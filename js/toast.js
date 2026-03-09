@@ -610,8 +610,8 @@ const Confirm = (function() {
                 color: var(--text-secondary);
                 line-height: 1.5;
                 white-space: pre-line;
-                overflow-wrap: anywhere;
-                word-break: break-all;
+                overflow-wrap: break-word;
+                word-break: break-word;
             }
 
             .confirm-actions {

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { width: 1200px; height: 630px; font-family: 'Inter', -apple-system, sans-serif; overflow: hidden; }
+        .og-card {
+            width: 1200px; height: 630px;
+            background: linear-gradient(135deg, #050810 0%, #0a1628 50%, #050810 100%);
+            position: relative; display: flex; align-items: center; overflow: hidden;
+        }
+        .og-card::before {
+            content: ''; position: absolute; width: 700px; height: 700px; top: -150px; right: -100px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.35) 0%, transparent 60%);
+        }
+        .og-card::after {
+            content: ''; position: absolute; width: 500px; height: 500px; bottom: -100px; left: -50px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, transparent 60%);
+        }
+        .grid-pattern {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px; opacity: 0.5;
+        }
+        .left { position: relative; z-index: 10; padding: 60px 50px 60px 70px; flex: 1; }
+        .right { position: relative; z-index: 10; width: 460px; padding-right: 50px; }
+        .logo { margin-bottom: 24px; }
+        .logo img { height: 40px; filter: brightness(0) invert(1); }
+        .badge {
+            display: inline-block; padding: 8px 18px; background: rgba(6, 182, 212, 0.15);
+            border: 1px solid rgba(6, 182, 212, 0.35); border-radius: 100px;
+            font-size: 12px; font-weight: 600; color: #22d3ee; text-transform: uppercase;
+            letter-spacing: 0.1em; margin-bottom: 24px;
+        }
+        .title { font-size: 48px; font-weight: 800; color: #ffffff; line-height: 1.1; margin-bottom: 16px; }
+        .title .highlight {
+            background: linear-gradient(135deg, #06b6d4 0%, #a78bfa 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .subtitle { font-size: 20px; color: rgba(255,255,255,0.6); font-weight: 500; line-height: 1.4; }
+        /* Mini dashboard preview */
+        .preview { display: flex; flex-direction: column; gap: 12px; }
+        .preview-kpi-row { display: flex; gap: 10px; }
+        .preview-kpi {
+            flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; padding: 14px 12px; text-align: center;
+        }
+        .preview-kpi-val { font-size: 22px; font-weight: 800; color: #22d3ee; margin-bottom: 2px; }
+        .preview-kpi-label { font-size: 9px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.08em; }
+        .preview-chart {
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; padding: 16px; height: 160px; position: relative; overflow: hidden;
+        }
+        .preview-chart-title { font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.06em; }
+        .bars { display: flex; align-items: flex-end; gap: 8px; height: 110px; padding-top: 4px; }
+        .bar { flex: 1; border-radius: 4px 4px 0 0; }
+        .bar:nth-child(1) { height: 85%; background: linear-gradient(180deg, #06b6d4, #0891b2); }
+        .bar:nth-child(2) { height: 65%; background: linear-gradient(180deg, #a78bfa, #7c3aed); }
+        .bar:nth-child(3) { height: 90%; background: linear-gradient(180deg, #06b6d4, #0891b2); }
+        .bar:nth-child(4) { height: 45%; background: linear-gradient(180deg, #a78bfa, #7c3aed); }
+        .bar:nth-child(5) { height: 70%; background: linear-gradient(180deg, #06b6d4, #0891b2); }
+        .bar:nth-child(6) { height: 55%; background: linear-gradient(180deg, #a78bfa, #7c3aed); }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="og-card">
+        <div class="grid-pattern"></div>
+        <div class="left">
+            <div class="logo"><img src="brand_logo.png" alt="Ragenaizer"></div>
+            <div class="badge">Survey Insights</div>
+            <h1 class="title">Survey <span class="highlight">Insights</span><br>Dashboard</h1>
+            <p class="subtitle">Executive-grade analysis powered by<br>agentic AI &middot; Interactive charts</p>
+        </div>
+        <div class="right">
+            <div class="preview">
+                <div class="preview-kpi-row">
+                    <div class="preview-kpi"><div class="preview-kpi-val">78%</div><div class="preview-kpi-label">CSAT</div></div>
+                    <div class="preview-kpi"><div class="preview-kpi-val">62%</div><div class="preview-kpi-label">NPS</div></div>
+                    <div class="preview-kpi"><div class="preview-kpi-val">8.4</div><div class="preview-kpi-label">Intent</div></div>
+                </div>
+                <div class="preview-chart">
+                    <div class="preview-chart-title">Key Metrics Analysis</div>
+                    <div class="bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

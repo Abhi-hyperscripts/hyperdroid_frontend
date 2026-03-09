@@ -636,6 +636,10 @@
         }
         .question-type-badge.multi_response { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
         .question-type-badge.grid { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+        .question-type-badge.single_select_grid { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+        .question-type-badge.multi_select_grid { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
+        .question-type-badge.numeric_grid { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .question-type-badge.nested_grid { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
         .question-type-badge.single { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
         .question-type-badge.numeric_scale { background: rgba(234, 179, 8, 0.15); color: #eab308; }
         .question-type-badge.text { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
@@ -1789,6 +1793,21 @@
             color: var(--brand-primary, #635bff);
             background: rgba(99, 91, 255, 0.06);
         }
+        .btn-track-progress {
+            padding: 5px 12px;
+            font-size: 0.72rem;
+            font-weight: 500;
+            border: 1px solid var(--color-warning, #f59e0b);
+            border-radius: 6px;
+            background: rgba(245, 158, 11, 0.08);
+            color: var(--color-warning, #f59e0b);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-track-progress:hover {
+            background: rgba(245, 158, 11, 0.16);
+            border-color: var(--color-warning, #f59e0b);
+        }
 
         /* ======== Questionnaire Viewer Modal ======== */
         .qv-overlay {
@@ -2084,8 +2103,32 @@
             color: var(--brand-primary, #635bff);
             border-bottom-color: var(--brand-primary, #635bff);
         }
-        .qv-q-panel { padding: 12px 16px; }
+        .qv-q-panel { padding: 12px 16px; position: relative; }
         .qv-q-panel[hidden] { display: none; }
+        .qv-json-copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 20px;
+            z-index: 2;
+            padding: 4px 12px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            border: 1px solid var(--brand-primary);
+            border-radius: 4px;
+            background: var(--brand-primary);
+            color: var(--text-inverse);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .qv-json-copy-btn:hover {
+            background: var(--brand-primary-hover);
+            border-color: var(--brand-primary-hover);
+        }
+        .qv-json-copy-btn.copied {
+            background: var(--color-success);
+            color: var(--text-inverse);
+            border-color: var(--color-success);
+        }
         .qv-q-json-pre {
             background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
@@ -2175,6 +2218,24 @@
             font-size: 0.72rem;
             color: var(--text-muted);
             flex-shrink: 0;
+        }
+        .qv-opt-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 3px;
+            margin-left: 6px;
+            vertical-align: middle;
+            text-transform: uppercase;
+        }
+        .qv-opt-badge.exclusive {
+            background: var(--color-warning);
+            color: var(--text-inverse);
+        }
+        .qv-opt-badge.oe {
+            background: var(--brand-primary);
+            color: var(--text-inverse);
         }
         .qv-matrix {
             width: 100%;
@@ -3101,10 +3162,10 @@
             right: 24px;
             width: 340px;
             max-height: 400px;
-            background: var(--bg-secondary);
+            background: var(--bg-card, #ffffff);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
             z-index: 1000;
             overflow: hidden;
             transition: transform 0.3s ease, opacity 0.3s ease;
@@ -3163,6 +3224,41 @@
             font-size: 0.72rem;
             color: var(--text-secondary);
             margin-bottom: 6px;
+        }
+        /* Rich insights progress detail */
+        .ins-progress-detail {
+            margin-bottom: 6px;
+        }
+        .ins-progress-stats {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+        }
+        .ins-progress-round {
+            color: var(--brand-primary);
+            font-weight: 600;
+        }
+        .ins-progress-sep {
+            color: var(--text-muted, var(--text-secondary));
+            opacity: 0.5;
+        }
+        .ins-progress-elapsed {
+            font-variant-numeric: tabular-nums;
+        }
+        .ins-progress-calls {
+            font-variant-numeric: tabular-nums;
+        }
+        .ins-progress-functions {
+            font-size: 0.68rem;
+            color: var(--text-muted, var(--text-secondary));
+            opacity: 0.8;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .file-progress-bar {
             width: 100%;
@@ -3970,6 +4066,18 @@
         }
         /* ===== Embed Settings Modal Styles ===== */
         #embedSettingsModal .modal-body { padding: 20px 24px 24px; }
+        #questionnaireManagerModal .modal-body {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-primary, #333) transparent;
+            color-scheme: dark;
+        }
+        #questionnaireManagerModal .modal-body::-webkit-scrollbar { width: 6px; }
+        #questionnaireManagerModal .modal-body::-webkit-scrollbar-track { background: transparent; margin: 8px 0; }
+        #questionnaireManagerModal .modal-body::-webkit-scrollbar-thumb { background: var(--border-primary); border-radius: 3px; }
+        #questionnaireManagerModal .modal-body::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
 
         /* Section blocks */
         .embed-section {
@@ -4547,25 +4655,90 @@
             min-height: 0;
             flex: 1;
         }
-        #ailogsInternalPanel, #ailogsWidgetPanel {
+        #ailogsInternalPanel, #ailogsWidgetPanel, #ailogsParsingPanel {
             flex: 1;
             min-height: 0;
             overflow-y: auto;
             padding-right: 4px;
         }
         #ailogsInternalPanel::-webkit-scrollbar,
-        #ailogsWidgetPanel::-webkit-scrollbar {
+        #ailogsWidgetPanel::-webkit-scrollbar,
+        #ailogsParsingPanel::-webkit-scrollbar {
             width: 6px;
         }
         #ailogsInternalPanel::-webkit-scrollbar-track,
-        #ailogsWidgetPanel::-webkit-scrollbar-track {
+        #ailogsWidgetPanel::-webkit-scrollbar-track,
+        #ailogsParsingPanel::-webkit-scrollbar-track {
             background: transparent;
         }
         #ailogsInternalPanel::-webkit-scrollbar-thumb,
-        #ailogsWidgetPanel::-webkit-scrollbar-thumb {
+        #ailogsWidgetPanel::-webkit-scrollbar-thumb,
+        #ailogsParsingPanel::-webkit-scrollbar-thumb {
             background: var(--border-primary, #d1d5db);
             border-radius: 3px;
         }
+        /* Parsing Logs stage table */
+        .pl-stage-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+        }
+        .pl-stage-table th {
+            text-align: left;
+            padding: 8px 10px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .pl-stage-table td {
+            padding: 7px 10px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .pl-stage-table tr:hover td {
+            background: var(--bg-secondary);
+        }
+        .pl-stage-table tr.pl-no-llm td {
+            color: var(--text-muted);
+        }
+        .pl-stage-label {
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .pl-token-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .pl-token-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: var(--brand-primary);
+            min-width: 0;
+            transition: width 0.3s;
+        }
+        .pl-outcome {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            max-width: 260px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .pl-quality-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .pl-quality-badge.excellent { background: rgba(16,185,129,0.15); color: var(--color-success); }
+        .pl-quality-badge.production { background: rgba(59,130,246,0.15); color: var(--brand-primary); }
+        .pl-quality-badge.borderline { background: rgba(245,158,11,0.15); color: var(--color-warning); }
+        .pl-quality-badge.failure { background: rgba(239,68,68,0.15); color: var(--color-error); }
         .ailogs-subtabs {
             display: flex;
             gap: 0;
@@ -5177,6 +5350,38 @@
                                 </svg>
                                 Upload JSON
                             </button>
+                            <div class="actions-divider" id="viewLinkageDivider" style="display:none;"></div>
+                            <button class="actions-item" id="viewLinkageBtn" style="display:none;" onclick="viewLinkage(); closeQuestionActionsDropdown();">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 11 12 14 22 4"/>
+                                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                                </svg>
+                                View Linkage
+                            </button>
+                            <div class="actions-divider" id="linkQuestionnaireDivider" style="display:none;"></div>
+                            <button class="actions-item" id="linkQuestionnaireBtn" style="display:none;" onclick="linkQuestionnaire(); closeQuestionActionsDropdown();">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                                </svg>
+                                Link Questionnaire
+                            </button>
+                            <div class="actions-divider" id="insightsDivider" style="display:none;"></div>
+                            <button class="actions-item" id="generateInsightsBtn" style="display:none;" onclick="generateInsights(); closeQuestionActionsDropdown();">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                                </svg>
+                                <span id="generateInsightsLabel">Generate Insights</span>
+                            </button>
+                            <button class="actions-item" id="viewInsightsBtn" style="display:none;" onclick="viewInsights(); closeQuestionActionsDropdown();">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="7" height="7"/>
+                                    <rect x="14" y="3" width="7" height="7"/>
+                                    <rect x="14" y="14" width="7" height="7"/>
+                                    <rect x="3" y="14" width="7" height="7"/>
+                                </svg>
+                                View Insights
+                            </button>
                         </div>
                     </div>
                     <input type="file" id="questionJsonUpload" accept=".json" style="display:none" onchange="handleQuestionJsonUpload(event)">
@@ -5184,7 +5389,10 @@
                     <select id="questionTypeFilter" onchange="filterQuestions()">
                         <option value="">All types</option>
                         <option value="multi_response">Multi Response</option>
-                        <option value="grid">Grid</option>
+                        <option value="single_select_grid">Single Select Grid</option>
+                        <option value="multi_select_grid">Multi Select Grid</option>
+                        <option value="numeric_grid">Numeric Grid</option>
+                        <option value="nested_grid">Nested Grid</option>
                         <option value="single">Single</option>
                         <option value="numeric_scale">Numeric Scale</option>
                         <option value="text">Text</option>
@@ -5314,6 +5522,9 @@
                     <button class="ailogs-subtab" onclick="switchAiLogsSubtab('widget')" id="ailogsSubtabWidget">
                         Widget Logs<span class="ailogs-subtab-badge" id="ailogsWidgetBadge"></span>
                     </button>
+                    <button class="ailogs-subtab" onclick="switchAiLogsSubtab('parsing')" id="ailogsSubtabParsing">
+                        Parsing Logs<span class="ailogs-subtab-badge" id="ailogsParsingBadge"></span>
+                    </button>
                 </div>
 
                 <!-- Internal AI Logs panel -->
@@ -5367,6 +5578,21 @@
                         <div class="ea-card"><div class="ea-value" id="eaTokens">0</div><div class="ea-label">Tokens</div></div>
                     </div>
                     <div id="embedSessionsList"></div>
+                </div>
+
+                <!-- Parsing Logs panel -->
+                <div id="ailogsParsingPanel" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+                        <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 0;">Per-stage token usage, LLM calls, and timing for questionnaire parsing</p>
+                        <div id="parsingLogsQuestionnaireDropdown" style="margin-left: auto; min-width: 250px;"></div>
+                    </div>
+                    <div class="ea-cards" id="parsingLogsSummary" style="display: none;">
+                        <div class="ea-card"><div class="ea-value" id="plTotalTokens">0</div><div class="ea-label">Total Tokens</div></div>
+                        <div class="ea-card"><div class="ea-value" id="plLlmCalls">0</div><div class="ea-label">LLM Calls</div></div>
+                        <div class="ea-card"><div class="ea-value" id="plDuration">0s</div><div class="ea-label">Processing Time</div></div>
+                        <div class="ea-card"><div class="ea-value" id="plQuestions">0</div><div class="ea-label">Questions</div></div>
+                    </div>
+                    <div id="parsingLogsContent"></div>
                 </div>
             </div>
 

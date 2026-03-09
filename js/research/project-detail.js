@@ -376,11 +376,16 @@ async function connectFileProgressSignalR() {
             handleQuestionnaireProgressUpdate(data);
         });
 
+        fileProgressConnection.on('InsightsProgressUpdate', (data) => {
+            handleInsightsProgressUpdate(data);
+        });
+
         fileProgressConnection.onreconnected(async () => {
             console.log('[FileProgress] SignalR reconnected, rejoining groups');
             fileProgressConnected = true;
             await joinFileProgressGroups();
             await rejoinQuestionnaireProgressGroups();
+            await rejoinInsightsProgressGroups();
         });
 
         fileProgressConnection.onclose(() => {
@@ -493,6 +498,7 @@ function handleFileProgressUpdate(data) {
         if (row) {
             const statusCell = row.querySelector('td:nth-child(3)');
             const displaySt = status === 'loading_data' ? 'loading data'
+                             : status === 'regrouping' ? 'regrouping variables'
                              : status === 'grouping' ? 'grouping variables'
                              : status === 'embedding' ? 'generating embeddings'
                              : status;
@@ -518,7 +524,7 @@ function startFilePolling() {
     Object.values(fileStatusPollers).forEach(id => clearInterval(id));
     fileStatusPollers = {};
 
-    const processingFiles = files.filter(f => ['uploading', 'parsing', 'loading_data', 'grouping', 'embedding'].includes(f.status));
+    const processingFiles = files.filter(f => ['uploading', 'parsing', 'loading_data', 'regrouping', 'grouping', 'embedding'].includes(f.status));
     if (processingFiles.length === 0) return;
 
     // Try SignalR first
@@ -646,13 +652,13 @@ function updateProgressPanelItem(fileId, data) {
         barClass = 'style="background: var(--color-danger, #ef4444);"';
     } else if (status === 'loading_data' && rowsLoaded > 0) {
         barWidth = '60%';
-    } else if (status === 'grouping') {
+    } else if (status === 'regrouping' || status === 'grouping') {
         barWidth = '80%';
     } else if (status === 'embedding') {
         barWidth = '90%';
     }
 
-    const isIndeterminate = (status === 'queued' || status === 'parsing' || status === 'grouping' || status === 'embedding' || (status === 'loading_data' && rowsLoaded === 0));
+    const isIndeterminate = (status === 'queued' || status === 'parsing' || status === 'regrouping' || status === 'grouping' || status === 'embedding' || (status === 'loading_data' && rowsLoaded === 0));
 
     const statsText = (status === 'queued' && queuePosition > 0)
         ? `Position ${queuePosition} in queue`
@@ -695,6 +701,173 @@ function removeProgressPanelItem(fileId) {
         const count = Object.keys(activeProgressFiles).length;
         const titleEl = document.getElementById('fileProgressTitle');
         if (titleEl) titleEl.textContent = count === 1 ? 'Processing File' : `Processing ${count} Files`;
+    }
+}
+
+// ═══ INSIGHTS PROGRESS ═══
+let activeInsightsFileId = null;
+
+function handleInsightsProgressUpdate(data) {
+    const fileId = data.file_id;
+    const status = data.status;
+    const message = data.message || '';
+    const progressKey = `insights-${fileId}`;
+
+    if (status === 'ready' || status === 'failed') {
+        // Terminal state
+        if (activeProgressFiles[progressKey]) {
+            updateInsightsProgressItem(fileId, status, message);
+        }
+
+        if (status === 'ready') {
+            Toast.success('Insights dashboard is ready!');
+            const genBtn = document.getElementById('generateInsightsBtn');
+            const viewBtn = document.getElementById('viewInsightsBtn');
+            if (genBtn) {
+                genBtn.disabled = false;
+                genBtn.querySelector('#generateInsightsLabel').textContent = 'Regenerate Insights';
+            }
+            if (viewBtn) viewBtn.style.display = '';
+        } else {
+            Toast.error('Insights generation failed: ' + message);
+            const genBtn = document.getElementById('generateInsightsBtn');
+            if (genBtn) {
+                genBtn.disabled = false;
+                genBtn.querySelector('#generateInsightsLabel').textContent = 'Generate Insights';
+            }
+        }
+
+        // Stop polling fallback
+        if (insightsPollingTimer) {
+            clearInterval(insightsPollingTimer);
+            insightsPollingTimer = null;
+        }
+
+        // Clean up after brief delay
+        setTimeout(() => {
+            delete activeProgressFiles[progressKey];
+            removeProgressPanelItem(progressKey);
+            leaveInsightsProgressGroup(fileId);
+            activeInsightsFileId = null;
+        }, 2500);
+    } else {
+        // In-progress update
+        if (!activeProgressFiles[progressKey]) {
+            const file = files.find(f => f.id === fileId);
+            activeProgressFiles[progressKey] = {
+                fileName: 'Generating Insights',
+                fileId: fileId,
+                isInsights: true
+            };
+        }
+        updateInsightsProgressItem(fileId, status, message);
+        showProgressPanel();
+    }
+}
+
+function updateInsightsProgressItem(fileId, status, message) {
+    const list = document.getElementById('fileProgressList');
+    if (!list) return;
+
+    const progressKey = `insights-${fileId}`;
+    let item = document.getElementById(`progress-${progressKey}`);
+
+    let barClass = '';
+    let barWidth = '10%';
+    let isIndeterminate = true;
+
+    if (status === 'ready') {
+        barWidth = '100%';
+        isIndeterminate = false;
+    } else if (status === 'failed') {
+        barWidth = '100%';
+        isIndeterminate = false;
+        barClass = 'style="background: var(--color-danger, #ef4444);"';
+    }
+
+    // Parse rich progress message: "Round 3/25 | 15s elapsed | 8 analysis calls | frequency, cross_tab"
+    let html = '';
+    const parts = message.split(' | ');
+    const roundMatch = parts[0]?.match(/Round (\d+)\/(\d+)/);
+
+    if (roundMatch && status === 'generating') {
+        const currentRound = parseInt(roundMatch[1]);
+        const maxRounds = parseInt(roundMatch[2]);
+        const elapsed = parts[1] || '';
+        const calls = parts[2] || '';
+        const functions = parts.slice(3).join(', ') || '';
+
+        // Estimate progress: rounds are ~70% of work, final JSON assembly is ~30%
+        const roundProgress = Math.min(Math.round((currentRound / maxRounds) * 80) + 5, 90);
+        barWidth = `${roundProgress}%`;
+        isIndeterminate = false;
+
+        html = `
+            <div class="file-progress-name" title="AI Insights">AI Insights Dashboard</div>
+            <div class="ins-progress-detail">
+                <div class="ins-progress-stats">
+                    <span class="ins-progress-round">${escapeHtml(parts[0])}</span>
+                    <span class="ins-progress-sep">·</span>
+                    <span class="ins-progress-elapsed">${escapeHtml(elapsed)}</span>
+                    <span class="ins-progress-sep">·</span>
+                    <span class="ins-progress-calls">${escapeHtml(calls)}</span>
+                </div>
+                ${functions ? `<div class="ins-progress-functions">${escapeHtml(functions)}</div>` : ''}
+            </div>
+            <div class="file-progress-bar">
+                <div class="file-progress-fill" style="width: ${barWidth};"></div>
+            </div>
+        `;
+    } else {
+        // Fallback for early messages or terminal states
+        const statusLabel = status === 'ready' ? 'Complete' : status === 'failed' ? 'Failed' : '';
+        html = `
+            <div class="file-progress-name" title="AI Insights">AI Insights Dashboard${statusLabel ? ` — ${statusLabel}` : ''}</div>
+            <div class="file-progress-status">${escapeHtml(message)}</div>
+            <div class="file-progress-bar">
+                <div class="file-progress-fill ${isIndeterminate ? 'indeterminate' : ''}" style="width: ${barWidth};" ${barClass}></div>
+            </div>
+        `;
+    }
+
+    if (!item) {
+        item = document.createElement('div');
+        item.className = 'file-progress-item';
+        item.id = `progress-${progressKey}`;
+        list.appendChild(item);
+    }
+    item.innerHTML = html;
+
+    // Update panel title
+    const count = Object.keys(activeProgressFiles).length;
+    const titleEl = document.getElementById('fileProgressTitle');
+    if (titleEl) {
+        const hasInsightsOnly = count === 1 && activeProgressFiles[progressKey];
+        titleEl.textContent = hasInsightsOnly ? 'Generating Insights' : count === 1 ? 'Processing File' : `Processing ${count} Items`;
+    }
+}
+
+async function joinInsightsProgressGroup(fileId) {
+    if (!fileProgressConnection || !fileProgressConnected) return;
+    try {
+        await fileProgressConnection.invoke('JoinInsightsProgress', fileId);
+    } catch (e) {
+        console.warn('Failed to join insights progress group:', e);
+    }
+}
+
+async function leaveInsightsProgressGroup(fileId) {
+    if (!fileProgressConnection || !fileProgressConnected) return;
+    try {
+        await fileProgressConnection.invoke('LeaveInsightsProgress', fileId);
+    } catch (e) {
+        // ignore
+    }
+}
+
+async function rejoinInsightsProgressGroups() {
+    if (activeInsightsFileId) {
+        await joinInsightsProgressGroup(activeInsightsFileId);
     }
 }
 
@@ -847,6 +1020,10 @@ function toggleQuestionActionsDropdown() {
     } else {
         trigger.classList.add('open');
         menu.classList.add('open');
+        // Check if we should show the "Link Questionnaire" button
+        checkLinkQuestionnaireVisibility();
+        // Check if we should show insights buttons
+        checkInsightsAvailability();
         setTimeout(() => {
             document.addEventListener('click', closeQuestionActionsOnOutsideClick);
         }, 0);
@@ -881,10 +1058,32 @@ async function regenerateQuestions() {
     });
     if (!confirmed) return;
 
-    Toast.info('Regenerating question groupings...');
+    // Show progress panel and join SignalR group for real-time updates
+    const file = files.find(f => f.id === fileId);
+    const fileName = file?.file_name || file?.fileName || 'File';
+    activeProgressFiles[fileId] = {
+        fileName,
+        fileId,
+        status: 'regrouping',
+        message: 'Regrouping variables...'
+    };
+    updateProgressPanelItem(fileId, {
+        status: 'regrouping',
+        message: 'Regrouping variables...',
+        rows_loaded: 0, elapsed_ms: 0, rows_per_sec: 0, queue_position: 0
+    });
+    showProgressPanel();
+
+    // Ensure SignalR connected and join file progress group
+    await connectFileProgressSignalR();
+    if (fileProgressConnected) {
+        try { await fileProgressConnection.invoke('JoinFileProgress', fileId); } catch (e) { /* ignore */ }
+    }
+
     try {
         const resp = await api.request(`/research/projects/${projectId}/files/${fileId}/regroup`, {
-            method: 'POST'
+            method: 'POST',
+            _skipSpinner: true
         });
         if (resp.success) {
             Toast.success(resp.message || 'Questions regenerated successfully');
@@ -895,6 +1094,13 @@ async function regenerateQuestions() {
         }
     } catch (err) {
         Toast.error('Failed to regenerate: ' + (err.message || err));
+    } finally {
+        // Clean up progress panel
+        setTimeout(() => {
+            delete activeProgressFiles[fileId];
+            removeProgressPanelItem(fileId);
+            leaveFileProgressGroup(fileId);
+        }, 2000);
     }
 }
 
@@ -1010,6 +1216,364 @@ async function handleQuestionJsonUpload(event) {
         const errMsg = errData.errors ? errData.errors.join('\n') : (err.message || 'Upload failed');
         Toast.error('Failed to upload: ' + errMsg);
     }
+}
+
+// ============================================
+// LINK QUESTIONNAIRE TO SPSS DATA
+// ============================================
+
+let cachedReadyQuestionnaires = null;
+let cachedLinkageInfo = null; // { questionnaireId, spssFileId } when mapping exists
+
+async function checkLinkQuestionnaireVisibility() {
+    const btn = document.getElementById('linkQuestionnaireBtn');
+    const divider = document.getElementById('linkQuestionnaireDivider');
+    const viewBtn = document.getElementById('viewLinkageBtn');
+    const viewDivider = document.getElementById('viewLinkageDivider');
+    if (!btn || !divider) return;
+
+    try {
+        const questionnaires = await api.request(`/research/projects/${projectId}/questionnaires`);
+        const ready = (questionnaires || []).filter(q => (q.status || q.Status) === 'ready' && (q.is_active || q.isActive || q.IsActive));
+        cachedReadyQuestionnaires = ready;
+
+        if (ready.length > 0) {
+            btn.style.display = '';
+            divider.style.display = '';
+        } else {
+            btn.style.display = 'none';
+            divider.style.display = 'none';
+        }
+
+        // Check if any active questionnaire is linked to the currently selected SPSS file
+        cachedLinkageInfo = null;
+        if (viewBtn && viewDivider) {
+            const fileId = getQuestionFileFilterValue();
+            const linked = ready.find(q => {
+                const lsId = q.linked_spss_file_id || q.linkedSpssFileId || q.LinkedSpssFileId;
+                return lsId && lsId === fileId;
+            });
+            if (linked) {
+                const qId = linked.id || linked.Id;
+                const lsId = linked.linked_spss_file_id || linked.linkedSpssFileId || linked.LinkedSpssFileId;
+                cachedLinkageInfo = { questionnaireId: qId, spssFileId: lsId };
+                viewBtn.style.display = '';
+                viewDivider.style.display = '';
+            } else {
+                viewBtn.style.display = 'none';
+                viewDivider.style.display = 'none';
+            }
+        }
+    } catch {
+        btn.style.display = 'none';
+        divider.style.display = 'none';
+        if (viewBtn) viewBtn.style.display = 'none';
+        if (viewDivider) viewDivider.style.display = 'none';
+    }
+}
+
+async function viewLinkage() {
+    if (!cachedLinkageInfo) {
+        Toast.error('No linkage found');
+        return;
+    }
+
+    const { questionnaireId, spssFileId } = cachedLinkageInfo;
+
+    try {
+        Toast.info('Loading mapping results...');
+        const result = await api.request(`/research/projects/${projectId}/questionnaires/${questionnaireId}/mappings/${spssFileId}`);
+        if (!result.mappings || result.mappings.length === 0) {
+            Toast.warning('No mappings found. Run "Link Questionnaire" first to generate mappings.');
+            return;
+        }
+        showMappingResultsDialog(questionnaireId, spssFileId, result);
+    } catch (err) {
+        const msg = err.data?.error || err.message || err;
+        Toast.error('Failed to load mappings: ' + msg);
+    }
+}
+
+async function linkQuestionnaire() {
+    const fileId = getQuestionFileFilterValue();
+    if (!fileId) { Toast.error('No SPSS file selected'); return; }
+
+    // Fetch ready questionnaires
+    let ready = cachedReadyQuestionnaires;
+    if (!ready) {
+        try {
+            const questionnaires = await api.request(`/research/projects/${projectId}/questionnaires`);
+            ready = (questionnaires || []).filter(q => (q.status || q.Status) === 'ready' && (q.is_active || q.isActive || q.IsActive));
+        } catch (err) {
+            Toast.error('Failed to load questionnaires: ' + (err.message || err));
+            return;
+        }
+    }
+
+    if (!ready || ready.length === 0) {
+        Toast.error('No active questionnaire found. Set a questionnaire as Active first.');
+        return;
+    }
+
+    let selectedQuestionnaire;
+
+    if (ready.length === 1) {
+        // Only one — confirm directly
+        const q = ready[0];
+        const qName = q.file_name || q.fileName || q.FileName || 'Questionnaire';
+        const totalQ = q.total_questions || q.totalQuestions || q.TotalQuestions || 0;
+        const confirmed = await Confirm.show({
+            title: 'Link Questionnaire',
+            message: `Link "${qName}" (${totalQ} questions) to this SPSS data file and run the matching algorithm?`,
+            type: 'info',
+            confirmText: 'Link & Map',
+            cancelText: 'Cancel'
+        });
+        if (!confirmed) return;
+        selectedQuestionnaire = q;
+    } else {
+        // Multiple — show selection dialog
+        selectedQuestionnaire = await showQuestionnaireSelectionDialog(ready);
+        if (!selectedQuestionnaire) return;
+    }
+
+    const qId = selectedQuestionnaire.id || selectedQuestionnaire.Id;
+    const qName = selectedQuestionnaire.file_name || selectedQuestionnaire.fileName || selectedQuestionnaire.FileName || 'Questionnaire';
+
+    Toast.info(`Linking "${qName}" and running mapping...`);
+
+    try {
+        // Step 1: Link questionnaire to SPSS file
+        await api.request(`/research/projects/${projectId}/questionnaires/${qId}/link-spss/${fileId}`, {
+            method: 'POST'
+        });
+
+        // Step 2: Run the mapping algorithm
+        const result = await api.request(`/research/projects/${projectId}/questionnaires/${qId}/map/${fileId}`, {
+            method: 'POST'
+        });
+
+        const confirmed = result.confirmed || 0;
+        const suggested = result.suggested || 0;
+        const unmatched = result.unmatched || 0;
+        const total = result.total_mappings || 0;
+        const timeMs = result.processing_time_ms || 0;
+
+        Toast.success(`Mapping complete: ${confirmed} confirmed, ${suggested} suggested, ${unmatched} unmatched (${timeMs}ms)`);
+
+        // Show mapping results in a dialog
+        showMappingResultsDialog(qId, fileId, result);
+
+    } catch (err) {
+        const msg = err.data?.error || err.message || err;
+        Toast.error('Mapping failed: ' + msg);
+    }
+}
+
+async function showQuestionnaireSelectionDialog(questionnaires) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'gm-overlay';
+
+        overlay.innerHTML = `
+            <div class="gm-modal" style="width:500px;">
+                <div class="gm-header">
+                    <div class="gm-header-left">
+                        <div class="gm-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                        </div>
+                        <div class="gm-title-group">
+                            <h3 class="gm-title">Select Questionnaire to Link</h3>
+                            <p class="gm-subtitle">Choose which questionnaire to map against SPSS variable groups</p>
+                        </div>
+                    </div>
+                    <button class="gm-close" id="gmSelectClose">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="gm-body" id="gmSelectList" style="gap:6px;"></div>
+                <div class="gm-footer" style="display:flex;justify-content:flex-end;">
+                    <button class="gm-btn gm-btn-secondary" id="gmSelectCancel">Cancel</button>
+                </div>
+            </div>
+        `;
+
+        const list = overlay.querySelector('#gmSelectList');
+
+        questionnaires.forEach(q => {
+            const qName = q.file_name || q.fileName || q.FileName || 'Questionnaire';
+            const totalQ = q.total_questions || q.totalQuestions || q.TotalQuestions || 0;
+            const quality = q.quality_level || q.qualityLevel || q.QualityLevel || '';
+            const isActive = q.is_active || q.isActive || q.IsActive;
+
+            const badges = [];
+            if (isActive) badges.push('<span style="background:var(--color-success);color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">ACTIVE</span>');
+            if (quality) badges.push(`<span style="background:rgba(var(--brand-primary-rgb),0.12);color:var(--brand-primary);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:500;">${quality.toUpperCase()}</span>`);
+
+            const item = document.createElement('button');
+            item.className = 'glass-card-sm';
+            item.style.cssText = 'display:flex;align-items:center;gap:12px;width:100%;cursor:pointer;text-align:left;transition:all 0.2s ease;';
+            item.innerHTML = `
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(var(--brand-primary-rgb),0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:500;font-size:13px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(qName)}</div>
+                    <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;display:flex;align-items:center;gap:6px;">${totalQ} questions ${badges.join(' ')}</div>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="flex-shrink:0;">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            `;
+
+            item.onclick = () => {
+                closeGmOverlay(overlay);
+                resolve(q);
+            };
+            list.appendChild(item);
+        });
+
+        const closeHandler = () => { closeGmOverlay(overlay); resolve(null); };
+        overlay.querySelector('#gmSelectClose').onclick = closeHandler;
+        overlay.querySelector('#gmSelectCancel').onclick = closeHandler;
+        overlay.onclick = (e) => { if (e.target === overlay) closeHandler(); };
+
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(() => overlay.classList.add('active'));
+    });
+}
+
+function closeGmOverlay(overlay) {
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+    setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 200);
+}
+
+function showMappingResultsDialog(questionnaireId, spssFileId, result) {
+    const mappings = result.mappings || [];
+    const confirmed = result.confirmed || 0;
+    const suggested = result.suggested || 0;
+    const unmatched = result.unmatched || 0;
+    const total = mappings.length;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'gm-overlay';
+
+    let tableRows = '';
+    if (mappings.length > 0) {
+        mappings.forEach(m => {
+            const scorePct = Math.round((m.score || 0) * 100);
+            const statusColor = m.status === 'confirmed' ? 'var(--color-success)' : m.status === 'suggested' ? 'var(--color-warning)' : 'var(--text-muted)';
+            const scoreColor = scorePct >= 70 ? 'var(--color-success)' : scorePct >= 40 ? 'var(--color-warning)' : 'var(--color-error)';
+            const qLabel = m.question_label || m.question_id || '';
+            const qText = m.question_text || '';
+            const gLabel = m.group_label || m.group_question_id || '';
+            const signals = m.signal_scores || {};
+            const sigTooltip = Object.entries(signals).map(([k, v]) => `${k}: ${Math.round(v * 100)}%`).join('\n');
+
+            tableRows += `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                <td style="padding:10px 12px;min-width:140px;">
+                    <div style="font-weight:500;font-size:12px;color:var(--text-primary);">${escapeHtml(qLabel)}</div>
+                    <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(qText)}">${escapeHtml(qText)}</div>
+                </td>
+                <td style="padding:10px 12px;color:var(--text-primary);font-weight:500;font-size:12px;min-width:120px;">${escapeHtml(gLabel)}</td>
+                <td style="padding:10px 8px;text-align:center;" title="${escapeHtml(sigTooltip)}">
+                    <span style="font-weight:600;font-size:12px;color:${scoreColor};cursor:help;">${scorePct}%</span>
+                </td>
+                <td style="padding:10px 8px;text-align:center;">
+                    <span style="background:${statusColor};color:#fff;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;">${m.status}</span>
+                </td>
+            </tr>`;
+        });
+    }
+
+    overlay.innerHTML = `
+        <div class="gm-modal gm-lg" style="width:960px;max-width:95vw;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 11 12 14 22 4"/>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Mapping Results</h3>
+                        <p class="gm-subtitle">${total} mapping${total !== 1 ? 's' : ''} generated</p>
+                    </div>
+                </div>
+                <button class="gm-close" id="gmResultClose">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body" style="gap:12px;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <div class="glass-card-sm" style="display:flex;align-items:center;gap:8px;flex:1;min-width:100px;">
+                        <div style="width:8px;height:8px;border-radius:50%;background:var(--color-success);flex-shrink:0;"></div>
+                        <div>
+                            <div style="font-size:18px;font-weight:700;color:var(--text-primary);line-height:1;">${confirmed}</div>
+                            <div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">Confirmed</div>
+                        </div>
+                    </div>
+                    <div class="glass-card-sm" style="display:flex;align-items:center;gap:8px;flex:1;min-width:100px;">
+                        <div style="width:8px;height:8px;border-radius:50%;background:var(--color-warning);flex-shrink:0;"></div>
+                        <div>
+                            <div style="font-size:18px;font-weight:700;color:var(--text-primary);line-height:1;">${suggested}</div>
+                            <div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">Suggested</div>
+                        </div>
+                    </div>
+                    <div class="glass-card-sm" style="display:flex;align-items:center;gap:8px;flex:1;min-width:100px;">
+                        <div style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);flex-shrink:0;"></div>
+                        <div>
+                            <div style="font-size:18px;font-weight:700;color:var(--text-primary);line-height:1;">${unmatched}</div>
+                            <div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">Unmatched</div>
+                        </div>
+                    </div>
+                </div>
+                ${mappings.length > 0 ? `
+                <div class="glass-card-flush" style="overflow:hidden;">
+                    <div style="max-height:440px;overflow-y:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                            <thead style="position:sticky;top:0;z-index:1;">
+                                <tr style="background:rgba(0,0,0,0.2);">
+                                    <th style="padding:10px 12px;text-align:left;color:var(--text-secondary);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Question</th>
+                                    <th style="padding:10px 12px;text-align:left;color:var(--text-secondary);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">SPSS Group</th>
+                                    <th style="padding:10px 8px;text-align:center;color:var(--text-secondary);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Score</th>
+                                    <th style="padding:10px 8px;text-align:center;color:var(--text-secondary);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+                    </div>
+                </div>` : `<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;">No mappings were created. Questions and SPSS variable groups could not be matched.</div>`}
+            </div>
+            <div class="gm-footer" style="display:flex;justify-content:flex-end;">
+                <button class="gm-btn gm-btn-primary" id="gmResultDone">Done</button>
+            </div>
+        </div>
+    `;
+
+    const closeHandler = () => closeGmOverlay(overlay);
+    overlay.querySelector('#gmResultClose').onclick = closeHandler;
+    overlay.querySelector('#gmResultDone').onclick = closeHandler;
+    overlay.onclick = (e) => { if (e.target === overlay) closeHandler(); };
+
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => overlay.classList.add('active'));
 }
 
 // ============================================
@@ -6486,29 +7050,43 @@ function onEaEmbedKeyFilterChange() {
     loadEmbedAnalytics(key);
 }
 
+let parsingLogsLoaded = false;
+let parsingLogsData = null;
+let parsingLogsDropdown = null;
+
 function switchAiLogsSubtab(sub) {
     const internalBtn = document.getElementById('ailogsSubtabInternal');
     const widgetBtn = document.getElementById('ailogsSubtabWidget');
+    const parsingBtn = document.getElementById('ailogsSubtabParsing');
     const internalPanel = document.getElementById('ailogsInternalPanel');
     const widgetPanel = document.getElementById('ailogsWidgetPanel');
+    const parsingPanel = document.getElementById('ailogsParsingPanel');
+
+    internalBtn.classList.remove('active');
+    widgetBtn.classList.remove('active');
+    parsingBtn.classList.remove('active');
+    internalPanel.style.display = 'none';
+    widgetPanel.style.display = 'none';
+    parsingPanel.style.display = 'none';
 
     if (sub === 'internal') {
         internalBtn.classList.add('active');
-        widgetBtn.classList.remove('active');
         internalPanel.style.display = '';
-        widgetPanel.style.display = 'none';
-    } else {
-        internalBtn.classList.remove('active');
+    } else if (sub === 'widget') {
         widgetBtn.classList.add('active');
-        internalPanel.style.display = 'none';
         widgetPanel.style.display = '';
         if (!eaLoaded) loadEmbedAnalytics('');
+    } else if (sub === 'parsing') {
+        parsingBtn.classList.add('active');
+        parsingPanel.style.display = '';
+        if (!parsingLogsLoaded) initParsingLogs();
     }
 }
 
 function updateAiLogsBadges() {
     const internalBadge = document.getElementById('ailogsInternalBadge');
     const widgetBadge = document.getElementById('ailogsWidgetBadge');
+    const parsingBadge = document.getElementById('ailogsParsingBadge');
     const countEl = document.getElementById('aiLogsCount');
     if (internalBadge && countEl) {
         const match = (countEl.textContent || '').match(/(\d+)/);
@@ -6518,6 +7096,135 @@ function updateAiLogsBadges() {
         const total = eaAnalyticsData.reduce((sum, a) => sum + (a.session_count || 0), 0);
         widgetBadge.textContent = total > 0 ? total : '';
     }
+    if (parsingBadge && parsingLogsData && parsingLogsData.stages) {
+        const totalLlm = parsingLogsData.stages.reduce((s, st) => s + (st.llm_calls ?? st.LlmCalls ?? st.llmCalls ?? 0), 0);
+        parsingBadge.textContent = totalLlm > 0 ? totalLlm : '';
+    }
+}
+
+async function initParsingLogs() {
+    const container = document.getElementById('parsingLogsQuestionnaireDropdown');
+    if (!container) return;
+    try {
+        const files = await api.request(`/research/projects/${projectId}/questionnaires`);
+        const ready = files.filter(f => f.status === 'ready' || f.Status === 'ready');
+        if (ready.length === 0) {
+            document.getElementById('parsingLogsContent').innerHTML =
+                '<div style="text-align:center; padding:30px; color:var(--text-muted);">No completed questionnaires. Upload and parse a questionnaire first.</div>';
+            return;
+        }
+        const options = ready.map(f => ({
+            value: f.id || f.Id,
+            label: f.file_name || f.fileName || f.FileName || (f.id || f.Id)
+        }));
+        if (parsingLogsDropdown) {
+            parsingLogsDropdown.destroy();
+        }
+        parsingLogsDropdown = new SearchableDropdown(container, {
+            options: options,
+            value: options[0].value,
+            placeholder: 'Select questionnaire...',
+            searchPlaceholder: 'Search questionnaires...',
+            onChange: () => loadParsingLogs()
+        });
+        parsingLogsLoaded = true;
+        loadParsingLogs();
+    } catch (err) {
+        document.getElementById('parsingLogsContent').innerHTML =
+            `<div style="text-align:center; padding:30px; color:var(--color-error);">Failed to load questionnaires: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+async function loadParsingLogs() {
+    const qId = parsingLogsDropdown?.getValue();
+    if (!qId) return;
+
+    const content = document.getElementById('parsingLogsContent');
+    const summary = document.getElementById('parsingLogsSummary');
+    content.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">Loading stage logs...</div>';
+    summary.style.display = 'none';
+
+    try {
+        const data = await api.request(`/research/projects/${projectId}/questionnaires/${qId}/stage-logs`);
+        parsingLogsData = data;
+
+        // Summary cards
+        const totalTokens = data.total_tokens || data.totalTokens || 0;
+        const totalCalls = data.total_llm_calls || data.totalLlmCalls || 0;
+        const totalMs = data.processing_time_ms || data.processingTimeMs || 0;
+        const totalQ = data.total_questions || data.totalQuestions || 0;
+        const quality = data.quality_level || data.qualityLevel || '';
+
+        document.getElementById('plTotalTokens').textContent = formatTokenCount(totalTokens);
+        document.getElementById('plLlmCalls').textContent = totalCalls;
+        document.getElementById('plDuration').textContent = formatDuration(totalMs);
+        document.getElementById('plQuestions').textContent = totalQ;
+        summary.style.display = '';
+
+        const stages = data.stages || [];
+        if (stages.length === 0) {
+            content.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">No stage logs recorded for this questionnaire. Re-parse to generate logs.</div>';
+            updateAiLogsBadges();
+            return;
+        }
+
+        const maxTokens = Math.max(...stages.map(s => s.tokens_used ?? s.TokensUsed ?? s.tokensUsed ?? 0), 1);
+
+        let html = `<div style="overflow-x:auto;">
+            <table class="pl-stage-table">
+                <thead><tr>
+                    <th>#</th>
+                    <th>Stage</th>
+                    <th>Tokens</th>
+                    <th style="min-width:100px;">Token Share</th>
+                    <th>LLM Calls</th>
+                    <th>Duration</th>
+                    <th>Outcome</th>
+                </tr></thead>
+                <tbody>`;
+
+        stages.forEach(s => {
+            const tokens = s.tokens_used ?? s.TokensUsed ?? s.tokensUsed ?? 0;
+            const calls = s.llm_calls ?? s.LlmCalls ?? s.llmCalls ?? 0;
+            const dur = s.duration_ms ?? s.DurationMs ?? s.durationMs ?? 0;
+            const outcome = s.outcome ?? s.Outcome ?? '';
+            const label = s.stage_label ?? s.StageLabel ?? s.stage_name ?? s.StageName ?? '';
+            const order = s.stage_order ?? s.StageOrder ?? s.stageOrder ?? 0;
+            const isNoLlm = tokens === 0 && calls === 0;
+            const barWidth = tokens > 0 ? Math.max(2, (tokens / maxTokens) * 100) : 0;
+
+            html += `<tr class="${isNoLlm ? 'pl-no-llm' : ''}">
+                <td style="color:var(--text-muted);font-size:0.72rem;">${order}</td>
+                <td class="pl-stage-label">${escapeHtml(label)}</td>
+                <td>${tokens > 0 ? formatTokenCount(tokens) : '-'}</td>
+                <td>
+                    <div class="pl-token-bar-container">
+                        <div class="pl-token-bar" style="width:${barWidth}%;${isNoLlm ? 'background:var(--border-color);' : ''}"></div>
+                    </div>
+                </td>
+                <td>${calls > 0 ? calls : '-'}</td>
+                <td>${formatDuration(dur)}</td>
+                <td class="pl-outcome" title="${escapeHtml(outcome)}">${escapeHtml(outcome)}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table></div>';
+
+        if (quality) {
+            html += `<div style="margin-top:12px;"><span class="pl-quality-badge ${quality}">${quality}</span></div>`;
+        }
+
+        content.innerHTML = html;
+        updateAiLogsBadges();
+    } catch (err) {
+        content.innerHTML = `<div style="text-align:center; padding:20px; color:var(--color-error);">Failed to load stage logs: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function formatDuration(ms) {
+    if (ms >= 60000) return (ms / 60000).toFixed(1) + 'm';
+    if (ms >= 1000) return (ms / 1000).toFixed(1) + 's';
+    return ms + 'ms';
 }
 
 function setAnalyticsCards(sessions, ips, messages, tokens) {
@@ -6883,6 +7590,12 @@ function handleQuestionnaireProgressUpdate(data) {
             Toast.error(`Questionnaire parsing failed: ${message}`);
         }
 
+        // Refresh questionnaire list if the manager modal is open
+        const managerModal = document.getElementById('questionnaireManagerModal');
+        if (managerModal && managerModal.classList.contains('active')) {
+            loadQuestionnaireList();
+        }
+
         // Clean up after a moment
         setTimeout(() => {
             delete activeQuestionnaireProgress[qId];
@@ -6958,6 +7671,59 @@ function startPollingQuestionnaire(qId) {
             console.warn('Questionnaire poll failed:', e);
         }
     }, 5000);
+}
+
+async function trackQuestionnaireProgress(qId, fileName) {
+    // Already tracking?
+    if (activeQuestionnaireProgress[qId]) {
+        showProgressPanel();
+        return;
+    }
+
+    // Fetch current status from API
+    try {
+        const data = await api.request(`/research/projects/${projectId}/questionnaires/${qId}`, { _skipSpinner: true });
+        const status = data.Status || data.status;
+        const pct = data.ProgressPercent || data.progressPercent || data.progress_percent || 0;
+        const tokensUsed = data.TokensUsed || data.tokensUsed || data.tokens_used || 0;
+        const llmCalls = data.LlmCalls || data.llmCalls || data.llm_calls || 0;
+
+        if (status === 'ready' || status === 'failed') {
+            Toast.info(`Parsing already ${status}`);
+            loadQuestionnaireList();
+            return;
+        }
+
+        activeQuestionnaireProgress[qId] = {
+            fileName: fileName || data.FileName || data.fileName || data.file_name || 'Questionnaire',
+            questionnaireId: qId,
+            status,
+            message: QUESTIONNAIRE_STAGE_LABELS[status] || status,
+            progressPercent: pct,
+            tokensUsed,
+            llmCalls
+        };
+        updateQuestionnaireProgressPanelItem(qId, activeQuestionnaireProgress[qId]);
+        showProgressPanel();
+
+        // Connect SignalR and join group
+        if (!fileProgressConnected) {
+            await connectFileProgressSignalR();
+        }
+        if (fileProgressConnected) {
+            try {
+                await fileProgressConnection.invoke('JoinQuestionnaireProgress', qId);
+            } catch (e) {
+                console.warn('Failed to join questionnaire progress group:', e);
+                startPollingQuestionnaire(qId);
+            }
+        } else {
+            startPollingQuestionnaire(qId);
+        }
+    } catch (e) {
+        console.error('Failed to track questionnaire progress:', e);
+        Toast.error('Failed to load questionnaire status');
+    }
 }
 
 async function rejoinQuestionnaireProgressGroups() {
@@ -7098,6 +7864,7 @@ async function loadQuestionnaireList() {
                     </div>
                     <div class="questionnaire-item-actions">
                         ${hasDetails ? `<button class="btn-expand-details" onclick="toggleQuestionnaireDetails(this)" title="Show details"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>` : ''}
+                        ${status !== 'ready' && status !== 'failed' ? `<button class="btn-track-progress" onclick="trackQuestionnaireProgress('${id}', '${escapeHtml(fileName).replace(/'/g, "\\'")}')" title="Show parsing progress">Track</button>` : ''}
                         ${status === 'ready' ? `<button class="btn-view-questionnaire" onclick="openQuestionnaireViewer('${id}', '${escapeHtml(fileName).replace(/'/g, "\\'")}')">View</button>` : ''}
                         ${status === 'ready' && !isActive ? `<button class="btn-activate" onclick="activateQuestionnaire('${id}')">Set Active</button>` : ''}
                         <button class="btn-icon-danger" onclick="deleteQuestionnaire('${id}', '${escapeHtml(fileName).replace(/'/g, "\\'")}')" title="Delete">
@@ -7320,7 +8087,7 @@ function renderQvQuestion(q) {
     const skipLogic = q.skipLogic || q.SkipLogic || q.skip_logic || null;
     const ontology = q.ontology || q.Ontology || null;
 
-    const displayNum = label || `Q${qNum}`;
+    const displayNum = `Q${qNum}`;
     const typeLabels = {
         'single_select': 'Single Select',
         'multi_select': 'Multi Select',
@@ -7348,6 +8115,9 @@ function renderQvQuestion(q) {
     }
 
     questionContent += `<span class="qv-q-type">${typeLabels[type] || type}</span>`;
+    if (label && label !== displayNum) {
+        questionContent += `<span class="qv-q-type" style="background:var(--bg-tertiary);color:var(--text-muted);" title="Original label from document">${escapeHtml(label)}</span>`;
+    }
     if (ontology) {
         const cLabel = ontology.conceptLabel || ontology.ConceptLabel || ontology.concept_label || '';
         if (cLabel) questionContent += `<span class="qv-ontology-tag">${escapeHtml(cLabel)}</span>`;
@@ -7390,7 +8160,7 @@ function renderQvQuestion(q) {
             <button class="qv-q-tab" onclick="switchQvQTab('${qid}','json',this)">JSON</button>
         </div>
         <div class="qv-q-panel" id="${qid}_question">${questionContent}</div>
-        <div class="qv-q-panel" id="${qid}_json" hidden><pre class="qv-q-json-pre">${escapeHtml(jsonStr)}</pre></div>
+        <div class="qv-q-panel" id="${qid}_json" hidden><button class="qv-json-copy-btn" onclick="copyQvQuestionJson(this)" title="Copy JSON">Copy</button><pre class="qv-q-json-pre">${escapeHtml(jsonStr)}</pre></div>
     </div>`;
     return html;
 }
@@ -7413,6 +8183,17 @@ function switchQvQTab(qid, tab, btn) {
     const tabs = btn.parentElement.querySelectorAll('.qv-q-tab');
     tabs.forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
+}
+
+function copyQvQuestionJson(btn) {
+    const pre = btn.parentElement.querySelector('.qv-q-json-pre');
+    if (!pre) return;
+    navigator.clipboard.writeText(pre.textContent).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
+    });
 }
 
 /* ====== Questionnaire Viewer Search ====== */
@@ -7540,6 +8321,8 @@ function renderQvOptions(options, mode) {
     options.forEach((opt, i) => {
         const code = opt.code || opt.Code || '';
         const label = opt.label || opt.Label || '';
+        const isExclusive = opt.is_exclusive || opt.IsExclusive || opt.isExclusive || false;
+        const isOE = opt.is_open_ended || opt.IsOpenEnded || opt.isOpenEnded || false;
         let marker;
         if (mode === 'rank') {
             marker = `<span class="qv-opt-marker rank">${i + 1}.</span>`;
@@ -7548,7 +8331,10 @@ function renderQvOptions(options, mode) {
         } else {
             marker = `<span class="qv-opt-marker"></span>`;
         }
-        html += `<li>${marker} ${code ? `<span class="qv-opt-code">${escapeHtml(code)}</span>` : ''} ${escapeHtml(label)}</li>`;
+        let badges = '';
+        if (isExclusive) badges += '<span class="qv-opt-badge exclusive">EXCL</span>';
+        if (isOE) badges += '<span class="qv-opt-badge oe">OE</span>';
+        html += `<li>${marker} ${code ? `<span class="qv-opt-code">${escapeHtml(code)}</span>` : ''} ${escapeHtml(label)}${badges}</li>`;
     });
     html += `</ul>`;
     return html;
@@ -7612,4 +8398,175 @@ function downloadQuestionnaireJson() {
 function printQuestionnaire() {
     if (qvCurrentTab !== 'normal') switchQvTab('normal');
     setTimeout(() => window.print(), 200);
+}
+
+// ============================================
+// INSIGHTS DASHBOARD
+// ============================================
+
+let insightsShareToken = null;
+let insightsPollingTimer = null;
+
+async function checkInsightsAvailability() {
+    const divider = document.getElementById('insightsDivider');
+    const genBtn = document.getElementById('generateInsightsBtn');
+    const viewBtn = document.getElementById('viewInsightsBtn');
+    if (!divider || !genBtn || !viewBtn) return;
+
+    const fileId = getQuestionFileFilterValue();
+    if (!fileId) {
+        divider.style.display = 'none';
+        genBtn.style.display = 'none';
+        viewBtn.style.display = 'none';
+        return;
+    }
+
+    try {
+        // Check AI availability (route via /research/ prefix to hit ResearchBackend)
+        const aiStatus = await api.request('/research/ai/status');
+        if (!aiStatus || !aiStatus.available) {
+            divider.style.display = 'none';
+            genBtn.style.display = 'none';
+            viewBtn.style.display = 'none';
+            return;
+        }
+
+        // Show generate button
+        divider.style.display = '';
+        genBtn.style.display = '';
+
+        // Check existing insights
+        try {
+            const insights = await api.request(`/research/projects/${projectId}/files/${fileId}/insights`);
+            if (insights.status === 'ready') {
+                insightsShareToken = insights.share_token;
+                viewBtn.style.display = '';
+                genBtn.querySelector('#generateInsightsLabel').textContent = 'Regenerate Insights';
+            } else if (insights.status === 'generating') {
+                insightsShareToken = insights.share_token;
+                genBtn.disabled = true;
+                genBtn.querySelector('#generateInsightsLabel').textContent = 'Generating...';
+                viewBtn.style.display = 'none';
+                startInsightsPolling(fileId);
+            } else {
+                viewBtn.style.display = 'none';
+            }
+        } catch {
+            // No insights yet — that's fine
+            viewBtn.style.display = 'none';
+            genBtn.querySelector('#generateInsightsLabel').textContent = 'Generate Insights';
+        }
+    } catch {
+        divider.style.display = 'none';
+        genBtn.style.display = 'none';
+        viewBtn.style.display = 'none';
+    }
+}
+
+async function generateInsights() {
+    const fileId = getQuestionFileFilterValue();
+    if (!fileId) {
+        Toast.error('No file selected');
+        return;
+    }
+
+    const confirmed = await showConfirm('Generate AI insights dashboard? This uses your AI API key and may take 10-30 seconds.', 'Generate Insights');
+    if (!confirmed) return;
+
+    const genBtn = document.getElementById('generateInsightsBtn');
+    const viewBtn = document.getElementById('viewInsightsBtn');
+
+    try {
+        genBtn.disabled = true;
+        genBtn.querySelector('#generateInsightsLabel').textContent = 'Generating...';
+        viewBtn.style.display = 'none';
+
+        // Connect SignalR and join progress group BEFORE triggering generation
+        if (!fileProgressConnected) {
+            await connectFileProgressSignalR();
+        }
+        if (fileProgressConnected) {
+            await joinInsightsProgressGroup(fileId);
+        }
+        activeInsightsFileId = fileId;
+
+        // Show progress panel immediately
+        const progressKey = `insights-${fileId}`;
+        activeProgressFiles[progressKey] = {
+            fileName: 'Generating Insights',
+            fileId: fileId,
+            isInsights: true
+        };
+        updateInsightsProgressItem(fileId, 'generating', 'Starting insights generation...');
+        showProgressPanel();
+
+        const result = await api.request(`/research/projects/${projectId}/files/${fileId}/insights/generate`, {
+            method: 'POST'
+        });
+
+        insightsShareToken = result.share_token;
+
+        // Fallback polling in case SignalR doesn't deliver
+        startInsightsPolling(fileId);
+    } catch (err) {
+        genBtn.disabled = false;
+        genBtn.querySelector('#generateInsightsLabel').textContent = 'Generate Insights';
+        const msg = err.data?.error || err.message || 'Failed to generate insights';
+        Toast.error(msg);
+        // Clean up progress
+        const progressKey = `insights-${fileId}`;
+        delete activeProgressFiles[progressKey];
+        removeProgressPanelItem(progressKey);
+        activeInsightsFileId = null;
+    }
+}
+
+function startInsightsPolling(fileId) {
+    if (insightsPollingTimer) clearInterval(insightsPollingTimer);
+
+    insightsPollingTimer = setInterval(async () => {
+        try {
+            const insights = await api.request(`/research/projects/${projectId}/files/${fileId}/insights`, { _skipSpinner: true });
+            insightsShareToken = insights.share_token;
+
+            if (insights.status === 'ready') {
+                clearInterval(insightsPollingTimer);
+                insightsPollingTimer = null;
+
+                // Only update UI if SignalR hasn't already handled it
+                const progressKey = `insights-${fileId}`;
+                if (activeProgressFiles[progressKey]) {
+                    handleInsightsProgressUpdate({ file_id: fileId, status: 'ready', message: 'Dashboard ready' });
+                }
+            } else if (insights.status === 'failed') {
+                clearInterval(insightsPollingTimer);
+                insightsPollingTimer = null;
+
+                const progressKey = `insights-${fileId}`;
+                if (activeProgressFiles[progressKey]) {
+                    handleInsightsProgressUpdate({ file_id: fileId, status: 'failed', message: insights.error_message || 'Unknown error' });
+                }
+            }
+        } catch {
+            // Keep polling
+        }
+    }, 5000);
+}
+
+function viewInsights() {
+    if (!insightsShareToken) {
+        Toast.error('No insights available');
+        return;
+    }
+    // Open in new tab
+    const url = `/pages/research/insights.html?token=${insightsShareToken}`;
+    window.open(url, '_blank');
+
+    // Show copy-link toast
+    const fullUrl = window.location.origin + url;
+    navigator.clipboard.writeText(fullUrl).then(() => {
+        Toast.success('Share link copied to clipboard!');
+    }).catch(() => {
+        Toast.info('Share link: ' + fullUrl);
+    });
 }
