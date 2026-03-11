@@ -61,6 +61,28 @@
         return window.innerWidth <= 600;
     }
 
+    /**
+     * Determine the suffix for data labels.
+     * Uses explicit data.suffix if present; otherwise if all values
+     * are in 0-100 range, treats them as percentages.
+     * Skips % for titles containing stats keywords (mean, median, index, score, coefficient, correlation).
+     */
+    function detectValueSuffix(data, config) {
+        if (data.suffix) return data.suffix;
+        if (config.suffix) return config.suffix;
+        const title = (config.title || '').toLowerCase();
+        const statsKeywords = ['mean', 'median', 'index', 'score', 'coefficient', 'correlation', 'count', 'average', 'ratio'];
+        if (statsKeywords.some(k => title.includes(k))) return '';
+        const allVals = Array.isArray(data.series)
+            ? (typeof data.series[0] === 'object' && data.series[0]?.data
+                ? data.series.flatMap(s => s.data || [])
+                : data.series)
+            : [];
+        const nums = allVals.filter(v => typeof v === 'number');
+        if (nums.length > 0 && nums.every(v => v >= 0 && v <= 100)) return '%';
+        return '';
+    }
+
     function chartHeight(desktopH, mobileH) {
         return isMobile() ? mobileH : desktopH;
     }
@@ -833,6 +855,7 @@
         };
 
         const sigLookup = buildSignificanceLookup(config);
+        const valSuffix = detectValueSuffix(data, config);
 
         // Always show data labels on desktop
         if (!mobile) {
@@ -840,6 +863,7 @@
                 enabled: true,
                 formatter: (val, o) => {
                     let label = typeof val === 'number' ? (Number.isInteger(val) ? String(val) : val.toFixed(1)) : String(val);
+                    label += valSuffix;
                     if (sigLookup) {
                         const cat = categories[o.dataPointIndex];
                         const sName = series[o.seriesIndex]?.name;
