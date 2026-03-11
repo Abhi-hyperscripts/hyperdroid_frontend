@@ -1482,6 +1482,9 @@
     };
 
     window.insSwitchTab = function (tabId) {
+        // Scroll to top so new tab content starts from the beginning
+        window.scrollTo({ top: 0, behavior: 'instant' });
+
         // Handle both horizontal tabs and sidebar buttons
         document.querySelectorAll('.ins-tab-btn, .sidebar-btn[data-tab]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabId);
