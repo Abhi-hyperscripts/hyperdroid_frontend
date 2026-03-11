@@ -1138,6 +1138,7 @@
 
         /* ═══ SEGMENT BADGE & DROPDOWN ═══ */
         .ins-segment-badge {
+            position: relative;
             display: inline-flex;
             align-items: center;
             gap: 5px;
@@ -1168,6 +1169,10 @@
             color: #fff;
         }
         .ins-segment-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 4px;
             min-width: 140px;
             background: var(--ins-surface);
             border: 1px solid var(--ins-border);
@@ -1716,6 +1721,6 @@
     <div class="ins-toast" id="insToast"></div>
 
     <script src="../../js/share-widget.js"></script>
-    <script src="../../js/research/insights.js?v=343"></script>
+    <script src="../../js/research/insights.js?v=345"></script>
 </body>
 </html>

@@ -2021,15 +2021,11 @@
         if (e.target.closest('.ins-segment-badge, .ins-segment-dropdown')) return;
         document.querySelectorAll('.ins-segment-dropdown').forEach(d => d.remove());
     });
-    window.addEventListener('scroll', function () {
-        document.querySelectorAll('.ins-segment-dropdown').forEach(d => d.remove());
-    }, { passive: true });
-
     /** Toggle segment dropdown on badge click */
     window.insToggleSegmentDropdown = function (event, tabId, chartIdx) {
         event.stopPropagation();
         const btn = event.currentTarget;
-        const wasOpen = document.querySelector('.ins-segment-dropdown[data-for="' + btn.id + '"]');
+        const wasOpen = btn.querySelector('.ins-segment-dropdown');
 
         // Close any open dropdown globally
         document.querySelectorAll('.ins-segment-dropdown').forEach(d => d.remove());
@@ -2039,12 +2035,8 @@
         const segments = JSON.parse(btn.getAttribute('data-segments') || '[]');
         if (!segments.length) return;
 
-        // Assign a temp id for tracking
-        if (!btn.id) btn.id = 'ins-seg-btn-' + tabId + '-' + chartIdx;
-
         const dd = document.createElement('div');
         dd.className = 'ins-segment-dropdown';
-        dd.setAttribute('data-for', btn.id);
         segments.forEach(name => {
             const item = document.createElement('button');
             item.className = 'ins-segment-dropdown-item';
@@ -2057,12 +2049,8 @@
             dd.appendChild(item);
         });
 
-        // Position dropdown below the badge using fixed positioning (escapes overflow:hidden)
-        const rect = btn.getBoundingClientRect();
-        dd.style.position = 'fixed';
-        dd.style.top = (rect.bottom + 4) + 'px';
-        dd.style.left = rect.left + 'px';
-        document.body.appendChild(dd);
+        // Append inside the badge — scrolls naturally with content
+        btn.appendChild(dd);
     };
 
     // Escape key: priority order — segment panel → fullscreen
