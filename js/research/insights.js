@@ -2016,11 +2016,14 @@
         insCloseSegmentPanel();
     }, true);
 
-    // Close segment dropdown when clicking outside
+    // Close segment dropdown when clicking outside or scrolling
     document.addEventListener('click', function (e) {
         if (e.target.closest('.ins-segment-badge, .ins-segment-dropdown')) return;
         document.querySelectorAll('.ins-segment-dropdown').forEach(d => d.remove());
     });
+    window.addEventListener('scroll', function () {
+        document.querySelectorAll('.ins-segment-dropdown').forEach(d => d.remove());
+    }, { passive: true });
 
     /** Toggle segment dropdown on badge click */
     window.insToggleSegmentDropdown = function (event, tabId, chartIdx) {
