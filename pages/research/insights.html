@@ -1574,68 +1574,6 @@
             color: var(--ins-text-secondary);
         }
 
-        /* ═══ HIGHLIGHT CHIP ═══ */
-        .ins-highlight-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 14px;
-            margin-bottom: 14px;
-            background: var(--ins-accent-glow);
-            border: 1px solid var(--ins-accent);
-            border-radius: 20px;
-            font-size: 13px;
-            color: var(--ins-text);
-            font-weight: 500;
-            animation: ins-chip-in 0.3s ease;
-        }
-        @keyframes ins-chip-in {
-            from { opacity: 0; transform: translateY(-6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .ins-highlight-chip .ins-chip-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--ins-accent);
-            animation: ins-pulse 2s ease-in-out infinite;
-        }
-        @keyframes ins-pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-        .ins-highlight-chip .ins-chip-close {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 18px;
-            height: 18px;
-            border: none;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--ins-text-muted);
-            cursor: pointer;
-            font-size: 12px;
-            line-height: 1;
-            transition: all 0.15s;
-            padding: 0;
-        }
-        .ins-highlight-chip .ins-chip-close:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: var(--ins-text);
-        }
-        [data-theme="light"] .ins-highlight-chip .ins-chip-close {
-            background: rgba(0, 0, 0, 0.08);
-        }
-        [data-theme="light"] .ins-highlight-chip .ins-chip-close:hover {
-            background: rgba(0, 0, 0, 0.15);
-        }
-
-        /* Dimmed chart state for cross-chart highlighting */
-        .ins-chart-card.ins-dimmed {
-            opacity: 0.3;
-            transition: opacity 0.3s ease;
-        }
 
         @media (max-width: 600px) {
             .ins-segment-panel {
@@ -1672,7 +1610,6 @@
             .ins-sticky-header { display: none !important; }
             .ins-fullscreen-overlay { display: none !important; }
             .ins-segment-panel, .ins-segment-panel-overlay { display: none !important; }
-            .ins-highlight-chip { display: none !important; }
             .ins-segment-badge, .ins-segment-dropdown { display: none !important; }
             /* Force visibility for animated cards */
             .ins-chart-card, .ins-kpi-card, .ins-summary-card {

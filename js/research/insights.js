@@ -27,8 +27,6 @@
     let kpiChartInstances = [];
     let dashboardData = null;
 
-    // Cross-chart highlighting state
-    let activeHighlight = null; // { segmentName, tabId }
 
     // ═══ THEME ═══
     function getTheme() {
@@ -1484,9 +1482,6 @@
     };
 
     window.insSwitchTab = function (tabId) {
-        // Auto-clear highlighting on tab switch
-        if (activeHighlight) insClearHighlight();
-
         // Handle both horizontal tabs and sidebar buttons
         document.querySelectorAll('.ins-tab-btn, .sidebar-btn[data-tab]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabId);
@@ -1887,11 +1882,7 @@
         const existingMounted = options.chart.events.mounted;
         const existingAnimEnd = options.chart.events.animationEnd;
 
-        // Legend click — open segment panel + highlight
-        if (!options.legend) options.legend = {};
-        if (!options.legend.onItemClick) options.legend.onItemClick = {};
-        options.legend.onItemClick.toggleDataSeries = false;
-
+        // Legend click — open segment panel if matching profile exists
         options.chart.events.legendClick = function (chartContext, seriesIndex, config) {
             const type = chartConfig.chart_type || 'bar';
             let segName = null;
@@ -1902,7 +1893,6 @@
             }
             if (segName && dashboardData.segment_profiles?.[segName]) {
                 insOpenSegmentPanel(segName);
-                insHighlightSegment(segName, tabId);
             }
         };
 
@@ -1911,7 +1901,6 @@
             const segName = resolveSegmentFromClick(chartConfig, config.seriesIndex, config.dataPointIndex);
             if (segName && dashboardData.segment_profiles?.[segName]) {
                 insOpenSegmentPanel(segName);
-                insHighlightSegment(segName, tabId);
             }
         };
 
@@ -2058,7 +2047,6 @@
                 e.stopPropagation();
                 dd.remove();
                 insOpenSegmentPanel(name);
-                insHighlightSegment(name, tabId);
             };
             dd.appendChild(item);
         });
@@ -2071,143 +2059,7 @@
         document.body.appendChild(dd);
     };
 
-    /** Highlight a segment across all charts in a tab */
-    window.insHighlightSegment = function (segmentName, tabId) {
-        // Toggle: same segment clicked again → clear
-        if (activeHighlight && activeHighlight.segmentName === segmentName && activeHighlight.tabId === tabId) {
-            insClearHighlight();
-            return;
-        }
-
-        // Clear previous highlight first
-        insClearHighlight(true); // silent = don't remove chip yet
-
-        activeHighlight = { segmentName, tabId };
-
-        // Inject highlight chip at top of the active tab panel
-        const panel = document.getElementById(`insPanel-${tabId}`);
-        if (panel) {
-            const existing = panel.querySelector('.ins-highlight-chip');
-            if (existing) existing.remove();
-            const chip = document.createElement('div');
-            chip.className = 'ins-highlight-chip';
-            chip.innerHTML = `<span class="ins-chip-dot"></span> Viewing: <strong>${esc(segmentName)}</strong> <button class="ins-chip-close" onclick="insClearHighlight()">✕</button>`;
-            panel.insertBefore(chip, panel.firstChild);
-        }
-
-        // Apply dimming to charts on this tab
-        chartInstances.forEach(ci => {
-            if (ci.tabId !== tabId) return;
-            const config = ci.config;
-            const type = config.chart_type || 'bar';
-            const data = config.data || {};
-            const chartSegments = getChartSegmentNames(config);
-
-            if (!chartSegments.has(segmentName)) {
-                // Chart doesn't contain this segment — dim the whole card
-                const card = document.querySelector(`.ins-chart-card[data-chart-tab="${tabId}"][data-chart-idx="${ci.idx}"]`);
-                if (card) card.classList.add('ins-dimmed');
-                return;
-            }
-
-            // Chart contains the segment — dim non-matching series via opacity
-            try {
-                if (['stacked_bar', 'line', 'area', 'radar'].includes(type)) {
-                    // Multi-series chart: set opacity per series
-                    const series = data.series || [];
-                    const opacities = series.map(s => (s.name === segmentName) ? 1.0 : 0.15);
-                    ci.instance.updateOptions({ fill: { opacity: opacities } }, false, false);
-                } else if (['pie', 'donut', 'polarArea'].includes(type)) {
-                    // CSS-based dimming on series paths
-                    const chartEl = ci.instance.el;
-                    if (chartEl) {
-                        const labels = data.labels || [];
-                        const slices = chartEl.querySelectorAll('.apexcharts-pie-series, .apexcharts-polararea-series');
-                        // Also try individual series paths
-                        const pieSlices = chartEl.querySelectorAll('.apexcharts-series');
-                        pieSlices.forEach((slice, i) => {
-                            if (labels[i] && labels[i] !== segmentName) {
-                                slice.style.opacity = '0.15';
-                                slice.style.transition = 'opacity 0.3s';
-                            }
-                        });
-                    }
-                } else if (['bar', 'column'].includes(type)) {
-                    // For multi-series bar: dim non-matching series
-                    // For single-series bar: dim non-matching bars via CSS
-                    const chartEl = ci.instance.el;
-                    if (chartEl) {
-                        if (Array.isArray(data.series) && data.series.length > 0 && typeof data.series[0] === 'object' && data.series[0].data) {
-                            // Multi-series bar
-                            const seriesEls = chartEl.querySelectorAll('.apexcharts-series');
-                            (data.series || []).forEach((s, i) => {
-                                if (seriesEls[i] && s.name !== segmentName) {
-                                    seriesEls[i].style.opacity = '0.15';
-                                    seriesEls[i].style.transition = 'opacity 0.3s';
-                                }
-                            });
-                        } else {
-                            // Single-series bar: dim bars whose category doesn't match
-                            const categories = data.labels || data.categories || [];
-                            const bars = chartEl.querySelectorAll('.apexcharts-bar-area');
-                            bars.forEach((bar, i) => {
-                                if (categories[i] && categories[i] !== segmentName) {
-                                    bar.style.opacity = '0.15';
-                                    bar.style.transition = 'opacity 0.3s';
-                                }
-                            });
-                        }
-                    }
-                }
-            } catch (e) {
-                console.warn('Highlight error:', e);
-            }
-        });
-    };
-
-    /** Clear all cross-chart highlighting */
-    window.insClearHighlight = function (silent) {
-        if (!activeHighlight && !silent) return;
-
-        const prevTabId = activeHighlight?.tabId;
-        activeHighlight = null;
-
-        // Remove chip
-        if (!silent) {
-            document.querySelectorAll('.ins-highlight-chip').forEach(c => c.remove());
-        }
-
-        // Remove card-level dimming
-        document.querySelectorAll('.ins-chart-card.ins-dimmed').forEach(c => c.classList.remove('ins-dimmed'));
-
-        // Restore chart opacities
-        chartInstances.forEach(ci => {
-            if (prevTabId && ci.tabId !== prevTabId) return;
-            const type = ci.config.chart_type || 'bar';
-            try {
-                if (type === 'stacked_bar') {
-                    ci.instance.updateOptions({ fill: { opacity: 0.9 } }, false, false);
-                } else if (type === 'radar') {
-                    ci.instance.updateOptions({ fill: { opacity: 0.15 } }, false, false);
-                } else if (['line', 'area'].includes(type)) {
-                    // Line/area use gradient fill — just reset opacity to uniform
-                    const seriesCount = (ci.config.data?.series || []).length || 1;
-                    ci.instance.updateOptions({ fill: { opacity: Array(seriesCount).fill(1.0) } }, false, false);
-                } else {
-                    // Remove inline opacity styles
-                    const chartEl = ci.instance.el;
-                    if (chartEl) {
-                        chartEl.querySelectorAll('.apexcharts-series, .apexcharts-bar-area').forEach(el => {
-                            el.style.opacity = '';
-                            el.style.transition = '';
-                        });
-                    }
-                }
-            } catch (e) { /* ignore */ }
-        });
-    };
-
-    // Escape key: priority order — segment panel → highlight → fullscreen
+    // Escape key: priority order — segment panel → fullscreen
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             // 1. Close segment panel if open
@@ -2216,12 +2068,7 @@
                 insCloseSegmentPanel();
                 return;
             }
-            // 2. Clear highlight if active
-            if (activeHighlight) {
-                insClearHighlight();
-                return;
-            }
-            // 3. Close fullscreen if open
+            // 2. Close fullscreen if open
             const overlay = document.getElementById('insFullscreenOverlay');
             if (overlay && overlay.classList.contains('open')) {
                 insCloseFullscreen();
