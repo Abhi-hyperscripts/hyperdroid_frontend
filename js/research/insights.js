@@ -716,8 +716,8 @@
             dataLabels: {
                 enabled: true,
                 formatter: (val) => `${val.toFixed(1)}%`,
-                style: { fontSize: mobile ? '10px' : '11px', fontWeight: 500 },
-                dropShadow: { enabled: false }
+                style: { fontSize: mobile ? '10px' : '12px', fontWeight: 600, colors: ['#ffffff'] },
+                dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.4 }
             },
             stroke: { width: 1, colors: [strokeColor] }
         };
@@ -848,9 +848,9 @@
                     }
                     return label;
                 },
-                style: { fontSize: '10px', fontWeight: 500, colors: [getChartLabelColor()] },
+                style: { fontSize: '11px', fontWeight: 600, colors: horizontal ? ['#ffffff'] : [getChartValueColor()] },
                 offsetY: horizontal ? 0 : -8,
-                dropShadow: { enabled: false }
+                dropShadow: horizontal ? { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.35 } : { enabled: false }
             };
             if (sigLookup) {
                 opts.chart.events = {
@@ -933,7 +933,8 @@
                     }
                     return label;
                 },
-                style: { fontSize: '10px', fontWeight: 500 }
+                style: { fontSize: '11px', fontWeight: 600, colors: ['#ffffff'] },
+                dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.35 }
             },
             fill: { opacity: 0.9 }
         };
@@ -1281,9 +1282,10 @@
             },
             dataLabels: {
                 enabled: true,
-                style: { fontSize: mobile ? '10px' : '11px' },
+                style: { fontSize: mobile ? '10px' : '11px', fontWeight: 600, colors: ['#ffffff'] },
                 formatter: (text, op) => [text, op.value != null ? Math.round(op.value) + '%' : ''],
-                offsetY: -2
+                offsetY: -2,
+                dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.35 }
             },
             legend: { show: false }
         };
@@ -1357,8 +1359,8 @@
             dataLabels: {
                 enabled: true,
                 formatter: v => Math.round(v) + '%',
-                style: { fontSize: mobile ? '9px' : '10px' },
-                dropShadow: { enabled: false }
+                style: { fontSize: mobile ? '9px' : '11px', fontWeight: 600, colors: ['#ffffff'] },
+                dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.35 }
             }
         };
     }
