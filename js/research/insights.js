@@ -392,8 +392,7 @@
                     <div class="ins-chart-card${fullWidth ? ' full-width' : ''}" data-chart-tab="${id}" data-chart-idx="${ci}">
                         <div class="ins-chart-header-row">
                             <div class="ins-chart-title-wrap">
-                                <div class="ins-chart-title">${esc(chart.title || chart.question_label || '')}</div>
-                                ${chart.question_id ? `<div class="ins-chart-subtitle">${esc(chart.question_id)}</div>` : ''}
+                                <div class="ins-chart-title">${chart.question_id ? `<span class="ins-qid-icon" data-qid="${esc(chart.question_id)}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span class="ins-qid-tooltip">${esc(chart.question_id)}</span></span>` : ''}${esc(chart.title || chart.question_label || '')}</div>
                             </div>
                             ${matchingProfiles.length > 0 ? `
                             <button class="ins-segment-badge"

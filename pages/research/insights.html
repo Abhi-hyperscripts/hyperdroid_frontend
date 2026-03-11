@@ -839,11 +839,41 @@
             margin-bottom: 4px;
         }
 
-        .ins-chart-subtitle {
-            font-size: 11px;
+        .ins-qid-icon {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 6px;
             color: var(--ins-text-muted);
-            margin-bottom: 14px;
+            opacity: 0.5;
+            cursor: help;
+            position: relative;
+            vertical-align: middle;
+            transition: opacity 0.15s;
+        }
+        .ins-qid-icon:hover {
+            opacity: 1;
+        }
+        .ins-qid-tooltip {
+            display: none;
+            position: absolute;
+            left: 50%;
+            top: calc(100% + 6px);
+            transform: translateX(-50%);
+            background: var(--ins-card);
+            border: 1px solid var(--ins-border);
+            color: var(--ins-text-muted);
+            font-size: 11px;
+            font-weight: 400;
             font-family: var(--ins-mono);
+            padding: 4px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+            z-index: 20;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            pointer-events: none;
+        }
+        .ins-qid-icon:hover .ins-qid-tooltip {
+            display: block;
         }
 
         .ins-chart-area {
@@ -1721,6 +1751,6 @@
     <div class="ins-toast" id="insToast"></div>
 
     <script src="../../js/share-widget.js"></script>
-    <script src="../../js/research/insights.js?v=347"></script>
+    <script src="../../js/research/insights.js?v=348"></script>
 </body>
 </html>
