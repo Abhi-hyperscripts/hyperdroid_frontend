@@ -22,9 +22,13 @@
     const CHART_FONT = "'DM Sans', -apple-system, sans-serif";
 
     // Track all rendered chart instances for theme switching
+    // Each entry: { instance: ApexCharts, tabId: string, idx: number, config: object }
     let chartInstances = [];
     let kpiChartInstances = [];
     let dashboardData = null;
+
+    // Cross-chart highlighting state
+    let activeHighlight = null; // { segmentName, tabId }
 
     // ═══ THEME ═══
     function getTheme() {
@@ -357,11 +361,44 @@
                 }
                 charts.forEach((chart, ci) => {
                     const fullWidth = widths[ci];
+                    const chartSegNames = getChartSegmentNames(chart);
+                    const matchingProfiles = [];
+                    if (dashboardData.segment_profiles) {
+                        for (const name of Object.keys(dashboardData.segment_profiles)) {
+                            if (chartSegNames.has(name)) matchingProfiles.push(name);
+                        }
+                    }
                     html += `
-                    <div class="ins-chart-card${fullWidth ? ' full-width' : ''}">
-                        <div class="ins-chart-title">${esc(chart.title || chart.question_label || '')}</div>
-                        ${chart.question_id ? `<div class="ins-chart-subtitle">${esc(chart.question_id)}</div>` : ''}
+                    <div class="ins-chart-card${fullWidth ? ' full-width' : ''}" data-chart-tab="${id}" data-chart-idx="${ci}">
+                        <div class="ins-chart-header-row">
+                            <div class="ins-chart-title-wrap">
+                                <div class="ins-chart-title">${esc(chart.title || chart.question_label || '')}</div>
+                                ${chart.question_id ? `<div class="ins-chart-subtitle">${esc(chart.question_id)}</div>` : ''}
+                            </div>
+                            ${matchingProfiles.length > 0 ? `
+                            <button class="ins-segment-badge"
+                                    data-segments='${JSON.stringify(matchingProfiles).replace(/'/g, "&#39;")}'
+                                    onclick="insToggleSegmentDropdown(event, '${id}', ${ci})"
+                                    title="Explore segment profiles">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                Segments
+                            </button>` : ''}
+                            <div class="ins-chart-actions">
+                                <button class="ins-chart-action-btn" onclick="insToggleDataTable('${id}',${ci})" title="View data table">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                                </button>
+                                <button class="ins-chart-action-btn" onclick="insOpenFullscreen('${id}',${ci})" title="Expand chart">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                                </button>
+                            </div>
+                        </div>
                         <div class="ins-chart-area" id="insChart-${id}-${ci}"></div>
+                        <div class="ins-data-table-wrap" id="insTable-${id}-${ci}" style="display:none"></div>
+                        ${chart.significance_markers?.length ? `<div class="ins-sig-legend">
+                            <span class="ins-sig-high">▲ Significantly higher</span>
+                            <span class="ins-sig-low">▼ Significantly lower</span>
+                            <span class="ins-sig-ci">95% confidence</span>
+                        </div>` : ''}
                         ${chart.insight ? `<div class="ins-chart-insight">${esc(chart.insight)}</div>` : ''}
                         ${chart.significance_notes ? `<div class="ins-chart-sig-note">${esc(chart.significance_notes)}</div>` : ''}
                     </div>`;
@@ -382,6 +419,10 @@
         requestAnimationFrame(() => {
             renderAllCharts(tabs);
             renderKpiGauges(d.kpi_cards || []);
+            initScrollAnimations();
+            initStickyHeader(tabs);
+            // Trigger resize so ApexCharts reflows to container width
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
         });
     }
 
@@ -485,22 +526,22 @@
 
     // ═══ RENDER ALL CHARTS ═══
     function renderAllCharts(tabs) {
-        // Destroy previous chart instances (skip KPI gauges — they're at the start of the array)
+        // Destroy previous chart instances
         chartInstances.forEach(c => {
-            try { c.destroy(); } catch (e) { /* ignore */ }
+            try { c.instance.destroy(); } catch (e) { /* ignore */ }
         });
         chartInstances = [];
 
         tabs.forEach((tab, i) => {
             const id = tab.tab_id || `tab-${i}`;
             (tab.charts || []).forEach((chart, ci) => {
-                renderChart(`insChart-${id}-${ci}`, chart);
+                renderChart(`insChart-${id}-${ci}`, chart, id, ci);
             });
         });
     }
 
     // ═══ CHART RENDERING ═══
-    function renderChart(elId, chartConfig) {
+    function renderChart(elId, chartConfig, tabId, chartIdx) {
         const el = document.getElementById(elId);
         if (!el) return;
 
@@ -561,10 +602,20 @@
             }
 
             if (options) {
+                // Add segment click handlers if segment_profiles exist
+                if (hasSegmentProfiles() && tabId != null) {
+                    addSegmentClickHandlers(options, chartConfig, tabId);
+                }
+
                 el.innerHTML = '';
                 const chart = new ApexCharts(el, options);
                 chart.render();
-                chartInstances.push(chart);
+                chartInstances.push({
+                    instance: chart,
+                    tabId: tabId,
+                    idx: chartIdx,
+                    config: chartConfig
+                });
             }
         } catch (err) {
             console.warn(`Failed to render chart ${elId}:`, err);
@@ -580,6 +631,7 @@
             chart: {
                 background: 'transparent',
                 fontFamily: CHART_FONT,
+                width: '100%',
                 toolbar: { show: false },
                 animations: { enabled: true, easing: 'easeinout', speed: 600 }
             },
@@ -659,8 +711,9 @@
             },
             legend: {
                 ...baseChartOptions().legend,
-                position: mobile ? 'bottom' : 'right',
-                fontSize: mobile ? '11px' : '12px'
+                position: 'bottom',
+                fontSize: mobile ? '11px' : '12px',
+                horizontalAlign: 'center'
             },
             dataLabels: {
                 enabled: true,
@@ -669,6 +722,58 @@
                 dropShadow: { enabled: false }
             },
             stroke: { width: 1, colors: [strokeColor] }
+        };
+    }
+
+    // ═══ SIGNIFICANCE MARKERS ═══
+
+    function buildSignificanceLookup(config) {
+        const markers = config.significance_markers;
+        if (!Array.isArray(markers) || markers.length === 0) return null;
+        const lookup = new Map();
+        markers.forEach(m => {
+            const key = m.series ? `${m.category}|||${m.series}` : `${m.category}|||__any__`;
+            lookup.set(key, m.direction);
+        });
+        return lookup;
+    }
+
+    function getSigDirection(lookup, category, seriesName) {
+        if (!lookup) return null;
+        return lookup.get(`${category}|||${seriesName}`) || lookup.get(`${category}|||__any__`) || null;
+    }
+
+    function colorizeSignificanceLabels(chartContext) {
+        if (!chartContext?.el) return;
+        const textEls = chartContext.el.querySelectorAll('.apexcharts-datalabel, .apexcharts-data-labels text');
+        textEls.forEach(el => {
+            const t = el.textContent || '';
+            if (t.includes('▲')) {
+                el.setAttribute('fill', '#10b981');
+                el.style.fill = '#10b981';
+                el.style.fontWeight = '700';
+            } else if (t.includes('▼')) {
+                el.setAttribute('fill', '#ef4444');
+                el.style.fill = '#ef4444';
+                el.style.fontWeight = '700';
+            }
+        });
+    }
+
+    function buildSigTooltip(sigLookup, categories) {
+        if (!sigLookup) return {};
+        return {
+            y: {
+                formatter: (val, opts) => {
+                    let label = typeof val === 'number' ? (Number.isInteger(val) ? String(val) : val.toFixed(1)) : String(val);
+                    const cat = categories[opts.dataPointIndex];
+                    const sName = opts.w?.config?.series?.[opts.seriesIndex]?.name;
+                    const dir = getSigDirection(sigLookup, cat, sName);
+                    if (dir === 'high') label += ' <span style="color:#10b981;font-weight:700">▲ sig. higher</span>';
+                    else if (dir === 'low') label += ' <span style="color:#ef4444;font-weight:700">▼ sig. lower</span>';
+                    return label;
+                }
+            }
         };
     }
 
@@ -692,7 +797,7 @@
             typeof c === 'string' && c.length > maxLabelLen ? c.substring(0, maxLabelLen) + '...' : c
         );
 
-        return {
+        const opts = {
             ...baseChartOptions(),
             chart: { ...baseChartOptions().chart, type: 'bar', height: chartHeight(280, Math.max(220, categories.length * 40)) },
             series: series,
@@ -728,6 +833,40 @@
             },
             dataLabels: { enabled: false }
         };
+
+        const sigLookup = buildSignificanceLookup(config);
+
+        // Always show data labels on desktop
+        if (!mobile) {
+            opts.dataLabels = {
+                enabled: true,
+                formatter: (val, o) => {
+                    let label = typeof val === 'number' ? (Number.isInteger(val) ? String(val) : val.toFixed(1)) : String(val);
+                    if (sigLookup) {
+                        const cat = categories[o.dataPointIndex];
+                        const sName = series[o.seriesIndex]?.name;
+                        const dir = getSigDirection(sigLookup, cat, sName);
+                        if (dir) label += dir === 'high' ? ' ▲' : ' ▼';
+                    }
+                    return label;
+                },
+                style: { fontSize: '10px', fontWeight: 500, colors: [getChartLabelColor()] },
+                offsetY: horizontal ? 0 : -8,
+                dropShadow: { enabled: false }
+            };
+            if (sigLookup) {
+                opts.chart.events = {
+                    animationEnd: colorizeSignificanceLabels,
+                    mounted: colorizeSignificanceLabels
+                };
+            }
+        }
+
+        // Significance in tooltips
+        const sigTip = buildSigTooltip(sigLookup, categories);
+        if (sigTip.y) opts.tooltip = { ...opts.tooltip, ...sigTip };
+
+        return opts;
     }
 
     function buildStackedBarOptions(data, config) {
@@ -736,20 +875,25 @@
         const labelColor = getChartLabelColor();
         const gridColor = getChartGridColor();
         const mobile = isMobile();
+        const sigLookup = buildSignificanceLookup(config);
 
         const maxLabelLen = mobile ? 14 : 30;
         const displayCategories = categories.map(c =>
             typeof c === 'string' && c.length > maxLabelLen ? c.substring(0, maxLabelLen) + '...' : c
         );
 
-        return {
+        const opts = {
             ...baseChartOptions(),
             chart: {
                 ...baseChartOptions().chart,
                 type: 'bar',
                 height: chartHeight(320, Math.max(260, categories.length * 44)),
                 stacked: true,
-                stackType: '100%'
+                stackType: '100%',
+                events: sigLookup ? {
+                    animationEnd: colorizeSignificanceLabels,
+                    mounted: colorizeSignificanceLabels
+                } : {}
             },
             series: series,
             plotOptions: {
@@ -780,11 +924,27 @@
             },
             dataLabels: {
                 enabled: !mobile,
-                formatter: (val) => val > 5 ? `${val.toFixed(0)}%` : '',
+                formatter: (val, o) => {
+                    if (val <= 5) return '';
+                    let label = `${val.toFixed(0)}%`;
+                    if (sigLookup) {
+                        const cat = categories[o.dataPointIndex];
+                        const sName = series[o.seriesIndex]?.name;
+                        const dir = getSigDirection(sigLookup, cat, sName);
+                        if (dir) label += dir === 'high' ? ' ▲' : ' ▼';
+                    }
+                    return label;
+                },
                 style: { fontSize: '10px', fontWeight: 500 }
             },
             fill: { opacity: 0.9 }
         };
+
+        // Significance in tooltips
+        const sigTip = buildSigTooltip(sigLookup, categories);
+        if (sigTip.y) opts.tooltip = { ...opts.tooltip, ...sigTip };
+
+        return opts;
     }
 
     function buildLineOptions(data, config) {
@@ -1324,6 +1484,9 @@
     };
 
     window.insSwitchTab = function (tabId) {
+        // Auto-clear highlighting on tab switch
+        if (activeHighlight) insClearHighlight();
+
         // Handle both horizontal tabs and sidebar buttons
         document.querySelectorAll('.ins-tab-btn, .sidebar-btn[data-tab]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabId);
@@ -1338,6 +1501,29 @@
         if (activeBtn && headerTabName) {
             headerTabName.textContent = activeBtn.querySelector('.nav-label')?.textContent || activeBtn.textContent.trim();
         }
+
+        // Also try horizontal tab button for label
+        if (!activeBtn) {
+            const hTab = document.querySelector(`.ins-tab-btn[data-tab="${tabId}"]`);
+            if (hTab && headerTabName) {
+                headerTabName.textContent = hTab.textContent.trim();
+            }
+        }
+
+        // Update sticky header
+        const stickyLabel = document.getElementById('insStickyTabLabel');
+        if (stickyLabel) {
+            const label = (activeBtn && activeBtn.querySelector('.nav-label')?.textContent) ||
+                          document.querySelector(`.ins-tab-btn[data-tab="${tabId}"]`)?.textContent?.trim() || tabId;
+            stickyLabel.textContent = label;
+        }
+        updateStickyNavButtons();
+
+        // Re-init scroll animations for newly visible cards
+        requestAnimationFrame(() => initScrollAnimations());
+
+        // Trigger resize so ApexCharts reflows to container width
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
 
         // On mobile, close sidebar after selecting tab. On desktop, keep it pinned.
         if (window.innerWidth <= 900) {
@@ -1427,7 +1613,10 @@
             if (toggle) toggle.classList.add('active');
         }
         // After sidebar CSS transition (300ms), trigger resize so ApexCharts reflows
-        setTimeout(() => window.dispatchEvent(new Event('resize')), 350);
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+            syncStickyOffset();
+        }, 350);
     };
 
     function insCloseSidebar() {
@@ -1440,6 +1629,7 @@
         if (toggle) toggle.classList.remove('active');
         if (overlay) overlay.classList.remove('active');
         document.body.style.overflow = '';
+        setTimeout(() => syncStickyOffset(), 350);
     }
 
     window.insShareLink = function () {
@@ -1519,6 +1709,798 @@
         }, 600);
     };
 
+    // ═══ FEATURE 1: SCROLL ANIMATIONS ═══
+    let scrollObserver = null;
+
+    function initScrollAnimations() {
+        // Disconnect previous observer
+        if (scrollObserver) scrollObserver.disconnect();
+
+        scrollObserver = new IntersectionObserver((entries) => {
+            const visible = entries.filter(e => e.isIntersecting);
+            visible.forEach((entry, i) => {
+                setTimeout(() => {
+                    entry.target.classList.add('ins-visible');
+                    scrollObserver.unobserve(entry.target);
+                }, i * 80);
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.ins-chart-card, .ins-kpi-card, .ins-summary-card').forEach(card => {
+            // Only observe cards that aren't already visible
+            if (!card.classList.contains('ins-visible')) {
+                scrollObserver.observe(card);
+            }
+        });
+    }
+
+    // ═══ FEATURE 2: CHART FULLSCREEN ═══
+    let fullscreenChartInstance = null;
+
+    function getChartConfig(tabId, chartIdx) {
+        if (!dashboardData) return null;
+        const tabs = dashboardData.tabs || dashboardData.sections || [];
+        const tab = tabs.find(t => (t.tab_id || `tab-${tabs.indexOf(t)}`) === tabId);
+        if (!tab || !tab.charts) return null;
+        return tab.charts[chartIdx] || null;
+    }
+
+    window.insOpenFullscreen = function (tabId, chartIdx) {
+        const config = getChartConfig(tabId, chartIdx);
+        if (!config) return;
+
+        const overlay = document.getElementById('insFullscreenOverlay');
+        const titleEl = document.getElementById('insFullscreenTitle');
+        const chartArea = document.getElementById('insFullscreenChart');
+        const insightEl = document.getElementById('insFullscreenInsight');
+
+        titleEl.textContent = config.title || config.question_label || '';
+
+        // Store current tab/idx for theme re-render
+        overlay.dataset.tab = tabId;
+        overlay.dataset.idx = chartIdx;
+
+        // Show insight if available
+        if (config.insight) {
+            insightEl.textContent = config.insight;
+            insightEl.style.display = 'block';
+        } else {
+            insightEl.style.display = 'none';
+        }
+
+        // Render chart at full size
+        chartArea.innerHTML = '';
+        if (fullscreenChartInstance) {
+            try { fullscreenChartInstance.destroy(); } catch (e) {}
+            fullscreenChartInstance = null;
+        }
+
+        overlay.classList.add('open');
+
+        // Slight delay to let modal animate in before rendering chart
+        requestAnimationFrame(() => {
+            const type = config.chart_type || 'bar';
+            const data = config.data || {};
+            let options = null;
+
+            try {
+                switch (type) {
+                    case 'gauge': options = buildGaugeOptions(data, config); break;
+                    case 'pie': case 'donut': options = buildPieOptions(data, config, type); break;
+                    case 'bar': options = buildBarOptions(data, config, true); break;
+                    case 'column': options = buildBarOptions(data, config, false); break;
+                    case 'stacked_bar': options = buildStackedBarOptions(data, config); break;
+                    case 'line': options = buildLineOptions(data, config); break;
+                    case 'area': options = buildAreaOptions(data, config); break;
+                    case 'radar': options = buildRadarOptions(data, config); break;
+                    case 'heatmap': options = buildHeatmapOptions(data, config); break;
+                    case 'scatter': options = buildScatterOptions(data, config); break;
+                    case 'bubble': options = buildBubbleOptions(data, config); break;
+                    case 'treemap': options = buildTreemapOptions(data, config); break;
+                    case 'radialBar': options = buildRadialBarOptions(data, config); break;
+                    case 'polarArea': options = buildPolarAreaOptions(data, config); break;
+                    case 'boxPlot': options = buildBoxPlotOptions(data, config); break;
+                    default: options = buildBarOptions(data, config, false);
+                }
+
+                if (options) {
+                    // Override height for fullscreen
+                    if (options.chart) options.chart.height = 450;
+                    fullscreenChartInstance = new ApexCharts(chartArea, options);
+                    fullscreenChartInstance.render();
+                }
+            } catch (err) {
+                chartArea.innerHTML = '<div style="color:var(--ins-text-muted);padding:40px;text-align:center;">Chart could not be rendered</div>';
+            }
+        });
+    };
+
+    window.insCloseFullscreen = function () {
+        const overlay = document.getElementById('insFullscreenOverlay');
+        overlay.classList.remove('open');
+        if (fullscreenChartInstance) {
+            try { fullscreenChartInstance.destroy(); } catch (e) {}
+            fullscreenChartInstance = null;
+        }
+    };
+
+    // ═══ SEGMENT PROFILES — Panel, Click Handlers, Cross-Chart Highlighting ═══
+
+    function hasSegmentProfiles() {
+        return dashboardData && dashboardData.segment_profiles && Object.keys(dashboardData.segment_profiles).length > 0;
+    }
+
+    /** Collect all segment names (series names, labels, categories) from a chart config */
+    function getChartSegmentNames(config) {
+        const names = new Set();
+        const data = config.data || {};
+        const type = config.chart_type || 'bar';
+        // Series names
+        if (Array.isArray(data.series)) {
+            data.series.forEach(s => {
+                if (s && typeof s === 'object' && s.name) names.add(s.name);
+            });
+        }
+        // Labels / categories
+        (data.labels || data.categories || []).forEach(l => { if (l) names.add(String(l)); });
+        // Points series names
+        if (Array.isArray(data.points)) {
+            data.points.forEach(p => { if (p && p.name) names.add(p.name); });
+        }
+        return names;
+    }
+
+    /** Resolve segment name from a chart click event */
+    function resolveSegmentFromClick(chartConfig, seriesIndex, dataPointIndex) {
+        const data = chartConfig.data || {};
+        const type = chartConfig.chart_type || 'bar';
+
+        switch (type) {
+            case 'pie':
+            case 'donut':
+            case 'polarArea':
+                return (data.labels || [])[dataPointIndex] || null;
+            case 'stacked_bar':
+            case 'radar':
+            case 'line':
+            case 'area':
+                return (Array.isArray(data.series) && data.series[seriesIndex])
+                    ? data.series[seriesIndex].name || null : null;
+            case 'bar':
+            case 'column': {
+                // Multi-series: use series name. Single-series: use category
+                if (Array.isArray(data.series) && data.series.length > 0 && typeof data.series[0] === 'object' && data.series[0].data) {
+                    return data.series[seriesIndex]?.name || null;
+                }
+                return (data.labels || data.categories || [])[dataPointIndex] || null;
+            }
+            default:
+                return null;
+        }
+    }
+
+    /** Add click handlers to ApexCharts options for segment interaction */
+    function addSegmentClickHandlers(options, chartConfig, tabId) {
+        if (!options.chart) options.chart = {};
+        if (!options.chart.events) options.chart.events = {};
+
+        const existingMounted = options.chart.events.mounted;
+        const existingAnimEnd = options.chart.events.animationEnd;
+
+        // Legend click — open segment panel + highlight
+        if (!options.legend) options.legend = {};
+        if (!options.legend.onItemClick) options.legend.onItemClick = {};
+        options.legend.onItemClick.toggleDataSeries = false;
+
+        options.chart.events.legendClick = function (chartContext, seriesIndex, config) {
+            const type = chartConfig.chart_type || 'bar';
+            let segName = null;
+            if (['pie', 'donut', 'polarArea'].includes(type)) {
+                segName = (chartConfig.data?.labels || [])[seriesIndex] || null;
+            } else if (Array.isArray(chartConfig.data?.series) && chartConfig.data.series[seriesIndex]) {
+                segName = chartConfig.data.series[seriesIndex].name || null;
+            }
+            if (segName && dashboardData.segment_profiles?.[segName]) {
+                insOpenSegmentPanel(segName);
+                insHighlightSegment(segName, tabId);
+            }
+        };
+
+        // Data point click — resolve segment + open panel
+        options.chart.events.dataPointSelection = function (event, chartContext, config) {
+            const segName = resolveSegmentFromClick(chartConfig, config.seriesIndex, config.dataPointIndex);
+            if (segName && dashboardData.segment_profiles?.[segName]) {
+                insOpenSegmentPanel(segName);
+                insHighlightSegment(segName, tabId);
+            }
+        };
+
+        // Preserve existing event handlers (significance colorize)
+        if (existingMounted) {
+            const newMounted = options.chart.events.mounted;
+            options.chart.events.mounted = function (ctx) {
+                existingMounted(ctx);
+                if (newMounted) newMounted(ctx);
+            };
+        }
+        if (existingAnimEnd) {
+            const newAnimEnd = options.chart.events.animationEnd;
+            options.chart.events.animationEnd = function (ctx) {
+                existingAnimEnd(ctx);
+                if (newAnimEnd) newAnimEnd(ctx);
+            };
+        }
+    }
+
+    /** Open the segment profile panel */
+    window.insOpenSegmentPanel = function (segmentName) {
+        if (!dashboardData?.segment_profiles) return;
+        const profile = dashboardData.segment_profiles[segmentName];
+        if (!profile) return;
+
+        const panel = document.getElementById('insSegmentPanel');
+        const overlay = document.getElementById('insSegmentPanelOverlay');
+        const titleEl = document.getElementById('insSegmentPanelTitle');
+        const bodyEl = document.getElementById('insSegmentPanelBody');
+
+        titleEl.textContent = segmentName;
+
+        let html = '';
+
+        // Size cards
+        html += '<div class="ins-seg-size-row">';
+        if (profile.n != null) {
+            html += `<div class="ins-seg-size-card">
+                <div class="ins-seg-size-value">${Number(profile.n).toLocaleString()}</div>
+                <div class="ins-seg-size-label">Respondents</div>
+            </div>`;
+        }
+        if (profile.pct != null) {
+            html += `<div class="ins-seg-size-card">
+                <div class="ins-seg-size-value">${profile.pct}%</div>
+                <div class="ins-seg-size-label">Of Total</div>
+            </div>`;
+        }
+        html += '</div>';
+
+        // Stats rows
+        if (Array.isArray(profile.stats) && profile.stats.length > 0) {
+            html += '<div class="ins-seg-stats-section">';
+            html += '<div class="ins-seg-stats-title">Key Metrics</div>';
+            profile.stats.forEach(stat => {
+                const vsAvg = stat.vs_avg || '0';
+                const numericVs = parseFloat(vsAvg);
+                let vsClass = 'neutral';
+                if (numericVs > 0) vsClass = 'positive';
+                else if (numericVs < 0) vsClass = 'negative';
+                const vsDisplay = numericVs > 0 ? `+${vsAvg}` : vsAvg;
+
+                html += `<div class="ins-seg-stat-row">
+                    <span class="ins-seg-stat-label">${esc(stat.label || '')}</span>
+                    <span class="ins-seg-stat-right">
+                        <span class="ins-seg-stat-value">${esc(stat.value || '')}</span>
+                        <span class="ins-seg-vs-avg ${vsClass}">${esc(String(vsDisplay))} vs avg</span>
+                    </span>
+                </div>`;
+            });
+            html += '</div>';
+        }
+
+        // Traits card
+        if (profile.traits) {
+            html += `<div class="ins-seg-traits-card">
+                <div class="ins-seg-traits-title">Profile</div>
+                <div class="ins-seg-traits-text">${esc(profile.traits)}</div>
+            </div>`;
+        }
+
+        // Top group
+        if (profile.top_group) {
+            html += `<div class="ins-seg-top-group">Top sub-group: <strong>${esc(profile.top_group)}</strong></div>`;
+        }
+
+        bodyEl.innerHTML = html;
+
+        panel.classList.add('open');
+        overlay.classList.add('open');
+    };
+
+    /** Close the segment profile panel */
+    window.insCloseSegmentPanel = function () {
+        const panel = document.getElementById('insSegmentPanel');
+        const overlay = document.getElementById('insSegmentPanelOverlay');
+        if (panel) panel.classList.remove('open');
+        if (overlay) overlay.classList.remove('open');
+    };
+
+    // Close segment panel when clicking outside it (non-blocking overlay approach)
+    document.addEventListener('click', function (e) {
+        const panel = document.getElementById('insSegmentPanel');
+        if (!panel || !panel.classList.contains('open')) return;
+        // Don't close if click is inside the panel itself
+        if (panel.contains(e.target)) return;
+        // Don't close if click is on a chart legend/data point (those open the panel)
+        if (e.target.closest('.apexcharts-legend-series, .apexcharts-series')) return;
+        insCloseSegmentPanel();
+    }, true);
+
+    // Close segment dropdown when clicking outside
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('.ins-segment-badge, .ins-segment-dropdown')) return;
+        document.querySelectorAll('.ins-segment-dropdown').forEach(d => d.remove());
+    });
+
+    /** Toggle segment dropdown on badge click */
+    window.insToggleSegmentDropdown = function (event, tabId, chartIdx) {
+        event.stopPropagation();
+        const btn = event.currentTarget;
+        const wasOpen = document.querySelector('.ins-segment-dropdown[data-for="' + btn.id + '"]');
+
+        // Close any open dropdown globally
+        document.querySelectorAll('.ins-segment-dropdown').forEach(d => d.remove());
+
+        if (wasOpen) return; // Was open → toggled off
+
+        const segments = JSON.parse(btn.getAttribute('data-segments') || '[]');
+        if (!segments.length) return;
+
+        // Assign a temp id for tracking
+        if (!btn.id) btn.id = 'ins-seg-btn-' + tabId + '-' + chartIdx;
+
+        const dd = document.createElement('div');
+        dd.className = 'ins-segment-dropdown';
+        dd.setAttribute('data-for', btn.id);
+        segments.forEach(name => {
+            const item = document.createElement('button');
+            item.className = 'ins-segment-dropdown-item';
+            item.textContent = name;
+            item.onclick = function (e) {
+                e.stopPropagation();
+                dd.remove();
+                insOpenSegmentPanel(name);
+                insHighlightSegment(name, tabId);
+            };
+            dd.appendChild(item);
+        });
+
+        // Position dropdown below the badge using fixed positioning (escapes overflow:hidden)
+        const rect = btn.getBoundingClientRect();
+        dd.style.position = 'fixed';
+        dd.style.top = (rect.bottom + 4) + 'px';
+        dd.style.left = rect.left + 'px';
+        document.body.appendChild(dd);
+    };
+
+    /** Highlight a segment across all charts in a tab */
+    window.insHighlightSegment = function (segmentName, tabId) {
+        // Toggle: same segment clicked again → clear
+        if (activeHighlight && activeHighlight.segmentName === segmentName && activeHighlight.tabId === tabId) {
+            insClearHighlight();
+            return;
+        }
+
+        // Clear previous highlight first
+        insClearHighlight(true); // silent = don't remove chip yet
+
+        activeHighlight = { segmentName, tabId };
+
+        // Inject highlight chip at top of the active tab panel
+        const panel = document.getElementById(`insPanel-${tabId}`);
+        if (panel) {
+            const existing = panel.querySelector('.ins-highlight-chip');
+            if (existing) existing.remove();
+            const chip = document.createElement('div');
+            chip.className = 'ins-highlight-chip';
+            chip.innerHTML = `<span class="ins-chip-dot"></span> Viewing: <strong>${esc(segmentName)}</strong> <button class="ins-chip-close" onclick="insClearHighlight()">✕</button>`;
+            panel.insertBefore(chip, panel.firstChild);
+        }
+
+        // Apply dimming to charts on this tab
+        chartInstances.forEach(ci => {
+            if (ci.tabId !== tabId) return;
+            const config = ci.config;
+            const type = config.chart_type || 'bar';
+            const data = config.data || {};
+            const chartSegments = getChartSegmentNames(config);
+
+            if (!chartSegments.has(segmentName)) {
+                // Chart doesn't contain this segment — dim the whole card
+                const card = document.querySelector(`.ins-chart-card[data-chart-tab="${tabId}"][data-chart-idx="${ci.idx}"]`);
+                if (card) card.classList.add('ins-dimmed');
+                return;
+            }
+
+            // Chart contains the segment — dim non-matching series via opacity
+            try {
+                if (['stacked_bar', 'line', 'area', 'radar'].includes(type)) {
+                    // Multi-series chart: set opacity per series
+                    const series = data.series || [];
+                    const opacities = series.map(s => (s.name === segmentName) ? 1.0 : 0.15);
+                    ci.instance.updateOptions({ fill: { opacity: opacities } }, false, false);
+                } else if (['pie', 'donut', 'polarArea'].includes(type)) {
+                    // CSS-based dimming on series paths
+                    const chartEl = ci.instance.el;
+                    if (chartEl) {
+                        const labels = data.labels || [];
+                        const slices = chartEl.querySelectorAll('.apexcharts-pie-series, .apexcharts-polararea-series');
+                        // Also try individual series paths
+                        const pieSlices = chartEl.querySelectorAll('.apexcharts-series');
+                        pieSlices.forEach((slice, i) => {
+                            if (labels[i] && labels[i] !== segmentName) {
+                                slice.style.opacity = '0.15';
+                                slice.style.transition = 'opacity 0.3s';
+                            }
+                        });
+                    }
+                } else if (['bar', 'column'].includes(type)) {
+                    // For multi-series bar: dim non-matching series
+                    // For single-series bar: dim non-matching bars via CSS
+                    const chartEl = ci.instance.el;
+                    if (chartEl) {
+                        if (Array.isArray(data.series) && data.series.length > 0 && typeof data.series[0] === 'object' && data.series[0].data) {
+                            // Multi-series bar
+                            const seriesEls = chartEl.querySelectorAll('.apexcharts-series');
+                            (data.series || []).forEach((s, i) => {
+                                if (seriesEls[i] && s.name !== segmentName) {
+                                    seriesEls[i].style.opacity = '0.15';
+                                    seriesEls[i].style.transition = 'opacity 0.3s';
+                                }
+                            });
+                        } else {
+                            // Single-series bar: dim bars whose category doesn't match
+                            const categories = data.labels || data.categories || [];
+                            const bars = chartEl.querySelectorAll('.apexcharts-bar-area');
+                            bars.forEach((bar, i) => {
+                                if (categories[i] && categories[i] !== segmentName) {
+                                    bar.style.opacity = '0.15';
+                                    bar.style.transition = 'opacity 0.3s';
+                                }
+                            });
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Highlight error:', e);
+            }
+        });
+    };
+
+    /** Clear all cross-chart highlighting */
+    window.insClearHighlight = function (silent) {
+        if (!activeHighlight && !silent) return;
+
+        const prevTabId = activeHighlight?.tabId;
+        activeHighlight = null;
+
+        // Remove chip
+        if (!silent) {
+            document.querySelectorAll('.ins-highlight-chip').forEach(c => c.remove());
+        }
+
+        // Remove card-level dimming
+        document.querySelectorAll('.ins-chart-card.ins-dimmed').forEach(c => c.classList.remove('ins-dimmed'));
+
+        // Restore chart opacities
+        chartInstances.forEach(ci => {
+            if (prevTabId && ci.tabId !== prevTabId) return;
+            const type = ci.config.chart_type || 'bar';
+            try {
+                if (type === 'stacked_bar') {
+                    ci.instance.updateOptions({ fill: { opacity: 0.9 } }, false, false);
+                } else if (type === 'radar') {
+                    ci.instance.updateOptions({ fill: { opacity: 0.15 } }, false, false);
+                } else if (['line', 'area'].includes(type)) {
+                    // Line/area use gradient fill — just reset opacity to uniform
+                    const seriesCount = (ci.config.data?.series || []).length || 1;
+                    ci.instance.updateOptions({ fill: { opacity: Array(seriesCount).fill(1.0) } }, false, false);
+                } else {
+                    // Remove inline opacity styles
+                    const chartEl = ci.instance.el;
+                    if (chartEl) {
+                        chartEl.querySelectorAll('.apexcharts-series, .apexcharts-bar-area').forEach(el => {
+                            el.style.opacity = '';
+                            el.style.transition = '';
+                        });
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        });
+    };
+
+    // Escape key: priority order — segment panel → highlight → fullscreen
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            // 1. Close segment panel if open
+            const segPanel = document.getElementById('insSegmentPanel');
+            if (segPanel && segPanel.classList.contains('open')) {
+                insCloseSegmentPanel();
+                return;
+            }
+            // 2. Clear highlight if active
+            if (activeHighlight) {
+                insClearHighlight();
+                return;
+            }
+            // 3. Close fullscreen if open
+            const overlay = document.getElementById('insFullscreenOverlay');
+            if (overlay && overlay.classList.contains('open')) {
+                insCloseFullscreen();
+            }
+        }
+    });
+
+    // ═══ FEATURE 3: DATA TABLE TOGGLE ═══
+    function sigBadge(dir) {
+        if (dir === 'high') return ' <span style="color:#10b981;font-weight:700" title="Significantly higher (95% CI)">▲</span>';
+        if (dir === 'low') return ' <span style="color:#ef4444;font-weight:700" title="Significantly lower (95% CI)">▼</span>';
+        return '';
+    }
+
+    function buildDataTableHtml(chartConfig) {
+        const type = chartConfig.chart_type || 'bar';
+        const data = chartConfig.data || {};
+        const sigLookup = buildSignificanceLookup(chartConfig);
+        let headers = [];
+        let rows = [];
+
+        switch (type) {
+            case 'pie':
+            case 'donut':
+            case 'radialBar':
+            case 'polarArea': {
+                const labels = data.labels || [];
+                const series = data.series || [];
+                headers = ['Label', 'Value'];
+                rows = labels.map((l, i) => [esc(l), `<span class="num">${series[i] != null ? series[i] : ''}</span>`]);
+                break;
+            }
+            case 'gauge': {
+                const val = data.series ? data.series[0] : (chartConfig.value || 0);
+                headers = ['Metric', 'Value'];
+                rows = [[esc(chartConfig.title || 'Value'), `<span class="num">${val}${chartConfig.suffix || '%'}</span>`]];
+                break;
+            }
+            case 'bar':
+            case 'column': {
+                const categories = data.labels || data.categories || [];
+                if (Array.isArray(data.series) && data.series.length > 0 && typeof data.series[0] === 'object' && data.series[0].data) {
+                    headers = ['Category', ...data.series.map(s => s.name || 'Value')];
+                    rows = categories.map((c, i) => [
+                        esc(c),
+                        ...data.series.map(s => {
+                            const v = s.data[i] != null ? s.data[i] : '';
+                            const dir = sigLookup ? getSigDirection(sigLookup, c, s.name) : null;
+                            return `<span class="num">${v}${sigBadge(dir)}</span>`;
+                        })
+                    ]);
+                } else {
+                    headers = ['Category', 'Value'];
+                    const vals = data.series || [];
+                    rows = categories.map((c, i) => {
+                        const dir = sigLookup ? getSigDirection(sigLookup, c, null) : null;
+                        return [esc(c), `<span class="num">${vals[i] != null ? vals[i] : ''}${sigBadge(dir)}</span>`];
+                    });
+                }
+                break;
+            }
+            case 'stacked_bar': {
+                const categories = data.categories || data.labels || [];
+                const series = Array.isArray(data.series) ? data.series : [];
+                headers = ['Category', ...series.map(s => s.name || 'Series')];
+                rows = categories.map((c, i) => [
+                    esc(c),
+                    ...series.map(s => {
+                        const v = (s.data || [])[i] != null ? (s.data || [])[i] : '';
+                        const dir = sigLookup ? getSigDirection(sigLookup, c, s.name) : null;
+                        return `<span class="num">${v}${sigBadge(dir)}</span>`;
+                    })
+                ]);
+                break;
+            }
+            case 'line':
+            case 'area':
+            case 'radar': {
+                const categories = data.categories || data.labels || [];
+                if (Array.isArray(data.series) && data.series.length > 0 && typeof data.series[0] === 'object' && data.series[0].data) {
+                    headers = ['X', ...data.series.map(s => s.name || 'Value')];
+                    rows = categories.map((c, i) => [
+                        esc(c),
+                        ...data.series.map(s => `<span class="num">${(s.data || [])[i] != null ? (s.data || [])[i] : ''}</span>`)
+                    ]);
+                } else {
+                    headers = ['X', 'Value'];
+                    const vals = data.series || [];
+                    rows = categories.map((c, i) => [esc(c), `<span class="num">${vals[i] != null ? vals[i] : ''}</span>`]);
+                }
+                break;
+            }
+            case 'scatter':
+            case 'bubble': {
+                const points = data.points || [];
+                const hasBubble = type === 'bubble';
+                headers = ['Series', 'X', 'Y'];
+                if (hasBubble) headers.push('Size');
+                points.forEach(s => {
+                    (s.data || []).forEach(p => {
+                        const row = [esc(s.name || ''), `<span class="num">${p.x}</span>`, `<span class="num">${p.y}</span>`];
+                        if (hasBubble) row.push(`<span class="num">${p.z || ''}</span>`);
+                        rows.push(row);
+                    });
+                });
+                break;
+            }
+            case 'heatmap': {
+                const series = Array.isArray(data.series) ? data.series : [];
+                const categories = data.categories || data.labels || [];
+                headers = ['Row', ...categories];
+                series.forEach(s => {
+                    rows.push([
+                        esc(s.name || ''),
+                        ...(s.data || []).map(v => `<span class="num">${typeof v === 'number' ? v : ''}</span>`)
+                    ]);
+                });
+                break;
+            }
+            case 'boxPlot': {
+                const series = Array.isArray(data.series) ? data.series : [];
+                const categories = data.categories || data.labels || [];
+                headers = ['Group', 'Min', 'Q1', 'Median', 'Q3', 'Max'];
+                series.forEach(s => {
+                    (s.data || []).forEach((d, i) => {
+                        const vals = Array.isArray(d) ? d : [d, d, d, d, d];
+                        rows.push([
+                            esc(categories[i] || `Group ${i + 1}`),
+                            ...vals.map(v => `<span class="num">${v}</span>`)
+                        ]);
+                    });
+                });
+                break;
+            }
+            case 'treemap': {
+                const points = data.points || [];
+                headers = ['Label', 'Value'];
+                if (points.length > 0) {
+                    points.forEach(s => {
+                        (s.data || []).forEach(p => {
+                            rows.push([esc(p.label || p.x || ''), `<span class="num">${p.y}</span>`]);
+                        });
+                    });
+                } else if (Array.isArray(data.series) && Array.isArray(data.labels)) {
+                    data.labels.forEach((l, i) => {
+                        rows.push([esc(l), `<span class="num">${data.series[i] || 0}</span>`]);
+                    });
+                }
+                break;
+            }
+            default: {
+                const categories = data.labels || data.categories || [];
+                const vals = Array.isArray(data.series) ? data.series : [];
+                headers = ['Label', 'Value'];
+                rows = categories.map((c, i) => [esc(c), `<span class="num">${vals[i] != null ? vals[i] : ''}</span>`]);
+            }
+        }
+
+        if (rows.length === 0) return '<div style="padding:12px;color:var(--ins-text-muted);font-size:12px;">No data available</div>';
+
+        let html = '<table class="ins-data-table"><thead><tr>';
+        headers.forEach((h, i) => {
+            html += `<th${i > 0 ? ' class="num"' : ''}>${esc(h)}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+        rows.forEach(row => {
+            html += '<tr>';
+            row.forEach((cell, i) => {
+                html += `<td${i > 0 ? ' class="num"' : ''}>${cell}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        return html;
+    }
+
+    window.insToggleDataTable = function (tabId, chartIdx) {
+        const wrap = document.getElementById(`insTable-${tabId}-${chartIdx}`);
+        if (!wrap) return;
+
+        const card = wrap.closest('.ins-chart-card');
+        const btn = card ? card.querySelector('.ins-chart-action-btn') : null;
+
+        if (wrap.style.display === 'none') {
+            // Lazy build table on first open
+            if (!wrap.innerHTML) {
+                const config = getChartConfig(tabId, chartIdx);
+                if (config) wrap.innerHTML = buildDataTableHtml(config);
+            }
+            wrap.style.display = 'block';
+            if (btn) btn.classList.add('active');
+        } else {
+            wrap.style.display = 'none';
+            if (btn) btn.classList.remove('active');
+        }
+    };
+
+    // ═══ FEATURE 4: STICKY TAB HEADER ═══
+    let stickyTabs = [];
+
+    function initStickyHeader(tabs) {
+        stickyTabs = tabs;
+        if (tabs.length <= 1) return; // No need for sticky nav with 0-1 tabs
+
+        const stickyEl = document.getElementById('insStickyHeader');
+        const stickyLabel = document.getElementById('insStickyTabLabel');
+        if (!stickyEl || !stickyLabel) return;
+
+        // Set initial label
+        const firstLabel = tabs[0].tab_label || tabs[0].title || 'Overview';
+        stickyLabel.textContent = firstLabel;
+        updateStickyNavButtons();
+
+        // Scroll listener
+        let ticking = false;
+        window.addEventListener('scroll', function () {
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    const tabsBar = document.getElementById('insTabsBar');
+                    const overviewSection = document.getElementById('insOverviewSection');
+                    // For sidebar layouts (>3 tabs), trigger after overview section
+                    const triggerEl = tabsBar || overviewSection;
+                    if (triggerEl) {
+                        const rect = triggerEl.getBoundingClientRect();
+                        stickyEl.classList.toggle('visible', rect.bottom < 0);
+                    }
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+
+        // Sync sidebar offset
+        syncStickyOffset();
+    }
+
+    function syncStickyOffset() {
+        const stickyEl = document.getElementById('insStickyHeader');
+        const sidebar = document.getElementById('insSidebar');
+        if (!stickyEl) return;
+        const isOpen = sidebar && sidebar.classList.contains('open') && window.innerWidth > 900;
+        stickyEl.classList.toggle('sidebar-offset', isOpen);
+    }
+
+    function getCurrentTabIndex() {
+        if (!stickyTabs.length) return 0;
+        const activePanel = document.querySelector('.ins-tab-panel.active');
+        if (!activePanel) return 0;
+        const activeId = activePanel.id.replace('insPanel-', '');
+        return stickyTabs.findIndex((t, i) => (t.tab_id || `tab-${i}`) === activeId);
+    }
+
+    function updateStickyNavButtons() {
+        const idx = getCurrentTabIndex();
+        const prevBtn = document.getElementById('insStickyPrev');
+        const nextBtn = document.getElementById('insStickyNext');
+        if (prevBtn) prevBtn.disabled = idx <= 0;
+        if (nextBtn) nextBtn.disabled = idx >= stickyTabs.length - 1;
+    }
+
+    window.insStickyPrevTab = function () {
+        const idx = getCurrentTabIndex();
+        if (idx > 0) {
+            const prevTab = stickyTabs[idx - 1];
+            const id = prevTab.tab_id || `tab-${idx - 1}`;
+            insSwitchTab(id);
+        }
+    };
+
+    window.insStickyNextTab = function () {
+        const idx = getCurrentTabIndex();
+        if (idx < stickyTabs.length - 1) {
+            const nextTab = stickyTabs[idx + 1];
+            const id = nextTab.tab_id || `tab-${idx + 1}`;
+            insSwitchTab(id);
+        }
+    };
+
+    // ═══ THEME TOGGLE (updated with fullscreen re-render) ═══
     window.insToggleTheme = function () {
         const current = getTheme();
         const next = current === 'dark' ? 'light' : 'dark';
@@ -1540,6 +2522,14 @@
             requestAnimationFrame(() => {
                 renderAllCharts(tabs);
                 renderKpiGauges(dashboardData.kpi_cards || []);
+            });
+        }
+
+        // Re-render fullscreen chart if open
+        const overlay = document.getElementById('insFullscreenOverlay');
+        if (overlay && overlay.classList.contains('open') && overlay.dataset.tab) {
+            requestAnimationFrame(() => {
+                insOpenFullscreen(overlay.dataset.tab, parseInt(overlay.dataset.idx));
             });
         }
     };
