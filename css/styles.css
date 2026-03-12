@@ -625,23 +625,48 @@ body:has(.auth-container)::after {
     min-height: 100vh;
 }
 
+/* ── Navbar ── */
 .navbar {
-    background: var(--glass-bg-strong);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    color: var(--text-primary);
-    padding: 10px 32px 16px;
-    max-height: 70px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: var(--shadow-sm);
-    border-bottom: 1px solid var(--border-color-light);
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 999999;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(1.6);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    color: var(--text-primary);
+    padding: 0 24px;
+    height: 52px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--glass-border);
+    overflow: hidden;
+}
+
+/* Subtle light sweep along bottom edge */
+.navbar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -100%;
+    width: 40%;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(218, 165, 32, 0.6),
+        rgba(255, 215, 0, 0.8),
+        rgba(218, 165, 32, 0.6),
+        transparent
+    );
+    animation: navbar-line-sweep 4s ease-in-out infinite;
+}
+
+@keyframes navbar-line-sweep {
+    0%   { left: -40%; }
+    100% { left: 100%; }
 }
 
 .navbar-brand {
@@ -654,18 +679,22 @@ body:has(.auth-container)::after {
     background-clip: text;
     display: flex;
     align-items: center;
+    position: relative;
+    z-index: 1;
 }
 
 .navbar-logo {
-    height: 32px;
+    height: 24px;
     width: auto;
-    transform: translateY(2px);
+    transform: translateY(1px);
 }
 
 .navbar-menu {
     display: flex;
     gap: 16px;
     align-items: center;
+    position: relative;
+    z-index: 1;
 }
 
 .navbar-menu span {
@@ -714,8 +743,8 @@ body:has(.auth-container)::after {
 }
 
 .user-avatar {
-    width: 40px;
-    height: 40px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     background: var(--avatar-bg);
     color: var(--avatar-text);
@@ -723,21 +752,21 @@ body:has(.auth-container)::after {
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
     user-select: none;
 }
 
 .user-avatar:hover {
     transform: scale(1.05);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-md);
 }
 
 .user-dropdown-menu {
     position: fixed;
-    top: 65px;
+    top: 60px;
     right: 24px;
     background: var(--bg-body);
     border-radius: 16px;
