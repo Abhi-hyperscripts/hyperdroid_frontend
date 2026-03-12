@@ -1164,8 +1164,9 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 }
 
 @media (max-width: 768px) {
-    .meeting-container-with-nav {
-        padding-top: 44px;
+    .meeting-container-with-nav .meeting-main {
+        padding: 2px;
+        padding-bottom: 80px;
     }
 }
 
@@ -1495,8 +1496,8 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
 @media (max-width: 768px) {
     .video-container {
         flex-direction: column;
-        padding: 12px;
-        gap: 12px;
+        padding: 4px;
+        gap: 4px;
         position: relative; /* For absolute positioning of overlays */
     }
 
