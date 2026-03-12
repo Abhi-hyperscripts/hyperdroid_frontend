@@ -4369,6 +4369,10 @@ function getCaptionsContainer() {
 function updateLiveCaption(speakerId, speakerName, text, language, isFinal, timestamp) {
     if (!captionsEnabled) return;
 
+    // Skip own captions — only show other participants' speech
+    const localId = room?.localParticipant?.identity;
+    if (localId && speakerId === localId) return;
+
     const container = getCaptionsContainer();
     let slot = captionSlots.get(speakerId);
 
