@@ -2844,6 +2844,8 @@ body.dark-theme .settings-menu,
         padding: 3px 6px;
         gap: 3px;
         border-radius: 8px;
+        flex-wrap: nowrap;
+        overflow: hidden;
     }
 
     .controls-track {
@@ -2856,9 +2858,10 @@ body.dark-theme .settings-menu,
     }
 
     .control-btn {
-        min-width: 44px;
+        min-width: 0;
+        flex: 1 1 0;
         height: 32px;
-        padding: 3px 6px;
+        padding: 3px 4px;
         font-size: 9px;
         border-radius: 6px;
         gap: 1px;
