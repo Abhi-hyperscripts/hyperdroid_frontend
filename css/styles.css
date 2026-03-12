@@ -645,12 +645,12 @@ body:has(.auth-container)::after {
     overflow: hidden;
 }
 
-/* Subtle light sweep along bottom edge */
+/* Static golden accent along bottom edge */
 .navbar::after {
     content: '';
     position: absolute;
     bottom: 0;
-    left: -100%;
+    left: 30%;
     width: 40%;
     height: 1px;
     background: linear-gradient(
@@ -661,12 +661,6 @@ body:has(.auth-container)::after {
         rgba(218, 165, 32, 0.6),
         transparent
     );
-    animation: navbar-line-sweep 4s ease-in-out infinite;
-}
-
-@keyframes navbar-line-sweep {
-    0%   { left: -40%; }
-    100% { left: 100%; }
 }
 
 .navbar-brand {

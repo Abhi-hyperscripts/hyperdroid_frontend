@@ -24,12 +24,17 @@
 </head>
 <body>
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
-    <div class="meeting-container">
-        <div class="meeting-header">
-            <div class="meeting-header-left">
-                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="meeting-logo">
-            </div>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
         </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+    <div class="meeting-container" style="padding-top: 52px;">
 
         <div class="meeting-main">
             <!-- Screen share container (hidden by default) -->
@@ -487,6 +492,12 @@
     <script>document.write('<script src="../../js/vision/copilot.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <!-- Browser-side STT removed — server-side Vosk bot handles transcription -->
     <!-- <script src="../../js/vision/controls-scroll.js"></script> Disabled - no longer using scrolling controls -->
+    <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/vision/meeting.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof Navigation !== 'undefined') Navigation.init('vision', '../');
+        });
+    </script>
 </body>
 </html>
