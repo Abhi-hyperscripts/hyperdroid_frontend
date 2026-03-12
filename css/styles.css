@@ -2838,7 +2838,7 @@ body.dark-theme .settings-menu,
     }
 
     .meeting-controls {
-        width: calc(100% - 24px);
+        width: calc(100% - 8px);
         height: auto;
         bottom: 10px;
         padding: 3px 6px;
