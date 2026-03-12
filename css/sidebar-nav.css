@@ -133,10 +133,10 @@
    ============================================================= */
 .sidebar-nav-panel {
     position: fixed;
-    top: 60px;
+    top: 52px;
     left: 0;
     width: 280px;
-    height: calc(100vh - 60px);
+    height: calc(100vh - 52px);
     background: var(--bg-card);
     border-right: 1px solid var(--border-color);
     z-index: 1000;

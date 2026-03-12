@@ -12,7 +12,7 @@
    ============================================================= */
 .slide-panel-overlay {
     position: fixed;
-    top: 70px; /* Below navbar */
+    top: 52px; /* Below navbar */
     left: 0;
     right: 0;
     bottom: 0;
@@ -37,11 +37,11 @@
     --panel-width: 440px;
 
     position: fixed;
-    top: 70px; /* Below navbar */
+    top: 52px; /* Below navbar */
     right: 0;
     width: var(--panel-width);
     max-width: 100%;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 52px);
     background: var(--bg-body);
     box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
     transform: translateX(100%);

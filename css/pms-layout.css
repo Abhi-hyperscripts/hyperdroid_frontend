@@ -48,7 +48,7 @@
 /* ── Container ── */
 .pms-container {
     max-width: 100%;
-    padding-top: 70px; /* Account for fixed navbar */
+    padding-top: 52px; /* Account for fixed navbar */
 }
 
 /* ── Layout wrapper (sidebar + main) ── */

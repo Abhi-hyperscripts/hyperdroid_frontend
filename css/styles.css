@@ -632,7 +632,7 @@ body:has(.auth-container)::after {
     left: 0;
     right: 0;
     z-index: 999999;
-    background: var(--glass-bg);
+    background: var(--bg-primary);
     backdrop-filter: blur(20px) saturate(1.6);
     -webkit-backdrop-filter: blur(20px) saturate(1.6);
     color: var(--text-primary);
@@ -766,7 +766,7 @@ body:has(.auth-container)::after {
 
 .user-dropdown-menu {
     position: fixed;
-    top: 60px;
+    top: 52px;
     right: 24px;
     background: var(--bg-body);
     border-radius: 16px;
@@ -7418,13 +7418,13 @@ label.toggle-switch,
 
     .user-dropdown-menu {
         right: 16px;
-        top: 60px;
+        top: 52px;
         min-width: 200px;
     }
 
     #navDropdownPortal .user-dropdown-menu {
         right: 16px;
-        top: 60px;
+        top: 52px;
     }
 
     /* Show mobile nav links in dropdown */

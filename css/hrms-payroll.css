@@ -726,7 +726,7 @@
 /* Container - Add padding-top for fixed navbar */
 .hrms-container {
     padding: 0 16px;
-    padding-top: 70px; /* Account for fixed navbar height */
+    padding-top: 52px; /* Account for fixed navbar height */
     max-width: 100%;
     overflow-x: hidden;
 }

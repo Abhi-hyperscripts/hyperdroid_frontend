@@ -46,8 +46,8 @@ body:has(.ess-layout) .navbar {
 
 .ess-layout {
     display: flex;
-    min-height: calc(100vh - 70px);
-    margin-top: 70px;
+    min-height: calc(100vh - 52px);
+    margin-top: 52px;
     position: relative;
     background: transparent;
 }
@@ -58,10 +58,10 @@ body:has(.ess-layout) .navbar {
 
 .ess-sidebar {
     position: fixed;
-    top: 70px;
+    top: 52px;
     left: 0;
     width: 280px;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 52px);
     background: var(--bg-card);
     border-right: 1px solid var(--border-color);
     z-index: 1000;
@@ -484,7 +484,7 @@ body:has(.ess-layout) .navbar {
 .ess-sidebar-overlay {
     position: fixed;
     inset: 0;
-    top: 70px;
+    top: 52px;
     background: var(--overlay-dark);
     z-index: 999;
     opacity: 0;
@@ -6118,8 +6118,8 @@ body:has(.ess-layout) .navbar {
    ============================================================ */
 #declarationsModal {
     z-index: 1000;
-    top: 70px !important;
-    height: calc(100vh - 70px) !important;
+    top: 52px !important;
+    height: calc(100vh - 52px) !important;
     align-items: flex-start;
     padding-top: 20px;
 }

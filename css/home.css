@@ -42,17 +42,8 @@ body.dashboard::before {
    NAVBAR STYLING
    ============================================================= */
 body.dashboard .navbar {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-color);
     position: relative;
     z-index: 100;
-}
-
-[data-theme="dark"] body.dashboard .navbar {
-    background: rgba(10, 15, 26, 0.8);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* =============================================================
