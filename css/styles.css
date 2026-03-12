@@ -1163,12 +1163,6 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     padding-top: 52px;
 }
 
-@media (max-width: 768px) {
-    .meeting-container-with-nav .meeting-main {
-        padding: 2px;
-        padding-bottom: 80px;
-    }
-}
 
 .meeting-header {
     background: var(--glass-bg-strong);
@@ -1227,9 +1221,9 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     display: flex;
     overflow: hidden;
     position: relative;
-    padding: 16px;
+    padding: 8px;
     padding-bottom: 40px;
-    gap: 16px;
+    gap: 8px;
 }
 
 .video-container {
@@ -3026,7 +3020,8 @@ body.dark-theme .settings-menu,
     }
 
     .meeting-main {
-        padding: 8px;
+        padding: 2px;
+        padding-bottom: 80px;
     }
 
     .video-container {
