@@ -1159,6 +1159,16 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     font-family: var(--font-family);
 }
 
+.meeting-container-with-nav {
+    padding-top: 52px;
+}
+
+@media (max-width: 768px) {
+    .meeting-container-with-nav {
+        padding-top: 44px;
+    }
+}
+
 .meeting-header {
     background: var(--glass-bg-strong);
     backdrop-filter: var(--glass-blur);
@@ -2810,9 +2820,9 @@ body.dark-theme .settings-menu,
 
     .meeting-main {
         flex-direction: column;
-        padding: 12px;
+        padding: 4px;
         padding-bottom: 100px; /* Space for floating controls */
-        gap: 12px;
+        gap: 4px;
     }
 
     .chat-sidebar {
