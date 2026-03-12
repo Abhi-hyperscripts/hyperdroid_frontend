@@ -237,6 +237,38 @@
                 </div>
             </div>
 
+            <!-- PMS Card -->
+            <div class="bento-card pms" onclick="navigateToModule('pms')" id="pmsCard">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                                <rect x="9" y="3" width="6" height="4" rx="1"/>
+                                <path d="M9 14l2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <div class="app-status" id="pmsStatus">
+                            <span class="status-indicator"></span>
+                            <span>Checking...</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3>Projects</h3>
+                        <p>Project management with clients, tasks, time tracking, and timesheets</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="app-action">
+                            Launch
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Admin Card (SUPERADMIN only) -->
             <div class="bento-card admin" onclick="navigateToModule('admin')" id="adminCard">
                 <div class="card-border"></div>
@@ -335,6 +367,7 @@
                 'hrmsCard': 'HRMS_USER',
                 'crmCard': 'CRM_USER',
                 'researchCard': 'RESEARCH_USER',
+                'pmsCard': 'PMS_USER',
                 'adminCard': 'SUPERADMIN'
             };
 
@@ -345,7 +378,8 @@
                 'chatCard': 'Chat',
                 'hrmsCard': 'HRMS',
                 'crmCard': 'CRM',
-                'researchCard': 'Research'
+                'researchCard': 'Research',
+                'pmsCard': 'PMS'
             };
 
             // Get licensed services from cached organization info (populated at login from JWT)
@@ -358,7 +392,7 @@
             const cardToModule = {
                 'visionCard': 'vision', 'driveCard': 'drive', 'chatCard': 'chat',
                 'hrmsCard': 'hrms', 'crmCard': 'crm', 'researchCard': 'research',
-                'adminCard': 'admin'
+                'pmsCard': 'pms', 'adminCard': 'admin'
             };
             const accessibleModules = [];
 
@@ -401,6 +435,7 @@
             checkServiceHealth('hrms', CONFIG.endpoints.hrms);
             checkServiceHealth('crm', CONFIG.endpoints.crm);
             checkServiceHealth('research', CONFIG.endpoints.research);
+            checkServiceHealth('pms', CONFIG.endpoints.pms);
         }
 
         async function checkServiceHealth(moduleName, endpoint) {
@@ -448,6 +483,9 @@
                     break;
                 case 'research':
                     window.location.href = 'research/dashboard.html';
+                    break;
+                case 'pms':
+                    window.location.href = 'pms/dashboard.html';
                     break;
                 case 'admin':
                     window.location.href = 'auth/dashboard.html';

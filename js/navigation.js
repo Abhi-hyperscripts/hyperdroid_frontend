@@ -15,6 +15,7 @@ const Navigation = {
         hrms: 'HRMS_USER',
         crm: 'CRM_USER',
         research: 'RESEARCH_USER',
+        pms: 'PMS_USER',
         admin: 'SUPERADMIN'
     },
 
@@ -91,6 +92,17 @@ const Navigation = {
             </svg>`,
             href: 'research/dashboard.html',
             requiresRole: 'RESEARCH_USER'
+        },
+        {
+            id: 'pms',
+            label: 'Projects',
+            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                <rect x="9" y="3" width="6" height="4" rx="1"/>
+                <path d="M9 14l2 2 4-4"/>
+            </svg>`,
+            href: 'pms/dashboard.html',
+            requiresRole: 'PMS_USER'
         },
         {
             id: 'admin',
@@ -185,7 +197,8 @@ const Navigation = {
         'chat': 'Chat',
         'hrms': 'HRMS',
         'crm': 'CRM',
-        'research': 'Research'
+        'research': 'Research',
+        'pms': 'PMS'
         // 'admin' and 'home' don't require service licensing
     },
 
@@ -824,6 +837,9 @@ async function loadNavigation() {
         basePath = '../';
     } else if (path.includes('/research/')) {
         currentPageId = 'research';
+        basePath = '../';
+    } else if (path.includes('/pms/')) {
+        currentPageId = 'pms';
         basePath = '../';
     } else if (path.includes('/auth/')) {
         currentPageId = 'admin';

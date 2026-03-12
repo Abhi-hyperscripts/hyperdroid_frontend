@@ -116,6 +116,10 @@ class API {
         if (endpoint.startsWith('/crm/')) {
             return CONFIG.crmApiBaseUrl;
         }
+        // PMS endpoints go to PMS service (independent microservice)
+        if (endpoint.startsWith('/pms/')) {
+            return CONFIG.pmsApiBaseUrl;
+        }
         // Notification endpoints go to Notification service
         if (endpoint.startsWith('/notifications/')) {
             return CONFIG.notificationApiBaseUrl;
@@ -156,6 +160,10 @@ class API {
         // For Research endpoints, strip /research prefix since baseUrl already has /api
         if (endpoint.startsWith('/research/')) {
             actualEndpoint = endpoint.substring(9); // Remove '/research' prefix, keep the rest
+        }
+        // For PMS endpoints, strip /pms prefix since baseUrl already has /api
+        if (endpoint.startsWith('/pms/')) {
+            actualEndpoint = endpoint.substring(4); // Remove '/pms' prefix, keep the rest
         }
         const url = `${baseUrl}${actualEndpoint}`;
         const headers = {

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Client Details - PMS | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/pms-detail.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Breadcrumb -->
+        <div class="crm-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">PMS</a>
+                    <span class="separator">/</span>
+                    <a href="clients.html">Clients</a>
+                    <span class="separator">/</span>
+                    <span class="current" id="breadcrumbClient">Client</span>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Client Header Card -->
+        <div class="pms-detail-header" id="clientHeader">
+            <div class="pms-detail-header-top">
+                <div class="pms-detail-title-section">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="pms-client-avatar" id="clientAvatar">?</div>
+                        <div>
+                            <h1 id="clientTitle">Loading...</h1>
+                            <span class="crm-source-badge" id="clientIndustry" style="display: none;"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pms-detail-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="openEditClientModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Edit
+                    </button>
+                    <button class="btn btn-sm" style="color: var(--color-error); border: 1px solid var(--color-error); background: transparent;" onclick="deleteCurrentClient()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                        Delete
+                    </button>
+                </div>
+            </div>
+            <div class="pms-detail-meta">
+                <div class="pms-meta-item">
+                    <span class="pms-meta-label">Website</span>
+                    <a href="#" class="pms-meta-value" id="clientWebsite" target="_blank" rel="noopener noreferrer">-</a>
+                </div>
+                <div class="pms-meta-item">
+                    <span class="pms-meta-label">Location</span>
+                    <span class="pms-meta-value" id="clientLocation">-</span>
+                </div>
+                <div class="pms-meta-item">
+                    <span class="pms-meta-label">Projects</span>
+                    <span class="pms-meta-value" id="clientProjectCount">0</span>
+                </div>
+                <div class="pms-meta-item">
+                    <span class="pms-meta-label">Contacts</span>
+                    <span class="pms-meta-value" id="clientContactCount">0</span>
+                </div>
+            </div>
+            <div class="pms-detail-description" id="clientNotes" style="display:none;"></div>
+        </div>
+
+        <!-- Projects Section -->
+        <div class="pms-section">
+            <div class="pms-section-header">
+                <h3>Projects</h3>
+                <button class="btn btn-primary btn-sm" onclick="openNewProjectModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New Project
+                </button>
+            </div>
+            <div class="crm-table-wrapper data-table-container">
+                <table class="crm-table data-table">
+                    <thead>
+                        <tr>
+                            <th>Project Name</th>
+                            <th>Status</th>
+                            <th class="hide-mobile">Tasks</th>
+                            <th class="hide-mobile">Members</th>
+                            <th class="hide-mobile">Hours</th>
+                            <th class="hide-mobile">Start Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientProjectsBody">
+                        <tr><td colspan="7" class="crm-empty-state"><div class="crm-empty-content"><p>Loading projects...</p></div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Contacts Section -->
+        <div class="pms-section">
+            <div class="pms-section-header">
+                <h3>Contacts</h3>
+                <button class="btn btn-primary btn-sm" onclick="toggleAddContactForm()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add Contact
+                </button>
+            </div>
+            <!-- Add Contact Inline Form (hidden by default) -->
+            <div id="addContactForm" style="display: none; margin-bottom: 16px; padding: 16px; border: 1px solid var(--border-primary); border-radius: 8px; background: var(--bg-tertiary);">
+                <form onsubmit="handleContactSubmit(event)">
+                    <div class="row mb-2">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control form-control-sm" id="contactName" placeholder="Name *" required>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="email" class="form-control form-control-sm" id="contactEmail" placeholder="Email">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="tel" class="form-control form-control-sm" id="contactPhone" placeholder="Phone">
+                        </div>
+                        <div class="col-md-2">
+                            <input type="text" class="form-control form-control-sm" id="contactDesignation" placeholder="Designation">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary btn-sm w-100" id="contactSubmitBtn">
+                                <span class="btn-spinner" id="contactSubmitSpinner" style="display:none;"></span>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div id="contactsList">
+                <p style="color: var(--text-secondary); text-align: center; padding: 20px;">Loading contacts...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Client Modal -->
+    <div class="modal" id="clientModal">
+        <div class="modal-backdrop" onclick="closeClientModal()"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Client</h5>
+                    <button class="close-btn" onclick="closeClientModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="clientForm" onsubmit="handleClientSubmit(event)">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editClientName" class="form-label">Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="editClientName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editClientIndustry" class="form-label">Industry</label>
+                                <input type="text" class="form-control" id="editClientIndustry">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editClientWebsite" class="form-label">Website</label>
+                                <input type="url" class="form-control" id="editClientWebsite" placeholder="https://...">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editClientCountry" class="form-label">Country</label>
+                                <input type="text" class="form-control" id="editClientCountry">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editClientCity" class="form-label">City</label>
+                                <input type="text" class="form-control" id="editClientCity">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editClientState" class="form-label">State</label>
+                                <input type="text" class="form-control" id="editClientState">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editClientNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="editClientNotes" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeClientModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="clientForm" id="clientSubmitBtn">
+                        <span class="btn-spinner" id="clientSubmitSpinner" style="display:none;"></span>
+                        Update Client
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Project Modal -->
+    <div class="modal" id="projectModal">
+        <div class="modal-backdrop" onclick="closeProjectModal()"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="projectModalTitle">New Project</h5>
+                    <button class="close-btn" onclick="closeProjectModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="projectForm" onsubmit="handleProjectSubmit(event)">
+                        <input type="hidden" id="projectFormId" value="">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="projectFormName" class="form-label">Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="projectFormName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="projectFormStatus" class="form-label">Status</label>
+                                <select class="form-select" id="projectFormStatus">
+                                    <option value="not_started">Not Started</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="on_hold">On Hold</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="projectFormBudget" class="form-label">Budget</label>
+                                <input type="number" class="form-control" id="projectFormBudget" step="0.01" min="0">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="projectFormStartDate" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="projectFormStartDate">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="projectFormEndDate" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="projectFormEndDate">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="projectFormDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="projectFormDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeProjectModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="projectForm" id="projectSubmitBtn">
+                        <span class="btn-spinner" id="projectSubmitSpinner" style="display:none;"></span>
+                        Create Project
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/pms/client-detail.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

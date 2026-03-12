@@ -1,0 +1,163 @@
+/**
+ * PMS Layout CSS
+ * Handles sidebar + content layout for PMS pages.
+ * Mirrors HRMS pattern: header shifts with margin-left, layout shifts with margin-left.
+ */
+
+/* ── Page Header (breadcrumb, title row, active tab) ── */
+.pms-page-header {
+    padding: 16px 20px;
+    transition: all 0.3s ease;
+}
+
+.pms-page-header .header-content {
+    display: block;
+}
+
+/* Shift header when sidebar is open (like HRMS) */
+.pms-container.sidebar-open .pms-page-header {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+}
+
+/* ── Header row: toggle + h1 title + badge + actions ── */
+.pms-header-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.pms-header-row h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.pms-header-row .crm-status-badge {
+    flex-shrink: 0;
+}
+
+.pms-header-row .pms-detail-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* ── Container ── */
+.pms-container {
+    max-width: 100%;
+    padding-top: 70px; /* Account for fixed navbar */
+}
+
+/* ── Layout wrapper (sidebar + main) ── */
+.pms-layout {
+    position: relative;
+}
+
+/* Shift layout when sidebar open (like HRMS organization-layout) */
+.pms-container.sidebar-open .pms-layout {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+    transition: all 0.3s ease;
+}
+
+.pms-layout > main {
+    padding: 0 20px 24px;
+}
+
+/* ── PMS Sidebar panel — matches right-side dropdown background ── */
+.pms-container .sidebar-nav-panel {
+    background: var(--bg-body);
+    border-right: 1px solid var(--border-color-light, var(--border-color));
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Dark theme */
+[data-theme="dark"] .pms-container .sidebar-nav-panel {
+    background: var(--bg-body);
+    border-right-color: var(--border-color-light, rgba(255, 255, 255, 0.08));
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
+}
+
+/* Light theme */
+[data-theme="light"] .pms-container .sidebar-nav-panel {
+    background: var(--bg-body);
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.06);
+}
+
+/* Bento gradient overlay */
+.pms-container .sidebar-nav-panel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 100% 60% at 80% 20%, rgba(var(--brand-primary-rgb), 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 80% 80% at 20% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 45%);
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 0;
+}
+
+/* Ensure sidebar content is above the gradient overlay */
+.pms-container .sidebar-header,
+.pms-container .sidebar-nav {
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Sidebar nav item styling ── */
+.pms-container .sidebar-btn {
+    text-decoration: none;
+}
+
+.pms-container .sidebar-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ── Toggle button ── */
+.pms-container .sidebar-toggle {
+    position: relative;
+    z-index: 1100;
+}
+
+/* ── Responsive (tablet) ── */
+@media (max-width: 1024px) {
+    .pms-container.sidebar-open .pms-page-header {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .pms-container.sidebar-open .pms-layout {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+/* ── Responsive (mobile) ── */
+@media (max-width: 768px) {
+    .pms-page-header {
+        padding: 12px 16px;
+    }
+
+    .pms-layout > main {
+        padding: 0 16px 24px;
+    }
+
+    .pms-header-row {
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .pms-header-row h1 {
+        font-size: 1.25rem;
+    }
+
+    .pms-header-row .pms-detail-actions {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-end;
+    }
+}

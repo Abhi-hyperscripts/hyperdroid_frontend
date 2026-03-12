@@ -15,7 +15,8 @@ const ENVIRONMENTS = {
         hrms: 'https://localhost:5104',
         crm: 'https://localhost:5112',
         research: 'https://localhost:5114',
-        notification: 'https://localhost:5110'
+        notification: 'https://localhost:5110',
+        pms: 'https://localhost:5116'
     },
     production: {
         auth: 'https://auth.ragenaizer.com',
@@ -25,7 +26,8 @@ const ENVIRONMENTS = {
         hrms: 'https://hrms.ragenaizer.com',
         crm: 'https://crm.ragenaizer.com',
         research: 'https://research.ragenaizer.com',
-        notification: 'https://notification.ragenaizer.com'
+        notification: 'https://notification.ragenaizer.com',
+        pms: 'https://pms.ragenaizer.com'
     }
 };
 
@@ -92,6 +94,10 @@ const CONFIG = {
 
     get notificationApiBaseUrl() {
         return `${this.endpoints.notification}/api`;
+    },
+
+    get pmsApiBaseUrl() {
+        return `${this.endpoints.pms}/api`;
     },
 
     // Legacy alias for backwards compatibility

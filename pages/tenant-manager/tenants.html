@@ -1802,6 +1802,14 @@
                                     <path d="M2 12l10 5 10-5"></path>
                                 </svg>
                             </button>
+                            <button class="btn-icon-sm" onclick="convertToSaaS('${tenant.id}', '${escapeHtml(tenant.tenantName)}')" data-tooltip="Convert to SaaS" data-tooltip-position="top" style="color: var(--brand-primary);">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="17 1 21 5 17 9"></polyline>
+                                    <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                    <polyline points="7 23 3 19 7 15"></polyline>
+                                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                                </svg>
+                            </button>
                             ${tenant.isActive ? `
                                 <button class="btn-icon-sm btn-icon-danger" onclick="deleteTenant('${tenant.id}')" data-tooltip="Deactivate" data-tooltip-position="top">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1928,6 +1936,30 @@
                 Toast.success('Tenant deactivated successfully');
             } catch (error) {
                 Toast.error('Failed to delete tenant: ' + error.message);
+            }
+        }
+
+        async function convertToSaaS(tenantId, tenantName) {
+            const confirmed = await Confirm.warning(
+                `Convert "${tenantName}" from On-Premise to SaaS Platform?\n\nThis will:\n• Change deployment type to SaaS\n• Enable unlimited tenants and sub-tenants\n• Set max users to unlimited\n\nExisting data and services will be preserved. You will need to generate a new SaaS license key after conversion.`,
+                'Convert to SaaS Platform'
+            );
+            if (!confirmed) return;
+
+            try {
+                await api.updateTenant(tenantId, {
+                    deploymentType: 'saas',
+                    maxUsers: -1,
+                    canCreateSubTenants: true,
+                    maxSubTenants: -1
+                });
+                loadTenants();
+                loadSaaSPlatforms();
+                Toast.success(`"${tenantName}" converted to SaaS Platform. Please generate a new SaaS license key.`);
+                // Switch to SaaS tab
+                switchLicenseTab('saas');
+            } catch (error) {
+                Toast.error('Failed to convert tenant: ' + error.message);
             }
         }
 
