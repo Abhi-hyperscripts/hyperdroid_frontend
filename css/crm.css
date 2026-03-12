@@ -1272,6 +1272,10 @@ body.crm-dashboard .crm-container {
 /* =============================================================
    CRM LEADS & DEALS - Header Row
    ============================================================= */
+.crm-header .header-content {
+    width: 100%;
+}
+
 .crm-header-row {
     display: flex;
     align-items: center;
@@ -1282,12 +1286,17 @@ body.crm-dashboard .crm-container {
 .crm-header-row .btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.85rem;
+    gap: 5px;
+    font-size: 0.75rem;
     font-weight: 600;
-    padding: 8px 18px;
+    padding: 6px 14px;
     border-radius: var(--border-radius-md);
     white-space: nowrap;
+}
+
+.crm-header-row .btn svg {
+    width: 14px;
+    height: 14px;
 }
 
 .crm-header-actions {

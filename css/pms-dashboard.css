@@ -1,0 +1,389 @@
+/* =============================================================
+   PMS Dashboard Styles
+   Mirrors HRMS dashboard visual design
+   All colors use theme variables for light/dark mode support
+   ============================================================= */
+
+/* =============================================================
+   AMBIENT BACKGROUND - Brand-themed radial gradients
+   ============================================================= */
+body.pms-dashboard {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+body.pms-dashboard::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.05) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.04) 0%, transparent 45%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+[data-theme="dark"] body.pms-dashboard::before {
+    background:
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 45%);
+}
+
+/* Ensure content stays above the background */
+body.pms-dashboard .crm-container {
+    position: relative;
+    z-index: 1;
+}
+
+/* =============================================================
+   HEADER SUBTITLE
+   ============================================================= */
+body.pms-dashboard .crm-header .header-subtitle {
+    color: var(--text-secondary);
+    margin: 2px 0 0 0;
+    font-size: 0.8rem;
+}
+
+/* =============================================================
+   STAT CARD ICON VARIANTS - PMS specific colors
+   ============================================================= */
+
+/* Active Clients - Blue */
+body.pms-dashboard .stat-icon.clients {
+    background: linear-gradient(135deg, var(--color-info), var(--color-primary));
+}
+body.pms-dashboard .stat-icon.clients svg {
+    color: var(--text-inverse);
+}
+
+/* Active Projects - Green */
+body.pms-dashboard .stat-icon.projects {
+    background: linear-gradient(135deg, var(--color-success), var(--color-success-light-accent));
+}
+body.pms-dashboard .stat-icon.projects svg {
+    color: var(--text-inverse);
+}
+
+/* Open Tasks - Purple */
+body.pms-dashboard .stat-icon.tasks {
+    background: linear-gradient(135deg, var(--color-purple), var(--color-purple-light));
+}
+body.pms-dashboard .stat-icon.tasks svg {
+    color: var(--text-inverse);
+}
+
+/* Hours This Week - Orange/Warning */
+body.pms-dashboard .stat-icon.hours {
+    background: linear-gradient(135deg, var(--color-warning), var(--color-orange));
+}
+body.pms-dashboard .stat-icon.hours svg {
+    color: var(--text-inverse);
+}
+
+/* Pending Timesheets - Cyan/Teal */
+body.pms-dashboard .stat-icon.timesheets {
+    background: linear-gradient(135deg, var(--color-cyan), var(--color-cyan-dark));
+}
+body.pms-dashboard .stat-icon.timesheets svg {
+    color: var(--text-inverse);
+}
+
+/* Team Members - Red/Danger */
+body.pms-dashboard .stat-icon.members {
+    background: linear-gradient(135deg, var(--color-danger), var(--color-danger-light-accent));
+}
+body.pms-dashboard .stat-icon.members svg {
+    color: var(--text-inverse);
+}
+
+/* =============================================================
+   STATS GRID - All 6 cards in one row
+   ============================================================= */
+body.pms-dashboard .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+/* =============================================================
+   STAT CARDS - Compact horizontal layout (icon + text in row)
+   ============================================================= */
+body.pms-dashboard .stat-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+body.pms-dashboard .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-lg);
+}
+
+body.pms-dashboard .stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+body.pms-dashboard .stat-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+body.pms-dashboard .stat-text {
+    min-width: 0;
+}
+
+body.pms-dashboard .stat-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-primary);
+}
+
+body.pms-dashboard .stat-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-top: 1px;
+    white-space: nowrap;
+}
+
+/* =============================================================
+   QUICK ACTION CARD ICON VARIANTS - PMS specific
+   ============================================================= */
+
+/* Clients - Blue */
+body.pms-dashboard .action-card[data-action="clients"] .action-icon {
+    background: var(--gradient-primary);
+}
+body.pms-dashboard .action-card[data-action="clients"] .action-icon svg {
+    color: var(--text-inverse);
+}
+body.pms-dashboard .action-card[data-action="clients"]:hover {
+    border-color: var(--brand-primary);
+}
+
+/* Projects - Success/Green */
+body.pms-dashboard .action-card[data-action="projects"] .action-icon {
+    background: var(--gradient-success);
+}
+body.pms-dashboard .action-card[data-action="projects"] .action-icon svg {
+    color: var(--text-inverse);
+}
+body.pms-dashboard .action-card[data-action="projects"]:hover {
+    border-color: var(--color-success);
+}
+
+/* Tasks - Purple/Secondary */
+body.pms-dashboard .action-card[data-action="tasks"] .action-icon {
+    background: var(--gradient-secondary);
+}
+body.pms-dashboard .action-card[data-action="tasks"] .action-icon svg {
+    color: var(--text-inverse);
+}
+body.pms-dashboard .action-card[data-action="tasks"]:hover {
+    border-color: var(--brand-secondary);
+}
+
+/* Time Tracking - Warning/Amber */
+body.pms-dashboard .action-card[data-action="time-tracking"] .action-icon {
+    background: var(--gradient-warning);
+}
+body.pms-dashboard .action-card[data-action="time-tracking"] .action-icon svg {
+    color: var(--text-inverse);
+}
+body.pms-dashboard .action-card[data-action="time-tracking"]:hover {
+    border-color: var(--color-warning);
+}
+
+/* Timesheets - Info/Cyan */
+body.pms-dashboard .action-card[data-action="timesheets"] .action-icon {
+    background: var(--gradient-info);
+}
+body.pms-dashboard .action-card[data-action="timesheets"] .action-icon svg {
+    color: var(--text-inverse);
+}
+body.pms-dashboard .action-card[data-action="timesheets"]:hover {
+    border-color: var(--color-info);
+}
+
+/* Activity Log - Accent */
+body.pms-dashboard .action-card[data-action="activity"] .action-icon {
+    background: var(--gradient-accent);
+}
+body.pms-dashboard .action-card[data-action="activity"] .action-icon svg {
+    color: var(--text-inverse);
+}
+body.pms-dashboard .action-card[data-action="activity"]:hover {
+    border-color: var(--brand-accent);
+}
+
+/* =============================================================
+   QUICK ACTIONS GRID - 3-column like HRMS
+   ============================================================= */
+body.pms-dashboard .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+body.pms-dashboard .action-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-3);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    position: relative;
+    box-shadow: var(--shadow-xs);
+}
+
+body.pms-dashboard .action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    background: var(--bg-card-hover);
+}
+
+body.pms-dashboard .action-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--border-radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+body.pms-dashboard .action-icon svg {
+    width: 22px;
+    height: 22px;
+    transition: transform var(--transition-fast);
+}
+
+body.pms-dashboard .action-card:hover .action-icon svg {
+    transform: scale(1.05);
+}
+
+body.pms-dashboard .action-arrow {
+    margin-left: auto;
+    color: var(--text-muted);
+    transition: all var(--transition-base);
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+body.pms-dashboard .action-card:hover .action-arrow {
+    transform: translateX(4px);
+    color: var(--text-secondary);
+    opacity: 1;
+}
+
+/* =============================================================
+   SECTION HEADER
+   ============================================================= */
+body.pms-dashboard .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+body.pms-dashboard .section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+/* =============================================================
+   DATA TABLE - Glass effect
+   ============================================================= */
+body.pms-dashboard .table-responsive {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 1px solid var(--border-color-light);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+/* =============================================================
+   REFRESH BUTTON
+   ============================================================= */
+body.pms-dashboard .refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--overlay-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+body.pms-dashboard .refresh-btn:hover {
+    background: var(--hover-overlay-strong);
+}
+
+body.pms-dashboard .refresh-btn.loading svg {
+    animation: pms-spin 1s linear infinite;
+}
+
+@keyframes pms-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* =============================================================
+   RESPONSIVE - MOBILE
+   ============================================================= */
+@media (max-width: 768px) {
+    body.pms-dashboard .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    body.pms-dashboard .stat-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+    }
+
+    body.pms-dashboard .stat-icon svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    body.pms-dashboard .stat-value {
+        font-size: 1rem;
+    }
+
+    body.pms-dashboard .quick-actions {
+        grid-template-columns: 1fr;
+    }
+}
