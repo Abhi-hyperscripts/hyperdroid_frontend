@@ -3030,11 +3030,11 @@ body.dark-theme .settings-menu,
     }
 
     .meeting-controls {
-        width: calc(100% - 90px);
-        height: 45px;
-        bottom: 20px;
-        padding: 0 12px;
-        border-radius: 12px;
+        width: calc(100% - 8px);
+        height: auto;
+        bottom: 10px;
+        padding: 3px 6px;
+        border-radius: 8px;
     }
 
     .controls-track {
