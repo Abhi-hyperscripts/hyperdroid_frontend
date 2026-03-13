@@ -2324,22 +2324,42 @@ function renderHolidaysRows(filtered) {
         return;
     }
 
-    tbody.innerHTML = filtered.map(holiday => `
+    // Group holidays by name+date to show multiple offices in one row
+    const grouped = new Map();
+    filtered.forEach(holiday => {
+        const key = `${holiday.holiday_name}|${holiday.holiday_date}|${holiday.holiday_type}`;
+        if (!grouped.has(key)) {
+            grouped.set(key, { ...holiday, _offices: [{ id: holiday.id, office_id: holiday.office_id }] });
+        } else {
+            grouped.get(key)._offices.push({ id: holiday.id, office_id: holiday.office_id });
+        }
+    });
+
+    tbody.innerHTML = Array.from(grouped.values()).map(holiday => {
+        const officeNames = holiday._offices.map(o => escapeHtml(getOfficeName(o.office_id)));
+        const allOffices = offices.filter(o => o.is_active !== false);
+        const isAllOffices = holiday._offices.length === allOffices.length && allOffices.length > 1;
+        const officeDisplay = isAllOffices
+            ? '<span class="badge badge-public" style="font-size:0.75rem">All Offices</span>'
+            : officeNames.join(', ');
+        const firstId = holiday._offices[0].id;
+        const allIds = holiday._offices.map(o => o.id);
+        return `
         <tr>
             <td><strong>${escapeHtml(holiday.holiday_name)}</strong></td>
             <td>${escapeHtml(formatDate(holiday.holiday_date))}</td>
             <td>${escapeHtml(getDayName(holiday.holiday_date))}</td>
             <td><span class="badge badge-${escapeHtml(holiday.holiday_type)}">${escapeHtml(formatHolidayType(holiday.holiday_type))}</span></td>
-            <td>${escapeHtml(getOfficeName(holiday.office_id))}</td>
+            <td>${officeDisplay}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="editHoliday('${escapeHtml(holiday.id)}')" data-tooltip="Edit Holiday">
+                    <button class="action-btn" onclick="editHoliday('${escapeHtml(firstId)}')" data-tooltip="Edit Holiday">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
-                    <button class="action-btn danger" onclick="deleteHoliday('${escapeHtml(holiday.id)}')" data-tooltip="Delete Holiday">
+                    <button class="action-btn danger" onclick="deleteGroupedHoliday(${JSON.stringify(allIds).replace(/"/g, '&quot;')}, '${escapeHtml(holiday.holiday_name)}')" data-tooltip="Delete Holiday">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -2347,8 +2367,8 @@ function renderHolidaysRows(filtered) {
                     </button>
                 </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 }
 
 async function loadEmployees() {
@@ -3508,20 +3528,36 @@ async function saveHoliday() {
                 hideLoading();
                 return;
             }
+            let succeeded = 0;
+            let skipped = 0;
             for (const office of activeOffices) {
-                await api.request('/hrms/holidays', {
-                    method: 'POST',
-                    body: JSON.stringify({ ...baseData, office_id: office.id })
-                });
+                try {
+                    await api.request('/hrms/holidays', {
+                        method: 'POST',
+                        body: JSON.stringify({ ...baseData, office_id: office.id })
+                    });
+                    succeeded++;
+                } catch (err) {
+                    // Holiday already exists for this office+date — skip
+                    skipped++;
+                }
+            }
+            if (succeeded === 0) {
+                showToast('Holiday already exists on this date for all offices', 'error');
+                hideLoading();
+                return;
+            }
+            if (skipped > 0) {
+                showToast(`Holiday created for ${succeeded} office(s), ${skipped} already had it`, 'warning');
             }
         }
 
         closeModal('holidayModal');
         const activeOfficeCount = !selectedOffice && !id ? offices.filter(o => o.is_active !== false).length : 1;
-        const msg = activeOfficeCount > 1
+        const msg = activeOfficeCount > 1 && !document.querySelector('.toast.show')
             ? `Holiday created for ${activeOfficeCount} offices`
-            : `Holiday ${id ? 'updated' : 'created'} successfully`;
-        showToast(msg, 'success');
+            : activeOfficeCount <= 1 || id ? `Holiday ${id ? 'updated' : 'created'} successfully` : null;
+        if (msg) showToast(msg, 'success');
         await loadHolidays();
         hideLoading();
     } catch (error) {
@@ -3546,6 +3582,36 @@ async function deleteHoliday(id) {
         showLoading();
         await api.request(`/hrms/holidays/${id}`, { method: 'DELETE' });
         showToast('Holiday deleted successfully', 'success');
+        await loadHolidays();
+        hideLoading();
+    } catch (error) {
+        console.error('Error deleting holiday:', error);
+        showToast(error.message || 'Failed to delete holiday', 'error');
+        hideLoading();
+    }
+}
+
+async function deleteGroupedHoliday(ids, name) {
+    const count = ids.length;
+    const msg = count > 1
+        ? `Delete "${name}" from ${count} offices?`
+        : `Are you sure you want to delete this holiday?`;
+    const confirmed = await Confirm.show({
+        title: 'Delete Holiday',
+        message: msg,
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+
+    if (!confirmed) return;
+
+    try {
+        showLoading();
+        for (const id of ids) {
+            await api.request(`/hrms/holidays/${id}`, { method: 'DELETE' });
+        }
+        showToast(count > 1 ? `Holiday deleted from ${count} offices` : 'Holiday deleted successfully', 'success');
         await loadHolidays();
         hideLoading();
     } catch (error) {
