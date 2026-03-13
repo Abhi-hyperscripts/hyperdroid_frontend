@@ -2492,7 +2492,7 @@
                     <button onclick="insCloseFormatSettings()" class="ins-format-close">&times;</button>
                 </div>
                 <div class="ins-format-modal-body">
-                    <div class="ins-format-group">
+                    <div class="ins-format-group" data-fmt-group="decimals">
                         <label class="ins-format-label">Percentage Decimals</label>
                         <div class="ins-format-options">
                             <button class="ins-format-opt${s.decimals === 0 ? ' active' : ''}" data-val="0" onclick="insSetDecimal(0)">Whole numbers <span class="ins-format-example">e.g. 79%</span></button>
@@ -2500,18 +2500,18 @@
                             <button class="ins-format-opt${s.decimals === 2 ? ' active' : ''}" data-val="2" onclick="insSetDecimal(2)">2 decimals <span class="ins-format-example">e.g. 79.52%</span></button>
                         </div>
                     </div>
-                    <div class="ins-format-group">
+                    <div class="ins-format-group" data-fmt-group="showpct">
                         <label class="ins-format-label">Show % Sign</label>
                         <div class="ins-format-options">
-                            <button class="ins-format-opt${s.showPercent ? ' active' : ''}" onclick="insSetShowPercent(true)">Show % <span class="ins-format-example">e.g. 79%</span></button>
-                            <button class="ins-format-opt${!s.showPercent ? ' active' : ''}" onclick="insSetShowPercent(false)">Hide % <span class="ins-format-example">e.g. 79</span></button>
+                            <button class="ins-format-opt${s.showPercent ? ' active' : ''}" data-val="true" onclick="insSetShowPercent(true)">Show % <span class="ins-format-example">e.g. 79%</span></button>
+                            <button class="ins-format-opt${!s.showPercent ? ' active' : ''}" data-val="false" onclick="insSetShowPercent(false)">Hide % <span class="ins-format-example">e.g. 79</span></button>
                         </div>
                     </div>
-                    <div class="ins-format-group">
+                    <div class="ins-format-group" data-fmt-group="means">
                         <label class="ins-format-label">Means / Scores Decimals</label>
                         <div class="ins-format-options">
-                            <button class="ins-format-opt${s.meansDecimals === 1 ? ' active' : ''}" onclick="insSetMeansDecimal(1)">1 decimal <span class="ins-format-example">e.g. 3.5</span></button>
-                            <button class="ins-format-opt${s.meansDecimals === 2 ? ' active' : ''}" onclick="insSetMeansDecimal(2)">2 decimals <span class="ins-format-example">e.g. 3.45</span></button>
+                            <button class="ins-format-opt${s.meansDecimals === 1 ? ' active' : ''}" data-val="1" onclick="insSetMeansDecimal(1)">1 decimal <span class="ins-format-example">e.g. 3.5</span></button>
+                            <button class="ins-format-opt${s.meansDecimals === 2 ? ' active' : ''}" data-val="2" onclick="insSetMeansDecimal(2)">2 decimals <span class="ins-format-example">e.g. 3.45</span></button>
                         </div>
                     </div>
                 </div>
@@ -2545,8 +2545,7 @@
         const s = getFormatSettings();
         s.decimals = val;
         saveFormatSettings(s);
-        // Update button states
-        document.querySelectorAll('.ins-format-group:first-child .ins-format-opt').forEach(btn => {
+        document.querySelectorAll('[data-fmt-group="decimals"] .ins-format-opt').forEach(btn => {
             btn.classList.toggle('active', parseInt(btn.dataset.val) === val);
         });
         applyFormatAndRerender();
@@ -2556,9 +2555,9 @@
         const s = getFormatSettings();
         s.showPercent = val;
         saveFormatSettings(s);
-        const btns = document.querySelectorAll('.ins-format-group:nth-child(2) .ins-format-opt');
-        if (btns[0]) btns[0].classList.toggle('active', val);
-        if (btns[1]) btns[1].classList.toggle('active', !val);
+        document.querySelectorAll('[data-fmt-group="showpct"] .ins-format-opt').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.val === String(val));
+        });
         applyFormatAndRerender();
     };
 
@@ -2566,9 +2565,9 @@
         const s = getFormatSettings();
         s.meansDecimals = val;
         saveFormatSettings(s);
-        const btns = document.querySelectorAll('.ins-format-group:nth-child(3) .ins-format-opt');
-        if (btns[0]) btns[0].classList.toggle('active', val === 1);
-        if (btns[1]) btns[1].classList.toggle('active', val === 2);
+        document.querySelectorAll('[data-fmt-group="means"] .ins-format-opt').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.val) === val);
+        });
         applyFormatAndRerender();
     };
 
