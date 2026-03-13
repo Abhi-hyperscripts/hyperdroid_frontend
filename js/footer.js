@@ -18,6 +18,7 @@ const FooterComponent = {
             <a href="/pages/chat.html" class="footer-link">Chat</a>
             <a href="/pages/drive.html" class="footer-link">Drive</a>
             <a href="/pages/hrms.html" class="footer-link">HRMS</a>
+            <a href="/pages/research.html" class="footer-link">Research</a>
             <a href="/pages/crm.html" class="footer-link">CRM</a>
             <a href="/pages/pms.html" class="footer-link">PMS</a>
             <a href="/pages/login.html" class="footer-link">Sign In</a>
