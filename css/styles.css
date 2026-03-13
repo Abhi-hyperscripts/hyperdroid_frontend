@@ -1163,6 +1163,12 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     padding-top: 52px;
 }
 
+@media (max-width: 768px) {
+    .meeting-container-with-nav {
+        padding-top: 0;
+    }
+}
+
 /* Mobile meeting: eliminate ALL gaps between navbar and video */
 @media (max-width: 768px) {
     .meeting-container-with-nav > .meeting-main {
