@@ -577,7 +577,11 @@
                                 fontFamily: CHART_FONT,
                                 color: valueColor,
                                 offsetY: 8,
-                                formatter: () => `${displayValue}${suffix}`
+                                formatter: () => {
+                                    if (suffix === '%') return fmtPct(rawValue);
+                                    const s = getFormatSettings();
+                                    return displayValue + (s.showPercent ? suffix : suffix.replace('%', ''));
+                                }
                             }
                         }
                     }
