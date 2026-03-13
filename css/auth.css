@@ -189,7 +189,7 @@
 }
 
 .service-name {
-    font-size: 0.9rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: var(--text-primary);
     margin: 0 0 2px 0;
@@ -294,8 +294,8 @@
 }
 
 .service-detail-value {
-    color: var(--text-primary);
-    font-weight: 600;
+    color: var(--text-secondary);
+    font-weight: 500;
     font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
     font-size: 0.72rem;
 }
