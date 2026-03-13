@@ -357,16 +357,18 @@
     position: relative;
     background: var(--bg-card);
     backdrop-filter: blur(20px);
-    padding: 24px 32px;
-    border-radius: 16px;
+    padding: 14px 20px;
+    border-radius: 12px;
     border: 1px solid var(--border-primary);
-    text-align: center;
-    min-width: 160px;
+    min-width: 140px;
     flex: 1;
     overflow: hidden;
     transition: all 0.3s ease;
     box-shadow: var(--shadow-sm);
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 
 .health-stat:hover {
@@ -379,10 +381,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
-    margin: 0 auto 12px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 10px;
     background: linear-gradient(135deg, var(--brand-alpha-10), var(--brand-alpha-20));
 }
 
@@ -392,8 +394,14 @@
     color: var(--brand-primary);
 }
 
+.health-stat-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
 .health-stat-value {
-    font-size: 2.5rem;
+    font-size: 1.5rem;
     font-weight: 800;
     color: var(--text-primary);
     letter-spacing: -0.03em;
@@ -401,10 +409,10 @@
 }
 
 .health-stat-label {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
     color: var(--text-secondary);
-    margin-top: 8px;
+    margin-top: 2px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
