@@ -36,6 +36,7 @@ const NavbarComponent = {
                     <a href="/pages/hrms.html" class="nav-dropdown-item" data-nav="hrms">HRMS <span>HR & Payroll</span></a>
                     <a href="/pages/research.html" class="nav-dropdown-item" data-nav="research">Research <span>AI Analytics</span></a>
                     <a href="/pages/crm.html" class="nav-dropdown-item" data-nav="crm">CRM <span>Sales Pipeline</span></a>
+                    <a href="/pages/pms.html" class="nav-dropdown-item" data-nav="pms">PMS <span>Project & Time Tracking</span></a>
                 </div>
             </div>
             <!-- Features Dropdown -->
@@ -53,6 +54,7 @@ const NavbarComponent = {
                     <a href="/pages/features/hrms-payroll.html" class="nav-dropdown-item" data-nav="hrms-payroll">HRMS & Payroll <span>Automated compliance</span></a>
                     <a href="/pages/research.html" class="nav-dropdown-item" data-nav="ai-research">AI Research <span>Agentic SPSS analytics</span></a>
                     <a href="/pages/crm.html" class="nav-dropdown-item" data-nav="sales-crm">Sales CRM <span>Pipeline & lead capture</span></a>
+                    <a href="/pages/pms.html" class="nav-dropdown-item" data-nav="pms-tracking">Project Management <span>Time tracking & billing</span></a>
                 </div>
             </div>
             <!-- Solutions Dropdown -->

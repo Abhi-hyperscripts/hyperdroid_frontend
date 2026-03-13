@@ -5,11 +5,11 @@
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ragenaizer — Business OS | Communication, HR, Analytics, CRM in One Platform</title>
-    <meta name="description" content="The operating system for your business. Ragenaizer unifies video conferencing, team chat, cloud storage, HRMS, AI research analytics, and sales CRM in one platform. Self-hosted or cloud. Complete data sovereignty.">
+    <title>Ragenaizer — Business OS | Communication, HR, Analytics, CRM, Project Management in One Platform</title>
+    <meta name="description" content="The operating system for your business. Ragenaizer unifies video conferencing, team chat, cloud storage, HRMS, AI research analytics, sales CRM, and project management with time tracking in one platform. Self-hosted or cloud. Complete data sovereignty.">
 
     <!-- SEO Meta Tags -->
-    <meta name="keywords" content="all-in-one business software, unified workspace platform, enterprise collaboration software, video conferencing software, zoom alternative, microsoft teams alternative, team messaging app, business chat software, cloud storage for business, secure file sharing, HRMS software, payroll software, automated payroll processing, attendance tracking software, leave management system, remote team collaboration tools, digital workplace solution, work from home software, best video conferencing for remote teams, HRMS with payroll software, employee self-service portal, statutory compliance software">
+    <meta name="keywords" content="all-in-one business software, unified workspace platform, enterprise collaboration software, video conferencing software, zoom alternative, microsoft teams alternative, team messaging app, business chat software, cloud storage for business, secure file sharing, HRMS software, payroll software, automated payroll processing, attendance tracking software, leave management system, project management software, time tracking software, client billing software, timesheet management, remote team collaboration tools, digital workplace solution, work from home software, best video conferencing for remote teams, HRMS with payroll software, employee self-service portal, statutory compliance software">
     <meta name="author" content="Ragenaizer">
     <meta name="robots" content="index, follow">
     <meta name="googlebot" content="index, follow">
@@ -20,7 +20,7 @@
     <meta property="og:site_name" content="Ragenaizer">
     <meta property="og:url" content="https://ragenaizer.com/">
     <meta property="og:title" content="Ragenaizer — The Business OS | Everything Your Business Needs">
-    <meta property="og:description" content="The operating system for your business. Video conferencing, team chat, cloud storage, HRMS, AI analytics, and CRM — unified. Self-hosted or cloud.">
+    <meta property="og:description" content="The operating system for your business. Video conferencing, team chat, cloud storage, HRMS, AI analytics, CRM, and project management — unified. Self-hosted or cloud.">
     <meta property="og:image" content="https://ragenaizer.com/assets/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -30,7 +30,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@ragenaizer">
     <meta name="twitter:title" content="Ragenaizer — The Business OS">
-    <meta name="twitter:description" content="The operating system for your business. Video, chat, storage, HRMS, AI analytics, CRM — all unified. Self-hosted or cloud.">
+    <meta name="twitter:description" content="The operating system for your business. Video, chat, storage, HRMS, AI analytics, CRM, project management — all unified. Self-hosted or cloud.">
     <meta name="twitter:image" content="https://ragenaizer.com/assets/og-image.png">
 
     <!-- Additional SEO -->
@@ -54,7 +54,7 @@
         "applicationCategory": "BusinessApplication",
         "applicationSubCategory": "Business Operating System",
         "operatingSystem": "Web",
-        "description": "The operating system for your business. Unifies video conferencing, team chat, cloud storage, HRMS, AI research analytics, and sales CRM. Self-hosted or cloud with complete data sovereignty.",
+        "description": "The operating system for your business. Unifies video conferencing, team chat, cloud storage, HRMS, AI research analytics, sales CRM, and project management with time tracking and billing. Self-hosted or cloud with complete data sovereignty.",
         "url": "https://ragenaizer.com",
         "author": {
             "@type": "Organization",
@@ -74,13 +74,16 @@
             "HRMS with Automated Payroll",
             "AI Research Analytics with SPSS Processing",
             "Sales CRM with Pipeline Management",
+            "Project Management with Time Tracking and Billing",
+            "Client Management with Billing Rates",
+            "Weekly Timesheet Submission and Approval",
             "Attendance Tracking with Geofencing",
             "Leave Management System",
             "Embeddable Analytics Widget",
             "Real-time Collaboration",
             "Self-Hosted or Cloud Deployment"
         ],
-        "keywords": "business OS, business operating system, video conferencing, team chat, cloud storage, HRMS, payroll software, AI analytics, CRM software, sales pipeline, self-hosted business software"
+        "keywords": "business OS, business operating system, video conferencing, team chat, cloud storage, HRMS, payroll software, AI analytics, CRM software, sales pipeline, project management, time tracking, client billing, self-hosted business software"
     }
     </script>
     <script type="application/ld+json">
@@ -427,6 +430,7 @@
         .sidebar-item.hrms { --item-color: #fbbf24; --item-bg: rgba(245, 158, 11, 0.15); }
         .sidebar-item.research { --item-color: #22d3ee; --item-bg: rgba(6, 182, 212, 0.15); }
         .sidebar-item.crm { --item-color: #fb7185; --item-bg: rgba(244, 63, 94, 0.15); }
+        .sidebar-item.pms { --item-color: #2dd4bf; --item-bg: rgba(20, 184, 166, 0.15); }
 
         .sidebar-divider {
             width: 32px;
@@ -472,6 +476,7 @@
         .preview-card.hrms { --card-border: rgba(245, 158, 11, 0.3); --accent: #fbbf24; }
         .preview-card.research { --card-border: rgba(6, 182, 212, 0.3); --accent: #22d3ee; }
         .preview-card.crm { --card-border: rgba(244, 63, 94, 0.3); --accent: #fb7185; }
+        .preview-card.pms { --card-border: rgba(20, 184, 166, 0.3); --accent: #2dd4bf; }
 
         /* Research-specific preview */
         .preview-card.research .preview-content {
@@ -516,6 +521,32 @@
             background: rgba(244, 63, 94, 0.2);
             border-radius: 3px;
             border: 1px solid rgba(244, 63, 94, 0.15);
+        }
+
+        /* PMS-specific preview */
+        .pms-task-cols {
+            display: flex;
+            gap: 4px;
+        }
+
+        .pms-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .pms-col-label {
+            font-size: 7px;
+            color: rgba(255, 255, 255, 0.4);
+            text-align: center;
+        }
+
+        .pms-task {
+            height: 14px;
+            background: rgba(20, 184, 166, 0.2);
+            border-radius: 3px;
+            border: 1px solid rgba(20, 184, 166, 0.15);
         }
 
         .preview-header {
@@ -1139,6 +1170,15 @@
             --icon-bg: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(244, 63, 94, 0.05));
             --icon-border: rgba(244, 63, 94, 0.3);
             --icon-color: #fb7185;
+        }
+
+        .product-card.pms {
+            --card-gradient: linear-gradient(135deg, rgba(20, 184, 166, 0.08) 0%, transparent 60%);
+            --card-border: rgba(20, 184, 166, 0.3);
+            --card-shadow: rgba(20, 184, 166, 0.15);
+            --icon-bg: linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(20, 184, 166, 0.05));
+            --icon-border: rgba(20, 184, 166, 0.3);
+            --icon-color: #2dd4bf;
         }
 
         /* Stats Section */
@@ -1774,6 +1814,7 @@
                     <a href="pages/hrms.html" class="nav-dropdown-item">HRMS <span>HR & Payroll</span></a>
                     <a href="pages/research.html" class="nav-dropdown-item">Research <span>AI Analytics</span></a>
                     <a href="pages/crm.html" class="nav-dropdown-item">CRM <span>Sales Pipeline</span></a>
+                    <a href="pages/pms.html" class="nav-dropdown-item">PMS <span>Project & Time Tracking</span></a>
                 </div>
             </div>
             <!-- Features Dropdown -->
@@ -1791,6 +1832,7 @@
                     <a href="pages/features/hrms-payroll.html" class="nav-dropdown-item">HRMS & Payroll <span>Automated compliance</span></a>
                     <a href="pages/research.html" class="nav-dropdown-item">AI Research <span>Agentic SPSS analytics</span></a>
                     <a href="pages/crm.html" class="nav-dropdown-item">Sales CRM <span>Pipeline & lead capture</span></a>
+                    <a href="pages/pms.html" class="nav-dropdown-item">Project Management <span>Time tracking & billing</span></a>
                 </div>
             </div>
             <!-- Solutions Dropdown -->
@@ -1969,6 +2011,14 @@
                                     <path d="M2 12l10 5 10-5"/>
                                 </svg>
                             </a>
+                            <a href="pages/pms.html" class="sidebar-item pms">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                                </svg>
+                            </a>
                         </div>
 
                         <!-- Main content area -->
@@ -2072,6 +2122,38 @@
                                         <div class="research-bar" style="height: 70%;"></div>
                                     </div>
                                     <div class="preview-bar short" style="background: rgba(6, 182, 212, 0.3);"></div>
+                                </div>
+                            </a>
+
+                            <!-- PMS preview -->
+                            <a href="pages/pms.html" class="preview-card pms">
+                                <div class="preview-header">
+                                    <div class="preview-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <rect x="3" y="3" width="7" height="7" rx="1"/>
+                                            <rect x="14" y="3" width="7" height="7" rx="1"/>
+                                            <rect x="3" y="14" width="7" height="7" rx="1"/>
+                                            <rect x="14" y="14" width="7" height="7" rx="1"/>
+                                        </svg>
+                                    </div>
+                                    <span class="preview-title">PMS</span>
+                                </div>
+                                <div class="preview-content">
+                                    <div class="pms-task-cols">
+                                        <div class="pms-col">
+                                            <div class="pms-col-label">Todo</div>
+                                            <div class="pms-task"></div>
+                                            <div class="pms-task"></div>
+                                        </div>
+                                        <div class="pms-col">
+                                            <div class="pms-col-label">Doing</div>
+                                            <div class="pms-task" style="background: rgba(20, 184, 166, 0.35);"></div>
+                                        </div>
+                                        <div class="pms-col">
+                                            <div class="pms-col-label">Done</div>
+                                            <div class="pms-task"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </a>
 
@@ -2497,6 +2579,35 @@
                         <span>Lead Webhooks</span>
                         <span>Facebook Ads</span>
                         <span>Real-Time Alerts</span>
+                    </div>
+                    <div class="product-link">
+                        Learn more
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
+            <!-- PMS -->
+            <a href="pages/pms.html" class="product-card pms">
+                <div class="product-card-content">
+                    <div class="product-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="7" height="7" rx="1"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1"/>
+                            <rect x="14" y="14" width="7" height="7" rx="1"/>
+                        </svg>
+                    </div>
+                    <h3>PMS</h3>
+                    <div class="product-tagline">Project Management</div>
+                    <p>Track projects, tasks, and time in one place. Per-member billing rates, weekly timesheet approval, and automatic meeting rooms for every project.</p>
+                    <div class="product-features">
+                        <span>Time Tracking</span>
+                        <span>Timesheets</span>
+                        <span>Client Billing</span>
+                        <span>Task Boards</span>
                     </div>
                     <div class="product-link">
                         Learn more
