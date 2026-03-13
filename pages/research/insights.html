@@ -940,6 +940,225 @@
             text-decoration: none;
         }
 
+        /* ═══ CHART BASE / N BADGE ═══ */
+        .ins-chart-base {
+            display: inline-block;
+            font-size: 11px;
+            color: var(--ins-text-muted);
+            font-weight: 500;
+            margin-top: 2px;
+            padding: 1px 6px;
+            background: var(--ins-surface-2);
+            border-radius: 4px;
+            border: 1px solid var(--ins-border);
+        }
+
+        /* ═══ FORMAT SETTINGS MODAL ═══ */
+        .ins-format-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .ins-format-modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .ins-format-modal {
+            background: var(--ins-surface);
+            border: 1px solid var(--ins-border);
+            border-radius: var(--ins-radius-lg);
+            width: 420px;
+            max-width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+        .ins-format-modal-overlay.open .ins-format-modal {
+            transform: scale(1);
+        }
+        .ins-format-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--ins-border);
+        }
+        .ins-format-modal-header h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--ins-text-heading);
+        }
+        .ins-format-close {
+            background: none;
+            border: none;
+            color: var(--ins-text-muted);
+            font-size: 22px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 4px;
+        }
+        .ins-format-close:hover { color: var(--ins-text); }
+        .ins-format-modal-body {
+            padding: 16px 20px 20px;
+        }
+        .ins-format-group {
+            margin-bottom: 16px;
+        }
+        .ins-format-group:last-child { margin-bottom: 0; }
+        .ins-format-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ins-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .ins-format-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .ins-format-opt {
+            flex: 1;
+            min-width: 100px;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-family: var(--ins-font);
+            background: var(--ins-surface-2);
+            border: 1px solid var(--ins-border);
+            border-radius: 8px;
+            color: var(--ins-text);
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+        }
+        .ins-format-opt:hover {
+            border-color: var(--ins-accent);
+            background: var(--ins-accent-glow);
+        }
+        .ins-format-opt.active {
+            border-color: var(--ins-accent);
+            background: var(--ins-accent-glow);
+            color: var(--ins-accent);
+            font-weight: 600;
+        }
+        .ins-format-example {
+            display: block;
+            font-size: 10px;
+            color: var(--ins-text-muted);
+            margin-top: 2px;
+            font-weight: 400;
+        }
+
+        /* ═══ MULTI-CHART DOWNLOAD ═══ */
+        .ins-chart-select-wrap {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 5;
+        }
+        .ins-chart-card {
+            position: relative;
+        }
+        .ins-chart-checkbox {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .ins-chart-checkbox input { display: none; }
+        .ins-chart-checkbox-mark {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--ins-border-hover);
+            border-radius: 5px;
+            background: var(--ins-surface);
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ins-chart-checkbox-mark::after {
+            content: '';
+            display: none;
+            width: 5px;
+            height: 10px;
+            border: solid #fff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin-top: -2px;
+        }
+        .ins-chart-checkbox input:checked + .ins-chart-checkbox-mark {
+            background: var(--ins-accent);
+            border-color: var(--ins-accent);
+        }
+        .ins-chart-checkbox input:checked + .ins-chart-checkbox-mark::after {
+            display: block;
+        }
+        .ins-chart-card.selected {
+            outline: 2px solid var(--ins-accent);
+            outline-offset: -2px;
+        }
+
+        .ins-download-bar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--ins-surface);
+            border: 1px solid var(--ins-border-hover);
+            border-radius: 12px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 9998;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+        .ins-download-bar.visible {
+            transform: translateX(-50%) translateY(0);
+        }
+        .ins-download-bar-count {
+            font-size: 13px;
+            color: var(--ins-text-secondary);
+            white-space: nowrap;
+        }
+        .ins-download-bar-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: var(--ins-accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: var(--ins-font);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .ins-download-bar-btn:hover { opacity: 0.9; }
+        .ins-download-bar-cancel {
+            padding: 8px 12px;
+            background: none;
+            border: 1px solid var(--ins-border);
+            border-radius: 8px;
+            color: var(--ins-text-muted);
+            font-size: 13px;
+            font-family: var(--ins-font);
+            cursor: pointer;
+        }
+        .ins-download-bar-cancel:hover { color: var(--ins-text); border-color: var(--ins-border-hover); }
+
         /* ═══ TOAST ═══ */
         .ins-toast {
             position: fixed;

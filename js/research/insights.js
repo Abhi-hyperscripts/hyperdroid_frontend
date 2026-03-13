@@ -26,6 +26,53 @@
     let chartInstances = [];
     let kpiChartInstances = [];
     let dashboardData = null;
+    let selectedCharts = new Set(); // For multi-chart download
+
+    // ═══ FORMAT SETTINGS (localStorage-backed) ═══
+    const FORMAT_DEFAULTS = { decimals: 1, showPercent: true, meansDecimals: 2 };
+
+    function getFormatSettings() {
+        try {
+            const saved = localStorage.getItem('ins-format-settings');
+            return saved ? { ...FORMAT_DEFAULTS, ...JSON.parse(saved) } : { ...FORMAT_DEFAULTS };
+        } catch { return { ...FORMAT_DEFAULTS }; }
+    }
+
+    function saveFormatSettings(s) {
+        localStorage.setItem('ins-format-settings', JSON.stringify(s));
+    }
+
+    /** Format a percentage value according to user settings */
+    function fmtPct(val) {
+        if (val == null || isNaN(val)) return '';
+        const s = getFormatSettings();
+        const num = Number(val);
+        const formatted = s.decimals === 0 ? Math.round(num).toString() : num.toFixed(s.decimals);
+        return s.showPercent ? formatted + '%' : formatted;
+    }
+
+    /** Format a raw percentage number (no suffix) */
+    function fmtPctNum(val) {
+        if (val == null || isNaN(val)) return '';
+        const s = getFormatSettings();
+        return s.decimals === 0 ? Math.round(Number(val)).toString() : Number(val).toFixed(s.decimals);
+    }
+
+    /** Format a mean/median/score value — always 2 decimal places */
+    function fmtMean(val) {
+        if (val == null || isNaN(val)) return '';
+        const s = getFormatSettings();
+        return Number(val).toFixed(s.meansDecimals);
+    }
+
+    /** Smart formatter — detects if value is a stat/mean or percentage */
+    function fmtVal(val, config) {
+        if (val == null || isNaN(val)) return String(val);
+        const title = (config?.title || '').toLowerCase();
+        const statsKeywords = ['mean', 'median', 'index', 'score', 'coefficient', 'correlation', 'count', 'average', 'ratio'];
+        if (statsKeywords.some(k => title.includes(k))) return fmtMean(val);
+        return fmtPctNum(val);
+    }
 
 
     // ═══ THEME ═══
@@ -249,6 +296,14 @@
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                             <span>Print</span>
                         </button>
+                        <button onclick="insOpenFormatSettings(); insCloseMenu()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                            <span>Format Settings</span>
+                        </button>
+                        <button onclick="insToggleSelectMode(); insCloseMenu()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span>Download Charts</span>
+                        </button>
                     </div>
                 </div>`;
         }
@@ -388,11 +443,20 @@
                             if (chartSegNames.has(name)) matchingProfiles.push(name);
                         }
                     }
+                    const chartBase = chart.data?.base ?? chart.data?.n ?? chart.base ?? null;
+                    const displayBase = chartBase != null ? chartBase : (d.sample_size || null);
                     html += `
                     <div class="ins-chart-card${fullWidth ? ' full-width' : ''}" data-chart-tab="${id}" data-chart-idx="${ci}">
+                        <div class="ins-chart-select-wrap" style="display:none">
+                            <label class="ins-chart-checkbox">
+                                <input type="checkbox" onchange="insToggleChartSelect('${id}',${ci},this.checked)">
+                                <span class="ins-chart-checkbox-mark"></span>
+                            </label>
+                        </div>
                         <div class="ins-chart-header-row">
                             <div class="ins-chart-title-wrap">
                                 <div class="ins-chart-title">${chart.question_id ? `<span class="ins-qid-icon" data-qid="${esc(chart.question_id)}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span class="ins-qid-tooltip">${esc(chart.question_id)}</span></span>` : ''}${esc(chart.title || chart.question_label || '')}</div>
+                                ${displayBase != null ? `<span class="ins-chart-base" title="Sample size for this chart">N=${Number(displayBase).toLocaleString()}</span>` : ''}
                             </div>
                             ${matchingProfiles.length > 0 ? `
                             <button class="ins-segment-badge"
@@ -469,18 +533,17 @@
             // Determine gauge percentage (0-100) and display value
             let gaugePercent, displayValue;
             if (suffix === '/10' || suffix.toLowerCase().includes('/10')) {
-                // Could be 7.4/10 (<=10) or 74.3/10 (LLM scaled it already)
                 const scaledValue = rawValue <= 10 ? rawValue * 10 : rawValue;
                 gaugePercent = Math.min(100, Math.max(0, scaledValue));
-                displayValue = rawValue % 1 === 0 ? rawValue.toFixed(0) : rawValue.toFixed(1);
+                displayValue = fmtMean(rawValue);
             } else if (suffix === '/5' || suffix.toLowerCase().includes('/5')) {
                 const scaledValue = rawValue <= 5 ? rawValue * 20 : rawValue;
                 gaugePercent = Math.min(100, Math.max(0, scaledValue));
-                displayValue = rawValue % 1 === 0 ? rawValue.toFixed(0) : rawValue.toFixed(1);
+                displayValue = fmtMean(rawValue);
             } else {
                 // Percentage or raw number — treat as 0-100
                 gaugePercent = Math.min(100, Math.max(0, rawValue));
-                displayValue = rawValue % 1 === 0 ? rawValue.toFixed(0) : rawValue.toFixed(1);
+                displayValue = fmtPctNum(rawValue);
             }
 
             const options = {
@@ -701,7 +764,11 @@
                             fontWeight: 700,
                             color: valueColor,
                             offsetY: -16,
-                            formatter: (val) => `${Math.round(val)}${config.suffix || '%'}`
+                            formatter: (val) => {
+                                const suffix = config.suffix || '%';
+                                if (suffix === '%') return fmtPct(val);
+                                return fmtMean(val) + suffix;
+                            }
                         }
                     }
                 }
@@ -736,11 +803,24 @@
             },
             dataLabels: {
                 enabled: true,
-                formatter: (val) => `${val.toFixed(1)}%`,
+                formatter: (val) => fmtPct(val),
                 style: { fontSize: mobile ? '10px' : '12px', fontWeight: 600, colors: ['#ffffff'] },
                 dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.4 }
             },
-            stroke: { width: 1, colors: [strokeColor] }
+            stroke: { width: 1, colors: [strokeColor] },
+            tooltip: {
+                ...baseChartOptions().tooltip,
+                y: {
+                    formatter: (val, opts) => {
+                        let label = fmtPct(val);
+                        const count = resolveCount(data, 0, opts?.dataPointIndex ?? 0, val);
+                        if (count != null) {
+                            label += ` <span style="opacity:0.7">(n=${count.toLocaleString()})</span>`;
+                        }
+                        return label;
+                    }
+                }
+            }
         };
     }
 
@@ -779,17 +859,47 @@
         });
     }
 
-    function buildSigTooltip(sigLookup, categories) {
-        if (!sigLookup) return {};
+    /** Resolve actual count from data.counts (real) or compute from base+percentage (fallback) */
+    function resolveCount(chartData, seriesIndex, dataPointIndex, pctValue) {
+        const counts = chartData?.counts;
+        if (counts) {
+            // Multi-series: counts is array of {name, data}
+            if (Array.isArray(counts) && counts[seriesIndex]?.data) {
+                const c = counts[seriesIndex].data[dataPointIndex];
+                if (c != null) return c;
+            }
+            // Flat series: counts is array of numbers
+            if (Array.isArray(counts) && typeof counts[0] === 'number') {
+                const c = counts[dataPointIndex];
+                if (c != null) return c;
+            }
+        }
+        // Fallback: compute from base + percentage
+        const base = chartData?.base ?? chartData?.n ?? dashboardData?.sample_size;
+        if (base && typeof pctValue === 'number') {
+            return Math.round(pctValue * base / 100);
+        }
+        return null;
+    }
+
+    function buildSigTooltip(sigLookup, categories, chartData, config) {
         return {
             y: {
                 formatter: (val, opts) => {
-                    let label = typeof val === 'number' ? (Number.isInteger(val) ? String(val) : val.toFixed(1)) : String(val);
-                    const cat = categories[opts.dataPointIndex];
-                    const sName = opts.w?.config?.series?.[opts.seriesIndex]?.name;
-                    const dir = getSigDirection(sigLookup, cat, sName);
-                    if (dir === 'high') label += ' <span style="color:#10b981;font-weight:700">▲ sig. higher</span>';
-                    else if (dir === 'low') label += ' <span style="color:#ef4444;font-weight:700">▼ sig. lower</span>';
+                    let label = typeof val === 'number' ? fmtPct(val) : String(val);
+                    // Add count (real from data.counts or computed from base)
+                    const count = resolveCount(chartData, opts.seriesIndex, opts.dataPointIndex, val);
+                    if (count != null) {
+                        label += ` <span style="opacity:0.7">(n=${count.toLocaleString()})</span>`;
+                    }
+                    // Add significance
+                    if (sigLookup) {
+                        const cat = categories[opts.dataPointIndex];
+                        const sName = opts.w?.config?.series?.[opts.seriesIndex]?.name;
+                        const dir = getSigDirection(sigLookup, cat, sName);
+                        if (dir === 'high') label += ' <span style="color:#10b981;font-weight:700">▲ sig. higher</span>';
+                        else if (dir === 'low') label += ' <span style="color:#ef4444;font-weight:700">▼ sig. lower</span>';
+                    }
                     return label;
                 }
             }
@@ -861,8 +971,7 @@
             opts.dataLabels = {
                 enabled: true,
                 formatter: (val, o) => {
-                    let label = typeof val === 'number' ? (Number.isInteger(val) ? String(val) : val.toFixed(1)) : String(val);
-                    label += valSuffix;
+                    let label = valSuffix === '%' ? fmtPct(val) : fmtVal(val, config);
                     if (sigLookup) {
                         const cat = categories[o.dataPointIndex];
                         const sName = series[o.seriesIndex]?.name;
@@ -883,8 +992,8 @@
             }
         }
 
-        // Significance in tooltips
-        const sigTip = buildSigTooltip(sigLookup, categories);
+        // Rich tooltips with percentage + count + significance
+        const sigTip = buildSigTooltip(sigLookup, categories, data, config);
         if (sigTip.y) opts.tooltip = { ...opts.tooltip, ...sigTip };
 
         return opts;
@@ -928,7 +1037,7 @@
                 categories: displayCategories,
                 labels: {
                     style: { colors: labelColor, fontSize: mobile ? '10px' : '11px' },
-                    formatter: (val) => `${val}%`
+                    formatter: (val) => fmtPct(val)
                 },
                 axisBorder: { color: gridColor }
             },
@@ -947,7 +1056,7 @@
                 enabled: !mobile,
                 formatter: (val, o) => {
                     if (val <= 5) return '';
-                    let label = `${val.toFixed(0)}%`;
+                    let label = fmtPct(val);
                     if (sigLookup) {
                         const cat = categories[o.dataPointIndex];
                         const sName = series[o.seriesIndex]?.name;
@@ -962,8 +1071,8 @@
             fill: { opacity: 0.9 }
         };
 
-        // Significance in tooltips
-        const sigTip = buildSigTooltip(sigLookup, categories);
+        // Rich tooltips with percentage + count + significance
+        const sigTip = buildSigTooltip(sigLookup, categories, data, config);
         if (sigTip.y) opts.tooltip = { ...opts.tooltip, ...sigTip };
 
         return opts;
@@ -1306,7 +1415,7 @@
             dataLabels: {
                 enabled: true,
                 style: { fontSize: mobile ? '10px' : '11px', fontWeight: 600, colors: ['#ffffff'] },
-                formatter: (text, op) => [text, op.value != null ? Math.round(op.value) + '%' : ''],
+                formatter: (text, op) => [text, op.value != null ? fmtPct(op.value) : ''],
                 offsetY: -2,
                 dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.35 }
             },
@@ -1337,14 +1446,14 @@
                             fontSize: mobile ? '16px' : '18px',
                             fontWeight: 600,
                             color: valueColor,
-                            formatter: v => Math.round(v) + '%'
+                            formatter: v => fmtPct(v)
                         },
                         total: {
                             show: labels.length > 1,
                             label: 'Average',
                             fontSize: '11px',
                             color: labelColor,
-                            formatter: w => Math.round(w.globals.series.reduce((a, b) => a + b, 0) / w.globals.series.length) + '%'
+                            formatter: w => fmtPct(w.globals.series.reduce((a, b) => a + b, 0) / w.globals.series.length)
                         }
                     }
                 }
@@ -1381,7 +1490,7 @@
             },
             dataLabels: {
                 enabled: true,
-                formatter: v => Math.round(v) + '%',
+                formatter: v => fmtPct(v),
                 style: { fontSize: mobile ? '9px' : '11px', fontWeight: 600, colors: ['#ffffff'] },
                 dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.35 }
             }
@@ -2364,6 +2473,198 @@
             const id = nextTab.tab_id || `tab-${idx + 1}`;
             insSwitchTab(id);
         }
+    };
+
+    // ═══ FORMAT SETTINGS MODAL ═══
+    window.insOpenFormatSettings = function () {
+        // Remove existing modal if any
+        let modal = document.getElementById('insFormatModal');
+        if (modal) modal.remove();
+
+        const s = getFormatSettings();
+        modal = document.createElement('div');
+        modal.id = 'insFormatModal';
+        modal.className = 'ins-format-modal-overlay';
+        modal.innerHTML = `
+            <div class="ins-format-modal">
+                <div class="ins-format-modal-header">
+                    <h3>Format Settings</h3>
+                    <button onclick="insCloseFormatSettings()" class="ins-format-close">&times;</button>
+                </div>
+                <div class="ins-format-modal-body">
+                    <div class="ins-format-group">
+                        <label class="ins-format-label">Percentage Decimals</label>
+                        <div class="ins-format-options">
+                            <button class="ins-format-opt${s.decimals === 0 ? ' active' : ''}" data-val="0" onclick="insSetDecimal(0)">Whole numbers <span class="ins-format-example">e.g. 79%</span></button>
+                            <button class="ins-format-opt${s.decimals === 1 ? ' active' : ''}" data-val="1" onclick="insSetDecimal(1)">1 decimal <span class="ins-format-example">e.g. 79.5%</span></button>
+                            <button class="ins-format-opt${s.decimals === 2 ? ' active' : ''}" data-val="2" onclick="insSetDecimal(2)">2 decimals <span class="ins-format-example">e.g. 79.52%</span></button>
+                        </div>
+                    </div>
+                    <div class="ins-format-group">
+                        <label class="ins-format-label">Show % Sign</label>
+                        <div class="ins-format-options">
+                            <button class="ins-format-opt${s.showPercent ? ' active' : ''}" onclick="insSetShowPercent(true)">Show % <span class="ins-format-example">e.g. 79%</span></button>
+                            <button class="ins-format-opt${!s.showPercent ? ' active' : ''}" onclick="insSetShowPercent(false)">Hide % <span class="ins-format-example">e.g. 79</span></button>
+                        </div>
+                    </div>
+                    <div class="ins-format-group">
+                        <label class="ins-format-label">Means / Scores Decimals</label>
+                        <div class="ins-format-options">
+                            <button class="ins-format-opt${s.meansDecimals === 1 ? ' active' : ''}" onclick="insSetMeansDecimal(1)">1 decimal <span class="ins-format-example">e.g. 3.5</span></button>
+                            <button class="ins-format-opt${s.meansDecimals === 2 ? ' active' : ''}" onclick="insSetMeansDecimal(2)">2 decimals <span class="ins-format-example">e.g. 3.45</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+        requestAnimationFrame(() => modal.classList.add('open'));
+    };
+
+    window.insCloseFormatSettings = function () {
+        const modal = document.getElementById('insFormatModal');
+        if (modal) {
+            modal.classList.remove('open');
+            setTimeout(() => modal.remove(), 200);
+        }
+    };
+
+    function applyFormatAndRerender() {
+        if (dashboardData) {
+            const tabs = dashboardData.tabs || dashboardData.sections || [];
+            renderAllCharts(tabs);
+            renderKpiGauges(dashboardData.kpi_cards || []);
+        }
+        // Re-render fullscreen if open
+        const overlay = document.getElementById('insFullscreenOverlay');
+        if (overlay && overlay.classList.contains('open') && overlay.dataset.tab) {
+            insOpenFullscreen(overlay.dataset.tab, parseInt(overlay.dataset.idx));
+        }
+    }
+
+    window.insSetDecimal = function (val) {
+        const s = getFormatSettings();
+        s.decimals = val;
+        saveFormatSettings(s);
+        // Update button states
+        document.querySelectorAll('.ins-format-group:first-child .ins-format-opt').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.val) === val);
+        });
+        applyFormatAndRerender();
+    };
+
+    window.insSetShowPercent = function (val) {
+        const s = getFormatSettings();
+        s.showPercent = val;
+        saveFormatSettings(s);
+        const btns = document.querySelectorAll('.ins-format-group:nth-child(2) .ins-format-opt');
+        if (btns[0]) btns[0].classList.toggle('active', val);
+        if (btns[1]) btns[1].classList.toggle('active', !val);
+        applyFormatAndRerender();
+    };
+
+    window.insSetMeansDecimal = function (val) {
+        const s = getFormatSettings();
+        s.meansDecimals = val;
+        saveFormatSettings(s);
+        const btns = document.querySelectorAll('.ins-format-group:nth-child(3) .ins-format-opt');
+        if (btns[0]) btns[0].classList.toggle('active', val === 1);
+        if (btns[1]) btns[1].classList.toggle('active', val === 2);
+        applyFormatAndRerender();
+    };
+
+    // ═══ MULTI-CHART DOWNLOAD ═══
+    let selectModeActive = false;
+
+    window.insToggleSelectMode = function () {
+        selectModeActive = !selectModeActive;
+        selectedCharts.clear();
+
+        // Show/hide checkboxes on all chart cards
+        document.querySelectorAll('.ins-chart-select-wrap').forEach(w => {
+            w.style.display = selectModeActive ? 'block' : 'none';
+            const cb = w.querySelector('input[type="checkbox"]');
+            if (cb) cb.checked = false;
+        });
+
+        // Show/hide floating action bar
+        let bar = document.getElementById('insDownloadBar');
+        if (selectModeActive) {
+            if (!bar) {
+                bar = document.createElement('div');
+                bar.id = 'insDownloadBar';
+                bar.className = 'ins-download-bar';
+                bar.innerHTML = `
+                    <span class="ins-download-bar-count"><span id="insSelectedCount">0</span> charts selected</span>
+                    <button class="ins-download-bar-btn" onclick="insDownloadSelected()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Download Selected
+                    </button>
+                    <button class="ins-download-bar-cancel" onclick="insToggleSelectMode()">Cancel</button>`;
+                document.body.appendChild(bar);
+            }
+            requestAnimationFrame(() => bar.classList.add('visible'));
+        } else {
+            if (bar) {
+                bar.classList.remove('visible');
+                setTimeout(() => bar.remove(), 200);
+            }
+            // Remove selected state from cards
+            document.querySelectorAll('.ins-chart-card.selected').forEach(c => c.classList.remove('selected'));
+        }
+    };
+
+    window.insToggleChartSelect = function (tabId, chartIdx, checked) {
+        const key = `${tabId}-${chartIdx}`;
+        if (checked) {
+            selectedCharts.add(key);
+        } else {
+            selectedCharts.delete(key);
+        }
+        // Update card visual
+        const card = document.querySelector(`.ins-chart-card[data-chart-tab="${tabId}"][data-chart-idx="${chartIdx}"]`);
+        if (card) card.classList.toggle('selected', checked);
+
+        // Update count
+        const countEl = document.getElementById('insSelectedCount');
+        if (countEl) countEl.textContent = selectedCharts.size;
+    };
+
+    window.insDownloadSelected = async function () {
+        if (selectedCharts.size === 0) {
+            showToast('No charts selected');
+            return;
+        }
+
+        const bar = document.getElementById('insDownloadBar');
+        const btn = bar?.querySelector('.ins-download-bar-btn');
+        if (btn) btn.textContent = 'Downloading...';
+
+        let downloaded = 0;
+        for (const key of selectedCharts) {
+            const entry = chartInstances.find(c => `${c.tabId}-${c.idx}` === key);
+            if (!entry) continue;
+
+            try {
+                const { imgURI } = await entry.instance.dataURI({ scale: 2 });
+                const link = document.createElement('a');
+                const config = entry.config;
+                const name = (config.title || config.question_label || `chart-${key}`).replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-').substring(0, 50);
+                link.href = imgURI;
+                link.download = `${name}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                downloaded++;
+                // Small delay between downloads to avoid browser blocking
+                await new Promise(r => setTimeout(r, 300));
+            } catch (err) {
+                console.warn(`Failed to export chart ${key}:`, err);
+            }
+        }
+
+        showToast(`Downloaded ${downloaded} chart${downloaded !== 1 ? 's' : ''}`);
+        if (btn) btn.textContent = 'Download Selected';
+        insToggleSelectMode();
     };
 
     // ═══ THEME TOGGLE (updated with fullscreen re-render) ═══
