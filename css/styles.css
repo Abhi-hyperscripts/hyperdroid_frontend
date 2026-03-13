@@ -10042,6 +10042,13 @@ label.toggle-switch,
     overflow: visible !important;
 }
 
+/* PMS Add Member modal — prevent dropdown clipping */
+#memberModal:has(.dropdown-menu.open),
+#memberModal .modal-content:has(.dropdown-menu.open),
+#memberModal .modal-body:has(.dropdown-menu.open) {
+    overflow: visible !important;
+}
+
 /* Live Captions Overlay (Path A — real-time STT) */
 .live-captions-container {
     position: fixed;

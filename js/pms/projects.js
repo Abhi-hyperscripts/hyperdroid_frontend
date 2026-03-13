@@ -14,10 +14,35 @@ let filterClientDropdown = null;
 let projectClientDropdown = null;
 let projectStatusDropdown = null;
 
+// ==================== RBAC State ====================
+let isPmsAdmin = false;
+
+// ==================== RBAC Functions ====================
+
+async function loadUserRole() {
+    try {
+        const resp = await api.request('/pms/projects/user-role', { _skipSpinner: true });
+        const data = resp.data || resp;
+        isPmsAdmin = data.is_admin || data.is_super_admin || false;
+        applyRoleBasedUI();
+    } catch (e) {
+        console.error('Failed to load user role', e);
+    }
+}
+
+function applyRoleBasedUI() {
+    if (!isPmsAdmin) {
+        document.querySelectorAll('[data-admin-only]').forEach(el => {
+            el.style.display = 'none';
+        });
+    }
+}
+
 // ==================== Initialization ====================
 
 document.addEventListener('DOMContentLoaded', () => {
     Navigation.init('pms', '../');
+    loadUserRole();
     loadProjects();
     loadClients();
     loadProjectStats();
@@ -209,7 +234,7 @@ function renderProjectsTable(projects) {
                 <span class="crm-cell-secondary">${formatDate(project.start_date)}</span>
             </td>
             <td>
-                <div class="crm-actions" onclick="event.stopPropagation();">
+                ${isPmsAdmin ? `<div class="crm-actions" onclick="event.stopPropagation();">
                     <button class="crm-action-btn" onclick="openEditProjectModal('${project.id}')" title="Edit">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -222,7 +247,7 @@ function renderProjectsTable(projects) {
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                         </svg>
                     </button>
-                </div>
+                </div>` : ''}
             </td>
         </tr>
     `).join('');

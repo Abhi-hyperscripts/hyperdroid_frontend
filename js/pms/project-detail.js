@@ -17,6 +17,10 @@ let currentEditTimeEntryId = null;
 let currentEditSubProjectId = null;
 const loadedTabs = new Set(['overview']);
 
+// ==================== RBAC State ====================
+let isPmsAdmin = false;
+let currentUserId = null;
+
 // SearchableDropdown instances
 let taskFilterStatusDropdown = null;
 let taskFilterPriorityDropdown = null;
@@ -26,8 +30,32 @@ let taskStatusDropdown = null;
 let taskPriorityDropdown = null;
 let memberRoleDropdown = null;
 let entryTaskDropdown = null;
+let entrySubProjectDropdown = null;
 let subProjectStatusDropdown = null;
 let editProjectStatusDropdown = null;
+
+// ==================== RBAC Functions ====================
+
+async function loadUserRole() {
+    try {
+        const resp = await api.request('/pms/projects/user-role', { _skipSpinner: true });
+        const data = resp.data || resp;
+        isPmsAdmin = data.is_admin || data.is_super_admin || false;
+        currentUserId = data.user_id || null;
+        applyRoleBasedUI();
+    } catch (e) {
+        console.error('Failed to load user role', e);
+    }
+}
+
+function applyRoleBasedUI() {
+    if (!isPmsAdmin) {
+        // Hide all elements marked as admin-only
+        document.querySelectorAll('[data-admin-only]').forEach(el => {
+            el.style.display = 'none';
+        });
+    }
+}
 
 // ==================== Initialization ====================
 
@@ -42,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupSidebar();
     initSearchableDropdowns();
+    loadUserRole();
     loadProjectDetail();
 
     // Restore tab from hash
@@ -161,6 +190,88 @@ function renderProjectHeader() {
         descEl.textContent = project.description;
         descEl.style.display = 'block';
     }
+
+    // Meeting room link
+    if (project.vision_meeting_id) {
+        const meetingUrl = `../vision/lobby.html?id=${project.vision_meeting_id}`;
+        const meetingBtn = document.getElementById('joinMeetingBtn');
+        const meetingWrap = document.getElementById('joinMeetingBtnWrap');
+        if (meetingBtn) {
+            meetingBtn.href = meetingUrl;
+            if (meetingWrap) meetingWrap.style.display = '';
+        }
+        const overviewCard = document.getElementById('overviewMeetingCard');
+        const overviewBtn = document.getElementById('overviewJoinMeetingBtn');
+        if (overviewCard && overviewBtn) {
+            overviewBtn.href = meetingUrl;
+            overviewCard.style.display = '';
+        }
+    }
+}
+
+// ==================== Meeting Dropdown ====================
+function toggleMeetingDropdown(e, menuId) {
+    e.stopPropagation();
+    const menu = document.getElementById(menuId);
+    // Close any other open menus
+    document.querySelectorAll('.pms-meeting-menu.active').forEach(m => {
+        if (m.id !== menuId) m.classList.remove('active');
+    });
+    menu.classList.toggle('active');
+}
+
+function closeMeetingDropdowns() {
+    document.querySelectorAll('.pms-meeting-menu.active').forEach(m => m.classList.remove('active'));
+}
+
+document.addEventListener('click', closeMeetingDropdowns);
+
+function getMeetingLink(type) {
+    if (!project?.vision_meeting_id) return '';
+    return type === 'guest'
+        ? `${window.location.origin}/pages/vision/guest-join.html?id=${project.vision_meeting_id}`
+        : `${window.location.origin}/pages/vision/lobby.html?id=${project.vision_meeting_id}`;
+}
+
+function copyMeetingLink(type) {
+    const link = getMeetingLink(type);
+    if (!link) return;
+    const label = type === 'guest' ? 'Guest link' : 'Meeting link';
+    navigator.clipboard.writeText(link).then(() => {
+        Toast.success(`${label} copied!`);
+    }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = link;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        Toast.success(`${label} copied!`);
+    });
+    closeMeetingDropdowns();
+}
+
+function copyEmailCard(type) {
+    if (!project?.vision_meeting_id) return;
+    const url = getMeetingLink(type);
+    const title = project.project_name || 'Project Meeting';
+    const description = 'Join this project meeting on Ragenaizer Vision.';
+    const ogImage = `${window.location.origin}/assets/og-vision.png`;
+    const btnText = type === 'guest' ? 'Join as Guest \u2192' : 'Join Meeting \u2192';
+
+    const html = ShareWidget.buildEmailCard({ url, title, description, ogImage, btnText });
+    const blob = new Blob([html], { type: 'text/html' });
+    const plainBlob = new Blob([html], { type: 'text/plain' });
+    navigator.clipboard.write([
+        new ClipboardItem({ 'text/html': blob, 'text/plain': plainBlob })
+    ]).then(() => {
+        Toast.success('Email card copied \u2014 paste into Outlook or Gmail!');
+    }).catch(() => {
+        navigator.clipboard.writeText(html).then(() => {
+            Toast.success('Email card copied!');
+        }).catch(() => Toast.error('Could not copy'));
+    });
+    closeMeetingDropdowns();
 }
 
 async function loadOverviewData() {
@@ -261,9 +372,9 @@ async function loadProjectTasks() {
                         <button class="crm-action-btn" onclick="openEditTaskModal('${task.id}')" title="Edit">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                        <button class="crm-action-btn action-delete" onclick="deleteTask('${task.id}')" title="Delete">
+                        ${isPmsAdmin ? `<button class="crm-action-btn action-delete" onclick="deleteTask('${task.id}')" title="Delete">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        </button>
+                        </button>` : ''}
                     </div>
                 </td>
             </tr>
@@ -415,7 +526,8 @@ async function loadProjectMembers() {
         document.getElementById('tabMemberCount').textContent = projectMembers.length || '';
 
         if (!projectMembers.length) {
-            tbody.innerHTML = `<tr><td colspan="5" class="crm-empty-state"><div class="crm-empty-content"><p>No members yet</p><button class="btn btn-sm btn-primary" onclick="openAddMemberModal()">Add first member</button></div></td></tr>`;
+            const cols = isPmsAdmin ? 5 : 4;
+            tbody.innerHTML = `<tr><td colspan="${cols}" class="crm-empty-state"><div class="crm-empty-content"><p>No members yet</p>${isPmsAdmin ? '<button class="btn btn-sm btn-primary" onclick="openAddMemberModal()">Add first member</button>' : ''}</div></td></tr>`;
             return;
         }
 
@@ -430,51 +542,204 @@ async function loadProjectMembers() {
                 <td><span class="crm-cell-secondary">${escapeHtml(m.user_email || '-')}</span></td>
                 <td class="hide-mobile"><span class="crm-source-badge">${capitalize(m.role || 'member')}</span></td>
                 <td class="hide-mobile"><span class="crm-cell-secondary">${m.billing_rate ? '$' + m.billing_rate + '/hr' : '-'}</span></td>
-                <td>
+                ${isPmsAdmin ? `<td>
                     <div class="crm-actions">
+                        <button class="crm-action-btn" onclick="openSubProjectAssignModal('${m.id}', '${escapeHtml(m.user_name || m.user_email || '')}', '${m.user_id}')" title="Sub-Projects">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        </button>
                         <button class="crm-action-btn action-delete" onclick="removeMember('${m.id}')" title="Remove">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
                     </div>
-                </td>
+                </td>` : ''}
             </tr>
         `).join('');
     } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="5" class="crm-empty-state"><div class="crm-empty-content"><p>Failed to load members</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${isPmsAdmin ? 5 : 4}" class="crm-empty-state"><div class="crm-empty-content"><p>Failed to load members</p></div></td></tr>`;
     }
 }
 
-function openAddMemberModal() {
+// ── Add Member multi-select state ──
+let memberAllUsers = [];
+let memberFilteredUsers = [];
+let memberSelectedUserIds = [];
+let memberDropdownOpen = false;
+
+async function openAddMemberModal() {
     currentEditMemberId = null;
-    document.getElementById('memberModalTitle').textContent = 'Add Member';
-    document.getElementById('memberSubmitBtn').innerHTML = '<span class="btn-spinner" id="memberSubmitSpinner" style="display:none;"></span> Add Member';
-    document.getElementById('memberForm').reset();
-    document.getElementById('memberId').value = '';
+    document.getElementById('memberModalTitle').textContent = 'Add Members';
+    document.getElementById('memberSubmitBtn').innerHTML = '<span class="btn-spinner" id="memberSubmitSpinner" style="display:none;"></span> Add Members';
+    document.getElementById('memberRole').value = 'member';
+    document.getElementById('memberBillingRate').value = '';
+    memberSelectedUserIds = [];
+    updateMemberSelectedCount();
     openModal('memberModal');
+    loadAvailablePmsUsers();
 }
 
-async function handleMemberSubmit(event) {
-    event.preventDefault();
+async function loadAvailablePmsUsers() {
+    const container = document.getElementById('memberUsersOptions');
+    container.innerHTML = '<div class="dropdown-no-results">Loading users...</div>';
+
+    try {
+        const response = await api.request('/pms/project-members/available-users');
+        const allPmsUsers = response.data || response || [];
+
+        // Filter out users already in the project
+        const existingUserIds = new Set(projectMembers.map(m => m.user_id));
+        memberAllUsers = allPmsUsers.filter(u => !existingUserIds.has(u.user_id));
+        memberFilteredUsers = [...memberAllUsers];
+        renderMemberUsersOptions();
+    } catch (error) {
+        console.error('Error loading available users:', error);
+        container.innerHTML = '<div class="dropdown-no-results">Failed to load users</div>';
+    }
+}
+
+function toggleMemberUsersDropdown() {
+    const selectedDiv = document.getElementById('memberUsersSelected');
+    const menu = document.getElementById('memberUsersMenu');
+    const searchInput = document.getElementById('memberUsersSearch');
+
+    memberDropdownOpen = !memberDropdownOpen;
+
+    if (memberDropdownOpen) {
+        selectedDiv.classList.add('open');
+        menu.classList.add('open');
+        searchInput.value = '';
+        memberFilteredUsers = [...memberAllUsers];
+        renderMemberUsersOptions();
+        setTimeout(() => searchInput.focus(), 50);
+    } else {
+        closeMemberUsersDropdown();
+    }
+}
+
+function closeMemberUsersDropdown() {
+    const selectedDiv = document.getElementById('memberUsersSelected');
+    const menu = document.getElementById('memberUsersMenu');
+    memberDropdownOpen = false;
+    if (selectedDiv) selectedDiv.classList.remove('open');
+    if (menu) menu.classList.remove('open');
+}
+
+function filterMemberUsersOptions() {
+    const query = document.getElementById('memberUsersSearch').value.toLowerCase().trim();
+
+    if (!query) {
+        memberFilteredUsers = [...memberAllUsers];
+    } else {
+        memberFilteredUsers = memberAllUsers.filter(user => {
+            const fullName = `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase();
+            const email = (user.email || '').toLowerCase();
+            return fullName.includes(query) || email.includes(query);
+        });
+    }
+
+    renderMemberUsersOptions();
+}
+
+function renderMemberUsersOptions() {
+    const container = document.getElementById('memberUsersOptions');
+
+    if (memberFilteredUsers.length === 0) {
+        container.innerHTML = '<div class="dropdown-no-results">No users found</div>';
+        return;
+    }
+
+    const sortedUsers = [...memberFilteredUsers].sort((a, b) => {
+        const aSelected = memberSelectedUserIds.includes(a.user_id);
+        const bSelected = memberSelectedUserIds.includes(b.user_id);
+        if (aSelected && !bSelected) return -1;
+        if (!aSelected && bSelected) return 1;
+        const aName = `${a.first_name || ''} ${a.last_name || ''}`.toLowerCase();
+        const bName = `${b.first_name || ''} ${b.last_name || ''}`.toLowerCase();
+        return aName.localeCompare(bName);
+    });
+
+    container.innerHTML = sortedUsers.map(user => {
+        const isSelected = memberSelectedUserIds.includes(user.user_id);
+        const name = user.display_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+        const roleLabel = (user.roles || []).join(', ');
+
+        return `
+            <div class="dropdown-option ${isSelected ? 'selected' : ''}" onclick="toggleMemberUserSelection(event, '${user.user_id}')">
+                <div class="option-info">
+                    <div class="option-name">${escapeHtml(name)}</div>
+                    <div class="option-email">${escapeHtml(user.email)}${roleLabel ? ' &middot; ' + escapeHtml(roleLabel) : ''}</div>
+                </div>
+                <div class="option-toggle">
+                    <div class="mini-toggle ${isSelected ? 'active' : ''}"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleMemberUserSelection(event, userId) {
+    event.stopPropagation();
+    if (!userId) return;
+
+    const index = memberSelectedUserIds.indexOf(userId);
+    if (index > -1) {
+        memberSelectedUserIds.splice(index, 1);
+    } else {
+        memberSelectedUserIds.push(userId);
+    }
+
+    updateMemberSelectedCount();
+    renderMemberUsersOptions();
+}
+
+function updateMemberSelectedCount() {
+    const countEl = document.getElementById('selectedMembersCount');
+    if (countEl) countEl.textContent = memberSelectedUserIds.length;
+}
+
+async function handleMemberSubmit() {
+    if (memberSelectedUserIds.length === 0) {
+        Toast.error('Please select at least one user');
+        return;
+    }
+
     const submitBtn = document.getElementById('memberSubmitBtn');
     const spinner = document.getElementById('memberSubmitSpinner');
     submitBtn.disabled = true;
     if (spinner) spinner.style.display = 'inline-block';
 
-    const formData = {
-        project_id: projectId,
-        user_id: document.getElementById('memberUserId').value.trim(),
-        role: document.getElementById('memberRole').value,
-        billing_rate: parseFloat(document.getElementById('memberBillingRate').value) || null
-    };
+    const role = document.getElementById('memberRole').value;
+    const billingRate = parseFloat(document.getElementById('memberBillingRate').value) || null;
+
+    let successCount = 0;
+    let failCount = 0;
 
     try {
-        await api.request('/pms/project-members', { method: 'POST', body: JSON.stringify(formData) });
-        Toast.success('Member added');
-        closeMemberModal();
-        loadProjectMembers();
-        loadOverviewData();
-    } catch (error) {
-        Toast.error(error.message || 'Failed to add member');
+        for (const userId of memberSelectedUserIds) {
+            try {
+                await api.request('/pms/project-members', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        project_id: projectId,
+                        user_id: userId,
+                        role: role,
+                        billing_rate: billingRate
+                    })
+                });
+                successCount++;
+            } catch (error) {
+                failCount++;
+                console.error(`Failed to add member ${userId}:`, error);
+            }
+        }
+
+        if (successCount > 0) {
+            Toast.success(`${successCount} member${successCount > 1 ? 's' : ''} added${failCount > 0 ? `, ${failCount} failed` : ''}`);
+            closeMemberModal();
+            loadProjectMembers();
+            loadOverviewData();
+        } else {
+            Toast.error('Failed to add members');
+        }
     } finally {
         submitBtn.disabled = false;
         if (spinner) spinner.style.display = 'none';
@@ -493,7 +758,12 @@ async function removeMember(memberId) {
     }
 }
 
-function closeMemberModal() { closeModal('memberModal'); currentEditMemberId = null; }
+function closeMemberModal() {
+    closeModal('memberModal');
+    currentEditMemberId = null;
+    closeMemberUsersDropdown();
+    memberSelectedUserIds = [];
+}
 
 // ==================== TIME TRACKING TAB ====================
 
@@ -504,7 +774,7 @@ async function loadProjectTime() {
         projectTimeEntries = response.data || response || [];
 
         if (!projectTimeEntries.length) {
-            tbody.innerHTML = `<tr><td colspan="7" class="crm-empty-state"><div class="crm-empty-content"><p>No time entries yet</p><button class="btn btn-sm btn-primary" onclick="openLogTimeModal()">Log first entry</button></div></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="crm-empty-state"><div class="crm-empty-content"><p>No time entries yet</p><button class="btn btn-sm btn-primary" onclick="openLogTimeModal()">Log first entry</button></div></td></tr>`;
             return;
         }
 
@@ -514,25 +784,57 @@ async function loadProjectTime() {
         tbody.innerHTML = projectTimeEntries.map(entry => `
             <tr>
                 <td><span class="crm-cell-secondary">${formatDate(entry.log_date)}</span></td>
+                <td><span class="crm-cell-secondary">${escapeHtml(entry.sub_project_name || '-')}</span></td>
                 <td><span class="crm-cell-secondary">${escapeHtml(entry.task_title || '-')}</span></td>
                 <td><span class="crm-cell-secondary">${escapeHtml(entry.user_name || '-')}</span></td>
                 <td><span class="crm-cell-primary">${parseInt(entry.hours) || 0}</span></td>
                 <td><span class="crm-cell-primary">${parseInt(entry.minutes) || 0}</span></td>
                 <td class="hide-mobile"><span class="crm-cell-secondary">${escapeHtml(entry.comment || '-')}</span></td>
                 <td>
-                    <div class="crm-actions">
+                    ${(isPmsAdmin || entry.user_id === currentUserId) ? `<div class="crm-actions">
                         <button class="crm-action-btn" onclick="editTimeEntry('${entry.id}')" title="Edit">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
                         <button class="crm-action-btn action-delete" onclick="deleteTimeEntry('${entry.id}')" title="Delete">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
-                    </div>
+                    </div>` : ''}
                 </td>
             </tr>
         `).join('');
     } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="7" class="crm-empty-state"><div class="crm-empty-content"><p>Failed to load time entries</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="crm-empty-state"><div class="crm-empty-content"><p>Failed to load time entries</p></div></td></tr>`;
+    }
+}
+
+async function loadTimeEntrySubProjects() {
+    const select = document.getElementById('entrySubProject');
+    select.innerHTML = '<option value="">Loading...</option>';
+
+    try {
+        const response = await api.request(`/pms/sub-projects/member-assignments?projectId=${projectId}`, { _skipSpinner: true });
+        const data = response.data || response;
+        const subProjects = data.sub_projects || [];
+
+        select.innerHTML = subProjects.length === 1
+            ? `<option value="${subProjects[0].id}">${escapeHtml(subProjects[0].sub_project_name)}</option>`
+            : '<option value="">Select sub-project</option>' + subProjects.map(sp =>
+                `<option value="${sp.id}">${escapeHtml(sp.sub_project_name)}</option>`
+              ).join('');
+
+        // Auto-select if only one option
+        if (subProjects.length === 1) {
+            select.value = subProjects[0].id;
+        }
+
+        // Refresh searchable dropdown
+        if (typeof convertSelectToSearchable === 'function') {
+            if (entrySubProjectDropdown) entrySubProjectDropdown.destroy();
+            entrySubProjectDropdown = convertSelectToSearchable('entrySubProject', { placeholder: 'Select sub-project', searchPlaceholder: 'Search sub-projects...' });
+        }
+    } catch (error) {
+        console.error('Error loading sub-projects:', error);
+        select.innerHTML = '<option value="">Failed to load</option>';
     }
 }
 
@@ -545,6 +847,9 @@ function openLogTimeModal() {
     document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('entryHours').value = '0';
     document.getElementById('entryMinutes').value = '0';
+
+    // Populate sub-project dropdown
+    loadTimeEntrySubProjects();
 
     // Populate task dropdown
     const taskSelect = document.getElementById('entryTask');
@@ -563,7 +868,7 @@ function openLogTimeModal() {
     openModal('timeEntryModal');
 }
 
-function editTimeEntry(entryId) {
+async function editTimeEntry(entryId) {
     const entry = projectTimeEntries.find(e => e.id === entryId);
     if (!entry) return;
 
@@ -575,6 +880,11 @@ function editTimeEntry(entryId) {
     document.getElementById('entryHours').value = parseInt(entry.hours) || 0;
     document.getElementById('entryMinutes').value = parseInt(entry.minutes) || 0;
     document.getElementById('entryComment').value = entry.comment || '';
+
+    // Populate and set sub-project
+    await loadTimeEntrySubProjects();
+    document.getElementById('entrySubProject').value = entry.sub_project_id || '';
+    if (entrySubProjectDropdown) entrySubProjectDropdown.setValue(entry.sub_project_id || '');
 
     // Populate and set task
     const taskSelect = document.getElementById('entryTask');
@@ -601,13 +911,30 @@ async function handleTimeEntrySubmit(event) {
     submitBtn.disabled = true;
     if (spinner) spinner.style.display = 'inline-block';
 
+    const subProjectId = document.getElementById('entrySubProject').value;
+    if (!subProjectId) {
+        Toast.error('Please select a sub-project');
+        submitBtn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+        return;
+    }
+
+    const comment = document.getElementById('entryComment').value.trim();
+    if (comment.length < 150) {
+        Toast.error(`Comment must be at least 150 characters (currently ${comment.length})`);
+        submitBtn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+        return;
+    }
+
     const formData = {
         project_id: projectId,
+        sub_project_id: subProjectId,
         task_id: document.getElementById('entryTask').value || null,
         log_date: document.getElementById('entryDate').value,
         hours: parseInt(document.getElementById('entryHours').value) || 0,
         minutes: parseInt(document.getElementById('entryMinutes').value) || 0,
-        comment: document.getElementById('entryComment').value.trim()
+        comment: comment
     };
 
     try {
@@ -652,7 +979,8 @@ async function loadProjectSubProjects() {
         document.getElementById('tabSubProjectCount').textContent = projectSubProjects.length || '';
 
         if (!projectSubProjects.length) {
-            tbody.innerHTML = `<tr><td colspan="4" class="crm-empty-state"><div class="crm-empty-content"><p>No sub-projects yet</p><button class="btn btn-sm btn-primary" onclick="openNewSubProjectModal()">Create first sub-project</button></div></td></tr>`;
+            const cols = isPmsAdmin ? 7 : 6;
+            tbody.innerHTML = `<tr><td colspan="${cols}" class="crm-empty-state"><div class="crm-empty-content"><p>No sub-projects yet</p>${isPmsAdmin ? '<button class="btn btn-sm btn-primary" onclick="openNewSubProjectModal()">Create first sub-project</button>' : ''}</div></td></tr>`;
             return;
         }
 
@@ -661,7 +989,10 @@ async function loadProjectSubProjects() {
                 <td><div class="crm-cell-primary">${escapeHtml(sp.sub_project_name || sp.name || '')}</div></td>
                 <td><span class="crm-status-badge status-${getStatusClass(sp.status)}">${formatStatus(sp.status)}</span></td>
                 <td class="hide-mobile"><span class="crm-cell-secondary">${escapeHtml(truncate(sp.description || '', 80))}</span></td>
-                <td>
+                <td><span class="crm-cell-secondary">${sp.member_count || 0}</span></td>
+                <td><span class="crm-cell-secondary">${sp.task_count || 0}</span></td>
+                <td><span class="crm-cell-secondary">${parseFloat(sp.total_hours_logged || 0).toFixed(1)}</span></td>
+                ${isPmsAdmin ? `<td>
                     <div class="crm-actions">
                         <button class="crm-action-btn" onclick="openEditSubProjectModal('${sp.id}')" title="Edit">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -670,11 +1001,11 @@ async function loadProjectSubProjects() {
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
                     </div>
-                </td>
+                </td>` : ''}
             </tr>
         `).join('');
     } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="4" class="crm-empty-state"><div class="crm-empty-content"><p>Failed to load sub-projects</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${isPmsAdmin ? 7 : 6}" class="crm-empty-state"><div class="crm-empty-content"><p>Failed to load sub-projects</p></div></td></tr>`;
     }
 }
 
@@ -746,6 +1077,112 @@ async function deleteSubProject(spId) {
 }
 
 function closeSubProjectModal() { closeModal('subProjectModal'); currentEditSubProjectId = null; }
+
+// ==================== SUB-PROJECT ASSIGNMENT ====================
+
+let assignMemberUserId = null;
+let assignMemberProjectId = null;
+
+async function openSubProjectAssignModal(memberId, userName, userId) {
+    assignMemberUserId = userId;
+    assignMemberProjectId = projectId;
+    document.getElementById('subProjectAssignTitle').textContent = `Sub-Project Access: ${userName}`;
+    openModal('subProjectAssignModal');
+    await loadSubProjectAssignments(userId);
+}
+
+async function loadSubProjectAssignments(userId) {
+    const container = document.getElementById('subProjectAssignList');
+    container.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--text-secondary);">Loading...</div>';
+
+    try {
+        // Get all sub-projects for this project
+        const subProjectsResp = await api.request(`/pms/sub-projects?projectId=${projectId}`, { _skipSpinner: true });
+        const subProjects = subProjectsResp.data || subProjectsResp || [];
+
+        // Get this member's current assignments
+        const assignResp = await api.request(`/pms/sub-projects/member-assignments?projectId=${projectId}&userId=${userId}`, { _skipSpinner: true });
+        const assignData = assignResp.data || assignResp;
+        const assignedIds = assignData.all_access ? [] : (assignData.sub_projects || []).map(sp => sp.id);
+        const allAccess = assignData.all_access;
+
+        if (subProjects.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--text-secondary);">No sub-projects found</div>';
+            return;
+        }
+
+        container.innerHTML = subProjects.map(sp => {
+            const isAssigned = allAccess || assignedIds.includes(sp.id);
+            return `
+                <div class="dropdown-option ${isAssigned && !allAccess ? 'selected' : ''}"
+                     onclick="toggleSubProjectAssignment(event, '${sp.id}', '${escapeHtml(sp.sub_project_name)}')"
+                     style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border-primary);">
+                    <div class="option-info">
+                        <div class="option-name">${escapeHtml(sp.sub_project_name)}</div>
+                        <div class="option-email">${sp.member_count || 0} members</div>
+                    </div>
+                    <div class="option-toggle">
+                        <div class="mini-toggle ${isAssigned && !allAccess ? 'active' : ''}" id="spToggle_${sp.id}"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        if (allAccess) {
+            container.insertAdjacentHTML('afterbegin',
+                '<div style="padding: 8px 12px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 8px; font-size: 0.82rem; color: var(--text-secondary);">No specific assignments — member has access to all sub-projects. Toggle any to restrict access.</div>'
+            );
+        }
+    } catch (error) {
+        console.error('Error loading sub-project assignments:', error);
+        container.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--color-error);">Failed to load</div>';
+    }
+}
+
+async function toggleSubProjectAssignment(event, subProjectId, subProjectName) {
+    event.stopPropagation();
+    const toggle = document.getElementById(`spToggle_${subProjectId}`);
+    const isCurrentlyActive = toggle.classList.contains('active');
+
+    try {
+        if (isCurrentlyActive) {
+            // Unassign
+            await api.request('/pms/project-members/sub-project-unassign', {
+                method: 'POST',
+                body: JSON.stringify({
+                    project_id: assignMemberProjectId,
+                    sub_project_id: subProjectId,
+                    user_id: assignMemberUserId
+                })
+            });
+            toggle.classList.remove('active');
+            toggle.closest('.dropdown-option').classList.remove('selected');
+        } else {
+            // Assign
+            await api.request('/pms/project-members/sub-project-assign', {
+                method: 'POST',
+                body: JSON.stringify({
+                    project_id: assignMemberProjectId,
+                    sub_project_id: subProjectId,
+                    user_id: assignMemberUserId
+                })
+            });
+            toggle.classList.add('active');
+            toggle.closest('.dropdown-option').classList.add('selected');
+        }
+
+        // Remove the "all access" banner if it exists
+        const banner = document.querySelector('#subProjectAssignList > div[style*="bg-tertiary"]');
+        if (banner) banner.remove();
+    } catch (error) {
+        Toast.error(error.message || 'Failed to update assignment');
+    }
+}
+
+function closeSubProjectAssignModal() {
+    closeModal('subProjectAssignModal');
+    assignMemberUserId = null;
+}
 
 // ==================== ACTIVITY TAB ====================
 
@@ -892,6 +1329,12 @@ function initSearchableDropdowns() {
     }
 
     // Time entry modal
+    if (!entrySubProjectDropdown) {
+        entrySubProjectDropdown = convertSelectToSearchable('entrySubProject', {
+            placeholder: 'Select sub-project',
+            searchPlaceholder: 'Search sub-projects...'
+        });
+    }
     if (!entryTaskDropdown) {
         entryTaskDropdown = convertSelectToSearchable('entryTask', {
             placeholder: 'No Task',
