@@ -12,10 +12,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
     <title>Vision - Best Video Conferencing Software | Zoom Alternative | Ragenaizer</title>
-    <meta name="description" content="Best video conferencing software for remote teams. HD video calls, screen sharing, virtual backgrounds, meeting recording. Free Zoom alternative with built-in chat. Up to 100 participants. Start free today.">
+    <meta name="description" content="Best video conferencing software for remote teams. HD video calls, screen sharing, virtual backgrounds, live captions, guest join, meeting recordings. Free Zoom alternative with built-in chat. Up to 100 participants. Start free today.">
 
     <!-- SEO Meta Tags -->
-    <meta name="keywords" content="video conferencing software, best video conferencing for remote teams, zoom alternative, HD video calls, screen sharing software, virtual meeting platform, online meeting software, webinar software for small teams, video call platform with chat, secure video calls for business, video conferencing with recording, free video conferencing, team video meetings, remote work video software">
+    <meta name="keywords" content="video conferencing software, best video conferencing for remote teams, zoom alternative, HD video calls, screen sharing software, virtual meeting platform, online meeting software, webinar software for small teams, video call platform with chat, secure video calls for business, video conferencing with recording, free video conferencing, team video meetings, remote work video software, live captions, real-time transcription, guest meeting links, accessible video conferencing">
     <meta name="author" content="Ragenaizer">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://ragenaizer.com/pages/vision.html">
@@ -94,7 +94,10 @@
             "Meeting Recording",
             "Waiting Room",
             "Host Controls",
-            "Live Chat"
+            "Live Chat",
+            "Live Captions with Real-Time Speech-to-Text",
+            "Guest Join Links (No Account Required)",
+            "Three Meeting Types (Regular, Hosted, Whitelist)"
         ]
     }
     </script>
@@ -106,6 +109,90 @@
     <script src="/js/pwa-install-prompt.js"></script>
     <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        /* Integrations Section */
+        .integrations-section {
+            padding: 120px 60px;
+            position: relative;
+        }
+
+        .integrations-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .integration-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--border-radius-xl);
+            padding: 32px;
+            transition: var(--transition-all);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .integration-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .integration-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-4px);
+        }
+
+        .integration-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: var(--border-radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.2) 0%, rgba(var(--brand-primary-rgb), 0.05) 100%);
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.2);
+        }
+
+        .integration-icon svg {
+            width: 24px;
+            height: 24px;
+            color: var(--brand-primary);
+        }
+
+        .integration-title {
+            font-family: 'Electrolize', sans-serif;
+            font-size: var(--font-size-lg);
+            font-weight: 400;
+            color: #ffffff;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .integration-description {
+            font-size: var(--font-size-sm);
+            line-height: var(--line-height-relaxed);
+            color: rgba(255, 255, 255, 0.6);
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .integrations-section {
+                padding: 60px 20px;
+            }
+
+            .integrations-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body class="landing-page landing-vision">
     <!-- Navigation -->
@@ -126,7 +213,7 @@
                     <span class="highlight">every single time.</span>
                 </h1>
                 <p class="hero-description">
-                    Host professional video meetings without the technical headaches. One click to join, crystal clear audio and video, and all the tools your team needs to collaborate effectively.
+                    Host professional video meetings without the technical headaches. One click to join, crystal clear audio and video, live captions for accessibility, and all the tools your team needs to collaborate effectively.
                 </p>
                 <div class="hero-actions">
                     <a href="activate.html" class="btn-primary">Start Free Meeting</a>
@@ -256,6 +343,76 @@
                 </div>
                 <h3 class="feature-title">Keep Everyone Engaged</h3>
                 <p class="feature-description">Emoji reactions, hand raising, and live chat keep meetings interactive. See who's speaking and never talk over each other.</p>
+            </div>
+
+            <div class="feature-card cyan">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        <line x1="9" y1="9" x2="15" y2="9"/>
+                        <line x1="9" y1="13" x2="13" y2="13"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Live Captions (CC)</h3>
+                <p class="feature-description">Real-time speech-to-text captions during meetings. Click the CC button and see live transcription with speaker names. Powered by Deepgram cloud STT with local Vosk/Whisper fallback. Accessible by default.</p>
+            </div>
+
+            <div class="feature-card green">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Guest Join Links</h3>
+                <p class="feature-description">Share a link — anyone joins without an account. Perfect for client calls, interviews, and external meetings. No signup, no download, just click and join.</p>
+            </div>
+
+            <div class="feature-card purple">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        <circle cx="12" cy="16" r="1"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Meeting Types</h3>
+                <p class="feature-description">Three meeting modes: Regular (anyone with link joins), Hosted (host must start first, lobby with admit/reject), and Participant-Controlled (whitelist-only). Choose the right security level for each meeting.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integrations Section -->
+    <section class="integrations-section" id="integrations">
+        <div class="section-header">
+            <div class="section-badge">Integrations</div>
+            <h2 class="section-title">Connected across your workspace</h2>
+            <p class="section-description">
+                Vision works with your other tools so meetings fit naturally into your workflow.
+            </p>
+        </div>
+
+        <div class="integrations-grid">
+            <div class="integration-card">
+                <div class="integration-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <h3 class="integration-title">Drive</h3>
+                <p class="integration-description">Meeting recordings automatically save to Drive. Access, share, and audit recordings from one place.</p>
+            </div>
+            <div class="integration-card">
+                <div class="integration-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                    </svg>
+                </div>
+                <h3 class="integration-title">PMS</h3>
+                <p class="integration-description">PMS auto-creates a dedicated meeting room for every project. One-click video calls from your project dashboard.</p>
             </div>
         </div>
     </section>

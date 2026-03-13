@@ -12,10 +12,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
     <title>AI Research Analytics Platform | Agentic AI for Survey Data Analysis | Ragenaizer</title>
-    <meta name="description" content="Agentic AI research analytics platform. Upload SPSS files, ask questions in plain English, get publication-ready statistical analysis with significance testing. Cross-tabulation, Z-test, effective base, embeddable widgets. Sub-second queries on ClickHouse.">
+    <meta name="description" content="Agentic AI research analytics platform. Upload SPSS files, ask questions in plain English, get publication-ready statistical analysis with significance testing. Insights dashboard, embeddable chatbot, questionnaire parsing. Cross-tabulation, Z-test, effective base. Sub-second queries on ClickHouse.">
 
     <!-- SEO Meta Tags -->
-    <meta name="keywords" content="AI research analytics, agentic AI analytics, survey data analysis, SPSS analysis online, AI-powered analytics, market research software, cross tabulation tool, data visualization, embeddable analytics widget, agentic AI analytics, natural language analytics, statistical analysis tool, Z-test significance testing, ClickHouse analytics, survey data platform">
+    <meta name="keywords" content="AI research analytics, agentic AI analytics, survey data analysis, SPSS analysis online, AI-powered analytics, market research software, cross tabulation tool, data visualization, embeddable analytics widget, agentic AI analytics, natural language analytics, statistical analysis tool, Z-test significance testing, ClickHouse analytics, survey data platform, insights dashboard, embeddable analytics widget, survey chatbot, questionnaire parsing, AI research dashboard">
     <meta name="author" content="Ragenaizer">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://ragenaizer.com/pages/research.html">
@@ -95,7 +95,10 @@
             "ClickHouse Analytics Engine",
             "Variable Auto-Grouping",
             "Publication-Ready Results",
-            "Agentic Multi-Step Analysis"
+            "Agentic Multi-Step Analysis",
+            "Insights Dashboard",
+            "Embeddable Chatbot Widget",
+            "Questionnaire Parsing"
         ]
     }
     </script>
@@ -684,6 +687,42 @@
         .widget-code-body .code-attr { color: #a78bfa; }
         .widget-code-body .code-val { color: #34d399; }
 
+        /* Additional feature card colors */
+        .feature-card.teal .feature-icon {
+            background: rgba(20, 184, 166, 0.12);
+            border: 1px solid rgba(20, 184, 166, 0.25);
+        }
+        .feature-card.teal .feature-icon svg { color: #14b8a6; }
+
+        .feature-card.amber .feature-icon {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+        .feature-card.amber .feature-icon svg { color: #f59e0b; }
+
+        .feature-card.rose .feature-icon {
+            background: rgba(244, 63, 94, 0.12);
+            border: 1px solid rgba(244, 63, 94, 0.25);
+        }
+        .feature-card.rose .feature-icon svg { color: #f43f5e; }
+
+        /* Cross-product integration callout */
+        .integration-callout {
+            max-width: 900px;
+            margin: 40px auto 0;
+            padding: 20px 28px;
+            background: rgba(139, 92, 246, 0.06);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #cbd5e1;
+            text-align: center;
+        }
+        .integration-callout strong {
+            color: #a78bfa;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .widget-section {
@@ -735,7 +774,7 @@
                     <span class="highlight">Now it answers.</span>
                 </h1>
                 <p class="hero-description">
-                    Natural language questions become instant statistical analysis, charts, and insights from your SPSS data. Upload files. Ask questions in plain English. Get publication-ready results.
+                    Natural language questions become instant statistical analysis, charts, and insights from your SPSS data. Upload files. Ask questions in plain English. Get publication-ready results. Generate insights dashboards in minutes, embed AI chatbots on any website, and parse survey questionnaires automatically.
                 </p>
                 <div class="hero-actions">
                     <a href="activate.html" class="btn-primary">Try Research Free</a>
@@ -753,6 +792,10 @@
                     <div class="stat-item">
                         <div class="stat-value">Embed</div>
                         <div class="stat-label">Anywhere</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">5 min</div>
+                        <div class="stat-label">Dashboard Setup</div>
                     </div>
                 </div>
             </div>
@@ -1021,6 +1064,47 @@
                 <h3 class="feature-title">Variable Auto-Grouping</h3>
                 <p class="feature-description">7-signal deterministic algorithm detects multi-response sets, grids, and question structures with 99.9% accuracy. Zero manual mapping.</p>
             </div>
+
+            <div class="feature-card teal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Insights Dashboard</h3>
+                <p class="feature-description">Generate a complete insights dashboard in under 5 minutes. Upload your SPSS data, and the AI builds interactive charts, summary tables, and key findings — ready to present or share.</p>
+            </div>
+
+            <div class="feature-card amber">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        <path d="M8 10h8"/>
+                        <path d="M8 14h4"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Embeddable Chatbot Widget</h3>
+                <p class="feature-description">Drop a chatbot on any website that answers questions from your research data. Domain whitelisting, dark/light themes, and full branding control. Your clients ask questions in plain English — the AI answers with data.</p>
+            </div>
+
+            <div class="feature-card rose">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <path d="M9 15l2 2 4-4"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Questionnaire Parsing</h3>
+                <p class="feature-description">Upload survey questionnaires as PDFs. A 13-stage parsing pipeline extracts every question, response option, and scale — with 97.8% label accuracy. Supports consumer surveys, market research, brand tracking, and more.</p>
+            </div>
+        </div>
+
+        <div class="integration-callout">
+            <strong>Cross-product integration:</strong> Research works alongside Vision for meeting analytics, Drive for data storage, and HRMS for workforce insights.
         </div>
     </section>
 

@@ -1495,6 +1495,30 @@
 }
 .feature-card.pink .feature-icon svg { color: #ec4899; }
 
+.feature-card.teal .feature-icon {
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.2) 0%, rgba(20, 184, 166, 0.05) 100%);
+    border-color: rgba(20, 184, 166, 0.3);
+}
+.feature-card.teal .feature-icon svg { color: #14b8a6; }
+
+.feature-card.amber .feature-icon {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.05) 100%);
+    border-color: rgba(245, 158, 11, 0.3);
+}
+.feature-card.amber .feature-icon svg { color: #f59e0b; }
+
+.feature-card.indigo .feature-icon {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.05) 100%);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+.feature-card.indigo .feature-icon svg { color: #6366f1; }
+
+.feature-card.slate .feature-icon {
+    background: linear-gradient(135deg, rgba(100, 116, 139, 0.2) 0%, rgba(100, 116, 139, 0.05) 100%);
+    border-color: rgba(100, 116, 139, 0.3);
+}
+.feature-card.slate .feature-icon svg { color: #64748b; }
+
 /* ═══════════════════════════════════════════════════════════════════════════
    PLATFORM SECTION - BENTO GRID (HRMS Complete Platform)
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -3222,6 +3246,10 @@
 .feature-card:nth-child(4) { animation-delay: 0.4s; }
 .feature-card:nth-child(5) { animation-delay: 0.5s; }
 .feature-card:nth-child(6) { animation-delay: 0.6s; }
+.feature-card:nth-child(7) { animation-delay: 0.7s; }
+.feature-card:nth-child(8) { animation-delay: 0.8s; }
+.feature-card:nth-child(9) { animation-delay: 0.9s; }
+.feature-card:nth-child(10) { animation-delay: 1.0s; }
 
 @keyframes fadeSlideUp {
     from {
