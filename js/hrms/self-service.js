@@ -34,7 +34,8 @@ const panelTitles = {
     'panel-directory': 'Team Directory',
     'panel-orgchart': 'Org Chart',
     'panel-announcements': 'Announcements',
-    'panel-policies': 'Policies'
+    'panel-policies': 'Policies',
+    'panel-team-approvals': 'Team Approvals'
 };
 
 // SearchableDropdown instances
@@ -97,6 +98,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Load dashboard data
         await loadDashboard();
+
+        // Initialize team approvals for managers
+        initTeamApprovals();
 
     } catch (error) {
         console.error('Error initializing self-service dashboard:', error);
@@ -279,6 +283,9 @@ function loadPanelData(panelId) {
             break;
         case 'panel-leaves':
             loadMyLeaves();
+            break;
+        case 'panel-team-approvals':
+            loadTeamApprovals();
             break;
         case 'panel-leave-balance':
             loadLeaveBalanceDetailed();
@@ -1533,12 +1540,30 @@ async function loadMyLeaves() {
         let url = `/hrms/leave/requests?year=${year}`;
         if (status) url += `&status=${status}`;
 
-        const response = await api.request(url);
+        // Fetch leave requests and balances in parallel
+        const [response, balancesResponse] = await Promise.all([
+            api.request(url),
+            api.request(`/hrms/leave/balances?year=${year}`).catch(() => null)
+        ]);
         const requests = response?.requests || response || [];
 
-        // Update leave balance cards
-        if (response?.balances) {
-            updateLeaveBalanceCards(response.balances);
+        // Update leave balance cards from balances API
+        const balances = balancesResponse?.balances || balancesResponse || [];
+        if (Array.isArray(balances) && balances.length) {
+            updateLeaveBalanceCards(balances);
+        }
+
+        // Count pending requests from the returned data (when status filter is "all" or empty)
+        if (!status || status === '') {
+            const pendingCount = requests.filter(r => (r.status || '').toLowerCase() === 'pending').length;
+            const pendingEl = document.getElementById('pendingLeaveCount');
+            if (pendingEl) pendingEl.textContent = pendingCount;
+            // Update sidebar badge
+            const badge = document.getElementById('leavePendingBadge');
+            if (badge) {
+                badge.textContent = pendingCount;
+                badge.style.display = pendingCount > 0 ? 'inline-flex' : 'none';
+            }
         }
 
         if (!requests.length) {
@@ -1579,20 +1604,172 @@ async function loadMyLeaves() {
 }
 
 /**
- * Update leave balance cards in the leaves panel
+ * Update leave balance cards in the leaves panel (dynamic from API)
  */
 function updateLeaveBalanceCards(balances) {
-    if (!balances) return;
+    const container = document.getElementById('leaveBalanceCards');
+    if (!container || !Array.isArray(balances)) return;
 
-    const annualEl = document.getElementById('annualBalance');
-    const sickEl = document.getElementById('sickBalance');
-    const casualEl = document.getElementById('casualBalance');
-    const pendingEl = document.getElementById('pendingLeaveCount');
+    // Preserve the pending card
+    const pendingCard = container.querySelector('.ess-leave-pending');
 
-    if (annualEl) annualEl.textContent = balances.annual ?? balances.EL ?? 0;
-    if (sickEl) sickEl.textContent = balances.sick ?? balances.SL ?? 0;
-    if (casualEl) casualEl.textContent = balances.casual ?? balances.CL ?? 0;
-    if (pendingEl) pendingEl.textContent = balances.pending ?? 0;
+    // Build cards for each leave type (show max 3 to keep it compact)
+    const leaveCards = balances.slice(0, 3).map(b => {
+        const total = parseFloat(b.total_days) || parseFloat(b.total) || 0;
+        const carried = parseFloat(b.carried_forward_days) || 0;
+        const used = parseFloat(b.used_days) || parseFloat(b.used) || 0;
+        const pending = parseFloat(b.pending_days) || parseFloat(b.pending) || 0;
+        const encashed = parseFloat(b.encashed_days) || 0;
+        const totalAllocation = total + carried;
+        const available = Math.max(0, totalAllocation - used - pending - encashed);
+        const name = b.leave_type_name || b.name || 'Leave';
+
+        return `<div class="ess-leave-card">
+            <div class="ess-leave-type">${escapeHtml(name)}</div>
+            <div class="ess-leave-value">${available}</div>
+            <div class="ess-leave-label">days available</div>
+        </div>`;
+    }).join('');
+
+    // Replace content: leave type cards + pending card
+    container.innerHTML = leaveCards;
+    if (pendingCard) {
+        container.appendChild(pendingCard);
+    } else {
+        container.insertAdjacentHTML('beforeend', `<div class="ess-leave-card ess-leave-pending">
+            <div class="ess-leave-type">Pending</div>
+            <div class="ess-leave-value" id="pendingLeaveCount">0</div>
+            <div class="ess-leave-label">requests</div>
+        </div>`);
+    }
+}
+
+/**
+ * Show Team Approvals nav button for managers
+ */
+function initTeamApprovals() {
+    const isManager = typeof hrmsRoles !== 'undefined' &&
+        (hrmsRoles.isManager() || hrmsRoles.isHRAdmin() || hrmsRoles.isSuperAdmin());
+    const navBtn = document.getElementById('teamApprovalsNavBtn');
+    if (navBtn) {
+        navBtn.style.display = isManager ? '' : 'none';
+    }
+    if (isManager) {
+        loadTeamApprovals();
+    }
+}
+
+/**
+ * Load team leave approvals (for managers)
+ */
+async function loadTeamApprovals() {
+    const tbody = document.getElementById('teamApprovalsTable');
+    if (!tbody) return;
+
+    const status = document.getElementById('teamApprovalStatus')?.value || 'pending';
+
+    try {
+        tbody.innerHTML = `<tr><td colspan="8" class="loading-cell"><div class="spinner"></div> Loading...</td></tr>`;
+
+        let url = `/hrms/leave/pending-approvals?all=true`;
+        if (status) url += `&status=${status}`;
+
+        const response = await api.request(url);
+        const requests = response || [];
+
+        // Update badge with pending count
+        const pendingRequests = status === 'pending' ? requests : requests.filter(r => (r.status || '').toLowerCase() === 'pending');
+        const badge = document.getElementById('teamApprovalsBadge');
+        if (badge) {
+            const count = status === 'pending' ? requests.length : pendingRequests.length;
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-flex' : 'none';
+        }
+
+        if (!requests.length) {
+            tbody.innerHTML = `<tr class="ess-empty-state"><td colspan="8"><div class="ess-empty-message"><p>No ${status || ''} leave requests</p></div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = requests.map(r => {
+            const reqStatus = (r.status || 'pending').toLowerCase();
+            const empName = r.employee_name || r.employeeName || 'Employee';
+            const isPending = reqStatus === 'pending';
+
+            return `
+                <tr>
+                    <td>${escapeHtml(empName)}</td>
+                    <td>${escapeHtml(r.leave_type_name || r.leaveTypeName || 'Leave')}</td>
+                    <td>${formatDate(r.start_date || r.from_date || r.fromDate)}</td>
+                    <td>${formatDate(r.end_date || r.to_date || r.toDate)}</td>
+                    <td>${r.total_days || r.totalDays || 1}</td>
+                    <td>${escapeHtml(truncateText(r.reason, 30))}</td>
+                    <td><span class="status-badge status-${reqStatus}">${capitalizeFirst(reqStatus)}</span></td>
+                    <td>
+                        <div style="display: flex; gap: 8px; align-items: center; justify-content: center;">
+                            ${isPending ? `
+                                <button class="action-btn" onclick="approveTeamLeave('${r.id}', true)" title="Approve" style="color: var(--color-success);">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                </button>
+                                <button class="action-btn" onclick="approveTeamLeave('${r.id}', false)" title="Reject" style="color: var(--color-error);">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                </button>
+                            ` : ''}
+                            <button class="action-btn" onclick="viewLeaveRequest('${r.id}')" title="View">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error('Error loading team approvals:', error);
+        tbody.innerHTML = `<tr class="ess-empty-state"><td colspan="8"><div class="ess-empty-message"><p>Failed to load team approvals</p></div></td></tr>`;
+    }
+}
+
+/**
+ * Approve or reject a team leave request
+ */
+async function approveTeamLeave(requestId, approve) {
+    let reason = '';
+    if (!approve) {
+        reason = prompt('Please provide a reason for rejection:');
+        if (reason === null) return; // Cancelled
+        if (!reason.trim()) {
+            showToast('Rejection reason is required', 'error');
+            return;
+        }
+    }
+
+    try {
+        const payload = {
+            leave_request_id: requestId,
+            approve: approve,
+            rejection_reason: approve ? null : reason
+        };
+
+        await api.request('/hrms/leave/approve', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        showToast(approve ? 'Leave request approved' : 'Leave request rejected', 'success');
+        loadTeamApprovals();
+    } catch (error) {
+        console.error('Error processing leave approval:', error);
+        showToast('Failed to process leave request', 'error');
+    }
 }
 
 /**
@@ -1657,7 +1834,7 @@ async function viewLeaveRequest(requestId) {
                         ${r.approved_by || r.rejected_by ? `
                         <div class="ess-detail-group">
                             <label>${r.status === 'approved' ? 'Approved' : 'Rejected'} By</label>
-                            <p>${escapeHtml(r.approved_by || r.rejected_by || 'N/A')}</p>
+                            <p>${escapeHtml(r.approved_by_name || r.rejected_by_name || r.approved_by || r.rejected_by || 'N/A')}</p>
                         </div>
                         ` : ''}
                         ${r.rejection_reason ? `
@@ -3021,8 +3198,18 @@ async function showApplyLeaveModal() {
     const fromDateEl = document.getElementById('fromDate');
     const toDateEl = document.getElementById('toDate');
     const halfDayEl = document.getElementById('halfDay');
-    if (fromDateEl) fromDateEl.onchange = calculateLeaveDays;
-    if (toDateEl) toDateEl.onchange = calculateLeaveDays;
+
+    // Use Flatpickr onChange callback since native onchange doesn't fire with altInput
+    if (fromDateEl && fromDateEl._flatpickr) {
+        fromDateEl._flatpickr.config.onChange.push(function() { calculateLeaveDays(); });
+    } else if (fromDateEl) {
+        fromDateEl.onchange = calculateLeaveDays;
+    }
+    if (toDateEl && toDateEl._flatpickr) {
+        toDateEl._flatpickr.config.onChange.push(function() { calculateLeaveDays(); });
+    } else if (toDateEl) {
+        toDateEl.onchange = calculateLeaveDays;
+    }
     if (halfDayEl) halfDayEl.onchange = calculateLeaveDays;
 
     // Reset total days
@@ -3379,6 +3566,15 @@ async function submitLoanApplication() {
         }
 
         const parsedAmount = parseFloat(amount);
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+            showToast('Please enter a valid loan amount', 'error');
+            return;
+        }
+        if (parsedAmount > 100000000) {
+            showToast('Loan amount cannot exceed 10,00,00,000', 'error');
+            return;
+        }
+
         let emi;
         let interestRate = 0;
 
@@ -3399,6 +3595,10 @@ async function submitLoanApplication() {
             emi = parseInt(emiRaw) || 0;
             if (!emi || emi < 1) {
                 showToast('Please enter repayment months for this loan type', 'error');
+                return;
+            }
+            if (emi > 360) {
+                showToast('Repayment period cannot exceed 360 months (30 years)', 'error');
                 return;
             }
         }

@@ -1270,7 +1270,7 @@
                             <h4>New Office</h4>
                             <div class="form-group">
                                 <label>Select New Office <span class="required">*</span></label>
-                                <select id="newOfficeId">
+                                <select id="newOfficeId" onchange="onNewOfficeChange()">
                                     <option value="">Select new office...</option>
                                 </select>
                             </div>
@@ -1300,9 +1300,23 @@
                             <h4>New Reporting Manager</h4>
                             <div class="form-group">
                                 <label>New Manager</label>
-                                <select id="newManagerUserId" onchange="onTransferManagerChange()">
-                                    <option value="">No manager (CEO/Top level)</option>
-                                </select>
+                                <div class="searchable-dropdown" id="transferManagerDropdownContainer">
+                                    <div class="dropdown-input-wrapper">
+                                        <input type="text" class="dropdown-search" id="transferManagerSearchInput"
+                                               placeholder="Search managers..." autocomplete="off">
+                                        <input type="hidden" id="newManagerUserId">
+                                        <svg class="dropdown-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div class="dropdown-list" id="transferManagerDropdownList">
+                                        <div class="dropdown-item no-manager" data-value="">
+                                            <span class="item-avatar">—</span>
+                                            <span>No manager (Top level)</span>
+                                        </div>
+                                        <div class="virtual-scroll-container" id="transferManagerVirtualList"></div>
+                                    </div>
+                                </div>
                                 <small class="validation-message text-danger" id="transferManagerValidationMsg" style="display: none;"></small>
                             </div>
                         </div>

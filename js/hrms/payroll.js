@@ -886,6 +886,16 @@ async function initializePage() {
 function applyPayrollRBAC() {
     const isHRAdminRole = hrmsRoles.isHRAdmin();
 
+    // Helper: use setProperty with !important to override CSS rules like sidebar-nav.css
+    function setDisplay(el, show, showValue = 'block') {
+        if (!el) return;
+        if (show) {
+            el.style.removeProperty('display');
+        } else {
+            el.style.setProperty('display', 'none', 'important');
+        }
+    }
+
     // Admin actions header
     const adminActions = document.getElementById('adminActions');
     if (adminActions) {
@@ -893,40 +903,25 @@ function applyPayrollRBAC() {
     }
 
     // Payroll Drafts tab - HR Admin only
-    const payrollDraftsTab = document.getElementById('payrollDraftsTab');
-    if (payrollDraftsTab) {
-        payrollDraftsTab.style.display = isHRAdminRole ? 'block' : 'none';
-    }
+    setDisplay(document.getElementById('payrollDraftsTab'), isHRAdminRole);
 
     // Payroll Runs tab - HR Admin only
-    const payrollRunsTab = document.getElementById('payrollRunsTab');
-    if (payrollRunsTab) {
-        payrollRunsTab.style.display = isHRAdminRole ? 'block' : 'none';
-    }
+    setDisplay(document.getElementById('payrollRunsTab'), isHRAdminRole);
 
     // Salary Components tab - HR Admin only
-    const salaryComponentsTab = document.getElementById('salaryComponentsTab');
-    if (salaryComponentsTab) {
-        salaryComponentsTab.style.display = isHRAdminRole ? 'block' : 'none';
-    }
+    setDisplay(document.getElementById('salaryComponentsTab'), isHRAdminRole);
 
     // Salary Structures tab - HR Admin only
-    const salaryStructuresTab = document.getElementById('salaryStructuresTab');
-    if (salaryStructuresTab) {
-        salaryStructuresTab.style.display = isHRAdminRole ? 'block' : 'none';
-    }
+    setDisplay(document.getElementById('salaryStructuresTab'), isHRAdminRole);
+
+    // Employee Salaries tab - HR Admin only (backend requires HRMS_HR_USER+)
+    setDisplay(document.getElementById('employeeSalariesTab'), isHRAdminRole);
 
     // Create Structure button - HR Admin only
-    const createStructureBtn = document.getElementById('createStructureBtn');
-    if (createStructureBtn) {
-        createStructureBtn.style.display = isHRAdminRole ? 'inline-flex' : 'none';
-    }
+    setDisplay(document.getElementById('createStructureBtn'), isHRAdminRole);
 
     // Create Component button - HR Admin only
-    const createComponentBtn = document.getElementById('createComponentBtn');
-    if (createComponentBtn) {
-        createComponentBtn.style.display = isHRAdminRole ? 'inline-flex' : 'none';
-    }
+    setDisplay(document.getElementById('createComponentBtn'), isHRAdminRole);
 
     // Loan Employee Row (for admin creating loans for employees) - HR Admin only
     const loanEmployeeRow = document.getElementById('loanEmployeeRow');
@@ -934,23 +929,26 @@ function applyPayrollRBAC() {
         loanEmployeeRow.style.display = isHRAdminRole ? 'block' : 'none';
     }
 
+    // Voluntary Deductions tab - HR Admin only (backend GET requires HRMS_HR_ADMIN+)
+    setDisplay(document.getElementById('voluntaryDeductionsTab'), isHRAdminRole);
+
+    // Adjustments tab - HR Admin only
+    setDisplay(document.getElementById('adjustmentsTab'), isHRAdminRole);
+
     // Arrears tab - HR Admin only
-    const arrearsTab = document.getElementById('arrearsTab');
-    if (arrearsTab) {
-        arrearsTab.style.display = isHRAdminRole ? 'block' : 'none';
-    }
+    setDisplay(document.getElementById('arrearsTab'), isHRAdminRole);
+
+    // Tax Configuration tab - HR Admin only
+    setDisplay(document.getElementById('taxConfigTab'), isHRAdminRole);
+
+    // Statutory Filing tab - HR Admin only
+    setDisplay(document.getElementById('statutoryFilingTab'), isHRAdminRole);
 
     // All Payslips tab - HR Admin only
-    const allPayslipsTab = document.getElementById('allPayslipsTab');
-    if (allPayslipsTab) {
-        allPayslipsTab.style.display = isHRAdminRole ? 'block' : 'none';
-    }
+    setDisplay(document.getElementById('allPayslipsTab'), isHRAdminRole);
 
     // Salary Reports tab - HR Admin only
-    const salaryReportsTab = document.getElementById('salaryReportsTab');
-    if (salaryReportsTab) {
-        salaryReportsTab.style.display = isHRAdminRole ? 'block' : 'none';
-    }
+    setDisplay(document.getElementById('salaryReportsTab'), isHRAdminRole);
 }
 
 // Initialize month pickers for payroll tabs
@@ -2681,6 +2679,7 @@ function updateSalaryStructuresTable() {
 
 function renderSalaryStructuresRows(filtered) {
     const tbody = document.getElementById('salaryStructuresTable');
+    const canManageStructures = hrmsRoles.isHRAdmin();
 
     if (filtered.length === 0) {
         tbody.innerHTML = `
@@ -2719,7 +2718,7 @@ function renderSalaryStructuresRows(filtered) {
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
                     </button>
-                    ${!s.has_processed_payroll ? `
+                    ${canManageStructures ? (!s.has_processed_payroll ? `
                     <button class="action-btn" onclick="editSalaryStructure('${s.id}')" title="Edit">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -2733,8 +2732,8 @@ function renderSalaryStructuresRows(filtered) {
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                         </svg>
                     </span>
-                    `}
-                    ${(s.employee_count || 0) === 0 ? `
+                    `) : ''}
+                    ${canManageStructures ? ((s.employee_count || 0) === 0 ? `
                     <button class="action-btn danger" onclick="deleteSalaryStructure('${s.id}')" title="Delete">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
@@ -2750,7 +2749,7 @@ function renderSalaryStructuresRows(filtered) {
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                         </svg>
                     </span>
-                    `}
+                    `) : ''}
                 </div>
             </td>
         </tr>
@@ -14583,6 +14582,19 @@ async function openEmployeeSalaryModal(employeeId) {
                 structureDropdown.setValue(salary.structure_id || '');
             }
             document.getElementById('empSalaryCTC').value = salary.ctc || '';
+
+            // Pre-fill effective_from date from existing salary
+            if (salary.effective_from) {
+                const effDate = new Date(salary.effective_from);
+                const effDateStr = formatDateLocal(effDate.getFullYear(), effDate.getMonth() + 1, effDate.getDate());
+                const effFromEl = document.getElementById('empSalaryEffectiveFrom');
+                if (effFromEl._flatpickr) {
+                    effFromEl._flatpickr.setDate(effDateStr, true);
+                } else {
+                    effFromEl.value = effDateStr;
+                }
+            }
+
             document.getElementById('employeeSalaryFormTitle').textContent = 'Revise Salary';
             document.getElementById('empRevisionTypeGroup').style.display = 'block';
             document.getElementById('empRevisionReasonGroup').style.display = 'block';

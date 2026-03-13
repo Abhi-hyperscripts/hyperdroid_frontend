@@ -10942,6 +10942,14 @@ input:checked + .slider:before {
     display: block;
 }
 
+/* Drop-up positioning when near bottom of viewport */
+.searchable-dropdown.open-up .dropdown-list {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 4px;
+}
+
 /* Dropdown items */
 .dropdown-item {
     display: flex;
@@ -23539,4 +23547,5 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 
 
 /* Employee Meetings Modal styles moved to glassmorphic-modal.css (.gm-* classes) */
+
 

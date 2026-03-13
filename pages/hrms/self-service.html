@@ -156,6 +156,15 @@
                             <span>My Leaves</span>
                             <span class="ess-nav-badge" id="leavePendingBadge" style="display: none;">0</span>
                         </button>
+                        <button class="ess-nav-btn" id="teamApprovalsNavBtn" data-panel="panel-team-approvals" style="display: none;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="8.5" cy="7" r="4"/>
+                                <polyline points="17 11 19 13 23 9"/>
+                            </svg>
+                            <span>Team Approvals</span>
+                            <span class="ess-nav-badge" id="teamApprovalsBadge" style="display: none;">0</span>
+                        </button>
                         <button class="ess-nav-btn" data-panel="panel-leave-balance">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -880,21 +889,7 @@
 
                 <!-- Leave Balance Cards -->
                 <div class="ess-leave-balance-cards" id="leaveBalanceCards">
-                    <div class="ess-leave-card">
-                        <div class="ess-leave-type">Annual Leave</div>
-                        <div class="ess-leave-value" id="annualBalance">0</div>
-                        <div class="ess-leave-label">days available</div>
-                    </div>
-                    <div class="ess-leave-card">
-                        <div class="ess-leave-type">Sick Leave</div>
-                        <div class="ess-leave-value" id="sickBalance">0</div>
-                        <div class="ess-leave-label">days available</div>
-                    </div>
-                    <div class="ess-leave-card">
-                        <div class="ess-leave-type">Casual Leave</div>
-                        <div class="ess-leave-value" id="casualBalance">0</div>
-                        <div class="ess-leave-label">days available</div>
-                    </div>
+                    <!-- Dynamically populated from leave balances API -->
                     <div class="ess-leave-card ess-leave-pending">
                         <div class="ess-leave-type">Pending</div>
                         <div class="ess-leave-value" id="pendingLeaveCount">0</div>
@@ -927,6 +922,60 @@
                                             <line x1="3" y1="10" x2="21" y2="10"/>
                                         </svg>
                                         <p>No leave requests found</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ======================= -->
+            <!-- Team Approvals Panel (Managers Only) -->
+            <!-- ======================= -->
+            <div class="ess-panel" id="panel-team-approvals">
+                <div class="ess-panel-header">
+                    <h2>Team Leave Approvals</h2>
+                    <div class="ess-header-actions">
+                        <a href="leave.html" class="btn btn-outline" style="text-decoration: none;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                <polyline points="15 3 21 3 21 9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                            </svg>
+                            Full Leave Management
+                        </a>
+                    </div>
+                </div>
+                <div class="ess-filters-bar">
+                    <div class="ess-filter-group">
+                        <select id="teamApprovalStatus" class="form-select" onchange="loadTeamApprovals()">
+                            <option value="pending">Pending</option>
+                            <option value="">All Status</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="ess-table-container">
+                    <table class="ess-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Leave Type</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Days</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teamApprovalsTable">
+                            <tr class="ess-empty-state">
+                                <td colspan="8">
+                                    <div class="ess-empty-message">
+                                        <p>No pending approvals</p>
                                     </div>
                                 </td>
                             </tr>
@@ -1629,6 +1678,7 @@
         document.write('<script src="../../js/hrms/hrms-signalr.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/payslip-modal.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/roleUtils.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/self-service.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

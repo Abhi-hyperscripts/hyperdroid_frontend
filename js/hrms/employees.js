@@ -359,7 +359,7 @@ async function loadEmployees() {
     tbody.innerHTML = '<tr><td colspan="8"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
 
     try {
-        employees = await api.getHrmsEmployees(false);
+        employees = await api.getHrmsEmployees(true);
 
         updateStats();
         renderEmployees();
@@ -862,15 +862,8 @@ async function saveEmployee() {
         }
     } catch (error) {
         console.error('Error saving employee:', error);
-        // Parse backend errors to show user-friendly messages
+        // Show backend error messages directly - they are already user-friendly
         let errorMsg = error.message || 'Error saving employee';
-        if (errorMsg.includes('identifier') || errorMsg.includes('unique constraint') || errorMsg.includes('duplicate key')) {
-            errorMsg = 'This user already has an employee profile, or the employee code is already in use. Please check and try again.';
-        } else if (errorMsg.includes('user_id')) {
-            errorMsg = 'The selected user account is invalid or already linked to an employee. Please select a different user.';
-        } else if (errorMsg.includes('salary structure')) {
-            errorMsg = 'The selected office does not have a salary structure configured. Please set up a salary structure first.';
-        }
         showToast(errorMsg, 'error');
     } finally {
         // Re-enable save button
@@ -2472,6 +2465,9 @@ async function openTransferModal(employeeId) {
     document.getElementById('changeManager').checked = false;
 
     openModal('transferModal');
+
+    // Convert native selects to searchable dropdowns after modal is visible
+    setTimeout(() => initTransferSearchableDropdowns(), 0);
 }
 
 function populateTransferDropdowns(employee) {
@@ -2481,27 +2477,226 @@ function populateTransferDropdowns(employee) {
         offices.filter(o => o.id !== employee.office_id)
             .map(o => `<option value="${o.id}">${o.office_name}</option>`).join('');
 
-    // Populate department dropdown (only departments with designations)
-    const deptSelect = document.getElementById('newDepartmentId');
-    const deptsWithDesignations = departments.filter(d =>
-        designations.some(desig => desig.department_id === d.id)
-    );
-    deptSelect.innerHTML = '<option value="">Select new department...</option>' +
-        deptsWithDesignations.map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
+    // Populate department dropdown filtered by employee's office
+    populateTransferDepartments(employee.office_id);
 
     // Populate designation dropdown (initially empty until department selected)
     document.getElementById('newDesignationId').innerHTML = '<option value="">Select department first...</option>';
 
-    // Populate manager dropdown (exclude current employee and their direct reports)
-    const managerSelect = document.getElementById('newManagerUserId');
-    managerSelect.innerHTML = '<option value="">No manager (CEO/Top level)</option>' +
-        employees.filter(e => e.id !== employee.id && e.user_id !== employee.manager_user_id)
-            .map(e => `<option value="${e.user_id}">${e.first_name} ${e.last_name} (${e.employee_code})</option>`).join('');
+    // Populate transfer manager searchable dropdown
+    populateTransferManagerDropdown(employee);
+}
+
+// ============================================
+// Transfer Manager Searchable Dropdown
+// ============================================
+let transferManagersList = [];
+let filteredTransferManagersList = [];
+
+function populateTransferManagerDropdown(employee) {
+    const validManagers = getValidManagers(employees, employee.id, employee.user_id);
+
+    transferManagersList = validManagers.map(e => {
+        const office = offices.find(o => o.id === e.office_id);
+        const desig = designations.find(d => d.id === e.designation_id);
+        const name = `${e.first_name || ''} ${e.last_name || ''}`.trim();
+        const initials = `${(e.first_name || '')[0] || ''}${(e.last_name || '')[0] || ''}`.toUpperCase();
+        return {
+            user_id: e.user_id,
+            name,
+            initials,
+            code: e.employee_code || '',
+            designation: desig?.designation_name || '',
+            office: office?.office_name || '',
+            email: e.work_email || '',
+            searchText: `${name} ${e.employee_code || ''} ${e.work_email || ''} ${desig?.designation_name || ''} ${office?.office_name || ''}`.toLowerCase()
+        };
+    });
+
+    filteredTransferManagersList = [...transferManagersList];
+
+    // Reset hidden input and search input
+    document.getElementById('newManagerUserId').value = '';
+    document.getElementById('transferManagerSearchInput').value = '';
+
+    renderTransferManagerList();
+    initTransferManagerDropdown();
+}
+
+function initTransferManagerDropdown() {
+    const container = document.getElementById('transferManagerDropdownContainer');
+    const searchInput = document.getElementById('transferManagerSearchInput');
+
+    // Replace to remove old listeners
+    const newInput = searchInput.cloneNode(true);
+    searchInput.parentNode.replaceChild(newInput, searchInput);
+
+    function openTransferManagerDropdown() {
+        container.classList.add('open');
+        // Detect if we should open upward
+        const rect = container.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const dropdownHeight = 350; // max-height of .dropdown-list
+        if (spaceBelow < dropdownHeight && rect.top > spaceBelow) {
+            container.classList.add('open-up');
+        } else {
+            container.classList.remove('open-up');
+        }
+    }
+
+    newInput.addEventListener('focus', openTransferManagerDropdown);
+    newInput.addEventListener('click', openTransferManagerDropdown);
+
+    let searchTimeout;
+    newInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            const term = e.target.value.toLowerCase().trim();
+            filteredTransferManagersList = term
+                ? transferManagersList.filter(m => m.searchText.includes(term))
+                : [...transferManagersList];
+            renderTransferManagerList();
+        }, 150);
+    });
+
+    // Close on outside click
+    document.addEventListener('click', function transferClickOutside(e) {
+        if (!container.contains(e.target)) {
+            container.classList.remove('open', 'open-up');
+        }
+    });
+
+    // "No manager" option
+    const noMgrOption = document.getElementById('transferManagerDropdownList').querySelector('.no-manager');
+    if (noMgrOption) {
+        noMgrOption.onclick = () => selectTransferManager('', 'No manager (Top level)');
+    }
+}
+
+function renderTransferManagerList() {
+    const container = document.getElementById('transferManagerVirtualList');
+
+    if (filteredTransferManagersList.length === 0) {
+        container.innerHTML = '<div class="dropdown-no-results">No managers found</div>';
+        return;
+    }
+
+    container.innerHTML = filteredTransferManagersList.map(mgr => {
+        const line1 = [mgr.code, mgr.designation].filter(Boolean).join(' \u2022 ');
+        const line2 = [mgr.office].filter(Boolean).join(' \u2022 ');
+        return `
+        <div class="dropdown-item" data-value="${mgr.user_id}" onclick="selectTransferManager('${mgr.user_id}', '${mgr.name.replace(/'/g, "\\'")}')">
+            <span class="item-avatar">${mgr.initials}</span>
+            <div class="item-name">
+                <strong>${mgr.name}</strong>
+                <small>${line1}${line2 ? '<br>' + line2 : ''}</small>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function selectTransferManager(userId, displayName) {
+    document.getElementById('newManagerUserId').value = userId;
+    document.getElementById('transferManagerSearchInput').value = displayName;
+    document.getElementById('transferManagerDropdownContainer').classList.remove('open', 'open-up');
+
+    // Mark selected
+    document.getElementById('transferManagerDropdownList').querySelectorAll('.dropdown-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.value === userId);
+    });
+
+    // Trigger validation
+    onTransferManagerChange();
+}
+
+function populateTransferDepartments(officeId) {
+    const deptSelect = document.getElementById('newDepartmentId');
+    const deptsWithDesignations = departments.filter(d =>
+        designations.some(desig => desig.department_id === d.id) &&
+        (!d.office_id || d.office_id === officeId)
+    );
+    deptSelect.innerHTML = '<option value="">Select new department...</option>' +
+        deptsWithDesignations.map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
+
+    // Reset designation
+    document.getElementById('newDesignationId').innerHTML = '<option value="">Select department first...</option>';
+    refreshTransferDropdown('newDepartmentId');
+    refreshTransferDropdown('newDesignationId');
+}
+
+// ============================================
+// Transfer Modal Searchable Dropdowns
+// ============================================
+const transferDropdowns = new Map();
+
+/**
+ * Initialize all selects in the transfer modal as SearchableDropdowns.
+ */
+function initTransferSearchableDropdowns() {
+    const configs = [
+        { id: 'transferType', options: { searchPlaceholder: 'Search type...', compact: true } },
+        { id: 'newOfficeId', options: { searchPlaceholder: 'Search offices...', compact: true } },
+        { id: 'newDepartmentId', options: { searchPlaceholder: 'Search departments...', compact: true } },
+        { id: 'newDesignationId', options: { searchPlaceholder: 'Search designations...', compact: true } },
+    ];
+
+    configs.forEach(config => {
+        // Destroy existing instance if re-opening modal
+        const existing = transferDropdowns.get(config.id);
+        if (existing) {
+            existing.destroy();
+            // Remove the container created by previous convertSelectToSearchable
+            const oldContainer = document.getElementById(`${config.id}-searchable-container`);
+            if (oldContainer) oldContainer.remove();
+            // Unhide the native select so convertSelectToSearchable can re-process it
+            const select = document.getElementById(config.id);
+            if (select) select.style.display = '';
+        }
+
+        const dropdown = convertSelectToSearchable(config.id, config.options);
+        if (dropdown) {
+            transferDropdowns.set(config.id, dropdown);
+        }
+    });
+}
+
+/**
+ * Refresh a transfer dropdown after its native select options have changed.
+ */
+function refreshTransferDropdown(selectId) {
+    const dropdown = transferDropdowns.get(selectId);
+    const select = document.getElementById(selectId);
+    if (!dropdown || !select) return;
+
+    const newOptions = Array.from(select.options).map(opt => ({
+        value: opt.value,
+        label: opt.textContent.trim()
+    }));
+    // Update placeholder from first empty-value option before setting options
+    const firstOpt = newOptions.find(o => !o.value);
+    if (firstOpt) {
+        dropdown.placeholder = firstOpt.label;
+    }
+    dropdown.setOptions(newOptions);
+    // Reset selection to show updated placeholder
+    dropdown.setValue(select.value || null);
 }
 
 function toggleTransferSection(sectionId, checkbox) {
     const section = document.getElementById(sectionId);
     section.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+function onNewOfficeChange() {
+    const newOfficeId = document.getElementById('newOfficeId').value;
+    const employeeId = document.getElementById('transferEmployeeId').value;
+    const employee = employees.find(e => e.id === employeeId);
+
+    // Re-populate departments for the selected office (or current office if none selected)
+    const officeId = newOfficeId || (employee ? employee.office_id : null);
+    if (officeId) {
+        populateTransferDepartments(officeId);
+    }
 }
 
 function onNewDepartmentChange() {
@@ -2510,6 +2705,7 @@ function onNewDepartmentChange() {
 
     if (!deptId) {
         desigSelect.innerHTML = '<option value="">Select department first...</option>';
+        refreshTransferDropdown('newDesignationId');
         return;
     }
 
@@ -2518,6 +2714,7 @@ function onNewDepartmentChange() {
 
     desigSelect.innerHTML = '<option value="">Select new designation...</option>' +
         filteredDesigs.map(d => `<option value="${d.id}">${d.designation_name}</option>`).join('');
+    refreshTransferDropdown('newDesignationId');
 }
 
 async function submitTransfer() {
@@ -2760,6 +2957,7 @@ function onTransferManagerChange() {
         }
         // Reset to empty (No manager option)
         document.getElementById('newManagerUserId').value = '';
+        document.getElementById('transferManagerSearchInput').value = '';
     } else {
         // Hide validation message
         if (validationMsg) {
@@ -3854,10 +4052,10 @@ async function confirmTerminateEmployee() {
     const settlementDate = document.getElementById('settlementDate').value;
     const exitNotes = document.getElementById('exitNotes').value;
 
-    // Prepare termination data
+    // Prepare termination data — backend expects termination_date and reason
     const terminationData = {
-        last_working_date: lastWorkingDate,
-        termination_reason: terminationReason,
+        termination_date: lastWorkingDate,
+        reason: terminationReason,
         exit_interview_date: exitInterviewDate || null,
         settlement_date: settlementDate || null,
         exit_notes: exitNotes || null

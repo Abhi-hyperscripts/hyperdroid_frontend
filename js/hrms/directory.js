@@ -30,13 +30,17 @@ async function loadFilters() {
         ]);
 
         // Populate native selects first (for SearchableDropdown conversion)
+        // Group departments by name so "Development" across multiple offices shows once
+        const uniqueDeptNames = [...new Set((departments || []).map(d => d.department_name || '').filter(Boolean))].sort();
         const deptSelect = document.getElementById('departmentFilter');
         deptSelect.innerHTML = '<option value="">All Departments</option>' +
-            (departments || []).map(d => `<option value="${d.id}">${escapeHtml(d.department_name)}</option>`).join('');
+            uniqueDeptNames.map(name => `<option value="${name}">${escapeHtml(name)}</option>`).join('');
 
+        const sortedOffices = (offices || []).slice().sort((a, b) =>
+            (a.office_name || '').localeCompare(b.office_name || ''));
         const officeSelect = document.getElementById('officeFilter');
         officeSelect.innerHTML = '<option value="">All Offices</option>' +
-            (offices || []).map(o => `<option value="${o.id}">${escapeHtml(o.office_name)}</option>`).join('');
+            sortedOffices.map(o => `<option value="${o.id}">${escapeHtml(o.office_name)}</option>`).join('');
     } catch (e) {
         console.error('Error loading filters:', e);
     }
@@ -74,7 +78,7 @@ async function loadDirectory() {
     const search = document.getElementById('searchInput').value.trim();
 
     // Get values from SearchableDropdown if available, otherwise from native select
-    const departmentId = departmentDropdown
+    const departmentName = departmentDropdown
         ? departmentDropdown.getValue()
         : document.getElementById('departmentFilter')?.value;
     const officeId = officeDropdown
@@ -82,7 +86,13 @@ async function loadDirectory() {
         : document.getElementById('officeFilter')?.value;
 
     try {
-        employees = await api.getTeamDirectory(departmentId || null, officeId || null, search || null) || [];
+        // Fetch all employees (department filtering done client-side since dropdown uses grouped names)
+        employees = await api.getTeamDirectory(null, officeId || null, search || null) || [];
+        // Filter by department name if selected
+        if (departmentName) {
+            employees = employees.filter(emp =>
+                (emp.department || emp.department_name || '') === departmentName);
+        }
         renderDirectory();
     } catch (error) {
         console.error('Error loading directory:', error);

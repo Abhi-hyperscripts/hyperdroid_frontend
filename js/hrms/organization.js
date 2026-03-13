@@ -1936,7 +1936,7 @@ function renderDesignationsRows(filtered) {
             <td>${escapeHtml(desig.office_name || '-')}</td>
             <td>${escapeHtml(desig.department_name || '-')}</td>
             <td>${escapeHtml(desig.role_category || '-')}</td>
-            <td>Level ${desig.level || 1}</td>
+            <td style="white-space:nowrap">Level ${desig.level || 1}</td>
             <td>${formatHrmsRoles(desig.default_hrms_roles)}</td>
             <td>${desig.employee_count || 0}</td>
             <td><span class="status-badge status-${desig.is_active ? 'active' : 'inactive'}">${desig.is_active ? 'Active' : 'Inactive'}</span></td>
@@ -3789,7 +3789,7 @@ function addBulkHolidayRow() {
     row.className = 'bulk-entry-row';
     row.innerHTML = `
         <input type="text" class="form-control holiday-name" placeholder="Holiday name *" required oninput="updateBulkHolidayCount()">
-        <input type="date" class="form-control holiday-date" required onchange="updateBulkHolidayCount()">
+        <input type="date" class="form-control holiday-date" required>
         <select class="form-control holiday-type">
             <option value="public">Public</option>
             <option value="regional">Regional</option>
@@ -3805,6 +3805,17 @@ function addBulkHolidayRow() {
         </button>
     `;
     container.appendChild(row);
+
+    // Initialize Flatpickr on the date input with onChange to update the counter
+    const dateInput = row.querySelector('.holiday-date');
+    if (typeof HRMSDatePicker !== 'undefined') {
+        HRMSDatePicker.init(dateInput, {
+            onChange: function() {
+                updateBulkHolidayCount();
+            }
+        });
+    }
+
     bulkHolidayRowCount++;
     updateBulkHolidayCount();
 }
