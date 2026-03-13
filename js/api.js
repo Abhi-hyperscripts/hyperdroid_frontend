@@ -964,6 +964,12 @@ class API {
         return response.json();
     }
 
+    async generateSessionSummary(sessionId) {
+        return this.request(`/transcripts/sessions/${sessionId}/generate-summary`, {
+            method: 'POST'
+        });
+    }
+
     async deleteSession(sessionId) {
         return this.request(`/transcripts/sessions/${sessionId}`, {
             method: 'DELETE'

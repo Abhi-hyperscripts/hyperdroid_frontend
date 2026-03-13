@@ -2677,30 +2677,112 @@ async function loadSessionSummary(sessionId) {
 
         summaryContainer.innerHTML = '<div class="spinner-small"></div>';
 
-        const response = await api.getSessionSummary(sessionId);
+        // Fetch summary and LLM key availability in parallel
+        const [response, hasLlmKey] = await Promise.all([
+            api.getSessionSummary(sessionId),
+            api.hasActiveLlmKey().catch(() => false)
+        ]);
         const hasSummary = response.hasSummary && response.summaryText;
+        const isAiGenerated = response.isAiGenerated && hasSummary;
 
-        // Store the full summary text for the modal
+        // Parse structured MOM data if AI-generated
+        let actionItems = [], keyPoints = [], participants = [];
+        if (isAiGenerated) {
+            try { actionItems = typeof response.actionItems === 'string' ? JSON.parse(response.actionItems) : (response.actionItems || []); } catch(e) { actionItems = []; }
+            try { keyPoints = typeof response.keyPoints === 'string' ? JSON.parse(response.keyPoints) : (response.keyPoints || []); } catch(e) { keyPoints = []; }
+            try { participants = typeof response.participants === 'string' ? JSON.parse(response.participants) : (response.participants || []); } catch(e) { participants = []; }
+        }
+
+        // Store for the modal
         if (hasSummary) {
             window.currentSummaryText = response.summaryText;
             window.currentSummaryUpdatedAt = response.uploadedAt;
+            window.currentSummaryData = { actionItems, keyPoints, participants, sow: response.sow, generatedBy: response.generatedBy, isAiGenerated };
         }
 
         summaryContainer.innerHTML = `
             <div class="summary-content">
                 ${hasSummary ? `
+                    ${isAiGenerated ? `
+                    <div class="mom-tabs" id="momTabs">
+                        <button class="mom-tab active" data-tab="summary" onclick="switchMomTab('summary')">Summary</button>
+                        <button class="mom-tab" data-tab="actions" onclick="switchMomTab('actions')">
+                            Action Items${actionItems.length ? ` <span class="mom-tab-badge">${actionItems.length}</span>` : ''}
+                        </button>
+                        <button class="mom-tab" data-tab="keypoints" onclick="switchMomTab('keypoints')">
+                            Key Points${keyPoints.length ? ` <span class="mom-tab-badge">${keyPoints.length}</span>` : ''}
+                        </button>
+                        <button class="mom-tab" data-tab="participants" onclick="switchMomTab('participants')">
+                            Participants${participants.length ? ` <span class="mom-tab-badge">${participants.length}</span>` : ''}
+                        </button>
+                    </div>
+                    <div class="mom-tab-content active" id="momTab-summary">
+                        <div class="summary-text-display" id="summaryTextDisplay">
+                            <p>${escapeHtml(response.summaryText)}</p>
+                        </div>
+                    </div>
+                    <div class="mom-tab-content" id="momTab-actions">
+                        ${actionItems.length ? actionItems.map((item, i) => `
+                            <div class="mom-action-item">
+                                <div class="mom-action-header">
+                                    <span class="mom-action-index">${i + 1}</span>
+                                    <span class="mom-action-priority priority-${(item.priority || 'medium').toLowerCase()}">${(item.priority || 'medium').toUpperCase()}</span>
+                                    ${item.assignee ? `<span class="mom-action-assignee">${escapeHtml(item.assignee)}</span>` : ''}
+                                    ${item.deadline ? `<span class="mom-action-deadline">${escapeHtml(item.deadline)}</span>` : ''}
+                                </div>
+                                <div class="mom-action-desc">${escapeHtml(item.description || '')}</div>
+                            </div>
+                        `).join('') : '<p class="mom-empty">No action items identified.</p>'}
+                    </div>
+                    <div class="mom-tab-content" id="momTab-keypoints">
+                        ${keyPoints.length ? keyPoints.map((kp, i) => `
+                            <div class="mom-keypoint">
+                                <div class="mom-keypoint-header">
+                                    <span class="mom-keypoint-type type-${(kp.type || 'information').toLowerCase()}">${(kp.type || 'info').toUpperCase()}</span>
+                                    <span class="mom-keypoint-topic">${escapeHtml(kp.topic || '')}</span>
+                                </div>
+                                <div class="mom-keypoint-detail">${escapeHtml(kp.detail || '')}</div>
+                                ${kp.speakers && kp.speakers.length ? `<div class="mom-keypoint-speakers">${kp.speakers.map(s => `<span class="mom-speaker-tag">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
+                            </div>
+                        `).join('') : '<p class="mom-empty">No key points identified.</p>'}
+                    </div>
+                    <div class="mom-tab-content" id="momTab-participants">
+                        ${participants.length ? participants.map(p => `
+                            <div class="mom-participant">
+                                <div class="mom-participant-header">
+                                    <span class="mom-participant-name">${escapeHtml(p.name || '')}</span>
+                                    <span class="mom-participant-status ${p.present ? 'present' : 'absent'}">${p.present ? 'Present' : 'Mentioned'}</span>
+                                </div>
+                                ${p.role ? `<div class="mom-participant-role">${escapeHtml(p.role)}</div>` : ''}
+                                ${p.contribution_summary ? `<div class="mom-participant-contribution">${escapeHtml(p.contribution_summary)}</div>` : ''}
+                            </div>
+                        `).join('') : '<p class="mom-empty">No participants identified.</p>'}
+                    </div>
+                    <div class="summary-meta">
+                        <small>Generated by ${escapeHtml(response.generatedBy || 'AI')} &middot; ${response.uploadedAt ? new Date(response.uploadedAt).toLocaleString() : 'N/A'}</small>
+                    </div>
+                    ` : `
                     <div class="summary-text-display" id="summaryTextDisplay">
                         <pre>${escapeHtml(response.summaryText)}</pre>
                     </div>
                     <div class="summary-meta">
                         <small>Last updated: ${response.uploadedAt ? new Date(response.uploadedAt).toLocaleString() : 'N/A'}</small>
                     </div>
+                    `}
                 ` : `
                     <div class="summary-empty">
                         <p>No summary/minutes for this session yet.</p>
                     </div>
                 `}
                 <div class="summary-actions">
+                    ${hasLlmKey ? `
+                    <button class="btn btn-primary btn-sm" id="generateSummaryBtn" onclick="generateAISummary('${sessionId}')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                        </svg>
+                        ${hasSummary ? 'Regenerate' : 'Generate'}
+                    </button>
+                    ` : ''}
                     ${hasSummary ? `
                     <button class="btn btn-secondary btn-sm" onclick="openSummaryModal()">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2737,6 +2819,11 @@ async function loadSessionSummary(sessionId) {
             summaryContainer.innerHTML = '<p class="text-error">Failed to load summary</p>';
         }
     }
+}
+
+function switchMomTab(tabName) {
+    document.querySelectorAll('.mom-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+    document.querySelectorAll('.mom-tab-content').forEach(c => c.classList.toggle('active', c.id === `momTab-${tabName}`));
 }
 
 function showSummaryEditor(sessionId) {
@@ -2820,6 +2907,37 @@ async function uploadSummaryFile(sessionId, input) {
         Toast.error('Failed to upload summary: ' + error.message);
     } finally {
         input.value = '';
+    }
+}
+
+async function generateAISummary(sessionId) {
+    const btn = document.getElementById('generateSummaryBtn');
+    if (!btn) return;
+
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `
+        <div class="spinner-small" style="width:14px;height:14px;margin-right:6px;display:inline-block;"></div>
+        Generating...
+    `;
+
+    try {
+        Toast.info('Generating AI summary — this may take a minute...');
+        const result = await api.generateSessionSummary(sessionId);
+
+        if (result.success) {
+            Toast.success('AI summary generated successfully');
+            await loadSessionSummary(sessionId);
+        } else {
+            Toast.error(result.message || 'Failed to generate summary');
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    } catch (error) {
+        console.error('Error generating AI summary:', error);
+        Toast.error('Failed to generate summary: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     }
 }
 
@@ -3028,6 +3146,7 @@ async function uploadSummaryFile(sessionId, input) {
 function openSummaryModal() {
     const summaryText = window.currentSummaryText || '';
     const updatedAt = window.currentSummaryUpdatedAt;
+    const data = window.currentSummaryData || {};
 
     if (!summaryText) {
         Toast.error('No summary to display');
@@ -3037,6 +3156,71 @@ function openSummaryModal() {
     // Remove existing overlay if any
     const existingOverlay = document.getElementById('summaryModalOverlay');
     if (existingOverlay) existingOverlay.remove();
+
+    const actionItems = data.actionItems || [];
+    const keyPoints = data.keyPoints || [];
+    const participants = data.participants || [];
+
+    // Build modal body — structured if AI-generated, plain text otherwise
+    let modalBody = '';
+    if (data.isAiGenerated) {
+        modalBody = `
+            <div class="mom-modal-section">
+                <h4 class="mom-modal-section-title">Executive Summary</h4>
+                <p class="mom-modal-summary-text">${escapeHtml(summaryText)}</p>
+            </div>
+            ${participants.length ? `
+            <div class="mom-modal-section">
+                <h4 class="mom-modal-section-title">Participants (${participants.length})</h4>
+                <div class="mom-modal-participants">
+                    ${participants.map(p => `
+                        <div class="mom-participant">
+                            <div class="mom-participant-header">
+                                <span class="mom-participant-name">${escapeHtml(p.name || '')}</span>
+                                <span class="mom-participant-status ${p.present ? 'present' : 'absent'}">${p.present ? 'Present' : 'Mentioned'}</span>
+                            </div>
+                            ${p.role ? `<div class="mom-participant-role">${escapeHtml(p.role)}</div>` : ''}
+                            ${p.contribution_summary ? `<div class="mom-participant-contribution">${escapeHtml(p.contribution_summary)}</div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
+            ${actionItems.length ? `
+            <div class="mom-modal-section">
+                <h4 class="mom-modal-section-title">Action Items (${actionItems.length})</h4>
+                ${actionItems.map((item, i) => `
+                    <div class="mom-action-item">
+                        <div class="mom-action-header">
+                            <span class="mom-action-index">${i + 1}</span>
+                            <span class="mom-action-priority priority-${(item.priority || 'medium').toLowerCase()}">${(item.priority || 'medium').toUpperCase()}</span>
+                            ${item.assignee ? `<span class="mom-action-assignee">${escapeHtml(item.assignee)}</span>` : ''}
+                            ${item.deadline ? `<span class="mom-action-deadline">${escapeHtml(item.deadline)}</span>` : ''}
+                        </div>
+                        <div class="mom-action-desc">${escapeHtml(item.description || '')}</div>
+                    </div>
+                `).join('')}
+            </div>
+            ` : ''}
+            ${keyPoints.length ? `
+            <div class="mom-modal-section">
+                <h4 class="mom-modal-section-title">Key Discussion Points (${keyPoints.length})</h4>
+                ${keyPoints.map(kp => `
+                    <div class="mom-keypoint">
+                        <div class="mom-keypoint-header">
+                            <span class="mom-keypoint-type type-${(kp.type || 'information').toLowerCase()}">${(kp.type || 'info').toUpperCase()}</span>
+                            <span class="mom-keypoint-topic">${escapeHtml(kp.topic || '')}</span>
+                        </div>
+                        <div class="mom-keypoint-detail">${escapeHtml(kp.detail || '')}</div>
+                        ${kp.speakers && kp.speakers.length ? `<div class="mom-keypoint-speakers">${kp.speakers.map(s => `<span class="mom-speaker-tag">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+            ` : ''}
+        `;
+    } else {
+        modalBody = `<pre>${escapeHtml(summaryText)}</pre>`;
+    }
 
     // Create overlay
     const overlay = document.createElement('div');
@@ -3054,7 +3238,7 @@ function openSummaryModal() {
                         <line x1="16" y1="17" x2="8" y2="17"/>
                         <polyline points="10 9 9 9 8 9"/>
                     </svg>
-                    Summary / Minutes
+                    ${data.isAiGenerated ? 'AI Meeting Summary & MOM' : 'Summary / Minutes'}
                 </h3>
                 <button class="summary-modal-close" onclick="closeSummaryModal()">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3064,10 +3248,10 @@ function openSummaryModal() {
                 </button>
             </div>
             <div class="summary-modal-body">
-                <pre>${escapeHtml(summaryText)}</pre>
+                ${modalBody}
             </div>
             <div class="summary-modal-footer">
-                <small>Last updated: ${updatedAt ? new Date(updatedAt).toLocaleString() : 'N/A'}</small>
+                <small>${data.isAiGenerated ? `Generated by ${escapeHtml(data.generatedBy || 'AI')} &middot; ` : 'Last updated: '}${updatedAt ? new Date(updatedAt).toLocaleString() : 'N/A'}</small>
             </div>
         </div>
     `;

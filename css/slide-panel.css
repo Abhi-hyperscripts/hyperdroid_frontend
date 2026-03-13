@@ -2127,3 +2127,336 @@ body.modal-open {
         font-size: 0.9rem;
     }
 }
+
+/* ========== MOM (Minutes of Meeting) Tabs & Components ========== */
+
+.mom-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 0 0 8px 0;
+    border-bottom: 1px solid var(--border-primary);
+    margin-bottom: 10px;
+    overflow-x: auto;
+}
+
+.mom-tab {
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mom-tab:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.mom-tab.active {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+.mom-tab-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.mom-tab.active .mom-tab-badge {
+    background: rgba(255,255,255,0.3);
+}
+
+.mom-tab-content {
+    display: none;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.mom-tab-content.active {
+    display: block;
+}
+
+/* Action Items */
+.mom-action-item {
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    border-left: 3px solid var(--border-primary);
+}
+
+.mom-action-item:last-child {
+    margin-bottom: 0;
+}
+
+.mom-action-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+}
+
+.mom-action-index {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border-radius: 50%;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.mom-action-priority {
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.mom-action-priority.priority-high {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--color-error);
+}
+
+.mom-action-priority.priority-medium {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--color-warning);
+}
+
+.mom-action-priority.priority-low {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--color-success);
+}
+
+.mom-action-assignee {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+}
+
+.mom-action-deadline {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.mom-action-desc {
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+/* Key Points */
+.mom-keypoint {
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+}
+
+.mom-keypoint:last-child {
+    margin-bottom: 0;
+}
+
+.mom-keypoint-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.mom-keypoint-type {
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.mom-keypoint-type.type-information {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--brand-primary);
+}
+
+.mom-keypoint-type.type-discussion {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+}
+
+.mom-keypoint-type.type-decision,
+.mom-keypoint-type.type-agreement {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--color-success);
+}
+
+.mom-keypoint-type.type-concern {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--color-warning);
+}
+
+.mom-keypoint-type.type-question {
+    background: rgba(236, 72, 153, 0.15);
+    color: #ec4899;
+}
+
+.mom-keypoint-topic {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.mom-keypoint-detail {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.mom-keypoint-speakers {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.mom-speaker-tag {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Participants */
+.mom-participant {
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+}
+
+.mom-participant:last-child {
+    margin-bottom: 0;
+}
+
+.mom-participant-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2px;
+}
+
+.mom-participant-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.mom-participant-status {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.mom-participant-status.present {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--color-success);
+}
+
+.mom-participant-status.absent {
+    background: rgba(156, 163, 175, 0.15);
+    color: var(--text-secondary);
+}
+
+.mom-participant-role {
+    font-size: 0.75rem;
+    color: var(--brand-primary);
+    margin-bottom: 2px;
+}
+
+.mom-participant-contribution {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.mom-empty {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* Modal sections for full view */
+.mom-modal-section {
+    margin-bottom: 20px;
+}
+
+.mom-modal-section:last-child {
+    margin-bottom: 0;
+}
+
+.mom-modal-section-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-primary);
+}
+
+.mom-modal-summary-text {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* Scrollbar for MOM tab content */
+.mom-tab-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.mom-tab-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mom-tab-content::-webkit-scrollbar-thumb {
+    background: var(--border-primary);
+    border-radius: 2px;
+}
+
+@media (max-width: 768px) {
+    .mom-tabs {
+        gap: 1px;
+    }
+    .mom-tab {
+        padding: 5px 8px;
+        font-size: 0.72rem;
+    }
+    .mom-tab-content {
+        max-height: 300px;
+    }
+}
