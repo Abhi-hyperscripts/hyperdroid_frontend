@@ -168,7 +168,7 @@ function generateInsightsPPT(data, opts = {}) {
         // Subtitle
         slide.addText('Insights Dashboard', {
             x: 0.6, y: 1.6, w: 8.8, h: 0.5,
-            fontSize: 18, fontFace: FONT, color: 'FFFFFFCC',
+            fontSize: 18, fontFace: FONT, color: 'CCCCCC',
         });
 
         // Info bar
@@ -404,6 +404,14 @@ function generateInsightsPPT(data, opts = {}) {
         const chartW = w - 0.2;
         const chartH = h - (insight ? 1.05 : 0.6);
 
+        // Pre-process scatter/bubble: normalize 'points' to 'series' for the renderer
+        if ((chartType === 'scatter' || chartType === 'bubble') && d.points && !d.series) {
+            const allPts = [];
+            (d.points || []).forEach(s => (s.data || []).forEach(pt => allPts.push(pt)));
+            d.series = allPts.map(p => p.y);
+            d.labels = allPts.map(p => p.label || `${p.x},${p.y}`);
+        }
+
         // Route to specific chart renderer
         switch (chartType) {
             case 'gauge':
@@ -434,7 +442,12 @@ function generateInsightsPPT(data, opts = {}) {
                 break;
             case 'scatter':
             case 'bubble':
-                renderScatterChart(slide, config, { x: chartX, y: chartY, w: chartW, h: chartH });
+                // If pre-processed (points→labels+series), render as bar; otherwise native scatter
+                if (d.labels && Array.isArray(d.series) && typeof d.series[0] === 'number') {
+                    renderBarChart(slide, config, { x: chartX, y: chartY, w: chartW, h: chartH }, true);
+                } else {
+                    renderScatterChart(slide, config, { x: chartX, y: chartY, w: chartW, h: chartH });
+                }
                 break;
             case 'heatmap':
                 renderHeatmapTable(slide, config, { x: chartX, y: chartY, w: chartW, h: chartH });
@@ -706,39 +719,68 @@ function generateInsightsPPT(data, opts = {}) {
     /** Scatter chart (for scatter and bubble types) */
     function renderScatterChart(slide, config, r) {
         const d = config.data || {};
-        const series = d.series || [];
-        if (series.length === 0) return;
+        const rawSeries = d.series || d.points || [];
+        if (rawSeries.length === 0) return;
 
-        // Scatter expects [{name, values: [{x,y}]}]
-        const chartData = series.map((s, i) => {
-            const vals = (s.data || []).map(pt => {
-                if (Array.isArray(pt)) return { x: pt[0], y: pt[1] };
-                if (typeof pt === 'object' && pt.x != null) return pt;
-                return { x: i, y: pt };
+        // Extract x,y pairs from various formats
+        const allPoints = [];
+        rawSeries.forEach(s => {
+            (s.data || []).forEach(pt => {
+                if (Array.isArray(pt)) allPoints.push({ x: pt[0], y: pt[1], label: '' });
+                else if (typeof pt === 'object' && pt.x != null) allPoints.push(pt);
+                else allPoints.push({ x: 0, y: pt, label: '' });
             });
-            return { name: s.name || `Series ${i + 1}`, values: vals };
         });
 
-        const colors = series.map((_, i) => getChartColor(i));
+        if (allPoints.length === 0) return;
+
+        // PptxGenJS SCATTER needs: [{name:'X', values:[...]}, {name:'Y', values:[...]}]
+        const xLabel = d.x_label || 'X-Axis';
+        const yLabel = d.y_label || 'Y-Axis';
+        const chartData = [
+            { name: xLabel, values: allPoints.map(p => p.x) },
+            { name: yLabel, values: allPoints.map(p => p.y) },
+        ];
 
         slide.addChart(pptx.charts.SCATTER, chartData, {
             x: r.x, y: r.y, w: r.w, h: r.h,
             showTitle: false,
-            chartColors: colors,
+            chartColors: [C.accent],
             showValue: false,
+            lineSize: 0,
+            showMarker: true,
+            markerSize: 8,
             catAxisLabelColor: C.textSecondary,
             catAxisLabelFontSize: 7,
             valAxisLabelColor: C.textMuted,
             valAxisLabelFontSize: 7,
             catGridLine: { color: C.surfaceLight, width: 0.3 },
             valGridLine: { color: C.surfaceLight, width: 0.3 },
-            showLegend: series.length > 1,
-            legendPos: 'b',
-            legendFontSize: 7,
-            legendFontFace: FONT,
-            legendColor: C.textSecondary,
+            showLegend: false,
             plotBgColor: C.surface,
         });
+
+        // Add data labels as text annotations for each point
+        if (allPoints.length <= 10) {
+            const xVals = allPoints.map(p => p.x);
+            const yVals = allPoints.map(p => p.y);
+            const xMin = Math.min(...xVals), xMax = Math.max(...xVals);
+            const yMin = Math.min(...yVals), yMax = Math.max(...yVals);
+            const xRange = xMax - xMin || 1;
+            const yRange = yMax - yMin || 1;
+            const pad = 0.08; // padding inside chart area
+
+            allPoints.forEach(pt => {
+                if (!pt.label) return;
+                const px = r.x + pad + ((pt.x - xMin) / xRange) * (r.w - pad * 2);
+                const py = r.y + r.h - pad - ((pt.y - yMin) / yRange) * (r.h - pad * 2) - 0.18;
+                slide.addText(pt.label, {
+                    x: px - 0.4, y: py, w: 0.9, h: 0.18,
+                    fontSize: 6, fontFace: FONT, color: C.textPrimary,
+                    align: 'center', valign: 'middle',
+                });
+            });
+        }
     }
 
     /** Heatmap — rendered as a colored table */
