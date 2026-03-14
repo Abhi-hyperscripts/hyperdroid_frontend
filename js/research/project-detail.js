@@ -785,37 +785,76 @@ function updateInsightsProgressItem(fileId, status, message) {
         barClass = 'style="background: var(--color-danger, #ef4444);"';
     }
 
-    // Parse rich progress message: "Round 3/25 | 15s elapsed | 8 analysis calls | frequency, cross_tab"
+    // Parse rich phase-aware progress message:
+    // New format: "Phase 2: Core Metrics | Running frequency analysis | Round 5/25 | 32s elapsed | 12 analysis calls | frequency, cross_tab"
+    // Old format: "Round 3/25 | 15s elapsed | 8 analysis calls | frequency, cross_tab"
     let html = '';
     const parts = message.split(' | ');
-    const roundMatch = parts[0]?.match(/Round (\d+)\/(\d+)/);
 
-    if (roundMatch && status === 'generating') {
-        const currentRound = parseInt(roundMatch[1]);
-        const maxRounds = parseInt(roundMatch[2]);
-        const elapsed = parts[1] || '';
-        const calls = parts[2] || '';
-        const functions = parts.slice(3).join(', ') || '';
+    // Detect phase from message
+    const phaseMatch = parts[0]?.match(/^Phase (\d+):\s*(.+)/);
+    // Round can be in parts[0] (old format) or parts[2] (new format)
+    const roundPart = parts.find(p => /Round \d+\/\d+/.test(p));
+    const roundMatch = roundPart?.match(/Round (\d+)\/(\d+)/);
 
-        // Estimate progress: rounds are ~70% of work, final JSON assembly is ~30%
-        const roundProgress = Math.min(Math.round((currentRound / maxRounds) * 80) + 5, 90);
-        barWidth = `${roundProgress}%`;
+    if (status === 'generating' && (phaseMatch || roundMatch)) {
+        const phaseNum = phaseMatch ? parseInt(phaseMatch[1]) : 0;
+        const phaseName = phaseMatch ? phaseMatch[2].trim() : '';
+        const currentRound = roundMatch ? parseInt(roundMatch[1]) : 0;
+        const maxRounds = roundMatch ? parseInt(roundMatch[2]) : 25;
+
+        // Find elapsed time, calls, activity description, and function names
+        const elapsedPart = parts.find(p => /\d+s elapsed/.test(p)) || '';
+        const callsPart = parts.find(p => /\d+ analysis calls/.test(p)) || '';
+        const activityPart = parts.find(p => !p.match(/^Phase/) && !p.match(/^Round/) && !p.match(/elapsed/) && !p.match(/analysis calls/) && !p.match(/^(frequency|cross_tab|driver|cluster|correlation|custom_table|descriptive|trend|turf|internet)/) && p.length > 3) || '';
+        // Function names are the last pipe-separated segment that looks like function names
+        const fnPart = parts.find(p => /^(frequency|cross_tab|driver_regression|cluster_segmentation|correlation_matrix|custom_table|descriptive_stats|trend_decomposition|turf_analysis|internet_search)/.test(p)) || '';
+
+        // Phase-based progress estimation (more accurate than round-based)
+        let progressPct;
+        if (phaseNum > 0) {
+            // 7 phases: Phase 1=5-15%, Phase 2=15-30%, Phase 3=30-45%, Phase 4=45-65%, Phase 5=65-75%, Phase 6=75-90%, Phase 7=90-98%
+            const phaseStarts = [0, 5, 15, 30, 45, 65, 75, 90];
+            const phaseEnds   = [5, 15, 30, 45, 65, 75, 90, 98];
+            const pIdx = Math.min(phaseNum, 7);
+            const roundInPhase = currentRound / maxRounds;
+            progressPct = Math.round(phaseStarts[pIdx] + (phaseEnds[pIdx] - phaseStarts[pIdx]) * Math.min(roundInPhase * 2, 1));
+        } else {
+            progressPct = Math.min(Math.round((currentRound / maxRounds) * 80) + 5, 90);
+        }
+        barWidth = `${progressPct}%`;
         isIndeterminate = false;
+
+        // Phase indicator with icons
+        const phaseIcons = { 1: '🔍', 2: '📊', 3: '📈', 4: '🧪', 5: '✅', 6: '🏗️', 7: '🌐' };
+        const phaseIcon = phaseIcons[phaseNum] || '⚙️';
+        const isThinking = activityPart.includes('Analyzing');
 
         html = `
             <div class="file-progress-name" title="AI Insights">AI Insights Dashboard</div>
             <div class="ins-progress-detail">
-                <div class="ins-progress-stats">
-                    <span class="ins-progress-round">${escapeHtml(parts[0])}</span>
-                    <span class="ins-progress-sep">·</span>
-                    <span class="ins-progress-elapsed">${escapeHtml(elapsed)}</span>
-                    <span class="ins-progress-sep">·</span>
-                    <span class="ins-progress-calls">${escapeHtml(calls)}</span>
+                ${phaseNum > 0 ? `
+                <div class="ins-progress-phase">
+                    <span class="ins-phase-icon">${phaseIcon}</span>
+                    <span class="ins-phase-name">Phase ${phaseNum}: ${escapeHtml(phaseName)}</span>
+                    ${isThinking ? '<span class="ins-thinking-dot"></span>' : ''}
                 </div>
-                ${functions ? `<div class="ins-progress-functions">${escapeHtml(functions)}</div>` : ''}
+                ` : ''}
+                ${activityPart ? `<div class="ins-progress-activity">${escapeHtml(activityPart)}</div>` : ''}
+                <div class="ins-progress-stats">
+                    ${roundMatch ? `<span class="ins-progress-round">${escapeHtml(roundPart)}</span><span class="ins-progress-sep">·</span>` : ''}
+                    ${elapsedPart ? `<span class="ins-progress-elapsed">${escapeHtml(elapsedPart)}</span><span class="ins-progress-sep">·</span>` : ''}
+                    ${callsPart ? `<span class="ins-progress-calls">${escapeHtml(callsPart)}</span>` : ''}
+                </div>
+                ${fnPart ? `<div class="ins-progress-functions">${escapeHtml(fnPart)}</div>` : ''}
             </div>
-            <div class="file-progress-bar">
-                <div class="file-progress-fill" style="width: ${barWidth};"></div>
+            <div class="ins-phase-bar-container">
+                <div class="ins-phase-dots">
+                    ${[1,2,3,4,5,6,7].map(p => `<div class="ins-phase-dot ${p < phaseNum ? 'completed' : p === phaseNum ? 'active' : ''}" title="Phase ${p}"></div>`).join('')}
+                </div>
+                <div class="file-progress-bar">
+                    <div class="file-progress-fill" style="width: ${barWidth};"></div>
+                </div>
             </div>
         `;
     } else {

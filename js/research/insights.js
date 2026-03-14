@@ -495,6 +495,54 @@
             });
         }
 
+        // Secondary Research section (rendered as a proper tab panel)
+        if (d.secondary_research && d.secondary_research.items && d.secondary_research.items.length > 0) {
+            const sr = d.secondary_research;
+            html += `<div class="ins-tab-panel" id="insPanel-secondary-research"><div class="ins-secondary-research" id="insSecondaryResearch">
+                <div class="ins-sr-header">
+                    <div class="ins-sr-title-row">
+                        <svg class="ins-sr-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                        <h2 class="ins-sr-title">${esc(sr.section_title || 'Secondary Research — Market Context')}</h2>
+                    </div>
+                    ${sr.methodology_note ? `<div class="ins-sr-methodology">${esc(sr.methodology_note)}</div>` : ''}
+                </div>
+                <div class="ins-sr-items">`;
+
+            sr.items.forEach((item, idx) => {
+                const typeIcons = {
+                    benchmark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>',
+                    trend: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+                    competitor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+                };
+                const typeLabels = { benchmark: 'Industry Benchmark', trend: 'Market Trend', competitor: 'Competitor Context' };
+                const icon = typeIcons[item.type] || typeIcons.benchmark;
+                const typeLabel = typeLabels[item.type] || item.type || 'Research';
+
+                html += `<div class="ins-sr-item">
+                    <div class="ins-sr-item-header">
+                        <span class="ins-sr-type-badge ins-sr-type-${item.type || 'benchmark'}">
+                            ${icon}
+                            ${esc(typeLabel)}
+                        </span>
+                        <h3 class="ins-sr-item-title">${esc(item.title || '')}</h3>
+                    </div>
+                    <div class="ins-sr-item-finding">${esc(item.finding || '')}</div>
+                    ${item.chart ? `<div class="ins-sr-chart" id="insSrChart-${idx}"></div>` : ''}
+                    ${item.sources && item.sources.length > 0 ? `
+                        <div class="ins-sr-sources">
+                            ${item.sources.map(s => `<a href="${esc(s.url || '#')}" target="_blank" rel="noopener noreferrer" class="ins-sr-source">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                ${esc(s.title || s.url || 'Source')}
+                            </a>`).join('')}
+                        </div>` : ''}
+                </div>`;
+            });
+
+            html += '</div></div></div>'; // close ins-sr-items + ins-secondary-research + ins-tab-panel
+        }
+
         // Footer
         html += `
         <div class="ins-footer">
@@ -507,6 +555,7 @@
         requestAnimationFrame(() => {
             renderAllCharts(tabs);
             renderKpiGauges(d.kpi_cards || []);
+            renderSecondaryResearchCharts(d.secondary_research);
             initScrollAnimations();
             initStickyHeader(tabs);
             // Trigger resize so ApexCharts reflows to container width
@@ -632,6 +681,66 @@
                 kpiChartInstances.push(chart);
             } catch (e) {
                 el.innerHTML = `<div style="text-align:center;padding:20px;font-size:28px;font-weight:700;color:${color}">${displayValue}${suffix}</div>`;
+            }
+        });
+    }
+
+    // ═══ RENDER SECONDARY RESEARCH CHARTS ═══
+    function renderSecondaryResearchCharts(sr) {
+        if (!sr || !sr.items || !sr.items.length) return;
+
+        sr.items.forEach((item, idx) => {
+            if (!item.chart) return;
+            const elId = `insSrChart-${idx}`;
+            const el = document.getElementById(elId);
+            if (!el) return;
+
+            const chart = item.chart;
+            const data = chart.data || {};
+            const type = chart.chart_type || 'column';
+            let options = null;
+
+            try {
+                switch (type) {
+                    case 'pie':
+                    case 'donut':
+                        options = buildPieOptions(data, chart, type);
+                        break;
+                    case 'bar':
+                        options = buildBarOptions(data, chart, true);
+                        break;
+                    case 'column':
+                        options = buildBarOptions(data, chart, false);
+                        break;
+                    case 'stacked_bar':
+                        options = buildStackedBarOptions(data, chart);
+                        break;
+                    case 'line':
+                        options = buildLineOptions(data, chart);
+                        break;
+                    case 'area':
+                        options = buildAreaOptions(data, chart);
+                        break;
+                    case 'radar':
+                        options = buildRadarOptions(data, chart);
+                        break;
+                    case 'scatter':
+                        options = buildScatterOptions(data, chart);
+                        break;
+                    default:
+                        options = buildBarOptions(data, chart, false);
+                }
+
+                if (options) {
+                    // Override height for secondary research charts (compact)
+                    options.chart = { ...(options.chart || {}), height: 280 };
+                    el.innerHTML = '';
+                    const c = new ApexCharts(el, options);
+                    c.render();
+                    chartInstances.push({ instance: c, tabId: 'secondary_research', idx: idx });
+                }
+            } catch (e) {
+                el.innerHTML = `<div style="text-align:center;padding:16px;opacity:0.5">Chart unavailable</div>`;
             }
         });
     }
@@ -1718,6 +1827,15 @@
             </button>`;
         });
 
+        // Add Secondary Research sidebar entry if dashboard has secondary_research data
+        if (dashboardData && dashboardData.secondary_research && dashboardData.secondary_research.items && dashboardData.secondary_research.items.length > 0) {
+            sidebarHtml += `<div class="sidebar-divider"></div>
+            <button class="sidebar-btn ins-sr-sidebar-btn" data-tab="secondary-research" onclick="insSwitchTab('secondary-research')">
+                <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
+                <span class="nav-label">Secondary Research</span>
+            </button>`;
+        }
+
         sidebarHtml += '</div></nav>';
         sidebar.innerHTML = sidebarHtml;
 
@@ -1747,6 +1865,27 @@
             });
         }
     }
+
+    window.insScrollToSecondaryResearch = function () {
+        const el = document.getElementById('insSecondaryResearch');
+        if (!el) return;
+
+        // Deactivate all tab buttons and highlight the secondary research button
+        document.querySelectorAll('.ins-tab-btn, .sidebar-btn[data-tab]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === 'secondary-research');
+        });
+
+        // Show all tab panels (so user sees the secondary research section below)
+        // Actually just scroll to it — it's always visible below the tabs
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        // Update header tab name
+        const headerTabName = document.getElementById('activeTabName');
+        if (headerTabName) headerTabName.textContent = 'Secondary Research';
+
+        // On mobile, close sidebar
+        if (window.innerWidth <= 900) insCloseSidebar();
+    };
 
     window.insToggleSidebar = function () {
         const sidebar = document.getElementById('insSidebar');

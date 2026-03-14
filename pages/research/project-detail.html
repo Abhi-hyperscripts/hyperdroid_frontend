@@ -3229,6 +3229,38 @@
         .ins-progress-detail {
             margin-bottom: 6px;
         }
+        .ins-progress-phase {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+        .ins-phase-icon {
+            font-size: 0.85rem;
+            line-height: 1;
+        }
+        .ins-phase-name {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--brand-primary);
+        }
+        .ins-thinking-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--brand-primary);
+            animation: insThinkingPulse 1s ease-in-out infinite;
+        }
+        @keyframes insThinkingPulse {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        .ins-progress-activity {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+            font-style: italic;
+        }
         .ins-progress-stats {
             display: flex;
             align-items: center;
@@ -3238,8 +3270,8 @@
             margin-bottom: 3px;
         }
         .ins-progress-round {
-            color: var(--brand-primary);
-            font-weight: 600;
+            color: var(--text-primary);
+            font-weight: 500;
         }
         .ins-progress-sep {
             color: var(--text-muted, var(--text-secondary));
@@ -3259,6 +3291,35 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        .ins-phase-bar-container {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .ins-phase-dots {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 2px;
+        }
+        .ins-phase-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--bg-tertiary, rgba(0,0,0,0.1));
+            transition: all 0.3s ease;
+        }
+        .ins-phase-dot.completed {
+            background: var(--color-success, #22c55e);
+        }
+        .ins-phase-dot.active {
+            background: var(--brand-primary);
+            box-shadow: 0 0 4px var(--brand-primary);
+            animation: insActiveDot 1.5s ease-in-out infinite;
+        }
+        @keyframes insActiveDot {
+            0%, 100% { box-shadow: 0 0 2px var(--brand-primary); }
+            50% { box-shadow: 0 0 8px var(--brand-primary); }
         }
         .file-progress-bar {
             width: 100%;
