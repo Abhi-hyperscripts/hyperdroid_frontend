@@ -825,9 +825,6 @@ function updateInsightsProgressItem(fileId, status, message) {
         barWidth = `${progressPct}%`;
         isIndeterminate = false;
 
-        // Phase indicator with icons
-        const phaseIcons = { 1: '🔍', 2: '📊', 3: '📈', 4: '🧪', 5: '✅', 6: '🏗️', 7: '🌐' };
-        const phaseIcon = phaseIcons[phaseNum] || '⚙️';
         const isThinking = activityPart.includes('Analyzing');
 
         html = `
@@ -835,8 +832,7 @@ function updateInsightsProgressItem(fileId, status, message) {
             <div class="ins-progress-detail">
                 ${phaseNum > 0 ? `
                 <div class="ins-progress-phase">
-                    <span class="ins-phase-icon">${phaseIcon}</span>
-                    <span class="ins-phase-name">Phase ${phaseNum}: ${escapeHtml(phaseName)}</span>
+                    <span class="ins-phase-name">Phase ${phaseNum}/${7} — ${escapeHtml(phaseName)}</span>
                     ${isThinking ? '<span class="ins-thinking-dot"></span>' : ''}
                 </div>
                 ` : ''}
