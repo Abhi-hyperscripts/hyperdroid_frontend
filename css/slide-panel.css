@@ -2462,20 +2462,30 @@ body.modal-open {
 .mom-sow-list li {
     font-size: 0.85rem;
     color: var(--text-primary);
-    padding: 4px 0 4px 16px;
+    padding: 6px 0 6px 16px;
     position: relative;
     line-height: 1.4;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.mom-sow-list li:last-child {
+    border-bottom: none;
 }
 
 .mom-sow-list li::before {
     content: '';
     position: absolute;
     left: 0;
-    top: 11px;
+    top: 13px;
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background: var(--brand-primary);
+}
+
+.mom-sow-list li .mom-sow-field:first-child .mom-sow-field-label {
+    color: var(--brand-primary);
+    font-weight: 700;
 }
 
 .mom-sow-risks li::before {
