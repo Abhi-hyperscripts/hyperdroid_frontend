@@ -404,14 +404,6 @@ function generateInsightsPPT(data, opts = {}) {
         const chartW = w - 0.2;
         const chartH = h - (insight ? 1.05 : 0.6);
 
-        // Pre-process scatter/bubble: normalize 'points' to 'series' for the renderer
-        if ((chartType === 'scatter' || chartType === 'bubble') && d.points && !d.series) {
-            const allPts = [];
-            (d.points || []).forEach(s => (s.data || []).forEach(pt => allPts.push(pt)));
-            d.series = allPts.map(p => p.y);
-            d.labels = allPts.map(p => p.label || `${p.x},${p.y}`);
-        }
-
         // Route to specific chart renderer
         switch (chartType) {
             case 'gauge':
@@ -442,12 +434,7 @@ function generateInsightsPPT(data, opts = {}) {
                 break;
             case 'scatter':
             case 'bubble':
-                // If pre-processed (points→labels+series), render as bar; otherwise native scatter
-                if (d.labels && Array.isArray(d.series) && typeof d.series[0] === 'number') {
-                    renderBarChart(slide, config, { x: chartX, y: chartY, w: chartW, h: chartH }, true);
-                } else {
-                    renderScatterChart(slide, config, { x: chartX, y: chartY, w: chartW, h: chartH });
-                }
+                renderScatterChart(slide, config, { x: chartX, y: chartY, w: chartW, h: chartH });
                 break;
             case 'heatmap':
                 renderHeatmapTable(slide, config, { x: chartX, y: chartY, w: chartW, h: chartH });

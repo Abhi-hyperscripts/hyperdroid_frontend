@@ -23,6 +23,7 @@
 
     const scriptEl = document.currentScript;
     const embedKey = scriptEl?.getAttribute('data-key') || '';
+    const shareToken = scriptEl?.getAttribute('data-share-token') || '';
 
     if (!embedKey) { console.warn('[Ragenaizer] Missing data-key on embed script.'); return; }
 
@@ -81,7 +82,8 @@
         execute_function: 'Running analysis',
         search_questions: 'Searching questions',
         get_variable_details: 'Looking up metadata',
-        create_visualization: 'Creating chart'
+        create_visualization: 'Creating chart',
+        load_dashboard_context: 'Loading dashboard context'
     };
 
     // ========================================
@@ -320,6 +322,19 @@
             }
             .rz-chart-render { min-height: 200px; }
 
+            /* ApexCharts toolbar menu — force readable in both themes */
+            .apexcharts-menu {
+                background: ${isDark ? '#1e2235' : '#ffffff'} !important;
+                border: 1px solid ${C.border} !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+            }
+            .apexcharts-menu-item {
+                color: ${C.text} !important;
+            }
+            .apexcharts-menu-item:hover {
+                background: ${C.bgHover} !important;
+            }
+
             /* ---- STREAMING CURSOR ---- */
             .rz-cursor {
                 display: inline-block; width: 2px; height: 15px;
@@ -413,6 +428,39 @@
 
             .rz-error-msg { color: ${C.error}; font-size: 12px; padding: 8px 14px; text-align: center; }
             .rz-meta { font-size: 10px; color: ${C.textMuted}; text-align: right; padding: 4px 14px 0; }
+
+            /* ---- COPY BUTTONS ---- */
+            .rz-copy-row {
+                display: flex; justify-content: flex-end; gap: 4px;
+                margin-top: 6px; padding-top: 6px;
+                border-top: 1px solid ${C.border};
+            }
+            .rz-copy-btn {
+                display: inline-flex; align-items: center; gap: 4px;
+                padding: 4px 10px; border-radius: 6px;
+                border: 1px solid ${C.border}; background: ${C.bgSurface};
+                color: ${C.textSecondary}; font-size: 11px; font-family: inherit;
+                cursor: pointer; transition: all 0.15s; white-space: nowrap;
+            }
+            .rz-copy-btn:hover { background: ${C.bgHover}; color: ${C.text}; border-color: ${C.accent}; }
+            .rz-copy-btn:active { transform: scale(0.96); }
+            .rz-copy-btn svg { width: 12px; height: 12px; flex-shrink: 0; }
+            .rz-copy-btn.copied { border-color: #22c55e; color: #22c55e; }
+
+            .rz-tbl-wrap { position: relative; }
+            .rz-tbl-copy {
+                position: absolute; top: -2px; right: 0; z-index: 2;
+                padding: 3px 7px; border-radius: 5px;
+                border: 1px solid ${C.border}; background: ${C.bgSurface};
+                color: ${C.textSecondary}; font-size: 10px; font-family: inherit;
+                cursor: pointer; transition: all 0.15s;
+                display: flex; align-items: center; gap: 3px;
+                opacity: 0; pointer-events: none;
+            }
+            .rz-tbl-wrap:hover .rz-tbl-copy { opacity: 1; pointer-events: auto; }
+            .rz-tbl-copy:hover { background: ${C.bgHover}; color: ${C.text}; border-color: ${C.accent}; }
+            .rz-tbl-copy svg { width: 11px; height: 11px; }
+            .rz-tbl-copy.copied { border-color: #22c55e; color: #22c55e; opacity: 1; }
 
             /* ---- MOBILE ---- */
             @media (max-width: 480px) {
@@ -533,7 +581,7 @@
             const ts = document.createElement('style');
             ts.textContent = `
                 .rz-input:focus { border-color: ${info.accent_color}; box-shadow: 0 0 0 2px ${info.accent_color}22; }
-                .rz-msg.user .rz-msg-bubble { background: ${info.font_color || info.accent_color}; }
+                .rz-msg.user .rz-msg-bubble { background: ${info.accent_color}; color: #fff; }
                 .rz-newchat { border-color: ${info.accent_color}; }
                 .rz-newchat svg { stroke: ${info.accent_color}; }
                 .rz-newchat:hover { background: ${info.accent_color}22; }
@@ -648,7 +696,7 @@
                 const res = await fetch(`${baseUrl}/api/embed/chat/${embedKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
-                    body: JSON.stringify({ message: text, session_id: sessionId })
+                    body: JSON.stringify({ message: text, session_id: sessionId, share_token: shareToken || undefined })
                 });
 
                 if (!res.ok) {
@@ -708,6 +756,7 @@
                     } else {
                         const b = appendMessage('ai', data.response || 'No response.');
                         if (sViz?.length) renderCharts(b, sViz);
+                        addCopyButtons(b);
                         showMeta(sMeta);
                     }
                     break;
@@ -745,6 +794,7 @@
                 dText = sText; sBuf = '';
                 sBubble.innerHTML = renderContent(sText, false);
                 if (sViz?.length) renderCharts(sBubble, sViz);
+                addCopyButtons(sBubble);
                 scrollBottom();
             }
             if (sMeta) showMeta(sMeta);
@@ -864,7 +914,7 @@
             const base = {
                 chart: {
                     background: 'transparent',
-                    toolbar: { show: true, tools: { download: true, selection: false, zoom: false, zoomin: false, zoomout: false, pan: false, reset: false } },
+                    toolbar: { show: true, tools: { download: true, selection: false, zoom: false, zoomin: false, zoomout: false, pan: false, reset: false }, export: { png: { background: 'transparent' }, svg: { background: 'transparent' } } },
                     fontFamily: 'inherit', foreColor: C.chartFg, redrawOnParentResize: true,
                     animations: { enabled: true, easing: 'easeinout', speed: 600 }
                 },
@@ -1010,6 +1060,86 @@
             if (Math.abs(v) >= 1e6) return (v / 1e6).toFixed(1) + 'M';
             if (Math.abs(v) >= 1e3) return (v / 1e3).toFixed(1) + 'K';
             return Number.isInteger(v) ? v.toString() : v.toFixed(1);
+        }
+
+        // ========================================
+        // COPY UTILITIES
+        // ========================================
+        const COPY_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+        const CHECK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+        function flashCopied(btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = `${CHECK_ICON} Copied`;
+            btn.classList.add('copied');
+            setTimeout(() => { btn.innerHTML = orig; btn.classList.remove('copied'); }, 1500);
+        }
+
+        // Copy full AI bubble as plain text
+        function copyBubbleText(bubble) {
+            const clone = bubble.cloneNode(true);
+            // Remove UI elements from clone
+            clone.querySelectorAll('.rz-copy-row, .rz-tbl-copy').forEach(e => e.remove());
+            // Replace charts with just their title
+            clone.querySelectorAll('.rz-chart-container').forEach(chart => {
+                const title = chart.querySelector('.rz-chart-title')?.textContent?.trim() || '';
+                chart.replaceWith(document.createTextNode(title ? `[Chart: ${title}]\n` : ''));
+            });
+            // For tables, convert to tab-separated
+            clone.querySelectorAll('table').forEach(tbl => {
+                let txt = '';
+                tbl.querySelectorAll('tr').forEach(row => {
+                    const cells = Array.from(row.querySelectorAll('th, td')).map(c => c.textContent.trim());
+                    txt += cells.join('\t') + '\n';
+                });
+                tbl.replaceWith(document.createTextNode(txt));
+            });
+            return clone.innerText || clone.textContent || '';
+        }
+
+        // Copy table as tab-separated text
+        function copyTableText(table) {
+            let txt = '';
+            table.querySelectorAll('tr').forEach(row => {
+                const cells = Array.from(row.querySelectorAll('th, td')).map(c => c.textContent.trim());
+                txt += cells.join('\t') + '\n';
+            });
+            return txt.trim();
+        }
+
+        // Add copy buttons to a completed AI message bubble
+        function addCopyButtons(bubble) {
+            // Wrap tables with copy button
+            bubble.querySelectorAll('table').forEach(tbl => {
+                if (tbl.closest('.rz-tbl-wrap')) return;
+                const wrap = document.createElement('div');
+                wrap.className = 'rz-tbl-wrap';
+                tbl.parentNode.insertBefore(wrap, tbl);
+                wrap.appendChild(tbl);
+                const btn = document.createElement('button');
+                btn.className = 'rz-tbl-copy';
+                btn.innerHTML = `${COPY_ICON} Copy table`;
+                btn.onclick = async (e) => {
+                    e.stopPropagation();
+                    const txt = copyTableText(tbl);
+                    try { await navigator.clipboard.writeText(txt); flashCopied(btn); } catch {}
+                };
+                wrap.appendChild(btn);
+            });
+
+            // Add bottom copy row for entire response
+            const copyRow = document.createElement('div');
+            copyRow.className = 'rz-copy-row';
+            const copyAllBtn = document.createElement('button');
+            copyAllBtn.className = 'rz-copy-btn';
+            copyAllBtn.innerHTML = `${COPY_ICON} Copy response`;
+            copyAllBtn.onclick = async (e) => {
+                e.stopPropagation();
+                const txt = copyBubbleText(bubble);
+                try { await navigator.clipboard.writeText(txt); flashCopied(copyAllBtn); } catch {}
+            };
+            copyRow.appendChild(copyAllBtn);
+            bubble.appendChild(copyRow);
         }
 
     })();

@@ -216,9 +216,10 @@
         const apiBase = API_BASE;
 
         const script = document.createElement('script');
-        script.src = `${widgetBase}/embed/widget.js`;
+        script.src = `${widgetBase}/embed/widget.js?v=${Date.now()}`;
         script.setAttribute('data-key', embedKey);
         script.setAttribute('data-api', apiBase);
+        script.setAttribute('data-share-token', token);
         document.body.appendChild(script);
     }
 
@@ -510,6 +511,27 @@
             initStickyHeader(tabs);
             // Trigger resize so ApexCharts reflows to container width
             setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+            // Force-render charts in hidden tabs (width=0) so they print correctly
+            setTimeout(() => {
+                const insts = window.__insChartInstances;
+                if (!insts || !insts.length) return;
+                const hiddenPanels = [];
+                document.querySelectorAll('.ins-tab-panel').forEach(p => {
+                    if (getComputedStyle(p).display === 'none') {
+                        hiddenPanels.push(p);
+                        p.style.display = 'block';
+                    }
+                });
+                insts.forEach(ci => {
+                    const el = ci.instance.el;
+                    const svg = el?.querySelector('svg');
+                    if (svg && parseFloat(svg.getAttribute('width')) === 0) {
+                        const w = el.offsetWidth || el.parentElement?.offsetWidth || 700;
+                        ci.instance.updateOptions({ chart: { width: w } }, false, false);
+                    }
+                });
+                hiddenPanels.forEach(p => { p.style.display = ''; });
+            }, 300);
         });
     }
 
@@ -628,6 +650,7 @@
                 renderChart(`insChart-${id}-${ci}`, chart, id, ci);
             });
         });
+        window.__insChartInstances = chartInstances;
     }
 
     // ═══ CHART RENDERING ═══
@@ -722,7 +745,7 @@
                 background: 'transparent',
                 fontFamily: CHART_FONT,
                 width: '100%',
-                toolbar: { show: false },
+                toolbar: { show: false, export: { png: { background: 'transparent' }, svg: { background: 'transparent' } } },
                 animations: { enabled: true, easing: 'easeinout', speed: 600 }
             },
             theme: {
@@ -1830,23 +1853,7 @@
     });
 
     window.insPrintDashboard = function () {
-        // Show all tab panels so ApexCharts can render into visible containers
-        const panels = document.querySelectorAll('.ins-tab-panel');
-        panels.forEach(p => p.style.display = 'block');
-
-        // Re-render all charts now that all containers are visible
-        if (dashboardData) {
-            const tabs = dashboardData.tabs || dashboardData.sections || [];
-            renderAllCharts(tabs);
-            renderKpiGauges(dashboardData.kpi_cards || []);
-        }
-
-        // Wait for ApexCharts to finish rendering, then print
-        setTimeout(() => {
-            window.print();
-            // Restore tab visibility after print
-            panels.forEach(p => p.style.display = '');
-        }, 600);
+        window.print();
     };
 
     // ═══ FEATURE 1: SCROLL ANIMATIONS ═══
@@ -2652,7 +2659,7 @@
             if (!entry) continue;
 
             try {
-                const { imgURI } = await entry.instance.dataURI({ scale: 2 });
+                const { imgURI } = await entry.instance.dataURI({ scale: 2, background: 'transparent' });
                 const link = document.createElement('a');
                 const config = entry.config;
                 const name = (config.title || config.question_label || `chart-${key}`).replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-').substring(0, 50);

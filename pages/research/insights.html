@@ -31,6 +31,10 @@
 
     <!-- Shared sidebar nav -->
     <link rel="stylesheet" href="../../css/sidebar-nav.css">
+    <script>
+    // Cache-bust CSS too
+    document.querySelector('link[href*="sidebar-nav.css"]').href = '../../css/sidebar-nav.css?v=' + Date.now();
+    </script>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1840,37 +1844,223 @@
 
         /* ═══ PRINT ═══ */
         @media print {
-            body { background: #fff; color: #000; }
-            body::before { display: none; }
-            .ins-menu-wrap, .ins-header-area { display: none; }
-            .ins-footer { display: none; }
-            .ins-summary-card, .ins-kpi-card, .ins-chart-card {
-                background: #fff;
-                border-color: #e5e7eb;
-                box-shadow: none;
-                backdrop-filter: none;
+            /* ── Global reset ── */
+            *, *::before, *::after {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
             }
-            .ins-kpi-value, .ins-text, .ins-chart-title { color: #111; }
-            .ins-text-secondary, .ins-text-muted, .ins-chart-insight { color: #555; }
-            .ins-tab-panel { display: block !important; page-break-inside: avoid; margin-bottom: 20px; }
-            .ins-tabs-bar { display: none; }
-            .sidebar-nav-panel { display: none !important; }
-            .sidebar-overlay { display: none !important; }
-            .ins-container { margin-left: 0 !important; padding: 0 !important; }
-            .ins-chart-area { min-height: 200px; overflow: visible !important; }
-            .ins-chart-card { page-break-inside: avoid; break-inside: avoid; }
-            .apexcharts-canvas { max-width: 100% !important; }
-            /* Hide interactive elements in print */
-            .ins-chart-actions { display: none !important; }
-            .ins-data-table-wrap { display: none !important; }
-            .ins-sticky-header { display: none !important; }
-            .ins-fullscreen-overlay { display: none !important; }
-            .ins-segment-panel, .ins-segment-panel-overlay { display: none !important; }
-            .ins-segment-badge, .ins-segment-dropdown { display: none !important; }
-            /* Force visibility for animated cards */
-            .ins-chart-card, .ins-kpi-card, .ins-summary-card {
+            body {
+                background: #fff !important;
+                color: #000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            body::before { display: none !important; }
+
+            /* ── Hide non-content UI ── */
+            .ins-menu-wrap,
+            .ins-header-area,
+            .ins-footer,
+            .ins-sticky-header,
+            .ins-fullscreen-overlay,
+            .ins-segment-panel,
+            .ins-segment-panel-overlay,
+            .ins-segment-badge,
+            .ins-segment-dropdown,
+            .ins-chart-actions,
+            .ins-data-table-wrap,
+            .ins-tabs-bar,
+            .ins-toast,
+            .sidebar-nav-panel,
+            .sidebar-overlay,
+            .sw-float-btn,
+            .sw-popover {
+                display: none !important;
+            }
+
+            /* ── Hide chatbot widget (Shadow DOM host element) ── */
+            #ragenaizer-chat-widget,
+            [id^="rz-widget"],
+            div[style*="z-index: 2147483647"] {
+                display: none !important;
+            }
+
+            /* ── Layout: full width, no margin (override sidebar-open) ── */
+            .ins-container,
+            .ins-container.sidebar-open {
+                margin: 0 !important;
+                margin-left: 0 !important;
+                padding: 10px !important;
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+            #insDashboard {
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+            /* Hide sidebar toggle button */
+            .sidebar-toggle {
+                display: none !important;
+            }
+
+            /* ── Tab panels: show all, display block ── */
+            .ins-tab-panel {
+                display: block !important;
+                margin-bottom: 16px;
+                padding: 0 !important;
+            }
+
+            /* ── Cards: white bg, visible borders, print-friendly ── */
+            .ins-summary-card, .ins-kpi-card, .ins-chart-card {
+                background: #fff !important;
+                border: 1px solid #d1d5db !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
                 opacity: 1 !important;
                 transform: none !important;
+                margin-bottom: 6px !important;
+                padding: 10px 12px !important;
+            }
+
+            /* ── Text colors for print ── */
+            .ins-kpi-value, .ins-text, .ins-chart-title,
+            .ins-summary-card h3, .ins-summary-card h4,
+            .ins-kpi-label, .ins-kpi-change {
+                color: #111 !important;
+            }
+            .ins-text-secondary, .ins-text-muted, .ins-chart-insight,
+            .ins-kpi-insight {
+                color: #444 !important;
+            }
+            .ins-summary-card p, .ins-summary-card li,
+            .ins-overall-text, .ins-summary-text {
+                color: #222 !important;
+            }
+
+            /* ── Charts: prevent clipping ── */
+            .ins-chart-card {
+                page-break-inside: avoid;
+                break-inside: avoid;
+                overflow: visible !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .ins-chart-area {
+                min-height: 0 !important;
+                overflow: visible !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .ins-chart-area > div {
+                overflow: visible !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .apexcharts-canvas {
+                max-width: 100% !important;
+                width: 100% !important;
+                overflow: visible !important;
+            }
+            .apexcharts-canvas svg {
+                overflow: visible !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            /* Ensure chart bars/lines are not clipped */
+            .apexcharts-inner,
+            .apexcharts-plot-area,
+            .apexcharts-graphical {
+                overflow: visible !important;
+            }
+            /* Hide ApexCharts toolbar in print */
+            .apexcharts-toolbar {
+                display: none !important;
+            }
+
+            /* ── Data labels: ensure visibility on bars ── */
+            .apexcharts-data-labels text,
+            .apexcharts-datalabel,
+            .apexcharts-datalabel-label,
+            .apexcharts-datalabel-value,
+            .apexcharts-bar-goals-markers text {
+                fill: #111 !important;
+                font-size: 10px !important;
+                font-weight: 600 !important;
+                stroke: #fff !important;
+                stroke-width: 2px !important;
+                paint-order: stroke fill !important;
+            }
+
+            /* ── Axis labels: ensure visible ── */
+            .apexcharts-xaxis-label,
+            .apexcharts-yaxis-label {
+                fill: #333 !important;
+                font-size: 10px !important;
+            }
+            .apexcharts-xaxis text,
+            .apexcharts-yaxis text {
+                fill: #333 !important;
+            }
+
+            /* ── Legend: visible in print ── */
+            .apexcharts-legend-text {
+                color: #333 !important;
+            }
+
+            /* ── Grid/Section layout ── */
+            .ins-chart-grid, .ins-kpi-grid {
+                display: grid !important;
+                gap: 6px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            /* ── Page breaks ── */
+            .ins-section-wrap {
+                page-break-before: auto;
+                page-break-after: auto;
+                margin-bottom: 8px !important;
+            }
+            .ins-section-wrap:first-child {
+                page-break-before: avoid;
+            }
+
+            /* ── KPI cards: inline, compact ── */
+            .ins-kpi-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+            }
+            .ins-kpi-card {
+                padding: 10px !important;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+
+            /* ── Summary card ── */
+            .ins-summary-card {
+                page-break-inside: avoid;
+                break-inside: avoid;
+                padding: 16px !important;
+            }
+
+            /* ── Sample size badge: light background ── */
+            .ins-chart-base {
+                background: #f3f4f6 !important;
+                color: #333 !important;
+                border-color: #d1d5db !important;
+            }
+
+            /* ── Reduce whitespace ── */
+            .ins-section-title {
+                color: #111 !important;
+                margin-bottom: 8px !important;
+                font-size: 16px !important;
+            }
+            .ins-section-desc {
+                color: #444 !important;
+                margin-bottom: 8px !important;
             }
         }
     </style>
@@ -1971,8 +2161,192 @@
     <!-- Toast notification -->
     <div class="ins-toast" id="insToast"></div>
 
-    <script src="../../js/share-widget.js"></script>
-    <script src="../../js/research/insights-ppt.js?v=2"></script>
-    <script src="../../js/research/insights.js?v=349"></script>
+    <script>
+    // Cache-bust all local JS on every page load — sequential to preserve order
+    (function(){
+        var cb = Date.now();
+        var scripts = ['../../js/share-widget.js','../../js/research/insights-ppt.js','../../js/research/insights.js'];
+        var i = 0;
+        function loadNext() {
+            if (i >= scripts.length) return;
+            var s = document.createElement('script');
+            s.src = scripts[i] + '?v=' + cb;
+            s.onload = function(){ i++; loadNext(); };
+            document.body.appendChild(s);
+        }
+        loadNext();
+    })();
+    </script>
+
+    <!-- Print: fix ApexCharts SVGs (no viewBox → can't CSS-scale) -->
+    <script>
+    (function() {
+        const saved = [];
+
+        // Convert rgba(r,g,b,a) → rgb(r,g,b) for a given attribute on all SVG elements
+        function rgbaToRgb(str) {
+            const m = str.match(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*[\d.]+\s*\)/);
+            return m ? `rgb(${m[1]},${m[2]},${m[3]})` : null;
+        }
+
+        // Force-render charts in hidden tabs that have zero-width SVGs
+        function forceRenderHiddenCharts() {
+            const instances = window.__insChartInstances;
+            if (!instances || !instances.length) return;
+            const hiddenPanels = [];
+            document.querySelectorAll('.ins-tab-panel').forEach(p => {
+                if (getComputedStyle(p).display === 'none') {
+                    hiddenPanels.push(p);
+                    p.style.display = 'block';
+                }
+            });
+            instances.forEach(ci => {
+                const el = ci.instance.el;
+                const svg = el?.querySelector('svg');
+                if (svg && parseFloat(svg.getAttribute('width')) === 0) {
+                    const w = el.offsetWidth || el.parentElement?.offsetWidth || 700;
+                    ci.instance.updateOptions({ chart: { width: w } }, false, false);
+                }
+            });
+            hiddenPanels.forEach(p => { p.style.display = ''; });
+        }
+
+        window.addEventListener('beforeprint', () => {
+            // Force-render any still-zero-width charts
+            forceRenderHiddenCharts();
+            // Expand all collapsed summary cards
+            document.querySelectorAll('.ins-summary-card.collapsed, .ins-overview-section.collapsed').forEach(el => {
+                el.classList.remove('collapsed');
+                el.dataset.printExpanded = '1';
+            });
+
+            // ── Pass 1: Force solid fills via inline style !important ──
+            // Chrome print engine strips rgba() from SVG fill attributes.
+            // Using inline style with !important ensures Chrome cannot strip them.
+            document.querySelectorAll('.apexcharts-canvas svg').forEach(svg => {
+                svg.querySelectorAll('*').forEach(el => {
+                    const fill = el.getAttribute('fill');
+                    if (fill && fill.includes('rgba(')) {
+                        const rgb = rgbaToRgb(fill);
+                        if (rgb) {
+                            el.dataset.origFill = fill;
+                            el.dataset.origInlineStyle = el.getAttribute('style') || '';
+                            el.setAttribute('fill', rgb);
+                            // Also set via inline style with !important as belt-and-suspenders
+                            const existing = el.getAttribute('style') || '';
+                            el.setAttribute('style', existing + `; fill: ${rgb} !important;`);
+                        }
+                    }
+                    const stroke = el.getAttribute('stroke');
+                    if (stroke && stroke.includes('rgba(')) {
+                        const rgb = rgbaToRgb(stroke);
+                        if (rgb) {
+                            el.dataset.origStroke = stroke;
+                            el.setAttribute('stroke', rgb);
+                        }
+                    }
+                });
+            });
+
+            // ── Pass 2: Add viewBox + scale large SVGs for A4 fit ──
+            document.querySelectorAll('.apexcharts-canvas').forEach(canvas => {
+                const svg = canvas.querySelector('svg');
+                if (!svg) return;
+                const w = parseFloat(svg.getAttribute('width'));
+                const h = parseFloat(svg.getAttribute('height'));
+                if (!w || !h) return;
+                // Skip small charts (KPI radial gauges ≤300px) — they fit fine
+                if (w <= 300) return;
+                const area = canvas.closest('.ins-chart-area');
+                saved.push({
+                    canvas, svg,
+                    cW: canvas.style.width,
+                    cH: canvas.style.height,
+                    sW: svg.getAttribute('width'),
+                    sH: svg.getAttribute('height'),
+                    vb: svg.getAttribute('viewBox'),
+                    par: svg.getAttribute('preserveAspectRatio'),
+                    area,
+                    areaH: area?.style.minHeight
+                });
+                svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+                svg.setAttribute('preserveAspectRatio', 'xMidYMin meet');
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                canvas.style.width = '100%';
+                canvas.style.height = 'auto';
+                if (area) area.style.minHeight = '0';
+                // Boost text sizes to compensate for SVG scaling
+                svg.querySelectorAll('.apexcharts-datalabel, .apexcharts-data-labels text').forEach(t => {
+                    t.dataset.origSize = t.getAttribute('font-size') || '';
+                    const cur = parseFloat(t.getAttribute('font-size') || t.style.fontSize || 11);
+                    t.setAttribute('font-size', Math.round(cur * 1.3));
+                });
+                svg.querySelectorAll('.apexcharts-xaxis-label, .apexcharts-yaxis-label').forEach(t => {
+                    t.dataset.origSize = t.getAttribute('font-size') || '';
+                    const cur = parseFloat(t.getAttribute('font-size') || t.style.fontSize || 11);
+                    t.setAttribute('font-size', Math.round(cur * 1.2));
+                });
+                svg.querySelectorAll('.apexcharts-legend-text').forEach(t => {
+                    t.dataset.origSize = t.style.fontSize || '';
+                    const cur = parseFloat(t.style.fontSize || 12);
+                    t.style.fontSize = Math.round(cur * 1.2) + 'px';
+                });
+            });
+        });
+        window.addEventListener('afterprint', () => {
+            document.querySelectorAll('[data-print-expanded]').forEach(el => {
+                el.classList.add('collapsed');
+                delete el.dataset.printExpanded;
+            });
+            // Restore rgba fills/strokes/styles on ALL SVGs
+            document.querySelectorAll('.apexcharts-canvas svg').forEach(svg => {
+                svg.querySelectorAll('[data-orig-fill]').forEach(el => {
+                    el.setAttribute('fill', el.dataset.origFill);
+                    // Restore original inline style (removes the !important fill we added)
+                    const origStyle = el.dataset.origInlineStyle;
+                    if (origStyle !== undefined) {
+                        if (origStyle) el.setAttribute('style', origStyle);
+                        else el.removeAttribute('style');
+                        delete el.dataset.origInlineStyle;
+                    }
+                    delete el.dataset.origFill;
+                });
+                svg.querySelectorAll('[data-orig-stroke]').forEach(el => {
+                    el.setAttribute('stroke', el.dataset.origStroke);
+                    delete el.dataset.origStroke;
+                });
+                svg.querySelectorAll('[data-orig-style]').forEach(el => {
+                    el.setAttribute('style', el.dataset.origStyle);
+                    delete el.dataset.origStyle;
+                });
+            });
+            saved.forEach(({ canvas, svg, cW, cH, sW, sH, vb, par, area, areaH }) => {
+                canvas.style.width = cW;
+                canvas.style.height = cH;
+                if (sW) svg.setAttribute('width', sW); else svg.removeAttribute('width');
+                if (sH) svg.setAttribute('height', sH); else svg.removeAttribute('height');
+                if (vb) svg.setAttribute('viewBox', vb); else svg.removeAttribute('viewBox');
+                if (par) svg.setAttribute('preserveAspectRatio', par); else svg.removeAttribute('preserveAspectRatio');
+                svg.style.width = '';
+                svg.style.height = '';
+                if (area) area.style.minHeight = areaH || '';
+                // Restore text sizes
+                svg.querySelectorAll('[data-orig-size]').forEach(t => {
+                    const orig = t.dataset.origSize;
+                    if (orig) t.setAttribute('font-size', orig); else t.removeAttribute('font-size');
+                    delete t.dataset.origSize;
+                });
+                svg.querySelectorAll('.apexcharts-legend-text[data-orig-size]').forEach(t => {
+                    t.style.fontSize = t.dataset.origSize || '';
+                    delete t.dataset.origSize;
+                });
+            });
+            saved.length = 0;
+        });
+    })();
+    </script>
 </body>
 </html>
