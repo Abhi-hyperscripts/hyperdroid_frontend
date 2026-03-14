@@ -2692,12 +2692,16 @@ async function loadSessionSummary(sessionId) {
             try { keyPoints = typeof response.keyPoints === 'string' ? JSON.parse(response.keyPoints) : (response.keyPoints || []); } catch(e) { keyPoints = []; }
             try { participants = typeof response.participants === 'string' ? JSON.parse(response.participants) : (response.participants || []); } catch(e) { participants = []; }
         }
+        let sow = null;
+        if (response.sow) {
+            try { sow = typeof response.sow === 'string' ? JSON.parse(response.sow) : response.sow; } catch(e) { sow = null; }
+        }
 
         // Store for the modal
         if (hasSummary) {
             window.currentSummaryText = response.summaryText;
             window.currentSummaryUpdatedAt = response.uploadedAt;
-            window.currentSummaryData = { actionItems, keyPoints, participants, sow: response.sow, generatedBy: response.generatedBy, isAiGenerated };
+            window.currentSummaryData = { actionItems, keyPoints, participants, sow, generatedBy: response.generatedBy, isAiGenerated };
         }
 
         summaryContainer.innerHTML = `
@@ -2715,6 +2719,7 @@ async function loadSessionSummary(sessionId) {
                         <button class="mom-tab" data-tab="participants" onclick="switchMomTab('participants')">
                             Participants${participants.length ? ` <span class="mom-tab-badge">${participants.length}</span>` : ''}
                         </button>
+                        ${sow ? `<button class="mom-tab" data-tab="sow" onclick="switchMomTab('sow')">SOW</button>` : ''}
                     </div>
                     <div class="mom-tab-content active" id="momTab-summary">
                         <div class="summary-text-display" id="summaryTextDisplay">
@@ -2758,6 +2763,61 @@ async function loadSessionSummary(sessionId) {
                             </div>
                         `).join('') : '<p class="mom-empty">No participants identified.</p>'}
                     </div>
+                    ${sow ? `
+                    <div class="mom-tab-content" id="momTab-sow">
+                        <div class="mom-sow-content">
+                            ${sow.project_title ? `<h4 class="mom-sow-title">${escapeHtml(sow.project_title)}</h4>` : ''}
+                            ${sow.objective ? `
+                            <div class="mom-sow-section">
+                                <div class="mom-sow-label">Objective</div>
+                                <p>${escapeHtml(sow.objective)}</p>
+                            </div>` : ''}
+                            ${sow.scope ? `
+                            <div class="mom-sow-section">
+                                <div class="mom-sow-label">Scope</div>
+                                <p>${escapeHtml(sow.scope)}</p>
+                            </div>` : ''}
+                            ${sow.deliverables && sow.deliverables.length ? `
+                            <div class="mom-sow-section">
+                                <div class="mom-sow-label">Deliverables</div>
+                                <ul class="mom-sow-list">${sow.deliverables.map(d => `<li>${escapeHtml(typeof d === 'string' ? d : d.description || d.name || JSON.stringify(d))}</li>`).join('')}</ul>
+                            </div>` : ''}
+                            ${sow.milestones && sow.milestones.length ? `
+                            <div class="mom-sow-section">
+                                <div class="mom-sow-label">Milestones</div>
+                                <div class="mom-sow-milestones">
+                                    ${sow.milestones.map((m, i) => `
+                                        <div class="mom-sow-milestone">
+                                            <span class="mom-action-index">${i + 1}</span>
+                                            <span>${escapeHtml(typeof m === 'string' ? m : m.name || m.description || JSON.stringify(m))}</span>
+                                            ${m.deadline ? `<span class="mom-action-deadline">${escapeHtml(m.deadline)}</span>` : ''}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>` : ''}
+                            ${sow.budget_notes ? `
+                            <div class="mom-sow-section">
+                                <div class="mom-sow-label">Budget Notes</div>
+                                <p>${escapeHtml(sow.budget_notes)}</p>
+                            </div>` : ''}
+                            ${sow.technology_decisions && sow.technology_decisions.length ? `
+                            <div class="mom-sow-section">
+                                <div class="mom-sow-label">Technology Decisions</div>
+                                <ul class="mom-sow-list">${sow.technology_decisions.map(t => `<li>${escapeHtml(typeof t === 'string' ? t : JSON.stringify(t))}</li>`).join('')}</ul>
+                            </div>` : ''}
+                            ${sow.risks && sow.risks.length ? `
+                            <div class="mom-sow-section">
+                                <div class="mom-sow-label">Risks</div>
+                                <ul class="mom-sow-list mom-sow-risks">${sow.risks.map(r => `<li>${escapeHtml(typeof r === 'string' ? r : JSON.stringify(r))}</li>`).join('')}</ul>
+                            </div>` : ''}
+                            ${sow.assumptions && sow.assumptions.length ? `
+                            <div class="mom-sow-section">
+                                <div class="mom-sow-label">Assumptions</div>
+                                <ul class="mom-sow-list">${sow.assumptions.map(a => `<li>${escapeHtml(typeof a === 'string' ? a : JSON.stringify(a))}</li>`).join('')}</ul>
+                            </div>` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
                     <div class="summary-meta">
                         <small>Generated by ${escapeHtml(response.generatedBy || 'AI')} &middot; ${response.uploadedAt ? new Date(response.uploadedAt).toLocaleString() : 'N/A'}</small>
                     </div>
@@ -3160,6 +3220,7 @@ function openSummaryModal() {
     const actionItems = data.actionItems || [];
     const keyPoints = data.keyPoints || [];
     const participants = data.participants || [];
+    const sow = data.sow || null;
 
     // Build modal body — structured if AI-generated, plain text otherwise
     let modalBody = '';
@@ -3215,6 +3276,22 @@ function openSummaryModal() {
                         ${kp.speakers && kp.speakers.length ? `<div class="mom-keypoint-speakers">${kp.speakers.map(s => `<span class="mom-speaker-tag">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
                     </div>
                 `).join('')}
+            </div>
+            ` : ''}
+            ${sow ? `
+            <div class="mom-modal-section">
+                <h4 class="mom-modal-section-title">Statement of Work (SOW)</h4>
+                <div class="mom-sow-content">
+                    ${sow.project_title ? `<h4 class="mom-sow-title">${escapeHtml(sow.project_title)}</h4>` : ''}
+                    ${sow.objective ? `<div class="mom-sow-section"><div class="mom-sow-label">Objective</div><p>${escapeHtml(sow.objective)}</p></div>` : ''}
+                    ${sow.scope ? `<div class="mom-sow-section"><div class="mom-sow-label">Scope</div><p>${escapeHtml(sow.scope)}</p></div>` : ''}
+                    ${sow.deliverables && sow.deliverables.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Deliverables</div><ul class="mom-sow-list">${sow.deliverables.map(d => `<li>${escapeHtml(typeof d === 'string' ? d : d.description || d.name || JSON.stringify(d))}</li>`).join('')}</ul></div>` : ''}
+                    ${sow.milestones && sow.milestones.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Milestones</div><div class="mom-sow-milestones">${sow.milestones.map((m, i) => `<div class="mom-sow-milestone"><span class="mom-action-index">${i + 1}</span><span>${escapeHtml(typeof m === 'string' ? m : m.name || m.description || JSON.stringify(m))}</span>${m.deadline ? `<span class="mom-action-deadline">${escapeHtml(m.deadline)}</span>` : ''}</div>`).join('')}</div></div>` : ''}
+                    ${sow.budget_notes ? `<div class="mom-sow-section"><div class="mom-sow-label">Budget Notes</div><p>${escapeHtml(sow.budget_notes)}</p></div>` : ''}
+                    ${sow.technology_decisions && sow.technology_decisions.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Technology Decisions</div><ul class="mom-sow-list">${sow.technology_decisions.map(t => `<li>${escapeHtml(typeof t === 'string' ? t : JSON.stringify(t))}</li>`).join('')}</ul></div>` : ''}
+                    ${sow.risks && sow.risks.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Risks</div><ul class="mom-sow-list mom-sow-risks">${sow.risks.map(r => `<li>${escapeHtml(typeof r === 'string' ? r : JSON.stringify(r))}</li>`).join('')}</ul></div>` : ''}
+                    ${sow.assumptions && sow.assumptions.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Assumptions</div><ul class="mom-sow-list">${sow.assumptions.map(a => `<li>${escapeHtml(typeof a === 'string' ? a : JSON.stringify(a))}</li>`).join('')}</ul></div>` : ''}
+                </div>
             </div>
             ` : ''}
         `;

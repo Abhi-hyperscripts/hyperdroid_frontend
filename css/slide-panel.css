@@ -2409,6 +2409,85 @@ body.modal-open {
     font-size: 0.85rem;
 }
 
+/* SOW tab styles */
+.mom-sow-content {
+    padding: 4px 0;
+}
+
+.mom-sow-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.mom-sow-section {
+    margin-bottom: 14px;
+}
+
+.mom-sow-section:last-child {
+    margin-bottom: 0;
+}
+
+.mom-sow-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--brand-primary);
+    margin-bottom: 4px;
+}
+
+.mom-sow-section p {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.mom-sow-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mom-sow-list li {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    padding: 4px 0 4px 16px;
+    position: relative;
+    line-height: 1.4;
+}
+
+.mom-sow-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 11px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+}
+
+.mom-sow-risks li::before {
+    background: var(--color-warning);
+}
+
+.mom-sow-milestones {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mom-sow-milestone {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
 /* Modal sections for full view */
 .mom-modal-section {
     margin-bottom: 20px;
