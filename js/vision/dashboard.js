@@ -2772,11 +2772,6 @@ async function loadSessionSummary(sessionId) {
                                 <div class="mom-sow-label">Objective</div>
                                 <p>${escapeHtml(sow.objective)}</p>
                             </div>` : ''}
-                            ${sow.scope ? `
-                            <div class="mom-sow-section">
-                                <div class="mom-sow-label">Scope</div>
-                                <p>${escapeHtml(sow.scope)}</p>
-                            </div>` : ''}
                             ${sow.deliverables && sow.deliverables.length ? `
                             <div class="mom-sow-section">
                                 <div class="mom-sow-label">Deliverables</div>
@@ -2794,15 +2789,30 @@ async function loadSessionSummary(sessionId) {
                                     `).join('')}
                                 </div>
                             </div>` : ''}
-                            ${sow.budget_notes ? `
+                            ${sow.scope_inclusions && sow.scope_inclusions.length ? `
+                            <div class="mom-sow-section">
+                                <div class="mom-sow-label">In Scope</div>
+                                <ul class="mom-sow-list">${sow.scope_inclusions.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
+                            </div>` : ''}
+                            ${sow.scope_exclusions && sow.scope_exclusions.length ? `
+                            <div class="mom-sow-section">
+                                <div class="mom-sow-label">Out of Scope</div>
+                                <ul class="mom-sow-list">${sow.scope_exclusions.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
+                            </div>` : ''}
+                            ${sow.budget_notes && sow.budget_notes.length ? `
                             <div class="mom-sow-section">
                                 <div class="mom-sow-label">Budget Notes</div>
-                                <p>${escapeHtml(typeof sow.budget_notes === 'string' ? sow.budget_notes : JSON.stringify(sow.budget_notes))}</p>
+                                ${Array.isArray(sow.budget_notes) ? `<ul class="mom-sow-list">${sow.budget_notes.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>` : `<p>${escapeHtml(sow.budget_notes)}</p>`}
+                            </div>` : ''}
+                            ${sow.resources && sow.resources.length ? `
+                            <div class="mom-sow-section">
+                                <div class="mom-sow-label">Resources</div>
+                                <ul class="mom-sow-list">${sow.resources.map(r => `<li>${formatSowItem(r)}</li>`).join('')}</ul>
                             </div>` : ''}
                             ${sow.technology_decisions && sow.technology_decisions.length ? `
                             <div class="mom-sow-section">
                                 <div class="mom-sow-label">Technology Decisions</div>
-                                <ul class="mom-sow-list">${sow.technology_decisions.map(t => `<li>${formatSowItem(t)}</li>`).join('')}</ul>
+                                <ul class="mom-sow-list">${sow.technology_decisions.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>
                             </div>` : ''}
                             ${sow.risks && sow.risks.length ? `
                             <div class="mom-sow-section">
@@ -2812,7 +2822,12 @@ async function loadSessionSummary(sessionId) {
                             ${sow.assumptions && sow.assumptions.length ? `
                             <div class="mom-sow-section">
                                 <div class="mom-sow-label">Assumptions</div>
-                                <ul class="mom-sow-list">${sow.assumptions.map(a => `<li>${formatSowItem(a)}</li>`).join('')}</ul>
+                                <ul class="mom-sow-list">${sow.assumptions.map(a => `<li>${escapeHtml(a)}</li>`).join('')}</ul>
+                            </div>` : ''}
+                            ${sow.acceptance_criteria && sow.acceptance_criteria.length ? `
+                            <div class="mom-sow-section">
+                                <div class="mom-sow-label">Acceptance Criteria</div>
+                                <ul class="mom-sow-list">${sow.acceptance_criteria.map(a => `<li>${escapeHtml(a)}</li>`).join('')}</ul>
                             </div>` : ''}
                         </div>
                     </div>
@@ -3286,10 +3301,14 @@ function openSummaryModal() {
                     ${sow.scope ? `<div class="mom-sow-section"><div class="mom-sow-label">Scope</div><p>${escapeHtml(sow.scope)}</p></div>` : ''}
                     ${sow.deliverables && sow.deliverables.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Deliverables</div><ul class="mom-sow-list">${sow.deliverables.map(d => `<li>${formatSowItem(d)}</li>`).join('')}</ul></div>` : ''}
                     ${sow.milestones && sow.milestones.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Milestones</div><div class="mom-sow-milestones">${sow.milestones.map((m, i) => `<div class="mom-sow-milestone"><span class="mom-action-index">${i + 1}</span><span>${formatSowItem(m)}</span></div>`).join('')}</div></div>` : ''}
-                    ${sow.budget_notes ? `<div class="mom-sow-section"><div class="mom-sow-label">Budget Notes</div><p>${escapeHtml(typeof sow.budget_notes === 'string' ? sow.budget_notes : JSON.stringify(sow.budget_notes))}</p></div>` : ''}
-                    ${sow.technology_decisions && sow.technology_decisions.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Technology Decisions</div><ul class="mom-sow-list">${sow.technology_decisions.map(t => `<li>${formatSowItem(t)}</li>`).join('')}</ul></div>` : ''}
+                    ${sow.scope_inclusions && sow.scope_inclusions.length ? `<div class="mom-sow-section"><div class="mom-sow-label">In Scope</div><ul class="mom-sow-list">${sow.scope_inclusions.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul></div>` : ''}
+                    ${sow.scope_exclusions && sow.scope_exclusions.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Out of Scope</div><ul class="mom-sow-list">${sow.scope_exclusions.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul></div>` : ''}
+                    ${sow.budget_notes && sow.budget_notes.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Budget Notes</div>${Array.isArray(sow.budget_notes) ? `<ul class="mom-sow-list">${sow.budget_notes.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>` : `<p>${escapeHtml(sow.budget_notes)}</p>`}</div>` : ''}
+                    ${sow.resources && sow.resources.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Resources</div><ul class="mom-sow-list">${sow.resources.map(r => `<li>${formatSowItem(r)}</li>`).join('')}</ul></div>` : ''}
+                    ${sow.technology_decisions && sow.technology_decisions.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Technology Decisions</div><ul class="mom-sow-list">${sow.technology_decisions.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul></div>` : ''}
                     ${sow.risks && sow.risks.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Risks</div><ul class="mom-sow-list mom-sow-risks">${sow.risks.map(r => `<li>${formatSowItem(r)}</li>`).join('')}</ul></div>` : ''}
-                    ${sow.assumptions && sow.assumptions.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Assumptions</div><ul class="mom-sow-list">${sow.assumptions.map(a => `<li>${formatSowItem(a)}</li>`).join('')}</ul></div>` : ''}
+                    ${sow.assumptions && sow.assumptions.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Assumptions</div><ul class="mom-sow-list">${sow.assumptions.map(a => `<li>${escapeHtml(a)}</li>`).join('')}</ul></div>` : ''}
+                    ${sow.acceptance_criteria && sow.acceptance_criteria.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Acceptance Criteria</div><ul class="mom-sow-list">${sow.acceptance_criteria.map(a => `<li>${escapeHtml(a)}</li>`).join('')}</ul></div>` : ''}
                 </div>
             </div>
             ` : ''}
