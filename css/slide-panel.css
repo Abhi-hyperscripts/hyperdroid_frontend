@@ -2093,11 +2093,19 @@ body.modal-open {
     padding: 16px 24px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.02);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .summary-modal-footer small {
     color: var(--text-tertiary);
     font-size: 0.8rem;
+}
+
+.summary-modal-actions {
+    display: flex;
+    gap: 8px;
 }
 
 /* Mobile responsive */
