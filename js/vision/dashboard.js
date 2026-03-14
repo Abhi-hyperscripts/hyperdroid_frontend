@@ -2780,7 +2780,7 @@ async function loadSessionSummary(sessionId) {
                             ${sow.deliverables && sow.deliverables.length ? `
                             <div class="mom-sow-section">
                                 <div class="mom-sow-label">Deliverables</div>
-                                <ul class="mom-sow-list">${sow.deliverables.map(d => `<li>${escapeHtml(typeof d === 'string' ? d : d.description || d.name || JSON.stringify(d))}</li>`).join('')}</ul>
+                                <ul class="mom-sow-list">${sow.deliverables.map(d => `<li>${formatSowItem(d)}</li>`).join('')}</ul>
                             </div>` : ''}
                             ${sow.milestones && sow.milestones.length ? `
                             <div class="mom-sow-section">
@@ -2789,8 +2789,7 @@ async function loadSessionSummary(sessionId) {
                                     ${sow.milestones.map((m, i) => `
                                         <div class="mom-sow-milestone">
                                             <span class="mom-action-index">${i + 1}</span>
-                                            <span>${escapeHtml(typeof m === 'string' ? m : m.name || m.description || JSON.stringify(m))}</span>
-                                            ${m.deadline ? `<span class="mom-action-deadline">${escapeHtml(m.deadline)}</span>` : ''}
+                                            <span>${formatSowItem(m)}</span>
                                         </div>
                                     `).join('')}
                                 </div>
@@ -2798,22 +2797,22 @@ async function loadSessionSummary(sessionId) {
                             ${sow.budget_notes ? `
                             <div class="mom-sow-section">
                                 <div class="mom-sow-label">Budget Notes</div>
-                                <p>${escapeHtml(sow.budget_notes)}</p>
+                                <p>${escapeHtml(typeof sow.budget_notes === 'string' ? sow.budget_notes : JSON.stringify(sow.budget_notes))}</p>
                             </div>` : ''}
                             ${sow.technology_decisions && sow.technology_decisions.length ? `
                             <div class="mom-sow-section">
                                 <div class="mom-sow-label">Technology Decisions</div>
-                                <ul class="mom-sow-list">${sow.technology_decisions.map(t => `<li>${escapeHtml(typeof t === 'string' ? t : JSON.stringify(t))}</li>`).join('')}</ul>
+                                <ul class="mom-sow-list">${sow.technology_decisions.map(t => `<li>${formatSowItem(t)}</li>`).join('')}</ul>
                             </div>` : ''}
                             ${sow.risks && sow.risks.length ? `
                             <div class="mom-sow-section">
                                 <div class="mom-sow-label">Risks</div>
-                                <ul class="mom-sow-list mom-sow-risks">${sow.risks.map(r => `<li>${escapeHtml(typeof r === 'string' ? r : JSON.stringify(r))}</li>`).join('')}</ul>
+                                <ul class="mom-sow-list mom-sow-risks">${sow.risks.map(r => `<li>${formatSowItem(r)}</li>`).join('')}</ul>
                             </div>` : ''}
                             ${sow.assumptions && sow.assumptions.length ? `
                             <div class="mom-sow-section">
                                 <div class="mom-sow-label">Assumptions</div>
-                                <ul class="mom-sow-list">${sow.assumptions.map(a => `<li>${escapeHtml(typeof a === 'string' ? a : JSON.stringify(a))}</li>`).join('')}</ul>
+                                <ul class="mom-sow-list">${sow.assumptions.map(a => `<li>${formatSowItem(a)}</li>`).join('')}</ul>
                             </div>` : ''}
                         </div>
                     </div>
@@ -3285,12 +3284,12 @@ function openSummaryModal() {
                     ${sow.project_title ? `<h4 class="mom-sow-title">${escapeHtml(sow.project_title)}</h4>` : ''}
                     ${sow.objective ? `<div class="mom-sow-section"><div class="mom-sow-label">Objective</div><p>${escapeHtml(sow.objective)}</p></div>` : ''}
                     ${sow.scope ? `<div class="mom-sow-section"><div class="mom-sow-label">Scope</div><p>${escapeHtml(sow.scope)}</p></div>` : ''}
-                    ${sow.deliverables && sow.deliverables.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Deliverables</div><ul class="mom-sow-list">${sow.deliverables.map(d => `<li>${escapeHtml(typeof d === 'string' ? d : d.description || d.name || JSON.stringify(d))}</li>`).join('')}</ul></div>` : ''}
-                    ${sow.milestones && sow.milestones.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Milestones</div><div class="mom-sow-milestones">${sow.milestones.map((m, i) => `<div class="mom-sow-milestone"><span class="mom-action-index">${i + 1}</span><span>${escapeHtml(typeof m === 'string' ? m : m.name || m.description || JSON.stringify(m))}</span>${m.deadline ? `<span class="mom-action-deadline">${escapeHtml(m.deadline)}</span>` : ''}</div>`).join('')}</div></div>` : ''}
-                    ${sow.budget_notes ? `<div class="mom-sow-section"><div class="mom-sow-label">Budget Notes</div><p>${escapeHtml(sow.budget_notes)}</p></div>` : ''}
-                    ${sow.technology_decisions && sow.technology_decisions.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Technology Decisions</div><ul class="mom-sow-list">${sow.technology_decisions.map(t => `<li>${escapeHtml(typeof t === 'string' ? t : JSON.stringify(t))}</li>`).join('')}</ul></div>` : ''}
-                    ${sow.risks && sow.risks.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Risks</div><ul class="mom-sow-list mom-sow-risks">${sow.risks.map(r => `<li>${escapeHtml(typeof r === 'string' ? r : JSON.stringify(r))}</li>`).join('')}</ul></div>` : ''}
-                    ${sow.assumptions && sow.assumptions.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Assumptions</div><ul class="mom-sow-list">${sow.assumptions.map(a => `<li>${escapeHtml(typeof a === 'string' ? a : JSON.stringify(a))}</li>`).join('')}</ul></div>` : ''}
+                    ${sow.deliverables && sow.deliverables.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Deliverables</div><ul class="mom-sow-list">${sow.deliverables.map(d => `<li>${formatSowItem(d)}</li>`).join('')}</ul></div>` : ''}
+                    ${sow.milestones && sow.milestones.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Milestones</div><div class="mom-sow-milestones">${sow.milestones.map((m, i) => `<div class="mom-sow-milestone"><span class="mom-action-index">${i + 1}</span><span>${formatSowItem(m)}</span></div>`).join('')}</div></div>` : ''}
+                    ${sow.budget_notes ? `<div class="mom-sow-section"><div class="mom-sow-label">Budget Notes</div><p>${escapeHtml(typeof sow.budget_notes === 'string' ? sow.budget_notes : JSON.stringify(sow.budget_notes))}</p></div>` : ''}
+                    ${sow.technology_decisions && sow.technology_decisions.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Technology Decisions</div><ul class="mom-sow-list">${sow.technology_decisions.map(t => `<li>${formatSowItem(t)}</li>`).join('')}</ul></div>` : ''}
+                    ${sow.risks && sow.risks.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Risks</div><ul class="mom-sow-list mom-sow-risks">${sow.risks.map(r => `<li>${formatSowItem(r)}</li>`).join('')}</ul></div>` : ''}
+                    ${sow.assumptions && sow.assumptions.length ? `<div class="mom-sow-section"><div class="mom-sow-label">Assumptions</div><ul class="mom-sow-list">${sow.assumptions.map(a => `<li>${formatSowItem(a)}</li>`).join('')}</ul></div>` : ''}
                 </div>
             </div>
             ` : ''}
@@ -3442,6 +3441,16 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function formatSowItem(item) {
+    if (typeof item === 'string') return escapeHtml(item);
+    const parts = [];
+    const keys = Object.keys(item);
+    for (const key of keys) {
+        if (item[key]) parts.push(`<strong>${escapeHtml(key.replace(/_/g, ' '))}:</strong> ${escapeHtml(String(item[key]))}`);
+    }
+    return parts.join(' &middot; ');
 }
 
 // ============================================
