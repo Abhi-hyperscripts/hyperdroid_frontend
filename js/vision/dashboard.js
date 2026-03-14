@@ -3443,6 +3443,8 @@ function printSummaryModal() {
         .mom-speaker-tag { font-size: 0.72rem; padding: 1px 6px; border-radius: 3px; background: #e3f2fd; margin-right: 4px; }
         .mom-sow-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #1976d2; margin-bottom: 4px; }
         .mom-sow-section { margin-bottom: 12px; }
+        .mom-sow-field { line-height: 1.5; }
+        .mom-sow-field-label { font-weight: 600; color: #555; text-transform: capitalize; }
         .mom-sow-title { font-size: 1rem; font-weight: 700; margin-bottom: 10px; }
         .mom-sow-list { list-style: disc; padding-left: 20px; }
         .mom-sow-list li { margin-bottom: 4px; font-size: 0.85rem; }
@@ -3467,9 +3469,9 @@ function formatSowItem(item) {
     const parts = [];
     const keys = Object.keys(item);
     for (const key of keys) {
-        if (item[key]) parts.push(`<strong>${escapeHtml(key.replace(/_/g, ' '))}:</strong> ${escapeHtml(String(item[key]))}`);
+        if (item[key]) parts.push(`<div class="mom-sow-field"><span class="mom-sow-field-label">${escapeHtml(key.replace(/_/g, ' '))}:</span> ${escapeHtml(String(item[key]))}</div>`);
     }
-    return parts.join(' &middot; ');
+    return parts.join('');
 }
 
 // ============================================

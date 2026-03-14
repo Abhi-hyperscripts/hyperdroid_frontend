@@ -2496,6 +2496,18 @@ body.modal-open {
     color: var(--text-primary);
 }
 
+.mom-sow-field {
+    line-height: 1.5;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+
+.mom-sow-field-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: capitalize;
+}
+
 /* Modal sections for full view */
 .mom-modal-section {
     margin-bottom: 20px;
