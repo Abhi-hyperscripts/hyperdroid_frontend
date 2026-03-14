@@ -320,6 +320,15 @@
                 font-size: 11px; font-weight: 600; color: ${C.textSecondary};
                 text-transform: uppercase; letter-spacing: 0.04em; padding: 0 6px 8px;
             }
+            .rz-chart-base {
+                font-size: 10px; font-weight: 400; color: ${C.textMuted};
+                text-transform: none; letter-spacing: 0; margin-top: 2px;
+            }
+            .rz-chart-sig {
+                font-size: 10px; color: ${C.textMuted}; padding: 6px 10px 2px;
+                border-top: 1px solid ${C.border}; margin-top: 4px;
+                font-style: italic;
+            }
             .rz-chart-render { min-height: 200px; }
 
             /* ApexCharts toolbar menu — force readable in both themes */
@@ -882,17 +891,23 @@
             if (hasM) {
                 let nh = html.replace(/<p>\s*\[CHART:(\d+)\]\s*<\/p>/g, (_, i) => {
                     const idx = parseInt(i); if (idx >= charts.length) return '';
-                    return `<div class="rz-chart-container" data-ci="${idx}"><div class="rz-chart-title">${esc(charts[idx].title||'')}</div><div class="rz-chart-render" id="rzc-${ts}-${idx}"></div></div>`;
+                    const c = charts[idx]; const baseHtml = c.base_n ? `<div class="rz-chart-base">Base: N=${c.base_n.toLocaleString()}</div>` : '';
+                    const sigHtml = c.significance_notes ? `<div class="rz-chart-sig">${esc(c.significance_notes)}</div>` : '';
+                    return `<div class="rz-chart-container" data-ci="${idx}"><div class="rz-chart-title">${esc(c.title||'')}${baseHtml}</div><div class="rz-chart-render" id="rzc-${ts}-${idx}"></div>${sigHtml}</div>`;
                 });
                 nh = nh.replace(/\[CHART:(\d+)\]/g, (_, i) => {
                     const idx = parseInt(i); if (idx >= charts.length) return '';
-                    return `</p><div class="rz-chart-container" data-ci="${idx}"><div class="rz-chart-title">${esc(charts[idx].title||'')}</div><div class="rz-chart-render" id="rzc-${ts}-${idx}"></div></div><p>`;
+                    const c = charts[idx]; const baseHtml = c.base_n ? `<div class="rz-chart-base">Base: N=${c.base_n.toLocaleString()}</div>` : '';
+                    const sigHtml = c.significance_notes ? `<div class="rz-chart-sig">${esc(c.significance_notes)}</div>` : '';
+                    return `</p><div class="rz-chart-container" data-ci="${idx}"><div class="rz-chart-title">${esc(c.title||'')}${baseHtml}</div><div class="rz-chart-render" id="rzc-${ts}-${idx}"></div>${sigHtml}</div><p>`;
                 });
                 el.innerHTML = nh.replace(/<p>\s*<\/p>/g, '');
             } else {
                 const fb = el.querySelector('h1, h2, h3, p');
                 let ch = ''; charts.forEach((c, i) => {
-                    ch += `<div class="rz-chart-container" data-ci="${i}"><div class="rz-chart-title">${esc(c.title||'')}</div><div class="rz-chart-render" id="rzc-${ts}-${i}"></div></div>`;
+                    const baseHtml = c.base_n ? `<div class="rz-chart-base">Base: N=${c.base_n.toLocaleString()}</div>` : '';
+                    const sigHtml = c.significance_notes ? `<div class="rz-chart-sig">${esc(c.significance_notes)}</div>` : '';
+                    ch += `<div class="rz-chart-container" data-ci="${i}"><div class="rz-chart-title">${esc(c.title||'')}${baseHtml}</div><div class="rz-chart-render" id="rzc-${ts}-${i}"></div>${sigHtml}</div>`;
                 });
                 if (fb) fb.insertAdjacentHTML('afterend', ch); else el.innerHTML += ch;
             }
@@ -906,11 +921,33 @@
         }
 
         function makeChart(el, cd) {
-            const { chart_type, categories, series, points } = cd;
+            const { chart_type, categories, series, points, counts, base_n, significance_markers } = cd;
             const usesPoints = ['scatter_chart', 'bubble_chart', 'treemap_chart'].includes(chart_type);
             if (!usesPoints && (!categories?.length || !series?.length)) return;
             if (usesPoints && (!points?.length) && (!series?.length)) return;
             const cc = CHART_COLORS.slice(0, Math.max((series||[]).length, (categories||[]).length, (points||[]).length));
+            // Build significance lookup: { "category|series": "high"|"low" }
+            const sigMap = {};
+            if (significance_markers?.length) significance_markers.forEach(m => { sigMap[`${m.category}|${m.series||''}`] = m.direction; });
+            // Custom tooltip that shows count + percentage + significance arrow
+            const richTooltip = (counts?.length) ? {
+                theme: isDark ? 'dark' : 'light', style: { fontSize: '11px' },
+                custom: ({ series: s, seriesIndex, dataPointIndex, w }) => {
+                    const cat = categories?.[dataPointIndex] || '';
+                    const sName = w.config.series[seriesIndex]?.name || '';
+                    const val = s[seriesIndex]?.[dataPointIndex];
+                    const cnt = counts?.[dataPointIndex];
+                    const sig = sigMap[`${cat}|${sName}`] || sigMap[`${cat}|`];
+                    const sigIcon = sig === 'high' ? ' <span style="color:#22c55e">&#9650;</span>' : sig === 'low' ? ' <span style="color:#ef4444">&#9660;</span>' : '';
+                    let html = `<div style="padding:8px 12px;font-size:12px;background:#1e293b;color:#e2e8f0;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.35);">`;
+                    html += `<strong>${esc(cat)}</strong><br>`;
+                    if (val != null) html += `${fmtNum(val)}%${sigIcon}`;
+                    if (cnt != null) html += `<br><span style="color:#94a3b8">Count: ${cnt.toLocaleString()}</span>`;
+                    if (base_n) html += `<br><span style="color:#64748b">Base: ${base_n.toLocaleString()}</span>`;
+                    html += '</div>';
+                    return html;
+                }
+            } : { theme: isDark ? 'dark' : 'light', style: { fontSize: '11px' } };
             const base = {
                 chart: {
                     background: 'transparent',
@@ -930,14 +967,18 @@
                     opt = { ...base, chart: { ...base.chart, type: 'bar', height: Math.max(280, categories.length * 32) },
                         series: series.map(s => ({ name: s.name, data: s.data })),
                         plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '65%', dataLabels: { position: 'right' } } },
-                        dataLabels: { enabled: true, textAnchor: 'start', offsetX: 8, style: { fontSize: '10px', fontWeight: 400, colors: [C.chartDataLabel] }, formatter: v => '\u2003' + fmtNum(v) },
+                        dataLabels: { enabled: true, textAnchor: 'start', offsetX: 8, style: { fontSize: '10px', fontWeight: 400, colors: [C.chartDataLabel] },
+                            formatter: (v) => '\u2003' + fmtNum(v) + '%' },
+                        tooltip: richTooltip,
                         xaxis: { categories, labels: { style: { fontSize: '10px' } } }, yaxis: { labels: { style: { fontSize: '10px' }, maxWidth: 160 } } };
                     break;
                 case 'column_chart':
                     opt = { ...base, chart: { ...base.chart, type: 'bar', height: 320 },
                         series: series.map(s => ({ name: s.name, data: s.data })),
                         plotOptions: { bar: { horizontal: false, columnWidth: series.length > 1 ? '75%' : '55%', borderRadius: 4, borderRadiusApplication: 'end' } },
-                        dataLabels: { enabled: categories.length <= 8, offsetY: -8, style: { fontSize: '10px', colors: [C.chartDataLabel] }, formatter: v => fmtNum(v) },
+                        dataLabels: { enabled: categories.length <= 8, offsetY: -8, style: { fontSize: '10px', colors: [C.chartDataLabel] },
+                            formatter: (v) => fmtNum(v) + '%' },
+                        tooltip: richTooltip,
                         xaxis: { categories, labels: { rotate: categories.length > 6 ? -45 : 0, rotateAlways: categories.length > 6, style: { fontSize: '10px' } } },
                         yaxis: { labels: { style: { fontSize: '10px' }, formatter: v => fmtNum(v) } } };
                     break;
@@ -951,17 +992,35 @@
                 case 'pie_chart':
                     opt = { ...base, chart: { ...base.chart, type: 'pie', height: 320 },
                         series: series[0].data, labels: categories,
-                        dataLabels: { enabled: true, formatter: v => Math.round(v) + '%', style: { fontSize: '11px', fontWeight: 500 }, dropShadow: { enabled: false } },
+                        dataLabels: { enabled: true, formatter: (v) => Math.round(v) + '%', style: { fontSize: '11px', fontWeight: 500 }, dropShadow: { enabled: false } },
+                        tooltip: counts?.length ? { custom: ({ seriesIndex, w }) => {
+                            const cat = w.config.labels?.[seriesIndex] || '';
+                            const val = w.globals.series?.[seriesIndex];
+                            const cnt = counts?.[seriesIndex];
+                            let h = `<div style="padding:8px 12px;font-size:12px;background:#1e293b;color:#e2e8f0;border-radius:6px;"><strong>${esc(cat)}</strong><br>${fmtNum(val)}%`;
+                            if (cnt != null) h += `<br><span style="color:#94a3b8">Count: ${cnt.toLocaleString()}</span>`;
+                            if (base_n) h += `<br><span style="color:#64748b">Base: ${base_n.toLocaleString()}</span>`;
+                            return h + '</div>';
+                        }} : base.tooltip,
                         plotOptions: { pie: { expandOnClick: true } }, stroke: { width: 1, colors: [C.chartStroke] } };
                     break;
                 case 'donut_chart':
                     opt = { ...base, chart: { ...base.chart, type: 'donut', height: 320 },
                         series: series[0].data, labels: categories,
-                        dataLabels: { enabled: true, formatter: v => Math.round(v) + '%', style: { fontSize: '11px', fontWeight: 500 }, dropShadow: { enabled: false } },
+                        dataLabels: { enabled: true, formatter: (v) => Math.round(v) + '%', style: { fontSize: '11px', fontWeight: 500 }, dropShadow: { enabled: false } },
+                        tooltip: counts?.length ? { custom: ({ seriesIndex, w }) => {
+                            const cat = w.config.labels?.[seriesIndex] || '';
+                            const val = w.globals.series?.[seriesIndex];
+                            const cnt = counts?.[seriesIndex];
+                            let h = `<div style="padding:8px 12px;font-size:12px;background:#1e293b;color:#e2e8f0;border-radius:6px;"><strong>${esc(cat)}</strong><br>${fmtNum(val)}%`;
+                            if (cnt != null) h += `<br><span style="color:#94a3b8">Count: ${cnt.toLocaleString()}</span>`;
+                            if (base_n) h += `<br><span style="color:#64748b">Base: ${base_n.toLocaleString()}</span>`;
+                            return h + '</div>';
+                        }} : base.tooltip,
                         plotOptions: { pie: { donut: { size: '62%', labels: {
                             show: true, name: { show: true, fontSize: '12px', color: C.chartLegend },
                             value: { show: true, fontSize: '16px', fontWeight: 600, color: '#00d4ff', formatter: v => fmtNum(parseFloat(v)) },
-                            total: { show: true, label: 'Total', fontSize: '11px', color: C.textMuted, formatter: w => fmtNum(w.globals.spikeWidth ? 0 : w.globals.series.reduce((a,b)=>a+b,0)) }
+                            total: { show: true, label: base_n ? `N=${base_n.toLocaleString()}` : 'Total', fontSize: '11px', color: C.textMuted, formatter: w => fmtNum(w.globals.spikeWidth ? 0 : w.globals.series.reduce((a,b)=>a+b,0)) }
                         } } } }, stroke: { width: 1, colors: [C.chartStroke] } };
                     break;
                 case 'scatter_chart': {
