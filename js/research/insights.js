@@ -304,6 +304,10 @@
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                             <span>Download Charts</span>
                         </button>
+                        <button onclick="insDownloadPPT(); insCloseMenu()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                            <span>Download PPT</span>
+                        </button>
                     </div>
                 </div>`;
         }
@@ -2669,6 +2673,29 @@
         if (btn) btn.textContent = 'Download Selected';
         insToggleSelectMode();
     };
+
+    // ═══ DOWNLOAD PPT ═══
+    window.insDownloadPPT = function () {
+        if (!dashboardData) {
+            showToast('No dashboard data loaded', 'error');
+            return;
+        }
+        if (typeof generateInsightsPPT !== 'function') {
+            showToast('PPT generator not loaded', 'error');
+            return;
+        }
+        showToast('Generating PPT...', 'info');
+        // Small delay to let toast render before heavy sync work
+        setTimeout(() => {
+            generateInsightsPPT(dashboardData, {
+                projectName: dashboardData.project_name || document.title.split('—')[0].trim(),
+                sampleSize: dashboardData.sample_size,
+            });
+        }, 100);
+    };
+
+    // Expose showToast so PPT generator can use it
+    window.showInsToast = showToast;
 
     // ═══ THEME TOGGLE (updated with fullscreen re-render) ═══
     window.insToggleTheme = function () {
