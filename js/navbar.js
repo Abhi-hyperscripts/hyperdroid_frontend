@@ -119,6 +119,20 @@ const NavbarComponent = {
                     </svg>
                 </span>
                 <div class="nav-dropdown-menu">
+                    <!-- Insights Submenu -->
+                    <div class="nav-submenu" data-nav="insights">
+                        <div class="nav-submenu-trigger">
+                            Insights <span>Survey reports & dashboards</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>
+                        <div class="nav-submenu-content">
+                            <div class="nav-dropdown-label">Research Reports</div>
+                            <a href="/pages/insights/work-from-home-research.html" class="nav-dropdown-item" data-nav="wfh-research">Work From Home Research</a>
+                            <div class="nav-dropdown-divider"></div>
+                            <a href="/pages/insights/" class="nav-dropdown-item" data-nav="all-insights">View All Reports &rarr;</a>
+                        </div>
+                    </div>
+                    <div class="nav-dropdown-divider"></div>
                     <!-- Blog Submenu -->
                     <div class="nav-submenu" data-nav="blog">
                         <div class="nav-submenu-trigger">

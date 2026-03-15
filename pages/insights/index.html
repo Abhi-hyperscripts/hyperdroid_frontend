@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Insights & Survey Reports | Ragenaizer</title>
+    <meta name="description" content="Explore AI-powered survey insights and research reports. Interactive dashboards with executive summaries, key findings, and detailed analytics.">
+    <meta name="keywords" content="survey insights, research reports, data analytics, survey analysis, interactive dashboards">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/insights/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Research Insights & Survey Reports | Ragenaizer">
+    <meta property="og:description" content="Explore AI-powered survey insights and research reports with interactive dashboards.">
+    <meta property="og:url" content="https://ragenaizer.com/pages/insights/">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-insights.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Research Insights & Survey Reports | Ragenaizer">
+    <meta name="twitter:description" content="Explore AI-powered survey insights and research reports with interactive dashboards.">
+    <meta name="twitter:image" content="https://ragenaizer.com/assets/og-insights.png">
+
+    <!-- Schema.org -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Research Insights & Survey Reports",
+        "description": "AI-powered survey insights and research reports with interactive dashboards.",
+        "url": "https://ragenaizer.com/pages/insights/",
+        "publisher": { "@type": "Organization", "name": "Ragenaizer" }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ragenaizer.com/" },
+            { "@type": "ListItem", "position": 2, "name": "Insights" }
+        ]
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="/css/landing.css">
+    <link rel="stylesheet" href="/css/insights-seo.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+</head>
+<body class="landing-page">
+    <div id="navbar"></div>
+
+    <main class="insights-hub">
+        <div class="insights-hub-container">
+            <!-- Breadcrumb -->
+            <nav class="seo-breadcrumb" aria-label="Breadcrumb">
+                <a href="/">Home</a>
+                <span class="seo-breadcrumb-sep">/</span>
+                <span>Insights</span>
+            </nav>
+
+            <div class="insights-hub-header">
+                <h1>Research Insights & Survey Reports</h1>
+                <p class="insights-hub-subtitle">AI-powered analysis of survey data. Explore interactive dashboards with executive summaries, key findings, and detailed analytics.</p>
+            </div>
+
+            <div id="insights-hub-grid" class="insights-hub-grid">
+                <!-- Cards rendered by JS from manifest.json -->
+            </div>
+
+            <div id="insights-hub-empty" class="insights-hub-empty" style="display:none;">
+                <p>No reports published yet. Check back soon.</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer"></div>
+
+    <script src="/js/navbar.js"></script>
+    <script src="/js/footer.js"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        async function loadReports() {
+            try {
+                const resp = await fetch('/pages/insights/manifest.json');
+                if (!resp.ok) throw new Error('Failed to load manifest');
+                const data = await resp.json();
+                const reports = data.reports || [];
+
+                const grid = document.getElementById('insights-hub-grid');
+                const empty = document.getElementById('insights-hub-empty');
+
+                if (!reports.length) {
+                    grid.style.display = 'none';
+                    empty.style.display = 'block';
+                    return;
+                }
+
+                // Update CollectionPage schema with actual reports
+                const schemaEl = document.querySelector('script[type="application/ld+json"]');
+                if (schemaEl) {
+                    try {
+                        const schema = JSON.parse(schemaEl.textContent);
+                        if (schema['@type'] === 'CollectionPage') {
+                            schema.hasPart = reports.map(r => ({
+                                '@type': 'Article',
+                                'name': r.title,
+                                'url': 'https://ragenaizer.com/pages/insights/' + r.slug + '.html'
+                            }));
+                            schemaEl.textContent = JSON.stringify(schema);
+                        }
+                    } catch(e) {}
+                }
+
+                grid.innerHTML = reports.map(function(r) {
+                    return `
+                    <a href="/pages/insights/${r.slug}.html" class="insights-card">
+                        <div class="insights-card-header">
+                            <span class="insights-card-category">${r.category || 'Research'}</span>
+                            ${r.hero_stat ? `<span class="insights-card-stat">${r.hero_stat.value} <small>${r.hero_stat.label}</small></span>` : ''}
+                        </div>
+                        <h2 class="insights-card-title">${r.title}</h2>
+                        <p class="insights-card-desc">${r.meta_description || ''}</p>
+                        <div class="insights-card-footer">
+                            <span class="insights-card-date">${r.date_published || ''}</span>
+                            <span class="insights-card-cta">Read Report &rarr;</span>
+                        </div>
+                    </a>`;
+                }).join('');
+            } catch (err) {
+                console.error('Failed to load insights manifest:', err);
+                document.getElementById('insights-hub-grid').style.display = 'none';
+                document.getElementById('insights-hub-empty').style.display = 'block';
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadReports);
+        } else {
+            loadReports();
+        }
+    })();
+    </script>
+</body>
+</html>

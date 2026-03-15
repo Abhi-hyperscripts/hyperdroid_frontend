@@ -143,6 +143,12 @@
     // ═══ INIT ═══
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
+    const isEmbed = params.get('embed') === 'true';
+
+    // Embed mode: strip padding/chrome for seamless iframe embedding
+    if (isEmbed) {
+        document.body.classList.add('ins-embed-mode');
+    }
 
     if (!token) {
         showError('No share token provided. Please use a valid insights link.');

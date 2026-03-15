@@ -1,0 +1,16 @@
+{
+  "reports": [
+    {
+      "slug": "work-from-home-research",
+      "token": "e4232d8ed8aff04700b82dd82e1dfbad",
+      "title": "Work From Home Research — Remote Work Insights 2026",
+      "meta_description": "Analysis of 1,507 remote workers: 66% maintain productivity, isolation is the #1 barrier (24%), and 55% prefer hybrid work. Interactive dashboard with executive-grade insights.",
+      "keywords": "remote work statistics, work from home productivity, remote work barriers, hybrid work preferences, employee isolation",
+      "og_title": "Work From Home Research — Key Insights",
+      "og_description": "Interactive insights dashboard analyzing remote work productivity, barriers, and preferences from 1,507 workers.",
+      "category": "Workplace Research",
+      "date_published": "2026-03-15",
+      "hero_stat": { "value": "1,507", "label": "Workers Surveyed" }
+    }
+  ]
+}
