@@ -2706,8 +2706,8 @@ body.research-page::before {
 /* Three-dot utility button */
 .utility-dropdown-btn {
     min-width: unset !important;
-    width: 38px;
-    height: 38px;
+    width: 32px;
+    height: 32px;
     padding: 0 !important;
     display: flex;
     align-items: center;
