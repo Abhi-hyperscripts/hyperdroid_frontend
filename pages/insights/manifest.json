@@ -1,6 +1,42 @@
 {
   "reports": [
     {
+      "slug": "ai-impact-global-job-market-2026",
+      "token": "aaa467d621c8b32b2f9a2e9fcd84b215",
+      "title": "AI's Impact on the Global Job Market in 2026",
+      "meta_description": "AI reshapes 40% of global jobs (IMF). 92M jobs displaced but 170M created by 2030 — net gain of 78M. AI to add $15.7T to global GDP. Interactive dashboard with 20+ sourced statistics.",
+      "keywords": "AI job market impact 2026, artificial intelligence employment, AI job displacement, AI job creation, AI GDP impact, workforce reskilling",
+      "og_title": "AI's Impact on the Global Job Market in 2026 — Key Findings",
+      "og_description": "40% of global jobs exposed to AI. Net gain of 78M jobs by 2030. AI to contribute $15.7T to global GDP. Interactive research dashboard.",
+      "category": "Secondary Research",
+      "date_published": "2026-03-15",
+      "hero_stat": { "value": "20+", "label": "Sources Cited" }
+    },
+    {
+      "slug": "us-israel-iran-conflict-impact-2025-2030",
+      "token": "059d75b5e7498c88085169bcb47186ae",
+      "title": "US-Israel-Iran Conflict Impact Analysis (2025-2030)",
+      "meta_description": "Strait of Hormuz carries 20.3M barrels/day (20% of global oil). Red Sea shipping down 75-90%. Global military spending hit $2.718T record. Gaza GDP contracted 83%. Dashboard with 38 sourced statistics.",
+      "keywords": "US Israel Iran conflict, Strait of Hormuz oil, Red Sea shipping disruption, global military spending, Middle East geopolitics, energy market disruption",
+      "og_title": "US-Israel-Iran Conflict — Global Energy, Trade & Security Impact",
+      "og_description": "Strait of Hormuz carries 20% of global oil. Red Sea shipping down 90%. Record $2.7T military spending. Interactive dashboard with 38 sources.",
+      "category": "Secondary Research",
+      "date_published": "2026-03-15",
+      "hero_stat": { "value": "38", "label": "Sources Cited" }
+    },
+    {
+      "slug": "world-2035-megatrends-global-economy",
+      "token": "7574d416e5be843667c644c873bc509f",
+      "title": "World in 2035: AI, Energy, Population & Technology Megatrends",
+      "meta_description": "AI to add $15.7T to global GDP by 2030. Space economy to reach $1.8T by 2035. 375M workers must reskill. Green hydrogen market $125-173B. Interactive dashboard with 49 sourced statistics.",
+      "keywords": "world 2035 predictions, global megatrends, AI economic impact, space economy 2035, energy transition forecast, population growth projections",
+      "og_title": "World in 2035 — AI, Energy, Population & Technology Megatrends",
+      "og_description": "AI adds $15.7T to GDP. Space economy triples to $1.8T. 375M workers must reskill. Research dashboard with 49 sourced statistics.",
+      "category": "Secondary Research",
+      "date_published": "2026-03-15",
+      "hero_stat": { "value": "49", "label": "Sources Cited" }
+    },
+    {
       "slug": "work-from-home-research",
       "token": "e4232d8ed8aff04700b82dd82e1dfbad",
       "title": "Work From Home Research — Remote Work Insights 2026",
@@ -8,7 +44,7 @@
       "keywords": "remote work statistics, work from home productivity, remote work barriers, hybrid work preferences, employee isolation",
       "og_title": "Work From Home Research — Key Insights",
       "og_description": "Interactive insights dashboard analyzing remote work productivity, barriers, and preferences from 1,507 workers.",
-      "category": "Workplace Research",
+      "category": "Primary Research",
       "date_published": "2026-03-15",
       "hero_stat": { "value": "1,507", "label": "Workers Surveyed" }
     }

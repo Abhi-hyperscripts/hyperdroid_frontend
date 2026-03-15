@@ -126,7 +126,12 @@ const NavbarComponent = {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
                         <div class="nav-submenu-content">
-                            <div class="nav-dropdown-label">Research Reports</div>
+                            <div class="nav-dropdown-label">Secondary Research</div>
+                            <a href="/pages/insights/ai-impact-global-job-market-2026.html" class="nav-dropdown-item" data-nav="ai-job-market">AI Impact on Job Market 2026</a>
+                            <a href="/pages/insights/us-israel-iran-conflict-impact-2025-2030.html" class="nav-dropdown-item" data-nav="us-israel-iran">US-Israel-Iran Conflict Analysis</a>
+                            <a href="/pages/insights/world-2035-megatrends-global-economy.html" class="nav-dropdown-item" data-nav="world-2035">World in 2035: Global Megatrends</a>
+                            <div class="nav-dropdown-divider"></div>
+                            <div class="nav-dropdown-label">Primary Research</div>
                             <a href="/pages/insights/work-from-home-research.html" class="nav-dropdown-item" data-nav="wfh-research">Work From Home Research</a>
                             <div class="nav-dropdown-divider"></div>
                             <a href="/pages/insights/" class="nav-dropdown-item" data-nav="all-insights">View All Reports &rarr;</a>

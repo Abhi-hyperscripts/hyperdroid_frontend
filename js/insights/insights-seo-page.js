@@ -69,10 +69,13 @@
         const projectName = d.project_name || d.title || 'Research Report';
         const execSummary = toBulletArray(d.executive_summary);
         const kpiCards = d.kpi_cards || [];
+        const keyTakeaways = toBulletArray(d.key_takeaways);
         const overallInsights = toBulletArray(d.overall_insights);
         const tabs = d.tabs || [];
         const methodNote = d.methodology_note || '';
         const sampleSize = d.sample_size || d.total_responses || '';
+        const sources = d.sources || [];
+        const isSecondary = d.research_type === 'secondary';
         const token = container.getAttribute('data-token');
 
         // Find this report's manifest entry for date/category
@@ -100,6 +103,7 @@
             <header class="seo-report-header">
                 <h1>${escHtml(projectName)}</h1>
                 <div class="seo-report-meta">
+                    ${isSecondary && sources.length ? `<span><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>${sources.length} Sources</span>` : ''}
                     ${sampleSize ? `<span><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>N = ${escHtml(String(sampleSize))}</span>` : ''}
                     ${category ? `<span><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${escHtml(category)}</span>` : ''}
                     ${datePublished ? `<span><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${escHtml(datePublished)}</span>` : ''}
@@ -157,6 +161,18 @@
                 </section>`;
         }
 
+        // Key Takeaways (secondary research)
+        if (keyTakeaways.length) {
+            html += `
+                <section class="seo-section">
+                    <h2>Key Takeaways</h2>
+                    <ul>${keyTakeaways.map(function (item) {
+                        const text = typeof item === 'string' ? item : (item.text || item.point || '');
+                        return '<li>' + escHtml(text) + '</li>';
+                    }).join('')}</ul>
+                </section>`;
+        }
+
         // Key Findings & Recommendations
         if (overallInsights.length) {
             html += `
@@ -173,7 +189,7 @@
         if (tabs.length) {
             html += '<section class="seo-section"><h2>Detailed Analysis</h2>';
             tabs.forEach(function (tab) {
-                const tabLabel = tab.label || tab.tab_label || tab.name || '';
+                const tabLabel = tab.title || tab.label || tab.tab_label || tab.name || '';
                 const tabSummary = toBulletArray(tab.tab_summary || tab.summary);
                 const charts = tab.charts || [];
 
@@ -195,6 +211,20 @@
                 });
             });
             html += '</section>';
+        }
+
+        // Sources (secondary research)
+        if (sources.length) {
+            html += `
+                <section class="seo-section">
+                    <h2>Sources & References</h2>
+                    <ol class="seo-sources-list">${sources.map(function (src) {
+                        const title = src.title || src.domain || 'Source';
+                        const url = src.url || '';
+                        const tier = src.tier ? ' (Tier ' + src.tier + ')' : '';
+                        return '<li>' + (url ? '<a href="' + escAttr(url) + '" target="_blank" rel="noopener nofollow">' + escHtml(title) + '</a>' : escHtml(title)) + escHtml(tier) + '</li>';
+                    }).join('')}</ol>
+                </section>`;
         }
 
         // Methodology
