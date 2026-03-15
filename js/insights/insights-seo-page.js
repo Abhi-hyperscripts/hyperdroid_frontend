@@ -73,7 +73,6 @@
         const tabs = d.tabs || [];
         const methodNote = d.methodology_note || '';
         const sampleSize = d.sample_size || d.total_responses || '';
-        const fileName = d.file_name || '';
         const token = container.getAttribute('data-token');
 
         // Find this report's manifest entry for date/category
@@ -199,14 +198,13 @@
         }
 
         // Methodology
-        if (methodNote || fileName) {
+        if (methodNote) {
             html += `
                 <section class="seo-section">
                     <h2>Methodology</h2>
                     <div class="seo-methodology">
                         ${methodNote ? '<p>' + escHtml(methodNote) + '</p>' : ''}
                         ${sampleSize ? '<p><strong>Sample size:</strong> ' + escHtml(String(sampleSize)) + ' respondents</p>' : ''}
-                        ${fileName ? '<p><strong>Data source:</strong> ' + escHtml(fileName) + '</p>' : ''}
                     </div>
                 </section>`;
         }
