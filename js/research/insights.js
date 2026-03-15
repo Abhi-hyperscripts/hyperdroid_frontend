@@ -334,7 +334,8 @@
         // Overview section — KPI cards + Executive Summary, collapsible
         const hasKpis = d.kpi_cards && d.kpi_cards.length > 0;
         const hasExec = !!d.executive_summary;
-        const hasKey = !!d.overall_insights;
+        const keyTakeaways = d.key_takeaways || d.overall_insights;
+        const hasKey = !!(keyTakeaways && (Array.isArray(keyTakeaways) ? keyTakeaways.length : keyTakeaways));
         if (hasKpis || hasExec || hasKey) {
             html += `<div class="ins-overview-section" id="insOverviewSection">`;
             html += `<div class="ins-overview-header" onclick="insToggleOverview()">
@@ -350,9 +351,10 @@
                 html += '<div class="ins-kpi-row">';
                 d.kpi_cards.forEach((kpi, i) => {
                     const accent = i % 4;
+                    const kpiSourceCite = kpi.source_id ? renderSourceCitation(kpi.source_id, `insKpiSrc-${i}`) : '';
                     html += `
                     <div class="ins-kpi-card ins-kpi-accent-${accent}">
-                        <div class="ins-kpi-label">${esc(kpi.kpi_label || '')}</div>
+                        <div class="ins-kpi-label">${esc(kpi.kpi_label || '')}${kpiSourceCite}</div>
                         <div class="ins-kpi-gauge" id="insKpiGauge-${i}"></div>
                         ${kpi.benchmark ? `<div class="ins-kpi-insight" style="font-style:normal;opacity:0.7;">${esc(kpi.benchmark)}</div>` : ''}
                         ${kpi.insight ? `<div class="ins-kpi-insight">${esc(kpi.insight)}</div>` : ''}
@@ -385,7 +387,7 @@
                 }
                 if (hasKey) {
                     html += `<div class="ins-mini-panel${!hasExec ? ' active' : ''}" id="insMiniKey">
-                        <div class="ins-summary-text">${formatBullets(d.overall_insights)}</div>
+                        <div class="ins-summary-text">${formatBullets(keyTakeaways)}</div>
                     </div>`;
                 }
                 html += `</div></div>`; // close ins-summary-body + ins-summary-card
@@ -469,6 +471,7 @@
                                 <div class="ins-chart-title">${chart.question_id ? `<span class="ins-qid-icon" data-qid="${esc(chart.question_id)}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span class="ins-qid-tooltip">${esc(chart.question_id)}</span></span>` : ''}${esc(chart.title || chart.question_label || '')}</div>
                                 ${displayBase != null ? `<span class="ins-chart-base" title="Sample size for this chart">N=${Number(displayBase).toLocaleString()}</span>` : ''}
                             </div>
+                            ${chart.data?.source_ids ? renderMultiSourceCitation(chart.data.source_ids, `insChartSrc-${id}-${ci}`) : ''}
                             ${matchingProfiles.length > 0 ? `
                             <button class="ins-segment-badge"
                                     data-segments='${JSON.stringify(matchingProfiles).replace(/'/g, "&#39;")}'
@@ -650,18 +653,24 @@
                             margin: 0
                         },
                         dataLabels: {
-                            name: { show: false },
+                            name: {
+                                show: suffix !== '%',
+                                fontSize: '13px',
+                                fontWeight: 500,
+                                fontFamily: CHART_FONT,
+                                color: valueColor,
+                                offsetY: 24
+                            },
                             value: {
                                 show: true,
                                 fontSize: '22px',
                                 fontWeight: 700,
                                 fontFamily: CHART_FONT,
                                 color: valueColor,
-                                offsetY: 8,
+                                offsetY: suffix !== '%' ? -4 : 8,
                                 formatter: () => {
                                     if (suffix === '%') return fmtPct(rawValue);
-                                    const s = getFormatSettings();
-                                    return displayValue + (s.showPercent ? suffix : suffix.replace('%', ''));
+                                    return displayValue;
                                 }
                             }
                         }
@@ -678,6 +687,7 @@
                     }
                 },
                 colors: [color],
+                labels: [suffix !== '%' ? suffix : ''],
                 stroke: { lineCap: 'round' }
             };
 
@@ -1158,6 +1168,9 @@
             typeof c === 'string' && c.length > maxLabelLen ? c.substring(0, maxLabelLen) + '...' : c
         );
 
+        // Only use 100% stackType when there are multiple series (otherwise single series always shows 100%)
+        const usePercentStack = series.length > 1;
+
         const opts = {
             ...baseChartOptions(),
             chart: {
@@ -1165,7 +1178,7 @@
                 type: 'bar',
                 height: chartHeight(320, Math.max(260, categories.length * 44)),
                 stacked: true,
-                stackType: '100%',
+                ...(usePercentStack ? { stackType: '100%' } : {}),
                 events: sigLookup ? {
                     animationEnd: colorizeSignificanceLabels,
                     mounted: colorizeSignificanceLabels
@@ -1183,7 +1196,7 @@
                 categories: displayCategories,
                 labels: {
                     style: { colors: labelColor, fontSize: mobile ? '10px' : '11px' },
-                    formatter: (val) => fmtPct(val)
+                    formatter: (val) => usePercentStack ? fmtPct(val) : (val != null ? Number(val).toLocaleString() : '')
                 },
                 axisBorder: { color: gridColor }
             },
@@ -1191,6 +1204,11 @@
                 labels: {
                     style: { colors: labelColor, fontSize: mobile ? '10px' : '11px' },
                     maxWidth: mobile ? 90 : 160
+                }
+            },
+            tooltip: {
+                y: {
+                    formatter: (val) => usePercentStack ? fmtPct(val) : (val != null ? Number(val).toLocaleString() : '')
                 }
             },
             legend: {
@@ -1201,8 +1219,8 @@
             dataLabels: {
                 enabled: !mobile,
                 formatter: (val, o) => {
-                    if (val <= 5) return '';
-                    let label = fmtPct(val);
+                    if (usePercentStack && val <= 5) return '';
+                    let label = usePercentStack ? fmtPct(val) : (val != null ? Number(val).toLocaleString() : '');
                     if (sigLookup) {
                         const cat = categories[o.dataPointIndex];
                         const sName = series[o.seriesIndex]?.name;
@@ -1693,9 +1711,21 @@
         return div.innerHTML;
     }
 
-    /** Format text with bullet points. Splits on • or \n• and renders as styled list. */
+    /** Format text with bullet points. Splits on • or \n• and renders as styled list. Also handles arrays. */
     function formatBullets(str) {
         if (!str) return '';
+        // Handle arrays — join into bullet string
+        if (Array.isArray(str)) {
+            if (str.length === 0) return '';
+            const bullets = str.filter(s => s && s.trim());
+            return '<ul class="ins-bullet-list">' +
+                bullets.map(b => {
+                    const escaped = esc(b);
+                    const headerMatch = escaped.match(/^([A-Z][A-Z\s\/&]+):\s*(.*)/s);
+                    if (headerMatch) return `<li><strong>${headerMatch[1]}:</strong> ${headerMatch[2]}</li>`;
+                    return `<li>${escaped}</li>`;
+                }).join('') + '</ul>';
+        }
         const escaped = esc(str);
         // Split on bullet character (with optional newline before it)
         const parts = escaped.split(/\n?•\s*/);
@@ -1745,13 +1775,108 @@
         }
     };
 
-    // Close methodology popover when clicking outside
+    // ═══ SOURCE CITATION POPOVERS ═══
+
+    /** Build lookup map from top-level sources array (keyed by id) */
+    function buildSourceLookup(d) {
+        const map = {};
+        if (d && Array.isArray(d.sources)) {
+            d.sources.forEach(s => { if (s.id) map[s.id] = s; });
+        }
+        return map;
+    }
+
+    /** Render a small source citation icon + popover HTML for a single source_id */
+    function renderSourceCitation(sourceId, popoverId) {
+        if (!sourceId || !dashboardData) return '';
+        const lookup = buildSourceLookup(dashboardData);
+        const src = lookup[sourceId];
+        if (!src) return '';
+        return `<span class="ins-info-trigger ins-source-cite" onclick="insToggleSourcePopover(event, '${popoverId}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <div class="ins-info-popover ins-source-popover" id="${popoverId}">
+                <div style="font-size:11px;font-weight:600;margin-bottom:4px;color:var(--ins-text-secondary);">Source</div>
+                <a href="${esc(src.url || '#')}" target="_blank" rel="noopener" style="color:var(--ins-accent);text-decoration:none;font-size:12px;word-break:break-all;">${esc(src.title || src.domain || src.url || 'Source')}</a>
+                ${src.tier ? `<div style="margin-top:4px;font-size:10px;color:var(--ins-text-muted);">Tier ${src.tier} source${src.accessed_at ? ' · Accessed ' + esc(src.accessed_at) : ''}</div>` : ''}
+            </div>
+        </span>`;
+    }
+
+    /** Render source citations for multiple source_ids (used on charts) */
+    function renderMultiSourceCitation(sourceIds, popoverId) {
+        if (!Array.isArray(sourceIds) || sourceIds.length === 0 || !dashboardData) return '';
+        const lookup = buildSourceLookup(dashboardData);
+        const validSources = sourceIds.map(id => lookup[id]).filter(Boolean);
+        if (validSources.length === 0) return '';
+        const sourcesHtml = validSources.map(s =>
+            `<div style="margin-bottom:6px;">
+                <a href="${esc(s.url || '#')}" target="_blank" rel="noopener" style="color:var(--ins-accent);text-decoration:none;font-size:12px;word-break:break-all;">${esc(s.title || s.domain || s.url || 'Source')}</a>
+                ${s.tier ? `<div style="font-size:10px;color:var(--ins-text-muted);">Tier ${s.tier}${s.accessed_at ? ' · ' + esc(s.accessed_at) : ''}</div>` : ''}
+            </div>`
+        ).join('');
+        return `<span class="ins-info-trigger ins-source-cite" onclick="insToggleSourcePopover(event, '${popoverId}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <span style="font-size:10px;margin-left:2px;">${validSources.length}</span>
+            <div class="ins-info-popover ins-source-popover" id="${popoverId}" style="min-width:220px;">
+                <div style="font-size:11px;font-weight:600;margin-bottom:6px;color:var(--ins-text-secondary);">Sources (${validSources.length})</div>
+                ${sourcesHtml}
+            </div>
+        </span>`;
+    }
+
+    window.insToggleSourcePopover = function (e, popoverId) {
+        e.stopPropagation();
+        // Close all other source popovers and move them back
+        document.querySelectorAll('.ins-source-popover.visible').forEach(p => {
+            if (p.id !== popoverId) {
+                p.classList.remove('visible');
+                if (p._originalParent) { p._originalParent.appendChild(p); p._originalParent = null; }
+            }
+        });
+        const popover = document.getElementById(popoverId);
+        if (!popover) return;
+        const trigger = popover.closest('.ins-info-trigger') || e.currentTarget;
+        const isVisible = !popover.classList.contains('visible');
+        if (isVisible) {
+            // Move to body to escape all overflow/transform contexts
+            const rect = trigger.getBoundingClientRect();
+            popover._originalParent = popover.parentElement;
+            document.body.appendChild(popover);
+            popover.classList.add('visible');
+            // Compute position — prefer below trigger, flip above if not enough space
+            const popH = popover.offsetHeight || 150;
+            let top = rect.bottom + 8;
+            if (top + popH > window.innerHeight - 8) top = rect.top - popH - 8;
+            popover.style.top = Math.max(8, top) + 'px';
+            popover.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 380)) + 'px';
+        } else {
+            popover.classList.remove('visible');
+            if (popover._originalParent) { popover._originalParent.appendChild(popover); popover._originalParent = null; }
+        }
+    };
+
+    // Close methodology + source popovers when clicking outside
     document.addEventListener('click', function (e) {
         const popover = document.getElementById('insMethodologyPopover');
         if (popover && popover.classList.contains('visible') && !e.target.closest('.ins-info-trigger')) {
             popover.classList.remove('visible');
         }
+        // Close any open source popovers and move them back
+        if (!e.target.closest('.ins-info-trigger') && !e.target.closest('.ins-source-popover')) {
+            document.querySelectorAll('.ins-source-popover.visible').forEach(p => {
+                p.classList.remove('visible');
+                if (p._originalParent) { p._originalParent.appendChild(p); p._originalParent = null; }
+            });
+        }
     });
+
+    // Close source popovers on scroll
+    window.addEventListener('scroll', function () {
+        document.querySelectorAll('.ins-source-popover.visible').forEach(p => {
+            p.classList.remove('visible');
+            if (p._originalParent) { p._originalParent.appendChild(p); p._originalParent = null; }
+        });
+    }, true);
 
     window.insSwitchMiniTab = function (btn, panel) {
         btn.parentElement.querySelectorAll('.ins-mini-tab').forEach(t => t.classList.remove('active'));

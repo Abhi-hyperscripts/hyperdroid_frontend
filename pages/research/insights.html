@@ -301,6 +301,25 @@
             border-left: 1px solid var(--ins-border);
         }
 
+        /* Source citation icons (inline on KPI labels and chart headers) */
+        .ins-source-cite {
+            margin-left: 6px;
+            vertical-align: middle;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        .ins-source-cite:hover {
+            opacity: 1;
+        }
+        .ins-source-popover {
+            text-align: left;
+            font-family: var(--ins-font);
+            letter-spacing: normal;
+            position: fixed !important;
+            transform: none !important;
+            z-index: 10000;
+        }
+
         /* Sidebar: starts from top since no navbar */
         .sidebar-nav-panel {
             top: 0 !important;

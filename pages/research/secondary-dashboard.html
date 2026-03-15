@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Secondary Research - HyperDroid</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/research.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard research-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="HyperDroid Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="research-container">
+        <!-- Page Header -->
+        <div class="research-header">
+            <div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+                    <a href="dashboard.html" style="color: var(--text-secondary); text-decoration: none; font-size: 14px;">Research</a>
+                    <span style="color: var(--text-secondary); font-size: 14px;">/</span>
+                    <h1 style="margin: 0;">Secondary Research</h1>
+                </div>
+                <p>AI-powered topic research from internet sources</p>
+            </div>
+            <button class="research-btn btn-primary" id="newProjectBtn" onclick="showModal('createProjectModal')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                New Research
+            </button>
+        </div>
+
+        <!-- Projects Grid -->
+        <div id="projectsGrid">
+            <div class="research-loading">
+                <div class="spinner"></div>
+                <p>Loading research projects...</p>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div id="paginationContainer" style="display:none; justify-content:center; gap:8px; padding:16px 0;">
+        </div>
+    </div>
+
+    <!-- Create Project Modal -->
+    <div id="createProjectModal" class="gm-overlay" onclick="if(event.target===this)closeModal('createProjectModal')">
+        <div class="gm-modal">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title">New Research Project</div>
+                </div>
+                <button class="gm-close" onclick="closeModal('createProjectModal')">&times;</button>
+            </div>
+            <form id="createProjectForm">
+                <div class="gm-body">
+                    <div class="research-form-group">
+                        <label for="projectName">Project Name <span class="required">*</span></label>
+                        <input type="text" id="projectName" placeholder="e.g., AI Job Market Research" required>
+                    </div>
+                    <div class="research-form-group">
+                        <label for="projectDescription">Description</label>
+                        <textarea id="projectDescription" rows="3" placeholder="Brief description of what you want to research..."></textarea>
+                    </div>
+                </div>
+                <div class="gm-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+                    <button type="button" class="gm-btn gm-btn-secondary" onclick="closeModal('createProjectModal')">Cancel</button>
+                    <button type="submit" class="gm-btn gm-btn-primary" id="createProjectBtn">Create Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Generate Research Modal -->
+    <div id="generateModal" class="gm-overlay" onclick="if(event.target===this)closeModal('generateModal')">
+        <div class="gm-modal" style="max-width: 600px;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M12 16v-4"/>
+                            <path d="M12 8h.01"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title" id="generateModalTitle">Generate Research</div>
+                </div>
+                <button class="gm-close" onclick="closeModal('generateModal')">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div class="research-form-group">
+                    <label for="researchInstruction">Research Instruction <span class="required">*</span></label>
+                    <textarea id="researchInstruction" rows="5" placeholder="e.g., Comprehensive analysis of AI's impact on the global job market in 2026. Include market size, key players, regional adoption, growth trends, and future predictions." style="resize: vertical;"></textarea>
+                    <div class="form-hint">Be specific — include aspects like market size, comparisons, regional data, trends, and timeframes for best results.</div>
+                </div>
+            </div>
+            <div class="gm-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+                <button type="button" class="gm-btn gm-btn-secondary" onclick="closeModal('generateModal')">Cancel</button>
+                <button type="button" class="gm-btn gm-btn-primary" id="generateBtn" onclick="handleGenerate()">Generate Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Overlay (bottom-right panel) -->
+    <div id="progressPanel" class="csv-progress-panel" style="display:none;">
+        <div class="csv-progress-header">
+            <span>Generating Research</span>
+            <div class="csv-progress-header-actions">
+                <button onclick="toggleProgressMinimize()">_</button>
+            </div>
+        </div>
+        <div class="csv-progress-body" id="progressList">
+            <div class="csv-progress-name" id="progressProjectName">...</div>
+            <div class="csv-progress-status" id="progressMessage">Initializing...</div>
+            <div class="csv-progress-bar">
+                <div class="csv-progress-fill indeterminate" id="progressBar" style="width:100%;"></div>
+            </div>
+            <div class="csv-progress-stats" id="progressStats"></div>
+        </div>
+    </div>
+
+    <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/research/secondary-dashboard.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</body>
+</html>
