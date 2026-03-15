@@ -629,3 +629,186 @@ function capitalizeFirst(str) {
     if (!str) return '';
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
+
+// ============================================
+// CSV to SPSS Conversion
+// ============================================
+
+let csvConversionId = null;
+let csvUtilityConnection = null;
+
+function toggleUtilityDropdown(e) {
+    e.stopPropagation();
+    const dd = document.getElementById('utilityDropdown');
+    dd.classList.toggle('show');
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', () => {
+    const dd = document.getElementById('utilityDropdown');
+    if (dd) dd.classList.remove('show');
+});
+
+function showCsvUploadModal() {
+    document.getElementById('utilityDropdown').classList.remove('show');
+    showModal('csvUploadModal');
+}
+
+function handleCsvFileSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const label = document.getElementById('csvFileLabel');
+    label.textContent = file.name;
+    document.getElementById('csvSubmitBtn').disabled = false;
+}
+
+async function submitCsvConversion() {
+    const fileInput = document.getElementById('csvFileInput');
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    closeModal('csvUploadModal');
+    showCsvConversionOverlay();
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        // Upload
+        updateCsvProgress('Uploading...', 'Sending file to server', 5);
+        const response = await fetch(`${CONFIG.researchApiBaseUrl}/api/utility/csv-to-spss`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || 'Upload failed');
+        }
+
+        const data = await response.json();
+        csvConversionId = data.conversion_id;
+
+        // Connect SignalR for progress
+        await connectCsvProgressHub(csvConversionId);
+
+        // Also poll as fallback
+        pollCsvStatus(csvConversionId);
+
+    } catch (err) {
+        updateCsvProgress('Failed', err.message, 0, true);
+    }
+}
+
+async function connectCsvProgressHub(conversionId) {
+    try {
+        csvUtilityConnection = new signalR.HubConnectionBuilder()
+            .withUrl(`${CONFIG.researchApiBaseUrl}/hubs/utility`, {
+                accessTokenFactory: () => localStorage.getItem('token')
+            })
+            .withAutomaticReconnect()
+            .build();
+
+        csvUtilityConnection.on('ConversionProgress', (data) => {
+            updateCsvProgress(data.stage, data.message, data.percentage * 100);
+        });
+
+        csvUtilityConnection.on('ConversionComplete', (data) => {
+            updateCsvProgress('Complete!', `${data.row_count} rows x ${data.column_count} columns converted`, 100);
+            // Auto-download
+            setTimeout(() => downloadCsvResult(data.conversion_id), 500);
+        });
+
+        csvUtilityConnection.on('ConversionFailed', (data) => {
+            updateCsvProgress('Failed', data.error, 0, true);
+        });
+
+        await csvUtilityConnection.start();
+        await csvUtilityConnection.invoke('JoinConversion', conversionId);
+    } catch (err) {
+        console.warn('SignalR connection failed, using polling fallback', err);
+    }
+}
+
+async function pollCsvStatus(conversionId) {
+    const poll = async () => {
+        try {
+            const resp = await fetch(`${CONFIG.researchApiBaseUrl}/api/utility/csv-to-spss/${conversionId}/status`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (!resp.ok) return;
+            const data = await resp.json();
+
+            updateCsvProgress(data.stage, data.message, data.percentage * 100);
+
+            if (data.status === 'complete') {
+                setTimeout(() => downloadCsvResult(conversionId), 500);
+                return;
+            }
+            if (data.status === 'failed') {
+                updateCsvProgress('Failed', data.error, 0, true);
+                return;
+            }
+
+            // Continue polling
+            setTimeout(poll, 1000);
+        } catch (err) {
+            setTimeout(poll, 2000);
+        }
+    };
+    setTimeout(poll, 1500);
+}
+
+function downloadCsvResult(conversionId) {
+    const link = document.createElement('a');
+    link.href = `${CONFIG.researchApiBaseUrl}/api/utility/csv-to-spss/${conversionId}/download?token=${localStorage.getItem('token')}`;
+    link.download = '';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    // Update overlay to show download started
+    updateCsvProgress('Downloaded!', 'Your SPSS file has been downloaded.', 100);
+    setTimeout(closeCsvConversionOverlay, 3000);
+
+    // Cleanup SignalR
+    if (csvUtilityConnection) {
+        csvUtilityConnection.stop().catch(() => {});
+        csvUtilityConnection = null;
+    }
+}
+
+function showCsvConversionOverlay() {
+    document.getElementById('csvConversionOverlay').style.display = 'flex';
+    // Reset
+    document.getElementById('csvFileInput').value = '';
+    document.getElementById('csvFileLabel').textContent = 'Click to select a CSV file or drag and drop';
+    document.getElementById('csvSubmitBtn').disabled = true;
+}
+
+function closeCsvConversionOverlay() {
+    document.getElementById('csvConversionOverlay').style.display = 'none';
+}
+
+function updateCsvProgress(stage, message, percentage, isError = false) {
+    const stageEl = document.getElementById('csvConversionStage');
+    const msgEl = document.getElementById('csvConversionMessage');
+    const fillEl = document.getElementById('csvConversionProgressFill');
+    const statsEl = document.getElementById('csvConversionStats');
+
+    if (stageEl) stageEl.textContent = stage;
+    if (stageEl && isError) stageEl.style.color = 'var(--color-error)';
+    else if (stageEl) stageEl.style.color = '';
+
+    if (msgEl) msgEl.textContent = message || '';
+    if (fillEl) fillEl.style.width = `${Math.min(percentage, 100)}%`;
+
+    if (percentage >= 100 && !isError) {
+        if (fillEl) fillEl.style.background = 'var(--color-success)';
+    } else if (isError) {
+        if (fillEl) fillEl.style.background = 'var(--color-error)';
+    } else {
+        if (fillEl) fillEl.style.background = '';
+    }
+}
