@@ -2792,91 +2792,99 @@ body.research-page::before {
 }
 
 /* CSV Conversion Overlay */
-.csv-conversion-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-}
-
-.csv-conversion-panel {
-    width: 420px;
-    max-width: 90vw;
-    background: var(--bg-card);
+/* CSV Progress Panel — matches file-progress-panel in project-detail */
+.csv-progress-panel {
+    position: fixed !important;
+    bottom: 24px;
+    right: 24px;
+    width: 340px;
+    background: var(--bg-card, #ffffff);
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-xl, 16px);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    z-index: 1000;
     overflow: hidden;
     animation: research-slideUp 0.25s ease-out;
 }
 
-.csv-conversion-header {
+.csv-progress-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border-color);
-    font-weight: var(--font-weight-semibold);
-    font-size: var(--font-size-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
     color: var(--text-primary);
 }
 
-.csv-conversion-header button {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 20px;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
-    transition: color var(--transition-fast);
-}
-
-.csv-conversion-header button:hover {
-    color: var(--text-primary);
-}
-
-.csv-conversion-body {
-    padding: 20px;
+.csv-progress-header-actions {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    gap: 4px;
 }
 
-.csv-conversion-stage {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-semibold);
+.csv-progress-header button {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    transition: color 0.15s ease;
+}
+
+.csv-progress-header button:hover {
     color: var(--text-primary);
 }
 
-.csv-conversion-message {
-    font-size: var(--font-size-sm);
+.csv-progress-body {
+    padding: 12px 16px;
+}
+
+.csv-progress-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.csv-progress-status {
+    font-size: 0.72rem;
     color: var(--text-secondary);
-    min-height: 20px;
+    margin-bottom: 6px;
+    min-height: 16px;
 }
 
-.csv-conversion-progress-bar {
+.csv-progress-bar {
     width: 100%;
-    height: 6px;
-    background: var(--bg-tertiary);
-    border-radius: 3px;
+    height: 4px;
+    background: var(--bg-tertiary, rgba(0, 0, 0, 0.1));
+    border-radius: 2px;
     overflow: hidden;
+    margin-bottom: 4px;
 }
 
-.csv-conversion-progress-fill {
+.csv-progress-fill {
     height: 100%;
     width: 0%;
     background: var(--brand-primary);
-    border-radius: 3px;
-    transition: width 0.4s ease, background 0.3s ease;
+    border-radius: 2px;
+    transition: width 0.3s ease;
 }
 
-.csv-conversion-stats {
-    font-size: var(--font-size-xs);
+.csv-progress-fill.indeterminate {
+    width: 30% !important;
+    animation: progressIndeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes progressIndeterminate {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(400%); }
+}
+
+.csv-progress-stats {
+    font-size: 0.68rem;
     color: var(--text-muted);
+    font-family: var(--font-mono, 'SF Mono', Monaco, monospace);
 }

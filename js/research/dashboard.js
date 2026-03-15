@@ -676,9 +676,9 @@ async function submitCsvConversion() {
     try {
         // Upload
         updateCsvProgress('Uploading...', 'Sending file to server', 5);
-        const response = await fetch(`${CONFIG.researchApiBaseUrl}/api/utility/csv-to-spss`, {
+        const response = await fetch(`${CONFIG.researchApiBaseUrl}/utility/csv-to-spss`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            headers: { 'Authorization': `Bearer ${getAuthToken()}` },
             body: formData
         });
 
@@ -704,8 +704,8 @@ async function submitCsvConversion() {
 async function connectCsvProgressHub(conversionId) {
     try {
         csvUtilityConnection = new signalR.HubConnectionBuilder()
-            .withUrl(`${CONFIG.researchApiBaseUrl}/hubs/utility`, {
-                accessTokenFactory: () => localStorage.getItem('token')
+            .withUrl(`${CONFIG.endpoints.research}/hubs/utility`, {
+                accessTokenFactory: () => getAuthToken()
             })
             .withAutomaticReconnect()
             .build();
@@ -734,8 +734,8 @@ async function connectCsvProgressHub(conversionId) {
 async function pollCsvStatus(conversionId) {
     const poll = async () => {
         try {
-            const resp = await fetch(`${CONFIG.researchApiBaseUrl}/api/utility/csv-to-spss/${conversionId}/status`, {
-                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            const resp = await fetch(`${CONFIG.researchApiBaseUrl}/utility/csv-to-spss/${conversionId}/status`, {
+                headers: { 'Authorization': `Bearer ${getAuthToken()}` }
             });
             if (!resp.ok) return;
             const data = await resp.json();
@@ -760,17 +760,29 @@ async function pollCsvStatus(conversionId) {
     setTimeout(poll, 1500);
 }
 
-function downloadCsvResult(conversionId) {
-    const link = document.createElement('a');
-    link.href = `${CONFIG.researchApiBaseUrl}/api/utility/csv-to-spss/${conversionId}/download?token=${localStorage.getItem('token')}`;
-    link.download = '';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+async function downloadCsvResult(conversionId) {
+    try {
+        updateCsvProgress('Downloading...', 'Preparing download...', 95);
+        const resp = await fetch(`${CONFIG.researchApiBaseUrl}/utility/csv-to-spss/${conversionId}/download`, {
+            headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
 
-    // Update overlay to show download started
-    updateCsvProgress('Downloaded!', 'Your SPSS file has been downloaded.', 100);
-    setTimeout(closeCsvConversionOverlay, 3000);
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'converted.zip';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+
+        updateCsvProgress('Downloaded!', 'Your SPSS file has been downloaded.', 100);
+        setTimeout(closeCsvConversionOverlay, 3000);
+    } catch (err) {
+        updateCsvProgress('Download Failed', err.message, 0, true);
+    }
 
     // Cleanup SignalR
     if (csvUtilityConnection) {
@@ -780,11 +792,7 @@ function downloadCsvResult(conversionId) {
 }
 
 function showCsvConversionOverlay() {
-    document.getElementById('csvConversionOverlay').style.display = 'flex';
-    // Reset
-    document.getElementById('csvFileInput').value = '';
-    document.getElementById('csvFileLabel').textContent = 'Click to select a CSV file or drag and drop';
-    document.getElementById('csvSubmitBtn').disabled = true;
+    document.getElementById('csvConversionOverlay').style.display = '';
 }
 
 function closeCsvConversionOverlay() {
@@ -802,13 +810,24 @@ function updateCsvProgress(stage, message, percentage, isError = false) {
     else if (stageEl) stageEl.style.color = '';
 
     if (msgEl) msgEl.textContent = message || '';
-    if (fillEl) fillEl.style.width = `${Math.min(percentage, 100)}%`;
 
-    if (percentage >= 100 && !isError) {
-        if (fillEl) fillEl.style.background = 'var(--color-success)';
-    } else if (isError) {
-        if (fillEl) fillEl.style.background = 'var(--color-error)';
-    } else {
-        if (fillEl) fillEl.style.background = '';
+    if (fillEl) {
+        const pct = Math.min(percentage, 100);
+        if (pct <= 5 && !isError) {
+            fillEl.classList.add('indeterminate');
+            fillEl.style.width = '';
+        } else {
+            fillEl.classList.remove('indeterminate');
+            fillEl.style.width = `${pct}%`;
+        }
+
+        if (pct >= 100 && !isError) {
+            fillEl.style.background = 'var(--color-success)';
+        } else if (isError) {
+            fillEl.style.background = 'var(--color-error, #ef4444)';
+            fillEl.style.width = '100%';
+        } else {
+            fillEl.style.background = '';
+        }
     }
 }

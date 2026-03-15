@@ -192,21 +192,21 @@
         </div>
     </div>
 
-    <!-- CSV Conversion Progress Overlay -->
-    <div id="csvConversionOverlay" class="csv-conversion-overlay" style="display:none;">
-        <div class="csv-conversion-panel">
-            <div class="csv-conversion-header">
-                <span>CSV to SPSS Conversion</span>
+    <!-- CSV Conversion Progress Panel (bottom-right, matches file processing panel) -->
+    <div id="csvConversionOverlay" class="csv-progress-panel" style="display:none;">
+        <div class="csv-progress-header">
+            <span>CSV to SPSS Conversion</span>
+            <div class="csv-progress-header-actions">
                 <button onclick="closeCsvConversionOverlay()" title="Close">&times;</button>
             </div>
-            <div class="csv-conversion-body">
-                <div class="csv-conversion-stage" id="csvConversionStage">Initializing...</div>
-                <div class="csv-conversion-message" id="csvConversionMessage"></div>
-                <div class="csv-conversion-progress-bar">
-                    <div class="csv-conversion-progress-fill" id="csvConversionProgressFill"></div>
-                </div>
-                <div class="csv-conversion-stats" id="csvConversionStats"></div>
+        </div>
+        <div class="csv-progress-body">
+            <div class="csv-progress-name" id="csvConversionStage">Initializing...</div>
+            <div class="csv-progress-status" id="csvConversionMessage"></div>
+            <div class="csv-progress-bar">
+                <div class="csv-progress-fill" id="csvConversionProgressFill"></div>
             </div>
+            <div class="csv-progress-stats" id="csvConversionStats"></div>
         </div>
     </div>
 
