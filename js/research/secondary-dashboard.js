@@ -592,39 +592,31 @@ async function showVisitorsModal(shareToken) {
         html += '</tbody></table>';
         body.innerHTML = html;
 
-        // Resolve country from IP using ip-api.com batch
-        const ips = visitors.map(function (v) { return v.ip_address; }).filter(Boolean);
-        if (ips.length > 0) {
-            try {
-                const geoResp = await fetch('http://ip-api.com/batch', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(ips.map(function (ip) { return { query: ip, fields: 'query,country,countryCode,city' }; }))
-                });
-                if (geoResp.ok) {
-                    const geoData = await geoResp.json();
-                    const geoMap = {};
-                    geoData.forEach(function (g) { geoMap[g.query] = g; });
-                    visitors.forEach(function (v, i) {
-                        const el = document.getElementById('geo-' + i);
-                        if (!el) return;
-                        const geo = geoMap[v.ip_address];
-                        if (geo && geo.country) {
-                            const flag = countryCodeToFlag(geo.countryCode);
-                            el.innerHTML = flag + ' ' + escapeHtml(geo.city ? geo.city + ', ' + geo.country : geo.country);
-                            el.style.color = 'var(--text-primary)';
-                        } else {
-                            el.textContent = '-';
-                        }
-                    });
+        // Resolve country from IP using free HTTPS GeoIP APIs
+        const uniqueIps = [...new Set(visitors.map(function (v) { return v.ip_address; }).filter(Boolean))];
+        if (uniqueIps.length > 0) {
+            const geoMap = {};
+            await Promise.allSettled(uniqueIps.map(async function (ip) {
+                try {
+                    const resp = await fetch('https://freeipapi.com/api/json/' + ip);
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        geoMap[ip] = { country: data.countryName, countryCode: data.countryCode, city: data.cityName };
+                    }
+                } catch (e) {}
+            }));
+            visitors.forEach(function (v, i) {
+                const el = document.getElementById('geo-' + i);
+                if (!el) return;
+                const geo = geoMap[v.ip_address];
+                if (geo && geo.country) {
+                    const flag = countryCodeToFlag(geo.countryCode);
+                    el.innerHTML = flag + ' ' + escapeHtml(geo.city ? geo.city + ', ' + geo.country : geo.country);
+                    el.style.color = 'var(--text-primary)';
+                } else {
+                    el.textContent = '-';
                 }
-            } catch (e) {
-                // GeoIP failed — leave "..." placeholders
-                visitors.forEach(function (v, i) {
-                    const el = document.getElementById('geo-' + i);
-                    if (el) el.textContent = '-';
-                });
-            }
+            });
         }
     } catch (err) {
         console.error('Failed to load visitors:', err);
