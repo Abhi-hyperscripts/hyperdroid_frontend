@@ -598,10 +598,12 @@ async function showVisitorsModal(shareToken) {
             const geoMap = {};
             await Promise.allSettled(uniqueIps.map(async function (ip) {
                 try {
-                    const resp = await fetch('https://freeipapi.com/api/json/' + ip);
+                    const resp = await fetch('https://ipapi.co/' + ip + '/json/');
                     if (resp.ok) {
                         const data = await resp.json();
-                        geoMap[ip] = { country: data.countryName, countryCode: data.countryCode, city: data.cityName };
+                        if (data.country_name) {
+                            geoMap[ip] = { country: data.country_name, countryCode: data.country_code, city: data.city };
+                        }
                     }
                 } catch (e) {}
             }));
