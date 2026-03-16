@@ -552,6 +552,45 @@
             html += '</div></div></div>'; // close ins-sr-items + ins-secondary-research + ins-tab-panel
         }
 
+        // Sources & References panel (secondary research only)
+        if (d.research_type === 'secondary' && Array.isArray(d.sources) && d.sources.length > 0) {
+            const tierLabels = { 1: 'Government & Academic', 2: 'Major Research Firms', 3: 'Reputable Media', 4: 'Industry & Corporate' };
+            const tierColors = { 1: '#10b981', 2: '#3b82f6', 3: '#a855f7', 4: '#f59e0b' };
+            // Group sources by tier
+            const byTier = {};
+            d.sources.forEach(s => {
+                const t = s.tier || 4;
+                if (!byTier[t]) byTier[t] = [];
+                byTier[t].push(s);
+            });
+            html += `<div class="ins-sources-panel">
+                <div class="ins-sources-header" onclick="this.parentElement.classList.toggle('ins-sources-expanded')" style="cursor:pointer;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    <h2>Sources & References</h2>
+                    <span class="ins-sources-count">${d.sources.length} sources cited</span>
+                    <svg class="ins-sources-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="ins-sources-tiers">`;
+            [1, 2, 3, 4].forEach(tier => {
+                if (!byTier[tier] || !byTier[tier].length) return;
+                html += `<div class="ins-sources-tier-group">
+                    <div class="ins-sources-tier-label">
+                        <span class="ins-tier-badge" style="background:${tierColors[tier]}20;color:${tierColors[tier]};border:1px solid ${tierColors[tier]}40;">Tier ${tier}</span>
+                        <span class="ins-tier-desc">${esc(tierLabels[tier] || '')}</span>
+                    </div>
+                    <div class="ins-sources-list">`;
+                byTier[tier].forEach(s => {
+                    html += `<a href="${esc(s.url || '#')}" target="_blank" rel="noopener nofollow" class="ins-source-item">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        <span>${esc(s.title || s.domain || s.url || 'Source')}</span>
+                        ${s.accessed_at ? `<span class="ins-source-date">${esc(s.accessed_at)}</span>` : ''}
+                    </a>`;
+                });
+                html += `</div></div>`;
+            });
+            html += `</div></div>`;
+        }
+
         // Footer
         html += `
         <div class="ins-footer">
@@ -776,6 +815,36 @@
             });
         });
         window.__insChartInstances = chartInstances;
+
+        // Listen for resize (fires on window resize AND sidebar toggle) to reflow all charts
+        if (!window.__insResizeListenerAdded) {
+            window.__insResizeListenerAdded = true;
+            let resizeTimer;
+            window.addEventListener('resize', function () {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function () {
+                    const insts = window.__insChartInstances;
+                    if (!insts || !insts.length) return;
+                    insts.forEach(function (ci) {
+                        const el = ci.instance.el;
+                        if (!el) return;
+                        const w = el.offsetWidth || el.parentElement?.offsetWidth;
+                        if (w && w > 0) {
+                            ci.instance.updateOptions({ chart: { width: w } }, false, false);
+                        }
+                    });
+                    // Also reflow KPI gauges
+                    kpiChartInstances.forEach(function (c) {
+                        const el = c.el;
+                        if (!el) return;
+                        const w = el.offsetWidth || el.parentElement?.offsetWidth;
+                        if (w && w > 0) {
+                            c.updateOptions({ chart: { width: w } }, false, false);
+                        }
+                    });
+                }, 200);
+            });
+        }
     }
 
     // ═══ CHART RENDERING ═══
@@ -2700,14 +2769,8 @@
         window.addEventListener('scroll', function () {
             if (!ticking) {
                 requestAnimationFrame(() => {
-                    const tabsBar = document.getElementById('insTabsBar');
-                    const overviewSection = document.getElementById('insOverviewSection');
-                    // For sidebar layouts (>3 tabs), trigger after overview section
-                    const triggerEl = tabsBar || overviewSection;
-                    if (triggerEl) {
-                        const rect = triggerEl.getBoundingClientRect();
-                        stickyEl.classList.toggle('visible', rect.bottom < 0);
-                    }
+                    // Show sticky header after minimal scroll (100px)
+                    stickyEl.classList.toggle('visible', window.scrollY > 100);
                     ticking = false;
                 });
                 ticking = true;
