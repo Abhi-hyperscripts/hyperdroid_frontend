@@ -224,12 +224,15 @@ async function loadProjectStatus(projectId) {
         } else if (status.status === 'ready') {
             statusEl.innerHTML = '<span class="badge" style="background: rgba(34,197,94,0.15); color: var(--color-success); padding: 4px 10px; border-radius: 12px; font-size: 11px;">Ready</span>';
             sourcesEl.textContent = status.source_count || '-';
-            // Fetch unique visitor count
+            // Fetch unique visitor count (clickable)
             const visitorsEl = document.getElementById(`visitors-${projectId}`);
             if (visitorsEl && status.share_token) {
                 try {
                     const views = await api.request(`/research/insights/${status.share_token}/views`, { _skipSpinner: true });
-                    visitorsEl.textContent = views.unique_visitors || '0';
+                    const count = views.unique_visitors || 0;
+                    visitorsEl.innerHTML = count > 0
+                        ? `<span class="visitors-link" onclick="showVisitorsModal('${status.share_token}')" title="Click to view visitor details">${count}</span>`
+                        : '0';
                 } catch (e) {
                     visitorsEl.textContent = '0';
                 }
@@ -542,6 +545,94 @@ function viewDashboard(shareToken) {
 }
 
 // ============================================
+// Visitors Modal
+// ============================================
+
+async function showVisitorsModal(shareToken) {
+    const modal = document.getElementById('visitorsModal');
+    const body = document.getElementById('visitorsModalBody');
+    if (!modal || !body) return;
+
+    body.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);">Loading visitors...</div>';
+    showModal('visitorsModal');
+
+    try {
+        const visitors = await api.request(`/research/insights/${shareToken}/visitors`, { _skipSpinner: true });
+
+        if (!visitors || visitors.length === 0) {
+            body.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary);">No visitors yet</div>';
+            return;
+        }
+
+        let html = `<table class="visitors-table">
+            <thead><tr>
+                <th>#</th>
+                <th>IP Address</th>
+                <th>Country</th>
+                <th>Views</th>
+                <th>Last Visited</th>
+                <th>Referrer</th>
+            </tr></thead><tbody>`;
+
+        visitors.forEach(function (v, i) {
+            const lastSeen = new Date(v.last_seen).toLocaleString('en-US', {
+                month: 'short', day: 'numeric', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            html += `<tr>
+                <td>${i + 1}</td>
+                <td><code>${escapeHtml(v.ip_address || 'Unknown')}</code></td>
+                <td id="geo-${i}" style="color:var(--text-secondary);">${v.ip_address ? '...' : '-'}</td>
+                <td>${v.view_count}</td>
+                <td>${lastSeen}</td>
+                <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(v.referrer || '')}">${escapeHtml(v.referrer || '-')}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table>';
+        body.innerHTML = html;
+
+        // Resolve country from IP using ip-api.com batch
+        const ips = visitors.map(function (v) { return v.ip_address; }).filter(Boolean);
+        if (ips.length > 0) {
+            try {
+                const geoResp = await fetch('http://ip-api.com/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(ips.map(function (ip) { return { query: ip, fields: 'query,country,countryCode,city' }; }))
+                });
+                if (geoResp.ok) {
+                    const geoData = await geoResp.json();
+                    const geoMap = {};
+                    geoData.forEach(function (g) { geoMap[g.query] = g; });
+                    visitors.forEach(function (v, i) {
+                        const el = document.getElementById('geo-' + i);
+                        if (!el) return;
+                        const geo = geoMap[v.ip_address];
+                        if (geo && geo.country) {
+                            const flag = countryCodeToFlag(geo.countryCode);
+                            el.innerHTML = flag + ' ' + escapeHtml(geo.city ? geo.city + ', ' + geo.country : geo.country);
+                            el.style.color = 'var(--text-primary)';
+                        } else {
+                            el.textContent = '-';
+                        }
+                    });
+                }
+            } catch (e) {
+                // GeoIP failed — leave "..." placeholders
+                visitors.forEach(function (v, i) {
+                    const el = document.getElementById('geo-' + i);
+                    if (el) el.textContent = '-';
+                });
+            }
+        }
+    } catch (err) {
+        console.error('Failed to load visitors:', err);
+        body.innerHTML = '<div style="text-align:center; padding:20px; color:var(--color-error);">Failed to load visitor data</div>';
+    }
+}
+
+// ============================================
 // Utilities
 // ============================================
 
@@ -550,6 +641,12 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function countryCodeToFlag(code) {
+    if (!code || code.length !== 2) return '';
+    const base = 0x1F1E6;
+    return String.fromCodePoint(base + code.charCodeAt(0) - 65, base + code.charCodeAt(1) - 65);
 }
 
 function showToast(message, type = 'success') {

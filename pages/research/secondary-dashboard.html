@@ -132,6 +132,73 @@
         </div>
     </div>
 
+    <!-- Visitors Modal -->
+    <div id="visitorsModal" class="gm-overlay" onclick="if(event.target===this)closeModal('visitorsModal')">
+        <div class="gm-modal" style="max-width: 900px; width: 90%;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title">Dashboard Visitors</div>
+                </div>
+                <button class="gm-close" onclick="closeModal('visitorsModal')">&times;</button>
+            </div>
+            <div class="gm-body" id="visitorsModalBody" style="max-height: 400px; overflow-y: auto;">
+            </div>
+            <div class="gm-footer" style="display:flex; justify-content:flex-end;">
+                <button type="button" class="gm-btn gm-btn-secondary" onclick="closeModal('visitorsModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .visitors-link {
+            color: var(--brand-primary);
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .visitors-link:hover {
+            color: var(--brand-primary-hover);
+        }
+        .visitors-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .visitors-table th {
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .visitors-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            white-space: nowrap;
+        }
+        .visitors-table code {
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .visitors-table tr:last-child td {
+            border-bottom: none;
+        }
+    </style>
+
     <!-- Progress Overlay (bottom-right panel) -->
     <div id="progressPanel" class="csv-progress-panel" style="display:none;">
         <div class="csv-progress-header">
