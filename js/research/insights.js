@@ -1959,6 +1959,19 @@
         // Scroll to top so new tab content starts from the beginning
         window.scrollTo({ top: 0, behavior: 'instant' });
 
+        // Auto-collapse overview section when switching away from first tab
+        const overviewSection = document.getElementById('insOverviewSection');
+        if (overviewSection) {
+            const firstTabBtn = document.querySelector('.sidebar-btn[data-tab]:not(.ins-sr-sidebar-btn)') ||
+                                document.querySelector('.ins-tab-btn[data-tab]');
+            const firstTabId = firstTabBtn ? firstTabBtn.dataset.tab : 'tab-0';
+            if (tabId !== firstTabId && tabId !== 'secondary-research') {
+                overviewSection.classList.add('collapsed');
+            } else if (tabId === firstTabId) {
+                overviewSection.classList.remove('collapsed');
+            }
+        }
+
         // Handle both horizontal tabs and sidebar buttons
         document.querySelectorAll('.ins-tab-btn, .sidebar-btn[data-tab]').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabId);
