@@ -113,6 +113,7 @@ function renderProjects() {
                         <th>Description</th>
                         <th>Status</th>
                         <th>Sources</th>
+                        <th>Visitors</th>
                         <th>Last Updated</th>
                         <th style="text-align:right">Actions</th>
                     </tr>
@@ -187,6 +188,7 @@ function renderProjectRow(project) {
                 <span class="badge" style="background: var(--bg-tertiary); color: var(--text-secondary); padding: 4px 10px; border-radius: 12px; font-size: 11px;">Loading...</span>
             </td>
             <td id="sources-${project.id}" class="projects-table-num">-</td>
+            <td id="visitors-${project.id}" class="projects-table-num">-</td>
             <td class="projects-table-date">${updatedAt}</td>
             <td style="text-align:right" id="actions-${project.id}">
                 <div class="projects-table-actions">
@@ -222,6 +224,16 @@ async function loadProjectStatus(projectId) {
         } else if (status.status === 'ready') {
             statusEl.innerHTML = '<span class="badge" style="background: rgba(34,197,94,0.15); color: var(--color-success); padding: 4px 10px; border-radius: 12px; font-size: 11px;">Ready</span>';
             sourcesEl.textContent = status.source_count || '-';
+            // Fetch unique visitor count
+            const visitorsEl = document.getElementById(`visitors-${projectId}`);
+            if (visitorsEl && status.share_token) {
+                try {
+                    const views = await api.request(`/research/insights/${status.share_token}/views`, { _skipSpinner: true });
+                    visitorsEl.textContent = views.unique_visitors || '0';
+                } catch (e) {
+                    visitorsEl.textContent = '0';
+                }
+            }
             // Update actions to include View Dashboard button
             if (actionsEl) {
                 actionsEl.innerHTML = `

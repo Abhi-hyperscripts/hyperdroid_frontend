@@ -38,6 +38,20 @@
                 </div>
             </div>`;
 
+        // Log view (fire-and-forget)
+        try {
+            var vid = localStorage.getItem('_rz_vid');
+            if (!vid) {
+                vid = crypto.randomUUID ? crypto.randomUUID() : (Math.random().toString(36).slice(2) + Date.now().toString(36));
+                localStorage.setItem('_rz_vid', vid);
+            }
+            fetch(API_BASE + '/api/insights/' + token + '/view', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ visitor_id: vid, referrer: document.referrer || null })
+            }).catch(function () {});
+        } catch (e) {}
+
         // Fetch dashboard JSON and manifest in parallel
         Promise.all([
             fetch(API_BASE + '/api/insights/' + token).then(r => r.ok ? r.json() : Promise.reject('API error')),
