@@ -7,72 +7,119 @@
         body { width: 1200px; height: 630px; font-family: 'Inter', -apple-system, sans-serif; overflow: hidden; }
         .og-card {
             width: 1200px; height: 630px;
-            background: linear-gradient(135deg, #050810 0%, #0a1628 50%, #050810 100%);
+            background: linear-gradient(145deg, #0a0806 0%, #1a1208 35%, #12100a 65%, #0a0806 100%);
             position: relative; display: flex; align-items: center; overflow: hidden;
         }
-        .og-card::before {
-            content: ''; position: absolute; width: 700px; height: 700px; top: -150px; right: -100px;
-            background: radial-gradient(circle, rgba(6, 182, 212, 0.35) 0%, transparent 60%);
+        /* Gold glow effects */
+        .glow-1 {
+            position: absolute; width: 600px; height: 600px; top: -200px; right: 50px;
+            background: radial-gradient(circle, rgba(234, 179, 8, 0.15) 0%, transparent 65%);
+            filter: blur(40px);
         }
-        .og-card::after {
-            content: ''; position: absolute; width: 500px; height: 500px; bottom: -100px; left: -50px;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, transparent 60%);
+        .glow-2 {
+            position: absolute; width: 400px; height: 400px; bottom: -100px; left: 100px;
+            background: radial-gradient(circle, rgba(217, 119, 6, 0.12) 0%, transparent 65%);
+            filter: blur(30px);
+        }
+        .glow-3 {
+            position: absolute; width: 350px; height: 350px; top: 40%; right: 25%;
+            background: radial-gradient(circle, rgba(250, 204, 21, 0.06) 0%, transparent 70%);
+            filter: blur(60px);
         }
         .grid-pattern {
             position: absolute; inset: 0;
-            background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-            background-size: 60px 60px; opacity: 0.5;
+            background-image: linear-gradient(rgba(234, 179, 8, 0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(234, 179, 8, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
         }
-        .left { position: relative; z-index: 10; padding: 60px 50px 60px 70px; flex: 1; }
-        .right { position: relative; z-index: 10; width: 460px; padding-right: 50px; }
-        .logo { margin-bottom: 24px; }
-        .logo img { height: 40px; filter: brightness(0) invert(1); }
+        /* Decorative line */
+        .accent-line {
+            position: absolute; left: 70px; top: 55px; bottom: 55px; width: 3px;
+            background: linear-gradient(180deg, transparent 0%, #eab308 30%, #d97706 70%, transparent 100%);
+            border-radius: 2px; opacity: 0.5;
+        }
+        .left { position: relative; z-index: 10; padding: 60px 40px 60px 95px; flex: 1; }
+        .right { position: relative; z-index: 10; width: 440px; padding-right: 55px; }
+        .logo { margin-bottom: 28px; }
+        .logo img { height: 36px; filter: brightness(0) invert(1); }
         .badge {
-            display: inline-block; padding: 8px 18px; background: rgba(6, 182, 212, 0.15);
-            border: 1px solid rgba(6, 182, 212, 0.35); border-radius: 100px;
-            font-size: 12px; font-weight: 600; color: #22d3ee; text-transform: uppercase;
-            letter-spacing: 0.1em; margin-bottom: 24px;
+            display: inline-block; padding: 7px 16px;
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%);
+            border: 1px solid rgba(234, 179, 8, 0.35); border-radius: 100px;
+            font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;
+            letter-spacing: 0.15em; margin-bottom: 22px;
         }
-        .title { font-size: 48px; font-weight: 800; color: #ffffff; line-height: 1.1; margin-bottom: 16px; }
+        .title { font-size: 46px; font-weight: 800; color: #ffffff; line-height: 1.12; margin-bottom: 20px; letter-spacing: -0.02em; }
         .title .highlight {
-            background: linear-gradient(135deg, #06b6d4 0%, #a78bfa 100%);
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-        .subtitle { font-size: 20px; color: rgba(255,255,255,0.6); font-weight: 500; line-height: 1.4; }
+        .bullets { list-style: none; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .bullets li {
+            font-size: 15px; color: rgba(255,255,255,0.85); font-weight: 500;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .bullet-dot {
+            width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+        }
+        .bullet-dot.gold { background: #fbbf24; box-shadow: 0 0 8px rgba(251, 191, 36, 0.5); }
+        .bullet-dot.amber { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
+        .bullets li .desc { color: rgba(255,255,255,0.45); font-weight: 400; }
+        .subtitle { font-size: 17px; color: rgba(255,255,255,0.45); font-weight: 400; line-height: 1.5; }
+        .subtitle strong { color: rgba(255,255,255,0.6); font-weight: 600; }
         /* Mini dashboard preview */
-        .preview { display: flex; flex-direction: column; gap: 12px; }
-        .preview-kpi-row { display: flex; gap: 10px; }
+        .preview { display: flex; flex-direction: column; gap: 10px; }
+        .preview-kpi-row { display: flex; gap: 8px; }
         .preview-kpi {
-            flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px; padding: 14px 12px; text-align: center;
+            flex: 1; background: rgba(234, 179, 8, 0.06); border: 1px solid rgba(234, 179, 8, 0.12);
+            border-radius: 12px; padding: 16px 10px; text-align: center;
         }
-        .preview-kpi-val { font-size: 22px; font-weight: 800; color: #22d3ee; margin-bottom: 2px; }
-        .preview-kpi-label { font-size: 9px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.08em; }
+        .preview-kpi-val { font-size: 24px; font-weight: 800; margin-bottom: 3px; }
+        .preview-kpi:nth-child(1) .preview-kpi-val { color: #fbbf24; }
+        .preview-kpi:nth-child(2) .preview-kpi-val { color: #f59e0b; }
+        .preview-kpi:nth-child(3) .preview-kpi-val { color: #fbbf24; }
+        .preview-kpi-label { font-size: 9px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
         .preview-chart {
-            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px; padding: 16px; height: 160px; position: relative; overflow: hidden;
+            background: rgba(234, 179, 8, 0.06); border: 1px solid rgba(234, 179, 8, 0.12);
+            border-radius: 12px; padding: 16px 18px; height: 155px; position: relative; overflow: hidden;
         }
-        .preview-chart-title { font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.06em; }
-        .bars { display: flex; align-items: flex-end; gap: 8px; height: 110px; padding-top: 4px; }
-        .bar { flex: 1; border-radius: 4px 4px 0 0; }
-        .bar:nth-child(1) { height: 85%; background: linear-gradient(180deg, #06b6d4, #0891b2); }
-        .bar:nth-child(2) { height: 65%; background: linear-gradient(180deg, #a78bfa, #7c3aed); }
-        .bar:nth-child(3) { height: 90%; background: linear-gradient(180deg, #06b6d4, #0891b2); }
-        .bar:nth-child(4) { height: 45%; background: linear-gradient(180deg, #a78bfa, #7c3aed); }
-        .bar:nth-child(5) { height: 70%; background: linear-gradient(180deg, #06b6d4, #0891b2); }
-        .bar:nth-child(6) { height: 55%; background: linear-gradient(180deg, #a78bfa, #7c3aed); }
+        .preview-chart-title { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.08em; font-weight: 600; }
+        .bars { display: flex; align-items: flex-end; gap: 7px; height: 105px; }
+        .bar { flex: 1; border-radius: 5px 5px 0 0; }
+        .bar:nth-child(1) { height: 85%; background: linear-gradient(180deg, #fbbf24, #b45309); }
+        .bar:nth-child(2) { height: 60%; background: linear-gradient(180deg, #f59e0b, #92400e); }
+        .bar:nth-child(3) { height: 92%; background: linear-gradient(180deg, #fbbf24, #b45309); }
+        .bar:nth-child(4) { height: 42%; background: linear-gradient(180deg, #f59e0b, #92400e); }
+        .bar:nth-child(5) { height: 72%; background: linear-gradient(180deg, #fbbf24, #b45309); }
+        .bar:nth-child(6) { height: 50%; background: linear-gradient(180deg, #f59e0b, #92400e); }
+        .bar:nth-child(7) { height: 78%; background: linear-gradient(180deg, #fbbf24, #b45309); }
+        /* Bottom border accent */
+        .bottom-accent {
+            position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent 0%, #eab308 30%, #d97706 70%, transparent 100%);
+            opacity: 0.5;
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="og-card">
         <div class="grid-pattern"></div>
+        <div class="glow-1"></div>
+        <div class="glow-2"></div>
+        <div class="glow-3"></div>
+        <div class="accent-line"></div>
+        <div class="bottom-accent"></div>
         <div class="left">
             <div class="logo"><img src="brand_logo.png" alt="Ragenaizer"></div>
-            <div class="badge">Survey Insights</div>
-            <h1 class="title">Survey <span class="highlight">Insights</span><br>Dashboard</h1>
-            <p class="subtitle">Executive-grade analysis powered by<br>agentic AI &middot; Interactive charts</p>
+            <div class="badge">AI Research</div>
+            <h1 class="title">Research <span class="highlight">Dashboard</span></h1>
+            <ul class="bullets">
+                <li><span class="bullet-dot gold"></span>Primary Research <span class="desc">&mdash; Survey data analysis</span></li>
+                <li><span class="bullet-dot amber"></span>Secondary Research <span class="desc">&mdash; AI internet research</span></li>
+                <li><span class="bullet-dot gold"></span>Embedded Chatbot <span class="desc">&mdash; AI chat widget for dashboards</span></li>
+            </ul>
+            <p class="subtitle"><strong>Executive-grade analysis</strong> powered by<br>agentic AI &middot; Interactive charts</p>
         </div>
         <div class="right">
             <div class="preview">
@@ -83,7 +130,7 @@
                 </div>
                 <div class="preview-chart">
                     <div class="preview-chart-title">Key Metrics Analysis</div>
-                    <div class="bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
+                    <div class="bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div>
                 </div>
             </div>
         </div>
