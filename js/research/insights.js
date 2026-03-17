@@ -3141,32 +3141,81 @@
 
         const bar = document.getElementById('insDownloadBar');
         const btn = bar?.querySelector('.ins-download-bar-btn');
-        if (btn) btn.textContent = 'Downloading...';
+        if (btn) btn.textContent = 'Preparing PDF...';
 
-        let downloaded = 0;
-        for (const key of selectedCharts) {
-            const entry = chartInstances.find(c => `${c.tabId}-${c.idx}` === key);
-            if (!entry) continue;
-
-            try {
-                const { imgURI } = await entry.instance.dataURI({ scale: 2, background: 'transparent' });
-                const link = document.createElement('a');
-                const config = entry.config;
-                const name = (config.title || config.question_label || `chart-${key}`).replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-').substring(0, 50);
-                link.href = imgURI;
-                link.download = `${name}.png`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                downloaded++;
-                // Small delay between downloads to avoid browser blocking
-                await new Promise(r => setTimeout(r, 300));
-            } catch (err) {
-                console.warn(`Failed to export chart ${key}:`, err);
+        try {
+            // Collect all selected card DOM elements in order
+            const cards = [];
+            for (const key of selectedCharts) {
+                const [tabId, idx] = key.split('-');
+                const card = document.querySelector(`.ins-chart-card[data-chart-tab="${tabId}"][data-chart-idx="${idx}"]`);
+                if (card) cards.push(card);
             }
+
+            if (cards.length === 0) {
+                showToast('No chart cards found', 'error');
+                if (btn) btn.textContent = 'Download Selected';
+                return;
+            }
+
+            // Determine theme for background color
+            const isDark = getTheme() === 'dark';
+            const bgColor = isDark ? '#1a1a2e' : '#ffffff';
+
+            // Capture each card as canvas
+            const canvases = [];
+            for (let i = 0; i < cards.length; i++) {
+                if (btn) btn.textContent = `Capturing ${i + 1}/${cards.length}...`;
+                const canvas = await html2canvas(cards[i], {
+                    scale: 2,
+                    backgroundColor: bgColor,
+                    useCORS: true,
+                    logging: false,
+                    // Ignore the select checkbox overlay
+                    ignoreElements: (el) => el.classList?.contains('ins-chart-select-wrap')
+                });
+                canvases.push(canvas);
+            }
+
+            if (btn) btn.textContent = 'Building PDF...';
+
+            // Build PDF — landscape A4, one card per page
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            const pageW = pdf.internal.pageSize.getWidth();
+            const pageH = pdf.internal.pageSize.getHeight();
+            const margin = 10;
+            const usableW = pageW - margin * 2;
+            const usableH = pageH - margin * 2;
+
+            canvases.forEach((canvas, i) => {
+                if (i > 0) pdf.addPage();
+
+                const imgData = canvas.toDataURL('image/png');
+                const cW = canvas.width;
+                const cH = canvas.height;
+
+                // Fit card into page while preserving aspect ratio
+                const ratio = Math.min(usableW / cW, usableH / cH);
+                const drawW = cW * ratio;
+                const drawH = cH * ratio;
+                const x = margin + (usableW - drawW) / 2;
+                const y = margin + (usableH - drawH) / 2;
+
+                pdf.addImage(imgData, 'PNG', x, y, drawW, drawH);
+            });
+
+            // Generate filename from dashboard title or fallback
+            const dashTitle = (dashboardData?.project_name || dashboardData?.dashboard_title || 'charts')
+                .replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-').substring(0, 40);
+            pdf.save(`${dashTitle}-selected-charts.pdf`);
+
+            showToast(`Exported ${canvases.length} chart${canvases.length !== 1 ? 's' : ''} to PDF`);
+        } catch (err) {
+            console.error('PDF export failed:', err);
+            showToast('PDF export failed — see console for details', 'error');
         }
 
-        showToast(`Downloaded ${downloaded} chart${downloaded !== 1 ? 's' : ''}`);
         if (btn) btn.textContent = 'Download Selected';
         insToggleSelectMode();
     };
