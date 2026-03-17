@@ -885,7 +885,7 @@
             display: none;
             position: absolute;
             left: 0;
-            top: calc(100% + 6px);
+            bottom: calc(100% + 6px);
             background: var(--ins-card);
             border: 1px solid var(--ins-border);
             color: var(--ins-text-muted);
@@ -1224,7 +1224,10 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            z-index: 5;
+            z-index: 10;
+        }
+        .ins-chart-card.select-mode .ins-chart-title-wrap {
+            padding-left: 30px;
         }
         .ins-chart-card {
             position: relative;

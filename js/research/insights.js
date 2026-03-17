@@ -3080,11 +3080,14 @@
         selectModeActive = !selectModeActive;
         selectedCharts.clear();
 
-        // Show/hide checkboxes on all chart cards
+        // Show/hide checkboxes on all chart cards + add padding class
         document.querySelectorAll('.ins-chart-select-wrap').forEach(w => {
             w.style.display = selectModeActive ? 'block' : 'none';
             const cb = w.querySelector('input[type="checkbox"]');
             if (cb) cb.checked = false;
+        });
+        document.querySelectorAll('.ins-chart-card').forEach(c => {
+            c.classList.toggle('select-mode', selectModeActive);
         });
 
         // Show/hide floating action bar
