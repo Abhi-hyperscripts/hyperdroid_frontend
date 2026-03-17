@@ -47,6 +47,18 @@
       "category": "Primary Research",
       "date_published": "2026-03-15",
       "hero_stat": { "value": "1,507", "label": "Workers Surveyed" }
+    },
+    {
+      "slug": "gen-z-rewriting-global-markets",
+      "token": "d7da5eafc9d65fdf87185debbe6045f8",
+      "title": "The New Consumer: How Gen Z Is Rewriting Global Markets",
+      "meta_description": "98% of Gen Z own a smartphone. Spending power projected to reach $12 trillion by 2030. Largest generation globally with 2.2 billion people. First smartphone at age 10. Interactive dashboard with 14 sourced statistics.",
+      "keywords": "Gen Z consumer behavior, Gen Z spending power 2030, Gen Z smartphone ownership, Gen Z market trends, generational marketing, mobile-first consumers",
+      "og_title": "The New Consumer: How Gen Z Is Rewriting Global Markets",
+      "og_description": "98% smartphone ownership. $12T spending power by 2030. Largest generation globally. Dashboard with 14 sourced statistics.",
+      "category": "Secondary Research",
+      "date_published": "2026-03-17",
+      "hero_stat": { "value": "14", "label": "Sources Cited" }
     }
   ]
 }
