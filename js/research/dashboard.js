@@ -65,6 +65,7 @@ async function loadProjects() {
         const params = new URLSearchParams();
         params.set('page', currentPage);
         params.set('pageSize', PAGE_SIZE);
+        params.set('project_type', 'primary');
         if (searchTerm) params.set('search', searchTerm);
 
         const response = await api.request(`/research/projects?${params}`);

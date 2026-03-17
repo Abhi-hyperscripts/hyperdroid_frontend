@@ -244,6 +244,12 @@ async function loadProjectStatus(projectId) {
                         <button class="action-btn" onclick="viewDashboard('${status.share_token}')" title="View Dashboard" style="color: var(--color-success);">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                         </button>
+                        <button class="action-btn" onclick="downloadDashboardJson('${projectId}')" title="Download JSON">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </button>
+                        <button class="action-btn" onclick="triggerUploadJson('${projectId}')" title="Upload JSON">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        </button>
                         <button class="action-btn" onclick="openGenerateModal('${projectId}', '${escapeHtml(status.instruction || '')}')" title="Regenerate">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                         </button>
@@ -306,6 +312,73 @@ async function deleteProject(projectId) {
         console.error('Failed to delete project:', err);
         showToast('Failed to delete project', 'error');
     }
+}
+
+// ============================================
+// Download / Upload Dashboard JSON
+// ============================================
+
+async function downloadDashboardJson(projectId) {
+    try {
+        const data = await api.request(`/research/secondary-research/projects/${projectId}/dashboard`);
+        if (!data.dashboard_json) {
+            showToast('No dashboard data available', 'error');
+            return;
+        }
+        const json = typeof data.dashboard_json === 'string' ? data.dashboard_json : JSON.stringify(data.dashboard_json, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const slug = data.topic?.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || projectId;
+        a.download = `dashboard-${slug}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Dashboard JSON downloaded');
+    } catch (err) {
+        console.error('Failed to download dashboard:', err);
+        showToast('Failed to download dashboard JSON', 'error');
+    }
+}
+
+function triggerUploadJson(projectId) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 10 * 1024 * 1024) {
+            showToast('File too large. Maximum 10MB.', 'error');
+            return;
+        }
+        if (!confirm(`Upload "${file.name}" and overwrite the current dashboard?\n\nThe current version will be saved to history.`)) return;
+
+        try {
+            const text = await file.text();
+            // Quick client-side validation
+            const parsed = JSON.parse(text);
+            if (!Array.isArray(parsed.tabs) || parsed.tabs.length === 0) {
+                showToast('Invalid dashboard JSON: missing or empty tabs array', 'error');
+                return;
+            }
+
+            await api.request(`/research/secondary-research/projects/${projectId}/dashboard`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dashboard_json: text })
+            });
+            showToast('Dashboard JSON uploaded successfully');
+            await loadProjects();
+        } catch (err) {
+            console.error('Failed to upload dashboard:', err);
+            const msg = err.message || 'Failed to upload dashboard JSON';
+            showToast(msg, 'error');
+        }
+    };
+    input.click();
 }
 
 // ============================================
