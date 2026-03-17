@@ -3221,7 +3221,7 @@
     };
 
     // ═══ DOWNLOAD PPT ═══
-    window.insDownloadPPT = function () {
+    window.insDownloadPPT = async function () {
         if (!dashboardData) {
             showToast('No dashboard data loaded', 'error');
             return;
@@ -3230,12 +3230,58 @@
             showToast('PPT generator not loaded', 'error');
             return;
         }
-        showToast('Generating PPT...', 'info');
-        // Small delay to let toast render before heavy sync work
+
+        showToast('Capturing charts for PPT...', 'info');
+
+        // Temporarily show all hidden tab panels so html2canvas can capture them
+        const hiddenPanels = [];
+        document.querySelectorAll('.ins-tab-panel').forEach(p => {
+            if (getComputedStyle(p).display === 'none') {
+                hiddenPanels.push(p);
+                p.style.display = 'block';
+            }
+        });
+
+        // Brief delay for layout reflow
+        await new Promise(r => setTimeout(r, 200));
+
+        // Capture all chart card DOM elements as images using html2canvas
+        const chartImages = {};
+        const isDark = getTheme() === 'dark';
+        const bgColor = isDark ? '#1a1a2e' : '#ffffff';
+        const allCards = document.querySelectorAll('.ins-chart-card[data-chart-tab][data-chart-idx]');
+        let captured = 0;
+
+        for (const card of allCards) {
+            const tabId = card.getAttribute('data-chart-tab');
+            const idx = card.getAttribute('data-chart-idx');
+            const key = `${tabId}-${idx}`;
+            try {
+                const canvas = await html2canvas(card, {
+                    scale: 2,
+                    backgroundColor: bgColor,
+                    useCORS: true,
+                    logging: false,
+                    ignoreElements: (el) => el.classList?.contains('ins-chart-select-wrap')
+                });
+                chartImages[key] = canvas.toDataURL('image/png');
+                captured++;
+            } catch (err) {
+                console.warn(`[PPT] Failed to capture card ${key}:`, err);
+            }
+        }
+
+        // Restore hidden panels
+        hiddenPanels.forEach(p => p.style.display = 'none');
+
+        console.log(`[PPT] Captured ${captured}/${allCards.length} chart cards as images`);
+        showToast('Building PPT...', 'info');
+
         setTimeout(() => {
             generateInsightsPPT(dashboardData, {
                 projectName: dashboardData.project_name || document.title.split('—')[0].trim(),
                 sampleSize: dashboardData.sample_size,
+                chartImages,
             });
         }, 100);
     };

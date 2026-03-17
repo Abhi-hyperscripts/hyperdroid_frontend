@@ -23,6 +23,7 @@ function generateInsightsPPT(data, opts = {}) {
     const sampleSize = opts.sampleSize || data.sample_size || '';
     const fileName = opts.fileName || `${projectName.replace(/[^a-zA-Z0-9]/g, '_')}_Insights`;
     const accent = opts.accentColor || '3B82F6';
+    const chartImages = opts.chartImages || {}; // Map of "tabId-chartIdx" -> base64 PNG data URI
 
     // Color palette
     const C = {
@@ -337,18 +338,14 @@ function generateInsightsPPT(data, opts = {}) {
         });
     }
 
-    /** 4. Chart Slide — renders one or two charts per slide */
-    function addChartSlides(tab) {
+    /** 4. Chart Slide — renders one chart per slide as a captured image */
+    function addChartSlides(tab, tabId) {
         const charts = tab.charts || [];
         if (charts.length === 0) return;
 
-        // Group charts: full-width gets own slide, half-width paired
-        let i = 0;
-        while (i < charts.length) {
-            const chart1 = charts[i];
-            const isHalf1 = chart1.chart_size === 'half';
-            const chart2 = (isHalf1 && i + 1 < charts.length && charts[i + 1].chart_size === 'half')
-                ? charts[i + 1] : null;
+        charts.forEach((chart, ci) => {
+            const imgKey = `${tabId}-${ci}`;
+            const imgData = chartImages[imgKey];
 
             const slide = pptx.addSlide({ masterName: 'CONTENT' });
 
@@ -358,20 +355,23 @@ function generateInsightsPPT(data, opts = {}) {
                 fontSize: 8, fontFace: FONT, color: C.textMuted,
             });
 
-            if (chart2) {
-                // Two half-width charts side by side
-                renderChartOnSlide(slide, chart1, { x: 0.3, y: 0.45, w: 4.6, h: 4.4 });
-                renderChartOnSlide(slide, chart2, { x: 5.1, y: 0.45, w: 4.6, h: 4.4 });
-                i += 2;
+            if (imgData) {
+                // Image-based: embed the html2canvas capture of the full card
+                // Place the image to fill most of the slide (with padding)
+                slide.addImage({
+                    data: imgData,
+                    x: 0.3, y: 0.45, w: 9.4, h: 4.6,
+                    sizing: { type: 'contain', w: 9.4, h: 4.6 },
+                });
             } else {
-                // Single full-width chart
-                renderChartOnSlide(slide, chart1, { x: 0.3, y: 0.45, w: 9.4, h: 4.4 });
-                i += 1;
+                // Fallback: native PptxGenJS chart rendering
+                const region = { x: 0.3, y: 0.45, w: 9.4, h: 4.4 };
+                renderChartOnSlide(slide, chart, region);
             }
-        }
+        });
     }
 
-    /** Render a single chart within a slide region */
+    /** Render a single chart within a slide region (fallback when no image available) */
     function renderChartOnSlide(slide, config, region) {
         const { x, y, w, h } = region;
         const chartType = (config.chart_type || config.type || 'bar').toLowerCase();
@@ -938,8 +938,9 @@ function generateInsightsPPT(data, opts = {}) {
 
         // 3. For each section: divider + chart slides
         tabs.forEach((tab, idx) => {
+            const tabId = tab.tab_id || `tab-${idx}`;
             addSectionDivider(tab, idx, tabs.length);
-            addChartSlides(tab);
+            addChartSlides(tab, tabId);
         });
 
         // 4. End slide
