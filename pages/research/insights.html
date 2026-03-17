@@ -931,6 +931,32 @@
             letter-spacing: 0.02em;
         }
 
+        .ins-chart-provenance {
+            margin-top: 8px;
+            padding-top: 6px;
+            border-top: 1px dashed var(--ins-border);
+            font-size: 10px;
+            color: var(--ins-text-muted);
+            font-family: var(--ins-mono);
+            line-height: 1.5;
+            opacity: 0.75;
+        }
+        .ins-prov-source {
+            display: block;
+            color: var(--ins-accent);
+        }
+        .ins-prov-source::before {
+            content: 'Source: ';
+            font-weight: 600;
+        }
+        .ins-prov-calc {
+            display: block;
+        }
+        .ins-prov-calc::before {
+            content: 'Method: ';
+            font-weight: 600;
+        }
+
         .ins-sig-legend {
             display: flex;
             align-items: center;

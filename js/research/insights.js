@@ -74,6 +74,19 @@
         return fmtPctNum(val);
     }
 
+    /**
+     * Format a number with the given suffix from detectValueSuffix.
+     * Uses fmtPct for '%' suffix, otherwise formats number + appends suffix.
+     */
+    function fmtWithSuffix(val, suffix) {
+        if (val == null || isNaN(val)) return '';
+        if (suffix === '%') return fmtPct(val);
+        const s = getFormatSettings();
+        const num = Number(val);
+        const formatted = s.decimals === 0 ? Math.round(num).toLocaleString() : num.toFixed(s.decimals);
+        return suffix ? formatted + ' ' + suffix : formatted;
+    }
+
 
     // ═══ THEME ═══
     function getTheme() {
@@ -109,14 +122,42 @@
     }
 
     /**
+     * Map value_format enum → display suffix for chart labels.
+     * Per-chart-type tools now declare value_format explicitly.
+     */
+    const VALUE_FORMAT_MAP = {
+        'percentage': '%',
+        'count': '',
+        'currency_usd': ' USD',
+        'currency_eur': ' EUR',
+        'billion_usd': 'B USD',
+        'trillion_usd': 'T USD',
+        'million': 'M',
+        'billion': 'B',
+        'decimal': '',
+        'ratio': '',
+        'index': '',
+        'year': '',
+        'custom': ''  // uses value_suffix field
+    };
+
+    /**
      * Determine the suffix for data labels.
-     * Uses explicit data.suffix if present; otherwise if all values
-     * are in 0-100 range, treats them as percentages.
-     * Skips % for titles containing stats keywords (mean, median, index, score, coefficient, correlation).
+     * Priority: 1) data.value_format (explicit from LLM), 2) data.suffix, 3) config.suffix, 4) heuristic fallback.
      */
     function detectValueSuffix(data, config) {
+        // Priority 1: Explicit value_format from per-chart-type tools
+        if (data.value_format) {
+            if (data.value_format === 'custom' && data.value_suffix) return data.value_suffix;
+            const mapped = VALUE_FORMAT_MAP[data.value_format];
+            if (mapped !== undefined) return mapped;
+        }
+
+        // Priority 2-3: Explicit suffix fields
         if (data.suffix) return data.suffix;
         if (config.suffix) return config.suffix;
+
+        // Priority 4: Heuristic fallback (for legacy dashboards without value_format)
         const title = (config.title || '').toLowerCase();
         const statsKeywords = ['mean', 'median', 'index', 'score', 'coefficient', 'correlation', 'count', 'average', 'ratio'];
         if (statsKeywords.some(k => title.includes(k))) return '';
@@ -375,6 +416,7 @@
                         <div class="ins-kpi-gauge" id="insKpiGauge-${i}"></div>
                         ${kpi.benchmark ? `<div class="ins-kpi-insight" style="font-style:normal;opacity:0.7;">${esc(kpi.benchmark)}</div>` : ''}
                         ${kpi.insight ? `<div class="ins-kpi-insight">${esc(kpi.insight)}</div>` : ''}
+                        ${kpi.calculation_note ? `<div class="ins-chart-provenance"><span class="ins-prov-calc" title="Calculation method">${esc(kpi.calculation_note)}</span></div>` : ''}
                     </div>`;
                 });
                 html += '</div>';
@@ -515,6 +557,10 @@
                         </div>` : ''}
                         ${chart.insight ? `<div class="ins-chart-insight">${esc(chart.insight)}</div>` : ''}
                         ${chart.significance_notes ? `<div class="ins-chart-sig-note">${esc(chart.significance_notes)}</div>` : ''}
+                        ${chart.data_source || chart.calculation_note ? `<div class="ins-chart-provenance">
+                            ${chart.data_source ? `<span class="ins-prov-source" title="Data source function">${esc(chart.data_source)}</span>` : ''}
+                            ${chart.calculation_note ? `<span class="ins-prov-calc" title="Calculation method">${esc(chart.calculation_note)}</span>` : ''}
+                        </div>` : ''}
                     </div>`;
                 });
                 html += '</div></div>'; // close ins-chart-grid + ins-tab-panel
@@ -680,10 +726,16 @@
                 const scaledValue = rawValue <= 5 ? rawValue * 20 : rawValue;
                 gaugePercent = Math.min(100, Math.max(0, scaledValue));
                 displayValue = fmtMean(rawValue);
-            } else {
-                // Percentage or raw number — treat as 0-100
+            } else if (suffix === '%') {
+                // Percentage — treat as 0-100
                 gaugePercent = Math.min(100, Math.max(0, rawValue));
                 displayValue = fmtPctNum(rawValue);
+            } else {
+                // Non-percentage KPI (e.g., "B USD", "T USD", "M") — show value + suffix
+                // Scale gauge to a meaningful percentage for visual (cap at 100)
+                gaugePercent = Math.min(100, Math.max(0, rawValue));
+                const s = getFormatSettings();
+                displayValue = s.decimals === 0 ? Math.round(rawValue).toLocaleString() : rawValue.toFixed(s.decimals);
             }
 
             const options = {
@@ -989,6 +1041,7 @@
         const valueColor = getChartValueColor();
         const trackColor = getGaugeTrackColor();
         const mobile = isMobile();
+        const valSuffix = detectValueSuffix(data, config);
 
         return {
             ...baseChartOptions(),
@@ -1006,17 +1059,14 @@
                             fontWeight: 700,
                             color: valueColor,
                             offsetY: -16,
-                            formatter: (val) => {
-                                const suffix = config.suffix || '%';
-                                if (suffix === '%') return fmtPct(val);
-                                return fmtMean(val) + suffix;
-                            }
+                            formatter: (val) => fmtWithSuffix(val, valSuffix)
                         }
                     }
                 }
             },
             labels: [label],
-            stroke: { lineCap: 'round' }
+            stroke: { lineCap: 'round' },
+            tooltip: { y: { formatter: v => fmtWithSuffix(v, valSuffix) } }
         };
     }
 
@@ -1025,6 +1075,7 @@
         const labels = Array.isArray(data.labels) ? data.labels : [];
         const strokeColor = getPieStrokeColor();
         const mobile = isMobile();
+        const valSuffix = detectValueSuffix(data, config);
 
         return {
             ...baseChartOptions(),
@@ -1045,7 +1096,7 @@
             },
             dataLabels: {
                 enabled: true,
-                formatter: (val) => fmtPct(val),
+                formatter: (val) => fmtWithSuffix(val, valSuffix),
                 style: { fontSize: mobile ? '10px' : '12px', fontWeight: 600, colors: ['#ffffff'] },
                 dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.4 }
             },
@@ -1054,7 +1105,7 @@
                 ...baseChartOptions().tooltip,
                 y: {
                     formatter: (val, opts) => {
-                        let label = fmtPct(val);
+                        let label = fmtWithSuffix(val, valSuffix);
                         const count = resolveCount(data, 0, opts?.dataPointIndex ?? 0, val);
                         if (count != null) {
                             label += ` <span style="opacity:0.7">(n=${count.toLocaleString()})</span>`;
@@ -1124,11 +1175,12 @@
         return null;
     }
 
-    function buildSigTooltip(sigLookup, categories, chartData, config) {
+    function buildSigTooltip(sigLookup, categories, chartData, config, valSuffix) {
+        const suffix = valSuffix !== undefined ? valSuffix : detectValueSuffix(chartData, config);
         return {
             y: {
                 formatter: (val, opts) => {
-                    let label = typeof val === 'number' ? fmtPct(val) : String(val);
+                    let label = typeof val === 'number' ? fmtWithSuffix(val, suffix) : String(val);
                     // Add count (real from data.counts or computed from base)
                     const count = resolveCount(chartData, opts.seriesIndex, opts.dataPointIndex, val);
                     if (count != null) {
@@ -1208,12 +1260,19 @@
         const sigLookup = buildSignificanceLookup(config);
         const valSuffix = detectValueSuffix(data, config);
 
+        // Add value axis formatter based on orientation
+        if (horizontal) {
+            opts.xaxis.labels.formatter = v => fmtWithSuffix(v, valSuffix);
+        } else {
+            opts.yaxis.labels.formatter = v => fmtWithSuffix(v, valSuffix);
+        }
+
         // Always show data labels on desktop
         if (!mobile) {
             opts.dataLabels = {
                 enabled: true,
                 formatter: (val, o) => {
-                    let label = valSuffix === '%' ? fmtPct(val) : fmtVal(val, config);
+                    let label = fmtWithSuffix(val, valSuffix);
                     if (sigLookup) {
                         const cat = categories[o.dataPointIndex];
                         const sName = series[o.seriesIndex]?.name;
@@ -1235,7 +1294,7 @@
         }
 
         // Rich tooltips with percentage + count + significance
-        const sigTip = buildSigTooltip(sigLookup, categories, data, config);
+        const sigTip = buildSigTooltip(sigLookup, categories, data, config, valSuffix);
         if (sigTip.y) opts.tooltip = { ...opts.tooltip, ...sigTip };
 
         return opts;
@@ -1248,14 +1307,16 @@
         const gridColor = getChartGridColor();
         const mobile = isMobile();
         const sigLookup = buildSignificanceLookup(config);
+        const valSuffix = detectValueSuffix(data, config);
 
         const maxLabelLen = mobile ? 14 : 30;
         const displayCategories = categories.map(c =>
             typeof c === 'string' && c.length > maxLabelLen ? c.substring(0, maxLabelLen) + '...' : c
         );
 
-        // Only use 100% stackType when there are multiple series (otherwise single series always shows 100%)
-        const usePercentStack = series.length > 1;
+        // Only use 100% stackType when there are multiple series AND value_format is percentage (or unset for legacy)
+        const isPercentFormat = valSuffix === '%' || !data.value_format;
+        const usePercentStack = series.length > 1 && isPercentFormat;
 
         const opts = {
             ...baseChartOptions(),
@@ -1282,7 +1343,7 @@
                 categories: displayCategories,
                 labels: {
                     style: { colors: labelColor, fontSize: mobile ? '10px' : '11px' },
-                    formatter: (val) => usePercentStack ? fmtPct(val) : (val != null ? Number(val).toLocaleString() : '')
+                    formatter: (val) => usePercentStack ? fmtPct(val) : fmtWithSuffix(val, valSuffix)
                 },
                 axisBorder: { color: gridColor }
             },
@@ -1294,7 +1355,7 @@
             },
             tooltip: {
                 y: {
-                    formatter: (val) => usePercentStack ? fmtPct(val) : (val != null ? Number(val).toLocaleString() : '')
+                    formatter: (val) => usePercentStack ? fmtPct(val) : fmtWithSuffix(val, valSuffix)
                 }
             },
             legend: {
@@ -1306,7 +1367,7 @@
                 enabled: !mobile,
                 formatter: (val, o) => {
                     if (usePercentStack && val <= 5) return '';
-                    let label = usePercentStack ? fmtPct(val) : (val != null ? Number(val).toLocaleString() : '');
+                    let label = usePercentStack ? fmtPct(val) : fmtWithSuffix(val, valSuffix);
                     if (sigLookup) {
                         const cat = categories[o.dataPointIndex];
                         const sName = series[o.seriesIndex]?.name;
@@ -1322,7 +1383,7 @@
         };
 
         // Rich tooltips with percentage + count + significance
-        const sigTip = buildSigTooltip(sigLookup, categories, data, config);
+        const sigTip = buildSigTooltip(sigLookup, categories, data, config, valSuffix);
         if (sigTip.y) opts.tooltip = { ...opts.tooltip, ...sigTip };
 
         return opts;
@@ -1333,6 +1394,7 @@
         const labelColor = getChartLabelColor();
         const gridColor = getChartGridColor();
         const mobile = isMobile();
+        const valSuffix = detectValueSuffix(data, config);
 
         if (Array.isArray(data.series) && data.series.length > 0 && typeof data.series[0] === 'object' && data.series[0].data) {
             series = data.series;
@@ -1356,8 +1418,12 @@
                 axisBorder: { color: gridColor }
             },
             yaxis: {
-                labels: { style: { colors: labelColor, fontSize: mobile ? '10px' : '11px' } }
+                labels: {
+                    style: { colors: labelColor, fontSize: mobile ? '10px' : '11px' },
+                    formatter: v => fmtWithSuffix(v, valSuffix)
+                }
             },
+            tooltip: { y: { formatter: v => fmtWithSuffix(v, valSuffix) } },
             legend: {
                 ...baseChartOptions().legend,
                 fontSize: mobile ? '10px' : '12px',
@@ -1376,6 +1442,7 @@
         const labelColor = getChartLabelColor();
         const gridColor = getChartGridColor();
         const mobile = isMobile();
+        const valSuffix = detectValueSuffix(data, config);
 
         if (Array.isArray(data.series) && data.series.length > 0 && typeof data.series[0] === 'object' && data.series[0].data) {
             series = data.series;
@@ -1404,8 +1471,12 @@
                 axisBorder: { color: gridColor }
             },
             yaxis: {
-                labels: { style: { colors: labelColor, fontSize: mobile ? '10px' : '11px' } }
+                labels: {
+                    style: { colors: labelColor, fontSize: mobile ? '10px' : '11px' },
+                    formatter: v => fmtWithSuffix(v, valSuffix)
+                }
             },
+            tooltip: { y: { formatter: v => fmtWithSuffix(v, valSuffix) } },
             legend: {
                 ...baseChartOptions().legend,
                 fontSize: mobile ? '10px' : '12px',
@@ -1430,10 +1501,25 @@
             categories = data.labels || data.categories || [];
         }
 
+        // Single-series radar is visually useless — convert to horizontal bar
+        if (series.length < 2) {
+            const flatData = series[0]?.data || [];
+            return buildBarOptions({
+                series: flatData,
+                labels: categories,
+                categories: categories,
+                value_format: data.value_format,
+                value_suffix: data.value_suffix
+            }, config, true);
+        }
+
+        const valSuffix = detectValueSuffix(data, config);
+
         return {
             ...baseChartOptions(),
             chart: { ...baseChartOptions().chart, type: 'radar', height: chartHeight(380, 300) },
             series: series.map(s => ({ name: s.name, data: s.data })),
+            tooltip: { y: { formatter: v => fmtWithSuffix(v, valSuffix) } },
             xaxis: {
                 categories: categories,
                 labels: {
@@ -1468,6 +1554,7 @@
         const series = Array.isArray(data.series) ? data.series : [];
         const categories = data.categories || data.labels || [];
         const mobile = isMobile();
+        const valSuffix = detectValueSuffix(data, config);
 
         // Build heatmap series with {x, y} format
         const hmSeries = series.map(s => ({
@@ -1504,8 +1591,10 @@
             },
             dataLabels: {
                 enabled: true,
+                formatter: v => fmtWithSuffix(v, valSuffix),
                 style: { fontSize: mobile ? '9px' : '10px', colors: ['#fff'] }
             },
+            tooltip: { y: { formatter: v => fmtWithSuffix(v, valSuffix) } },
             stroke: { width: 1, colors: [isDark() ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.1)'] },
             legend: { show: false },
             xaxis: {
@@ -1523,6 +1612,7 @@
         const labelColor = getChartLabelColor();
         const gridColor = getChartGridColor();
         const mobile = isMobile();
+        const valSuffix = detectValueSuffix(data, config);
 
         const scSeries = points.map(s => ({
             name: s.name,
@@ -1567,12 +1657,12 @@
             xaxis: {
                 type: 'numeric',
                 title: data.x_label ? { text: data.x_label, style: { color: labelColor, fontSize: '11px' } } : undefined,
-                labels: { formatter: v => Number(v).toFixed(1), style: { fontSize: '10px', colors: labelColor } },
+                labels: { formatter: v => Number(v).toFixed(1) + (data.x_format === 'percentage' ? '%' : ''), style: { fontSize: '10px', colors: labelColor } },
                 tickAmount: 6
             },
             yaxis: {
                 title: data.y_label ? { text: data.y_label, style: { color: labelColor, fontSize: '11px' } } : undefined,
-                labels: { formatter: v => Number(v).toFixed(1), style: { fontSize: '10px', colors: labelColor } }
+                labels: { formatter: v => Number(v).toFixed(1) + (data.y_format === 'percentage' ? '%' : ''), style: { fontSize: '10px', colors: labelColor } }
             },
             annotations: annOpts,
             grid: { ...baseChartOptions().grid, xaxis: { lines: { show: true } } },
@@ -1584,7 +1674,10 @@
                     const sn = w.config.series[seriesIndex].name || '';
                     const bg = isDark() ? '#1e293b' : '#ffffff';
                     const fg = isDark() ? '#e2e8f0' : '#1e293b';
-                    return `<div style="padding:8px 12px;font-size:12px;background:${bg};color:${fg};border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.2);"><strong>${esc(pt.meta || sn)}</strong><br>${data.x_label || 'X'}: ${Number(pt.x).toFixed(2)}<br>${data.y_label || 'Y'}: ${Number(pt.y).toFixed(2)}</div>`;
+                    // Per-axis formatting: use x_format/y_format from LLM, fallback to axis label heuristic
+                    const xSuffix = data.x_format === 'percentage' ? '%' : (data.x_format ? '' : ((data.x_label || '').includes('%') ? '%' : ''));
+                    const ySuffix = data.y_format === 'percentage' ? '%' : (data.y_format ? '' : ((data.y_label || '').includes('%') ? '%' : ''));
+                    return `<div style="padding:8px 12px;font-size:12px;background:${bg};color:${fg};border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.2);"><strong>${esc(pt.meta || sn)}</strong><br>${data.x_label || 'X'}: ${fmtWithSuffix(pt.x, xSuffix)}<br>${data.y_label || 'Y'}: ${fmtWithSuffix(pt.y, ySuffix)}</div>`;
                 }
             },
             legend: {
@@ -1598,6 +1691,7 @@
         const points = data.points || [];
         const labelColor = getChartLabelColor();
         const mobile = isMobile();
+        const valSuffix = detectValueSuffix(data, config);
 
         const bSeries = points.map(s => ({
             name: s.name,
@@ -1621,6 +1715,22 @@
                 title: data.y_label ? { text: data.y_label, style: { color: labelColor, fontSize: '11px' } } : undefined,
                 labels: { style: { fontSize: '10px', colors: labelColor } }
             },
+            tooltip: {
+                theme: getTheme(),
+                custom: ({ seriesIndex, dataPointIndex, w }) => {
+                    const pt = w.config.series[seriesIndex]?.data[dataPointIndex];
+                    if (!pt) return '';
+                    const sn = w.config.series[seriesIndex].name || '';
+                    const bg = isDark() ? '#1e293b' : '#ffffff';
+                    const fg = isDark() ? '#e2e8f0' : '#1e293b';
+                    const xVal = Array.isArray(pt) ? pt[0] : pt.x;
+                    const yVal = Array.isArray(pt) ? pt[1] : pt.y;
+                    const zVal = Array.isArray(pt) ? pt[2] : pt.z;
+                    const xSuffix = data.x_format === 'percentage' ? '%' : (data.x_format ? '' : ((data.x_label || '').includes('%') ? '%' : ''));
+                    const ySuffix = data.y_format === 'percentage' ? '%' : (data.y_format ? '' : ((data.y_label || '').includes('%') ? '%' : ''));
+                    return `<div style="padding:8px 12px;font-size:12px;background:${bg};color:${fg};border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.2);"><strong>${esc(sn)}</strong><br>${data.x_label || 'X'}: ${fmtWithSuffix(xVal, xSuffix)}<br>${data.y_label || 'Y'}: ${fmtWithSuffix(yVal, ySuffix)}${zVal ? '<br>Size: ' + fmtWithSuffix(zVal, '') : ''}</div>`;
+                }
+            },
             legend: {
                 ...baseChartOptions().legend,
                 position: 'bottom'
@@ -1631,6 +1741,7 @@
     function buildTreemapOptions(data, config) {
         const points = data.points || [];
         const mobile = isMobile();
+        const valSuffix = detectValueSuffix(data, config);
 
         // Build treemap series from points or fallback to series/labels
         let tmSeries;
@@ -1665,10 +1776,11 @@
             dataLabels: {
                 enabled: true,
                 style: { fontSize: mobile ? '10px' : '11px', fontWeight: 600, colors: ['#ffffff'] },
-                formatter: (text, op) => [text, op.value != null ? fmtPct(op.value) : ''],
+                formatter: (text, op) => [text, op.value != null ? fmtWithSuffix(op.value, valSuffix) : ''],
                 offsetY: -2,
                 dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.35 }
             },
+            tooltip: { y: { formatter: v => fmtWithSuffix(v, valSuffix) } },
             legend: { show: false }
         };
     }
@@ -1680,6 +1792,7 @@
         const valueColor = getChartValueColor();
         const trackColor = getGaugeTrackColor();
         const mobile = isMobile();
+        const valSuffix = detectValueSuffix(data, config);
 
         return {
             ...baseChartOptions(),
@@ -1696,24 +1809,29 @@
                             fontSize: mobile ? '16px' : '18px',
                             fontWeight: 600,
                             color: valueColor,
-                            formatter: v => fmtPct(v)
+                            formatter: v => fmtWithSuffix(v, valSuffix)
                         },
                         total: {
                             show: labels.length > 1,
                             label: 'Average',
                             fontSize: '11px',
                             color: labelColor,
-                            formatter: w => fmtPct(w.globals.series.reduce((a, b) => a + b, 0) / w.globals.series.length)
+                            formatter: w => fmtWithSuffix(w.globals.series.reduce((a, b) => a + b, 0) / w.globals.series.length, valSuffix)
                         }
                     }
                 }
             },
-            stroke: { lineCap: 'round' }
+            stroke: { lineCap: 'round' },
+            tooltip: { y: { formatter: v => fmtWithSuffix(v, valSuffix) } }
         };
     }
 
     function buildPolarAreaOptions(data, config) {
-        const series = Array.isArray(data.series) ? data.series.map(v => Math.min(100, Math.max(0, v))) : [];
+        const valSuffix = detectValueSuffix(data, config);
+        // Only clamp to 0-100 for percentage data; non-percentage data can exceed 100
+        const series = Array.isArray(data.series)
+            ? (valSuffix === '%' ? data.series.map(v => Math.min(100, Math.max(0, v))) : data.series)
+            : [];
         const labels = Array.isArray(data.labels) ? data.labels : [];
         const strokeColor = getPieStrokeColor();
         const polygonColor = isDark() ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
@@ -1740,10 +1858,11 @@
             },
             dataLabels: {
                 enabled: true,
-                formatter: v => fmtPct(v),
+                formatter: v => fmtWithSuffix(v, valSuffix),
                 style: { fontSize: mobile ? '9px' : '11px', fontWeight: 600, colors: ['#ffffff'] },
                 dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.35 }
-            }
+            },
+            tooltip: { y: { formatter: v => fmtWithSuffix(v, valSuffix) } }
         };
     }
 
@@ -1753,6 +1872,7 @@
         const labelColor = getChartLabelColor();
         const gridColor = getChartGridColor();
         const mobile = isMobile();
+        const valSuffix = detectValueSuffix(data, config);
 
         const bpSeries = series.map(s => ({
             name: s.name || 'Distribution',
@@ -1779,8 +1899,12 @@
                 labels: { style: { colors: labelColor, fontSize: mobile ? '10px' : '11px' } }
             },
             yaxis: {
-                labels: { style: { colors: labelColor, fontSize: mobile ? '10px' : '11px' } }
+                labels: {
+                    style: { colors: labelColor, fontSize: mobile ? '10px' : '11px' },
+                    formatter: v => fmtWithSuffix(v, valSuffix)
+                }
             },
+            tooltip: { y: { formatter: v => fmtWithSuffix(v, valSuffix) } },
             grid: { borderColor: gridColor, strokeDashArray: 3 },
             legend: {
                 ...baseChartOptions().legend,

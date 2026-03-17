@@ -3396,6 +3396,18 @@ const AI_CHART_COLORS = ['#00d4ff', '#ff6b6b', '#51cf66', '#ffd43b', '#cc5de8', 
  * then render ApexCharts into them. Charts render EXACTLY where markers are placed.
  * If no markers found, insert charts after the first paragraph or heading.
  */
+function buildChartContainerHtml(chart, ts, i) {
+    const baseNHtml = chart.base_n ? `<span class="ai-chart-base-n">N=${Number(chart.base_n).toLocaleString()}</span>` : '';
+    let provHtml = '';
+    if (chart.data_source || chart.calculation_note) {
+        provHtml = '<div class="ai-chart-provenance">';
+        if (chart.data_source) provHtml += `<span class="ai-chart-prov-source">Source: ${escapeHtml(chart.data_source)}</span>`;
+        if (chart.calculation_note) provHtml += `<span class="ai-chart-prov-calc">Method: ${escapeHtml(chart.calculation_note)}</span>`;
+        provHtml += '</div>';
+    }
+    return `<div class="ai-chart-container" data-chart-index="${i}"><div class="ai-chart-header"><div class="ai-chart-title">${escapeHtml(chart.title || '')}</div>${baseNHtml}</div><div id="ai-chart-${ts}-${i}" class="ai-chart-render"></div>${provHtml}</div>`;
+}
+
 function renderInlineCharts(msgEl, charts) {
     if (!charts || charts.length === 0 || typeof ApexCharts === 'undefined') return;
 
@@ -3412,13 +3424,13 @@ function renderInlineCharts(msgEl, charts) {
         let newHtml = html.replace(/<p>\s*\[CHART:(\d+)\]\s*<\/p>/g, (match, idx) => {
             const i = parseInt(idx);
             if (i >= charts.length) return '';
-            return `<div class="ai-chart-container" data-chart-index="${i}"><div class="ai-chart-title">${escapeHtml(charts[i].title || '')}</div><div id="ai-chart-${ts}-${i}" class="ai-chart-render"></div></div>`;
+            return buildChartContainerHtml(charts[i], ts, i);
         });
         // Then handle any remaining inline [CHART:N] (not wrapped in <p>)
         newHtml = newHtml.replace(/\[CHART:(\d+)\]/g, (match, idx) => {
             const i = parseInt(idx);
             if (i >= charts.length) return '';
-            return `</p><div class="ai-chart-container" data-chart-index="${i}"><div class="ai-chart-title">${escapeHtml(charts[i].title || '')}</div><div id="ai-chart-${ts}-${i}" class="ai-chart-render"></div></div><p>`;
+            return `</p>${buildChartContainerHtml(charts[i], ts, i)}<p>`;
         });
         // Clean up empty <p></p> tags left over
         newHtml = newHtml.replace(/<p>\s*<\/p>/g, '');
@@ -3429,16 +3441,12 @@ function renderInlineCharts(msgEl, charts) {
         const firstBlock = msgEl.querySelector('h1, h2, h3, p');
         if (firstBlock) {
             let chartsHtml = '';
-            charts.forEach((chart, i) => {
-                chartsHtml += `<div class="ai-chart-container" data-chart-index="${i}"><div class="ai-chart-title">${escapeHtml(chart.title || '')}</div><div id="ai-chart-${ts}-${i}" class="ai-chart-render"></div></div>`;
-            });
+            charts.forEach((chart, i) => { chartsHtml += buildChartContainerHtml(chart, ts, i); });
             firstBlock.insertAdjacentHTML('afterend', chartsHtml);
         } else {
             // Fallback: append at end
             let chartsHtml = '';
-            charts.forEach((chart, i) => {
-                chartsHtml += `<div class="ai-chart-container" data-chart-index="${i}"><div class="ai-chart-title">${escapeHtml(chart.title || '')}</div><div id="ai-chart-${ts}-${i}" class="ai-chart-render"></div></div>`;
-            });
+            charts.forEach((chart, i) => { chartsHtml += buildChartContainerHtml(chart, ts, i); });
             msgEl.innerHTML += chartsHtml;
         }
     }
@@ -3471,10 +3479,55 @@ function createApexChart(container, chartData) {
     const { chart_type, categories, series, points } = chartData;
     // scatter/bubble/treemap use 'points' instead of categories/series
     const usesPoints = ['scatter_chart', 'bubble_chart', 'treemap_chart'].includes(chart_type);
-    if (!usesPoints && (!categories || !series || series.length === 0)) return;
+    const isGauge = chart_type === 'gauge_chart';
+    if (!isGauge && !usesPoints && (!categories || !series || series.length === 0)) return;
     if (usesPoints && (!points || points.length === 0) && (!series || series.length === 0)) return;
 
     const colors = AI_CHART_COLORS.slice(0, Math.max((series||[]).length, (categories||[]).length, (points||[]).length));
+
+    // Value format suffix — only show % when LLM explicitly says "percentage"
+    const VALUE_FORMAT_MAP = {
+        'percentage': '%', 'count': '', 'currency_usd': ' USD', 'decimal': '',
+        'ratio': '', 'index': '', 'mean': '', 'score': '', 'year': '', 'custom': ''
+    };
+    const vf = chartData.value_format || '';
+    const valSuffix = VALUE_FORMAT_MAP[vf] !== undefined ? VALUE_FORMAT_MAP[vf] : '';
+
+    // Counts: flat array or multi-series {name, data}[]
+    const rawCounts = chartData.counts || [];
+
+    function resolveCount(seriesIdx, dataPointIdx, pctVal) {
+        // Multi-series counts: [{name, data: [...]}, ...]
+        if (rawCounts.length > 0 && rawCounts[seriesIdx]?.data) {
+            const c = rawCounts[seriesIdx].data[dataPointIdx];
+            if (c != null) return c;
+        }
+        // Flat counts: [n1, n2, ...]
+        if (rawCounts.length > 0 && typeof rawCounts[0] === 'number') {
+            const c = rawCounts[dataPointIdx];
+            if (c != null) return c;
+        }
+        // Fallback: compute from base_n + percentage
+        const base = chartData.base_n;
+        if (base && typeof pctVal === 'number' && valSuffix === '%') {
+            return Math.round(pctVal * base / 100);
+        }
+        return null;
+    }
+
+    function fmtVal(val) {
+        return formatChartNumber(val) + valSuffix;
+    }
+
+    // Build tooltip formatter: value + suffix + (n=count)
+    const tooltipY = {
+        formatter: (val, opts) => {
+            let label = fmtVal(val);
+            const count = resolveCount(opts.seriesIndex || 0, opts.dataPointIndex, val);
+            if (count != null) label += ` (n=${Number(count).toLocaleString()})`;
+            return label;
+        }
+    };
 
     // Common chart options
     const baseOptions = {
@@ -3495,7 +3548,8 @@ function createApexChart(container, chartData) {
         },
         tooltip: {
             theme: 'dark',
-            style: { fontSize: '11px' }
+            style: { fontSize: '11px' },
+            y: tooltipY
         },
         legend: {
             position: 'bottom',
@@ -3527,7 +3581,7 @@ function createApexChart(container, chartData) {
                     textAnchor: 'start',
                     offsetX: 8,
                     style: { fontSize: '10px', fontWeight: 400, colors: ['rgba(255,255,255,0.7)'] },
-                    formatter: (val) => '\u2003' + formatChartNumber(val)
+                    formatter: (val) => '\u2003' + fmtVal(val)
                 },
                 xaxis: { categories: categories, labels: { style: { fontSize: '10px' } } },
                 yaxis: { labels: { style: { fontSize: '10px' }, maxWidth: 160 } }
@@ -3551,13 +3605,13 @@ function createApexChart(container, chartData) {
                     enabled: categories.length <= 8,
                     offsetY: -8,
                     style: { fontSize: '10px', colors: ['rgba(255,255,255,0.7)'] },
-                    formatter: (val) => formatChartNumber(val)
+                    formatter: (val) => fmtVal(val)
                 },
                 xaxis: {
                     categories: categories,
                     labels: { rotate: categories.length > 6 ? -45 : 0, rotateAlways: categories.length > 6, style: { fontSize: '10px' } }
                 },
-                yaxis: { labels: { style: { fontSize: '10px' }, formatter: (val) => formatChartNumber(val) } }
+                yaxis: { labels: { style: { fontSize: '10px' }, formatter: (val) => fmtVal(val) } }
             };
             break;
 
@@ -3576,7 +3630,7 @@ function createApexChart(container, chartData) {
                     categories: categories,
                     labels: { rotate: categories.length > 8 ? -45 : 0, rotateAlways: categories.length > 8, style: { fontSize: '10px' } }
                 },
-                yaxis: { labels: { style: { fontSize: '10px' }, formatter: (val) => formatChartNumber(val) } }
+                yaxis: { labels: { style: { fontSize: '10px' }, formatter: (val) => fmtVal(val) } }
             };
             break;
 
@@ -3586,9 +3640,17 @@ function createApexChart(container, chartData) {
                 chart: { ...baseOptions.chart, type: 'pie', height: 320 },
                 series: series[0].data,
                 labels: categories,
+                tooltip: {
+                    ...baseOptions.tooltip,
+                    y: { formatter: (val, opts) => {
+                        const c = resolveCount(0, opts.seriesIndex, val);
+                        if (c != null) return `${fmtVal(val)} (n=${Number(c).toLocaleString()})`;
+                        return fmtVal(val);
+                    }}
+                },
                 dataLabels: {
                     enabled: true,
-                    formatter: (val) => Math.round(val) + '%',
+                    formatter: (val) => fmtVal(Math.round(val)),
                     style: { fontSize: '11px', fontWeight: 500 },
                     dropShadow: { enabled: false }
                 },
@@ -3603,9 +3665,17 @@ function createApexChart(container, chartData) {
                 chart: { ...baseOptions.chart, type: 'donut', height: 320 },
                 series: series[0].data,
                 labels: categories,
+                tooltip: {
+                    ...baseOptions.tooltip,
+                    y: { formatter: (val, opts) => {
+                        const c = resolveCount(0, opts.seriesIndex, val);
+                        if (c != null) return `${fmtVal(val)} (n=${Number(c).toLocaleString()})`;
+                        return fmtVal(val);
+                    }}
+                },
                 dataLabels: {
                     enabled: true,
-                    formatter: (val) => Math.round(val) + '%',
+                    formatter: (val) => fmtVal(Math.round(val)),
                     style: { fontSize: '11px', fontWeight: 500 },
                     dropShadow: { enabled: false }
                 },
@@ -3720,7 +3790,7 @@ function createApexChart(container, chartData) {
         case 'radar_chart':
             options = {
                 ...baseOptions,
-                chart: { ...baseOptions.chart, type: 'radar', height: 380 },
+                chart: { ...baseOptions.chart, type: 'radar', height: 480 },
                 series: series.map(s => ({ name: s.name, data: s.data })),
                 xaxis: {
                     categories: categories,
@@ -3881,6 +3951,57 @@ function createApexChart(container, chartData) {
                 markers: { size: 4, strokeWidth: 0, hover: { size: 6 } }
             };
             break;
+
+        case 'stacked_bar_chart':
+            options = {
+                ...baseOptions,
+                chart: { ...baseOptions.chart, type: 'bar', height: Math.max(280, (categories||[]).length * 48), stacked: true, stackType: '100%' },
+                series: series.map(s => ({ name: s.name, data: s.data })),
+                plotOptions: {
+                    bar: {
+                        horizontal: true,
+                        borderRadius: 2,
+                        barHeight: '70%'
+                    }
+                },
+                dataLabels: {
+                    enabled: true,
+                    style: { fontSize: '10px', fontWeight: 400, colors: ['#fff'] },
+                    formatter: (val, opt) => {
+                        const raw = series[opt.seriesIndex]?.data[opt.dataPointIndex];
+                        return raw != null && raw >= 5 ? raw.toFixed(1) + '%' : '';
+                    }
+                },
+                xaxis: { categories: categories, labels: { style: { fontSize: '10px' }, formatter: v => Math.round(v) + '%' } },
+                yaxis: { labels: { style: { fontSize: '10px' }, maxWidth: 160 } },
+                legend: { ...baseOptions.legend, position: 'bottom' }
+            };
+            break;
+
+        case 'gauge_chart': {
+            const gVal = chartData.gauge_value ?? (series?.[0]?.data?.[0] ?? 0);
+            const gLabel = chartData.gauge_label || chartData.title || 'Value';
+            options = {
+                ...baseOptions,
+                chart: { ...baseOptions.chart, type: 'radialBar', height: 300 },
+                series: [Math.min(100, Math.max(0, gVal))],
+                labels: [gLabel],
+                plotOptions: {
+                    radialBar: {
+                        startAngle: -135, endAngle: 135,
+                        hollow: { size: '60%' },
+                        track: { background: 'rgba(255,255,255,0.06)', strokeWidth: '100%' },
+                        dataLabels: {
+                            name: { fontSize: '13px', color: 'rgba(255,255,255,0.7)', offsetY: 20 },
+                            value: { fontSize: '28px', fontWeight: 700, color: '#00d4ff', offsetY: -15,
+                                formatter: () => gVal % 1 === 0 ? gVal.toFixed(0) + '%' : gVal.toFixed(1) + '%' }
+                        }
+                    }
+                },
+                stroke: { lineCap: 'round' }
+            };
+            break;
+        }
 
         default:
             return;

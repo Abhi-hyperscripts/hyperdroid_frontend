@@ -330,6 +330,15 @@
                 font-style: italic;
             }
             .rz-chart-render { min-height: 200px; }
+            .rz-chart-prov {
+                margin-top: 6px; padding-top: 5px;
+                border-top: 1px dashed ${C.border};
+                font-size: 9px; color: ${C.textMuted};
+                font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+                line-height: 1.5; opacity: 0.75;
+            }
+            .rz-prov-src { display: block; color: ${isDark ? '#5ba3ff' : '#2563eb'}; }
+            .rz-prov-calc { display: block; }
 
             /* ApexCharts toolbar menu — force readable in both themes */
             .apexcharts-menu {
@@ -883,6 +892,19 @@
         // ========================================
         // INLINE CHART RENDERING (ApexCharts)
         // ========================================
+        function buildWidgetChartHtml(c, ts, idx) {
+            const baseHtml = c.base_n ? `<div class="rz-chart-base">Base: N=${c.base_n.toLocaleString()}</div>` : '';
+            const sigHtml = c.significance_notes ? `<div class="rz-chart-sig">${esc(c.significance_notes)}</div>` : '';
+            let provHtml = '';
+            if (c.data_source || c.calculation_note) {
+                provHtml = '<div class="rz-chart-prov">';
+                if (c.data_source) provHtml += `<span class="rz-prov-src">Source: ${esc(c.data_source)}</span>`;
+                if (c.calculation_note) provHtml += `<span class="rz-prov-calc">Method: ${esc(c.calculation_note)}</span>`;
+                provHtml += '</div>';
+            }
+            return `<div class="rz-chart-container" data-ci="${idx}"><div class="rz-chart-title">${esc(c.title||'')}${baseHtml}</div><div class="rz-chart-render" id="rzc-${ts}-${idx}"></div>${sigHtml}${provHtml}</div>`;
+        }
+
         function renderCharts(el, charts) {
             if (!charts?.length || typeof ApexCharts === 'undefined') return;
             const ts = Date.now();
@@ -891,24 +913,16 @@
             if (hasM) {
                 let nh = html.replace(/<p>\s*\[CHART:(\d+)\]\s*<\/p>/g, (_, i) => {
                     const idx = parseInt(i); if (idx >= charts.length) return '';
-                    const c = charts[idx]; const baseHtml = c.base_n ? `<div class="rz-chart-base">Base: N=${c.base_n.toLocaleString()}</div>` : '';
-                    const sigHtml = c.significance_notes ? `<div class="rz-chart-sig">${esc(c.significance_notes)}</div>` : '';
-                    return `<div class="rz-chart-container" data-ci="${idx}"><div class="rz-chart-title">${esc(c.title||'')}${baseHtml}</div><div class="rz-chart-render" id="rzc-${ts}-${idx}"></div>${sigHtml}</div>`;
+                    return buildWidgetChartHtml(charts[idx], ts, idx);
                 });
                 nh = nh.replace(/\[CHART:(\d+)\]/g, (_, i) => {
                     const idx = parseInt(i); if (idx >= charts.length) return '';
-                    const c = charts[idx]; const baseHtml = c.base_n ? `<div class="rz-chart-base">Base: N=${c.base_n.toLocaleString()}</div>` : '';
-                    const sigHtml = c.significance_notes ? `<div class="rz-chart-sig">${esc(c.significance_notes)}</div>` : '';
-                    return `</p><div class="rz-chart-container" data-ci="${idx}"><div class="rz-chart-title">${esc(c.title||'')}${baseHtml}</div><div class="rz-chart-render" id="rzc-${ts}-${idx}"></div>${sigHtml}</div><p>`;
+                    return `</p>${buildWidgetChartHtml(charts[idx], ts, idx)}<p>`;
                 });
                 el.innerHTML = nh.replace(/<p>\s*<\/p>/g, '');
             } else {
                 const fb = el.querySelector('h1, h2, h3, p');
-                let ch = ''; charts.forEach((c, i) => {
-                    const baseHtml = c.base_n ? `<div class="rz-chart-base">Base: N=${c.base_n.toLocaleString()}</div>` : '';
-                    const sigHtml = c.significance_notes ? `<div class="rz-chart-sig">${esc(c.significance_notes)}</div>` : '';
-                    ch += `<div class="rz-chart-container" data-ci="${i}"><div class="rz-chart-title">${esc(c.title||'')}${baseHtml}</div><div class="rz-chart-render" id="rzc-${ts}-${i}"></div>${sigHtml}</div>`;
-                });
+                let ch = ''; charts.forEach((c, i) => { ch += buildWidgetChartHtml(c, ts, i); });
                 if (fb) fb.insertAdjacentHTML('afterend', ch); else el.innerHTML += ch;
             }
             requestAnimationFrame(() => {
@@ -923,31 +937,43 @@
         function makeChart(el, cd) {
             const { chart_type, categories, series, points, counts, base_n, significance_markers } = cd;
             const usesPoints = ['scatter_chart', 'bubble_chart', 'treemap_chart'].includes(chart_type);
-            if (!usesPoints && (!categories?.length || !series?.length)) return;
+            const isGauge = chart_type === 'gauge_chart';
+            if (!usesPoints && !isGauge && (!categories?.length || !series?.length)) return;
             if (usesPoints && (!points?.length) && (!series?.length)) return;
             const cc = CHART_COLORS.slice(0, Math.max((series||[]).length, (categories||[]).length, (points||[]).length));
+            // Value format suffix — only show % when LLM says "percentage"
+            const VF_MAP = { 'percentage': '%', 'count': '', 'currency_usd': ' USD', 'decimal': '', 'ratio': '', 'index': '', 'mean': '', 'score': '', 'year': '', 'custom': '' };
+            const valSuffix = VF_MAP[cd.value_format || ''] !== undefined ? VF_MAP[cd.value_format || ''] : '';
+            function fmtWithSuffix(v) { return fmtNum(v) + valSuffix; }
             // Build significance lookup: { "category|series": "high"|"low" }
             const sigMap = {};
             if (significance_markers?.length) significance_markers.forEach(m => { sigMap[`${m.category}|${m.series||''}`] = m.direction; });
-            // Custom tooltip that shows count + percentage + significance arrow
-            const richTooltip = (counts?.length) ? {
+            // Resolve count for a data point
+            function resolveCnt(sIdx, dIdx, pctVal) {
+                if (counts?.length && counts[sIdx]?.data) { const c = counts[sIdx].data[dIdx]; if (c != null) return c; }
+                if (counts?.length && typeof counts[0] === 'number') { const c = counts[dIdx]; if (c != null) return c; }
+                if (base_n && typeof pctVal === 'number' && valSuffix === '%') return Math.round(pctVal * base_n / 100);
+                return null;
+            }
+            // Custom tooltip that shows count + value + suffix + significance arrow
+            const richTooltip = {
                 theme: isDark ? 'dark' : 'light', style: { fontSize: '11px' },
                 custom: ({ series: s, seriesIndex, dataPointIndex, w }) => {
                     const cat = categories?.[dataPointIndex] || '';
                     const sName = w.config.series[seriesIndex]?.name || '';
                     const val = s[seriesIndex]?.[dataPointIndex];
-                    const cnt = counts?.[dataPointIndex];
+                    const cnt = resolveCnt(seriesIndex, dataPointIndex, val);
                     const sig = sigMap[`${cat}|${sName}`] || sigMap[`${cat}|`];
                     const sigIcon = sig === 'high' ? ' <span style="color:#22c55e">&#9650;</span>' : sig === 'low' ? ' <span style="color:#ef4444">&#9660;</span>' : '';
                     let html = `<div style="padding:8px 12px;font-size:12px;background:#1e293b;color:#e2e8f0;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.35);">`;
                     html += `<strong>${esc(cat)}</strong><br>`;
-                    if (val != null) html += `${fmtNum(val)}%${sigIcon}`;
+                    if (val != null) html += `${fmtWithSuffix(val)}${sigIcon}`;
                     if (cnt != null) html += `<br><span style="color:#94a3b8">Count: ${cnt.toLocaleString()}</span>`;
                     if (base_n) html += `<br><span style="color:#64748b">Base: ${base_n.toLocaleString()}</span>`;
                     html += '</div>';
                     return html;
                 }
-            } : { theme: isDark ? 'dark' : 'light', style: { fontSize: '11px' } };
+            };
             const base = {
                 chart: {
                     background: 'transparent',
@@ -968,7 +994,7 @@
                         series: series.map(s => ({ name: s.name, data: s.data })),
                         plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '65%', dataLabels: { position: 'right' } } },
                         dataLabels: { enabled: true, textAnchor: 'start', offsetX: 8, style: { fontSize: '10px', fontWeight: 400, colors: [C.chartDataLabel] },
-                            formatter: (v) => '\u2003' + fmtNum(v) + '%' },
+                            formatter: (v) => '\u2003' + fmtWithSuffix(v) },
                         tooltip: richTooltip,
                         xaxis: { categories, labels: { style: { fontSize: '10px' } } }, yaxis: { labels: { style: { fontSize: '10px' }, maxWidth: 160 } } };
                     break;
@@ -977,7 +1003,7 @@
                         series: series.map(s => ({ name: s.name, data: s.data })),
                         plotOptions: { bar: { horizontal: false, columnWidth: series.length > 1 ? '75%' : '55%', borderRadius: 4, borderRadiusApplication: 'end' } },
                         dataLabels: { enabled: categories.length <= 8, offsetY: -8, style: { fontSize: '10px', colors: [C.chartDataLabel] },
-                            formatter: (v) => fmtNum(v) + '%' },
+                            formatter: (v) => fmtWithSuffix(v) },
                         tooltip: richTooltip,
                         xaxis: { categories, labels: { rotate: categories.length > 6 ? -45 : 0, rotateAlways: categories.length > 6, style: { fontSize: '10px' } } },
                         yaxis: { labels: { style: { fontSize: '10px' }, formatter: v => fmtNum(v) } } };
@@ -986,37 +1012,38 @@
                     opt = { ...base, chart: { ...base.chart, type: 'line', height: 320 },
                         series: series.map(s => ({ name: s.name, data: s.data })),
                         stroke: { curve: 'smooth', width: 2.5 }, markers: { size: 5, strokeWidth: 0, hover: { size: 7 } },
+                        tooltip: richTooltip,
                         xaxis: { categories, labels: { rotate: categories.length > 8 ? -45 : 0, rotateAlways: categories.length > 8, style: { fontSize: '10px' } } },
-                        yaxis: { labels: { style: { fontSize: '10px' }, formatter: v => fmtNum(v) } } };
+                        yaxis: { labels: { style: { fontSize: '10px' }, formatter: v => fmtWithSuffix(v) } } };
                     break;
                 case 'pie_chart':
                     opt = { ...base, chart: { ...base.chart, type: 'pie', height: 320 },
                         series: series[0].data, labels: categories,
-                        dataLabels: { enabled: true, formatter: (v) => Math.round(v) + '%', style: { fontSize: '11px', fontWeight: 500 }, dropShadow: { enabled: false } },
-                        tooltip: counts?.length ? { custom: ({ seriesIndex, w }) => {
+                        dataLabels: { enabled: true, formatter: (v) => fmtWithSuffix(Math.round(v)), style: { fontSize: '11px', fontWeight: 500 }, dropShadow: { enabled: false } },
+                        tooltip: { custom: ({ seriesIndex, w }) => {
                             const cat = w.config.labels?.[seriesIndex] || '';
                             const val = w.globals.series?.[seriesIndex];
-                            const cnt = counts?.[seriesIndex];
-                            let h = `<div style="padding:8px 12px;font-size:12px;background:#1e293b;color:#e2e8f0;border-radius:6px;"><strong>${esc(cat)}</strong><br>${fmtNum(val)}%`;
-                            if (cnt != null) h += `<br><span style="color:#94a3b8">Count: ${cnt.toLocaleString()}</span>`;
+                            const cnt = resolveCnt(0, seriesIndex, val);
+                            let h = `<div style="padding:8px 12px;font-size:12px;background:#1e293b;color:#e2e8f0;border-radius:6px;"><strong>${esc(cat)}</strong><br>${fmtWithSuffix(val)}`;
+                            if (cnt != null) h += `<br><span style="color:#94a3b8">Count: ${Number(cnt).toLocaleString()}</span>`;
                             if (base_n) h += `<br><span style="color:#64748b">Base: ${base_n.toLocaleString()}</span>`;
                             return h + '</div>';
-                        }} : base.tooltip,
+                        }},
                         plotOptions: { pie: { expandOnClick: true } }, stroke: { width: 1, colors: [C.chartStroke] } };
                     break;
                 case 'donut_chart':
                     opt = { ...base, chart: { ...base.chart, type: 'donut', height: 320 },
                         series: series[0].data, labels: categories,
-                        dataLabels: { enabled: true, formatter: (v) => Math.round(v) + '%', style: { fontSize: '11px', fontWeight: 500 }, dropShadow: { enabled: false } },
-                        tooltip: counts?.length ? { custom: ({ seriesIndex, w }) => {
+                        dataLabels: { enabled: true, formatter: (v) => fmtWithSuffix(Math.round(v)), style: { fontSize: '11px', fontWeight: 500 }, dropShadow: { enabled: false } },
+                        tooltip: { custom: ({ seriesIndex, w }) => {
                             const cat = w.config.labels?.[seriesIndex] || '';
                             const val = w.globals.series?.[seriesIndex];
-                            const cnt = counts?.[seriesIndex];
-                            let h = `<div style="padding:8px 12px;font-size:12px;background:#1e293b;color:#e2e8f0;border-radius:6px;"><strong>${esc(cat)}</strong><br>${fmtNum(val)}%`;
-                            if (cnt != null) h += `<br><span style="color:#94a3b8">Count: ${cnt.toLocaleString()}</span>`;
+                            const cnt = resolveCnt(0, seriesIndex, val);
+                            let h = `<div style="padding:8px 12px;font-size:12px;background:#1e293b;color:#e2e8f0;border-radius:6px;"><strong>${esc(cat)}</strong><br>${fmtWithSuffix(val)}`;
+                            if (cnt != null) h += `<br><span style="color:#94a3b8">Count: ${Number(cnt).toLocaleString()}</span>`;
                             if (base_n) h += `<br><span style="color:#64748b">Base: ${base_n.toLocaleString()}</span>`;
                             return h + '</div>';
-                        }} : base.tooltip,
+                        }},
                         plotOptions: { pie: { donut: { size: '62%', labels: {
                             show: true, name: { show: true, fontSize: '12px', color: C.chartLegend },
                             value: { show: true, fontSize: '16px', fontWeight: 600, color: '#00d4ff', formatter: v => fmtNum(parseFloat(v)) },
@@ -1056,8 +1083,9 @@
                     break;
                 }
                 case 'radar_chart':
-                    opt = { ...base, chart: { ...base.chart, type: 'radar', height: 380 },
+                    opt = { ...base, chart: { ...base.chart, type: 'radar', height: 480 },
                         series: series.map(s => ({ name: s.name, data: s.data })),
+                        tooltip: richTooltip,
                         xaxis: { categories, labels: { style: { fontSize: '10px', colors: Array(categories.length).fill(C.chartFg) } } },
                         yaxis: { show: false }, stroke: { width: 2 }, fill: { opacity: 0.15 },
                         markers: { size: 4, strokeWidth: 0, hover: { size: 6 } },
@@ -1068,6 +1096,7 @@
                         series: series.map(s => ({ name: s.name, data: s.data.map((v,i) => ({ x: categories[i]||`Col ${i+1}`, y: v })) })),
                         plotOptions: { heatmap: { radius: 2, enableShades: true, shadeIntensity: 0.5, colorScale: { ranges: [{ from: -Infinity, to: 0, color: '#ef4444', name: 'Low' },{ from: 0, to: 50, color: '#f59e0b', name: 'Medium' },{ from: 50, to: Infinity, color: '#22c55e', name: 'High' }] } } },
                         dataLabels: { enabled: true, style: { fontSize: '10px', colors: ['#fff'] } },
+                        tooltip: richTooltip,
                         stroke: { width: 1, colors: ['rgba(0,0,0,0.15)'] } };
                     break;
                 case 'treemap_chart': {
@@ -1096,22 +1125,55 @@
                         plotOptions: { polarArea: { rings: { strokeWidth: 1, strokeColor: 'rgba(255,255,255,0.08)' }, spokes: { strokeWidth: 1, connectorColors: 'rgba(255,255,255,0.08)' } } },
                         yaxis: { show: false }, dataLabels: { enabled: true, formatter: v => Math.round(v) + '%', style: { fontSize: '10px' }, dropShadow: { enabled: false } } };
                     break;
-                case 'boxPlot_chart':
+                case 'boxPlot_chart': {
+                    const bpSeries = (series||[]).map(s => ({
+                        name: s.name || 'Distribution', type: 'boxPlot',
+                        data: (s.data||[]).map((d,i) => ({
+                            x: (categories||[])[i] || `Group ${i+1}`,
+                            y: Array.isArray(d) && d.length >= 5 ? d.slice(0,5) : Array.isArray(d) ? [...d, ...Array(5-d.length).fill(d[d.length-1]||0)] : [d,d,d,d,d]
+                        }))
+                    }));
                     opt = { ...base, chart: { ...base.chart, type: 'boxPlot', height: 340 },
-                        series: series.map(s => ({ name: s.name || 'Distribution', type: 'boxPlot', data: s.data.map((d,i) => ({ x: categories[i]||`Group ${i+1}`, y: Array.isArray(d) ? d : [d,d,d,d,d] })) })),
+                        series: bpSeries,
                         plotOptions: { boxPlot: { colors: { upper: '#00d4ff', lower: '#22c55e' } } } };
                     break;
+                }
                 case 'area_chart':
                     opt = { ...base, chart: { ...base.chart, type: 'area', height: 320 },
                         series: series.map(s => ({ name: s.name, data: s.data })),
                         stroke: { curve: 'smooth', width: 2 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } },
+                        tooltip: richTooltip,
                         xaxis: { categories, labels: { rotate: categories.length > 8 ? -45 : 0, rotateAlways: categories.length > 8, style: { fontSize: '10px' } } },
-                        yaxis: { labels: { style: { fontSize: '10px' }, formatter: v => fmtNum(v) } },
+                        yaxis: { labels: { style: { fontSize: '10px' }, formatter: v => fmtWithSuffix(v) } },
                         markers: { size: 4, strokeWidth: 0, hover: { size: 6 } } };
                     break;
+                case 'stacked_bar_chart':
+                    opt = { ...base, chart: { ...base.chart, type: 'bar', height: Math.max(280, (categories||[]).length * 48), stacked: true, stackType: '100%' },
+                        series: series.map(s => ({ name: s.name, data: s.data })),
+                        plotOptions: { bar: { horizontal: true, borderRadius: 2, barHeight: '70%' } },
+                        dataLabels: { enabled: true, style: { fontSize: '10px', fontWeight: 400, colors: ['#fff'] },
+                            formatter: (val, o) => { const raw = series[o.seriesIndex]?.data[o.dataPointIndex]; return raw != null && raw >= 5 ? raw.toFixed(1) + valSuffix : ''; } },
+                        tooltip: richTooltip,
+                        xaxis: { categories, labels: { style: { fontSize: '10px' }, formatter: v => Math.round(v) + '%' } },
+                        yaxis: { labels: { style: { fontSize: '10px' }, maxWidth: 160 } },
+                        legend: { ...base.legend, position: 'bottom' } };
+                    break;
+                case 'gauge_chart': {
+                    const gv = cd.gauge_value ?? (series?.[0]?.data?.[0] ?? 0);
+                    const gl = cd.gauge_label || cd.title || 'Value';
+                    opt = { ...base, chart: { ...base.chart, type: 'radialBar', height: 300 },
+                        series: [Math.min(100, Math.max(0, gv))], labels: [gl],
+                        plotOptions: { radialBar: { startAngle: -135, endAngle: 135, hollow: { size: '60%' },
+                            track: { background: 'rgba(255,255,255,0.06)', strokeWidth: '100%' },
+                            dataLabels: { name: { fontSize: '13px', color: C.chartLegend, offsetY: 20 },
+                                value: { fontSize: '28px', fontWeight: 700, color: '#00d4ff', offsetY: -15,
+                                    formatter: () => gv % 1 === 0 ? gv.toFixed(0) + '%' : gv.toFixed(1) + '%' } } } },
+                        stroke: { lineCap: 'round' } };
+                    break;
+                }
                 default: return;
             }
-            try { new ApexCharts(el, opt).render(); } catch { el.innerHTML = `<div style="color:${C.textMuted};font-size:11px;padding:20px;text-align:center;">Chart rendering failed</div>`; }
+            try { new ApexCharts(el, opt).render().catch(() => { el.innerHTML = `<div style="color:${C.textMuted};font-size:11px;padding:20px;text-align:center;">Chart rendering failed</div>`; }); } catch { el.innerHTML = `<div style="color:${C.textMuted};font-size:11px;padding:20px;text-align:center;">Chart rendering failed</div>`; }
         }
 
         function fmtNum(v) {

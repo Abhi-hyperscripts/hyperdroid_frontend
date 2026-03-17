@@ -3008,6 +3008,43 @@
             fill: var(--brand-primary-light) !important;
         }
 
+        /* AI Chart Header (title + base N) */
+        .ai-chart-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .ai-chart-base-n {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            background: rgba(var(--brand-primary-rgb), 0.08);
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        /* AI Chart Provenance Footer */
+        .ai-chart-provenance {
+            margin-top: 8px;
+            padding-top: 6px;
+            border-top: 1px dashed rgba(var(--brand-primary-rgb), 0.12);
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+            line-height: 1.5;
+            opacity: 0.75;
+        }
+        .ai-chart-prov-source {
+            display: block;
+            color: var(--brand-primary-light);
+        }
+        .ai-chart-prov-calc {
+            display: block;
+        }
+
         /* AI Metadata Footer */
         .ai-msg-meta {
             margin-top: 8px;
