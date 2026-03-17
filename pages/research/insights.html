@@ -935,16 +935,41 @@
             letter-spacing: 0.02em;
         }
 
-        .ins-chart-provenance {
-            margin-top: 8px;
-            padding-top: 6px;
-            border-top: 1px dashed var(--ins-border);
-            font-size: 10px;
-            color: var(--ins-text-muted);
-            font-family: var(--ins-mono);
-            line-height: 1.5;
-            opacity: 0.75;
+        /* Provenance info icon + hover tooltip (inline before insight text) */
+        .ins-prov-icon-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            vertical-align: middle;
+            margin-right: 6px;
+            cursor: help;
         }
+        .ins-prov-icon {
+            opacity: 0.4;
+            transition: opacity 0.15s;
+            flex-shrink: 0;
+        }
+        .ins-prov-icon-wrap:hover .ins-prov-icon { opacity: 0.9; }
+        .ins-prov-tooltip {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 0;
+            min-width: 280px;
+            max-width: 420px;
+            padding: 10px 12px;
+            background: var(--ins-surface);
+            border: 1px solid var(--ins-border);
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+            font-size: 11px;
+            font-family: var(--ins-mono);
+            line-height: 1.6;
+            color: var(--ins-text-muted);
+            z-index: 100;
+            white-space: normal;
+        }
+        .ins-prov-icon-wrap:hover .ins-prov-tooltip { display: block; }
         .ins-prov-source {
             display: block;
             color: var(--ins-accent);
@@ -955,11 +980,14 @@
         }
         .ins-prov-calc {
             display: block;
+            margin-top: 2px;
         }
         .ins-prov-calc::before {
             content: 'Method: ';
             font-weight: 600;
         }
+        /* Legacy standalone provenance block (hidden — now inline) */
+        .ins-chart-provenance { display: none; }
 
         .ins-sig-legend {
             display: flex;

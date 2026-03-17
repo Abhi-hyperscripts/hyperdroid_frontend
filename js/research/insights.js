@@ -113,6 +113,11 @@
         return isDark() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
     }
 
+    /** Data label color for text on/near chart elements (bars, slices, heatmap cells) */
+    function getDataLabelColor() {
+        return isDark() ? '#ffffff' : '#334155';
+    }
+
     function getPieStrokeColor() {
         return isDark() ? '#111827' : '#ffffff';
     }
@@ -415,8 +420,10 @@
                         <div class="ins-kpi-label">${esc(kpi.kpi_label || '')}${kpiSourceCite}</div>
                         <div class="ins-kpi-gauge" id="insKpiGauge-${i}"></div>
                         ${kpi.benchmark ? `<div class="ins-kpi-insight" style="font-style:normal;opacity:0.7;">${esc(kpi.benchmark)}</div>` : ''}
-                        ${kpi.insight ? `<div class="ins-kpi-insight">${esc(kpi.insight)}</div>` : ''}
-                        ${kpi.calculation_note ? `<div class="ins-chart-provenance"><span class="ins-prov-calc" title="Calculation method">${esc(kpi.calculation_note)}</span></div>` : ''}
+                        ${kpi.insight ? `<div class="ins-kpi-insight">${kpi.calculation_note ? `<span class="ins-prov-icon-wrap">
+                            <svg class="ins-prov-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            <span class="ins-prov-tooltip"><span class="ins-prov-calc">${esc(kpi.calculation_note)}</span></span>
+                        </span>` : ''}${esc(kpi.insight)}</div>` : ''}
                     </div>`;
                 });
                 html += '</div>';
@@ -555,12 +562,11 @@
                             <span class="ins-sig-low">▼ Significantly lower</span>
                             <span class="ins-sig-ci">95% confidence</span>
                         </div>` : ''}
-                        ${chart.insight ? `<div class="ins-chart-insight">${esc(chart.insight)}</div>` : ''}
+                        ${chart.insight ? `<div class="ins-chart-insight">${chart.data_source || chart.calculation_note ? `<span class="ins-prov-icon-wrap">
+                            <svg class="ins-prov-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            <span class="ins-prov-tooltip">${chart.data_source ? `<span class="ins-prov-source">${esc(chart.data_source)}</span>` : ''}${chart.calculation_note ? `<span class="ins-prov-calc">${esc(chart.calculation_note)}</span>` : ''}</span>
+                        </span>` : ''}${esc(chart.insight)}</div>` : ''}
                         ${chart.significance_notes ? `<div class="ins-chart-sig-note">${esc(chart.significance_notes)}</div>` : ''}
-                        ${chart.data_source || chart.calculation_note ? `<div class="ins-chart-provenance">
-                            ${chart.data_source ? `<span class="ins-prov-source" title="Data source function">${esc(chart.data_source)}</span>` : ''}
-                            ${chart.calculation_note ? `<span class="ins-prov-calc" title="Calculation method">${esc(chart.calculation_note)}</span>` : ''}
-                        </div>` : ''}
                     </div>`;
                 });
                 html += '</div></div>'; // close ins-chart-grid + ins-tab-panel
@@ -1097,7 +1103,7 @@
             dataLabels: {
                 enabled: true,
                 formatter: (val) => fmtWithSuffix(val, valSuffix),
-                style: { fontSize: mobile ? '10px' : '12px', fontWeight: 600, colors: ['#ffffff'] },
+                style: { fontSize: mobile ? '10px' : '12px', fontWeight: 600, colors: [getDataLabelColor()] },
                 dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.4 }
             },
             stroke: { width: 1, colors: [strokeColor] },
@@ -1281,7 +1287,7 @@
                     }
                     return label;
                 },
-                style: { fontSize: '11px', fontWeight: 600, colors: horizontal ? ['#ffffff'] : [getChartValueColor()] },
+                style: { fontSize: '11px', fontWeight: 600, colors: [getDataLabelColor()] },
                 offsetY: horizontal ? 0 : -8,
                 dropShadow: horizontal ? { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.35 } : { enabled: false }
             };
@@ -1376,7 +1382,7 @@
                     }
                     return label;
                 },
-                style: { fontSize: '11px', fontWeight: 600, colors: ['#ffffff'] },
+                style: { fontSize: '11px', fontWeight: 600, colors: [getDataLabelColor()] },
                 dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.35 }
             },
             fill: { opacity: 0.9 }
@@ -1592,7 +1598,7 @@
             dataLabels: {
                 enabled: true,
                 formatter: v => fmtWithSuffix(v, valSuffix),
-                style: { fontSize: mobile ? '9px' : '10px', colors: ['#fff'] }
+                style: { fontSize: mobile ? '9px' : '10px', colors: [getDataLabelColor()] }
             },
             tooltip: { y: { formatter: v => fmtWithSuffix(v, valSuffix) } },
             stroke: { width: 1, colors: [isDark() ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.1)'] },
@@ -1775,7 +1781,7 @@
             },
             dataLabels: {
                 enabled: true,
-                style: { fontSize: mobile ? '10px' : '11px', fontWeight: 600, colors: ['#ffffff'] },
+                style: { fontSize: mobile ? '10px' : '11px', fontWeight: 600, colors: [getDataLabelColor()] },
                 formatter: (text, op) => [text, op.value != null ? fmtWithSuffix(op.value, valSuffix) : ''],
                 offsetY: -2,
                 dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.35 }
@@ -1859,7 +1865,7 @@
             dataLabels: {
                 enabled: true,
                 formatter: v => fmtWithSuffix(v, valSuffix),
-                style: { fontSize: mobile ? '9px' : '11px', fontWeight: 600, colors: ['#ffffff'] },
+                style: { fontSize: mobile ? '9px' : '11px', fontWeight: 600, colors: [getDataLabelColor()] },
                 dropShadow: { enabled: true, top: 0, left: 0, blur: 3, opacity: 0.35 }
             },
             tooltip: { y: { formatter: v => fmtWithSuffix(v, valSuffix) } }
@@ -2591,7 +2597,7 @@
         }
         if (profile.pct != null) {
             html += `<div class="ins-seg-size-card">
-                <div class="ins-seg-size-value">${profile.pct}%</div>
+                <div class="ins-seg-size-value">${fmtPct(profile.pct)}</div>
                 <div class="ins-seg-size-label">Of Total</div>
             </div>`;
         }
@@ -3221,7 +3227,7 @@
     };
 
     // ═══ DOWNLOAD PPT ═══
-    window.insDownloadPPT = async function () {
+    window.insDownloadPPT = function () {
         if (!dashboardData) {
             showToast('No dashboard data loaded', 'error');
             return;
@@ -3231,57 +3237,12 @@
             return;
         }
 
-        showToast('Capturing charts for PPT...', 'info');
-
-        // Temporarily show all hidden tab panels so html2canvas can capture them
-        const hiddenPanels = [];
-        document.querySelectorAll('.ins-tab-panel').forEach(p => {
-            if (getComputedStyle(p).display === 'none') {
-                hiddenPanels.push(p);
-                p.style.display = 'block';
-            }
-        });
-
-        // Brief delay for layout reflow
-        await new Promise(r => setTimeout(r, 200));
-
-        // Capture all chart card DOM elements as images using html2canvas
-        const chartImages = {};
-        const isDark = getTheme() === 'dark';
-        const bgColor = isDark ? '#1a1a2e' : '#ffffff';
-        const allCards = document.querySelectorAll('.ins-chart-card[data-chart-tab][data-chart-idx]');
-        let captured = 0;
-
-        for (const card of allCards) {
-            const tabId = card.getAttribute('data-chart-tab');
-            const idx = card.getAttribute('data-chart-idx');
-            const key = `${tabId}-${idx}`;
-            try {
-                const canvas = await html2canvas(card, {
-                    scale: 2,
-                    backgroundColor: bgColor,
-                    useCORS: true,
-                    logging: false,
-                    ignoreElements: (el) => el.classList?.contains('ins-chart-select-wrap')
-                });
-                chartImages[key] = canvas.toDataURL('image/png');
-                captured++;
-            } catch (err) {
-                console.warn(`[PPT] Failed to capture card ${key}:`, err);
-            }
-        }
-
-        // Restore hidden panels
-        hiddenPanels.forEach(p => p.style.display = 'none');
-
-        console.log(`[PPT] Captured ${captured}/${allCards.length} chart cards as images`);
-        showToast('Building PPT...', 'info');
+        showToast('Generating PPT with native charts...', 'info');
 
         setTimeout(() => {
             generateInsightsPPT(dashboardData, {
                 projectName: dashboardData.project_name || document.title.split('—')[0].trim(),
                 sampleSize: dashboardData.sample_size,
-                chartImages,
             });
         }, 100);
     };

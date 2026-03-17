@@ -23,7 +23,7 @@ function generateInsightsPPT(data, opts = {}) {
     const sampleSize = opts.sampleSize || data.sample_size || '';
     const fileName = opts.fileName || `${projectName.replace(/[^a-zA-Z0-9]/g, '_')}_Insights`;
     const accent = opts.accentColor || '3B82F6';
-    const chartImages = opts.chartImages || {}; // Map of "tabId-chartIdx" -> base64 PNG data URI
+    // Native PptxGenJS charts — no image captures needed
 
     // Color palette
     const C = {
@@ -100,9 +100,11 @@ function generateInsightsPPT(data, opts = {}) {
         return text.split('\n').map(l => stripBullet(l)).filter(l => l.length > 0);
     }
 
-    function pctStr(val) {
+    function pctStr(val, suffix) {
         if (val == null) return '';
-        return typeof val === 'number' ? val.toFixed(1) + '%' : String(val);
+        if (typeof val !== 'number') return String(val);
+        if (suffix === '') return val.toFixed(1);
+        return val.toFixed(1) + (suffix || '%');
     }
 
     function getChartColor(i) {
@@ -338,15 +340,12 @@ function generateInsightsPPT(data, opts = {}) {
         });
     }
 
-    /** 4. Chart Slide — renders one chart per slide as a captured image */
+    /** 4. Chart Slides — one native PptxGenJS chart per slide */
     function addChartSlides(tab, tabId) {
         const charts = tab.charts || [];
         if (charts.length === 0) return;
 
         charts.forEach((chart, ci) => {
-            const imgKey = `${tabId}-${ci}`;
-            const imgData = chartImages[imgKey];
-
             const slide = pptx.addSlide({ masterName: 'CONTENT' });
 
             // Tab label in header
@@ -355,23 +354,13 @@ function generateInsightsPPT(data, opts = {}) {
                 fontSize: 8, fontFace: FONT, color: C.textMuted,
             });
 
-            if (imgData) {
-                // Image-based: embed the html2canvas capture of the full card
-                // Place the image to fill most of the slide (with padding)
-                slide.addImage({
-                    data: imgData,
-                    x: 0.3, y: 0.45, w: 9.4, h: 4.6,
-                    sizing: { type: 'contain', w: 9.4, h: 4.6 },
-                });
-            } else {
-                // Fallback: native PptxGenJS chart rendering
-                const region = { x: 0.3, y: 0.45, w: 9.4, h: 4.4 };
-                renderChartOnSlide(slide, chart, region);
-            }
+            // Native PptxGenJS chart rendering
+            const region = { x: 0.3, y: 0.45, w: 9.4, h: 4.4 };
+            renderChartOnSlide(slide, chart, region);
         });
     }
 
-    /** Render a single chart within a slide region (fallback when no image available) */
+    /** Render a single chart within a slide region using native PptxGenJS charts */
     function renderChartOnSlide(slide, config, region) {
         const { x, y, w, h } = region;
         const chartType = (config.chart_type || config.type || 'bar').toLowerCase();
@@ -828,8 +817,19 @@ function generateInsightsPPT(data, opts = {}) {
     /** Generic data table fallback (for treemap, polarArea, boxPlot, etc.) */
     function renderDataTable(slide, config, r) {
         const d = config.data || {};
-        const series = d.series || [];
-        const labels = d.labels || d.categories || [];
+        let series = d.series || [];
+        let labels = d.labels || d.categories || [];
+
+        // Handle treemap/scatter "points" format: [{name, data: [{x, y}]}]
+        const points = d.points || [];
+        if (series.length === 0 && points.length > 0) {
+            const allPts = points.flatMap(p => p.data || []);
+            labels = allPts.map(pt => pt.x || pt.label || '');
+            series = allPts.map(pt => typeof pt.y === 'number' ? pt.y : parseFloat(pt.y) || 0);
+        }
+
+        // Determine value suffix based on data format
+        const valSuffix = d.value_format === 'decimal' ? '' : '%';
 
         // Flat series: labels + values
         if (series.length > 0 && typeof series[0] === 'number') {
@@ -840,7 +840,7 @@ function generateInsightsPPT(data, opts = {}) {
 
             const dataRows = labels.map((lbl, i) => [
                 { text: truncate(String(lbl), 40), options: { fill: { color: C.surface }, fontSize: 8, color: C.textPrimary, fontFace: FONT } },
-                { text: pctStr(series[i]), options: { fill: { color: C.surface }, fontSize: 8, color: C.accent, fontFace: FONT, bold: true, align: 'right' } },
+                { text: pctStr(series[i], valSuffix), options: { fill: { color: C.surface }, fontSize: 8, color: C.accent, fontFace: FONT, bold: true, align: 'right' } },
             ]);
 
             slide.addTable([headerRow, ...dataRows.slice(0, 12)], {
