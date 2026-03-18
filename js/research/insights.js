@@ -245,6 +245,11 @@
                 return;
             }
 
+            // Override stale project_name in JSON with current name from API
+            if (data.project_name) {
+                dashboard.project_name = data.project_name;
+            }
+
             // Update page title
             if (dashboard.project_name) {
                 document.title = `${dashboard.project_name} — Insights`;
