@@ -183,12 +183,7 @@ function renderProjectRow(project) {
     const starred = project.is_starred;
     return `
         <tr class="projects-table-row" id="row-${project.id}" data-project-id="${project.id}">
-            <td>
-                <span class="star-toggle ${starred ? 'starred' : ''}" onclick="event.stopPropagation(); toggleStar('${project.id}')" title="${starred ? 'Unstar' : 'Star'}">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="${starred ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                </span>
-                <span class="projects-table-name">${escapeHtml(project.name)}</span>
-            </td>
+            <td><div style="display:flex;align-items:center;gap:6px;"><span class="star-toggle ${starred ? 'starred' : ''}" onclick="event.stopPropagation(); toggleStar('${project.id}')" title="${starred ? 'Unstar' : 'Star'}"><svg width="14" height="14" viewBox="0 0 24 24" fill="${starred ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span><span class="projects-table-name">${escapeHtml(project.name)}</span></div></td>
             <td><span class="projects-table-desc">${escapeHtml(project.description || '-')}</span></td>
             <td id="status-${project.id}">
                 <span class="badge" style="background: var(--bg-tertiary); color: var(--text-secondary); padding: 4px 10px; border-radius: 12px; font-size: 11px;">Loading...</span>
