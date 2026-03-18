@@ -423,7 +423,7 @@
                         ${kpi.insight ? `<div class="ins-kpi-insight">${kpi.calculation_note ? `<span class="ins-prov-icon-wrap">
                             <svg class="ins-prov-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                             <span class="ins-prov-tooltip"><span class="ins-prov-calc">${esc(kpi.calculation_note)}</span></span>
-                        </span>` : ''}${esc(kpi.insight)}</div>` : ''}
+                        </span>` : ''}${escWithSources(kpi.insight)}</div>` : ''}
                     </div>`;
                 });
                 html += '</div>';
@@ -565,7 +565,7 @@
                         ${chart.insight ? `<div class="ins-chart-insight">${chart.data_source || chart.calculation_note ? `<span class="ins-prov-icon-wrap">
                             <svg class="ins-prov-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                             <span class="ins-prov-tooltip">${chart.data_source ? `<span class="ins-prov-source">${esc(chart.data_source)}</span>` : ''}${chart.calculation_note ? `<span class="ins-prov-calc">${esc(chart.calculation_note)}</span>` : ''}</span>
-                        </span>` : ''}${esc(chart.insight)}</div>` : ''}
+                        </span>` : ''}${escWithSources(chart.insight)}</div>` : ''}
                         ${chart.significance_notes ? `<div class="ins-chart-sig-note">${esc(chart.significance_notes)}</div>` : ''}
                     </div>`;
                 });
@@ -1927,6 +1927,36 @@
         return div.innerHTML;
     }
 
+    /**
+     * Replace inline source references like (src7) or (src7, src8, src9) with
+     * clickable superscript badges that show source details on hover.
+     * Also handles patterns like "According to McKinsey (src1)" — keeps the name, replaces the ref.
+     * Must be called AFTER esc() since it injects HTML.
+     */
+    function linkSources(html) {
+        if (!html || !dashboardData || !Array.isArray(dashboardData.sources)) return html;
+        const lookup = buildSourceLookup(dashboardData);
+        // Match patterns like (src7) or (src7, src8, src9) or (src7, src8)
+        return html.replace(/\(((src\d+)(?:\s*,\s*src\d+)*)\)/g, (match, inner) => {
+            const ids = inner.split(/\s*,\s*/);
+            const badges = ids.map(id => {
+                const s = lookup[id];
+                if (!s) return '';
+                const num = id.replace('src', '');
+                const title = esc(s.title || s.domain || s.url || 'Source');
+                const url = esc(s.url || '#');
+                const tierLabel = { 1: 'Government & Academic', 2: 'Major Research Firm', 3: 'Reputable Media', 4: 'Industry & Corporate' }[s.tier] || '';
+                return `<a href="${url}" target="_blank" rel="noopener nofollow" class="ins-src-badge" title="${title}${tierLabel ? ' (Tier ' + s.tier + ': ' + tierLabel + ')' : ''}">${num}</a>`;
+            }).filter(Boolean);
+            return badges.length > 0 ? `<sup class="ins-src-group">${badges.join('')}</sup>` : match;
+        });
+    }
+
+    /** Escape text and convert inline source references to clickable badges */
+    function escWithSources(str) {
+        return linkSources(esc(str));
+    }
+
     /** Format text with bullet points. Splits on • or \n• and renders as styled list. Also handles arrays. */
     function formatBullets(str) {
         if (!str) return '';
@@ -1936,13 +1966,13 @@
             const bullets = str.filter(s => s && s.trim());
             return '<ul class="ins-bullet-list">' +
                 bullets.map(b => {
-                    const escaped = esc(b);
+                    const escaped = linkSources(esc(b));
                     const headerMatch = escaped.match(/^([A-Z][A-Z\s\/&]+):\s*(.*)/s);
                     if (headerMatch) return `<li><strong>${headerMatch[1]}:</strong> ${headerMatch[2]}</li>`;
                     return `<li>${escaped}</li>`;
                 }).join('') + '</ul>';
         }
-        const escaped = esc(str);
+        const escaped = linkSources(esc(str));
         // Split on bullet character (with optional newline before it)
         const parts = escaped.split(/\n?•\s*/);
         // If no bullets found, just return escaped text
@@ -2408,7 +2438,7 @@
 
         // Show insight if available
         if (config.insight) {
-            insightEl.textContent = config.insight;
+            insightEl.innerHTML = escWithSources(config.insight);
             insightEl.style.display = 'block';
         } else {
             insightEl.style.display = 'none';

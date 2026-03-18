@@ -315,6 +315,34 @@
         .ins-source-cite:hover {
             opacity: 1;
         }
+
+        /* Inline source reference badges — replaces (src7) in text */
+        .ins-src-group {
+            font-size: 0;
+            line-height: 1;
+            vertical-align: super;
+        }
+        .ins-src-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 600;
+            line-height: 1;
+            padding: 1px 4px;
+            margin: 0 1px;
+            border-radius: 3px;
+            background: var(--ins-accent, #3b82f6);
+            color: #fff !important;
+            text-decoration: none !important;
+            cursor: pointer;
+            vertical-align: baseline;
+            transition: opacity 0.2s, transform 0.15s;
+            opacity: 0.75;
+        }
+        .ins-src-badge:hover {
+            opacity: 1;
+            transform: scale(1.15);
+        }
+
         .ins-source-popover {
             text-align: left;
             font-family: var(--ins-font);
