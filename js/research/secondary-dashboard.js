@@ -498,14 +498,16 @@ function startProgressTracking(projectId) {
             const status = await api.request(`/research/secondary-research/projects/${projectId}/status`, { _skipSpinner: true });
 
             if (status.status === 'generating') {
-                // Show elapsed-based phase messages when SignalR is unavailable
-                const elapsed = Math.floor((Date.now() - progressStartTime) / 1000);
-                if (elapsed < 20) updateProgressMessage('Phase 1: Planning research queries...');
-                else if (elapsed < 120) updateProgressMessage('Phase 1: Searching internet sources...');
-                else if (elapsed < 300) updateProgressMessage('Phase 1: Extracting statistics from sources...');
-                else if (elapsed < 360) updateProgressMessage('Clustering and validating statistics...');
-                else if (elapsed < 540) updateProgressMessage('Phase 2: Synthesizing dashboard from verified data...');
-                else updateProgressMessage('Phase 2: Finalizing dashboard JSON...');
+                // Use real progress message from backend if available
+                if (status.progress_message) {
+                    updateProgressMessage(status.progress_message);
+                } else {
+                    const elapsed = Math.floor((Date.now() - progressStartTime) / 1000);
+                    if (elapsed < 15) updateProgressMessage('Planning research structure...');
+                    else if (elapsed < 120) updateProgressMessage('Searching and extracting data...');
+                    else if (elapsed < 300) updateProgressMessage('Building dashboard charts...');
+                    else updateProgressMessage('Finalizing dashboard...');
+                }
             } else if (status.status === 'ready') {
                 updateProgressMessage('Dashboard ready!');
                 const bar = document.getElementById('progressBar');

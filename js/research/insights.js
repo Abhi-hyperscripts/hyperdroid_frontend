@@ -482,7 +482,7 @@
 
                 // Tab summary — collapsible card
                 if (tab.tab_summary) {
-                    const tabLabel = tab.tab_label || `Section ${i + 1}`;
+                    const tabLabel = tab.tab_label || tab.title || `Section ${i + 1}`;
                     html += `<div class="ins-summary-card ins-tab-summary-card" id="insTabSummary-${id}">
                         <div class="ins-summary-header" onclick="insToggleTabSummary('${id}')">
                             <span class="ins-summary-label">${esc(tabLabel)} — Key Findings</span>
