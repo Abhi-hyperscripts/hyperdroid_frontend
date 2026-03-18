@@ -458,18 +458,9 @@ body.insights-page {
    ═══════════════════════════════════════════════════════════════ */
 
 .seo-dashboard-showcase {
-    max-width: 1400px;
+    max-width: min(1500px, calc(100vw - 60px));
     margin: 0 auto 56px;
     padding: 0 24px;
-    /* Break out of .seo-report's 1200px container */
-    width: calc(100vw - 48px);
-    margin-left: calc(-1 * (100vw - 48px - 100%) / 2);
-}
-@media (min-width: 1449px) {
-    .seo-dashboard-showcase {
-        width: 1400px;
-        margin-left: calc(-1 * (1400px - 100%) / 2);
-    }
 }
 
 .seo-dashboard-header {
@@ -530,7 +521,7 @@ body.insights-page {
     border: 1px solid var(--seo-border-strong);
     box-shadow: var(--seo-shadow-lg), var(--seo-shadow-glow);
     background: var(--seo-iframe-bg);
-    padding: 0;
+    padding: 8px;
 }
 
 .seo-dashboard-frame iframe {
