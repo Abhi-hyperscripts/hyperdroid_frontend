@@ -22,10 +22,9 @@
     // ─── Theme Management ───
     function initTheme() {
         const saved = localStorage.getItem(THEME_KEY);
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = saved || (prefersDark ? 'dark' : 'dark'); // default dark
+        const theme = saved || 'light'; // default light for insights pages
         applyTheme(theme);
-        injectThemeToggle();
+        // Toggle button injected later after report HTML is rendered
     }
 
     function applyTheme(theme) {
@@ -53,7 +52,13 @@
                 <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
             </svg>`;
         btn.addEventListener('click', toggleTheme);
-        document.body.appendChild(btn);
+        // Try to place in header meta area, fallback to body
+        const header = document.querySelector('.seo-report-header');
+        if (header) {
+            header.appendChild(btn);
+        } else {
+            document.body.appendChild(btn);
+        }
     }
 
     // ─── Entry Point ───
@@ -170,7 +175,9 @@
             html += `
                 <section class="seo-section seo-section-kpis">
                     <div class="seo-kpi-grid">${kpiCards.map(function (kpi) {
-                        const val = (kpi.value != null ? kpi.value : '') + (kpi.suffix || '');
+                        const rawVal = kpi.value != null ? String(kpi.value) : '';
+                        const suffix = kpi.suffix || '';
+                        const val = suffix ? rawVal + ' ' + suffix : rawVal;
                         const label = kpi.kpi_label || kpi.label || kpi.title || '';
                         const insight = kpi.insight || '';
                         return `
@@ -312,6 +319,9 @@
 
         html += '</article>';
         container.innerHTML = html;
+
+        // Inject theme toggle into the rendered header
+        injectThemeToggle();
     }
 
     // ─── Helpers ───
