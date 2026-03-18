@@ -193,6 +193,22 @@
     </div>
 
     <style>
+        .star-toggle {
+            cursor: pointer;
+            color: var(--text-secondary);
+            opacity: 0.4;
+            transition: all 0.15s ease;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+        .star-toggle:hover {
+            opacity: 0.8;
+            color: #f59e0b;
+        }
+        .star-toggle.starred {
+            color: #f59e0b;
+            opacity: 1;
+        }
         .visitors-link {
             color: var(--brand-primary);
             cursor: pointer;
