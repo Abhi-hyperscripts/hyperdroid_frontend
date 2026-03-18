@@ -157,6 +157,41 @@
         </div>
     </div>
 
+    <!-- Edit Project Modal -->
+    <div id="editProjectModal" class="gm-overlay" onclick="if(event.target===this)closeModal('editProjectModal')">
+        <div class="gm-modal" style="max-width: 520px;">
+            <form onsubmit="handleEditProject(event)">
+                <div class="gm-header">
+                    <div class="gm-header-left">
+                        <div class="gm-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </div>
+                        <div class="gm-title">Edit Project</div>
+                    </div>
+                    <button type="button" class="gm-close" onclick="closeModal('editProjectModal')">&times;</button>
+                </div>
+                <div class="gm-body">
+                    <input type="hidden" id="editProjectId">
+                    <div class="research-form-group">
+                        <label for="editProjectName">Project Name <span class="required">*</span></label>
+                        <input type="text" id="editProjectName" placeholder="Project name" required>
+                    </div>
+                    <div class="research-form-group">
+                        <label for="editProjectDescription">Description</label>
+                        <textarea id="editProjectDescription" rows="3" placeholder="Brief description..."></textarea>
+                    </div>
+                </div>
+                <div class="gm-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+                    <button type="button" class="gm-btn gm-btn-secondary" onclick="closeModal('editProjectModal')">Cancel</button>
+                    <button type="submit" class="gm-btn gm-btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <style>
         .visitors-link {
             color: var(--brand-primary);

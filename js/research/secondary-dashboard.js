@@ -192,6 +192,9 @@ function renderProjectRow(project) {
             <td class="projects-table-date">${updatedAt}</td>
             <td style="text-align:right" id="actions-${project.id}">
                 <div class="projects-table-actions">
+                    <button class="action-btn" onclick="openEditProjectModal('${project.id}')" title="Edit">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
                     <button class="action-btn" onclick="openGenerateModal('${project.id}')" title="Generate">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     </button>
@@ -246,6 +249,9 @@ async function loadProjectStatus(projectId) {
                     <div class="projects-table-actions">
                         <button class="action-btn" onclick="viewDashboard('${status.share_token}')" title="View Dashboard" style="color: var(--color-success);">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                        <button class="action-btn" onclick="openEditProjectModal('${projectId}')" title="Edit">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
                         <button class="action-btn" onclick="downloadDashboardJson('${projectId}')" title="Download JSON">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -314,6 +320,44 @@ async function deleteProject(projectId) {
     } catch (err) {
         console.error('Failed to delete project:', err);
         showToast('Failed to delete project', 'error');
+    }
+}
+
+// ============================================
+// Edit Project
+// ============================================
+
+function openEditProjectModal(projectId) {
+    const project = currentProjects.find(p => p.id === projectId);
+    if (!project) return;
+
+    document.getElementById('editProjectId').value = projectId;
+    document.getElementById('editProjectName').value = project.name || '';
+    document.getElementById('editProjectDescription').value = project.description || '';
+    showModal('editProjectModal');
+}
+
+async function handleEditProject(e) {
+    e.preventDefault();
+
+    const projectId = document.getElementById('editProjectId').value;
+    const name = document.getElementById('editProjectName').value.trim();
+    const description = document.getElementById('editProjectDescription').value.trim();
+
+    if (!name) return;
+
+    try {
+        await api.request(`/research/projects/${projectId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ name, description: description || null })
+        });
+
+        closeModal('editProjectModal');
+        await loadProjects();
+        showToast('Project updated successfully');
+    } catch (err) {
+        console.error('Failed to update project:', err);
+        showToast('Failed to update project', 'error');
     }
 }
 
