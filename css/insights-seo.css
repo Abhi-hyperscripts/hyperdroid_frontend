@@ -238,9 +238,9 @@ body.insights-page {
    ═══════════════════════════════════════════════════════════════ */
 
 .seo-report {
-    max-width: 860px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 0 24px 80px;
+    padding: 0 40px 80px;
 }
 
 /* ─── Header ─── */
@@ -430,8 +430,8 @@ body.insights-page {
 
 .seo-kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
     margin-top: 16px;
 }
 
@@ -469,7 +469,7 @@ body.insights-page {
 }
 
 .seo-kpi-value {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     font-weight: 800;
     background: var(--seo-gradient-text);
     -webkit-background-clip: text;
@@ -477,6 +477,7 @@ body.insights-page {
     background-clip: text;
     line-height: 1.2;
     letter-spacing: -0.02em;
+    word-break: break-word;
 }
 
 .seo-kpi-label {
@@ -708,9 +709,9 @@ body.insights-page {
    ═══════════════════════════════════════════════════════════════ */
 
 .seo-static-content {
-    max-width: 860px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 100px 24px 80px;
+    padding: 100px 40px 80px;
 }
 
 .seo-static-content header {
