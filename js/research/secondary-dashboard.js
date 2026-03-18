@@ -213,6 +213,9 @@ async function loadProjectStatus(projectId) {
 
         if (!statusEl) return;
 
+        // Cache instruction for regenerate modal (avoids inline JS escaping issues)
+        if (status.instruction) projectInstructions.set(projectId, status.instruction);
+
         if (status.status === 'none') {
             statusEl.innerHTML = '<span class="badge" style="background: var(--bg-tertiary); color: var(--text-secondary); padding: 4px 10px; border-radius: 12px; font-size: 11px;">Not Generated</span>';
             sourcesEl.textContent = '-';
@@ -250,7 +253,7 @@ async function loadProjectStatus(projectId) {
                         <button class="action-btn" onclick="triggerUploadJson('${projectId}')" title="Upload JSON">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         </button>
-                        <button class="action-btn" onclick="openGenerateModal('${projectId}', '${escapeHtml(status.instruction || '')}')" title="Regenerate">
+                        <button class="action-btn" onclick="openGenerateModal('${projectId}')" title="Regenerate">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                         </button>
                         <button class="action-btn danger" onclick="deleteProject('${projectId}')" title="Delete">
@@ -386,11 +389,13 @@ function triggerUploadJson(projectId) {
 // ============================================
 
 let generateProjectId = null;
+const projectInstructions = new Map(); // Cache instructions to avoid inline JS escaping issues
 
-function openGenerateModal(projectId, existingInstruction) {
+function openGenerateModal(projectId) {
     generateProjectId = projectId;
     const instructionEl = document.getElementById('researchInstruction');
     const titleEl = document.getElementById('generateModalTitle');
+    const existingInstruction = projectInstructions.get(projectId) || '';
 
     if (existingInstruction) {
         instructionEl.value = existingInstruction;
