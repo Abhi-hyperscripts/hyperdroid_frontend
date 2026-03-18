@@ -126,7 +126,7 @@
         } else {
             d = data.dashboard_json || data.dashboard || data;
         }
-        const projectName = d.project_name || d.title || 'Research Report';
+        const projectName = data.project_name || d.project_name || d.title || 'Research Report';
         const execSummary = toBulletArray(d.executive_summary);
         const kpiCards = d.kpi_cards || [];
         const keyTakeaways = toBulletArray(d.key_takeaways);
