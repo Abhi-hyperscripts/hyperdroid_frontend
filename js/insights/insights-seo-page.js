@@ -132,7 +132,7 @@
         const keyTakeaways = toBulletArray(d.key_takeaways);
         const overallInsights = toBulletArray(d.overall_insights);
         const tabs = d.tabs || [];
-        const methodNote = d.methodology_note || '';
+        const methodNote = (d.methodology_note || '').replace('references cited below', 'references cited above');
         const sampleSize = d.sample_size || d.total_responses || '';
         const sources = d.sources || [];
         const isSecondary = d.research_type === 'secondary';
