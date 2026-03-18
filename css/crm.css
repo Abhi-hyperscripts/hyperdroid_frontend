@@ -2784,3 +2784,353 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
         padding: 20px 16px;
     }
 }
+
+/* ============================================
+   Lead Discovery Panel
+   ============================================ */
+/* Discovery panel body (container is .slide-panel from slide-panel.css) */
+.discovery-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Input Section */
+.discovery-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+.discovery-label-sm {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+.discovery-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-primary);
+    border-radius: var(--border-radius-sm);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    resize: vertical;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+.discovery-textarea:focus {
+    outline: none;
+    border-color: var(--border-focus);
+}
+.discovery-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    margin-top: 12px;
+}
+.discovery-slider-group {
+    flex: 1;
+}
+.discovery-slider-group input[type="range"] {
+    width: 100%;
+    margin-top: 4px;
+    accent-color: var(--brand-primary);
+}
+.discovery-start-btn {
+    white-space: nowrap;
+}
+
+/* Progress Section */
+.discovery-progress-section {
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(var(--brand-primary-rgb), 0.04);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid rgba(var(--brand-primary-rgb), 0.1);
+}
+.discovery-progress-bar-container {
+    height: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+.discovery-progress-bar {
+    height: 100%;
+    width: 5%;
+    background: linear-gradient(90deg, var(--brand-primary), var(--brand-primary-hover));
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+.discovery-progress-text {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0 0 8px 0;
+}
+
+/* Stage Log */
+.discovery-stage-log {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.discovery-stage-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 3px 6px;
+    border-radius: 4px;
+    line-height: 1.4;
+}
+.discovery-stage-entry.stage-done {
+    color: var(--color-success);
+}
+.discovery-stage-entry.stage-active {
+    color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb), 0.06);
+}
+.discovery-stage-entry.stage-error {
+    color: var(--color-error);
+}
+.stage-icon {
+    flex-shrink: 0;
+    width: 14px;
+    text-align: center;
+    font-weight: 700;
+}
+.stage-msg {
+    flex: 1;
+    word-break: break-word;
+}
+.stage-time {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+.stage-spinner {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 2px solid rgba(var(--brand-primary-rgb), 0.3);
+    border-top: 2px solid var(--brand-primary);
+    border-radius: 50%;
+    animation: stage-spin 0.8s linear infinite;
+}
+@keyframes stage-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Results Section */
+.discovery-results-section {
+    margin-top: 16px;
+}
+.discovery-results-summary {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+.discovery-count {
+    font-weight: 700;
+    color: var(--brand-primary);
+    font-size: 1rem;
+}
+.discovery-complete-summary {
+    padding: 12px;
+    background: rgba(var(--color-success-rgb, 34, 197, 94), 0.08);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-success);
+    font-size: 0.85rem;
+}
+.discovery-complete-icon {
+    font-weight: 700;
+    margin-right: 4px;
+}
+.discovery-error-summary {
+    padding: 12px;
+    background: rgba(var(--color-error-rgb, 239, 68, 68), 0.08);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-error);
+    font-size: 0.85rem;
+}
+
+/* Lead Items */
+.discovery-leads-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.discovery-lead-item {
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--border-primary);
+}
+.discovery-lead-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+.discovery-lead-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+}
+.discovery-lead-contact {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+.discovery-lead-email {
+    font-size: 0.78rem;
+    color: var(--brand-primary);
+    margin-bottom: 2px;
+}
+.discovery-lead-email.discovery-pending {
+    color: var(--text-secondary);
+    font-style: italic;
+    opacity: 0.6;
+}
+.discovery-lead-phone {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+.discovery-lead-enriched {
+    border-color: var(--color-success) !important;
+    transition: border-color 0.3s ease;
+}
+.discovery-lead-reason {
+    font-size: 0.78rem;
+    color: var(--text-primary);
+    margin-top: 4px;
+}
+.discovery-lead-pitch {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* Signal Badges */
+.discovery-signal-badge {
+    display: inline-flex;
+    padding: 1px 6px;
+    border-radius: 9999px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+.signal-strong {
+    background: rgba(var(--color-success-rgb, 34, 197, 94), 0.12);
+    color: var(--color-success);
+}
+.signal-medium {
+    background: rgba(var(--color-warning-rgb, 234, 179, 8), 0.12);
+    color: var(--color-warning);
+}
+.signal-weak {
+    background: rgba(var(--color-error-rgb, 239, 68, 68), 0.08);
+    color: var(--text-secondary);
+}
+
+/* Score Badges */
+.discovery-score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+.score-high {
+    background: rgba(var(--color-success-rgb, 34, 197, 94), 0.12);
+    color: var(--color-success);
+}
+.score-medium {
+    background: rgba(var(--color-warning-rgb, 234, 179, 8), 0.12);
+    color: var(--color-warning);
+}
+.score-low {
+    background: rgba(var(--color-error-rgb, 239, 68, 68), 0.08);
+    color: var(--text-secondary);
+}
+
+/* Recent Jobs */
+.discovery-section-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 24px 0 12px 0;
+}
+.discovery-jobs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.discovery-job-item {
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--border-primary);
+}
+.discovery-job-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.discovery-job-instruction {
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.discovery-job-status {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 9999px;
+}
+.job-status-completed {
+    background: rgba(var(--color-success-rgb, 34, 197, 94), 0.12);
+    color: var(--color-success);
+}
+.job-status-pending, .job-status-searching, .job-status-extracting {
+    background: rgba(var(--color-warning-rgb, 234, 179, 8), 0.12);
+    color: var(--color-warning);
+}
+.job-status-failed, .job-status-cancelled {
+    background: rgba(var(--color-error-rgb, 239, 68, 68), 0.08);
+    color: var(--color-error);
+}
+.discovery-job-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+.discovery-empty {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 16px 0;
+}
+
+/* Responsive — slide-panel.css handles mobile bottom sheet */
