@@ -934,6 +934,18 @@
                     seatCount: seats
                 };
 
+                // Step 1: Validate email and plan before payment
+                const validateRes = await fetch(`${TM_URL}/api/signup/validate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const validateData = await validateRes.json();
+                if (!validateRes.ok || !validateData.success) {
+                    throw new Error(validateData.message || 'Validation failed');
+                }
+
+                // Step 2: Create order (only after validation passes)
                 const response = await fetch(`${TM_URL}/api/signup`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -955,15 +967,10 @@
                     });
                 } else {
                     // Paid plan — open Razorpay checkout
-                    if (data.razorpay_order_id && data.razorpay_key_id) {
+                    if (data.razorpayOrderId && data.razorpayKeyId) {
                         openRazorpayCheckout(data, orgName, adminEmail, phone, seats);
                     } else {
-                        // If API returned success without Razorpay (future: could be direct activation)
-                        showSuccessCard({
-                            tenantName: orgName,
-                            email: data.superAdminEmail || adminEmail,
-                            password: data.admin_password || null
-                        });
+                        throw new Error(data.message || 'Payment order could not be created');
                     }
                 }
             } catch (err) {
@@ -976,12 +983,12 @@
 
         function openRazorpayCheckout(signupResponse, orgName, adminEmail, phone, seats) {
             const options = {
-                key: signupResponse.razorpay_key_id,
-                amount: signupResponse.amount_paise,
-                currency: 'INR',
+                key: signupResponse.razorpayKeyId,
+                amount: signupResponse.amountPaise,
+                currency: signupResponse.currency || 'INR',
                 name: 'Ragenaizer',
                 description: `${currentPlan.displayName} - ${seats} seats`,
-                order_id: signupResponse.razorpay_order_id,
+                order_id: signupResponse.razorpayOrderId,
                 handler: async function(rzpResponse) {
                     // Verify payment with backend
                     try {
