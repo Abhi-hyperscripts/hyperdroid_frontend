@@ -125,6 +125,14 @@ function renderProjects() {
     }
 
     html += '</tbody></table></div>';
+
+    // Mobile card view (hidden on desktop, shown on mobile via CSS)
+    html += '<div class="projects-cards-mobile">';
+    for (const project of currentProjects) {
+        html += renderProjectCard(project);
+    }
+    html += '</div>';
+
     grid.innerHTML = html;
 
     // Render pagination
@@ -207,6 +215,43 @@ function renderProjectRow(project) {
         </tr>`;
 }
 
+function renderProjectCard(project) {
+    const starred = project.is_starred;
+    const updatedAt = new Date(project.updated_at).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric'
+    });
+    return `
+        <div class="project-card" id="card-${project.id}" data-project-id="${project.id}">
+            <div class="project-card-header">
+                <div class="project-card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                </div>
+                <div class="project-card-actions">
+                    <button class="action-btn" onclick="event.stopPropagation(); toggleStar('${project.id}')" title="${starred ? 'Unstar' : 'Star'}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="${starred ? '#f59e0b' : 'none'}" stroke="${starred ? '#f59e0b' : 'currentColor'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </button>
+                    <button class="action-btn" onclick="openEditProjectModal('${project.id}')" title="Edit">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="action-btn danger" onclick="deleteProject('${project.id}')" title="Delete">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="project-card-name">${escapeHtml(project.name)}</div>
+            <div class="project-card-description">${escapeHtml(project.description || 'No description')}</div>
+            <div class="project-card-meta" id="card-meta-${project.id}">
+                <div class="project-card-meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>${updatedAt}</span>
+                </div>
+                <div class="project-card-meta-item" id="card-status-${project.id}">
+                    <span class="badge" style="background: var(--bg-tertiary); color: var(--text-secondary); padding: 3px 8px; border-radius: 10px; font-size: 10px;">Loading...</span>
+                </div>
+            </div>
+        </div>`;
+}
+
 async function loadProjectStatus(projectId) {
     try {
         const status = await api.request(`/research/secondary-research/projects/${projectId}/status`, { _skipSpinner: true });
@@ -214,23 +259,36 @@ async function loadProjectStatus(projectId) {
         const statusEl = document.getElementById(`status-${projectId}`);
         const sourcesEl = document.getElementById(`sources-${projectId}`);
         const actionsEl = document.getElementById(`actions-${projectId}`);
+        const cardStatusEl = document.getElementById(`card-status-${projectId}`);
 
-        if (!statusEl) return;
+        if (!statusEl && !cardStatusEl) return;
 
         // Cache instruction for regenerate modal (avoids inline JS escaping issues)
         if (status.instruction) projectInstructions.set(projectId, status.instruction);
 
+        const badgeSmall = (bg, color, text) => `<span class="badge" style="background:${bg};color:${color};padding:3px 8px;border-radius:10px;font-size:10px;">${text}</span>`;
+        const badgeNormal = (bg, color, text, title) => `<span class="badge" style="background:${bg};color:${color};padding:4px 10px;border-radius:12px;font-size:11px;"${title ? ` title="${title}"` : ''}>${text}</span>`;
+
         if (status.status === 'none') {
-            statusEl.innerHTML = '<span class="badge" style="background: var(--bg-tertiary); color: var(--text-secondary); padding: 4px 10px; border-radius: 12px; font-size: 11px;">Not Generated</span>';
-            sourcesEl.textContent = '-';
+            if (statusEl) statusEl.innerHTML = badgeNormal('var(--bg-tertiary)', 'var(--text-secondary)', 'Not Generated');
+            if (sourcesEl) sourcesEl.textContent = '-';
+            if (cardStatusEl) cardStatusEl.innerHTML = badgeSmall('var(--bg-tertiary)', 'var(--text-secondary)', 'Not Generated');
         } else if (status.status === 'generating') {
-            statusEl.innerHTML = '<span class="badge" style="background: rgba(59,130,246,0.15); color: var(--brand-primary); padding: 4px 10px; border-radius: 12px; font-size: 11px;">Generating...</span>';
-            sourcesEl.textContent = '-';
+            if (statusEl) statusEl.innerHTML = badgeNormal('rgba(59,130,246,0.15)', 'var(--brand-primary)', 'Generating...');
+            if (sourcesEl) sourcesEl.textContent = '-';
+            if (cardStatusEl) cardStatusEl.innerHTML = badgeSmall('rgba(59,130,246,0.15)', 'var(--brand-primary)', 'Generating...');
             // Start watching progress
             startProgressTracking(projectId);
         } else if (status.status === 'ready') {
-            statusEl.innerHTML = '<span class="badge" style="background: rgba(34,197,94,0.15); color: var(--color-success); padding: 4px 10px; border-radius: 12px; font-size: 11px;">Ready</span>';
-            sourcesEl.textContent = status.source_count || '-';
+            if (statusEl) statusEl.innerHTML = badgeNormal('rgba(34,197,94,0.15)', 'var(--color-success)', 'Ready');
+            if (sourcesEl) sourcesEl.textContent = status.source_count || '-';
+            if (cardStatusEl) {
+                cardStatusEl.innerHTML = badgeSmall('rgba(34,197,94,0.15)', 'var(--color-success)', 'Ready') +
+                    (status.source_count ? `<span style="font-size:10px;color:var(--text-muted);margin-left:6px;">${status.source_count} sources</span>` : '');
+                // Make card clickable to view dashboard
+                const card = document.getElementById(`card-${projectId}`);
+                if (card && status.share_token) card.onclick = () => viewDashboard(status.share_token);
+            }
             // Fetch unique visitor count (clickable)
             const visitorsEl = document.getElementById(`visitors-${projectId}`);
             if (visitorsEl && status.share_token) {
@@ -269,8 +327,9 @@ async function loadProjectStatus(projectId) {
                     </div>`;
             }
         } else if (status.status === 'failed') {
-            statusEl.innerHTML = `<span class="badge" style="background: rgba(239,68,68,0.15); color: var(--color-error); padding: 4px 10px; border-radius: 12px; font-size: 11px;" title="${escapeHtml(status.error_message || '')}">Failed</span>`;
-            sourcesEl.textContent = '-';
+            if (statusEl) statusEl.innerHTML = badgeNormal('rgba(239,68,68,0.15)', 'var(--color-error)', 'Failed', escapeHtml(status.error_message || ''));
+            if (sourcesEl) sourcesEl.textContent = '-';
+            if (cardStatusEl) cardStatusEl.innerHTML = badgeSmall('rgba(239,68,68,0.15)', 'var(--color-error)', 'Failed');
         }
     } catch (err) {
         console.error('Failed to load status for', projectId, err);
