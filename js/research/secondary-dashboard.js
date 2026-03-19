@@ -287,7 +287,10 @@ async function loadProjectStatus(projectId) {
                     (status.source_count ? `<span style="font-size:10px;color:var(--text-muted);margin-left:6px;">${status.source_count} sources</span>` : '');
                 // Make card clickable to view dashboard
                 const card = document.getElementById(`card-${projectId}`);
-                if (card && status.share_token) card.onclick = () => viewDashboard(status.share_token);
+                if (card && status.share_token) card.onclick = (e) => {
+                    if (e.target.closest('.action-btn, .project-card-actions')) return;
+                    viewDashboard(status.share_token);
+                };
             }
             // Fetch unique visitor count (clickable)
             const visitorsEl = document.getElementById(`visitors-${projectId}`);
