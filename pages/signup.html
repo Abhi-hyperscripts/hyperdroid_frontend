@@ -961,9 +961,9 @@
                 if (currentPlan.isTrial) {
                     // Trial signup — show success with credentials
                     showSuccessCard({
-                        tenantName: orgName,
+                        tenantName: data.tenantName || orgName,
                         email: data.superAdminEmail || adminEmail,
-                        password: data.admin_password || null
+                        password: data.generatedPassword || null
                     });
                 } else {
                     // Paid plan — open Razorpay checkout
@@ -1008,9 +1008,9 @@
 
                         if (verifyRes.ok && verifyData.success) {
                             showSuccessCard({
-                                tenantName: orgName,
+                                tenantName: verifyData.tenantName || orgName,
                                 email: verifyData.superAdminEmail || adminEmail,
-                                password: verifyData.admin_password || null
+                                password: verifyData.generatedPassword || null
                             });
                         } else {
                             showMessage('error', verifyData.message || 'Payment verification failed. Please contact support.');
