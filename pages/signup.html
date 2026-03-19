@@ -1032,6 +1032,19 @@
                 },
                 modal: {
                     ondismiss: function() {
+                        // Notify backend to deactivate orphan tenant (best-effort, backend also has scheduled cleanup)
+                        fetch(`${TM_URL}/api/signup/payment-failed`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                tenantId: signupResponse.tenantId,
+                                email: adminEmail,
+                                organizationName: orgName,
+                                planName: currentPlan.displayName,
+                                reason: 'checkout_dismissed',
+                                razorpayOrderId: signupResponse.razorpayOrderId
+                            })
+                        }).catch(() => {}); // Fire-and-forget
                         showMessage('error', 'Payment was cancelled. You can try again.');
                     }
                 }
