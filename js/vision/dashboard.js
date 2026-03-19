@@ -24,7 +24,7 @@ let dashboardState = {
     search: '',
     source_filter: 'all',
     type_filter: 'all',
-    status_filter: 'active',
+    status_filter: 'scheduled',
     sort_by: 'recent',
     project_id: null,
     month_filter: null,  // null = all months
@@ -443,7 +443,7 @@ function initDashboardDropdowns() {
         onChange: (value) => { setFilter('type', value); }
     });
 
-    // Status dropdown — default matches dashboardState.status_filter ('active')
+    // Status dropdown — default to 'scheduled' to show upcoming meetings
     statusDropdownSD = new SearchableDropdown('statusDropdownContainer', {
         id: 'statusDropdownSD',
         options: [
@@ -453,8 +453,8 @@ function initDashboardDropdowns() {
             { value: 'scheduled', label: 'Scheduled' },
             { value: 'ended', label: 'Ended' }
         ],
-        value: 'active',
-        placeholder: 'Active',
+        value: 'scheduled',
+        placeholder: 'Scheduled',
         compact: true,
         onChange: (value) => { setFilter('status', value); }
     });
