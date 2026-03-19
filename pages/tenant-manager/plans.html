@@ -881,8 +881,8 @@
                             } else {
                                 checked = !defaultOffFeatures.includes(f.featureName);
                             }
-                            return `<label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:2px;cursor:pointer;">
-                                <input type="checkbox" class="plan-svc-feature" data-service="${svcName}" data-feature="${f.featureName}" ${checked ? 'checked' : ''}>
+                            return `<label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:3px;cursor:pointer;color:var(--text-primary);">
+                                <input type="checkbox" class="plan-svc-feature" data-service="${svcName}" data-feature="${f.featureName}" ${checked ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--brand-primary);">
                                 <span>${f.displayName || f.featureName}</span>
                             </label>`;
                         }).join('');
@@ -909,13 +909,13 @@
                         configHtml += '</div>';
                     }
 
-                    return `<div class="plan-svc-block" data-service="${svcName}" style="border:1px solid var(--border-primary);border-radius:6px;overflow:hidden;${isChecked ? '' : 'opacity:0.5;'}">
-                        <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;margin:0;background:var(--bg-tertiary);">
-                            <input type="checkbox" class="plan-svc-checkbox" data-service="${svcName}" ${isChecked ? 'checked' : ''} onchange="togglePlanServiceBlock(this)">
-                            <span style="font-size:13px;font-weight:500;">${svcName}</span>
-                            <span style="font-size:10px;color:var(--text-tertiary);margin-left:auto;">${svc.displayName}</span>
+                    return `<div class="plan-svc-block" data-service="${svcName}" style="border:1px solid var(--border-primary);border-radius:6px;overflow:hidden;${isChecked ? '' : 'opacity:0.6;'}">
+                        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;margin:0;background:var(--bg-tertiary);">
+                            <input type="checkbox" class="plan-svc-checkbox" data-service="${svcName}" ${isChecked ? 'checked' : ''} onchange="togglePlanServiceBlock(this)" style="width:16px;height:16px;accent-color:var(--brand-primary);">
+                            <span style="font-size:13px;font-weight:600;color:var(--text-primary);">${svcName}</span>
+                            <span style="font-size:11px;color:var(--text-secondary);margin-left:auto;">${svc.displayName}</span>
                         </label>
-                        <div class="plan-svc-body" style="padding:6px 10px;display:${isChecked ? 'block' : 'none'};border-top:1px solid var(--border-primary);background:var(--bg-secondary);">
+                        <div class="plan-svc-body" style="padding:8px 12px;display:${isChecked ? 'block' : 'none'};border-top:1px solid var(--border-primary);background:var(--bg-secondary);">
                             ${configHtml || '<small style="color:var(--text-secondary);">No configurable features</small>'}
                         </div>
                     </div>`;
@@ -929,7 +929,7 @@
         function togglePlanServiceBlock(checkbox) {
             const block = checkbox.closest('.plan-svc-block');
             const body = block.querySelector('.plan-svc-body');
-            block.style.opacity = checkbox.checked ? '1' : '0.5';
+            block.style.opacity = checkbox.checked ? '1' : '0.6';
             body.style.display = checkbox.checked ? 'block' : 'none';
         }
 
