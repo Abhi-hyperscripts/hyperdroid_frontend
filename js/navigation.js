@@ -145,6 +145,13 @@ const Navigation = {
         if (currentPageId !== 'chat') {
             this._fetchChatUnreadCount();
         }
+
+        // Start global chat SignalR listener for in-app notifications
+        // Skip on chat page — chat.js manages its own connection
+        this._currentPageId = currentPageId;
+        if (currentPageId !== 'chat') {
+            this._initGlobalChatListener();
+        }
     },
 
     /**
@@ -562,6 +569,7 @@ const Navigation = {
             const conversations = await api.getConversations(100, 0);
             const list = conversations.conversations || conversations || [];
             const total = list.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+            this._chatUnreadCount = total;
             this._updateChatBadge(total);
         } catch (e) {
             // Silently ignore — chat service may be unavailable
@@ -574,12 +582,106 @@ const Navigation = {
      */
     _updateChatBadge(count) {
         const badge = document.getElementById('chatUnreadBadge');
-        if (!badge) return;
-        if (count > 0) {
-            badge.textContent = count > 99 ? '99+' : count;
-            badge.style.display = '';
-        } else {
-            badge.style.display = 'none';
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // Also show/hide a small dot on the user avatar
+        const avatar = document.getElementById('userAvatar');
+        if (avatar) {
+            let dot = avatar.querySelector('.nav-chat-dot');
+            if (count > 0) {
+                if (!dot) {
+                    dot = document.createElement('span');
+                    dot.className = 'nav-chat-dot';
+                    dot.style.cssText = 'position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:var(--color-error,#ef4444);border:2px solid var(--bg-primary,#0f172a);pointer-events:none;';
+                    avatar.style.position = 'relative';
+                    avatar.appendChild(dot);
+                }
+            } else if (dot) {
+                dot.remove();
+            }
+        }
+    },
+
+    // ── Global Chat SignalR Listener ──
+    // Connects to chat hub on all non-chat pages to show toast notifications
+    // and update the unread badge in real-time when messages arrive.
+    _chatConnection: null,
+    _chatUnreadCount: 0,
+
+    async _initGlobalChatListener() {
+        try {
+            // Check prerequisites
+            if (typeof CONFIG === 'undefined' || typeof getAuthToken !== 'function') return;
+            const token = getAuthToken();
+            if (!token) return;
+
+            // Check if user has CHAT_USER role
+            const user = getStoredUser();
+            if (!user) return;
+            const roles = user.roles || [];
+            if (!roles.includes('CHAT_USER') && !roles.includes('SUPERADMIN')) return;
+
+            // Load SignalR library if not already loaded
+            if (typeof signalR === 'undefined') {
+                await this._loadScript('https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js');
+                // Wait a tick for the script to initialize
+                await new Promise(r => setTimeout(r, 50));
+                if (typeof signalR === 'undefined') return;
+            }
+
+            // Build connection
+            this._chatConnection = new signalR.HubConnectionBuilder()
+                .withUrl(CONFIG.chatSignalRHubUrl, {
+                    accessTokenFactory: () => getAuthToken(),
+                    transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling
+                })
+                .withAutomaticReconnect([2000, 5000, 10000, 30000, 60000])
+                .configureLogging(signalR.LogLevel.Warning)
+                .build();
+
+            // Listen for new messages
+            this._chatConnection.on('MessageReceived', (event) => {
+                this._handleGlobalMessageReceived(event);
+            });
+
+            // Start connection (non-blocking)
+            await this._chatConnection.start();
+            console.log('[Nav/Chat] Global chat listener connected');
+        } catch (err) {
+            // Non-blocking — chat notification failure should never break page
+            console.warn('[Nav/Chat] Failed to initialize global chat listener:', err.message);
+        }
+    },
+
+    _handleGlobalMessageReceived(event) {
+        const { message, conversation_id } = event;
+        if (!message) return;
+
+        // Don't toast for own messages
+        const user = getStoredUser();
+        if (user && message.sender_id === user.userId) return;
+
+        // Update unread badge
+        this._chatUnreadCount++;
+        this._updateChatBadge(this._chatUnreadCount);
+
+        // Show toast notification
+        const senderName = message.sender_name || 'Someone';
+        const preview = message.content
+            ? (message.content.length > 60 ? message.content.substring(0, 60) + '...' : message.content)
+            : (message.message_type === 'file' ? 'sent a file' : 'sent a message');
+
+        if (typeof showToast === 'function') {
+            showToast(`${senderName}: ${preview}`, 'info', 4000);
+        } else if (typeof Toast !== 'undefined') {
+            Toast.info(`${senderName}: ${preview}`);
         }
     },
 

@@ -20122,6 +20122,49 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
     font-family: var(--font-mono, monospace);
 }
 
+/* Employee Salaries table - fit to screen */
+#employee-salaries .data-table {
+    table-layout: fixed;
+    width: 100%;
+}
+#employee-salaries .data-table th {
+    white-space: nowrap;
+    padding: 10px 8px;
+    font-size: 0.7rem;
+}
+#employee-salaries .data-table td {
+    padding: 10px 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#employee-salaries .data-table th:nth-child(1),
+#employee-salaries .data-table td:nth-child(1) { width: 18%; }  /* Employee */
+#employee-salaries .data-table th:nth-child(2),
+#employee-salaries .data-table td:nth-child(2) { width: 11%; }  /* Department */
+#employee-salaries .data-table th:nth-child(3),
+#employee-salaries .data-table td:nth-child(3) { width: 13%; }  /* Designation */
+#employee-salaries .data-table th:nth-child(4),
+#employee-salaries .data-table td:nth-child(4) { width: 11%; }  /* Salary Structure */
+#employee-salaries .data-table th:nth-child(5),
+#employee-salaries .data-table td:nth-child(5) { width: 12%; white-space: nowrap; }  /* CTC */
+#employee-salaries .data-table th:nth-child(6),
+#employee-salaries .data-table td:nth-child(6) { width: 12%; }  /* Effective From */
+#employee-salaries .data-table th:nth-child(7),
+#employee-salaries .data-table td:nth-child(7) { width: 9%; }   /* Status */
+#employee-salaries .data-table th:nth-child(8),
+#employee-salaries .data-table td:nth-child(8) { width: 14%; }  /* Actions */
+#employee-salaries .emp-cell-compact {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    gap: 4px;
+}
+#employee-salaries .emp-code-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+}
+
 /* Input Group - Currency prefix styling */
 .input-group {
     display: flex;

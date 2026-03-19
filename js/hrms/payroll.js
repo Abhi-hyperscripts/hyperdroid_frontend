@@ -1186,8 +1186,8 @@ function updatePayrollDraftsTable(draftsList) {
             <td>${getMonthName(draft.payroll_month)} ${draft.payroll_year}</td>
             <td>${draft.office_name || 'All Offices'}</td>
             <td>${draft.total_employees || 0}</td>
-            <td>${formatCurrency(draft.total_gross, draft.currency_code, draft.currency_symbol)}</td>
-            <td>${formatCurrency(draft.total_net, draft.currency_code, draft.currency_symbol)}</td>
+            <td style="white-space:nowrap">${formatCurrency(draft.total_gross, draft.currency_code, draft.currency_symbol)}</td>
+            <td style="white-space:nowrap">${formatCurrency(draft.total_net, draft.currency_code, draft.currency_symbol)}</td>
             <td><span class="status-badge status-${draft.status?.toLowerCase()}">${formatDraftStatus(draft.status)}</span></td>
             <td>${formatDate(draft.created_at)}</td>
             <td>
@@ -1273,13 +1273,23 @@ async function createPayrollDraft() {
         const month = createDraftMonthPicker.getMonth();
         const year = createDraftMonthPicker.getYear();
 
+        const periodStart = document.getElementById('draftPeriodStart').value;
+        const periodEnd = document.getElementById('draftPeriodEnd').value;
+
+        // Validate pay period dates
+        if (periodStart && periodEnd && periodEnd < periodStart) {
+            showToast('Pay period end date cannot be before start date', 'error');
+            hideLoading();
+            return;
+        }
+
         const data = {
             payroll_month: month,
             payroll_year: year,
             office_id: officeId ? officeId : null,
             draft_name: document.getElementById('draftName').value || 'Draft',
-            pay_period_start: document.getElementById('draftPeriodStart').value,
-            pay_period_end: document.getElementById('draftPeriodEnd').value,
+            pay_period_start: periodStart,
+            pay_period_end: periodEnd,
             notes: document.getElementById('draftNotes')?.value || ''
         };
 
@@ -1680,9 +1690,9 @@ async function viewDraftDetails(draftId) {
                     <td><code>${p.employee_code || '-'}</code></td>
                     <td>${p.employee_name || 'Unknown'}</td>
                     <td>${p.department_name || '-'}</td>
-                    <td>${formatCurrency(p.gross_earnings, p.currency_code, p.currency_symbol)}</td>
-                    <td>${formatCurrency(p.total_deductions, p.currency_code, p.currency_symbol)}</td>
-                    <td><strong>${formatCurrency(p.net_pay, p.currency_code, p.currency_symbol)}</strong></td>
+                    <td style="white-space:nowrap">${formatCurrency(p.gross_earnings, p.currency_code, p.currency_symbol)}</td>
+                    <td style="white-space:nowrap">${formatCurrency(p.total_deductions, p.currency_code, p.currency_symbol)}</td>
+                    <td style="white-space:nowrap"><strong>${formatCurrency(p.net_pay, p.currency_code, p.currency_symbol)}</strong></td>
                     <td>
                         <button class="action-btn" onclick="viewDraftPayslip('${p.id}')" title="View Details">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1736,8 +1746,8 @@ async function viewDraftPayslip(payslipId) {
         // Local currency formatter using backend-provided currency
         // v3.0.20: Added space between symbol and number for readability
         const fmtCurrency = (amt) => {
-            if (amt === null || amt === undefined) return `${currencySymbol} 0`;
-            return `${currencySymbol} ${Number(amt).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+            if (amt === null || amt === undefined) return `${currencySymbol}\u00A00`;
+            return `${currencySymbol}\u00A0${Number(amt).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
         };
 
         const items = payslip.items || [];
@@ -2494,12 +2504,24 @@ function openCreateDraftModal() {
     const draftNameField = document.getElementById('draftName');
     if (draftNameField) draftNameField.value = 'Draft';
 
-    // Set period start to 1st of month
-    document.getElementById('draftPeriodStart').value = formatDateLocal(currentYear, currentMonth, 1);
+    // Set period start to 1st of month (use flatpickr API if available)
+    const startEl = document.getElementById('draftPeriodStart');
+    const startStr = formatDateLocal(currentYear, currentMonth, 1);
+    if (startEl._flatpickr) {
+        startEl._flatpickr.setDate(startStr, true);
+    } else {
+        startEl.value = startStr;
+    }
 
     // Set period end to last day of month
+    const endEl = document.getElementById('draftPeriodEnd');
     const lastDay = new Date(currentYear, currentMonth, 0).getDate();
-    document.getElementById('draftPeriodEnd').value = formatDateLocal(currentYear, currentMonth, lastDay);
+    const endStr = formatDateLocal(currentYear, currentMonth, lastDay);
+    if (endEl._flatpickr) {
+        endEl._flatpickr.setDate(endStr, true);
+    } else {
+        endEl.value = endStr;
+    }
 
     // Reset office dropdown (searchable dropdown doesn't reset with form.reset())
     const officeDropdown = getSearchableDropdown('draftPayrollOffice');
@@ -2529,12 +2551,25 @@ function updateDraftPeriodDates() {
     const year = createDraftMonthPicker.getYear();
     if (!month || !year) return;
 
-    // Set period start to 1st of month
-    document.getElementById('draftPeriodStart').value = formatDateLocal(year, month, 1);
-
-    // Set period end to last day of month
+    const startStr = formatDateLocal(year, month, 1);
     const lastDay = new Date(year, month, 0).getDate();
-    document.getElementById('draftPeriodEnd').value = formatDateLocal(year, month, lastDay);
+    const endStr = formatDateLocal(year, month, lastDay);
+
+    // Use flatpickr API if available, otherwise set value directly
+    const startEl = document.getElementById('draftPeriodStart');
+    const endEl = document.getElementById('draftPeriodEnd');
+
+    if (startEl._flatpickr) {
+        startEl._flatpickr.setDate(startStr, true);
+    } else {
+        startEl.value = startStr;
+    }
+
+    if (endEl._flatpickr) {
+        endEl._flatpickr.setDate(endStr, true);
+    } else {
+        endEl.value = endStr;
+    }
 }
 
 // =====================================================
@@ -2567,8 +2602,8 @@ function updatePayrollRunsTable(runs) {
             <td>${getMonthName(run.payroll_month)} ${run.payroll_year}</td>
             <td>${run.office_name || 'All Offices'}</td>
             <td>${run.total_employees || 0}</td>
-            <td>${formatCurrency(run.total_gross, run.currency_code, run.currency_symbol)}</td>
-            <td>${formatCurrency(run.total_net, run.currency_code, run.currency_symbol)}</td>
+            <td style="white-space:nowrap">${formatCurrency(run.total_gross, run.currency_code, run.currency_symbol)}</td>
+            <td style="white-space:nowrap">${formatCurrency(run.total_net, run.currency_code, run.currency_symbol)}</td>
             <td><span class="status-badge status-${run.status?.toLowerCase()}">${run.status}</span></td>
             <td>
                 <div class="action-buttons">
@@ -5159,8 +5194,8 @@ async function viewPayslip(payslipId) {
         // Local currency formatter using backend-provided currency
         // v3.0.20: Added space between symbol and number for readability
         const fmtCurrency = (amt) => {
-            if (amt === null || amt === undefined) return `${currencySymbol} 0`;
-            return `${currencySymbol} ${Number(amt).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+            if (amt === null || amt === undefined) return `${currencySymbol}\u00A00`;
+            return `${currencySymbol}\u00A0${Number(amt).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
         };
 
         const items = payslip.items || [];
@@ -7453,7 +7488,7 @@ function formatCurrency(amount, currencyCode = null, currencySymbol = null) {
         maximumFractionDigits: 0
     }).format(amount);
 
-    return `${symbol} ${formattedNumber}`;
+    return `${symbol}\u00A0${formattedNumber}`;
 }
 
 /**
@@ -9528,7 +9563,7 @@ async function previewVersionedSalary() {
                 <div class="sp-header">
                     <div class="sp-header-item">
                         <div class="sp-header-label">CTC (Annual)</div>
-                        <div class="sp-header-value">${currencySymbol} ${formatAmt(ctc)}</div>
+                        <div class="sp-header-value">${currencySymbol}\u00A0${formatAmt(ctc)}</div>
                     </div>
                     <div class="sp-header-item">
                         <div class="sp-header-label">Period</div>
@@ -9553,7 +9588,7 @@ async function previewVersionedSalary() {
             const displayAmount = Math.abs(amount);
             const amtClass = isNegative ? 'ded' : 'earn';  // Use red for negative, green for positive
             const prefix = isNegative ? '−' : '+';  // Minus sign for negative
-            htmlContent += `<div class="sp-row"><span class="sp-row-name" title="${cb.component_name}">${cb.component_name}</span><span class="sp-row-amt ${amtClass}">${prefix}${currencySymbol} ${formatAmt(displayAmount)}</span></div>`;
+            htmlContent += `<div class="sp-row"><span class="sp-row-name" title="${cb.component_name}">${cb.component_name}</span><span class="sp-row-amt ${amtClass}">${prefix}${currencySymbol}\u00A0${formatAmt(displayAmount)}</span></div>`;
         });
 
         // v3.0.53: If there's a discrepancy between displayed earnings and gross, show explanation
@@ -9564,11 +9599,11 @@ async function previewVersionedSalary() {
             const adjAmount = Math.abs(earningsDiscrepancy);
             const adjClass = earningsDiscrepancy > 0 ? 'ded' : 'earn';
             const adjPrefix = earningsDiscrepancy > 0 ? '−' : '+';
-            htmlContent += `<div class="sp-row" style="font-style: italic; opacity: 0.85;"><span class="sp-row-name" title="Auto-calculated to match CTC allocation">${adjustmentLabel}</span><span class="sp-row-amt ${adjClass}">${adjPrefix}${currencySymbol} ${formatAmt(adjAmount)}</span></div>`;
+            htmlContent += `<div class="sp-row" style="font-style: italic; opacity: 0.85;"><span class="sp-row-name" title="Auto-calculated to match CTC allocation">${adjustmentLabel}</span><span class="sp-row-amt ${adjClass}">${adjPrefix}${currencySymbol}\u00A0${formatAmt(adjAmount)}</span></div>`;
         }
 
         htmlContent += `
-                            <div class="sp-row sp-total-row"><span>Gross</span><span class="sp-row-amt earn">${currencySymbol} ${formatAmt(totalGross)}</span></div>
+                            <div class="sp-row sp-total-row"><span>Gross</span><span class="sp-row-amt earn">${currencySymbol}\u00A0${formatAmt(totalGross)}</span></div>
                         </div>
                     </div>
                     <div class="sp-column">
@@ -9580,10 +9615,10 @@ async function previewVersionedSalary() {
         activeDeductions.forEach(cb => {
             const amount = cb.total_amount || cb.prorated_amount || 0;
             const zeroClass = amount === 0 ? ' sp-row-zero' : '';
-            htmlContent += `<div class="sp-row${zeroClass}"><span class="sp-row-name" title="${cb.component_name}">${cb.component_name}</span><span class="sp-row-amt ded">${amount > 0 ? '−' : ''}${currencySymbol} ${formatAmt(amount)}</span></div>`;
+            htmlContent += `<div class="sp-row${zeroClass}"><span class="sp-row-name" title="${cb.component_name}">${cb.component_name}</span><span class="sp-row-amt ded">${amount > 0 ? '−' : ''}${currencySymbol}\u00A0${formatAmt(amount)}</span></div>`;
         });
         htmlContent += `
-                            <div class="sp-row sp-total-row"><span>Total</span><span class="sp-row-amt ded">−${currencySymbol} ${formatAmt(totalDeductions)}</span></div>
+                            <div class="sp-row sp-total-row"><span>Total</span><span class="sp-row-amt ded">−${currencySymbol}\u00A0${formatAmt(totalDeductions)}</span></div>
                         </div>
                     </div>
                 </div>
@@ -9591,15 +9626,15 @@ async function previewVersionedSalary() {
                 <div class="sp-summary">
                     <div class="sp-summary-item sp-summary-gross">
                         <div class="sp-summary-label">Gross</div>
-                        <div class="sp-summary-value">${currencySymbol} ${formatAmt(totalGross)}</div>
+                        <div class="sp-summary-value">${currencySymbol}\u00A0${formatAmt(totalGross)}</div>
                     </div>
                     <div class="sp-summary-item sp-summary-ded">
                         <div class="sp-summary-label">Deductions</div>
-                        <div class="sp-summary-value">−${currencySymbol} ${formatAmt(totalDeductions)}</div>
+                        <div class="sp-summary-value">−${currencySymbol}\u00A0${formatAmt(totalDeductions)}</div>
                     </div>
                     <div class="sp-summary-item sp-summary-net">
                         <div class="sp-summary-label">Net Pay</div>
-                        <div class="sp-summary-value">${currencySymbol} ${formatAmt(netPay)}</div>
+                        <div class="sp-summary-value">${currencySymbol}\u00A0${formatAmt(netPay)}</div>
                     </div>
                 </div>
         `;
@@ -9609,10 +9644,10 @@ async function previewVersionedSalary() {
             const activeEmployer = employerContributions.filter(e => (e.total_amount || e.prorated_amount || 0) > 0);
             if (activeEmployer.length > 0) {
                 const totalEmployer = activeEmployer.reduce((sum, e) => sum + (e.total_amount || e.prorated_amount || 0), 0);
-                htmlContent += `<div class="sp-employer"><div class="sp-employer-title">Employer Contributions (${currencySymbol} ${formatAmt(totalEmployer)})</div>`;
+                htmlContent += `<div class="sp-employer"><div class="sp-employer-title">Employer Contributions (${currencySymbol}\u00A0${formatAmt(totalEmployer)})</div>`;
                 activeEmployer.forEach(cb => {
                     const amount = cb.total_amount || cb.prorated_amount || 0;
-                    htmlContent += `<div class="sp-employer-row"><span>${cb.component_name}</span><span>${currencySymbol} ${formatAmt(amount)}</span></div>`;
+                    htmlContent += `<div class="sp-employer-row"><span>${cb.component_name}</span><span>${currencySymbol}\u00A0${formatAmt(amount)}</span></div>`;
                 });
                 htmlContent += `</div>`;
             }
@@ -14776,7 +14811,7 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
             <div class="esp-header">
                 <div class="esp-header-item">
                     <div class="esp-header-label">CTC (Annual)</div>
-                    <div class="esp-header-value">${currencySymbol} ${formatAmt(annualCtc || 0)}</div>
+                    <div class="esp-header-value">${currencySymbol}\u00A0${formatAmt(annualCtc || 0)}</div>
                 </div>
                 <div class="esp-header-item">
                     <div class="esp-header-label">Period</div>
@@ -14801,7 +14836,7 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
         const displayAmount = Math.abs(amount);
         const amtClass = isNegative ? 'ded' : 'earn';  // Use red for negative, green for positive
         const prefix = isNegative ? '−' : '+';  // Minus sign for negative
-        htmlContent += `<div class="esp-row"><span class="esp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="esp-row-amt ${amtClass}">${prefix}${currencySymbol} ${formatAmt(displayAmount)}</span></div>`;
+        htmlContent += `<div class="esp-row"><span class="esp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="esp-row-amt ${amtClass}">${prefix}${currencySymbol}\u00A0${formatAmt(displayAmount)}</span></div>`;
     });
 
     // v3.0.53: If there's a discrepancy between displayed earnings and gross, show explanation
@@ -14811,11 +14846,11 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
         const adjAmount = Math.abs(earningsDiscrepancy);
         const adjClass = earningsDiscrepancy > 0 ? 'ded' : 'earn';
         const adjPrefix = earningsDiscrepancy > 0 ? '−' : '+';
-        htmlContent += `<div class="esp-row" style="font-style: italic; opacity: 0.85;"><span class="esp-row-name" title="Auto-calculated to match CTC allocation">${adjustmentLabel}</span><span class="esp-row-amt ${adjClass}">${adjPrefix}${currencySymbol} ${formatAmt(adjAmount)}</span></div>`;
+        htmlContent += `<div class="esp-row" style="font-style: italic; opacity: 0.85;"><span class="esp-row-name" title="Auto-calculated to match CTC allocation">${adjustmentLabel}</span><span class="esp-row-amt ${adjClass}">${adjPrefix}${currencySymbol}\u00A0${formatAmt(adjAmount)}</span></div>`;
     }
 
     htmlContent += `
-                        <div class="esp-row esp-total-row"><span>Gross</span><span class="esp-row-amt earn">${currencySymbol} ${formatAmt(totalGross)}</span></div>
+                        <div class="esp-row esp-total-row"><span>Gross</span><span class="esp-row-amt earn">${currencySymbol}\u00A0${formatAmt(totalGross)}</span></div>
                     </div>
                 </div>
                 <div class="esp-column">
@@ -14827,10 +14862,10 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
     activeDeductions.forEach(cb => {
         const amount = cb.total_amount || cb.prorated_amount || 0;
         const zeroClass = amount === 0 ? ' esp-row-zero' : '';
-        htmlContent += `<div class="esp-row${zeroClass}"><span class="esp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="esp-row-amt ded">${amount > 0 ? '−' : ''}${currencySymbol} ${formatAmt(amount)}</span></div>`;
+        htmlContent += `<div class="esp-row${zeroClass}"><span class="esp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="esp-row-amt ded">${amount > 0 ? '−' : ''}${currencySymbol}\u00A0${formatAmt(amount)}</span></div>`;
     });
     htmlContent += `
-                        <div class="esp-row esp-total-row"><span>Total</span><span class="esp-row-amt ded">−${currencySymbol} ${formatAmt(totalDeductions)}</span></div>
+                        <div class="esp-row esp-total-row"><span>Total</span><span class="esp-row-amt ded">−${currencySymbol}\u00A0${formatAmt(totalDeductions)}</span></div>
                     </div>
                 </div>
             </div>
@@ -14838,15 +14873,15 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
             <div class="esp-summary">
                 <div class="esp-summary-item esp-summary-gross">
                     <div class="esp-summary-label">Gross</div>
-                    <div class="esp-summary-value">${currencySymbol} ${formatAmt(totalGross)}</div>
+                    <div class="esp-summary-value">${currencySymbol}\u00A0${formatAmt(totalGross)}</div>
                 </div>
                 <div class="esp-summary-item esp-summary-ded">
                     <div class="esp-summary-label">Deductions</div>
-                    <div class="esp-summary-value">−${currencySymbol} ${formatAmt(totalDeductions)}</div>
+                    <div class="esp-summary-value">−${currencySymbol}\u00A0${formatAmt(totalDeductions)}</div>
                 </div>
                 <div class="esp-summary-item esp-summary-net">
                     <div class="esp-summary-label">Net Pay</div>
-                    <div class="esp-summary-value">${currencySymbol} ${formatAmt(netPay)}</div>
+                    <div class="esp-summary-value">${currencySymbol}\u00A0${formatAmt(netPay)}</div>
                 </div>
             </div>
     `;
@@ -14859,13 +14894,13 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
             htmlContent += `
                 <div class="esp-employer">
                     <div class="esp-employer-title" onclick="this.nextElementSibling.classList.toggle('show')">
-                        <span>▶</span> Employer Contributions (${currencySymbol} ${formatAmt(totalEmployer)})
+                        <span>▶</span> Employer Contributions (${currencySymbol}\u00A0${formatAmt(totalEmployer)})
                     </div>
                     <div class="esp-employer-body">
             `;
             activeEmployer.forEach(cb => {
                 const amount = cb.total_amount || cb.prorated_amount || 0;
-                htmlContent += `<div class="esp-employer-row"><span>${escapeHtml(cb.component_name)}</span><span>${currencySymbol} ${formatAmt(amount)}</span></div>`;
+                htmlContent += `<div class="esp-employer-row"><span>${escapeHtml(cb.component_name)}</span><span>${currencySymbol}\u00A0${formatAmt(amount)}</span></div>`;
             });
             htmlContent += `</div></div>`;
         }

@@ -34,7 +34,7 @@ const TEMPLATE_COLUMNS = [
     { key: 'ctc', label: 'Annual CTC', required: true },
     { key: 'employment_type', label: 'Employment Type', required: false, default: 'full-time' },
     { key: 'gender', label: 'Gender', required: false },
-    { key: 'blood_group', label: 'Blood Group', required: false, hint: 'A+, A-, B+, B-, AB+, AB-, O+, O-' },
+    { key: 'blood_group', label: 'Blood Group', required: false },
     { key: 'work_phone', label: 'Work Phone', required: true }
 ];
 
@@ -284,10 +284,18 @@ function parseExcelData(data) {
     });
 
     // Skip header row (and optional hints row)
-    const startRow = data[1] && data[1].every(cell =>
-        String(cell || '').toLowerCase().includes('required') ||
-        String(cell || '').toLowerCase().includes('optional')
-    ) ? 2 : 1;
+    // Detect hints row: if majority of non-empty cells contain 'required' or 'optional'
+    let startRow = 1;
+    if (data[1]) {
+        const nonEmptyCells = data[1].filter(cell => cell != null && String(cell).trim() !== '');
+        const hintCells = nonEmptyCells.filter(cell =>
+            String(cell).toLowerCase().includes('required') ||
+            String(cell).toLowerCase().includes('optional')
+        );
+        if (nonEmptyCells.length > 0 && hintCells.length >= nonEmptyCells.length * 0.6) {
+            startRow = 2;
+        }
+    }
 
     for (let i = startRow; i < data.length; i++) {
         const row = data[i];
