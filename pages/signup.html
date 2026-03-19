@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <!-- Force dark theme to match landing page -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Sign Up - Ragenaizer | Create Your Account</title>
+    <meta name="description" content="Sign up for Ragenaizer. Create your organization account, choose your plan, and get started in minutes.">
+
+    <!-- SEO Meta Tags -->
+    <meta name="keywords" content="ragenaizer signup, create account, enterprise software signup, SaaS registration, business software trial">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/signup.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/signup.html">
+    <meta property="og:title" content="Sign Up - Ragenaizer">
+    <meta property="og:description" content="Create your organization account and start using Ragenaizer today.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-image.png">
+
+    <meta name="theme-color" content="#050810">
+
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/login-redesign.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+
+    <!-- Razorpay Checkout -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <style>
+        /* ==========================================
+           SIGNUP PAGE STYLES
+           ========================================== */
+
+        .signup-page {
+            min-height: 100vh;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .signup-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 7rem 2rem 4rem;
+        }
+
+        .signup-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .signup-header h1 {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .signup-header .subtitle {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+        }
+
+        .signup-layout {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        /* Form Card */
+        .signup-form-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(12px);
+        }
+
+        .signup-form-card h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+        }
+
+        .form-group label .required {
+            color: var(--color-danger);
+            margin-left: 2px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.7rem 0.9rem;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+
+        .form-group .help-text {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+            margin-top: 0.3rem;
+        }
+
+        .form-group input:invalid:not(:placeholder-shown) {
+            border-color: var(--color-danger);
+        }
+
+        /* Order Summary Card */
+        .order-summary-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1.75rem;
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 6rem;
+        }
+
+        .order-summary-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            color: var(--text-primary);
+        }
+
+        .order-plan-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--brand-primary-light);
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .order-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.4rem 0;
+            font-size: 0.88rem;
+        }
+
+        .order-line .label {
+            color: var(--text-secondary);
+        }
+
+        .order-line .value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .order-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            margin: 0.75rem 0;
+        }
+
+        .order-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+
+        .order-total .label {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .order-total .value {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .order-per-month {
+            text-align: right;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .order-trial-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--color-success);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .order-trial-badge svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Submit Button */
+        .signup-submit-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.85rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .signup-submit-btn:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(var(--brand-primary-rgb), 0.3);
+        }
+
+        .signup-submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .signup-submit-btn .btn-spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+
+        .signup-submit-btn.loading .btn-spinner {
+            display: block;
+        }
+
+        .signup-submit-btn.loading .btn-text {
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error & Success Messages */
+        .signup-message {
+            margin-top: 1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            display: none;
+        }
+
+        .signup-message.error {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--color-danger);
+            display: block;
+        }
+
+        .signup-message.success {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--color-success);
+            display: block;
+        }
+
+        /* Success Card */
+        .signup-success-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 2.5rem;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .success-icon-circle {
+            width: 64px;
+            height: 64px;
+            background: rgba(16, 185, 129, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.25rem;
+        }
+
+        .success-icon-circle svg {
+            width: 32px;
+            height: 32px;
+            color: var(--color-success);
+        }
+
+        .signup-success-card h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .signup-success-card .success-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .credentials-box {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+            text-align: left;
+        }
+
+        .credentials-box h4 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.75rem;
+        }
+
+        .credential-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.4rem 0;
+        }
+
+        .credential-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .credential-value {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+
+        .copy-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: color 0.2s;
+        }
+
+        .copy-btn:hover {
+            color: var(--brand-primary-light);
+        }
+
+        .warning-text {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--color-warning);
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .warning-text svg {
+            min-width: 20px;
+            margin-top: 1px;
+        }
+
+        .proceed-login-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 2rem;
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .proceed-login-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            color: #fff;
+        }
+
+        /* Loading state */
+        .signup-loading {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .signup-loading .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--brand-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        /* No plan selected */
+        .no-plan-message {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+
+        .no-plan-message p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .no-plan-message a {
+            color: var(--brand-primary-light);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .no-plan-message a:hover {
+            text-decoration: underline;
+        }
+
+        /* Footer link */
+        .signup-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+
+        .signup-footer a {
+            color: var(--brand-primary-light);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .signup-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .signup-container {
+                padding: 6rem 1rem 3rem;
+            }
+
+            .signup-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .order-summary-card {
+                position: static;
+                order: -1;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Light theme */
+        [data-theme="light"] .signup-form-card,
+        [data-theme="light"] .order-summary-card,
+        [data-theme="light"] .signup-success-card {
+            background: rgba(0, 0, 0, 0.02);
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+
+        [data-theme="light"] .form-group input {
+            background: rgba(0, 0, 0, 0.03);
+            border-color: rgba(0, 0, 0, 0.12);
+            color: var(--text-primary);
+        }
+
+        [data-theme="light"] .credentials-box {
+            background: rgba(0, 0, 0, 0.03);
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="landing-page login-page signup-page">
+    <!-- Navigation -->
+    <div id="navbar"></div>
+
+    <div class="signup-container" id="signupContainer">
+        <div class="signup-loading">
+            <div class="spinner"></div>
+            <p>Loading plan details...</p>
+        </div>
+    </div>
+
+    <!-- Global Components -->
+    <script src="/js/navbar.js"></script>
+
+    <script>
+        const TM_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'https://localhost:5108' : 'https://tenant.ragenaizer.com';
+
+        let currentPlan = null;
+
+        function formatINR(amount) {
+            return '\u20B9' + Number(amount).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+        }
+
+        function getQueryParam(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+
+        function updateOrderSummary() {
+            if (!currentPlan) return;
+            const seatsInput = document.getElementById('seats');
+            if (!seatsInput) return;
+
+            const seats = parseInt(seatsInput.value) || currentPlan.minSeats;
+            const price = currentPlan.pricePerUserMonthly;
+            const gstPct = Number(currentPlan.gstPercentage);
+            const subtotal = seats * price * 12;
+            const gstAmount = subtotal * (gstPct / 100);
+            const total = subtotal + gstAmount;
+            const perMonth = total / 12;
+
+            const el = (id) => document.getElementById(id);
+            el('summarySeats').textContent = seats;
+            el('summaryPrice').textContent = formatINR(price);
+            el('summarySubtotal').textContent = formatINR(subtotal);
+            el('summaryGstPct').textContent = gstPct;
+            el('summaryGst').textContent = formatINR(gstAmount);
+            el('summaryTotal').textContent = formatINR(total);
+
+            const perMonthEl = el('summaryPerMonth');
+            if (perMonthEl) {
+                perMonthEl.textContent = `${formatINR(Math.round(perMonth))}/month effective`;
+            }
+        }
+
+        function renderSignupForm(plan) {
+            const container = document.getElementById('signupContainer');
+            const isTrial = plan.isTrial;
+            const isEnterprise = !isTrial && plan.pricePerUserMonthly === 0;
+
+            let orderSummaryHTML = '';
+
+            if (isTrial) {
+                orderSummaryHTML = `
+                    <div class="order-summary-card">
+                        <h3>Order Summary</h3>
+                        <div class="order-plan-name">${plan.displayName}</div>
+                        <div class="order-trial-badge">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            ${plan.trialDays}-day free trial
+                        </div>
+                        <div class="order-line">
+                            <span class="label">Seats</span>
+                            <span class="value" id="summarySeats">${plan.minSeats}</span>
+                        </div>
+                        <div class="order-line">
+                            <span class="label">Validity</span>
+                            <span class="value">${plan.trialDays} days</span>
+                        </div>
+                        <div class="order-divider"></div>
+                        <div class="order-total">
+                            <span class="label">Total</span>
+                            <span class="value">Free</span>
+                        </div>
+                    </div>
+                `;
+            } else if (!isEnterprise) {
+                orderSummaryHTML = `
+                    <div class="order-summary-card">
+                        <h3>Order Summary</h3>
+                        <div class="order-plan-name">${plan.displayName}</div>
+                        <div class="order-line">
+                            <span class="label">Seats</span>
+                            <span class="value"><span id="summarySeats">${plan.minSeats}</span> users</span>
+                        </div>
+                        <div class="order-line">
+                            <span class="label">Price</span>
+                            <span class="value"><span id="summaryPrice">${formatINR(plan.pricePerUserMonthly)}</span>/user/mo</span>
+                        </div>
+                        <div class="order-line">
+                            <span class="label">Billing</span>
+                            <span class="value">Annual (12 months)</span>
+                        </div>
+                        <div class="order-divider"></div>
+                        <div class="order-line">
+                            <span class="label">Subtotal</span>
+                            <span class="value" id="summarySubtotal">${formatINR(plan.baseAnnualAmount)}</span>
+                        </div>
+                        <div class="order-line">
+                            <span class="label">GST (<span id="summaryGstPct">${Number(plan.gstPercentage)}</span>%)</span>
+                            <span class="value" id="summaryGst">${formatINR(plan.gstAmount)}</span>
+                        </div>
+                        <div class="order-divider"></div>
+                        <div class="order-total">
+                            <span class="label">Total</span>
+                            <span class="value" id="summaryTotal">${formatINR(plan.totalAnnualAmount)}</span>
+                        </div>
+                        <div class="order-per-month" id="summaryPerMonth">${formatINR(Math.round(plan.totalAnnualAmount / 12))}/month effective</div>
+                    </div>
+                `;
+            }
+
+            const submitLabel = isTrial ? 'Start Free Trial' : 'Proceed to Payment';
+            const submitIcon = isTrial
+                ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+                : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>';
+
+            container.innerHTML = `
+                <div class="signup-header">
+                    <h1>Create your account</h1>
+                    <p class="subtitle">Set up your organization on the <strong>${plan.displayName}</strong> plan</p>
+                </div>
+
+                <div class="signup-layout">
+                    <div class="signup-form-card">
+                        <h2>Organization Details</h2>
+                        <form id="signupForm" novalidate>
+                            <div class="form-group">
+                                <label for="orgName">Organization Name <span class="required">*</span></label>
+                                <input type="text" id="orgName" name="orgName" placeholder="Acme Corp" required autocomplete="organization">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="adminEmail">Admin Email <span class="required">*</span></label>
+                                <input type="email" id="adminEmail" name="adminEmail" placeholder="admin@company.com" required autocomplete="email">
+                                <div class="help-text">This will be the super admin account for your organization.</div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="firstName">First Name <span class="required">*</span></label>
+                                    <input type="text" id="firstName" name="firstName" placeholder="John" required autocomplete="given-name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="lastName">Last Name <span class="required">*</span></label>
+                                    <input type="text" id="lastName" name="lastName" placeholder="Doe" required autocomplete="family-name">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="phone">Phone <span style="opacity:0.5; font-weight:400;">(optional)</span></label>
+                                <input type="tel" id="phone" name="phone" placeholder="+91 98765 43210" autocomplete="tel">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="seats">Number of Seats <span class="required">*</span></label>
+                                <input type="number" id="seats" name="seats" min="${plan.minSeats}" ${plan.maxSeats !== -1 ? 'max="' + plan.maxSeats + '"' : ''} value="${plan.minSeats}" required>
+                                <div class="help-text">Minimum ${plan.minSeats} seats${plan.maxSeats !== -1 ? ', maximum ' + plan.maxSeats + ' seats' : ''}.</div>
+                            </div>
+
+                            <button type="submit" class="signup-submit-btn" id="submitBtn">
+                                <span class="btn-spinner"></span>
+                                <span class="btn-text">${submitIcon} ${submitLabel}</span>
+                            </button>
+
+                            <div class="signup-message" id="signupMessage"></div>
+                        </form>
+
+                        <div class="signup-footer">
+                            Already have an account? <a href="/pages/login.html">Sign in</a>
+                            &nbsp;|&nbsp;
+                            <a href="/pages/pricing.html">View all plans</a>
+                        </div>
+                    </div>
+
+                    ${orderSummaryHTML}
+                </div>
+            `;
+
+            // Bind events
+            const seatsInput = document.getElementById('seats');
+            if (seatsInput && !isTrial) {
+                seatsInput.addEventListener('input', () => {
+                    // Clamp to valid range
+                    let val = parseInt(seatsInput.value);
+                    if (!isNaN(val)) {
+                        if (val < plan.minSeats) val = plan.minSeats;
+                        if (plan.maxSeats !== -1 && val > plan.maxSeats) val = plan.maxSeats;
+                    }
+                    updateOrderSummary();
+                });
+
+                seatsInput.addEventListener('change', () => {
+                    let val = parseInt(seatsInput.value);
+                    if (isNaN(val) || val < plan.minSeats) {
+                        seatsInput.value = plan.minSeats;
+                    } else if (plan.maxSeats !== -1 && val > plan.maxSeats) {
+                        seatsInput.value = plan.maxSeats;
+                    }
+                    updateOrderSummary();
+                });
+            }
+
+            // For trial plan, update seats display on change
+            if (isTrial && seatsInput) {
+                seatsInput.addEventListener('input', () => {
+                    const summarySeats = document.getElementById('summarySeats');
+                    if (summarySeats) summarySeats.textContent = seatsInput.value || plan.minSeats;
+                });
+            }
+
+            document.getElementById('signupForm').addEventListener('submit', handleSubmit);
+        }
+
+        function showMessage(type, text) {
+            const msg = document.getElementById('signupMessage');
+            if (!msg) return;
+            msg.className = 'signup-message ' + type;
+            msg.textContent = text;
+            msg.style.display = 'block';
+        }
+
+        function hideMessage() {
+            const msg = document.getElementById('signupMessage');
+            if (msg) msg.style.display = 'none';
+        }
+
+        function setLoading(loading) {
+            const btn = document.getElementById('submitBtn');
+            if (!btn) return;
+            if (loading) {
+                btn.classList.add('loading');
+                btn.disabled = true;
+            } else {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
+        function showSuccessCard(data) {
+            const container = document.getElementById('signupContainer');
+            container.innerHTML = `
+                <div class="signup-success-card">
+                    <div class="success-icon-circle">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <h2>Account Created!</h2>
+                    <p class="success-subtitle">${data.tenantName || 'Your organization'} has been successfully set up on Ragenaizer.</p>
+
+                    ${data.email && data.password ? `
+                    <div class="credentials-box">
+                        <h4>Super Admin Credentials</h4>
+                        <div class="credential-row">
+                            <span class="credential-label">Email</span>
+                            <span class="credential-value">
+                                <span id="credEmail">${data.email}</span>
+                                <button type="button" class="copy-btn" onclick="copyToClipboard('credEmail')" title="Copy email">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                                    </svg>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="credential-row">
+                            <span class="credential-label">Password</span>
+                            <span class="credential-value">
+                                <span id="credPassword">${data.password}</span>
+                                <button type="button" class="copy-btn" onclick="copyToClipboard('credPassword')" title="Copy password">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                                    </svg>
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="warning-text">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 9v4m0 4h.01M5.07 19h13.86a2 2 0 001.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16a2 2 0 001.73 3z"/>
+                        </svg>
+                        <span><strong>Important:</strong> Save these credentials now. The password will not be shown again.</span>
+                    </div>
+                    ` : ''}
+
+                    <a href="/pages/login.html" class="proceed-login-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
+                            <polyline points="10 17 15 12 10 7"/>
+                            <line x1="15" y1="12" x2="3" y2="12"/>
+                        </svg>
+                        Proceed to Login
+                    </a>
+                </div>
+            `;
+        }
+
+        function copyToClipboard(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            const text = el.textContent.trim();
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = el.closest('.credential-value')?.querySelector('.copy-btn');
+                if (btn) {
+                    btn.style.color = 'var(--color-success)';
+                    setTimeout(() => { btn.style.color = ''; }, 1500);
+                }
+            }).catch(() => {
+                // Fallback
+                const range = document.createRange();
+                range.selectNode(el);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+            });
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            hideMessage();
+
+            const form = e.target;
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const orgName = document.getElementById('orgName').value.trim();
+            const adminEmail = document.getElementById('adminEmail').value.trim();
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const seats = parseInt(document.getElementById('seats').value) || currentPlan.minSeats;
+
+            if (!orgName || !adminEmail || !firstName || !lastName) {
+                showMessage('error', 'Please fill in all required fields.');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                const payload = {
+                    planId: currentPlan.id,
+                    organizationName: orgName,
+                    adminEmail: adminEmail,
+                    adminFirstName: firstName,
+                    adminLastName: lastName,
+                    adminPhone: phone || null,
+                    seatCount: seats
+                };
+
+                const response = await fetch(`${TM_URL}/api/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || `Signup failed (HTTP ${response.status})`);
+                }
+
+                if (currentPlan.isTrial) {
+                    // Trial signup — show success with credentials
+                    showSuccessCard({
+                        tenantName: orgName,
+                        email: data.superAdminEmail || adminEmail,
+                        password: data.admin_password || null
+                    });
+                } else {
+                    // Paid plan — open Razorpay checkout
+                    if (data.razorpay_order_id && data.razorpay_key_id) {
+                        openRazorpayCheckout(data, orgName, adminEmail, phone, seats);
+                    } else {
+                        // If API returned success without Razorpay (future: could be direct activation)
+                        showSuccessCard({
+                            tenantName: orgName,
+                            email: data.superAdminEmail || adminEmail,
+                            password: data.admin_password || null
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error('Signup error:', err);
+                showMessage('error', err.message || 'Something went wrong. Please try again.');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function openRazorpayCheckout(signupResponse, orgName, adminEmail, phone, seats) {
+            const options = {
+                key: signupResponse.razorpay_key_id,
+                amount: signupResponse.amount_paise,
+                currency: 'INR',
+                name: 'Ragenaizer',
+                description: `${currentPlan.displayName} - ${seats} seats`,
+                order_id: signupResponse.razorpay_order_id,
+                handler: async function(rzpResponse) {
+                    // Verify payment with backend
+                    try {
+                        setLoading(true);
+                        const verifyRes = await fetch(`${TM_URL}/api/signup/verify-payment`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpayOrderId: rzpResponse.razorpay_order_id,
+                                razorpayPaymentId: rzpResponse.razorpay_payment_id,
+                                razorpaySignature: rzpResponse.razorpay_signature,
+                                subscriptionId: signupResponse.subscriptionId
+                            })
+                        });
+
+                        const verifyData = await verifyRes.json();
+
+                        if (verifyRes.ok && verifyData.success) {
+                            showSuccessCard({
+                                tenantName: orgName,
+                                email: verifyData.superAdminEmail || adminEmail,
+                                password: verifyData.admin_password || null
+                            });
+                        } else {
+                            showMessage('error', verifyData.message || 'Payment verification failed. Please contact support.');
+                        }
+                    } catch (err) {
+                        console.error('Payment verification error:', err);
+                        showMessage('error', 'Payment verification failed. Please contact support at sales@ragenaizer.com');
+                    } finally {
+                        setLoading(false);
+                    }
+                },
+                prefill: {
+                    name: orgName,
+                    email: adminEmail,
+                    contact: phone || ''
+                },
+                theme: {
+                    color: '#6366f1'
+                },
+                modal: {
+                    ondismiss: function() {
+                        showMessage('error', 'Payment was cancelled. You can try again.');
+                    }
+                }
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.open();
+        }
+
+        async function init() {
+            const container = document.getElementById('signupContainer');
+            const planId = getQueryParam('plan');
+
+            if (!planId) {
+                container.innerHTML = `
+                    <div class="signup-header">
+                        <h1>Create your account</h1>
+                    </div>
+                    <div class="no-plan-message">
+                        <p>No plan selected. Please choose a plan first.</p>
+                        <a href="/pages/pricing.html">View pricing plans</a>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${TM_URL}/api/plans/public`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                if (!data.success || !data.plans) {
+                    throw new Error('Failed to load plans');
+                }
+
+                const plan = data.plans.find(p => p.id === planId);
+                if (!plan) {
+                    container.innerHTML = `
+                        <div class="signup-header">
+                            <h1>Create your account</h1>
+                        </div>
+                        <div class="no-plan-message">
+                            <p>Plan not found. It may have been removed or is no longer available.</p>
+                            <a href="/pages/pricing.html">View available plans</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                currentPlan = plan;
+                renderSignupForm(plan);
+
+            } catch (err) {
+                console.error('Failed to load plan:', err);
+                container.innerHTML = `
+                    <div class="signup-header">
+                        <h1>Create your account</h1>
+                    </div>
+                    <div class="no-plan-message">
+                        <p>Unable to load plan details. Please try again.</p>
+                        <p style="font-size: 0.85rem; opacity: 0.6; color: var(--text-secondary);">${err.message}</p>
+                        <a href="/pages/pricing.html">View pricing plans</a>
+                    </div>
+                `;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

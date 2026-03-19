@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <!-- Force dark theme to match landing page -->
+    <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Pricing - Ragenaizer | Simple, Transparent Pricing</title>
+    <meta name="description" content="Simple, transparent pricing for Ragenaizer. Per user per month, billed annually. Start with a free trial or choose the plan that fits your team.">
+
+    <!-- SEO Meta Tags -->
+    <meta name="keywords" content="ragenaizer pricing, enterprise software pricing, per user pricing, SaaS pricing, business software plans, free trial enterprise software">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/pricing.html">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/pricing.html">
+    <meta property="og:title" content="Pricing - Ragenaizer | Simple, Transparent Pricing">
+    <meta property="og:description" content="Per user per month, billed annually. Video, Chat, Drive, HRMS and more in one platform. Start your free trial today.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-image.png">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Ragenaizer Pricing - Plans for Every Team">
+    <meta name="twitter:description" content="Simple per-user pricing. All-in-one business platform. Free trial available.">
+
+    <meta name="theme-color" content="#050810">
+
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/login-redesign.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+
+    <style>
+        /* ==========================================
+           PRICING PAGE STYLES
+           ========================================== */
+
+        .pricing-page {
+            min-height: 100vh;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .pricing-hero {
+            text-align: center;
+            padding: 8rem 2rem 3rem;
+            position: relative;
+        }
+
+        .pricing-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 500px;
+            background: radial-gradient(ellipse at center, rgba(var(--brand-primary-rgb), 0.12) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .pricing-hero h1 {
+            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            position: relative;
+            z-index: 1;
+            letter-spacing: -0.02em;
+        }
+
+        .pricing-hero .subtitle {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            position: relative;
+            z-index: 1;
+            margin-bottom: 0;
+        }
+
+        /* Plans Grid */
+        .pricing-grid-wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 2rem 5rem;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            align-items: stretch;
+        }
+
+        /* Plan Card */
+        .plan-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            backdrop-filter: blur(12px);
+        }
+
+        .plan-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .plan-card.highlighted {
+            border-color: var(--brand-primary);
+            background: rgba(var(--brand-primary-rgb), 0.06);
+            box-shadow: 0 0 30px rgba(var(--brand-primary-rgb), 0.1);
+        }
+
+        .plan-card.highlighted:hover {
+            border-color: var(--brand-primary-light);
+            box-shadow: 0 12px 40px rgba(var(--brand-primary-rgb), 0.2);
+        }
+
+        /* Badge */
+        .plan-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        .plan-card-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        .plan-price {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .plan-price .currency {
+            font-size: 1.2rem;
+            font-weight: 600;
+            vertical-align: super;
+            margin-right: 2px;
+        }
+
+        .plan-price .per-unit {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .plan-billing {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .plan-min-seats {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            opacity: 0.8;
+        }
+
+        .plan-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-align: center;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+            min-height: 2.7rem;
+        }
+
+        /* Features List */
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 1.5rem;
+            flex: 1;
+        }
+
+        .plan-features li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            padding: 0.4rem 0;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .plan-features li svg {
+            width: 16px;
+            height: 16px;
+            min-width: 16px;
+            margin-top: 2px;
+            color: var(--color-success);
+        }
+
+        /* Annual Cost Breakdown */
+        .plan-cost-breakdown {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .plan-cost-breakdown .cost-total {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        /* CTA Button */
+        .plan-cta {
+            display: block;
+            width: 100%;
+            padding: 0.85rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .plan-cta.primary {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+            color: #fff;
+        }
+
+        .plan-cta.primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(var(--brand-primary-rgb), 0.3);
+        }
+
+        .plan-cta.secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .plan-cta.secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .plan-cta.enterprise {
+            background: transparent;
+            color: var(--brand-primary-light);
+            border: 1px solid var(--brand-primary);
+        }
+
+        .plan-cta.enterprise:hover {
+            background: rgba(var(--brand-primary-rgb), 0.1);
+        }
+
+        /* Loading State */
+        .pricing-loading {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .pricing-loading .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--brand-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error State */
+        .pricing-error {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--color-danger);
+        }
+
+        .pricing-error button {
+            margin-top: 1rem;
+            background: var(--brand-primary);
+            color: #fff;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* Divider */
+        .features-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.08);
+            margin: 0.5rem 0;
+        }
+
+        .features-section-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.6rem;
+            margin-bottom: 0.2rem;
+            opacity: 0.7;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .pricing-hero {
+                padding: 7rem 1.5rem 2rem;
+            }
+
+            .pricing-grid-wrapper {
+                padding: 0 1rem 3rem;
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+                margin: 0 auto;
+            }
+
+            .plan-card {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .pricing-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Light theme adjustments */
+        [data-theme="light"] .plan-card {
+            background: rgba(0, 0, 0, 0.02);
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+
+        [data-theme="light"] .plan-card:hover {
+            border-color: rgba(0, 0, 0, 0.15);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        [data-theme="light"] .plan-card.highlighted {
+            background: rgba(var(--brand-primary-rgb), 0.04);
+            border-color: var(--brand-primary);
+        }
+
+        [data-theme="light"] .plan-cost-breakdown {
+            background: rgba(0, 0, 0, 0.03);
+            border-color: rgba(0, 0, 0, 0.06);
+        }
+
+        [data-theme="light"] .plan-cta.secondary {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-primary);
+            border-color: rgba(0, 0, 0, 0.12);
+        }
+
+        [data-theme="light"] .plan-cta.secondary:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="landing-page login-page pricing-page">
+    <!-- Navigation -->
+    <div id="navbar"></div>
+
+    <!-- Hero Section -->
+    <div class="pricing-hero">
+        <h1>Simple, transparent pricing</h1>
+        <p class="subtitle">Per user per month, billed annually</p>
+    </div>
+
+    <!-- Plans Grid -->
+    <div class="pricing-grid-wrapper">
+        <div id="pricingContent">
+            <div class="pricing-loading">
+                <div class="spinner"></div>
+                <p>Loading plans...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Components -->
+    <script src="/js/navbar.js"></script>
+
+    <script>
+        const TM_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'https://localhost:5108' : 'https://tenant.ragenaizer.com';
+
+        function formatINR(amount) {
+            return '\u20B9' + Number(amount).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+        }
+
+        function parseServiceConfigs(serviceConfigsStr) {
+            if (!serviceConfigsStr) return [];
+            try {
+                const configs = typeof serviceConfigsStr === 'string'
+                    ? JSON.parse(serviceConfigsStr)
+                    : serviceConfigsStr;
+                const features = [];
+                for (const [service, config] of Object.entries(configs)) {
+                    if (config.features && Array.isArray(config.features)) {
+                        config.features.forEach(f => {
+                            features.push({ service, feature: f });
+                        });
+                    }
+                    if (config.limits) {
+                        for (const [key, value] of Object.entries(config.limits)) {
+                            let label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                            if (key === 'storage_bytes' && typeof value === 'number') {
+                                const gb = (value / (1024 * 1024 * 1024)).toFixed(0);
+                                features.push({ service, feature: `${gb} GB Storage` });
+                            } else if (typeof value === 'number') {
+                                features.push({ service, feature: `${label}: ${value.toLocaleString('en-IN')}` });
+                            } else {
+                                features.push({ service, feature: `${label}: ${value}` });
+                            }
+                        }
+                    }
+                }
+                return features;
+            } catch {
+                return [];
+            }
+        }
+
+        function getCheckSVG() {
+            return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        }
+
+        function getPriceDisplay(plan) {
+            if (plan.isTrial) {
+                return '<span class="plan-price">Free</span>';
+            }
+            if (plan.pricePerUserMonthly === 0) {
+                return '<span class="plan-price">Custom</span>';
+            }
+            return `<span class="plan-price"><span class="currency">\u20B9</span>${Number(plan.pricePerUserMonthly).toLocaleString('en-IN')}<span class="per-unit">/user/mo</span></span>`;
+        }
+
+        function getCTAButton(plan) {
+            if (plan.isTrial) {
+                return `<a href="/pages/signup.html?plan=${plan.id}" class="plan-cta primary">Start Free Trial</a>`;
+            }
+            if (plan.pricePerUserMonthly === 0) {
+                return `<a href="mailto:sales@ragenaizer.com?subject=Enterprise%20Plan%20Inquiry" class="plan-cta enterprise">Contact Sales</a>`;
+            }
+            return `<a href="/pages/signup.html?plan=${plan.id}" class="plan-cta ${plan.highlight ? 'primary' : 'secondary'}">Get Started</a>`;
+        }
+
+        function getBillingSubtitle(plan) {
+            if (plan.isTrial) {
+                return `${plan.trialDays}-day free trial`;
+            }
+            if (plan.pricePerUserMonthly === 0) {
+                return 'Custom pricing for your team';
+            }
+            return 'Billed annually';
+        }
+
+        function getMinSeatsLabel(plan) {
+            if (plan.isTrial) return '';
+            if (plan.pricePerUserMonthly === 0) return '';
+            const maxLabel = plan.maxSeats === -1 ? '+ seats' : `\u2013${plan.maxSeats} seats`;
+            return `${plan.minSeats}${maxLabel.startsWith('+') ? '' : ''} ${maxLabel}`;
+        }
+
+        function getCostBreakdown(plan) {
+            if (plan.isTrial || plan.pricePerUserMonthly === 0) return '';
+            const base = plan.baseAnnualAmount;
+            const gst = plan.gstAmount;
+            const total = plan.totalAnnualAmount;
+            const gstPct = Number(plan.gstPercentage);
+
+            return `
+                <div class="plan-cost-breakdown">
+                    ${plan.minSeats} users &times; ${formatINR(plan.pricePerUserMonthly)} &times; 12 months = ${formatINR(base)}<br>
+                    + ${gstPct}% GST = ${formatINR(gst)}<br>
+                    <span class="cost-total">Total: ${formatINR(total)}/year</span>
+                </div>
+            `;
+        }
+
+        function renderPlans(plans) {
+            if (!plans || plans.length === 0) {
+                return '<div class="pricing-error"><p>No plans available at the moment.</p></div>';
+            }
+
+            let html = '<div class="pricing-grid">';
+
+            plans.forEach(plan => {
+                const features = parseServiceConfigs(plan.serviceConfigs);
+                const isHighlighted = plan.highlight;
+
+                html += `
+                    <div class="plan-card ${isHighlighted ? 'highlighted' : ''}">
+                        ${isHighlighted ? '<div class="plan-badge">Most Popular</div>' : ''}
+                        <div class="plan-card-header">
+                            <div class="plan-name">${plan.displayName}</div>
+                            ${getPriceDisplay(plan)}
+                            <div class="plan-billing">${getBillingSubtitle(plan)}</div>
+                            ${getMinSeatsLabel(plan) ? `<div class="plan-min-seats">${getMinSeatsLabel(plan)}</div>` : ''}
+                        </div>
+
+                        ${plan.description ? `<div class="plan-description">${plan.description}</div>` : '<div class="plan-description"></div>'}
+
+                        <ul class="plan-features">
+                `;
+
+                // Group features by service
+                const grouped = {};
+                features.forEach(f => {
+                    if (!grouped[f.service]) grouped[f.service] = [];
+                    grouped[f.service].push(f.feature);
+                });
+
+                let serviceIndex = 0;
+                for (const [service, feats] of Object.entries(grouped)) {
+                    if (serviceIndex > 0) {
+                        html += '<div class="features-divider"></div>';
+                    }
+                    html += `<div class="features-section-label">${service}</div>`;
+                    feats.forEach(feat => {
+                        html += `<li>${getCheckSVG()}<span>${feat}</span></li>`;
+                    });
+                    serviceIndex++;
+                }
+
+                if (features.length === 0) {
+                    html += `<li>${getCheckSVG()}<span>All platform features</span></li>`;
+                }
+
+                html += `
+                        </ul>
+
+                        ${getCostBreakdown(plan)}
+                        ${getCTAButton(plan)}
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            return html;
+        }
+
+        async function loadPlans() {
+            const container = document.getElementById('pricingContent');
+            try {
+                const response = await fetch(`${TM_URL}/api/plans/public`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                if (data.success && data.plans) {
+                    container.innerHTML = renderPlans(data.plans);
+                } else {
+                    throw new Error(data.message || 'Failed to load plans');
+                }
+            } catch (err) {
+                console.error('Failed to load plans:', err);
+                container.innerHTML = `
+                    <div class="pricing-error">
+                        <p>Unable to load pricing plans.</p>
+                        <p style="font-size: 0.85rem; opacity: 0.7; color: var(--text-secondary);">${err.message}</p>
+                        <button onclick="loadPlans()">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadPlans);
+    </script>
+</body>
+</html>

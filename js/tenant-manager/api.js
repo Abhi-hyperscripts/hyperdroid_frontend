@@ -391,6 +391,61 @@ class TenantManagerAPI {
         return await response.json();
     }
 
+    // ==================== Plans ====================
+
+    async getPlans(includeInactive = false) {
+        const response = await fetch(
+            `${this.baseUrl}/api/plans?includeInactive=${includeInactive}`,
+            { headers: this._getHeaders() }
+        );
+        if (!response.ok) throw new Error('Failed to fetch plans');
+        return await response.json();
+    }
+
+    async getPlan(planId) {
+        const response = await fetch(
+            `${this.baseUrl}/api/plans/${planId}`,
+            { headers: this._getHeaders() }
+        );
+        if (!response.ok) throw new Error('Failed to fetch plan');
+        return await response.json();
+    }
+
+    async createPlan(planData) {
+        const response = await fetch(`${this.baseUrl}/api/plans`, {
+            method: 'POST',
+            headers: this._getHeaders(),
+            body: JSON.stringify(planData)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to create plan');
+        }
+        return await response.json();
+    }
+
+    async updatePlan(planId, planData) {
+        const response = await fetch(`${this.baseUrl}/api/plans/${planId}`, {
+            method: 'PUT',
+            headers: this._getHeaders(),
+            body: JSON.stringify(planData)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to update plan');
+        }
+        return await response.json();
+    }
+
+    async deletePlan(planId) {
+        const response = await fetch(`${this.baseUrl}/api/plans/${planId}`, {
+            method: 'DELETE',
+            headers: this._getHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to delete plan');
+        return await response.json();
+    }
+
     // ==================== Helpers ====================
 
     _getHeaders() {
