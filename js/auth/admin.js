@@ -2229,8 +2229,10 @@ function renderSubTenantRow(tenant) {
         ? `<span class="subtenant-service-badge">+${tenant.services.length - 3}</span>`
         : '';
 
+    const tid = tenant.tenantId;
+
     return `
-        <tr>
+        <tr style="cursor:pointer;" onclick="toggleSubTenantDetails('${tid}')">
             <td>
                 <div class="subtenant-org">
                     <span class="subtenant-org-name">${tenant.organizationName || tenant.tenantName}</span>
@@ -2267,5 +2269,147 @@ function renderSubTenantRow(tenant) {
                 </span>
             </td>
         </tr>
+        <tr id="subtenant-details-${tid}" style="display:none;">
+            <td colspan="7" style="padding:0;">
+                <div id="subtenant-details-content-${tid}" style="padding:16px 20px;background:var(--bg-secondary);border-top:1px solid var(--border-primary);">
+                    <span style="color:var(--text-secondary);font-size:12px;">Loading...</span>
+                </div>
+            </td>
+        </tr>
     `;
+}
+
+async function toggleSubTenantDetails(tenantId) {
+    const detailsRow = document.getElementById(`subtenant-details-${tenantId}`);
+    if (!detailsRow) return;
+
+    if (detailsRow.style.display === 'none') {
+        detailsRow.style.display = '';
+        const contentDiv = document.getElementById(`subtenant-details-content-${tenantId}`);
+
+        try {
+            const data = await api.getTenantInfo(tenantId);
+            const lic = data?.tenant?.license;
+            if (!lic || !lic.services) {
+                contentDiv.innerHTML = '<span style="color:var(--text-secondary);font-size:12px;">No license details available</span>';
+                return;
+            }
+
+            const formatBytes = (bytes) => {
+                if (!bytes) return 'Unlimited';
+                if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(1) + ' GB';
+                if (bytes >= 1048576) return (bytes / 1048576).toFixed(0) + ' MB';
+                return bytes + ' bytes';
+            };
+
+            let html = '<div style="display:flex;gap:16px;flex-wrap:wrap;">';
+            for (const svc of lic.services) {
+                const features = svc.enabledFeatures || [];
+                const hasStorage = svc.storageLimitBytes != null;
+                const hasCustom = svc.customLimits && Object.keys(svc.customLimits).length > 0;
+                const hasFeatures = features.length > 0;
+
+                html += `<div style="flex:1;min-width:200px;padding:12px;border:1px solid var(--border-primary);border-radius:8px;background:var(--bg-tertiary);">`;
+                html += `<div style="font-weight:600;font-size:13px;margin-bottom:8px;color:var(--text-primary);">${svc.name}</div>`;
+
+                if (hasFeatures) {
+                    html += `<div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;font-weight:600;">Features</div>`;
+                    html += features.map(f => {
+                        const icon = f === 'recording' ? '🎥' : f === 'captions' ? '💬' : f === 'screen_sharing' ? '🖥' : f === 'sharing' ? '🔗' : f === 'chunked_upload' ? '📦' : '✓';
+                        return `<span style="display:inline-block;font-size:11px;padding:2px 8px;margin:2px;border-radius:4px;background:var(--bg-primary);color:var(--color-success);">${icon} ${f}</span>`;
+                    }).join('');
+                }
+
+                if (hasStorage || hasCustom) {
+                    html += `<div style="font-size:11px;color:var(--text-secondary);margin-top:8px;margin-bottom:4px;font-weight:600;">Limits</div>`;
+                    if (hasStorage) {
+                        html += `<div style="font-size:12px;color:var(--text-primary);">Storage: <strong>${formatBytes(svc.storageLimitBytes)}</strong></div>`;
+                    }
+                    if (hasCustom) {
+                        for (const [k, v] of Object.entries(svc.customLimits)) {
+                            const label = k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                            html += `<div style="font-size:12px;color:var(--text-primary);">${label}: <strong>${v}</strong></div>`;
+                        }
+                    }
+                }
+
+                if (!hasFeatures && !hasStorage && !hasCustom) {
+                    html += `<span style="font-size:11px;color:var(--text-secondary);">No restrictions</span>`;
+                }
+
+                html += '</div>';
+            }
+            html += '</div>';
+            contentDiv.innerHTML = html;
+        } catch (err) {
+            contentDiv.innerHTML = `<span style="color:var(--color-error);font-size:12px;">Failed to load: ${err.message}</span>`;
+        }
+    } else {
+        detailsRow.style.display = 'none';
+    }
+}
+
+// ==================== Activate Sub-Tenant ====================
+
+async function activateSubTenant() {
+    const licenseKey = document.getElementById('activateTenantLicenseKey').value.trim();
+    const resultDiv = document.getElementById('activateTenantResult');
+    const btn = document.getElementById('activateTenantBtn');
+
+    if (!licenseKey) {
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = 'var(--bg-error, rgba(239,68,68,0.1))';
+        resultDiv.style.color = 'var(--color-error, #ef4444)';
+        resultDiv.textContent = 'Please paste a license key';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Activating...';
+    resultDiv.style.display = 'none';
+
+    try {
+        const response = await fetch(`${CONFIG.authApiBaseUrl}/auth/activate-tenant`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            },
+            body: JSON.stringify({ licenseKey })
+        });
+
+        const data = await response.json();
+
+        resultDiv.style.display = 'block';
+
+        if (data.success) {
+            resultDiv.style.background = 'var(--bg-success, rgba(34,197,94,0.1))';
+            resultDiv.style.color = 'var(--color-success, #22c55e)';
+            resultDiv.innerHTML = `
+                <strong>Tenant activated successfully!</strong><br>
+                <span style="color:var(--text-secondary);">
+                    Organization: ${data.tenantName || '-'}<br>
+                    Admin: ${data.superAdminEmail || '-'}<br>
+                    Password: <code style="background:var(--bg-tertiary);padding:2px 6px;border-radius:3px;user-select:all;">${data.generatedPassword || '-'}</code><br>
+                    <small style="color:var(--color-warning);">Save this password — it will not be shown again.</small>
+                </span>
+            `;
+
+            // Refresh sub-tenants list
+            subTenantsData = null;
+            loadSubTenants();
+        } else {
+            resultDiv.style.background = 'var(--bg-error, rgba(239,68,68,0.1))';
+            resultDiv.style.color = 'var(--color-error, #ef4444)';
+            resultDiv.textContent = data.message || 'Activation failed';
+        }
+    } catch (error) {
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = 'var(--bg-error, rgba(239,68,68,0.1))';
+        resultDiv.style.color = 'var(--color-error, #ef4444)';
+        resultDiv.textContent = 'Error: ' + error.message;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Activate';
+    }
 }

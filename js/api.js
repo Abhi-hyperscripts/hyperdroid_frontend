@@ -523,6 +523,10 @@ class API {
         return this.request(`/tenants/sub-tenants?includeInactive=${includeInactive}`);
     }
 
+    async getTenantInfo(tenantId) {
+        return this.request(`/tenants/${tenantId}`);
+    }
+
     // Tenant API Keys (SUPERADMIN)
     async getApiKeys() {
         return this.request('/tenant-api-keys');

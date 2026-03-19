@@ -335,7 +335,7 @@
                                 </span>
                                 <span class="toggle-switch-label">Allow guest access</span>
                             </label>
-                            <label class="toggle-switch">
+                            <label class="toggle-switch" id="autoRecordingToggle">
                                 <input type="checkbox" id="autoRecording">
                                 <span class="toggle-switch-track">
                                     <span class="toggle-switch-thumb"></span>
@@ -579,7 +579,7 @@
 
                     <!-- Auto Recording Toggle -->
                     <div class="form-group settings-row">
-                        <label class="toggle-switch">
+                        <label class="toggle-switch" id="settingsAutoRecordingToggle">
                             <input type="checkbox" id="settingsAutoRecording">
                             <span class="toggle-switch-track">
                                 <span class="toggle-switch-thumb"></span>
@@ -686,7 +686,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
-    <script src="../../js/config.js"></script>
+    <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>

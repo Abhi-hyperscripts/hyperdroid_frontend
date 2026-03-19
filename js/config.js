@@ -335,6 +335,100 @@ function clearAuthData() {
     removeStoredUser();
     // Also clear organization/license info cache
     localStorage.removeItem('organization_info');
+    localStorage.removeItem(`${STORAGE_PREFIX}tenant_features`);
+}
+
+// ==================== Tenant Feature Gating (JWT-based) ====================
+
+/**
+ * Get license features from the JWT token's license_features claim.
+ * Format: { u: bool (unlocked), k: string (keyType), svc: { Vision: { f: [...], s: bytes, l: {...} } } }
+ * Returns null if no token or no features claim.
+ */
+function getLicenseFeatures() {
+    try {
+        const token = getAuthToken();
+        if (!token) return null;
+        const payload = decodeJwtPayload(token);
+        if (!payload || !payload.license_features) return null;
+        return typeof payload.license_features === 'string'
+            ? JSON.parse(payload.license_features)
+            : payload.license_features;
+    } catch { return null; }
+}
+
+/**
+ * Check if a feature is enabled for a service.
+ * Reads directly from JWT — no API call needed.
+ * Returns true for on-premise/SaaS platform (u=true) or if feature is in the list.
+ * Returns true if no license data (fail-open).
+ * @param {string} serviceName - e.g., 'Vision', 'Drive'
+ * @param {string} featureName - e.g., 'recording', 'captions'
+ * @returns {boolean}
+ */
+function isFeatureEnabled(serviceName, featureName) {
+    const lf = getLicenseFeatures();
+    if (!lf || lf.u) return true; // No data or unlocked = allow all
+    const svc = lf.svc?.[serviceName];
+    if (!svc) return false; // Service not in license
+    const features = svc.f || [];
+    return features.includes(featureName);
+}
+
+/**
+ * Get storage limit for a service (in bytes).
+ * Returns null if unlimited or not available.
+ * @param {string} serviceName - e.g., 'Drive'
+ * @returns {number|null} Storage limit in bytes, or null if unlimited
+ */
+function getStorageLimit(serviceName) {
+    const lf = getLicenseFeatures();
+    if (!lf || lf.u) return null; // Unlimited
+    const svc = lf.svc?.[serviceName];
+    return svc?.s || null;
+}
+
+/**
+ * Fetch tenant features via API (for usage data which isn't in JWT).
+ * Still useful for Drive storage bar showing current usage.
+ */
+async function fetchAndStoreTenantFeatures() {
+    try {
+        const token = getAuthToken();
+        if (!token) return null;
+        const response = await fetch(`${CONFIG.authApiBaseUrl}/tenants/my-features`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) return null;
+        const data = await response.json();
+        if (data.success) {
+            localStorage.setItem(`${STORAGE_PREFIX}tenant_features`, JSON.stringify(data));
+            return data;
+        }
+    } catch (e) {
+        console.warn('[Config] Failed to fetch tenant features:', e.message);
+    }
+    return null;
+}
+
+/**
+ * Get storage usage info for a service (needs API data, not JWT)
+ * @param {string} serviceName - e.g., 'Drive'
+ * @returns {object|null} { used, limit, percentage } or null if unlimited/unavailable
+ */
+function getStorageUsage(serviceName) {
+    try {
+        const cached = localStorage.getItem(`${STORAGE_PREFIX}tenant_features`);
+        if (!cached) return null;
+        const features = JSON.parse(cached);
+        if (!features || features.isUnlocked) return null;
+        const svc = features.services?.[serviceName];
+        if (!svc) return null;
+        const limit = svc.limits?.storage_bytes;
+        if (!limit || limit <= 0) return null;
+        const used = svc.usage?.storage_bytes || 0;
+        return { used, limit, percentage: Math.round((used / limit) * 100) };
+    } catch { return null; }
 }
 
 /**

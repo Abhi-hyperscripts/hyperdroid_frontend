@@ -623,6 +623,17 @@ function showCreateMeetingQuickModal() {
         }
     }
 
+    // License enforcement: hide auto-recording toggle if recording feature not enabled
+    const autoRecToggle = document.getElementById('autoRecordingToggle');
+    if (autoRecToggle) {
+        if (typeof isFeatureEnabled === 'function' && !isFeatureEnabled('Vision', 'recording')) {
+            autoRecToggle.setAttribute('style', 'display:none !important');
+            document.getElementById('autoRecording').checked = false;
+        } else {
+            autoRecToggle.removeAttribute('style');
+        }
+    }
+
     openModal('createMeetingModal');
     fetchAndPopulateUsers();
 }
@@ -1772,6 +1783,10 @@ function loadMoreUsers() {
 
 document.addEventListener('DOMContentLoaded', () => {
     setupInfiniteScroll();
+    // Ensure tenant features are cached for license gating
+    if (typeof getTenantFeatures === 'function' && !getTenantFeatures() && typeof fetchAndStoreTenantFeatures === 'function') {
+        fetchAndStoreTenantFeatures().catch(() => {});
+    }
 });
 
 document.getElementById('userSearchBox')?.addEventListener('input', (e) => {
@@ -3542,7 +3557,17 @@ async function showMeetingSettingsModal(meetingId, type) {
 
         document.getElementById('settingsNotes').value = meeting.notes || '';
         document.getElementById('settingsAllowGuests').checked = meeting.allow_guests || false;
-        document.getElementById('settingsAutoRecording').checked = meeting.auto_recording || false;
+        // License enforcement: hide auto-recording in settings if not enabled
+        const settingsAutoRecToggle = document.getElementById('settingsAutoRecordingToggle');
+        if (settingsAutoRecToggle && typeof isFeatureEnabled === 'function' && !isFeatureEnabled('Vision', 'recording')) {
+            settingsAutoRecToggle.setAttribute('style', 'display:none !important');
+            document.getElementById('settingsAutoRecording').checked = false;
+        } else if (settingsAutoRecToggle) {
+            settingsAutoRecToggle.removeAttribute('style');
+            document.getElementById('settingsAutoRecording').checked = meeting.auto_recording || false;
+        } else {
+            document.getElementById('settingsAutoRecording').checked = meeting.auto_recording || false;
+        }
         document.getElementById('settingsAutoTranscription').checked = meeting.auto_transcription || false;
         document.getElementById('settingsAiCopilot').checked = meeting.ai_support || false;
         if (meeting.meeting_mode) {

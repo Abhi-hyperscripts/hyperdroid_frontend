@@ -403,7 +403,7 @@
                 <!-- Sub-Tenants Tab (SaaS Platform Only) -->
                 <div class="tab-content" id="subtenants">
                     <div class="subtenants-container">
-                        <div class="subtenants-header">
+                        <div class="subtenants-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
                             <div class="subtenants-summary">
                                 <div class="summary-stat">
                                     <div class="summary-stat-icon">
@@ -438,6 +438,10 @@
                                     <div class="summary-stat-label">Expired</div>
                                 </div>
                             </div>
+                            <button class="btn btn-primary" onclick="openModal('activateTenantModal')" style="white-space:nowrap;height:fit-content;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                                Activate Tenant
+                            </button>
                         </div>
 
                         <div class="subtenants-table-container">
@@ -479,6 +483,33 @@
                     </div>
                 </div>
             </main>
+        </div>
+    </div>
+
+    <!-- Activate Tenant Modal -->
+    <div class="modal" id="activateTenantModal">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Activate Sub-Tenant</h3>
+                    <button class="close-btn" onclick="closeModal('activateTenantModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;">Paste the encrypted license key generated from TenantManager. This will create the tenant and its super admin user.</p>
+                    <div class="form-group">
+                        <label>License Key *</label>
+                        <textarea id="activateTenantLicenseKey" rows="6" placeholder="Paste the encrypted license key here..." style="width:100%;resize:vertical;font-family:var(--font-mono,monospace);font-size:12px;padding:10px;border:1px solid var(--border-primary);border-radius:6px;background:var(--bg-tertiary);color:var(--text-primary);"></textarea>
+                    </div>
+                    <div id="activateTenantResult" style="display:none;margin-top:12px;padding:12px;border-radius:6px;font-size:13px;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeModal('activateTenantModal')">Cancel</button>
+                    <button class="btn btn-primary" id="activateTenantBtn" onclick="activateSubTenant()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Activate
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

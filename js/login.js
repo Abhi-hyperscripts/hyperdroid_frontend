@@ -126,6 +126,9 @@ async function handleFormSubmit() {
                 forceRegistrationOnNextLoad();
             }
 
+            // Fetch tenant features for license-based UI gating (non-blocking)
+            fetchAndStoreTenantFeatures().catch(() => {});
+
             // Redirect immediately — full FCM registration happens on home.html / navigation.js
             window.location.href = 'home.html';
         } else {

@@ -371,6 +371,15 @@ async function initializeMeeting() {
         const isHostUser = user && meetingStatus.host_user_id === user.userId;
         window._isHostUser = !!isHostUser;
 
+        // License enforcement: hide recording button if feature not enabled
+        if (typeof isFeatureEnabled === 'function' && !isFeatureEnabled('Vision', 'recording')) {
+            const recordBtn = document.getElementById('recordBtn');
+            if (recordBtn) {
+                recordBtn.setAttribute('style', 'display:none !important');
+                console.log('[License] Recording feature not available on current plan');
+            }
+        }
+
         // Show participants button to all users (host controls are restricted in loadParticipants)
         const participantsBtn = document.getElementById('participantsBtn');
         if (participantsBtn) {
@@ -2123,6 +2132,11 @@ async function toggleScreenShare() {
 
 // Toggle recording
 async function toggleRecording() {
+    // License enforcement: block recording if feature not enabled
+    if (typeof isFeatureEnabled === 'function' && !isFeatureEnabled('Vision', 'recording')) {
+        Toast.warning('Recording is not available on your current plan');
+        return;
+    }
     if (!isRecording) {
         await startRecording();
     } else {

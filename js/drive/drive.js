@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupBrowserNavigation();
     await loadDriveContents();
     initializeSignalR();
+    renderStorageQuotaBar();
 });
 
 // Handle browser back/forward navigation
@@ -1273,5 +1274,49 @@ function showLoading(show) {
 }
 
 // Local showError/showSuccess removed - using unified toast.js instead
+
+// ==================== Storage Quota Bar ====================
+
+/**
+ * Show storage usage bar if tenant has a storage limit (SaaS sub-tenant).
+ * On-premise/platform tenants see nothing (unlimited).
+ */
+function renderStorageQuotaBar() {
+    if (typeof getStorageUsage !== 'function') return;
+    const usage = getStorageUsage('Drive');
+    if (!usage) return; // Unlimited or unavailable
+
+    const formatBytes = (bytes) => {
+        if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(1) + ' GB';
+        if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+        return (bytes / 1024).toFixed(0) + ' KB';
+    };
+
+    // Create or update the quota bar
+    let bar = document.getElementById('storageQuotaBar');
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'storageQuotaBar';
+        bar.style.cssText = 'padding:8px 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border-primary);display:flex;align-items:center;gap:12px;font-size:0.8rem;color:var(--text-secondary);';
+        // Insert after the drive header
+        const header = document.querySelector('.drive-header') || document.querySelector('.page-header');
+        if (header) {
+            header.after(bar);
+        } else {
+            document.querySelector('.main-content')?.prepend(bar);
+        }
+    }
+
+    const pct = usage.percentage;
+    const barColor = pct > 90 ? 'var(--color-error)' : pct > 75 ? 'var(--color-warning)' : 'var(--brand-primary)';
+
+    bar.innerHTML = `
+        <span>Storage:</span>
+        <div style="flex:1;max-width:200px;height:6px;background:var(--bg-tertiary);border-radius:3px;overflow:hidden;">
+            <div style="width:${Math.min(pct, 100)}%;height:100%;background:${barColor};border-radius:3px;transition:width 0.3s;"></div>
+        </div>
+        <span>${formatBytes(usage.used)} / ${formatBytes(usage.limit)} (${pct}%)</span>
+    `;
+}
 
 // toggleUserDropdown is handled by navigation.js

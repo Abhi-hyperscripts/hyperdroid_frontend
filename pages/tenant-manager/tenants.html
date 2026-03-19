@@ -1467,16 +1467,16 @@
                             </div>
                         </div>
 
-                        <!-- Services Selection -->
+                        <!-- Services Selection with Per-Service Config -->
                         <div class="form-group">
                             <div class="services-selection-header">
                                 <label class="form-label">Assigned Services</label>
                                 <span class="select-all" onclick="toggleAllSubTenantServices()">Select All</span>
                             </div>
-                            <div class="services-inline" id="subTenantServicesGrid">
+                            <div id="subTenantServicesGrid" style="display:flex; flex-direction:column; gap:4px;">
                                 <span class="text-muted" style="font-size: 12px;">Loading...</span>
                             </div>
-                            <small class="form-hint">Services available from the parent platform</small>
+                            <small class="form-hint">Services available from the parent platform. Click a service to configure features &amp; limits.</small>
                         </div>
                     </form>
                 </div>
@@ -2928,12 +2928,14 @@
             }
         }
 
+        // Cache of service features keyed by serviceId
+        let serviceFeatureCache = {};
+
         async function loadSubTenantServices(platformId, selectedServiceIds = []) {
             const grid = document.getElementById('subTenantServicesGrid');
             grid.innerHTML = '<span class="text-muted" style="font-size: 12px;">Loading...</span>';
 
             try {
-                // Get parent platform's services
                 const platformServices = await api.getTenantServices(platformId);
                 currentParentPlatformServices = platformServices;
 
@@ -2942,13 +2944,73 @@
                     return;
                 }
 
+                // Load features for all services in parallel
+                const featurePromises = platformServices.map(async (svc) => {
+                    try {
+                        const result = await api.getServiceFeatures(svc.serviceId);
+                        serviceFeatureCache[svc.serviceId] = result.features || result || [];
+                    } catch { serviceFeatureCache[svc.serviceId] = []; }
+                });
+                await Promise.all(featurePromises);
+
                 grid.innerHTML = platformServices.map(service => {
                     const isChecked = selectedServiceIds.includes(service.serviceId);
+                    const features = serviceFeatureCache[service.serviceId] || [];
+                    const svcName = service.serviceName;
+                    const sid = service.serviceId;
+
+                    // Determine which limit fields to show
+                    const showStorage = ['Drive', 'Chat'].includes(svcName);
+                    const showRecordingLimit = svcName === 'Vision';
+
+                    let configHtml = '';
+                    // Features toggles
+                    // Default: recording is OFF for sub-tenants (premium feature)
+                    const defaultOffFeatures = ['recording'];
+                    if (features.length > 0) {
+                        configHtml += `<div style="margin-bottom:6px;"><small style="color:var(--text-secondary);font-weight:600;">Features</small></div>`;
+                        configHtml += features.map(f => {
+                            const isOff = defaultOffFeatures.includes(f.featureName);
+                            return `
+                            <label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:3px;cursor:pointer;">
+                                <input type="checkbox" class="svc-feature" data-service-id="${sid}" data-feature-id="${f.id}" ${isOff ? '' : 'checked'}>
+                                <span>${f.displayName || f.featureName}</span>
+                            </label>
+                            `;
+                        }).join('');
+                    }
+
+                    // Limit fields
+                    if (showStorage || showRecordingLimit) {
+                        configHtml += `<div style="margin-top:8px;margin-bottom:4px;"><small style="color:var(--text-secondary);font-weight:600;">Limits</small></div>`;
+                        configHtml += `<div style="display:flex;gap:8px;flex-wrap:wrap;">`;
+                        if (showStorage) {
+                            configHtml += `
+                                <div style="flex:1;min-width:100px;">
+                                    <label style="font-size:11px;color:var(--text-secondary);">Storage (GB)</label>
+                                    <input type="number" class="form-control svc-limit" data-service-id="${sid}" data-limit="storage_gb" value="20" min="1" style="font-size:12px;padding:4px 6px;height:28px;">
+                                </div>`;
+                        }
+                        if (showRecordingLimit) {
+                            configHtml += `
+                                <div style="flex:1;min-width:100px;">
+                                    <label style="font-size:11px;color:var(--text-secondary);">Recording (hours/month)</label>
+                                    <input type="number" class="form-control svc-limit" data-service-id="${sid}" data-limit="recording_hours" placeholder="Unlimited" min="1" style="font-size:12px;padding:4px 6px;height:28px;">
+                                </div>`;
+                        }
+                        configHtml += `</div>`;
+                    }
+
                     return `
-                        <label class="service-checkbox-item ${isChecked ? 'checked' : ''}" data-service-id="${service.serviceId}">
-                            <input type="checkbox" name="subTenantService" value="${service.serviceId}" ${isChecked ? 'checked' : ''} onchange="toggleServiceCheckbox(this)">
-                            <span class="service-name">${service.serviceName}</span>
-                        </label>
+                        <div class="svc-config-block" data-service-id="${sid}" style="border:1px solid var(--border-primary);border-radius:6px;overflow:hidden;${isChecked ? '' : 'opacity:0.5;'}">
+                            <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;margin:0;background:var(--bg-tertiary);">
+                                <input type="checkbox" name="subTenantService" value="${sid}" ${isChecked ? 'checked' : ''} onchange="toggleServiceConfig(this)">
+                                <span style="font-size:13px;font-weight:500;">${svcName}</span>
+                            </label>
+                            <div class="svc-config-body" style="padding:8px 10px;display:${isChecked ? 'block' : 'none'};border-top:1px solid var(--border-primary);background:var(--bg-secondary);">
+                                ${configHtml || '<small style="color:var(--text-secondary);">No configurable features or limits</small>'}
+                            </div>
+                        </div>
                     `;
                 }).join('');
             } catch (error) {
@@ -2957,36 +3019,88 @@
             }
         }
 
+        function toggleServiceConfig(checkbox) {
+            const block = checkbox.closest('.svc-config-block');
+            const body = block.querySelector('.svc-config-body');
+            if (checkbox.checked) {
+                block.style.opacity = '1';
+                body.style.display = 'block';
+            } else {
+                block.style.opacity = '0.5';
+                body.style.display = 'none';
+            }
+        }
+
         function toggleAllSubTenantServices() {
-            const checkboxes = document.querySelectorAll('#subTenantServicesGrid input[type="checkbox"]');
+            const checkboxes = document.querySelectorAll('#subTenantServicesGrid input[name="subTenantService"]');
             const allChecked = Array.from(checkboxes).every(cb => cb.checked);
 
             checkboxes.forEach(cb => {
                 cb.checked = !allChecked;
-                toggleServiceCheckbox(cb);
+                toggleServiceConfig(cb);
             });
 
             const btn = document.querySelector('#subTenantModal .services-selection-header .select-all');
             btn.textContent = allChecked ? 'Select All' : 'Deselect All';
         }
 
+        function collectServiceConfigs() {
+            const configs = [];
+            const checkedServices = document.querySelectorAll('#subTenantServicesGrid input[name="subTenantService"]:checked');
+
+            checkedServices.forEach(cb => {
+                const sid = cb.value;
+                const block = cb.closest('.svc-config-block');
+
+                // Collect enabled feature IDs
+                const enabledFeatureIds = [];
+                block.querySelectorAll('.svc-feature:checked').forEach(f => {
+                    enabledFeatureIds.push(f.dataset.featureId);
+                });
+
+                // Collect limits
+                let storageLimitBytes = null;
+                const customLimits = {};
+
+                block.querySelectorAll('.svc-limit').forEach(input => {
+                    const val = input.value ? parseFloat(input.value) : null;
+                    if (val === null) return;
+
+                    if (input.dataset.limit === 'storage_gb') {
+                        storageLimitBytes = Math.round(val * 1073741824); // GB to bytes
+                    } else if (input.dataset.limit === 'recording_hours') {
+                        customLimits['recording_seconds'] = String(Math.round(val * 3600)); // hours to seconds
+                    }
+                });
+
+                configs.push({
+                    serviceId: sid,
+                    canRead: true,
+                    canWrite: true,
+                    storageLimitBytes: storageLimitBytes,
+                    customLimits: Object.keys(customLimits).length > 0 ? customLimits : null,
+                    enabledFeatureIds: enabledFeatureIds.length > 0 ? enabledFeatureIds : null
+                });
+            });
+
+            return configs;
+        }
+
         async function saveSubTenant() {
             const tenantId = document.getElementById('subTenantId').value;
             const parentPlatformId = document.getElementById('parentPlatformId').value;
 
-            const selectedServiceIds = Array.from(
-                document.querySelectorAll('#subTenantServicesGrid input[type="checkbox"]:checked')
-            ).map(cb => cb.value);
+            const serviceConfigs = collectServiceConfigs();
 
             const contactEmail = document.getElementById('subTenantEmail').value;
             const tenantData = {
                 tenantName: document.getElementById('subTenantName').value,
                 contactEmail: contactEmail || null,
-                deploymentType: 'saas',  // Sub-tenants are also saas type
+                deploymentType: 'saas',
                 maxUsers: parseInt(document.getElementById('subTenantMaxUsers').value),
                 superAdminEmail: contactEmail || null,
-                parentTenantId: parentPlatformId,  // Link to parent platform
-                serviceIds: selectedServiceIds
+                parentTenantId: parentPlatformId,
+                serviceConfigs: serviceConfigs
             };
 
             try {
@@ -2996,7 +3110,6 @@
                     await api.createTenant(tenantData);
                 }
                 closeModal('subTenantModal');
-                // Reload sub-tenants for the parent platform
                 await loadSubTenants(parentPlatformId);
                 Toast.success('Tenant saved successfully');
             } catch (error) {
