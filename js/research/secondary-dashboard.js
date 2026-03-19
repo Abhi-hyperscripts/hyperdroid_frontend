@@ -65,6 +65,9 @@ async function loadProjects() {
         params.set('page', currentPage);
         params.set('pageSize', PAGE_SIZE);
         params.set('project_type', 'secondary');
+        const searchInput = document.getElementById('projectSearch');
+        const searchTerm = searchInput ? searchInput.value.trim() : '';
+        if (searchTerm) params.set('search', searchTerm);
 
         const response = await api.request(`/research/projects?${params}`);
 
@@ -422,6 +425,19 @@ async function handleEditProject(e) {
         console.error('Failed to update project:', err);
         showToast('Failed to update project', 'error');
     }
+}
+
+// ============================================
+// Search
+// ============================================
+
+let searchTimeout = null;
+function handleProjectSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        currentPage = 1;
+        loadProjects();
+    }, 300);
 }
 
 // ============================================

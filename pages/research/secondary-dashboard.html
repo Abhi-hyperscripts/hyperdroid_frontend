@@ -55,6 +55,16 @@
             </button>
         </div>
 
+        <!-- Search Bar -->
+        <div style="margin-bottom: 16px;">
+            <div style="position:relative; max-width:400px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); pointer-events:none;">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="projectSearch" placeholder="Search projects..." oninput="handleProjectSearch()" style="width:100%; padding:10px 12px 10px 38px; border:1px solid var(--border-primary); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px; outline:none;" onfocus="this.style.borderColor='var(--border-focus)'" onblur="this.style.borderColor='var(--border-primary)'">
+            </div>
+        </div>
+
         <!-- Projects Grid -->
         <div id="projectsGrid">
             <div class="research-loading">
