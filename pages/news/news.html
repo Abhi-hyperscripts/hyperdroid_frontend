@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>NewsWire - AI-Powered Business News & Market Intelligence | Ragenaizer</title>
+    <meta name="description" content="Ragenaizer NewsWire delivers AI-curated business news, technology updates, startup funding signals, and market intelligence. Real-time news aggregation with AI-generated summaries, category filtering, and business signal detection. Updated every 5 hours.">
+
+    <!-- SEO Meta Tags -->
+    <meta name="keywords" content="AI news aggregation, business news, technology news, startup funding, market intelligence, AI-curated news, business signals, IPO news, acquisition news, real-time news, India news, global news, finance news, sports news, science news, health news">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/news.html">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer NewsWire">
+    <meta property="og:url" content="https://ragenaizer.com/pages/news.html">
+    <meta property="og:title" content="NewsWire - AI-Powered Business News & Market Intelligence">
+    <meta property="og:description" content="AI-curated news with business signal detection. Funding, acquisitions, IPOs, regulations. Updated every 5 hours.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-news.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ragenaizer">
+    <meta name="twitter:title" content="Ragenaizer NewsWire - AI Business News">
+    <meta name="twitter:description" content="AI-curated business news with funding, acquisition & market signals. Free. Updated every 5 hours.">
+    <meta name="twitter:image" content="https://ragenaizer.com/assets/og-news.png">
+
+    <meta name="theme-color" content="#0f1118">
+
+    <!-- Schema: NewsMediaOrganization -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "NewsMediaOrganization",
+        "name": "Ragenaizer NewsWire",
+        "url": "https://ragenaizer.com/pages/news.html",
+        "logo": "https://ragenaizer.com/assets/brand_logo.png",
+        "description": "AI-powered news aggregation with business signal detection and market intelligence.",
+        "sameAs": ["https://twitter.com/ragenaizer"]
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Electrolize&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script>document.write('<link rel="stylesheet" href="../../css/news.css?v=' + CACHE_VERSION + '">');</script>
+</head>
+<body class="nw-page nw-dark">
+
+    <!-- Header -->
+    <header class="nw-header">
+        <a href="/index.html" class="nw-brand">
+            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="nw-brand-logo">
+            <span class="nw-brand-sub">NewsWire</span>
+        </a>
+        <div class="nw-header-right">
+            <div class="nw-live">
+                <span class="nw-live-dot"></span>
+                LIVE
+            </div>
+            <span class="nw-date-display" id="liveTime"></span>
+            <button class="nw-theme-btn" id="themeToggle" onclick="toggleTheme()">Light</button>
+        </div>
+    </header>
+
+    <!-- Filters -->
+    <div class="nw-filters">
+        <div class="nw-filter-group">
+            <label>COUNTRY</label>
+            <select class="nw-filter-select" id="countryFilter" onchange="filterCountry()">
+                <option value="">All Countries</option>
+                <option value="IN">India</option>
+                <option value="US">United States</option>
+                <option value="GB">United Kingdom</option>
+                <option value="CN">China</option>
+                <option value="AE">UAE</option>
+            </select>
+        </div>
+        <div class="nw-filter-group">
+            <label>SIGNAL</label>
+            <select class="nw-filter-select" id="signalFilter" onchange="filterSignal()">
+                <option value="">All Signals</option>
+                <option value="funding">Funding</option>
+                <option value="acquisition">Acquisition</option>
+                <option value="ipo">IPO</option>
+                <option value="regulation">Regulation</option>
+                <option value="product_launch">Product Launch</option>
+                <option value="partnership">Partnership</option>
+                <option value="hiring">Hiring</option>
+                <option value="expansion">Expansion</option>
+            </select>
+        </div>
+        <button class="nw-clear-btn" onclick="clearFilters()">Clear filters</button>
+        <span class="nw-article-count" id="articleCount"></span>
+    </div>
+
+    <!-- Categories -->
+    <div class="nw-categories" id="categoryBar">
+        <button class="nw-cat active" onclick="filterCategory(this, '')">All</button>
+    </div>
+
+    <!-- Content -->
+    <div class="nw-content">
+        <!-- Loading -->
+        <div class="nw-loading" id="loadingState">
+            <div class="nw-spinner"></div>
+            <p>Loading news...</p>
+        </div>
+
+        <!-- Empty -->
+        <div class="nw-empty" id="emptyState">
+            <p style="font-size:1.2rem;margin-bottom:8px;">No articles found</p>
+            <p>Try changing your filters or check back soon</p>
+        </div>
+
+        <!-- Articles -->
+        <div id="newsGrid"></div>
+
+        <!-- Load More -->
+        <div class="nw-load-more" id="loadMoreWrap">
+            <button class="nw-load-more-btn" onclick="loadMore()">Load More</button>
+        </div>
+    </div>
+
+    <script src="/js/config.js"></script>
+    <script>document.write('<script src="../../js/news/news.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</body>
+</html>
