@@ -360,6 +360,14 @@ body.dashboard .navbar {
     color: white;
 }
 
+.bento-card.pms .app-icon {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+}
+
+.bento-card.pms .app-icon svg {
+    color: white;
+}
+
 .bento-card.research .app-icon {
     background: linear-gradient(135deg, var(--brand-secondary), #a78bfa);
 }
