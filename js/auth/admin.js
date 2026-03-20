@@ -340,13 +340,15 @@ function initializeUser() {
 }
 
 async function loadAllData() {
+    // checkSubTenantsVisibility must run first to set isSaaSPlatformAdmin
+    // before loadServices renders cards (which conditionally show infra details)
+    await checkSubTenantsVisibility();
     await Promise.all([
         loadServices(),
         loadUsers(),
         loadRoles(),
         loadLicense(),
-        loadApiKeys(),
-        checkSubTenantsVisibility()
+        loadApiKeys()
     ]);
 }
 
@@ -454,6 +456,10 @@ function renderServiceCard(service) {
     const lastSeen = service.last_seen ? formatRelativeTime(new Date(service.last_seen)) : 'Never';
     const serviceIcon = getServiceIcon(service.name);
 
+    // Only show infrastructure details (endpoint, ports) for platform admins
+    // Sub-tenant admins only see service name, status, and last seen
+    const showInfraDetails = isSaaSPlatformAdmin;
+
     return `
         <div class="service-card ${statusClass}">
             <div class="service-card-accent"></div>
@@ -474,6 +480,7 @@ function renderServiceCard(service) {
                     </div>
                 </div>
                 <div class="service-details">
+                    ${showInfraDetails ? `
                     <div class="service-detail service-detail-full">
                         <span class="service-detail-label">Endpoint</span>
                         <span class="service-detail-value service-detail-endpoint">${service.endpoint || '-'}</span>
@@ -486,6 +493,7 @@ function renderServiceCard(service) {
                         <span class="service-detail-label">HTTP Port</span>
                         <span class="service-detail-value">${service.http_port || '-'}</span>
                     </div>
+                    ` : ''}
                     <div class="service-detail">
                         <span class="service-detail-label">Last Seen</span>
                         <span class="service-detail-value last-seen">${lastSeen}</span>
@@ -1601,10 +1609,15 @@ async function loadLicense() {
         document.getElementById('licenseExpiryDate').textContent = formatLicenseDate(response.expiryDate);
         document.getElementById('licenseMaxUsers').textContent = response.maxUsers === -1 ? 'Unlimited' : (response.maxUsers || '-');
 
-        // Sub-tenants only relevant for SaaS deployments
+        // Sub-tenants display logic:
+        // - On-premise: N/A (sub-tenants not applicable)
+        // - SaaS Platform admin (canCreateSubTenants=true): show actual count or Unlimited
+        // - SaaS Sub-tenant (canCreateSubTenants=false): show 0 (they can't create sub-tenants)
         const deploymentType = (response.deploymentType || '').toLowerCase();
         if (deploymentType === 'on-premise' || deploymentType === 'on_premise') {
             document.getElementById('licenseMaxSubTenants').textContent = 'N/A';
+        } else if (response.canCreateSubTenants === false) {
+            document.getElementById('licenseMaxSubTenants').textContent = '0';
         } else {
             document.getElementById('licenseMaxSubTenants').textContent = response.maxSubTenants === -1 ? 'Unlimited' : (response.maxSubTenants || '0');
         }
