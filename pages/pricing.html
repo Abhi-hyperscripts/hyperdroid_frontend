@@ -51,58 +51,160 @@
 
     <style>
         /* ==========================================
-           PRICING PAGE STYLES
+           PRICING PAGE - Premium Design (matches Login)
            ========================================== */
 
         .pricing-page {
             min-height: 100vh;
-            background: var(--bg-primary);
+            background: #050810;
             color: var(--text-primary);
             font-family: 'Inter', sans-serif;
-        }
-
-        .pricing-hero {
-            text-align: center;
-            padding: 8rem 2rem 3rem;
+            overflow-x: hidden;
             position: relative;
         }
 
-        .pricing-hero::before {
+        /* ── Animated gradient mesh background ── */
+        .pricing-bg {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .pricing-bg .gradient-mesh {
+            position: absolute;
+            inset: 0;
+        }
+
+        .pricing-bg .gradient-mesh::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 800px;
-            height: 500px;
-            background: radial-gradient(ellipse at center, rgba(var(--brand-primary-rgb), 0.12) 0%, transparent 70%);
-            pointer-events: none;
-            z-index: 0;
+            width: 140%;
+            height: 140%;
+            top: -20%;
+            left: -20%;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 30%, rgba(var(--brand-primary-rgb), 0.35) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 80% at 80% 15%, rgba(139, 92, 246, 0.3) 0%, transparent 45%),
+                radial-gradient(ellipse 50% 60% at 60% 75%, rgba(6, 182, 212, 0.2) 0%, transparent 45%),
+                radial-gradient(ellipse 80% 40% at 30% 85%, rgba(var(--brand-primary-rgb), 0.25) 0%, transparent 50%);
+            animation: pricingGradientShift 25s ease-in-out infinite;
+        }
+
+        .pricing-bg .gradient-mesh::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.06) 0%, transparent 25%),
+                radial-gradient(circle at 30% 60%, rgba(var(--brand-primary-rgb), 0.12) 0%, transparent 30%);
+            animation: pricingGradientPulse 15s ease-in-out infinite;
+        }
+
+        @keyframes pricingGradientShift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            25% { transform: translate(5%, -3%) rotate(1deg) scale(1.02); }
+            50% { transform: translate(-3%, 5%) rotate(-1deg) scale(0.98); }
+            75% { transform: translate(3%, 2%) rotate(0.5deg) scale(1.01); }
+        }
+
+        @keyframes pricingGradientPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* ── Grid overlay ── */
+        .pricing-bg .grid-overlay {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at 50% 40%, black 20%, transparent 75%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% 40%, black 20%, transparent 75%);
+        }
+
+        /* ── Floating geometric shapes ── */
+        .pricing-bg .float-shape-1 {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 50%;
+            top: 5%;
+            right: -120px;
+            animation: pricingFloatRotate 30s linear infinite;
+        }
+
+        .pricing-bg .float-shape-2 {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            bottom: 10%;
+            left: -80px;
+            animation: pricingFloatRotate 25s linear infinite reverse;
+        }
+
+        .pricing-bg .float-shape-3 {
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 50%;
+            top: 55%;
+            right: 8%;
+            animation: pricingFloatRotate 35s linear infinite;
+        }
+
+        @keyframes pricingFloatRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* ── Hero Section ── */
+        .pricing-hero {
+            text-align: center;
+            padding: 9rem 2rem 3rem;
+            position: relative;
+            z-index: 1;
         }
 
         .pricing-hero h1 {
-            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            font-size: clamp(2.4rem, 5vw, 3.8rem);
             font-weight: 800;
-            color: var(--text-primary);
             margin-bottom: 0.75rem;
-            position: relative;
-            z-index: 1;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: pricingFadeSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
         }
 
         .pricing-hero .subtitle {
             font-size: 1.15rem;
-            color: var(--text-secondary);
-            position: relative;
-            z-index: 1;
+            color: rgba(255, 255, 255, 0.6);
             margin-bottom: 0;
+            animation: pricingFadeSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
         }
 
-        /* Plans Grid */
+        @keyframes pricingFadeSlideIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Plans Grid ── */
         .pricing-grid-wrapper {
             max-width: 1300px;
             margin: 0 auto;
-            padding: 0 2rem 5rem;
+            padding: 0 2rem 6rem;
+            position: relative;
+            z-index: 1;
         }
 
         .pricing-grid {
@@ -110,73 +212,111 @@
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1.5rem;
             align-items: stretch;
+            padding-top: 16px;
         }
 
-        /* Plan Card */
+        /* ── Plan Card - Glassmorphism ── */
         .plan-card {
             background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 2rem;
             display: flex;
             flex-direction: column;
             position: relative;
-            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-            backdrop-filter: blur(12px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+            animation: pricingCardReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+        }
+
+        /* Subtle inner gradient on cards */
+        .plan-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            border-radius: 20px;
+        }
+
+        .plan-card:nth-child(1) { animation-delay: 0.1s; }
+        .plan-card:nth-child(2) { animation-delay: 0.2s; }
+        .plan-card:nth-child(3) { animation-delay: 0.3s; }
+        .plan-card:nth-child(4) { animation-delay: 0.4s; }
+        .plan-card:nth-child(5) { animation-delay: 0.5s; }
+
+        @keyframes pricingCardReveal {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .plan-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+            transform: translateY(-6px);
+            border-color: rgba(255, 255, 255, 0.18);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
         }
 
         .plan-card.highlighted {
-            border-color: var(--brand-primary);
-            background: rgba(var(--brand-primary-rgb), 0.06);
-            box-shadow: 0 0 30px rgba(var(--brand-primary-rgb), 0.1);
+            border-color: rgba(var(--brand-primary-rgb), 0.5);
+            background: rgba(var(--brand-primary-rgb), 0.08);
+            box-shadow: 0 0 40px rgba(var(--brand-primary-rgb), 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+
+        .plan-card.highlighted::before {
+            background: linear-gradient(135deg, rgba(var(--brand-primary-rgb), 0.1) 0%, transparent 60%);
         }
 
         .plan-card.highlighted:hover {
-            border-color: var(--brand-primary-light);
-            box-shadow: 0 12px 40px rgba(var(--brand-primary-rgb), 0.2);
+            border-color: rgba(var(--brand-primary-rgb), 0.7);
+            box-shadow: 0 20px 60px rgba(var(--brand-primary-rgb), 0.2), 0 0 40px rgba(var(--brand-primary-rgb), 0.15);
         }
 
-        /* Badge */
+        /* ── Badge ── */
         .plan-badge {
             position: absolute;
-            top: -12px;
+            top: -13px;
             left: 50%;
             transform: translateX(-50%);
+            z-index: 2;
             background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
             color: #fff;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 700;
-            padding: 0.3rem 1rem;
+            padding: 0.3rem 1.2rem;
             border-radius: 20px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
             white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(var(--brand-primary-rgb), 0.3);
         }
 
         .plan-card-header {
             text-align: center;
             margin-bottom: 1.5rem;
+            min-height: 130px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .plan-name {
             font-size: 1.3rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: rgba(255, 255, 255, 0.95);
             margin-bottom: 0.75rem;
         }
 
         .plan-price {
             font-size: 2.5rem;
             font-weight: 800;
-            color: var(--text-primary);
             line-height: 1;
             margin-bottom: 0.25rem;
+            background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.85) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .plan-price .currency {
@@ -189,31 +329,30 @@
         .plan-price .per-unit {
             font-size: 0.9rem;
             font-weight: 500;
-            color: var(--text-secondary);
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.5);
         }
 
         .plan-billing {
             font-size: 0.8rem;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.5);
             margin-bottom: 0.25rem;
         }
 
         .plan-min-seats {
             font-size: 0.8rem;
-            color: var(--text-secondary);
-            opacity: 0.8;
+            color: rgba(255, 255, 255, 0.45);
         }
 
         .plan-description {
             font-size: 0.9rem;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.55);
             text-align: center;
             line-height: 1.5;
             margin-bottom: 1.5rem;
             min-height: 2.7rem;
         }
 
-        /* Features List */
+        /* ── Features List ── */
         .plan-features {
             list-style: none;
             padding: 0;
@@ -227,95 +366,129 @@
             gap: 0.6rem;
             padding: 0.4rem 0;
             font-size: 0.88rem;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.6);
             line-height: 1.4;
         }
 
-        .plan-features li svg {
+        .plan-features li {
+            justify-content: flex-start;
+        }
+
+        /* Service icon (left) */
+        .plan-features li > svg:first-child {
             width: 16px;
             height: 16px;
             min-width: 16px;
             margin-top: 2px;
+            color: rgba(var(--brand-primary-rgb), 0.7);
+        }
+
+        /* Service name (middle, takes remaining space) */
+        .plan-features li > span {
+            flex: 1;
+        }
+
+        /* Check/cross icon (right) */
+        .plan-features li > svg:last-child {
+            width: 14px;
+            height: 14px;
+            min-width: 14px;
+            margin-left: auto;
+        }
+
+        .plan-features li.feature-included > svg.icon-check {
             color: var(--color-success);
         }
 
-        /* Annual Cost Breakdown */
+        .plan-features li.feature-excluded {
+            opacity: 0.35;
+        }
+
+        .plan-features li.feature-excluded > svg.icon-cross {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* ── Annual Cost Breakdown ── */
         .plan-cost-breakdown {
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 0.85rem 1rem;
             margin-bottom: 1.5rem;
             font-size: 0.8rem;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.5);
             line-height: 1.6;
             text-align: center;
+            backdrop-filter: blur(8px);
         }
 
         .plan-cost-breakdown .cost-total {
             font-weight: 700;
-            color: var(--text-primary);
+            color: rgba(255, 255, 255, 0.95);
             font-size: 0.9rem;
         }
 
-        /* CTA Button */
+        /* ── CTA Button ── */
         .plan-cta {
             display: block;
             width: 100%;
             padding: 0.85rem 1.5rem;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 0.95rem;
             font-weight: 600;
             text-align: center;
             text-decoration: none;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             border: none;
         }
 
         .plan-cta.primary {
             background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
             color: #fff;
+            box-shadow: 0 4px 16px rgba(var(--brand-primary-rgb), 0.2);
         }
 
         .plan-cta.primary:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 16px rgba(var(--brand-primary-rgb), 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(var(--brand-primary-rgb), 0.35);
         }
 
         .plan-cta.secondary {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-primary);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .plan-cta.secondary:hover {
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.1);
             border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
         }
 
         .plan-cta.enterprise {
             background: transparent;
-            color: var(--brand-primary-light);
-            border: 1px solid var(--brand-primary);
+            color: rgba(var(--brand-primary-rgb), 0.9);
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.4);
         }
 
         .plan-cta.enterprise:hover {
-            background: rgba(var(--brand-primary-rgb), 0.1);
+            background: rgba(var(--brand-primary-rgb), 0.08);
+            border-color: rgba(var(--brand-primary-rgb), 0.6);
+            transform: translateY(-2px);
         }
 
-        /* Loading State */
+        /* ── Loading State ── */
         .pricing-loading {
             text-align: center;
             padding: 4rem 2rem;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.5);
         }
 
         .pricing-loading .spinner {
             width: 40px;
             height: 40px;
-            border: 3px solid rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.08);
             border-top-color: var(--brand-primary);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
@@ -326,7 +499,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Error State */
+        /* ── Error State ── */
         .pricing-error {
             text-align: center;
             padding: 4rem 2rem;
@@ -335,34 +508,39 @@
 
         .pricing-error button {
             margin-top: 1rem;
-            background: var(--brand-primary);
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
             color: #fff;
             border: none;
-            padding: 0.6rem 1.5rem;
-            border-radius: 8px;
+            padding: 0.7rem 1.8rem;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
+            transition: all 0.2s ease;
         }
 
-        /* Divider */
+        .pricing-error button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(var(--brand-primary-rgb), 0.3);
+        }
+
+        /* ── Divider ── */
         .features-divider {
             height: 1px;
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.06);
             margin: 0.5rem 0;
         }
 
         .features-section-label {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.4);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
             margin-top: 0.6rem;
             margin-bottom: 0.2rem;
-            opacity: 0.7;
         }
 
-        /* Responsive */
+        /* ── Responsive ── */
         @media (max-width: 768px) {
             .pricing-hero {
                 padding: 7rem 1.5rem 2rem;
@@ -388,47 +566,25 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
-
-        /* Light theme adjustments */
-        [data-theme="light"] .plan-card {
-            background: rgba(0, 0, 0, 0.02);
-            border-color: rgba(0, 0, 0, 0.08);
-        }
-
-        [data-theme="light"] .plan-card:hover {
-            border-color: rgba(0, 0, 0, 0.15);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
-        }
-
-        [data-theme="light"] .plan-card.highlighted {
-            background: rgba(var(--brand-primary-rgb), 0.04);
-            border-color: var(--brand-primary);
-        }
-
-        [data-theme="light"] .plan-cost-breakdown {
-            background: rgba(0, 0, 0, 0.03);
-            border-color: rgba(0, 0, 0, 0.06);
-        }
-
-        [data-theme="light"] .plan-cta.secondary {
-            background: rgba(0, 0, 0, 0.05);
-            color: var(--text-primary);
-            border-color: rgba(0, 0, 0, 0.12);
-        }
-
-        [data-theme="light"] .plan-cta.secondary:hover {
-            background: rgba(0, 0, 0, 0.08);
-        }
     </style>
 </head>
 <body class="landing-page login-page pricing-page">
+    <!-- Animated Background (matches Login page) -->
+    <div class="pricing-bg">
+        <div class="gradient-mesh"></div>
+        <div class="grid-overlay"></div>
+        <div class="float-shape-1"></div>
+        <div class="float-shape-2"></div>
+        <div class="float-shape-3"></div>
+    </div>
+
     <!-- Navigation -->
     <div id="navbar"></div>
 
     <!-- Hero Section -->
     <div class="pricing-hero">
         <h1>Simple, transparent pricing</h1>
-        <p class="subtitle">Per user per month, billed annually</p>
+        <p class="subtitle">Per user per month, billed annually. No hidden fees.</p>
     </div>
 
     <!-- Plans Grid -->
@@ -452,42 +608,110 @@
             return '\u20B9' + Number(amount).toLocaleString('en-IN', { maximumFractionDigits: 0 });
         }
 
-        function parseServiceConfigs(serviceConfigsStr) {
-            if (!serviceConfigsStr) return [];
+        // Human-readable labels for service names
+        const SERVICE_LABELS = {
+            'vision': 'Vision', 'Vision': 'Vision',
+            'chat': 'Chat', 'Chat': 'Chat',
+            'drive': 'Drive', 'Drive': 'Drive',
+            'hrms': 'HRMS', 'HRMS': 'HRMS',
+            'pms': 'PMS', 'PMS': 'PMS',
+            'crm': 'CRM', 'CRM': 'CRM',
+            'research': 'Research', 'Research': 'Research',
+            'aiengine': 'AI Engine', 'AIEngine': 'AI Engine'
+        };
+
+        // Human-readable labels for feature keys
+        const FEATURE_LABELS = {
+            'chunked_upload': 'Chunked Upload',
+            'sharing': 'File Sharing',
+            'captions': 'Live Captions',
+            'screen_sharing': 'Screen Sharing',
+            'recording': 'Meeting Recording',
+            'virtual_backgrounds': 'Virtual Backgrounds',
+            'messaging': 'Team Messaging',
+            'file_sharing': 'File Sharing',
+            'threads': 'Threads',
+            'attendance': 'Attendance',
+            'leave': 'Leave Management',
+            'payroll': 'Payroll',
+            'employees': 'Employee Management',
+            'time_tracking': 'Time Tracking',
+            'timesheets': 'Timesheets',
+            'tasks': 'Task Management',
+            'clients': 'Client Management',
+            'projects': 'Project Management',
+            'leads': 'Lead Management',
+            'deals': 'Deal Pipeline',
+            'contacts': 'Contact Management'
+        };
+
+        function humanize(str) {
+            return FEATURE_LABELS[str] || str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        // Internal services that shouldn't be shown on pricing cards
+        const HIDDEN_SERVICES = ['payment', 'notification', 'authentication', 'auth', 'gateway', 'billing'];
+
+        // Parse a plan's serviceConfigs into a Set of included service labels + Drive storage
+        function getPlanServices(serviceConfigsStr) {
+            const result = { included: new Set(), driveGB: null };
+            if (!serviceConfigsStr) return result;
             try {
                 const configs = typeof serviceConfigsStr === 'string'
-                    ? JSON.parse(serviceConfigsStr)
-                    : serviceConfigsStr;
-                const features = [];
+                    ? JSON.parse(serviceConfigsStr) : serviceConfigsStr;
                 for (const [service, config] of Object.entries(configs)) {
-                    if (config.features && Array.isArray(config.features)) {
-                        config.features.forEach(f => {
-                            features.push({ service, feature: f });
-                        });
-                    }
-                    if (config.limits) {
+                    if (HIDDEN_SERVICES.includes(service.toLowerCase())) continue;
+                    const label = SERVICE_LABELS[service] || service;
+                    result.included.add(label);
+                    if (label.toLowerCase() === 'drive' && config.limits) {
                         for (const [key, value] of Object.entries(config.limits)) {
-                            let label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-                            if (key === 'storage_bytes' && typeof value === 'number') {
-                                const gb = (value / (1024 * 1024 * 1024)).toFixed(0);
-                                features.push({ service, feature: `${gb} GB Storage` });
-                            } else if (typeof value === 'number') {
-                                features.push({ service, feature: `${label}: ${value.toLocaleString('en-IN')}` });
-                            } else {
-                                features.push({ service, feature: `${label}: ${value}` });
+                            const lk = key.toLowerCase();
+                            const num = Number(value);
+                            if (!isNaN(num) && (lk.includes('storage') || lk === 'storage_bytes')) {
+                                result.driveGB = (lk === 'storage_bytes' || lk === 'storagebytes')
+                                    ? (num / (1024 * 1024 * 1024)).toFixed(0) : num;
                             }
                         }
                     }
                 }
-                return features;
-            } catch {
-                return [];
-            }
+            } catch {}
+            return result;
+        }
+
+        // Build master service list from all plans (preserves order of first appearance)
+        function buildMasterServiceList(plans) {
+            const seen = new Set();
+            const master = [];
+            plans.forEach(plan => {
+                const { included } = getPlanServices(plan.serviceConfigs);
+                included.forEach(label => {
+                    if (!seen.has(label)) {
+                        seen.add(label);
+                        master.push(label);
+                    }
+                });
+            });
+            return master;
         }
 
         function getCheckSVG() {
-            return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+            return '<svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
         }
+
+        function getCrossSVG() {
+            return '<svg class="icon-cross" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        }
+
+        const SERVICE_ICONS = {
+            'Vision': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
+            'Chat': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+            'Drive': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>',
+            'HRMS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
+            'CRM': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+            'PMS': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
+            'Research': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+            'AI Engine': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4v1a1 1 0 001 1h1a4 4 0 010 8h-1a1 1 0 00-1 1v1a4 4 0 01-8 0v-1a1 1 0 00-1-1H6a4 4 0 010-8h1a1 1 0 001-1V6a4 4 0 014-4z"/></svg>'
+        };
 
         function getPriceDisplay(plan) {
             if (plan.isTrial) {
@@ -522,24 +746,7 @@
         function getMinSeatsLabel(plan) {
             if (plan.isTrial) return '';
             if (plan.pricePerUserMonthly === 0) return '';
-            const maxLabel = plan.maxSeats === -1 ? '+ seats' : `\u2013${plan.maxSeats} seats`;
-            return `${plan.minSeats}${maxLabel.startsWith('+') ? '' : ''} ${maxLabel}`;
-        }
-
-        function getCostBreakdown(plan) {
-            if (plan.isTrial || plan.pricePerUserMonthly === 0) return '';
-            const base = plan.baseAnnualAmount;
-            const gst = plan.gstAmount;
-            const total = plan.totalAnnualAmount;
-            const gstPct = Number(plan.gstPercentage);
-
-            return `
-                <div class="plan-cost-breakdown">
-                    ${plan.minSeats} users &times; ${formatINR(plan.pricePerUserMonthly)} &times; 12 months = ${formatINR(base)}<br>
-                    + ${gstPct}% GST = ${formatINR(gst)}<br>
-                    <span class="cost-total">Total: ${formatINR(total)}/year</span>
-                </div>
-            `;
+            return `Min ${plan.minSeats} seats`;
         }
 
         function renderPlans(plans) {
@@ -547,11 +754,15 @@
                 return '<div class="pricing-error"><p>No plans available at the moment.</p></div>';
             }
 
+            // Build master list of all services across all plans
+            const masterList = buildMasterServiceList(plans);
+
             let html = '<div class="pricing-grid">';
 
             plans.forEach(plan => {
-                const features = parseServiceConfigs(plan.serviceConfigs);
+                const planServices = getPlanServices(plan.serviceConfigs);
                 const isHighlighted = plan.highlight;
+                const isEnterprise = !plan.isTrial && plan.pricePerUserMonthly === 0;
 
                 html += `
                     <div class="plan-card ${isHighlighted ? 'highlighted' : ''}">
@@ -568,33 +779,30 @@
                         <ul class="plan-features">
                 `;
 
-                // Group features by service
-                const grouped = {};
-                features.forEach(f => {
-                    if (!grouped[f.service]) grouped[f.service] = [];
-                    grouped[f.service].push(f.feature);
-                });
-
-                let serviceIndex = 0;
-                for (const [service, feats] of Object.entries(grouped)) {
-                    if (serviceIndex > 0) {
-                        html += '<div class="features-divider"></div>';
-                    }
-                    html += `<div class="features-section-label">${service}</div>`;
-                    feats.forEach(feat => {
-                        html += `<li>${getCheckSVG()}<span>${feat}</span></li>`;
+                if (isEnterprise) {
+                    // Enterprise: show all as included
+                    masterList.forEach(service => {
+                        const icon = SERVICE_ICONS[service] || getCheckSVG();
+                        const label = service === 'Drive' ? 'Drive (Unlimited)' : service;
+                        html += `<li class="feature-included">${icon}<span>${label}</span>${getCheckSVG()}</li>`;
                     });
-                    serviceIndex++;
-                }
-
-                if (features.length === 0) {
-                    html += `<li>${getCheckSVG()}<span>All platform features</span></li>`;
+                } else {
+                    // Show master list with check/cross
+                    masterList.forEach(service => {
+                        const included = planServices.included.has(service);
+                        const icon = SERVICE_ICONS[service] || getCheckSVG();
+                        let label = service;
+                        if (service === 'Drive' && included && planServices.driveGB) {
+                            label = `Drive (${planServices.driveGB} GB)`;
+                        }
+                        const status = included ? getCheckSVG() : getCrossSVG();
+                        html += `<li class="${included ? 'feature-included' : 'feature-excluded'}">${icon}<span>${label}</span>${status}</li>`;
+                    });
                 }
 
                 html += `
                         </ul>
 
-                        ${getCostBreakdown(plan)}
                         ${getCTAButton(plan)}
                     </div>
                 `;

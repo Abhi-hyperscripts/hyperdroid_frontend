@@ -49,38 +49,159 @@
 
     <style>
         /* ==========================================
-           SIGNUP PAGE STYLES
+           SIGNUP PAGE - Premium Design (matches Login/Pricing)
            ========================================== */
 
         .signup-page {
             min-height: 100vh;
-            background: var(--bg-primary);
+            background: #050810;
             color: var(--text-primary);
             font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            position: relative;
         }
 
+        /* ── Animated gradient mesh background ── */
+        .signup-bg {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .signup-bg .gradient-mesh {
+            position: absolute;
+            inset: 0;
+        }
+
+        .signup-bg .gradient-mesh::before {
+            content: '';
+            position: absolute;
+            width: 140%;
+            height: 140%;
+            top: -20%;
+            left: -20%;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 30%, rgba(var(--brand-primary-rgb), 0.35) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 80% at 80% 15%, rgba(139, 92, 246, 0.3) 0%, transparent 45%),
+                radial-gradient(ellipse 50% 60% at 60% 75%, rgba(6, 182, 212, 0.2) 0%, transparent 45%),
+                radial-gradient(ellipse 80% 40% at 30% 85%, rgba(var(--brand-primary-rgb), 0.25) 0%, transparent 50%);
+            animation: signupGradientShift 25s ease-in-out infinite;
+        }
+
+        .signup-bg .gradient-mesh::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.06) 0%, transparent 25%),
+                radial-gradient(circle at 30% 60%, rgba(var(--brand-primary-rgb), 0.12) 0%, transparent 30%);
+            animation: signupGradientPulse 15s ease-in-out infinite;
+        }
+
+        @keyframes signupGradientShift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            25% { transform: translate(5%, -3%) rotate(1deg) scale(1.02); }
+            50% { transform: translate(-3%, 5%) rotate(-1deg) scale(0.98); }
+            75% { transform: translate(3%, 2%) rotate(0.5deg) scale(1.01); }
+        }
+
+        @keyframes signupGradientPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* ── Grid overlay ── */
+        .signup-bg .grid-overlay {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at 50% 40%, black 20%, transparent 75%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% 40%, black 20%, transparent 75%);
+        }
+
+        /* ── Floating geometric shapes ── */
+        .signup-bg .float-shape-1 {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 50%;
+            top: 5%;
+            right: -120px;
+            animation: signupFloatRotate 30s linear infinite;
+        }
+
+        .signup-bg .float-shape-2 {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            bottom: 10%;
+            left: -80px;
+            animation: signupFloatRotate 25s linear infinite reverse;
+        }
+
+        .signup-bg .float-shape-3 {
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 50%;
+            top: 55%;
+            right: 8%;
+            animation: signupFloatRotate 35s linear infinite;
+        }
+
+        @keyframes signupFloatRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* ── Container ── */
         .signup-container {
             max-width: 1100px;
             margin: 0 auto;
             padding: 7rem 2rem 4rem;
+            position: relative;
+            z-index: 1;
         }
 
         .signup-header {
             text-align: center;
             margin-bottom: 2.5rem;
+            animation: signupFadeSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         .signup-header h1 {
             font-size: clamp(1.8rem, 4vw, 2.5rem);
             font-weight: 800;
-            color: var(--text-primary);
             margin-bottom: 0.5rem;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.8) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .signup-header .subtitle {
             font-size: 1.05rem;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .signup-header .subtitle strong {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        @keyframes signupFadeSlideIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .signup-layout {
@@ -90,20 +211,37 @@
             align-items: start;
         }
 
-        /* Form Card */
+        /* ── Form Card - Glassmorphism ── */
         .signup-form-card {
             background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 2rem;
-            backdrop-filter: blur(12px);
+            position: relative;
+            animation: signupCardReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+        }
+
+        .signup-form-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            border-radius: 20px;
+        }
+
+        @keyframes signupCardReveal {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .signup-form-card h2 {
             font-size: 1.25rem;
             font-weight: 700;
             margin-bottom: 1.5rem;
-            color: var(--text-primary);
+            color: rgba(255, 255, 255, 0.95);
         }
 
         .form-row {
@@ -120,7 +258,7 @@
             display: block;
             font-size: 0.85rem;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.6);
             margin-bottom: 0.4rem;
         }
 
@@ -131,11 +269,11 @@
 
         .form-group input {
             width: 100%;
-            padding: 0.7rem 0.9rem;
+            padding: 0.75rem 1rem;
             background: rgba(255, 255, 255, 0.06);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            color: var(--text-primary);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.95);
             font-size: 0.9rem;
             font-family: 'Inter', sans-serif;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -148,14 +286,12 @@
         }
 
         .form-group input::placeholder {
-            color: var(--text-secondary);
-            opacity: 0.5;
+            color: rgba(255, 255, 255, 0.3);
         }
 
         .form-group .help-text {
             font-size: 0.78rem;
-            color: var(--text-secondary);
-            opacity: 0.7;
+            color: rgba(255, 255, 255, 0.4);
             margin-top: 0.3rem;
         }
 
@@ -163,22 +299,34 @@
             border-color: var(--color-danger);
         }
 
-        /* Order Summary Card */
+        /* ── Order Summary Card - Glassmorphism ── */
         .order-summary-card {
             background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 1.75rem;
-            backdrop-filter: blur(12px);
             position: sticky;
             top: 6rem;
+            animation: signupCardReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
+        }
+
+        .order-summary-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            border-radius: 20px;
         }
 
         .order-summary-card h3 {
             font-size: 1.1rem;
             font-weight: 700;
             margin-bottom: 1.25rem;
-            color: var(--text-primary);
+            color: rgba(255, 255, 255, 0.95);
+            position: relative;
         }
 
         .order-plan-name {
@@ -199,17 +347,17 @@
         }
 
         .order-line .label {
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.5);
         }
 
         .order-line .value {
-            color: var(--text-primary);
+            color: rgba(255, 255, 255, 0.9);
             font-weight: 500;
         }
 
         .order-divider {
             height: 1px;
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.06);
             margin: 0.75rem 0;
         }
 
@@ -223,19 +371,22 @@
         .order-total .label {
             font-size: 1rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: rgba(255, 255, 255, 0.95);
         }
 
         .order-total .value {
             font-size: 1.25rem;
             font-weight: 800;
-            color: var(--text-primary);
+            background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.85) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .order-per-month {
             text-align: right;
             font-size: 0.8rem;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.4);
             margin-top: 0.2rem;
             margin-bottom: 1rem;
         }
@@ -258,7 +409,7 @@
             height: 16px;
         }
 
-        /* Submit Button */
+        /* ── Submit Button ── */
         .signup-submit-btn {
             display: flex;
             align-items: center;
@@ -266,22 +417,22 @@
             gap: 0.5rem;
             width: 100%;
             padding: 0.85rem 1.5rem;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 0.95rem;
             font-weight: 600;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             border: none;
             background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
             color: #fff;
             font-family: 'Inter', sans-serif;
+            box-shadow: 0 4px 16px rgba(var(--brand-primary-rgb), 0.2);
         }
 
         .signup-submit-btn:hover:not(:disabled) {
-            opacity: 0.9;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 16px rgba(var(--brand-primary-rgb), 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(var(--brand-primary-rgb), 0.35);
         }
 
         .signup-submit-btn:disabled {
@@ -311,11 +462,11 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Error & Success Messages */
+        /* ── Error & Success Messages ── */
         .signup-message {
             margin-top: 1rem;
             padding: 0.8rem 1rem;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 0.88rem;
             display: none;
         }
@@ -334,16 +485,28 @@
             display: block;
         }
 
-        /* Success Card */
+        /* ── Success Card ── */
         .signup-success-card {
             background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 2.5rem;
             text-align: center;
-            backdrop-filter: blur(12px);
             max-width: 600px;
             margin: 0 auto;
+            position: relative;
+            animation: signupCardReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .signup-success-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            border-radius: 20px;
         }
 
         .success-icon-circle {
@@ -367,12 +530,12 @@
             font-size: 1.5rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
-            color: var(--text-primary);
+            color: rgba(255, 255, 255, 0.95);
         }
 
         .signup-success-card .success-subtitle {
             font-size: 0.95rem;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.55);
             margin-bottom: 1.5rem;
         }
 
@@ -388,7 +551,7 @@
         .credentials-box h4 {
             font-size: 0.85rem;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.5);
             text-transform: uppercase;
             letter-spacing: 0.04em;
             margin-bottom: 0.75rem;
@@ -403,7 +566,7 @@
 
         .credential-label {
             font-size: 0.85rem;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.5);
         }
 
         .credential-value {
@@ -412,14 +575,14 @@
             gap: 0.5rem;
             font-size: 0.9rem;
             font-weight: 600;
-            color: var(--text-primary);
+            color: rgba(255, 255, 255, 0.95);
             font-family: 'SF Mono', 'Fira Code', monospace;
         }
 
         .copy-btn {
             background: none;
             border: none;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.4);
             cursor: pointer;
             padding: 4px;
             border-radius: 4px;
@@ -438,7 +601,7 @@
             color: var(--color-warning);
             background: rgba(245, 158, 11, 0.1);
             border: 1px solid rgba(245, 158, 11, 0.15);
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 0.75rem 1rem;
             margin-bottom: 1.5rem;
             text-align: left;
@@ -457,45 +620,46 @@
             background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
             color: #fff;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 0.95rem;
             font-weight: 600;
             text-decoration: none;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 16px rgba(var(--brand-primary-rgb), 0.2);
         }
 
         .proceed-login-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(var(--brand-primary-rgb), 0.35);
             color: #fff;
         }
 
-        /* Loading state */
+        /* ── Loading state ── */
         .signup-loading {
             text-align: center;
             padding: 4rem 2rem;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.5);
         }
 
         .signup-loading .spinner {
             width: 40px;
             height: 40px;
-            border: 3px solid rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.08);
             border-top-color: var(--brand-primary);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin: 0 auto 1rem;
         }
 
-        /* No plan selected */
+        /* ── No plan selected ── */
         .no-plan-message {
             text-align: center;
             padding: 3rem 2rem;
         }
 
         .no-plan-message p {
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.5);
             margin-bottom: 1rem;
         }
 
@@ -509,12 +673,12 @@
             text-decoration: underline;
         }
 
-        /* Footer link */
+        /* ── Footer link ── */
         .signup-footer {
             text-align: center;
             margin-top: 1.5rem;
             font-size: 0.88rem;
-            color: var(--text-secondary);
+            color: rgba(255, 255, 255, 0.45);
         }
 
         .signup-footer a {
@@ -527,7 +691,7 @@
             text-decoration: underline;
         }
 
-        /* Responsive */
+        /* ── Responsive ── */
         @media (max-width: 768px) {
             .signup-container {
                 padding: 6rem 1rem 3rem;
@@ -546,28 +710,18 @@
                 grid-template-columns: 1fr;
             }
         }
-
-        /* Light theme */
-        [data-theme="light"] .signup-form-card,
-        [data-theme="light"] .order-summary-card,
-        [data-theme="light"] .signup-success-card {
-            background: rgba(0, 0, 0, 0.02);
-            border-color: rgba(0, 0, 0, 0.08);
-        }
-
-        [data-theme="light"] .form-group input {
-            background: rgba(0, 0, 0, 0.03);
-            border-color: rgba(0, 0, 0, 0.12);
-            color: var(--text-primary);
-        }
-
-        [data-theme="light"] .credentials-box {
-            background: rgba(0, 0, 0, 0.03);
-            border-color: rgba(0, 0, 0, 0.08);
-        }
     </style>
 </head>
 <body class="landing-page login-page signup-page">
+    <!-- Animated Background (matches Login/Pricing) -->
+    <div class="signup-bg">
+        <div class="gradient-mesh"></div>
+        <div class="grid-overlay"></div>
+        <div class="float-shape-1"></div>
+        <div class="float-shape-2"></div>
+        <div class="float-shape-3"></div>
+    </div>
+
     <!-- Navigation -->
     <div id="navbar"></div>
 
@@ -594,33 +748,6 @@
         function getQueryParam(name) {
             const params = new URLSearchParams(window.location.search);
             return params.get(name);
-        }
-
-        function updateOrderSummary() {
-            if (!currentPlan) return;
-            const seatsInput = document.getElementById('seats');
-            if (!seatsInput) return;
-
-            const seats = parseInt(seatsInput.value) || currentPlan.minSeats;
-            const price = currentPlan.pricePerUserMonthly;
-            const gstPct = Number(currentPlan.gstPercentage);
-            const subtotal = seats * price * 12;
-            const gstAmount = subtotal * (gstPct / 100);
-            const total = subtotal + gstAmount;
-            const perMonth = total / 12;
-
-            const el = (id) => document.getElementById(id);
-            el('summarySeats').textContent = seats;
-            el('summaryPrice').textContent = formatINR(price);
-            el('summarySubtotal').textContent = formatINR(subtotal);
-            el('summaryGstPct').textContent = gstPct;
-            el('summaryGst').textContent = formatINR(gstAmount);
-            el('summaryTotal').textContent = formatINR(total);
-
-            const perMonthEl = el('summaryPerMonth');
-            if (perMonthEl) {
-                perMonthEl.textContent = `${formatINR(Math.round(perMonth))}/month effective`;
-            }
         }
 
         function renderSignupForm(plan) {
@@ -732,12 +859,6 @@
                                 <input type="tel" id="phone" name="phone" placeholder="+91 98765 43210" autocomplete="tel">
                             </div>
 
-                            <div class="form-group">
-                                <label for="seats">Number of Seats <span class="required">*</span></label>
-                                <input type="number" id="seats" name="seats" min="${plan.minSeats}" ${plan.maxSeats !== -1 ? 'max="' + plan.maxSeats + '"' : ''} value="${plan.minSeats}" required>
-                                <div class="help-text">Minimum ${plan.minSeats} seats${plan.maxSeats !== -1 ? ', maximum ' + plan.maxSeats + ' seats' : ''}.</div>
-                            </div>
-
                             <button type="submit" class="signup-submit-btn" id="submitBtn">
                                 <span class="btn-spinner"></span>
                                 <span class="btn-text">${submitIcon} ${submitLabel}</span>
@@ -756,38 +877,6 @@
                     ${orderSummaryHTML}
                 </div>
             `;
-
-            // Bind events
-            const seatsInput = document.getElementById('seats');
-            if (seatsInput && !isTrial) {
-                seatsInput.addEventListener('input', () => {
-                    // Clamp to valid range
-                    let val = parseInt(seatsInput.value);
-                    if (!isNaN(val)) {
-                        if (val < plan.minSeats) val = plan.minSeats;
-                        if (plan.maxSeats !== -1 && val > plan.maxSeats) val = plan.maxSeats;
-                    }
-                    updateOrderSummary();
-                });
-
-                seatsInput.addEventListener('change', () => {
-                    let val = parseInt(seatsInput.value);
-                    if (isNaN(val) || val < plan.minSeats) {
-                        seatsInput.value = plan.minSeats;
-                    } else if (plan.maxSeats !== -1 && val > plan.maxSeats) {
-                        seatsInput.value = plan.maxSeats;
-                    }
-                    updateOrderSummary();
-                });
-            }
-
-            // For trial plan, update seats display on change
-            if (isTrial && seatsInput) {
-                seatsInput.addEventListener('input', () => {
-                    const summarySeats = document.getElementById('summarySeats');
-                    if (summarySeats) summarySeats.textContent = seatsInput.value || plan.minSeats;
-                });
-            }
 
             document.getElementById('signupForm').addEventListener('submit', handleSubmit);
         }
@@ -914,7 +1003,7 @@
             const firstName = document.getElementById('firstName').value.trim();
             const lastName = document.getElementById('lastName').value.trim();
             const phone = document.getElementById('phone').value.trim();
-            const seats = parseInt(document.getElementById('seats').value) || currentPlan.minSeats;
+            const seats = currentPlan.minSeats;
 
             if (!orgName || !adminEmail || !firstName || !lastName) {
                 showMessage('error', 'Please fill in all required fields.');
