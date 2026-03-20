@@ -166,11 +166,11 @@ const NavbarComponent = {
                     <a href="/pages/calculators/professional-tax-calculator.html" class="nav-dropdown-item" data-nav="professional-tax">Professional Tax <span>State-wise PT</span></a>
                 </div>
             </div>
-            <a href="/pages/activate.html" class="nav-link" data-nav="pricing">Pricing</a>
+            <a href="/pages/pricing.html" class="nav-link" data-nav="pricing">Pricing</a>
         </div>
         <div class="nav-cta">
             <a href="/pages/login.html" class="btn-secondary" data-nav="signin">Sign In</a>
-            <a href="/pages/activate.html" class="btn-primary" data-nav="getstarted">Get Started</a>
+            <a href="/pages/pricing.html" class="btn-primary" data-nav="getstarted">Get Started</a>
         </div>
     </nav>`;
     },
