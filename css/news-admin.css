@@ -218,6 +218,42 @@
     padding: 12px;
 }
 
+/* ── Quill Editor Dark Mode ── */
+.ql-toolbar.ql-snow {
+    border-color: var(--border-color-light, var(--border-primary)) !important;
+    border-radius: 8px 8px 0 0;
+    background: var(--bg-secondary);
+}
+.ql-container.ql-snow {
+    border-color: var(--border-color-light, var(--border-primary)) !important;
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    border-radius: 0 0 8px 8px;
+}
+.ql-editor {
+    min-height: 300px;
+    color: var(--text-primary);
+}
+.ql-editor.ql-blank::before {
+    color: var(--text-secondary) !important;
+    font-style: normal !important;
+}
+.ql-snow .ql-stroke { stroke: var(--text-secondary) !important; }
+.ql-snow .ql-fill { fill: var(--text-secondary) !important; }
+.ql-snow .ql-picker { color: var(--text-secondary) !important; }
+.ql-snow .ql-picker-options {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color-light, var(--border-primary)) !important;
+}
+.ql-snow .ql-picker-item:hover { color: var(--brand-primary) !important; }
+.ql-snow .ql-active .ql-stroke { stroke: var(--brand-primary) !important; }
+.ql-snow .ql-active .ql-fill { fill: var(--brand-primary) !important; }
+.ql-snow .ql-active { color: var(--brand-primary) !important; }
+.ql-toolbar button:hover .ql-stroke { stroke: var(--brand-primary) !important; }
+.ql-toolbar button:hover .ql-fill { fill: var(--brand-primary) !important; }
+
 /* ── Mobile ── */
 @media (max-width: 768px) {
     .news-stats-grid { grid-template-columns: repeat(2, 1fr); }

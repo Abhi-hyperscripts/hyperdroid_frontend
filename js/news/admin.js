@@ -10,7 +10,9 @@ const TAB_NAMES = {
     'crawl-settings': 'Crawl Settings',
     'articles': 'Articles',
     'categories': 'Categories',
-    'sources': 'Sources'
+    'sources': 'Sources',
+    'authors': 'Authors',
+    'guest-articles': 'Guest Articles'
 };
 
 let articleOffset = 0;
@@ -139,6 +141,8 @@ function switchTab(tabName) {
     else if (tabName === 'articles') loadArticles();
     else if (tabName === 'categories') loadCategories();
     else if (tabName === 'sources') loadSources();
+    else if (tabName === 'authors') loadAuthors();
+    else if (tabName === 'guest-articles') loadGuestArticles();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -482,4 +486,250 @@ function formatDuration(ms) {
     const mins = Math.floor(secs / 60);
     const rem = secs % 60;
     return `${mins}m ${rem}s`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  AUTHORS
+// ═══════════════════════════════════════════════════════════════════════════
+
+let allAuthors = [];
+
+async function loadAuthors() {
+    const res = await newsRequest('/news/authors?limit=100');
+    const tbody = document.getElementById('authorsTable');
+    if (!res?.ok) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="text-align:center;padding:24px;">Failed to load</td></tr>'; return; }
+
+    allAuthors = await res.json();
+    if (!allAuthors || allAuthors.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="text-align:center;padding:24px;">No authors yet. Click "+ Add Author" to create one.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = allAuthors.map(a => `<tr>
+        <td><span style="font-weight:500;">${esc(a.name)}</span></td>
+        <td>${esc(a.designation) || '<span style="color:var(--text-muted);">-</span>'}</td>
+        <td>${esc(a.company) || '<span style="color:var(--text-muted);">-</span>'}</td>
+        <td>${esc(a.email) || '<span style="color:var(--text-muted);">-</span>'}</td>
+        <td><span class="status-badge ${a.isActive ? 'active' : 'neutral'}">${a.isActive ? 'Active' : 'Inactive'}</span></td>
+        <td class="actions-cell">
+            <button class="action-btn" title="Edit" onclick="event.stopPropagation(); editAuthor('${a.id}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="action-btn delete" title="Delete" onclick="event.stopPropagation(); deleteAuthor('${a.id}', '${esc(a.name)}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+        </td>
+    </tr>`).join('');
+}
+
+function openAuthorModal(author = null) {
+    document.getElementById('authorModalTitle').textContent = author ? 'Edit Author' : 'Add Author';
+    document.getElementById('authorEditId').value = author?.id || '';
+    document.getElementById('authorName').value = author?.name || '';
+    document.getElementById('authorDesignation').value = author?.designation || '';
+    document.getElementById('authorCompany').value = author?.company || '';
+    document.getElementById('authorEmail').value = author?.email || '';
+    document.getElementById('authorBio').value = author?.bio || '';
+    document.getElementById('authorModal').style.display = 'flex';
+}
+
+function closeAuthorModal() {
+    document.getElementById('authorModal').style.display = 'none';
+}
+
+function editAuthor(id) {
+    const author = allAuthors.find(a => a.id === id);
+    if (author) openAuthorModal(author);
+}
+
+async function saveAuthor() {
+    const id = document.getElementById('authorEditId').value;
+    const body = {
+        name: document.getElementById('authorName').value.trim(),
+        designation: document.getElementById('authorDesignation').value.trim() || null,
+        company: document.getElementById('authorCompany').value.trim() || null,
+        email: document.getElementById('authorEmail').value.trim() || null,
+        bio: document.getElementById('authorBio').value.trim() || null
+    };
+
+    if (!body.name) { Toast.error('Name is required'); return; }
+
+    let res;
+    if (id) {
+        res = await newsRequest(`/news/authors/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+    } else {
+        res = await newsRequest('/news/authors', { method: 'POST', body: JSON.stringify(body) });
+    }
+
+    if (res?.ok) {
+        Toast.success(id ? 'Author updated' : 'Author created');
+        closeAuthorModal();
+        loadAuthors();
+    } else {
+        Toast.error('Failed to save author');
+    }
+}
+
+async function deleteAuthor(id, name) {
+    if (!confirm(`Delete author "${name}"? This will also delete their articles.`)) return;
+    const res = await newsRequest(`/news/authors/${id}`, { method: 'DELETE' });
+    if (res?.ok) { Toast.success('Author deleted'); loadAuthors(); }
+    else Toast.error('Failed to delete author');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  GUEST ARTICLES
+// ═══════════════════════════════════════════════════════════════════════════
+
+let quillEditor = null;
+let allGuestArticles = [];
+
+async function loadGuestArticles() {
+    const res = await newsRequest('/news/guest-articles?limit=100');
+    const tbody = document.getElementById('guestArticlesTable');
+    if (!res?.ok) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="text-align:center;padding:24px;">Failed to load</td></tr>'; return; }
+
+    const data = await res.json();
+    allGuestArticles = data.articles || data || [];
+
+    if (allGuestArticles.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="text-align:center;padding:24px;">No guest articles yet. Click "+ New Article" to create one.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = allGuestArticles.map(a => {
+        const authorName = a.author?.name || '—';
+        const statusClass = a.status === 'published' ? 'active' : 'pending';
+        return `<tr>
+        <td><span style="font-weight:500;">${esc(a.title)}</span></td>
+        <td>${esc(authorName)}</td>
+        <td>${a.category ? `<span class="status-badge neutral">${esc(a.category)}</span>` : '<span style="color:var(--text-muted);">-</span>'}</td>
+        <td><span class="status-badge ${statusClass}">${esc(a.status)}</span></td>
+        <td style="white-space:nowrap;">${a.publishedAt ? formatTimeAgo(a.publishedAt) : '—'}</td>
+        <td class="actions-cell">
+            <button class="action-btn" title="Edit" onclick="event.stopPropagation(); editGuestArticle('${a.id}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="action-btn delete" title="Delete" onclick="event.stopPropagation(); deleteGuestArticle('${a.id}', '${esc(a.title).replace(/'/g, '&#39;')}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+        </td>
+    </tr>`;
+    }).join('');
+}
+
+function initQuillEditor() {
+    if (quillEditor) return;
+    quillEditor = new Quill('#quillEditor', {
+        theme: 'snow',
+        placeholder: 'Write your article content here...',
+        modules: {
+            toolbar: [
+                [{ header: [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                ['blockquote', 'code-block'],
+                ['link', 'image'],
+                [{ align: [] }],
+                ['clean']
+            ]
+        }
+    });
+}
+
+async function openArticleEditor(article = null) {
+    // Populate author dropdown
+    if (allAuthors.length === 0) {
+        const res = await newsRequest('/news/authors?limit=100');
+        if (res?.ok) allAuthors = await res.json();
+    }
+    const authorSelect = document.getElementById('articleAuthor');
+    authorSelect.innerHTML = '<option value="">Select author...</option>' +
+        allAuthors.map(a => `<option value="${a.id}">${esc(a.name)}${a.designation ? ' — ' + esc(a.designation) : ''}</option>`).join('');
+
+    document.getElementById('articleEditorTitle').textContent = article ? 'Edit Article' : 'New Article';
+    document.getElementById('articleEditId').value = article?.id || '';
+    document.getElementById('articleTitle').value = article?.title || '';
+    document.getElementById('articleAuthor').value = article?.authorId || '';
+    document.getElementById('articleCategory').value = article?.category || '';
+    document.getElementById('articleStatus').value = article?.status || 'draft';
+    document.getElementById('articleExcerpt').value = article?.excerpt || '';
+
+    document.getElementById('articleEditorModal').style.display = 'flex';
+
+    // Init Quill after modal is visible
+    setTimeout(() => {
+        initQuillEditor();
+        if (article?.content) {
+            quillEditor.root.innerHTML = article.content;
+        } else {
+            quillEditor.root.innerHTML = '';
+        }
+    }, 100);
+}
+
+function closeArticleEditor() {
+    document.getElementById('articleEditorModal').style.display = 'none';
+}
+
+async function editGuestArticle(id) {
+    const article = allGuestArticles.find(a => a.id === id);
+    if (!article) return;
+
+    // Fetch full content (list might not include it)
+    const res = await newsRequest(`/news/guest-articles/${id}`);
+    if (res?.ok) {
+        const full = await res.json();
+        openArticleEditor(full);
+    }
+}
+
+async function saveGuestArticle() {
+    const id = document.getElementById('articleEditId').value;
+    const body = {
+        authorId: document.getElementById('articleAuthor').value,
+        title: document.getElementById('articleTitle').value.trim(),
+        content: quillEditor ? quillEditor.root.innerHTML : '',
+        excerpt: document.getElementById('articleExcerpt').value.trim() || null,
+        category: document.getElementById('articleCategory').value.trim() || null,
+        status: document.getElementById('articleStatus').value
+    };
+
+    if (!body.title) { Toast.error('Title is required'); return; }
+    if (!body.authorId) { Toast.error('Author is required'); return; }
+    if (!body.content || body.content === '<p><br></p>') { Toast.error('Content is required'); return; }
+
+    let res;
+    if (id) {
+        res = await newsRequest(`/news/guest-articles/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+    } else {
+        res = await newsRequest('/news/guest-articles', { method: 'POST', body: JSON.stringify(body) });
+    }
+
+    if (res?.ok) {
+        Toast.success(id ? 'Article updated' : 'Article created');
+        closeArticleEditor();
+        loadGuestArticles();
+    } else {
+        const err = await res?.json().catch(() => null);
+        Toast.error(err?.error || 'Failed to save article');
+    }
+}
+
+async function deleteGuestArticle(id, title) {
+    if (!confirm(`Delete article "${title}"?`)) return;
+    const res = await newsRequest(`/news/guest-articles/${id}`, { method: 'DELETE' });
+    if (res?.ok) { Toast.success('Article deleted'); loadGuestArticles(); }
+    else Toast.error('Failed to delete article');
+}
+
+function previewArticle() {
+    const title = document.getElementById('articleTitle').value;
+    const content = quillEditor ? quillEditor.root.innerHTML : '';
+    const win = window.open('', '_blank');
+    win.document.write(`<!DOCTYPE html><html><head><title>${esc(title)}</title>
+        <style>body{font-family:Inter,-apple-system,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;color:#1a1a2e;}
+        h1{font-size:2rem;margin-bottom:16px;} img{max-width:100%;border-radius:8px;}</style></head>
+        <body><h1>${esc(title)}</h1><hr>${content}</body></html>`);
+    win.document.close();
 }
