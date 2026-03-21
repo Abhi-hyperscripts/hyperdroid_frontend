@@ -630,6 +630,9 @@ async function loadGuestArticles() {
         <td><span class="status-badge ${statusClass}">${esc(a.status)}</span></td>
         <td style="white-space:nowrap;">${a.publishedAt ? formatTimeAgo(a.publishedAt) : '—'}</td>
         <td class="actions-cell">
+            <button class="action-btn" title="Engagement Stats" onclick="event.stopPropagation(); showEngagementStats('${a.id}', '${esc(a.title).replace(/'/g, '&#39;')}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+            </button>
             <button class="action-btn" title="Edit" onclick="event.stopPropagation(); editGuestArticle('${a.id}')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
@@ -751,6 +754,47 @@ async function deleteGuestArticle(id, title) {
     const res = await newsRequest(`/news/guest-articles/${id}`, { method: 'DELETE' });
     if (res?.ok) { Toast.success('Article deleted'); loadGuestArticles(); }
     else Toast.error('Failed to delete article');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ENGAGEMENT STATS
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function showEngagementStats(articleId, title) {
+    document.getElementById('engagementArticleTitle').textContent = title;
+    document.getElementById('engViews').textContent = '...';
+    document.getElementById('engLikes').textContent = '...';
+    document.getElementById('engComments').textContent = '...';
+    document.getElementById('engShares').textContent = '...';
+    document.getElementById('engReadTime').textContent = '...';
+    document.getElementById('engagementModal').classList.add('active');
+
+    const res = await newsRequest(`/news/engagement/${articleId}/stats`);
+    if (res?.ok) {
+        const stats = await res.json();
+        document.getElementById('engViews').textContent = stats.viewCount ?? 0;
+        document.getElementById('engLikes').textContent = stats.likeCount ?? 0;
+        document.getElementById('engComments').textContent = stats.commentCount ?? 0;
+        document.getElementById('engShares').textContent = stats.shareCount ?? 0;
+        const avgSecs = Math.round(stats.avgReadingTimeSeconds ?? 0);
+        if (avgSecs === 0) {
+            document.getElementById('engReadTime').textContent = 'No data';
+        } else if (avgSecs < 60) {
+            document.getElementById('engReadTime').textContent = `${avgSecs}s`;
+        } else {
+            document.getElementById('engReadTime').textContent = `${Math.floor(avgSecs / 60)}m ${avgSecs % 60}s`;
+        }
+    } else {
+        document.getElementById('engViews').textContent = '—';
+        document.getElementById('engLikes').textContent = '—';
+        document.getElementById('engComments').textContent = '—';
+        document.getElementById('engShares').textContent = '—';
+        document.getElementById('engReadTime').textContent = '—';
+    }
+}
+
+function closeEngagementModal() {
+    document.getElementById('engagementModal').classList.remove('active');
 }
 
 function previewArticle() {

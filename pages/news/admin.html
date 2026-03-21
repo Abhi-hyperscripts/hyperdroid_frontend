@@ -390,6 +390,44 @@
         </div>
     </div>
 
+    <!-- Engagement Stats Modal -->
+    <div class="gm-overlay" id="engagementModal">
+        <div class="gm-modal" style="max-width: 560px;">
+            <div class="gm-header">
+                <h2 class="gm-title">Engagement Stats</h2>
+                <button class="gm-close" onclick="closeEngagementModal()">&times;</button>
+            </div>
+            <div class="gm-body">
+                <p style="font-weight:600;margin-bottom:16px;color:var(--text-primary);" id="engagementArticleTitle"></p>
+                <div class="news-stats-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 16px;">
+                    <div class="news-stat-card">
+                        <div class="news-stat-label">Impressions</div>
+                        <div class="news-stat-value" id="engViews">—</div>
+                    </div>
+                    <div class="news-stat-card">
+                        <div class="news-stat-label">Likes</div>
+                        <div class="news-stat-value" id="engLikes">—</div>
+                    </div>
+                    <div class="news-stat-card">
+                        <div class="news-stat-label">Comments</div>
+                        <div class="news-stat-value" id="engComments">—</div>
+                    </div>
+                    <div class="news-stat-card">
+                        <div class="news-stat-label">Shares</div>
+                        <div class="news-stat-value" id="engShares">—</div>
+                    </div>
+                </div>
+                <div class="news-stat-card" style="margin-bottom: 0;">
+                    <div class="news-stat-label">Avg. Reading Time</div>
+                    <div class="news-stat-value" id="engReadTime">—</div>
+                </div>
+            </div>
+            <div class="gm-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color-light);">
+                <button class="news-btn news-btn-ghost" onclick="closeEngagementModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast-container" id="toastContainer"></div>
 
