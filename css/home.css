@@ -214,6 +214,14 @@ body.dashboard .navbar {
     background: linear-gradient(135deg, var(--brand-secondary), #a78bfa);
 }
 
+.bento-card.pms:hover .card-border {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+}
+
+.bento-card.news:hover .card-border {
+    background: linear-gradient(135deg, #d4af37, #f5d67b);
+}
+
 .bento-card.admin:hover .card-border {
     background: linear-gradient(135deg, var(--color-danger), #f87171);
 }
@@ -243,6 +251,14 @@ body.dashboard .navbar {
     box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
 }
 
+.bento-card.pms:hover {
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
+}
+
+.bento-card.news:hover {
+    box-shadow: 0 8px 24px rgba(212, 175, 55, 0.15);
+}
+
 .bento-card.admin:hover {
     box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
 }
@@ -269,6 +285,14 @@ body.dashboard .navbar {
 
 [data-theme="dark"] .bento-card.research:hover {
     box-shadow: 0 8px 30px rgba(139, 92, 246, 0.25);
+}
+
+[data-theme="dark"] .bento-card.pms:hover {
+    box-shadow: 0 8px 30px rgba(245, 158, 11, 0.25);
+}
+
+[data-theme="dark"] .bento-card.news:hover {
+    box-shadow: 0 8px 30px rgba(212, 175, 55, 0.25);
 }
 
 [data-theme="dark"] .bento-card.admin:hover {
