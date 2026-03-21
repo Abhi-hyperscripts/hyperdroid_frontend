@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @font-face {
+            font-family: 'Rostex';
+            src: url('fonts/Rostex-Regular.ttf') format('truetype');
+            font-weight: 400;
+            font-style: normal;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { width: 1200px; height: 630px; font-family: 'Inter', -apple-system, sans-serif; overflow: hidden; }
+        .og-card {
+            width: 1200px; height: 630px;
+            background: linear-gradient(145deg, #d8d4d0 0%, #eae6e2 25%, #e0dcd6 50%, #eae6e2 75%, #d8d4d0 100%);
+            position: relative; display: flex; align-items: center; overflow: hidden;
+        }
+        /* Subtle gold shimmer */
+        .glow-1 {
+            position: absolute; width: 700px; height: 700px; top: -250px; right: -50px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.12) 0%, transparent 60%);
+            filter: blur(60px);
+        }
+        .glow-2 {
+            position: absolute; width: 500px; height: 500px; bottom: -150px; left: 50px;
+            background: radial-gradient(circle, rgba(184, 134, 11, 0.08) 0%, transparent 60%);
+            filter: blur(40px);
+        }
+        .grid-pattern {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(0,0,0,0.035) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0,0,0,0.035) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        /* Left gold accent line */
+        .accent-line {
+            position: absolute; left: 70px; top: 55px; bottom: 55px; width: 3px;
+            background: linear-gradient(180deg, transparent 0%, #b8860b 30%, #d4af37 50%, #b8860b 70%, transparent 100%);
+            border-radius: 2px; opacity: 0.5;
+        }
+        /* Bottom border */
+        .bottom-accent {
+            position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent 0%, #b8860b 25%, #d4af37 50%, #b8860b 75%, transparent 100%);
+            opacity: 0.5;
+        }
+
+        .left { position: relative; z-index: 10; padding: 60px 40px 60px 95px; flex: 1; }
+        .right { position: relative; z-index: 10; width: 420px; padding-right: 55px; }
+
+        .logo-row {
+            display: flex; align-items: center; gap: 14px; margin-bottom: 28px;
+        }
+        .logo-row img { height: 28px; display: block; }
+        .logo-sep { width: 5px; height: 5px; border-radius: 50%; background: rgba(0,0,0,0.3); flex-shrink: 0; }
+        .logo-kip {
+            font-family: 'Rostex', 'Inter', sans-serif;
+            font-size: 32px; font-weight: 400; color: #1a1505;
+            letter-spacing: 5px; text-transform: uppercase;
+            line-height: 1;
+        }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 8px; padding: 7px 18px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(184, 134, 11, 0.1) 100%);
+            border: 1px solid rgba(184, 134, 11, 0.35); border-radius: 100px;
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.15em; margin-bottom: 26px;
+            color: #8b6914;
+        }
+        .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.5); }
+
+        .title { font-size: 52px; font-weight: 800; line-height: 1.12; margin-bottom: 18px; letter-spacing: -0.02em; }
+        .title-dark { color: #1a1505; }
+        .title .gold {
+            background: linear-gradient(135deg, #8b6914 0%, #d4af37 40%, #f5d67b 60%, #d4af37 80%, #8b6914 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle { font-size: 18px; color: rgba(0,0,0,0.45); font-weight: 500; line-height: 1.6; margin-bottom: 28px; }
+
+        .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+        .pill {
+            padding: 6px 14px; border-radius: 16px; font-size: 11px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            border: 1px solid rgba(184, 134, 11, 0.3); color: #8b6914;
+            background: rgba(212, 175, 55, 0.08);
+        }
+
+        /* Right side — news preview cards */
+        .preview { display: flex; flex-direction: column; gap: 10px; }
+        .preview-card {
+            background: rgba(255,255,255,0.5); border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 12px; padding: 16px 18px; position: relative; overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        .preview-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+            background: linear-gradient(180deg, #d4af37, #8b6914);
+        }
+        .preview-signal {
+            font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em;
+            margin-bottom: 6px; color: #8b6914;
+        }
+        .preview-headline {
+            font-size: 13px; font-weight: 600; color: #1a1505; line-height: 1.35; margin-bottom: 6px;
+        }
+        .preview-meta { font-size: 10px; color: rgba(0,0,0,0.35); }
+        .preview-count {
+            text-align: center; padding: 14px;
+            background: rgba(255,255,255,0.5); border: 1px solid rgba(184,134,11,0.15);
+            border-radius: 12px; backdrop-filter: blur(10px);
+        }
+        .preview-count-num {
+            font-size: 32px; font-weight: 800;
+            background: linear-gradient(135deg, #8b6914, #d4af37, #f5d67b, #d4af37);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .preview-count-label { font-size: 9px; color: rgba(0,0,0,0.4); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600; margin-top: 2px; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="og-card">
+        <div class="grid-pattern"></div>
+        <div class="glow-1"></div>
+        <div class="glow-2"></div>
+        <div class="accent-line"></div>
+        <div class="bottom-accent"></div>
+        <div class="left">
+            <div class="logo-row">
+                <img src="brand_logo.png" alt="Ragenaizer">
+                <span class="logo-sep"></span>
+                <span class="logo-kip">KIP</span>
+            </div>
+            <div class="badge"><span class="badge-dot"></span>LIVE INTELLIGENCE</div>
+            <h1 class="title"><span class="title-dark">Where News Meets</span><br><span class="gold">Intelligence</span></h1>
+            <p class="subtitle">Track funding, acquisitions & market signals — as they happen</p>
+            <div class="pills">
+                <span class="pill">Funding</span>
+                <span class="pill">Acquisition</span>
+                <span class="pill">IPO</span>
+                <span class="pill">Regulation</span>
+                <span class="pill">Partnership</span>
+                <span class="pill">Expansion</span>
+            </div>
+        </div>
+        <div class="right">
+            <div class="preview">
+                <div class="preview-card">
+                    <div class="preview-signal">Funding</div>
+                    <div class="preview-headline">Gulf Investment Fuels Growth of European Defence Startups</div>
+                    <div class="preview-meta">Reuters · 2h ago</div>
+                </div>
+                <div class="preview-card">
+                    <div class="preview-signal">Regulation</div>
+                    <div class="preview-headline">24 States Sue EPA for Revoking Authority to Regulate Greenhouse Gases</div>
+                    <div class="preview-meta">New York Times · 3h ago</div>
+                </div>
+                <div class="preview-card">
+                    <div class="preview-signal">Partnership</div>
+                    <div class="preview-headline">Portal Space & Paladin Partner for LEO Security Service</div>
+                    <div class="preview-meta">Inc. · 4h ago</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
