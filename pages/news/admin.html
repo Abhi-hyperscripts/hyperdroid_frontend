@@ -271,7 +271,7 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div class="gm-modal-overlay" id="deleteModal" style="display:none;">
+    <div class="gm-overlay" id="deleteModal">
         <div class="gm-modal gm-modal-sm">
             <div class="gm-header">
                 <h2 class="gm-title">Delete Article</h2>
@@ -289,7 +289,7 @@
     </div>
 
     <!-- Author Modal -->
-    <div class="gm-modal-overlay" id="authorModal" style="display:none;">
+    <div class="gm-overlay" id="authorModal">
         <div class="gm-modal" style="max-width: 520px;">
             <div class="gm-header">
                 <h2 class="gm-title" id="authorModalTitle">Add Author</h2>
@@ -326,8 +326,8 @@
     </div>
 
     <!-- Article Editor Modal (Full-screen) -->
-    <div class="gm-modal-overlay" id="articleEditorModal" style="display:none;">
-        <div class="gm-modal" style="max-width: 960px; max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="gm-overlay" id="articleEditorModal">
+        <div class="gm-modal" style="width: 95vw; max-width: 1200px; max-height: 85vh; margin-top: 70px; display: flex; flex-direction: column;">
             <div class="gm-header">
                 <h2 class="gm-title" id="articleEditorTitle">New Article</h2>
                 <button class="gm-close" onclick="closeArticleEditor()">&times;</button>

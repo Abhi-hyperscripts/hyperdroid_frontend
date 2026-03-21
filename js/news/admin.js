@@ -390,12 +390,12 @@ function debounceArticleSearch() {
 function showDeleteModal(id, title) {
     deleteArticleId = id;
     document.getElementById('deleteArticleTitle').textContent = title;
-    document.getElementById('deleteModal').style.display = 'flex';
+    document.getElementById('deleteModal').classList.add('active');
 }
 
 function closeDeleteModal() {
     deleteArticleId = null;
-    document.getElementById('deleteModal').style.display = 'none';
+    document.getElementById('deleteModal').classList.remove('active');
 }
 
 async function confirmDeleteArticle() {
@@ -530,11 +530,11 @@ function openAuthorModal(author = null) {
     document.getElementById('authorCompany').value = author?.company || '';
     document.getElementById('authorEmail').value = author?.email || '';
     document.getElementById('authorBio').value = author?.bio || '';
-    document.getElementById('authorModal').style.display = 'flex';
+    document.getElementById('authorModal').classList.add('active');
 }
 
 function closeAuthorModal() {
-    document.getElementById('authorModal').style.display = 'none';
+    document.getElementById('authorModal').classList.remove('active');
 }
 
 function editAuthor(id) {
@@ -655,7 +655,7 @@ async function openArticleEditor(article = null) {
     document.getElementById('articleStatus').value = article?.status || 'draft';
     document.getElementById('articleExcerpt').value = article?.excerpt || '';
 
-    document.getElementById('articleEditorModal').style.display = 'flex';
+    document.getElementById('articleEditorModal').classList.add('active');
 
     // Init Quill after modal is visible
     setTimeout(() => {
@@ -669,7 +669,7 @@ async function openArticleEditor(article = null) {
 }
 
 function closeArticleEditor() {
-    document.getElementById('articleEditorModal').style.display = 'none';
+    document.getElementById('articleEditorModal').classList.remove('active');
 }
 
 async function editGuestArticle(id) {
