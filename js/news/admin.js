@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 function setupSidebar() {
     const toggle = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('settingsSidebar');
-    const container = document.querySelector('.news-admin-container');
+    const container = document.querySelector('.crm-settings-container');
     const overlay = document.getElementById('sidebarOverlay');
 
     if (!toggle || !sidebar) return;
@@ -109,7 +109,7 @@ function setupSidebar() {
 function closeSidebar() {
     document.getElementById('sidebarToggle')?.classList.remove('active');
     document.getElementById('settingsSidebar')?.classList.remove('open');
-    document.querySelector('.news-admin-container')?.classList.remove('sidebar-open');
+    document.querySelector('.crm-settings-container')?.classList.remove('sidebar-open');
     document.getElementById('sidebarOverlay')?.classList.remove('active');
 }
 
@@ -117,7 +117,7 @@ function switchTab(tabName) {
     document.querySelectorAll('#settingsSidebar .sidebar-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tabName);
     });
-    document.querySelectorAll('.news-tab-content').forEach(el => {
+    document.querySelectorAll('.crm-tab-content').forEach(el => {
         el.classList.toggle('active', el.id === `tab-${tabName}`);
     });
     const label = document.getElementById('activeTabName');
