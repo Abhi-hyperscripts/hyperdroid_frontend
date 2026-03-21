@@ -18,8 +18,16 @@ let deleteArticleId = null;
 let searchDebounceTimer = null;
 let tabDataLoaded = {};
 
-// ── Authenticated fetch helper ──
+// ── Authenticated fetch helper (with token refresh) ──
 async function newsRequest(path, options = {}) {
+    // Ensure token is fresh by triggering api.js refresh if needed
+    if (typeof api !== 'undefined' && typeof api.ensureValidToken === 'function') {
+        await api.ensureValidToken();
+    } else if (typeof isAccessTokenExpired === 'function' && isAccessTokenExpired()) {
+        // Trigger a lightweight api call to force token refresh
+        try { await api.request('/auth/validate'); } catch(e) {}
+    }
+
     const token = getAuthToken();
     if (!token) { window.location.href = '/index.html'; return null; }
     try {
