@@ -142,7 +142,7 @@ async function loadDashboard() {
         newsRequest('/news/categories'),
         newsRequest('/news/sources'),
         newsRequest('/news/crawl/status?limit=5'),
-        newsRequest('/news?limit=1&offset=0')
+        newsRequest('/news?limit=10000&offset=0')
     ]);
 
     if (catRes?.ok) {
@@ -155,7 +155,8 @@ async function loadDashboard() {
     }
     if (articlesRes?.ok) {
         const data = await articlesRes.json();
-        document.getElementById('statArticles').textContent = data.total ?? data.length ?? '—';
+        const artArr = data.articles || data.data || (Array.isArray(data) ? data : []);
+        document.getElementById('statArticles').textContent = artArr.length || data.count || '—';
     }
     if (crawlRes?.ok) {
         const jobs = await crawlRes.json();
@@ -174,16 +175,17 @@ function renderCrawlStatus(jobs) {
     const last = jobs[0];
     const status = (last.status || '').toLowerCase();
     if (status === 'completed') {
-        el.innerHTML = '<span class="news-badge news-badge-success">Completed</span>';
+        el.innerHTML = '<span class="status-badge status-badge active">Completed</span>';
     } else if (status === 'failed' || status === 'error') {
-        el.innerHTML = '<span class="news-badge news-badge-error">Failed</span>';
+        el.innerHTML = '<span class="status-badge status-badge rejected">Failed</span>';
     } else if (status === 'running' || status === 'in_progress') {
-        el.innerHTML = '<span class="news-badge news-badge-pending">Running</span>';
+        el.innerHTML = '<span class="status-badge status-badge pending">Running</span>';
     } else {
-        el.innerHTML = `<span class="news-badge news-badge-info">${esc(last.status)}</span>`;
+        el.innerHTML = `<span class="status-badge status-badge neutral">${esc(last.status)}</span>`;
     }
-    if (last.started_at || last.created_at) {
-        timeEl.textContent = formatTimeAgo(last.started_at || last.created_at);
+    const lastTime = last.startedAt || last.started_at || last.createdAt || last.created_at;
+    if (lastTime) {
+        timeEl.textContent = formatTimeAgo(lastTime);
     }
 }
 
@@ -233,38 +235,41 @@ function renderCrawlTable(jobs, targetId) {
     const tbody = document.getElementById(targetId);
     if (!tbody) return;
     if (!jobs || jobs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="news-empty">No crawl jobs yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="text-align:center;padding:24px;">No crawl jobs yet</td></tr>';
         return;
     }
     const cols = targetId === 'dashCrawlHistory' ? 4 : 5;
     tbody.innerHTML = jobs.map(j => {
         const status = (j.status || '').toLowerCase();
-        let badge = 'news-badge-info';
-        if (status === 'completed') badge = 'news-badge-success';
-        else if (status === 'failed' || status === 'error') badge = 'news-badge-error';
-        else if (status === 'running' || status === 'in_progress') badge = 'news-badge-pending';
+        let badge = 'status-badge neutral';
+        if (status === 'completed') badge = 'status-badge active';
+        else if (status === 'failed' || status === 'error') badge = 'status-badge rejected';
+        else if (status === 'running' || status === 'in_progress') badge = 'status-badge pending';
 
-        const started = formatDate(j.started_at || j.created_at);
-        const articles = j.articles_count ?? j.new_articles ?? '—';
-        const duration = j.completed_at && j.started_at
-            ? formatDuration(new Date(j.completed_at) - new Date(j.started_at))
+        const startedAt = j.startedAt || j.started_at || j.createdAt || j.created_at;
+        const completedAt = j.completedAt || j.completed_at;
+        const started = formatDate(startedAt);
+        const artCount = j.articlesCount ?? j.articles_count ?? j.newArticles ?? j.new_articles ?? '—';
+        const duration = completedAt && startedAt
+            ? formatDuration(new Date(completedAt) - new Date(startedAt))
             : '—';
 
         if (cols === 4) {
             return `<tr>
-                <td><span class="news-badge ${badge}">${esc(j.status)}</span></td>
-                <td class="td-meta">${started}</td>
-                <td>${articles}</td>
-                <td class="td-meta">${duration}</td>
+                <td><span class="status-badge ${badge}">${esc(j.status)}</span></td>
+                <td>${started}</td>
+                <td>${artCount}</td>
+                <td>${duration}</td>
             </tr>`;
         }
-        const completed = j.completed_at ? formatDate(j.completed_at) : '—';
-        const errors = j.error_message ? `<span style="color:var(--color-error);font-size:0.78rem;">${esc(j.error_message).substring(0, 60)}</span>` : '—';
+        const completed = completedAt ? formatDate(completedAt) : '—';
+        const errMsg = j.errorMessage || j.error_message || '';
+        const errors = errMsg ? `<span style="color:var(--color-error);font-size:0.78rem;">${esc(errMsg).substring(0, 60)}</span>` : '—';
         return `<tr>
-            <td><span class="news-badge ${badge}">${esc(j.status)}</span></td>
-            <td class="td-meta">${started}</td>
-            <td class="td-meta">${completed}</td>
-            <td>${articles}</td>
+            <td><span class="status-badge ${badge}">${esc(j.status)}</span></td>
+            <td>${started}</td>
+            <td>${completed}</td>
+            <td>${artCount}</td>
             <td>${errors}</td>
         </tr>`;
     }).join('');
@@ -301,14 +306,14 @@ async function loadArticles() {
 
     const data = await res.json();
     let articles = Array.isArray(data) ? data : (data.articles || data.data || []);
-    const total = data.total ?? articles.length;
+    const total = data.count ?? data.total ?? articles.length;
 
     // Client-side search filter (if backend doesn't support search param)
     if (search) {
         const q = search.toLowerCase();
         articles = articles.filter(a =>
-            (a.title || '').toLowerCase().includes(q) ||
-            (a.source || '').toLowerCase().includes(q)
+            (a.headline || a.title || '').toLowerCase().includes(q) ||
+            (a.sourceName || a.source_name || '').toLowerCase().includes(q)
         );
     }
 
@@ -316,18 +321,28 @@ async function loadArticles() {
 
     const tbody = document.getElementById('articlesTable');
     if (articles.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="news-empty">No articles found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="text-align:center;padding:24px;">No articles found</td></tr>';
         document.getElementById('articlesPagination').innerHTML = '';
         return;
     }
 
-    tbody.innerHTML = articles.map(a => `<tr>
-        <td class="td-title">${esc(a.title || a.headline)}</td>
-        <td class="td-meta">${esc(a.source || a.source_name || '—')}</td>
-        <td><span class="news-badge news-badge-info">${esc(a.category || '—')}</span></td>
-        <td class="td-meta">${formatTimeAgo(a.published_at || a.created_at)}</td>
-        <td class="td-actions"><button class="news-btn news-btn-danger" onclick="showDeleteModal('${a.id}', '${esc(a.title || a.headline)}')">Delete</button></td>
-    </tr>`).join('');
+    tbody.innerHTML = articles.map(a => {
+        const title = a.headline || a.title || '';
+        const source = a.sourceName || a.source_name || a.source || '';
+        const published = a.publishedAt || a.published_at || a.createdAt || a.created_at || '';
+        const escapedTitle = esc(title).replace(/'/g, '&#39;');
+        return `<tr>
+        <td><span style="font-weight: 500;">${esc(title)}</span></td>
+        <td>${esc(source) || '<span style="color: var(--text-muted);">-</span>'}</td>
+        <td><span class="status-badge neutral">${esc(a.category || '-')}</span></td>
+        <td style="white-space: nowrap;">${formatTimeAgo(published)}</td>
+        <td class="actions-cell">
+            <button class="action-btn delete" title="Delete" onclick="event.stopPropagation(); showDeleteModal('${a.id}', '${escapedTitle}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+        </td>
+    </tr>`;
+    }).join('');
 
     // Pagination
     renderPagination(total);
@@ -390,10 +405,10 @@ async function confirmDeleteArticle() {
 async function loadCategories() {
     const res = await newsRequest('/news/categories');
     const grid = document.getElementById('categoriesGrid');
-    if (!res?.ok) { grid.innerHTML = '<div class="news-empty">Failed to load</div>'; return; }
+    if (!res?.ok) { grid.innerHTML = '<div class="empty-state" style="text-align:center;padding:24px;">Failed to load</div>'; return; }
 
     const cats = await res.json();
-    if (!cats || cats.length === 0) { grid.innerHTML = '<div class="news-empty">No categories</div>'; return; }
+    if (!cats || cats.length === 0) { grid.innerHTML = '<div class="empty-state" style="text-align:center;padding:24px;">No categories</div>'; return; }
 
     grid.innerHTML = cats.map(c => `
         <div class="news-card-item">
@@ -410,10 +425,10 @@ async function loadCategories() {
 async function loadSources() {
     const res = await newsRequest('/news/sources');
     const grid = document.getElementById('sourcesGrid');
-    if (!res?.ok) { grid.innerHTML = '<div class="news-empty">Failed to load</div>'; return; }
+    if (!res?.ok) { grid.innerHTML = '<div class="empty-state" style="text-align:center;padding:24px;">Failed to load</div>'; return; }
 
     const sources = await res.json();
-    if (!sources || sources.length === 0) { grid.innerHTML = '<div class="news-empty">No sources</div>'; return; }
+    if (!sources || sources.length === 0) { grid.innerHTML = '<div class="empty-state" style="text-align:center;padding:24px;">No sources</div>'; return; }
 
     grid.innerHTML = sources.map(s => `
         <div class="news-card-item">

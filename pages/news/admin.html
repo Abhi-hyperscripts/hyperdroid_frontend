@@ -20,8 +20,10 @@
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/news-admin.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard crm-page">
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
@@ -133,8 +135,8 @@
                         <div class="news-stat-card"><div class="news-stat-label">Crawl Status</div><div class="news-stat-value" id="statCrawl">—</div><div class="news-stat-sub" id="statCrawlTime"></div></div>
                     </div>
                     <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">Recent Crawl Jobs</h4>
-                    <div class="news-table-wrap">
-                        <table class="news-table">
+                    <div class="data-table-container">
+                        <table class="data-table">
                             <thead><tr><th>Status</th><th>Started</th><th>Articles</th><th>Duration</th></tr></thead>
                             <tbody id="dashCrawlHistory"><tr><td colspan="4" class="news-loading">Loading...</td></tr></tbody>
                         </table>
@@ -175,8 +177,8 @@
                         </div>
                     </div>
                     <h4 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;">Crawl History</h4>
-                    <div class="news-table-wrap">
-                        <table class="news-table">
+                    <div class="data-table-container">
+                        <table class="data-table">
                             <thead><tr><th>Status</th><th>Started</th><th>Completed</th><th>Articles</th><th>Errors</th></tr></thead>
                             <tbody id="crawlHistory"><tr><td colspan="5" class="news-loading">Loading...</td></tr></tbody>
                         </table>
@@ -195,8 +197,8 @@
                             <option value="">All Categories</option>
                         </select>
                     </div>
-                    <div class="news-table-wrap">
-                        <table class="news-table">
+                    <div class="data-table-container">
+                        <table class="data-table">
                             <thead><tr><th>Title</th><th>Source</th><th>Category</th><th>Published</th><th>Actions</th></tr></thead>
                             <tbody id="articlesTable"><tr><td colspan="5" class="news-loading">Loading...</td></tr></tbody>
                         </table>
