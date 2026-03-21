@@ -249,7 +249,7 @@ function renderCrawlTable(jobs, targetId) {
         const startedAt = j.startedAt || j.started_at || j.createdAt || j.created_at;
         const completedAt = j.completedAt || j.completed_at;
         const started = formatDate(startedAt);
-        const artCount = j.articlesCount ?? j.articles_count ?? j.newArticles ?? j.new_articles ?? '—';
+        const artCount = j.totalInserted ?? j.total_inserted ?? j.articlesCount ?? j.articles_count ?? '—';
         const duration = completedAt && startedAt
             ? formatDuration(new Date(completedAt) - new Date(startedAt))
             : '—';
