@@ -471,6 +471,164 @@
     .nw-header, .nw-filters, .nw-categories, .nw-content { padding-left: 20px; padding-right: 20px; }
 }
 
+/* ── Hamburger Button (hidden on desktop) ── */
+.nw-hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+.nw-hamburger span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: var(--nw-text);
+    border-radius: 2px;
+    transition: all 0.3s;
+}
+
+/* ── Slide Menu ── */
+.nw-menu-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.nw-menu-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+.nw-slide-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100dvh;
+    background: var(--nw-bg2);
+    border-right: 1px solid var(--nw-border);
+    z-index: 999;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+}
+.nw-slide-menu.active {
+    transform: translateX(0);
+}
+
+.nw-slide-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--nw-border);
+}
+.nw-slide-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--nw-text);
+}
+.nw-slide-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: none;
+    font-size: 1.3rem;
+    color: var(--nw-text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+}
+.nw-slide-close:hover { background: var(--nw-bg); }
+
+.nw-slide-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.nw-slide-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.nw-slide-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--nw-text3);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+.nw-slide-select {
+    width: 100%;
+    padding: 8px 12px;
+}
+.nw-slide-clear {
+    align-self: flex-start;
+    padding: 6px 0;
+}
+.nw-slide-divider {
+    border: none;
+    border-top: 1px solid var(--nw-border);
+    margin: 4px 0;
+}
+.nw-slide-cats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.nw-slide-cats .nw-cat {
+    text-align: left;
+    border-radius: 8px;
+    padding: 8px 12px;
+    border: none;
+    font-size: 0.82rem;
+}
+.nw-slide-cats .nw-cat:hover {
+    background: var(--nw-bg);
+}
+.nw-slide-cats .nw-cat.active {
+    background: var(--nw-brand);
+    color: #fff;
+}
+
+.nw-slide-theme {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.nw-slide-theme-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--nw-border);
+    background: var(--nw-bg);
+    color: var(--nw-text);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.nw-slide-theme-btn:hover { border-color: var(--nw-brand); }
+.nw-slide-theme-icon { font-size: 1rem; }
+
 @media (max-width: 640px) {
     .nw-cards-grid { grid-template-columns: 1fr; }
     .nw-featured-row { gap: 16px; margin-bottom: 20px; }
@@ -481,11 +639,17 @@
     .nw-card-body { padding: 12px 14px; }
     .nw-card-headline { font-size: 0.9rem; -webkit-line-clamp: 3; }
     .nw-card-summary { -webkit-line-clamp: 4; }
-    .nw-header { flex-wrap: wrap; gap: 8px; padding: 12px 16px; }
-    .nw-filters { padding: 10px 16px; gap: 10px; flex-wrap: wrap; }
-    .nw-categories { padding: 8px 16px; }
+    .nw-header { gap: 10px; padding: 12px 16px; justify-content: flex-start; }
+    .nw-header-right { margin-left: auto; }
     .nw-content { padding: 16px; }
     .nw-cards-grid { gap: 14px; }
+
+    /* Show hamburger, hide desktop filters/categories/theme */
+    .nw-hamburger { display: flex; }
+    .nw-filters { display: none; }
+    .nw-categories { display: none; }
+    .nw-slide-menu { display: flex; }
+    .nw-theme-btn { display: none; }
 }
 
 /* ── Footer ── */

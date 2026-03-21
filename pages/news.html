@@ -60,8 +60,59 @@
 </head>
 <body class="nw-page nw-dark">
 
+    <!-- Mobile Slide Menu -->
+    <div class="nw-menu-overlay" id="menuOverlay" onclick="toggleMobileMenu()"></div>
+    <aside class="nw-slide-menu" id="slideMenu">
+        <div class="nw-slide-header">
+            <span class="nw-slide-title">Filters</span>
+            <button class="nw-slide-close" onclick="toggleMobileMenu()">&times;</button>
+        </div>
+        <div class="nw-slide-body">
+            <div class="nw-slide-section">
+                <label class="nw-slide-label">COUNTRY</label>
+                <select class="nw-filter-select nw-slide-select" id="countryFilterMobile" onchange="syncFilter('country', this.value)">
+                    <option value="">All Countries</option>
+                    <option value="IN">India</option>
+                    <option value="US">United States</option>
+                    <option value="GB">United Kingdom</option>
+                    <option value="CN">China</option>
+                    <option value="AE">UAE</option>
+                </select>
+            </div>
+            <div class="nw-slide-section">
+                <label class="nw-slide-label">SIGNAL</label>
+                <select class="nw-filter-select nw-slide-select" id="signalFilterMobile" onchange="syncFilter('signal', this.value)">
+                    <option value="">All Signals</option>
+                    <option value="funding">Funding</option>
+                    <option value="acquisition">Acquisition</option>
+                    <option value="ipo">IPO</option>
+                    <option value="regulation">Regulation</option>
+                    <option value="product_launch">Product Launch</option>
+                    <option value="partnership">Partnership</option>
+                    <option value="hiring">Hiring</option>
+                    <option value="expansion">Expansion</option>
+                </select>
+            </div>
+            <button class="nw-clear-btn nw-slide-clear" onclick="clearFilters(); toggleMobileMenu();">Clear filters</button>
+            <hr class="nw-slide-divider">
+            <label class="nw-slide-label">CATEGORIES</label>
+            <div class="nw-slide-cats" id="mobileCategoryBar"></div>
+            <hr class="nw-slide-divider">
+            <div class="nw-slide-theme">
+                <label class="nw-slide-label">THEME</label>
+                <button class="nw-slide-theme-btn" id="mobileThemeToggle" onclick="toggleTheme()">
+                    <span class="nw-slide-theme-icon" id="mobileThemeIcon">&#9790;</span>
+                    <span id="mobileThemeLabel">Light Mode</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
     <!-- Header -->
     <header class="nw-header">
+        <button class="nw-hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()">
+            <span></span><span></span><span></span>
+        </button>
         <a href="/index.html" class="nw-brand">
             <span class="nw-kip-mark">KIP</span>
         </a>

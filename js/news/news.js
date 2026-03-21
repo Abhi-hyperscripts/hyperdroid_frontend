@@ -26,15 +26,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 function toggleTheme() {
     const body = document.body;
     const btn = document.getElementById('themeToggle');
+    const mobileLabel = document.getElementById('mobileThemeLabel');
+    const mobileIcon = document.getElementById('mobileThemeIcon');
     if (body.classList.contains('nw-dark')) {
         body.classList.remove('nw-dark');
         body.classList.add('nw-light');
-        btn.textContent = 'Dark';
+        if (btn) btn.textContent = 'Dark';
+        if (mobileLabel) mobileLabel.textContent = 'Dark Mode';
+        if (mobileIcon) mobileIcon.innerHTML = '&#9728;';
         localStorage.setItem('nw_theme', 'light');
     } else {
         body.classList.remove('nw-light');
         body.classList.add('nw-dark');
-        btn.textContent = 'Light';
+        if (btn) btn.textContent = 'Light';
+        if (mobileLabel) mobileLabel.textContent = 'Light Mode';
+        if (mobileIcon) mobileIcon.innerHTML = '&#9790;';
         localStorage.setItem('nw_theme', 'dark');
     }
 }
@@ -42,11 +48,60 @@ function toggleTheme() {
 function applySavedTheme() {
     const saved = localStorage.getItem('nw_theme');
     const btn = document.getElementById('themeToggle');
+    const mobileLabel = document.getElementById('mobileThemeLabel');
+    const mobileIcon = document.getElementById('mobileThemeIcon');
     if (saved === 'light') {
         document.body.classList.remove('nw-dark');
         document.body.classList.add('nw-light');
         if (btn) btn.textContent = 'Dark';
+        if (mobileLabel) mobileLabel.textContent = 'Dark Mode';
+        if (mobileIcon) mobileIcon.innerHTML = '&#9728;';
     }
+}
+
+// ── Mobile Slide Menu ──
+function toggleMobileMenu() {
+    const menu = document.getElementById('slideMenu');
+    const overlay = document.getElementById('menuOverlay');
+    const isOpen = menu.classList.contains('active');
+    if (isOpen) {
+        menu.classList.remove('active');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    } else {
+        menu.classList.add('active');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        // Sync filter values from desktop to mobile
+        const cf = document.getElementById('countryFilter');
+        const cfm = document.getElementById('countryFilterMobile');
+        if (cf && cfm) cfm.value = cf.value;
+        const sf = document.getElementById('signalFilter');
+        const sfm = document.getElementById('signalFilterMobile');
+        if (sf && sfm) sfm.value = sf.value;
+    }
+}
+
+function syncFilter(type, value) {
+    if (type === 'country') {
+        document.getElementById('countryFilter').value = value;
+        currentCountry = value;
+    } else if (type === 'signal') {
+        document.getElementById('signalFilter').value = value;
+        currentSignal = value;
+    }
+    loadNews();
+}
+
+function mobileCategoryClick(btn, cat) {
+    currentCategory = cat;
+    // Update both desktop and mobile category buttons
+    document.querySelectorAll('.nw-cat').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.nw-cat').forEach(b => {
+        if (b.dataset.cat === cat) b.classList.add('active');
+    });
+    loadNews();
+    toggleMobileMenu();
 }
 
 // ── Live Clock ──
@@ -72,11 +127,21 @@ async function loadCategories() {
         const cats = await res.json();
         const bar = document.getElementById('categoryBar');
         if (!bar || !Array.isArray(cats)) return;
-        let html = '<button class="nw-cat active" onclick="filterCategory(this, \'\')">All</button>';
+        let html = '<button class="nw-cat active" data-cat="" onclick="filterCategory(this, \'\')">All</button>';
         cats.forEach(c => {
-            html += `<button class="nw-cat" onclick="filterCategory(this, '${esc(c.name)}')">${esc(c.name)}</button>`;
+            html += `<button class="nw-cat" data-cat="${esc(c.name)}" onclick="filterCategory(this, '${esc(c.name)}')">${esc(c.name)}</button>`;
         });
         bar.innerHTML = html;
+
+        // Populate mobile category bar
+        const mobileBar = document.getElementById('mobileCategoryBar');
+        if (mobileBar) {
+            let mhtml = '<button class="nw-cat active" data-cat="" onclick="mobileCategoryClick(this, \'\')">All</button>';
+            cats.forEach(c => {
+                mhtml += `<button class="nw-cat" data-cat="${esc(c.name)}" onclick="mobileCategoryClick(this, '${esc(c.name)}')">${esc(c.name)}</button>`;
+            });
+            mobileBar.innerHTML = mhtml;
+        }
     } catch (e) {
         console.warn('[NewsWire] Categories load failed:', e);
     }
@@ -179,28 +244,27 @@ function renderFeaturedCard(a) {
     const img = a.imageUrl
         ? `<img class="nw-featured-img" src="${esc(a.imageUrl)}" alt="" onerror="this.style.display='none'">`
         : '';
-    const signal = a.signalType ? `<span class="nw-tag nw-tag-signal">${esc(a.signalType)}</span>` : '';
-    const country = a.country ? `<span class="nw-tag nw-tag-country">${esc(a.country)}</span>` : '';
     const source = a.sourceName || extractDomain(a.sourceUrl);
     const date = formatDate(a.createdAt);
-    const opportunity = a.signalOpportunity
-        ? `<div class="nw-opportunity">${esc(a.signalCompany ? a.signalCompany + ' — ' : '')}${esc(a.signalOpportunity)}</div>`
+    const signalTag = a.signalType
+        ? `<span class="nw-stag">${esc(a.signalType.replace(/_/g, ' '))}</span>`
+        : '';
+    const whyLine = a.signalOpportunity
+        ? `<p class="nw-why">${esc(a.signalOpportunity)}</p>`
         : '';
 
     return `
     <article class="nw-featured-card" onclick="window.open('${esc(a.sourceUrl)}','_blank')">
         ${img}
         <div class="nw-featured-body">
-            <div class="nw-meta">
-                <span class="nw-tag nw-tag-cat">${esc(a.category)}</span>
-                ${signal}${country}
-                <span class="nw-source">${esc(source)}</span>
-                <span class="nw-date">${date}</span>
-            </div>
+            ${signalTag}
             <h2 class="nw-featured-headline">${esc(a.headline)}</h2>
+            ${whyLine}
             <p class="nw-featured-summary">${esc(a.aiSummary)}</p>
-            ${opportunity}
-            ${renderConfidence(a.confidence)}
+            <div class="nw-card-foot">
+                <span class="nw-cat-label">${esc(a.category)}</span>
+                <span class="nw-foot-right">${esc(source)} &middot; ${date}</span>
+            </div>
         </div>
     </article>`;
 }
@@ -209,23 +273,27 @@ function renderStandardCard(a) {
     const img = a.imageUrl
         ? `<div class="nw-card-img-wrap"><img class="nw-card-img" src="${esc(a.imageUrl)}" alt="" onerror="this.parentElement.style.display='none'"></div>`
         : '';
-    const signal = a.signalType ? `<span class="nw-tag nw-tag-signal">${esc(a.signalType)}</span>` : '';
     const source = a.sourceName || extractDomain(a.sourceUrl);
     const date = formatDate(a.createdAt);
+    const signalTag = a.signalType
+        ? `<span class="nw-stag">${esc(a.signalType.replace(/_/g, ' '))}</span>`
+        : '';
+    const whyLine = a.signalOpportunity
+        ? `<p class="nw-why">${esc(a.signalOpportunity)}</p>`
+        : '';
 
     return `
     <article class="nw-card" onclick="window.open('${esc(a.sourceUrl)}','_blank')">
         ${img}
         <div class="nw-card-body">
+            ${signalTag}
             <h3 class="nw-card-headline">${esc(a.headline)}</h3>
+            ${whyLine}
             <p class="nw-card-summary">${esc(a.aiSummary)}</p>
-            <div class="nw-meta">
-                <span class="nw-tag nw-tag-cat">${esc(a.category)}</span>
-                ${signal}
-                <span class="nw-source">${esc(source)}</span>
-                <span class="nw-date">${date}</span>
+            <div class="nw-card-foot">
+                <span class="nw-cat-label">${esc(a.category)}</span>
+                <span class="nw-foot-right">${esc(source)} &middot; ${date}</span>
             </div>
-            ${renderConfidence(a.confidence)}
         </div>
     </article>`;
 }
@@ -234,7 +302,7 @@ function renderStandardCard(a) {
 function filterCategory(btn, cat) {
     currentCategory = cat;
     document.querySelectorAll('.nw-cat').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    document.querySelectorAll(`.nw-cat[data-cat="${cat}"]`).forEach(b => b.classList.add('active'));
     loadNews();
 }
 
@@ -254,9 +322,12 @@ function clearFilters() {
     currentSignal = '';
     document.getElementById('countryFilter').value = '';
     document.getElementById('signalFilter').value = '';
+    const cfm = document.getElementById('countryFilterMobile');
+    const sfm = document.getElementById('signalFilterMobile');
+    if (cfm) cfm.value = '';
+    if (sfm) sfm.value = '';
     document.querySelectorAll('.nw-cat').forEach(b => b.classList.remove('active'));
-    const allBtn = document.querySelector('.nw-cat');
-    if (allBtn) allBtn.classList.add('active');
+    document.querySelectorAll('.nw-cat[data-cat=""]').forEach(b => b.classList.add('active'));
     loadNews();
 }
 
@@ -285,18 +356,7 @@ function updateArticleCount(count) {
     if (el) el.textContent = `${count} article${count !== 1 ? 's' : ''}`;
 }
 
-// ── Confidence Indicator ──
-function renderConfidence(val) {
-    if (val === undefined || val === null) return '';
-    const pct = Math.round(val * 100);
-    const cls = pct >= 70 ? 'nw-conf-high' : pct >= 40 ? 'nw-conf-med' : 'nw-conf-low';
-    const label = pct >= 70 ? 'High' : pct >= 40 ? 'Medium' : 'Low';
-    return `<div class="nw-confidence">
-        <span>${label} confidence</span>
-        <div class="nw-conf-bar"><div class="nw-conf-fill ${cls}" style="width:${pct}%"></div></div>
-        <span>${pct}%</span>
-    </div>`;
-}
+// (helpers removed — keeping it simple)
 
 // ── Utilities ──
 function esc(s) {
