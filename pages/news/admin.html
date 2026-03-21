@@ -22,6 +22,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/news-admin.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');</script>
@@ -317,6 +318,19 @@
                     <label>Bio</label>
                     <textarea id="authorBio" rows="3" placeholder="Short bio..." style="width:100%;padding:8px 12px;border:1px solid var(--border-color-light);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:0.85rem;resize:vertical;"></textarea>
                 </div>
+                <div class="crm-form-group" style="margin-bottom: 14px;">
+                    <label>Photograph</label>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div id="authorPhotoPreview" style="width:64px;height:64px;border-radius:50%;background:var(--bg-tertiary, var(--bg-secondary));border:2px dashed var(--border-color-light);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <div style="flex:1;">
+                            <input type="file" id="authorPhoto" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="previewAuthorPhoto(this)">
+                            <button class="news-btn news-btn-ghost" type="button" onclick="document.getElementById('authorPhoto').click()" style="font-size:0.8rem;">Choose Photo</button>
+                            <span id="authorPhotoName" style="font-size:0.75rem;color:var(--text-secondary);margin-left:8px;"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="gm-footer" style="padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color-light);">
                 <button class="news-btn news-btn-ghost" onclick="closeAuthorModal()">Cancel</button>
@@ -385,6 +399,7 @@
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/news/admin.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

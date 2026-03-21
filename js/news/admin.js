@@ -530,6 +530,15 @@ function openAuthorModal(author = null) {
     document.getElementById('authorCompany').value = author?.company || '';
     document.getElementById('authorEmail').value = author?.email || '';
     document.getElementById('authorBio').value = author?.bio || '';
+    // Reset photo
+    document.getElementById('authorPhoto').value = '';
+    document.getElementById('authorPhotoName').textContent = '';
+    const photoPreview = document.getElementById('authorPhotoPreview');
+    if (author?.photoS3Key || author?.photoUrl) {
+        photoPreview.innerHTML = `<img src="${author.photoUrl || ''}" style="width:100%;height:100%;object-fit:cover;">`;
+    } else {
+        photoPreview.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    }
     document.getElementById('authorModal').classList.add('active');
 }
 
@@ -567,6 +576,20 @@ async function saveAuthor() {
         loadAuthors();
     } else {
         Toast.error('Failed to save author');
+    }
+}
+
+function previewAuthorPhoto(input) {
+    const preview = document.getElementById('authorPhotoPreview');
+    const nameLabel = document.getElementById('authorPhotoName');
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        nameLabel.textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+        };
+        reader.readAsDataURL(file);
     }
 }
 
@@ -664,6 +687,13 @@ async function openArticleEditor(article = null) {
             quillEditor.root.innerHTML = article.content;
         } else {
             quillEditor.root.innerHTML = '';
+        }
+        // Convert author select to searchable dropdown
+        if (typeof convertSelectToSearchable === 'function') {
+            convertSelectToSearchable('articleAuthor', {
+                placeholder: 'Select author...',
+                searchPlaceholder: 'Search authors...'
+            });
         }
     }, 100);
 }
