@@ -639,8 +639,11 @@
     .nw-card-body { padding: 12px 14px; }
     .nw-card-headline { font-size: 0.9rem; -webkit-line-clamp: 3; }
     .nw-card-summary { -webkit-line-clamp: 4; }
-    .nw-header { gap: 10px; padding: 12px 16px; justify-content: flex-start; }
-    .nw-header-right { margin-left: auto; }
+    .nw-header { gap: 4px; padding: 10px 16px; justify-content: flex-start; }
+    .nw-header-right { margin-left: auto; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .nw-live { font-size: 0.65rem; gap: 4px; }
+    .nw-live-dot { width: 6px; height: 6px; }
+    .nw-date-display { font-size: 0.6rem; }
     .nw-content { padding: 16px; }
     .nw-cards-grid { gap: 14px; }
 
@@ -650,6 +653,15 @@
     .nw-categories { display: none; }
     .nw-slide-menu { display: flex; }
     .nw-theme-btn { display: none; }
+
+    /* Footer mobile */
+    .nw-footer { padding: 12px 28px; gap: 2px; }
+    .nw-footer-top { gap: 6px; }
+    .nw-footer-logo { height: 10px; }
+    .nw-footer-sep { width: 2px; height: 2px; }
+    .nw-footer-brand { font-size: 0.7rem; letter-spacing: 1.5px; }
+    .nw-footer-sub { font-size: 0.42rem; white-space: nowrap; }
+    .nw-footer-meta { font-size: 0.4rem; gap: 3px; white-space: nowrap; }
 }
 
 /* ── Footer ── */
