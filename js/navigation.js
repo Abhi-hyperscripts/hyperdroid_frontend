@@ -105,6 +105,18 @@ const Navigation = {
             requiresRole: 'PMS_USER'
         },
         {
+            id: 'news',
+            label: 'KIP',
+            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2z"/>
+                <line x1="7" y1="8" x2="13" y2="8"/>
+                <line x1="7" y1="12" x2="11" y2="12"/>
+                <line x1="7" y1="16" x2="13" y2="16"/>
+            </svg>`,
+            href: 'news/admin.html',
+            requiresRole: 'SUPERADMIN'
+        },
+        {
             id: 'admin',
             label: 'Admin',
             icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

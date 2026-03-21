@@ -269,6 +269,39 @@
                 </div>
             </div>
 
+            <!-- KIP News Card (SUPERADMIN only) -->
+            <div class="bento-card news" onclick="navigateToModule('news')" id="newsCard">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2z"/>
+                                <line x1="7" y1="8" x2="13" y2="8"/>
+                                <line x1="7" y1="12" x2="11" y2="12"/>
+                                <line x1="7" y1="16" x2="13" y2="16"/>
+                            </svg>
+                        </div>
+                        <div class="app-status admin-badge">
+                            <span class="status-indicator"></span>
+                            <span>Admin</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3>KIP</h3>
+                        <p>News intelligence with business signal detection and monitoring</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="app-action">
+                            Launch
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Admin Card (SUPERADMIN only) -->
             <div class="bento-card admin" onclick="navigateToModule('admin')" id="adminCard">
                 <div class="card-border"></div>
@@ -368,6 +401,7 @@
                 'crmCard': 'CRM_USER',
                 'researchCard': 'RESEARCH_USER',
                 'pmsCard': 'PMS_USER',
+                'newsCard': 'SUPERADMIN',
                 'adminCard': 'SUPERADMIN'
             };
 
@@ -392,7 +426,7 @@
             const cardToModule = {
                 'visionCard': 'vision', 'driveCard': 'drive', 'chatCard': 'chat',
                 'hrmsCard': 'hrms', 'crmCard': 'crm', 'researchCard': 'research',
-                'pmsCard': 'pms', 'adminCard': 'admin'
+                'pmsCard': 'pms', 'newsCard': 'news', 'adminCard': 'admin'
             };
             const accessibleModules = [];
 
@@ -403,7 +437,7 @@
 
                     // Check if service is licensed (Admin panel is always shown if user has SUPERADMIN role)
                     const serviceName = serviceNameMapping[cardId];
-                    const isLicensed = cardId === 'adminCard' ||
+                    const isLicensed = cardId === 'adminCard' || cardId === 'newsCard' ||
                                        !licensedServices ||
                                        licensedServices.includes(serviceName);
 
@@ -411,7 +445,7 @@
 
                     if (hasAccess) {
                         card.style.display = 'flex';
-                        if (cardId === 'adminCard') {
+                        if (cardId === 'adminCard' || cardId === 'newsCard') {
                             card.classList.add('visible');
                         }
                         accessibleModules.push(cardToModule[cardId]);
@@ -486,6 +520,9 @@
                     break;
                 case 'pms':
                     window.location.href = 'pms/dashboard.html';
+                    break;
+                case 'news':
+                    window.location.href = 'news/admin.html';
                     break;
                 case 'admin':
                     window.location.href = 'auth/dashboard.html';

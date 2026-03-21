@@ -376,6 +376,14 @@ body.dashboard .navbar {
     color: white;
 }
 
+.bento-card.news .app-icon {
+    background: linear-gradient(135deg, #d4af37, #f5d67b);
+}
+
+.bento-card.news .app-icon svg {
+    color: white;
+}
+
 .bento-card.admin .app-icon {
     background: linear-gradient(135deg, var(--color-danger), #f87171);
 }
