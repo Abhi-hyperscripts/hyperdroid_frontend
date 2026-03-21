@@ -166,6 +166,7 @@ const NavbarComponent = {
                     <a href="/pages/calculators/professional-tax-calculator.html" class="nav-dropdown-item" data-nav="professional-tax">Professional Tax <span>State-wise PT</span></a>
                 </div>
             </div>
+            <a href="/pages/kip.html" class="nav-link" data-nav="kip">KIP</a>
             <a href="/pages/pricing.html" class="nav-link" data-nav="pricing">Pricing</a>
         </div>
         <div class="nav-cta">
