@@ -52,6 +52,39 @@
     --nw-conf-track: #e2e8f0;
 }
 
+/* ── Toast/Prompt modal variable bridge (kip.html doesn't load theme.css) ── */
+.nw-dark {
+    --bg-card: #1a1d2e;
+    --bg-card-hover: #22263a;
+    --bg-input: #151822;
+    --border-color: rgba(255,255,255,0.08);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --brand-primary: #3b82f6;
+    --brand-primary-alpha-20: rgba(59,130,246,0.2);
+    --color-info: #60a5fa;
+    --shadow-xl: 0 20px 60px rgba(0,0,0,0.5);
+    --gray-50: rgba(255,255,255,0.04);
+    --overlay-dark: rgba(0,0,0,0.6);
+}
+
+.nw-light {
+    --bg-card: #ffffff;
+    --bg-card-hover: #f1f5f9;
+    --bg-input: #ffffff;
+    --border-color: #e2e8f0;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-tertiary: #94a3b8;
+    --brand-primary: #3b82f6;
+    --brand-primary-alpha-20: rgba(59,130,246,0.2);
+    --color-info: #2563eb;
+    --shadow-xl: 0 20px 60px rgba(0,0,0,0.15);
+    --gray-50: #f8fafc;
+    --overlay-dark: rgba(0,0,0,0.4);
+}
+
 /* ── Rostex Font ── */
 @font-face {
     font-family: 'Rostex';
@@ -730,4 +763,475 @@
 .nw-footer-dot::before {
     content: '·';
     font-size: 0.75rem;
+}
+
+/* ── Bottom Mode Toggle ── */
+.nw-mode-toggle {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    background: var(--nw-bg-card);
+    border: 1px solid var(--nw-border);
+    border-radius: 50px;
+    padding: 4px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    z-index: 1000;
+}
+
+.nw-mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 20px;
+    border: none;
+    border-radius: 50px;
+    background: transparent;
+    color: var(--nw-text3);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+.nw-mode-btn:hover {
+    color: var(--nw-text);
+}
+
+.nw-mode-btn.active {
+    background: var(--nw-brand);
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(59,130,246,0.4);
+}
+
+.nw-mode-btn svg {
+    flex-shrink: 0;
+}
+
+/* ── LinkedIn-style Feed ── */
+.nw-feed { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+.nw-post {
+    background: var(--nw-bg-card);
+    border: 1px solid var(--nw-border);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Post header — avatar + author */
+.nw-post-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px 0;
+}
+
+.nw-post-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.nw-post-avatar-initials {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--nw-brand);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.nw-post-author-info { flex: 1; min-width: 0; }
+
+.nw-post-author-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--nw-text);
+    line-height: 1.3;
+}
+
+.nw-post-author-role {
+    font-size: 0.76rem;
+    color: var(--nw-text3);
+    line-height: 1.3;
+}
+
+.nw-post-meta {
+    font-size: 0.72rem;
+    color: var(--nw-text3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.nw-post-meta .nw-post-dot::before { content: '·'; }
+
+/* Post body — title + truncated content */
+.nw-post-body { padding: 12px 20px 0; }
+
+.nw-post-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--nw-text);
+    margin: 0 0 6px 0;
+    line-height: 1.4;
+}
+
+.nw-post-category {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--nw-tag-bg);
+    color: var(--nw-tag-text);
+    margin-bottom: 8px;
+}
+
+.nw-post-content {
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: var(--nw-text2);
+    overflow: hidden;
+    position: relative;
+}
+
+.nw-post-content.collapsed {
+    max-height: 160px;
+}
+
+.nw-post-content.collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(transparent, var(--nw-bg-card));
+    pointer-events: none;
+}
+
+.nw-post-content h2 { font-size: 1.05rem; font-weight: 600; margin: 16px 0 8px; color: var(--nw-text); }
+.nw-post-content h3 { font-size: 0.95rem; font-weight: 600; margin: 14px 0 6px; color: var(--nw-text); }
+.nw-post-content p { margin: 0 0 10px; }
+.nw-post-content ul, .nw-post-content ol { margin: 0 0 10px; padding-left: 20px; }
+.nw-post-content li { margin-bottom: 4px; }
+.nw-post-content strong { color: var(--nw-text); font-weight: 600; }
+.nw-post-content blockquote {
+    border-left: 3px solid var(--nw-brand);
+    margin: 10px 0;
+    padding: 8px 16px;
+    background: var(--nw-opp-bg);
+    border-radius: 0 6px 6px 0;
+    font-style: italic;
+}
+
+/* Author photo inside article (desktop only) */
+.nw-post-author-photo {
+    float: right;
+    width: 160px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin: 0 0 16px 24px;
+    border: 1px solid var(--nw-border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+@media (max-width: 768px) {
+    .nw-post-author-photo { display: none; }
+}
+
+.nw-post-more {
+    background: none;
+    border: none;
+    color: var(--nw-text3);
+    font-size: 0.84rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 6px 20px 0;
+    font-family: 'Inter', sans-serif;
+}
+
+.nw-post-more:hover { color: var(--nw-brand); }
+
+/* Engagement stats bar */
+.nw-post-stats {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 20px;
+    font-size: 0.75rem;
+    color: var(--nw-text3);
+}
+
+/* Action bar — Like, Comment, Share */
+.nw-post-actions {
+    display: flex;
+    border-top: 1px solid var(--nw-border);
+    padding: 2px 8px;
+}
+
+.nw-post-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 0;
+    border: none;
+    background: none;
+    color: var(--nw-text3);
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.nw-post-action-btn:hover {
+    background: var(--nw-opp-bg);
+    color: var(--nw-text);
+}
+
+.nw-post-action-btn.liked {
+    color: var(--nw-brand);
+}
+
+.nw-post-action-btn svg { flex-shrink: 0; }
+
+/* Comment section */
+.nw-post-comments {
+    border-top: 1px solid var(--nw-border);
+    padding: 12px 20px 16px;
+    display: none;
+}
+
+.nw-post-comments.open { display: block; }
+
+.nw-post-comment-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.nw-post-comment-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--nw-border);
+    border-radius: 20px;
+    background: var(--nw-bg);
+    color: var(--nw-text);
+    font-size: 0.82rem;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+}
+
+.nw-post-comment-input:focus { border-color: var(--nw-brand); }
+
+.nw-post-comment-input::placeholder { color: var(--nw-text3); }
+
+.nw-post-comment-submit {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    background: var(--nw-brand);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.nw-post-comment-submit:hover { opacity: 0.9; }
+
+.nw-post-comment-list { display: flex; flex-direction: column; gap: 10px; }
+
+.nw-post-comment-item {
+    display: flex;
+    gap: 8px;
+}
+
+.nw-post-comment-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--nw-country-bg);
+    color: var(--nw-text3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.nw-post-comment-bubble {
+    background: var(--nw-opp-bg);
+    border-radius: 0 12px 12px 12px;
+    padding: 8px 12px;
+    flex: 1;
+}
+
+.nw-post-comment-author {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--nw-text);
+}
+
+.nw-post-comment-text {
+    font-size: 0.82rem;
+    color: var(--nw-text2);
+    margin-top: 2px;
+    line-height: 1.45;
+}
+
+.nw-post-comment-time {
+    font-size: 0.68rem;
+    color: var(--nw-text3);
+    margin-top: 3px;
+}
+
+.nw-post-no-comments {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--nw-text3);
+    padding: 8px 0;
+}
+
+/* ── Comment identity bar ── */
+.nw-post-comment-identity {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 0.76rem;
+    color: var(--nw-text3);
+}
+
+.nw-post-comment-identity strong {
+    color: var(--nw-text);
+    font-weight: 600;
+}
+
+.nw-post-comment-change {
+    background: none;
+    border: none;
+    color: var(--nw-brand);
+    font-size: 0.72rem;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 2px;
+}
+
+.nw-post-comment-change:hover { text-decoration: underline; }
+
+/* ── Single Article Page ── */
+.kip-article {
+    max-width: 820px;
+    margin: 0 auto;
+    background: var(--nw-bg-card);
+    border: 1px solid var(--nw-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.kip-article-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 32px 0;
+}
+
+.kip-article-title {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--nw-text);
+    margin: 0 0 8px;
+    padding: 0 32px;
+    line-height: 1.35;
+}
+
+.kip-article-excerpt {
+    font-size: 0.95rem;
+    color: var(--nw-text2);
+    line-height: 1.6;
+    margin: 0 0 20px;
+    padding: 0 32px;
+    font-style: italic;
+    border-left: 3px solid var(--nw-brand);
+    margin-left: 32px;
+    padding-left: 16px;
+    padding-right: 0;
+}
+
+.kip-article > #articleCategory { padding: 12px 32px 0; }
+
+.kip-article-content {
+    padding: 0 32px 24px;
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: var(--nw-text2);
+}
+
+.kip-article-content h2 { font-size: 1.25rem; font-weight: 700; margin: 28px 0 12px; color: var(--nw-text); }
+.kip-article-content h3 { font-size: 1.1rem; font-weight: 600; margin: 24px 0 10px; color: var(--nw-text); }
+.kip-article-content p { margin: 0 0 16px; }
+.kip-article-content ul, .kip-article-content ol { margin: 0 0 16px; padding-left: 24px; }
+.kip-article-content li { margin-bottom: 6px; }
+.kip-article-content strong { color: var(--nw-text); font-weight: 600; }
+.kip-article-content blockquote {
+    border-left: 3px solid var(--nw-brand);
+    margin: 16px 0;
+    padding: 12px 20px;
+    background: var(--nw-opp-bg);
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+}
+
+.kip-article-engagement { padding: 0 12px; }
+.kip-article-comments { padding: 20px 32px 28px; border-top: 1px solid var(--nw-border); }
+
+@media (max-width: 640px) {
+    .kip-article-author { padding: 16px 16px 0; }
+    .kip-article-title { font-size: 1.3rem; padding: 0 16px; }
+    .kip-article-excerpt { margin-left: 16px; }
+    .kip-article > #articleCategory { padding: 10px 16px 0; }
+    .kip-article-content { padding: 0 16px 16px; }
+    .kip-article-comments { padding: 16px; }
+    .kip-article-engagement { padding: 0 4px; }
+}
+
+/* Add bottom padding for fixed toggle */
+.nw-footer { padding-bottom: 80px; }
+
+@media (max-width: 640px) {
+    .nw-feed { gap: 8px; }
+    .nw-post-header { padding: 12px 16px 0; }
+    .nw-post-body { padding: 10px 16px 0; }
+    .nw-post-more { padding: 4px 16px 0; }
+    .nw-post-stats { padding: 6px 16px; }
+    .nw-post-actions { padding: 2px 4px; }
+    .nw-post-comments { padding: 10px 16px 14px; }
+    .nw-post-avatar, .nw-post-avatar-initials { width: 38px; height: 38px; font-size: 0.75rem; }
+}
 }

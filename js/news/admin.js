@@ -505,9 +505,21 @@ async function loadAuthors() {
         return;
     }
 
-    tbody.innerHTML = allAuthors.map(a => `<tr>
-        <td><span style="font-weight:500;">${esc(a.name)}</span></td>
-        <td>${esc(a.designation) || '<span style="color:var(--text-muted);">-</span>'}</td>
+    tbody.innerHTML = allAuthors.map(a => {
+        const initials = a.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        const photoHtml = a.photoS3Key
+            ? `<img class="employee-avatar-img" src="${esc(a.photoUrl || '')}" alt="${esc(a.name)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">`
+            : `<div class="employee-avatar" style="width:36px;height:36px;border-radius:50%;background:var(--brand-primary);color:var(--text-inverse);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:600;flex-shrink:0;">${initials}</div>`;
+        return `<tr>
+        <td>
+            <div class="employee-info" style="display:flex;align-items:center;gap:12px;">
+                ${photoHtml}
+                <div>
+                    <div style="font-weight:500;">${esc(a.name)}</div>
+                    ${a.designation ? `<div style="font-size:0.75rem;color:var(--text-secondary);">${esc(a.designation)}</div>` : ''}
+                </div>
+            </div>
+        </td>
         <td>${esc(a.company) || '<span style="color:var(--text-muted);">-</span>'}</td>
         <td>${esc(a.email) || '<span style="color:var(--text-muted);">-</span>'}</td>
         <td><span class="status-badge ${a.isActive ? 'active' : 'neutral'}">${a.isActive ? 'Active' : 'Inactive'}</span></td>
@@ -519,7 +531,8 @@ async function loadAuthors() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
         </td>
-    </tr>`).join('');
+    </tr>`;
+    }).join('');
 }
 
 function openAuthorModal(author = null) {
@@ -570,13 +583,52 @@ async function saveAuthor() {
         res = await newsRequest('/news/authors', { method: 'POST', body: JSON.stringify(body) });
     }
 
-    if (res?.ok) {
-        Toast.success(id ? 'Author updated' : 'Author created');
-        closeAuthorModal();
-        loadAuthors();
-    } else {
-        Toast.error('Failed to save author');
+    if (!res?.ok) { Toast.error('Failed to save author'); return; }
+
+    // Get author ID (from existing or newly created)
+    let authorId = id;
+    if (!authorId) {
+        try {
+            const data = await res.json();
+            authorId = data.id;
+        } catch { Toast.error('Author saved but failed to get ID for photo upload'); return; }
     }
+
+    // Upload photo if a file was selected
+    const photoInput = document.getElementById('authorPhoto');
+    if (photoInput.files && photoInput.files[0]) {
+        const formData = new FormData();
+        formData.append('file', photoInput.files[0]);
+
+        if (typeof api !== 'undefined' && typeof api.ensureValidToken === 'function') {
+            await api.ensureValidToken();
+        }
+        const token = getAuthToken();
+        try {
+            const photoRes = await fetch(`${NEWS_API}/news/authors/${authorId}/photo`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+            if (!photoRes.ok) {
+                const err = await photoRes.text().catch(() => '');
+                Toast.error('Author saved but photo upload failed' + (err ? ': ' + err : ''));
+                loadAuthors();
+                closeAuthorModal();
+                return;
+            }
+        } catch (err) {
+            console.error('[NewsAdmin] Photo upload error:', err);
+            Toast.error('Author saved but photo upload failed');
+            loadAuthors();
+            closeAuthorModal();
+            return;
+        }
+    }
+
+    Toast.success(id ? 'Author updated' : 'Author created');
+    closeAuthorModal();
+    loadAuthors();
 }
 
 function previewAuthorPhoto(input) {
@@ -630,13 +682,13 @@ async function loadGuestArticles() {
         <td><span class="status-badge ${statusClass}">${esc(a.status)}</span></td>
         <td style="white-space:nowrap;">${a.publishedAt ? formatTimeAgo(a.publishedAt) : '—'}</td>
         <td class="actions-cell">
-            <button class="action-btn" title="Engagement Stats" onclick="event.stopPropagation(); showEngagementStats('${a.id}', '${esc(a.title).replace(/'/g, '&#39;')}')">
+            <button class="action-btn" title="Engagement Stats" data-article-id="${a.id}" data-article-title="${esc(a.title)}" onclick="event.stopPropagation(); showEngagementStats(this.dataset.articleId, this.dataset.articleTitle)">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
             </button>
             <button class="action-btn" title="Edit" onclick="event.stopPropagation(); editGuestArticle('${a.id}')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
-            <button class="action-btn delete" title="Delete" onclick="event.stopPropagation(); deleteGuestArticle('${a.id}', '${esc(a.title).replace(/'/g, '&#39;')}')">
+            <button class="action-btn delete" title="Delete" data-article-id="${a.id}" data-article-title="${esc(a.title)}" onclick="event.stopPropagation(); deleteGuestArticle(this.dataset.articleId, this.dataset.articleTitle)">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
         </td>
@@ -790,6 +842,91 @@ async function showEngagementStats(articleId, title) {
         document.getElementById('engComments').textContent = '—';
         document.getElementById('engShares').textContent = '—';
         document.getElementById('engReadTime').textContent = '—';
+    }
+
+    // Load comments for moderation
+    loadEngagementComments(articleId);
+}
+
+async function loadEngagementComments(articleId) {
+    const list = document.getElementById('engCommentsList');
+    if (!list) return;
+    list.innerHTML = '<div style="text-align:center;color:var(--text-secondary);font-size:0.8rem;padding:8px;">Loading...</div>';
+
+    const res = await newsRequest(`/news/engagement/${articleId}/comments?limit=100`);
+    if (!res?.ok) { list.innerHTML = '<div style="text-align:center;color:var(--text-secondary);font-size:0.8rem;padding:8px;">Failed to load</div>'; return; }
+
+    const data = await res.json();
+    const comments = data.comments || [];
+
+    if (!comments.length) {
+        list.innerHTML = '<div style="text-align:center;color:var(--text-secondary);font-size:0.8rem;padding:12px;">No comments yet</div>';
+        return;
+    }
+
+    list.innerHTML = comments.map(c => {
+        const date = new Date(c.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const statusBadge = c.isApproved
+            ? '<span class="status-badge active" style="font-size:0.65rem;">Visible</span>'
+            : '<span class="status-badge rejected" style="font-size:0.65rem;">Hidden</span>';
+        const toggleLabel = c.isApproved ? 'Hide' : 'Show';
+        const toggleClass = c.isApproved ? 'news-btn-ghost' : 'news-btn-primary';
+        return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border-color-light);">
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <strong style="font-size:0.8rem;color:var(--text-primary);">${esc(c.visitorName || c.name)}</strong>
+                    ${statusBadge}
+                    <span style="font-size:0.68rem;color:var(--text-secondary);margin-left:auto;">${date}</span>
+                </div>
+                <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.4;">${esc(c.content)}</div>
+            </div>
+            <div style="display:flex;gap:4px;flex-shrink:0;">
+                <button class="news-btn ${toggleClass}" style="font-size:0.7rem;padding:4px 10px;" onclick="toggleCommentApproval('${c.id}', ${!c.isApproved}, '${articleId}')">${toggleLabel}</button>
+                <button class="news-btn news-btn-ghost" style="font-size:0.7rem;padding:4px 8px;color:var(--color-error);" onclick="deleteComment('${c.id}', '${articleId}')">Delete</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function toggleCommentApproval(commentId, approved, articleId) {
+    const res = await newsRequest(`/news/engagement/comment/${commentId}/approve`, {
+        method: 'PUT',
+        body: JSON.stringify({ approved })
+    });
+    if (res?.ok) {
+        Toast.success(approved ? 'Comment visible' : 'Comment hidden');
+        loadEngagementComments(articleId);
+        // Refresh stats
+        const statsRes = await newsRequest(`/news/engagement/${articleId}/stats`);
+        if (statsRes?.ok) {
+            const stats = await statsRes.json();
+            document.getElementById('engComments').textContent = stats.commentCount ?? 0;
+        }
+    } else {
+        Toast.error('Failed to update comment');
+    }
+}
+
+async function deleteComment(commentId, articleId) {
+    const confirmed = await Confirm.show({
+        title: 'Delete Comment',
+        message: 'Are you sure? This cannot be undone.',
+        type: 'danger',
+        confirmText: 'Delete'
+    });
+    if (!confirmed) return;
+
+    const res = await newsRequest(`/news/engagement/comment/${commentId}`, { method: 'DELETE' });
+    if (res?.ok) {
+        Toast.success('Comment deleted');
+        loadEngagementComments(articleId);
+        const statsRes = await newsRequest(`/news/engagement/${articleId}/stats`);
+        if (statsRes?.ok) {
+            const stats = await statsRes.json();
+            document.getElementById('engComments').textContent = stats.commentCount ?? 0;
+        }
+    } else {
+        Toast.error('Failed to delete comment');
     }
 }
 

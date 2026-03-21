@@ -185,6 +185,18 @@
         </div>
     </div>
 
+    <!-- Bottom Mode Toggle -->
+    <div class="nw-mode-toggle" id="modeToggle">
+        <button class="nw-mode-btn active" data-mode="news" onclick="switchMode('news')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            News
+        </button>
+        <button class="nw-mode-btn" data-mode="articles" onclick="switchMode('articles')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Articles
+        </button>
+    </div>
+
     <!-- Footer -->
     <footer class="nw-footer">
         <div class="nw-footer-top">
@@ -201,6 +213,7 @@
     </footer>
 
     <script src="/js/config.js"></script>
+    <script>document.write('<script src="../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../js/news/news.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </body>
 </html>

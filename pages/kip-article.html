@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>KIP — Knowledge Intelligence Platform</title>
+    <meta name="description" content="Read on KIP — Knowledge Intelligence Platform by Ragenaizer">
+
+    <!-- OG tags (will be updated by JS for better previews when server-side rendering is available) -->
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="KIP — Knowledge Intelligence Platform">
+    <meta property="og:title" id="og-title" content="KIP Article">
+    <meta property="og:description" id="og-desc" content="Read on KIP — Knowledge Intelligence Platform">
+    <meta property="og:image" id="og-image" content="https://ragenaizer.com/assets/og-news.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script>document.write('<link rel="stylesheet" href="../css/news.css?v=' + CACHE_VERSION + '">');</script>
+</head>
+<body class="nw-page nw-dark">
+
+    <!-- Header -->
+    <header class="nw-header">
+        <a href="/pages/kip.html" class="nw-brand">
+            <span class="nw-kip-mark">KIP</span>
+        </a>
+        <div class="nw-header-right">
+            <a href="/pages/kip.html" style="color:var(--nw-text3);font-size:0.82rem;text-decoration:none;margin-right:12px;">Back to Feed</a>
+            <button class="nw-theme-btn" id="themeToggle" onclick="toggleArticleTheme()">Light</button>
+        </div>
+    </header>
+
+    <!-- Article Container -->
+    <div class="nw-content">
+        <!-- Loading -->
+        <div class="nw-loading" id="loadingState">
+            <div class="nw-spinner"></div>
+            <p>Loading article...</p>
+        </div>
+
+        <!-- Error -->
+        <div class="nw-empty" id="errorState" style="display:none;">
+            <p style="font-size:1.2rem;margin-bottom:8px;">Article not found</p>
+            <p><a href="/pages/kip.html" style="color:var(--nw-brand);">Back to KIP</a></p>
+        </div>
+
+        <!-- Article -->
+        <article class="kip-article" id="articleContainer" style="display:none;">
+            <!-- Author header -->
+            <div class="kip-article-author" id="articleAuthor"></div>
+
+            <!-- Category + Title -->
+            <div id="articleCategory"></div>
+            <h1 class="kip-article-title" id="articleTitle"></h1>
+
+            <!-- Excerpt -->
+            <p class="kip-article-excerpt" id="articleExcerpt"></p>
+
+            <!-- Content with author photo -->
+            <div class="kip-article-content" id="articleContent"></div>
+
+            <!-- Engagement -->
+            <div class="kip-article-engagement">
+                <div class="nw-post-stats" id="articleStats"></div>
+                <div class="nw-post-actions">
+                    <button class="nw-post-action-btn" id="articleLikeBtn" onclick="likeArticle()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                        <span id="articleLikeCount">Like</span>
+                    </button>
+                    <button class="nw-post-action-btn" onclick="scrollToComments()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <span id="articleCommentCount">Comment</span>
+                    </button>
+                    <button class="nw-post-action-btn" onclick="shareArticle()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                        Share
+                    </button>
+                </div>
+            </div>
+
+            <!-- Comments -->
+            <div class="kip-article-comments" id="articleComments">
+                <h3 style="font-size:1rem;font-weight:600;color:var(--nw-text);margin:0 0 16px;">Comments</h3>
+                <div id="commentIdentity"></div>
+                <div class="nw-post-comment-form">
+                    <input class="nw-post-comment-input" id="commentInput" placeholder="Add a comment..." onkeydown="if(event.key==='Enter')postComment()">
+                    <button class="nw-post-comment-submit" onclick="postComment()">Post</button>
+                </div>
+                <div class="nw-post-comment-list" id="commentList"></div>
+            </div>
+        </article>
+    </div>
+
+    <!-- Footer -->
+    <footer class="nw-footer">
+        <div class="nw-footer-top">
+            <img src="../assets/brand_logo.png" alt="Ragenaizer" class="nw-footer-logo">
+            <span class="nw-footer-sep"></span>
+            <span class="nw-footer-brand">KIP</span>
+        </div>
+        <div class="nw-footer-sub">Knowledge Intelligence Platform by Ragenaizer</div>
+        <div class="nw-footer-meta">
+            <span>Real-time news intelligence & signal detection</span>
+            <span class="nw-footer-dot"></span>
+            <span>&copy; 2026 Ragenaizer. All rights reserved.</span>
+        </div>
+    </footer>
+
+    <script src="/js/config.js"></script>
+    <script>document.write('<script src="../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../js/news/kip-article.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</body>
+</html>
