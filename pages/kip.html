@@ -93,6 +93,15 @@
                     <option value="expansion">Expansion</option>
                 </select>
             </div>
+            <div class="nw-slide-section">
+                <label class="nw-slide-label">IMPACT</label>
+                <select class="nw-filter-select nw-slide-select" id="impactFilterMobile" onchange="syncFilter('impact', this.value)">
+                    <option value="">All Impact</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
             <button class="nw-clear-btn nw-slide-clear" onclick="clearFilters(); toggleMobileMenu();">Clear filters</button>
             <hr class="nw-slide-divider">
             <label class="nw-slide-label">CATEGORIES</label>
@@ -151,6 +160,15 @@
                 <option value="partnership">Partnership</option>
                 <option value="hiring">Hiring</option>
                 <option value="expansion">Expansion</option>
+            </select>
+        </div>
+        <div class="nw-filter-group">
+            <label>IMPACT</label>
+            <select class="nw-filter-select" id="impactFilter" onchange="filterImpact()">
+                <option value="">All Impact</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
             </select>
         </div>
         <button class="nw-clear-btn" onclick="clearFilters()">Clear filters</button>

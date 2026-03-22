@@ -243,14 +243,21 @@ async function triggerCrawl() {
     }
 }
 
+function formatTokens(inTok, outTok) {
+    const total = (inTok || 0) + (outTok || 0);
+    if (total === 0) return '—';
+    const fmt = n => n >= 1000 ? (n / 1000).toFixed(1) + 'k' : n.toString();
+    return `<span style="font-size:0.75rem;">${fmt(inTok)} / ${fmt(outTok)}</span><br><span style="font-size:0.65rem;color:var(--text-tertiary);">${fmt(total)} total</span>`;
+}
+
 function renderCrawlTable(jobs, targetId) {
     const tbody = document.getElementById(targetId);
     if (!tbody) return;
     if (!jobs || jobs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="text-align:center;padding:24px;">No crawl jobs yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="text-align:center;padding:24px;">No crawl jobs yet</td></tr>';
         return;
     }
-    const cols = targetId === 'dashCrawlHistory' ? 4 : 5;
+    const isDash = targetId === 'dashCrawlHistory';
     tbody.innerHTML = jobs.map(j => {
         const status = (j.status || '').toLowerCase();
         let badge = 'status-badge neutral';
@@ -262,15 +269,19 @@ function renderCrawlTable(jobs, targetId) {
         const completedAt = j.completedAt || j.completed_at;
         const started = formatDate(startedAt);
         const artCount = j.totalInserted ?? j.total_inserted ?? j.articlesCount ?? j.articles_count ?? '—';
+        const inTok = j.totalInputTokens ?? j.total_input_tokens ?? 0;
+        const outTok = j.totalOutputTokens ?? j.total_output_tokens ?? 0;
+        const tokens = formatTokens(inTok, outTok);
         const duration = completedAt && startedAt
             ? formatDuration(new Date(completedAt) - new Date(startedAt))
             : '—';
 
-        if (cols === 4) {
+        if (isDash) {
             return `<tr>
                 <td><span class="status-badge ${badge}">${esc(j.status)}</span></td>
                 <td>${started}</td>
                 <td>${artCount}</td>
+                <td>${tokens}</td>
                 <td>${duration}</td>
             </tr>`;
         }
@@ -282,6 +293,7 @@ function renderCrawlTable(jobs, targetId) {
             <td>${started}</td>
             <td>${completed}</td>
             <td>${artCount}</td>
+            <td>${tokens}</td>
             <td>${errors}</td>
         </tr>`;
     }).join('');
