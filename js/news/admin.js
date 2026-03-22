@@ -12,7 +12,9 @@ const TAB_NAMES = {
     'categories': 'Categories',
     'sources': 'Sources',
     'authors': 'Authors',
-    'guest-articles': 'Guest Articles'
+    'guest-articles': 'Guest Articles',
+    'ads': 'Ad Slots',
+    'analytics': 'Analytics'
 };
 
 let articleOffset = 0;
@@ -38,6 +40,7 @@ async function newsRequest(path, options = {}) {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
                 ...(options.headers || {})
             }
         });
@@ -143,6 +146,8 @@ function switchTab(tabName) {
     else if (tabName === 'sources') loadSources();
     else if (tabName === 'authors') loadAuthors();
     else if (tabName === 'guest-articles') loadGuestArticles();
+    else if (tabName === 'ads') loadAds();
+    else if (tabName === 'analytics') loadAnalytics();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -955,4 +960,191 @@ function previewArticle() {
         h1{font-size:2rem;margin-bottom:16px;} img{max-width:100%;border-radius:8px;}</style></head>
         <body><h1>${esc(title)}</h1><hr>${content}</body></html>`);
     win.document.close();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  AD SLOTS MANAGEMENT
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadAds() {
+    const res = await newsRequest(`/news/page-analytics/ads/all?_t=${Date.now()}`);
+    if (!res) return;
+    const data = await res.json();
+    const ads = data.ads || [];
+    const tbody = document.getElementById('adsTableBody');
+    if (!ads.length) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-secondary);">No ads yet</td></tr>';
+        return;
+    }
+    window._adSlotCache = {};
+    tbody.innerHTML = ads.map(a => {
+        window._adSlotCache[a.id] = a;
+        return `<tr>
+        <td><strong>${esc(a.title)}</strong></td>
+        <td><span style="font-size:0.7rem;padding:2px 6px;border-radius:4px;background:var(--bg-tertiary);color:var(--text-secondary);">${esc(a.adType)}</span></td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.75rem;color:var(--text-secondary);" title="${esc(a.linkUrl)}">${esc(a.linkUrl)}</td>
+        <td>${a.position}</td>
+        <td>${a.isActive ? '<span style="color:var(--color-success);">Yes</span>' : '<span style="color:var(--color-error);">No</span>'}</td>
+        <td>${(a.impressions || 0).toLocaleString()}</td>
+        <td>${(a.clicks || 0).toLocaleString()}</td>
+        <td>${a.ctr || 0}%</td>
+        <td style="white-space:nowrap;">
+            <button class="news-btn news-btn-ghost" style="padding:4px 8px;font-size:0.7rem;" onclick="editAdById('${a.id}')">Edit</button>
+            <button class="news-btn news-btn-ghost" style="padding:4px 8px;font-size:0.7rem;color:var(--color-error);" onclick="deleteAd('${a.id}')">Delete</button>
+        </td>
+    </tr>`;
+    }).join('');
+}
+
+function openAdEditor() {
+    document.getElementById('adEditorTitle').textContent = 'New Ad';
+    document.getElementById('adEditId').value = '';
+    document.getElementById('adTitle').value = '';
+    document.getElementById('adDescription').value = '';
+    document.getElementById('adLinkUrl').value = '';
+    document.getElementById('adImageUrl').value = '';
+    document.getElementById('adPosition').value = '1';
+    document.getElementById('adType').value = 'product';
+    document.getElementById('adEditorModal').classList.add('active');
+}
+
+function editAdById(adId) {
+    const ad = window._adSlotCache?.[adId];
+    if (ad) editAd(ad);
+}
+
+function editAd(ad) {
+    document.getElementById('adEditorTitle').textContent = 'Edit Ad';
+    document.getElementById('adEditId').value = ad.id;
+    document.getElementById('adTitle').value = ad.title || '';
+    document.getElementById('adDescription').value = ad.description || '';
+    document.getElementById('adLinkUrl').value = ad.linkUrl || '';
+    document.getElementById('adImageUrl').value = ad.imageUrl || '';
+    document.getElementById('adPosition').value = ad.position || 1;
+    document.getElementById('adType').value = ad.adType || 'product';
+    document.getElementById('adEditorModal').classList.add('active');
+    if (ad.linkUrl) previewAdUrl();
+}
+
+function closeAdEditor() {
+    document.getElementById('adEditorModal').classList.remove('active');
+    const wrap = document.getElementById('adPreviewWrap');
+    if (wrap) wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.8rem;">Enter a URL to preview</div>';
+}
+
+function previewAdUrl() {
+    const url = document.getElementById('adLinkUrl').value.trim();
+    const title = document.getElementById('adTitle').value.trim() || 'Ad Title';
+    const wrap = document.getElementById('adPreviewWrap');
+    if (!url) {
+        wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-secondary);font-size:0.8rem;">Enter a URL to preview</div>';
+        return;
+    }
+    // Render exactly like KIP ad card
+    wrap.innerHTML = `
+        <div style="display:flex;flex-direction:column;height:100%;background:var(--bg-secondary);border-radius:8px;overflow:hidden;">
+            <div style="flex:1;position:relative;overflow:hidden;min-height:0;">
+                <iframe src="${url}" style="width:250%;height:250%;transform:scale(0.4);transform-origin:top left;border:none;pointer-events:none;"></iframe>
+                <div style="position:absolute;inset:0;z-index:2;"></div>
+            </div>
+            <div style="padding:10px 14px 14px;border-top:1px solid var(--border-color-light);">
+                <div style="font-weight:600;font-size:0.85rem;color:var(--text-primary);margin-bottom:6px;">${title}</div>
+                <div style="display:inline-block;padding:5px 14px;border:1px solid var(--brand-primary);border-radius:6px;font-size:0.72rem;font-weight:600;color:var(--brand-primary);">Explore &rarr;</div>
+            </div>
+        </div>`;
+}
+
+async function saveAd() {
+    const id = document.getElementById('adEditId').value;
+    const body = {
+        title: document.getElementById('adTitle').value,
+        description: document.getElementById('adDescription').value,
+        linkUrl: document.getElementById('adLinkUrl').value,
+        imageUrl: document.getElementById('adImageUrl').value,
+        position: parseInt(document.getElementById('adPosition').value) || 1,
+        adType: document.getElementById('adType').value,
+        isActive: true
+    };
+    if (!body.title) { showToast('Title is required', 'error'); return; }
+
+    const path = id ? `/news/page-analytics/ads/${id}` : '/news/page-analytics/ads';
+    const method = id ? 'PUT' : 'POST';
+    const res = await newsRequest(path, { method, body: JSON.stringify(body) });
+    if (res && res.ok) {
+        showToast(id ? 'Ad updated' : 'Ad created', 'success');
+        closeAdEditor();
+        await loadAds();
+    } else {
+        const errText = res ? await res.text().catch(() => '') : 'No response';
+        console.error('[Ad Save] Failed:', res?.status, errText);
+        showToast('Failed to save ad: ' + (res?.status || 'network error'), 'error');
+    }
+}
+
+async function deleteAd(adId) {
+    const ad = window._adSlotCache?.[adId];
+    const confirmed = await Confirm.show({
+        title: 'Delete Ad',
+        message: `Are you sure you want to delete "${ad?.title || 'this ad'}"?`,
+        type: 'danger',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) return;
+
+    const res = await newsRequest(`/news/page-analytics/ads/${adId}`, { method: 'DELETE' });
+    if (res && res.ok) {
+        showToast('Ad deleted', 'success');
+        loadAds();
+    } else {
+        showToast('Failed to delete ad', 'error');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ANALYTICS
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function loadAnalytics() {
+    // Page stats
+    const statsRes = await newsRequest(`/news/page-analytics/visits?page=kip&days=7&_t=${Date.now()}`);
+    if (statsRes && statsRes.ok) {
+        const data = await statsRes.json();
+        const s = data.stats;
+        document.getElementById('anlActiveUsers').textContent = s.activeUsers;
+        document.getElementById('anlTotalVisits').textContent = s.totalVisits.toLocaleString();
+        document.getElementById('anlUniqueToday').textContent = s.uniqueVisitorsToday.toLocaleString();
+        document.getElementById('anlUniqueAll').textContent = s.uniqueVisitorsAllTime.toLocaleString();
+
+        // Daily table
+        const daily = data.daily || [];
+        const tbody = document.getElementById('dailyVisitsBody');
+        if (daily.length) {
+            tbody.innerHTML = daily.map(d => `<tr>
+                <td>${d.date}</td>
+                <td>${d.visits.toLocaleString()}</td>
+                <td>${d.uniqueVisitors.toLocaleString()}</td>
+            </tr>`).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);">No data yet</td></tr>';
+        }
+    }
+
+    // Ad performance
+    const adsRes = await newsRequest(`/news/page-analytics/ads/all?_t=${Date.now()}`);
+    if (adsRes && adsRes.ok) {
+        const data = await adsRes.json();
+        const ads = data.ads || [];
+        const tbody = document.getElementById('adPerformanceBody');
+        if (ads.length) {
+            tbody.innerHTML = ads.map(a => `<tr>
+                <td><strong>${esc(a.title)}</strong><br><span style="font-size:0.7rem;color:var(--text-secondary);">${esc(a.linkUrl)}</span></td>
+                <td>${(a.impressions || 0).toLocaleString()}</td>
+                <td>${(a.clicks || 0).toLocaleString()}</td>
+                <td>${a.ctr || 0}%</td>
+            </tr>`).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);">No ads yet</td></tr>';
+        }
+    }
 }

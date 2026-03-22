@@ -13,14 +13,20 @@ let currentOffset = 0;
 let allArticles = [];
 let autoRefreshTimer = null;
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
+let adSlots = [];
+const adImpressionsSent = new Set();
 
 // ── Init ──
 document.addEventListener('DOMContentLoaded', async () => {
     await loadCategories();
+    loadAdSlots();
     await loadNews();
     startAutoRefresh();
     updateLiveTime();
     setInterval(updateLiveTime, 60000);
+    recordPageVisit();
+    loadPageStats();
+    setInterval(loadPageStats, 60000);
 });
 
 // ── Theme Toggle ──
@@ -250,17 +256,22 @@ function renderArticles(articles) {
         html += '</div>';
     }
 
-    // Standard cards (rest)
+    // Standard cards (rest) — inject ads every 4 cards
     const standard = filtered.slice(2);
     if (standard.length) {
         html += '<div class="nw-cards-grid">';
-        standard.forEach(a => {
+        standard.forEach((a, i) => {
             html += renderStandardCard(a);
+            if ((i + 1) % 4 === 0 && adSlots.length > 0) {
+                const adIndex = Math.floor(i / 4) % adSlots.length;
+                html += renderAdCard(adSlots[adIndex]);
+            }
         });
         html += '</div>';
     }
 
     grid.innerHTML = html;
+    observeAdImpressions();
 }
 
 function renderSignalBadge(a) {
@@ -1306,6 +1317,125 @@ document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') flushReadingTimes();
 });
 window.addEventListener('beforeunload', flushReadingTimes);
+
+// ── Page Analytics ──
+function getVisitorId() {
+    let id = localStorage.getItem('kip_visitor_id');
+    if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem('kip_visitor_id', id);
+    }
+    return id;
+}
+
+async function recordPageVisit() {
+    try {
+        await fetch(`${NEWS_API}/news/page-analytics/visit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                page: 'kip',
+                visitorId: getVisitorId(),
+                referrer: document.referrer || ''
+            })
+        });
+    } catch (e) { /* silent */ }
+}
+
+async function loadPageStats() {
+    try {
+        const res = await fetch(`${NEWS_API}/news/page-analytics/stats?page=kip`);
+        if (!res.ok) return;
+        const stats = await res.json();
+        const badge = document.getElementById('readersBadge');
+        const count = document.getElementById('readersCount');
+        if (badge && count && stats.activeUsers > 0) {
+            count.textContent = stats.activeUsers;
+            badge.style.display = 'flex';
+        } else if (badge) {
+            badge.style.display = 'none';
+        }
+    } catch (e) { /* silent */ }
+}
+
+// ── Ad Slots ──
+async function loadAdSlots() {
+    try {
+        const res = await fetch(`${NEWS_API}/news/page-analytics/ads`);
+        if (res.ok) {
+            const data = await res.json();
+            adSlots = data.ads || [];
+        }
+    } catch (e) { /* silent */ }
+}
+
+function renderAdCard(ad) {
+    const label = ad.adType === 'insight' ? 'Ragenaizer Insights'
+                : ad.adType === 'product' ? 'Ragenaizer'
+                : 'Sponsored';
+    const cta = ad.adType === 'insight' ? 'Read Full Research &rarr;' : 'Explore &rarr;';
+
+    // Determine if URL is external (third-party) or internal (our pages)
+    const isExternal = ad.linkUrl && (ad.linkUrl.startsWith('http://') || ad.linkUrl.startsWith('https://'));
+
+    // External: full sandbox isolation (renders fully but cannot access parent DOM/cookies/storage)
+    // Internal: no sandbox needed (trusted same-origin pages)
+    const sandboxAttr = isExternal
+        ? 'sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"'
+        : '';
+
+    const iframePreview = ad.linkUrl ? `
+        <div class="nw-ad-iframe-wrap">
+            <iframe src="${esc(ad.linkUrl)}" class="nw-ad-iframe" loading="lazy" tabindex="-1"
+                    scrolling="no" ${sandboxAttr}></iframe>
+            <div class="nw-ad-iframe-overlay"
+                 onclick="event.stopPropagation(); handleAdClick('${ad.id}'); window.open('${esc(ad.linkUrl)}', '_blank');"></div>
+        </div>` : '';
+
+    return `<article class="nw-card nw-ad-card nw-ad-insight" data-ad-id="${ad.id}">
+        <div class="nw-ad-badge">${label}</div>
+        ${iframePreview}
+        <div class="nw-card-body">
+            <h3 class="nw-card-headline">${esc(ad.title)}</h3>
+            <a class="nw-ad-cta" href="${esc(ad.linkUrl)}" target="_blank" rel="noopener noreferrer"
+               onclick="event.stopPropagation(); handleAdClick('${ad.id}');">
+                ${cta}
+            </a>
+        </div>
+    </article>`;
+}
+
+function handleAdClick(adId) {
+    fetch(`${NEWS_API}/news/page-analytics/ads/${adId}/event`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventType: 'click', visitorId: getVisitorId() })
+    }).catch(() => {});
+}
+
+function observeAdImpressions() {
+    const adCards = document.querySelectorAll('.nw-ad-card[data-ad-id]');
+    if (!adCards.length) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const adId = entry.target.dataset.adId;
+                if (!adImpressionsSent.has(adId)) {
+                    adImpressionsSent.add(adId);
+                    fetch(`${NEWS_API}/news/page-analytics/ads/${adId}/event`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ eventType: 'impression', visitorId: getVisitorId() })
+                    }).catch(() => {});
+                }
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.5 });
+
+    adCards.forEach(card => observer.observe(card));
+}
 
 // Apply saved theme on load
 applySavedTheme();

@@ -775,6 +775,114 @@
     letter-spacing: 0.01em;
 }
 
+/* ── Ad Cards ── */
+.nw-ad-card {
+    position: relative;
+    border: 1px dashed var(--nw-border, #333) !important;
+    background: var(--nw-bg-card) !important;
+}
+.nw-ad-badge {
+    display: none;
+}
+.nw-ad-cta {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--nw-brand);
+    text-decoration: none;
+    padding: 5px 14px;
+    border: 1px solid var(--nw-brand);
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+.nw-ad-cta:hover {
+    background: var(--nw-brand);
+    color: #fff;
+}
+
+/* Ad card layout — iframe fills card height, CTA pinned at bottom */
+.nw-ad-card.nw-ad-insight .nw-card-body {
+    padding: 10px 14px 14px;
+    flex: 0 0 auto;
+}
+
+/* Ad iframe preview */
+.nw-ad-iframe-wrap {
+    position: relative;
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 280px;
+    overflow: hidden;
+}
+.nw-ad-iframe {
+    width: 250%;
+    height: 250%;
+    transform: scale(0.4);
+    transform-origin: top left;
+    border: none;
+    pointer-events: none;
+}
+.nw-ad-iframe-overlay {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+.nw-ad-iframe-overlay:hover {
+    background: rgba(59,130,246,0.05);
+}
+
+/* Insight-type ad cards */
+.nw-ad-insight {
+    border: 1px solid rgba(59,130,246,0.2) !important;
+    background: linear-gradient(135deg, rgba(59,130,246,0.04), rgba(99,102,241,0.04)) !important;
+}
+.nw-ad-insight .nw-ad-badge {
+    background: rgba(59,130,246,0.12);
+    color: var(--nw-brand);
+    border-color: rgba(59,130,246,0.2);
+}
+.nw-ad-icon {
+    font-size: 1.6rem;
+    margin-bottom: 6px;
+    line-height: 1;
+}
+.nw-ad-insight .nw-card-headline {
+    font-size: 0.92rem;
+    line-height: 1.35;
+}
+.nw-ad-insight .nw-card-summary {
+    font-size: 0.72rem;
+    opacity: 0.8;
+    line-height: 1.5;
+}
+
+/* ── Readers Badge ── */
+.nw-readers {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--nw-text2, #aaa);
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(34,197,94,0.08);
+    border: 1px solid rgba(34,197,94,0.2);
+}
+.nw-readers-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: nw-pulse 2s infinite;
+}
+@keyframes nw-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
 /* ── Gate Modal (Pipeline signup) ── */
 .nw-gate-modal { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
 .nw-gate-modal.open { opacity: 1; pointer-events: auto; }
