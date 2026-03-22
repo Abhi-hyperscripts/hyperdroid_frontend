@@ -8,6 +8,7 @@ const PAGE_SIZE = 20;
 let currentCategory = '';
 let currentCountry = '';
 let currentSignal = '';
+let currentImpact = '';
 let currentOffset = 0;
 let allArticles = [];
 let autoRefreshTimer = null;
@@ -79,6 +80,9 @@ function toggleMobileMenu() {
         const sf = document.getElementById('signalFilter');
         const sfm = document.getElementById('signalFilterMobile');
         if (sf && sfm) sfm.value = sf.value;
+        const impf = document.getElementById('impactFilter');
+        const impfm = document.getElementById('impactFilterMobile');
+        if (impf && impfm) impfm.value = impf.value;
     }
 }
 
@@ -89,6 +93,9 @@ function syncFilter(type, value) {
     } else if (type === 'signal') {
         document.getElementById('signalFilter').value = value;
         currentSignal = value;
+    } else if (type === 'impact') {
+        document.getElementById('impactFilter').value = value;
+        currentImpact = value;
     }
     loadNews();
 }
@@ -204,7 +211,23 @@ function renderArticles(articles) {
 
     if (loading) loading.style.display = 'none';
 
-    if (!articles.length) {
+    // Client-side impact filter (applied after server-side filters)
+    let filtered = articles;
+    if (currentImpact) {
+        filtered = articles.filter(a => a.impactLevel === currentImpact);
+    }
+
+    // Sort: signal articles first (high > medium > low), non-signal last
+    const impactOrder = { high: 0, medium: 1, low: 2, '': 3 };
+    filtered = [...filtered].sort((a, b) => {
+        const aHas = a.signalType ? 0 : 1;
+        const bHas = b.signalType ? 0 : 1;
+        if (aHas !== bHas) return aHas - bHas;
+        if (aHas === 0) return (impactOrder[a.impactLevel || ''] || 3) - (impactOrder[b.impactLevel || ''] || 3);
+        return 0; // preserve original order for non-signal
+    });
+
+    if (!filtered.length) {
         if (grid) grid.style.display = 'none';
         if (empty) empty.style.display = 'flex';
         return;
@@ -218,7 +241,7 @@ function renderArticles(articles) {
     let html = '';
 
     // Featured row (first 2)
-    const featured = articles.slice(0, 2);
+    const featured = filtered.slice(0, 2);
     if (featured.length) {
         html += '<div class="nw-featured-row">';
         featured.forEach(a => {
@@ -228,7 +251,7 @@ function renderArticles(articles) {
     }
 
     // Standard cards (rest)
-    const standard = articles.slice(2);
+    const standard = filtered.slice(2);
     if (standard.length) {
         html += '<div class="nw-cards-grid">';
         standard.forEach(a => {
@@ -240,28 +263,154 @@ function renderArticles(articles) {
     grid.innerHTML = html;
 }
 
+function renderSignalBadge(a) {
+    if (!a.signalType) return '';
+    const impact = a.impactLevel || '';
+    const impactClass = impact ? ` nw-impact-${impact}` : '';
+    const impactDot = impact ? `<span class="nw-impact-dot nw-impact-${impact}"></span>` : '';
+    const freshness = renderFreshness(a.createdAt);
+    const oppScore = impact === 'high' ? '9' : impact === 'medium' ? '6' : impact === 'low' ? '3' : '';
+    return `<div class="nw-signal-header">
+        <div class="nw-signal-badge${impactClass}">
+            ${impactDot}
+            <span class="nw-signal-label">${esc(a.signalType.replace(/_/g, ' '))} signal</span>
+        </div>
+        <div class="nw-signal-meta">
+            ${oppScore ? `<div class="nw-opp-tag nw-impact-${impact}">Score: ${oppScore}/10 \u00B7 ${oppScore >= 7 ? 'High Priority' : oppScore >= 4 ? 'Medium Priority' : 'Low Priority'}</div>` : ''}
+            ${freshness ? `<div class="nw-fresh-line">${freshness}</div>` : ''}
+        </div>
+    </div>`;
+}
+
+function renderFreshness(dateStr) {
+    if (!dateStr) return '';
+    const diffMin = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+    if (diffMin < 60) return `<span class="nw-fresh">\u{1F525} Fresh Signal \u00B7 ${diffMin}m ago</span>`;
+    if (diffMin < 1440) return `<span class="nw-fresh nw-fresh-dim">\u{1F525} Fresh Signal \u00B7 ${Math.floor(diffMin / 60)}h ago</span>`;
+    return '';
+}
+
+function renderImplication(a) {
+    const line = a.signalImplication || a.signalOpportunity;
+    if (!line) return '';
+    return `<p class="nw-implication"><span class="nw-impl-arrow">&rarr;</span> ${esc(line)}</p>`;
+}
+
+function renderTarget(a) {
+    const target = a.signalTarget;
+    if (!target) return '';
+    return `<p class="nw-target"><span class="nw-target-label">\u{1F3AF} Best for:</span> ${esc(target)}</p>`;
+}
+
+function renderGatedCTA(a) {
+    if (!a.signalType) return '';
+    return `<div class="nw-gated-cta">
+        <a class="nw-pipeline-btn" href="/pages/crm.html?signal=${encodeURIComponent(a.signalType)}&company=${encodeURIComponent(a.signalCompany || '')}" onclick="event.stopPropagation();" target="_blank">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Capture Opportunity
+        </a>
+        <span class="nw-cta-hint">\u2192 Create lead + track in CRM</span>
+    </div>`;
+}
+
+function showPipelineGate() {
+    const existing = document.getElementById('pipelineGate');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'pipelineGate';
+    modal.className = 'nw-gate-modal';
+    modal.innerHTML = `
+        <div class="nw-gate-overlay" onclick="closePipelineGate()"></div>
+        <div class="nw-gate-body">
+            <div class="nw-gate-header">
+                <span class="nw-gate-title">Unlock Signal Pipeline</span>
+                <button class="nw-gate-close" onclick="closePipelineGate()">&times;</button>
+            </div>
+            <p class="nw-gate-desc">Convert signals into actionable leads. Track companies, set alerts, and build your opportunity pipeline.</p>
+            <div class="nw-gate-features">
+                <div class="nw-gate-feat">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--nw-signal-text)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Save signals to your pipeline</span>
+                </div>
+                <div class="nw-gate-feat">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--nw-signal-text)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Get real-time alerts for new opportunities</span>
+                </div>
+                <div class="nw-gate-feat">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--nw-signal-text)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Export leads to your CRM</span>
+                </div>
+            </div>
+            <input class="nw-gate-input" id="gateEmail" type="email" placeholder="your@email.com" value="${esc(localStorage.getItem('kip_alert_email') || '')}" onkeydown="if(event.key==='Enter')submitPipelineGate()">
+            <button class="nw-gate-submit" onclick="submitPipelineGate()">Get Early Access</button>
+            <p class="nw-gate-note">Free during beta. No credit card required.</p>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    requestAnimationFrame(() => modal.classList.add('open'));
+    setTimeout(() => document.getElementById('gateEmail')?.focus(), 200);
+}
+
+function closePipelineGate() {
+    const m = document.getElementById('pipelineGate');
+    if (m) { m.classList.remove('open'); setTimeout(() => m.remove(), 200); }
+}
+
+function submitPipelineGate() {
+    const emailEl = document.getElementById('gateEmail');
+    const email = emailEl?.value?.trim();
+    if (!email || !email.includes('@')) {
+        emailEl?.classList.add('nw-am-error');
+        setTimeout(() => emailEl?.classList.remove('nw-am-error'), 1000);
+        return;
+    }
+    localStorage.setItem('kip_alert_email', email);
+    const waitlist = JSON.parse(localStorage.getItem('kip_waitlist') || '[]');
+    if (!waitlist.includes(email)) { waitlist.push(email); localStorage.setItem('kip_waitlist', JSON.stringify(waitlist)); }
+    closePipelineGate();
+    if (typeof showToast === 'function') showToast('You\'re on the list. We\'ll notify you when Pipeline launches.', 'success');
+}
+
+function renderActionBtn(a) {
+    if (!a.signalType) return '';
+    const saved = isSignalSaved(a.id);
+    const savedClass = saved ? ' nw-saved' : '';
+    const savedLabel = saved ? 'Saved' : 'Save';
+    return `<div class="nw-action-row">
+        <button class="nw-action-btn nw-act-save${savedClass}" id="save-btn-${a.id}" onclick="event.stopPropagation(); toggleSaveSignal('${a.id}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="${saved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            ${savedLabel}
+        </button>
+        <button class="nw-action-btn nw-act-share" onclick="event.stopPropagation(); shareSignal('${a.id}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Share
+        </button>
+    </div>`;
+}
+
 function renderFeaturedCard(a) {
     const img = a.imageUrl
         ? `<img class="nw-featured-img" src="${esc(a.imageUrl)}" alt="" onerror="this.style.display='none'">`
         : '';
     const source = a.sourceName || extractDomain(a.sourceUrl);
     const date = formatDate(a.createdAt);
-    const signalTag = a.signalType
-        ? `<span class="nw-stag">${esc(a.signalType.replace(/_/g, ' '))}</span>`
-        : '';
-    const whyLine = a.signalOpportunity
-        ? `<p class="nw-why">${esc(a.signalOpportunity)}</p>`
-        : '';
 
+    const summary = a.aiSummary
+        ? `<p class="nw-card-summary nw-clamped" id="sum-${a.id}">${esc(a.aiSummary)}</p><button class="nw-expand-btn" onclick="event.stopPropagation(); toggleSummary('${a.id}')">more</button>`
+        : '';
     return `
     <article class="nw-featured-card" onclick="window.open('${esc(a.sourceUrl)}','_blank')">
         ${img}
         <div class="nw-featured-body">
-            ${signalTag}
+            ${renderSignalBadge(a)}
             <h2 class="nw-featured-headline">${esc(a.headline)}</h2>
-            ${whyLine}
-            <p class="nw-featured-summary">${esc(a.aiSummary)}</p>
+            ${renderImplication(a)}
+            ${renderTarget(a)}
+            ${renderGatedCTA(a)}
+            ${summary}
             <div class="nw-card-foot">
+                ${renderActionBtn(a)}
                 <span class="nw-cat-label">${esc(a.category)}</span>
                 <span class="nw-foot-right">${esc(source)} &middot; ${date}</span>
             </div>
@@ -275,22 +424,22 @@ function renderStandardCard(a) {
         : '';
     const source = a.sourceName || extractDomain(a.sourceUrl);
     const date = formatDate(a.createdAt);
-    const signalTag = a.signalType
-        ? `<span class="nw-stag">${esc(a.signalType.replace(/_/g, ' '))}</span>`
-        : '';
-    const whyLine = a.signalOpportunity
-        ? `<p class="nw-why">${esc(a.signalOpportunity)}</p>`
-        : '';
 
+    const summary = a.aiSummary
+        ? `<p class="nw-card-summary nw-clamped" id="sum-${a.id}">${esc(a.aiSummary)}</p><button class="nw-expand-btn" onclick="event.stopPropagation(); toggleSummary('${a.id}')">more</button>`
+        : '';
     return `
     <article class="nw-card" onclick="window.open('${esc(a.sourceUrl)}','_blank')">
         ${img}
         <div class="nw-card-body">
-            ${signalTag}
+            ${renderSignalBadge(a)}
             <h3 class="nw-card-headline">${esc(a.headline)}</h3>
-            ${whyLine}
-            <p class="nw-card-summary">${esc(a.aiSummary)}</p>
+            ${renderImplication(a)}
+            ${renderTarget(a)}
+            ${renderGatedCTA(a)}
+            ${summary}
             <div class="nw-card-foot">
+                ${renderActionBtn(a)}
                 <span class="nw-cat-label">${esc(a.category)}</span>
                 <span class="nw-foot-right">${esc(source)} &middot; ${date}</span>
             </div>
@@ -316,16 +465,26 @@ function filterSignal() {
     loadNews();
 }
 
+function filterImpact() {
+    currentImpact = document.getElementById('impactFilter').value;
+    loadNews();
+}
+
 function clearFilters() {
     currentCategory = '';
     currentCountry = '';
     currentSignal = '';
+    currentImpact = '';
     document.getElementById('countryFilter').value = '';
     document.getElementById('signalFilter').value = '';
+    const impactEl = document.getElementById('impactFilter');
+    if (impactEl) impactEl.value = '';
     const cfm = document.getElementById('countryFilterMobile');
     const sfm = document.getElementById('signalFilterMobile');
+    const ifm = document.getElementById('impactFilterMobile');
     if (cfm) cfm.value = '';
     if (sfm) sfm.value = '';
+    if (ifm) ifm.value = '';
     document.querySelectorAll('.nw-cat').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.nw-cat[data-cat=""]').forEach(b => b.classList.add('active'));
     loadNews();
@@ -369,6 +528,265 @@ function esc(s) {
 function extractDomain(url) {
     try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; }
 }
+
+function toggleSummary(id) {
+    const el = document.getElementById(`sum-${id}`);
+    const btn = el?.nextElementSibling;
+    if (!el) return;
+    const isClamped = el.classList.contains('nw-clamped');
+    el.classList.toggle('nw-clamped');
+    if (btn) btn.textContent = isClamped ? 'less' : 'more';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  SAVE SIGNAL (localStorage)
+// ═══════════════════════════════════════════════════════════════════
+function getSavedSignals() {
+    try { return JSON.parse(localStorage.getItem('kip_saved_signals') || '[]'); }
+    catch { return []; }
+}
+
+function isSignalSaved(id) {
+    return getSavedSignals().some(s => s.id === id);
+}
+
+function toggleSaveSignal(id) {
+    const saved = getSavedSignals();
+    const idx = saved.findIndex(s => s.id === id);
+    const article = allArticles.find(a => a.id === id);
+    if (!article) return;
+
+    if (idx >= 0) {
+        saved.splice(idx, 1);
+        localStorage.setItem('kip_saved_signals', JSON.stringify(saved));
+        updateSaveBtn(id, false);
+        updateSavedCount();
+        if (typeof showToast === 'function') showToast('Signal removed', 'info');
+    } else {
+        saved.unshift({
+            id: article.id,
+            headline: article.headline,
+            signalType: article.signalType,
+            signalCompany: article.signalCompany || '',
+            signalImplication: article.signalImplication || article.signalOpportunity || '',
+            impactLevel: article.impactLevel || '',
+            sourceUrl: article.sourceUrl,
+            category: article.category,
+            savedAt: new Date().toISOString()
+        });
+        localStorage.setItem('kip_saved_signals', JSON.stringify(saved));
+        updateSaveBtn(id, true);
+        updateSavedCount();
+        if (typeof showToast === 'function') showToast('Signal saved', 'success');
+    }
+}
+
+function updateSaveBtn(id, saved) {
+    const btn = document.getElementById(`save-btn-${id}`);
+    if (!btn) return;
+    btn.classList.toggle('nw-saved', saved);
+    const svg = btn.querySelector('svg');
+    if (svg) svg.setAttribute('fill', saved ? 'currentColor' : 'none');
+    btn.childNodes.forEach(n => { if (n.nodeType === 3) n.textContent = saved ? '\n            Saved' : '\n            Save'; });
+}
+
+function updateSavedCount() {
+    const count = getSavedSignals().length;
+    let badge = document.getElementById('savedCountBadge');
+    if (count > 0) {
+        if (!badge) {
+            const header = document.querySelector('.nw-header-right');
+            if (header) {
+                const btn = document.createElement('button');
+                btn.className = 'nw-saved-btn';
+                btn.id = 'savedSignalsBtn';
+                btn.onclick = toggleSavedPanel;
+                btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> <span id="savedCountBadge">${count}</span>`;
+                header.insertBefore(btn, header.firstChild);
+            }
+        } else {
+            badge.textContent = count;
+        }
+    } else if (badge) {
+        const btn = document.getElementById('savedSignalsBtn');
+        if (btn) btn.remove();
+        closeSavedPanel();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  SAVED SIGNALS PANEL (slide-out)
+// ═══════════════════════════════════════════════════════════════════
+function toggleSavedPanel() {
+    const existing = document.getElementById('savedPanel');
+    if (existing) { closeSavedPanel(); return; }
+
+    const saved = getSavedSignals();
+    const panel = document.createElement('div');
+    panel.id = 'savedPanel';
+    panel.className = 'nw-saved-panel';
+
+    let listHtml = '';
+    if (saved.length === 0) {
+        listHtml = '<div class="nw-sp-empty">No saved signals yet</div>';
+    } else {
+        listHtml = saved.map(s => {
+            const label = (s.signalType || '').replace(/_/g, ' ');
+            const impact = s.impactLevel ? `<span class="nw-sp-impact nw-impact-${s.impactLevel}">${s.impactLevel}</span>` : '';
+            return `<div class="nw-sp-item">
+                <div class="nw-sp-item-top">
+                    <span class="nw-sp-signal">${esc(label)} ${impact}</span>
+                    <button class="nw-sp-remove" onclick="removeSavedSignal('${s.id}')" title="Remove">&times;</button>
+                </div>
+                <a class="nw-sp-headline" href="${esc(s.sourceUrl)}" target="_blank" onclick="event.stopPropagation()">${esc(s.headline)}</a>
+                ${s.signalImplication ? `<p class="nw-sp-impl">${esc(s.signalImplication)}</p>` : ''}
+                ${s.signalCompany ? `<span class="nw-sp-company">${esc(s.signalCompany)}</span>` : ''}
+            </div>`;
+        }).join('');
+    }
+
+    panel.innerHTML = `
+        <div class="nw-sp-overlay" onclick="closeSavedPanel()"></div>
+        <div class="nw-sp-body">
+            <div class="nw-sp-header">
+                <span class="nw-sp-title">Saved Signals (${saved.length})</span>
+                <div class="nw-sp-header-actions">
+                    ${saved.length > 0 ? '<button class="nw-sp-export" onclick="exportSavedSignals()">Export</button>' : ''}
+                    <button class="nw-sp-close" onclick="closeSavedPanel()">&times;</button>
+                </div>
+            </div>
+            <div class="nw-sp-list">${listHtml}</div>
+        </div>
+    `;
+    document.body.appendChild(panel);
+    requestAnimationFrame(() => panel.classList.add('open'));
+}
+
+function closeSavedPanel() {
+    const panel = document.getElementById('savedPanel');
+    if (panel) { panel.classList.remove('open'); setTimeout(() => panel.remove(), 250); }
+}
+
+function removeSavedSignal(id) {
+    const saved = getSavedSignals().filter(s => s.id !== id);
+    localStorage.setItem('kip_saved_signals', JSON.stringify(saved));
+    updateSaveBtn(id, false);
+    updateSavedCount();
+    // Re-render panel
+    closeSavedPanel();
+    setTimeout(() => { if (getSavedSignals().length > 0 || document.getElementById('savedSignalsBtn')) toggleSavedPanel(); }, 260);
+}
+
+function exportSavedSignals() {
+    const saved = getSavedSignals();
+    if (!saved.length) return;
+    const lines = ['Signal Type,Impact,Company,Headline,Implication,Source URL,Saved At'];
+    saved.forEach(s => {
+        lines.push([
+            s.signalType, s.impactLevel, `"${(s.signalCompany||'').replace(/"/g,'""')}"`,
+            `"${(s.headline||'').replace(/"/g,'""')}"`,
+            `"${(s.signalImplication||'').replace(/"/g,'""')}"`,
+            s.sourceUrl, s.savedAt
+        ].join(','));
+    });
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `kip-signals-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    if (typeof showToast === 'function') showToast(`Exported ${saved.length} signals`, 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  SHARE SIGNAL (clipboard / native share)
+// ═══════════════════════════════════════════════════════════════════
+function shareSignal(id) {
+    const a = allArticles.find(x => x.id === id);
+    if (!a) return;
+    const label = (a.signalType || '').replace(/_/g, ' ').toUpperCase();
+    const impl = a.signalImplication || a.signalOpportunity || '';
+    const impact = a.impactLevel ? ` [${a.impactLevel.toUpperCase()}]` : '';
+    const text = `${label} SIGNAL${impact}${a.signalCompany ? ' — ' + a.signalCompany : ''}\n${a.headline}\n${impl ? '→ ' + impl + '\n' : ''}${a.sourceUrl}`;
+
+    if (navigator.share) {
+        navigator.share({ title: a.headline, text, url: a.sourceUrl }).catch(() => {});
+    } else {
+        navigator.clipboard.writeText(text).then(() => {
+            if (typeof showToast === 'function') showToast('Signal copied to clipboard', 'success');
+        }).catch(() => {
+            if (typeof showToast === 'function') showToast('Failed to copy', 'error');
+        });
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  ALERT MODAL (email capture + localStorage)
+// ═══════════════════════════════════════════════════════════════════
+function showAlertModal(id) {
+    const a = allArticles.find(x => x.id === id);
+    if (!a) return;
+    const label = (a.signalType || '').replace(/_/g, ' ');
+    const savedEmail = localStorage.getItem('kip_alert_email') || '';
+
+    const existing = document.getElementById('alertModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'alertModal';
+    modal.className = 'nw-alert-modal';
+    modal.innerHTML = `
+        <div class="nw-am-overlay" onclick="closeAlertModal()"></div>
+        <div class="nw-am-body">
+            <div class="nw-am-header">
+                <span>Get alerts for <strong>${esc(label)}</strong> signals</span>
+                <button class="nw-am-close" onclick="closeAlertModal()">&times;</button>
+            </div>
+            <p class="nw-am-desc">We'll notify you when new ${esc(label)} signals are detected${a.category ? ' in ' + esc(a.category) : ''}.</p>
+            <input class="nw-am-input" id="alertEmail" type="email" placeholder="your@email.com" value="${esc(savedEmail)}" onkeydown="if(event.key==='Enter')submitAlert('${id}')">
+            <button class="nw-am-submit" onclick="submitAlert('${id}')">Set Alert</button>
+            <p class="nw-am-note">No spam. Unsubscribe anytime.</p>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    requestAnimationFrame(() => modal.classList.add('open'));
+    setTimeout(() => document.getElementById('alertEmail')?.focus(), 200);
+}
+
+function closeAlertModal() {
+    const m = document.getElementById('alertModal');
+    if (m) { m.classList.remove('open'); setTimeout(() => m.remove(), 200); }
+}
+
+function submitAlert(id) {
+    const emailEl = document.getElementById('alertEmail');
+    const email = emailEl?.value?.trim();
+    if (!email || !email.includes('@')) {
+        emailEl?.classList.add('nw-am-error');
+        setTimeout(() => emailEl?.classList.remove('nw-am-error'), 1000);
+        return;
+    }
+
+    const a = allArticles.find(x => x.id === id);
+    const signalType = a?.signalType || '';
+    const category = a?.category || '';
+
+    // Save email for future use
+    localStorage.setItem('kip_alert_email', email);
+
+    // Save alert preference
+    const alerts = JSON.parse(localStorage.getItem('kip_alerts') || '[]');
+    const exists = alerts.find(al => al.signalType === signalType && al.category === category);
+    if (!exists) {
+        alerts.push({ signalType, category, email, createdAt: new Date().toISOString() });
+        localStorage.setItem('kip_alerts', JSON.stringify(alerts));
+    }
+
+    closeAlertModal();
+    if (typeof showToast === 'function') showToast(`Alert set for ${signalType.replace(/_/g, ' ')} signals`, 'success');
+}
+
+// Init saved count on load
+document.addEventListener('DOMContentLoaded', () => updateSavedCount());
 
 function formatDate(dateStr) {
     if (!dateStr) return '';
