@@ -17,6 +17,9 @@ const NavbarComponent = {
     getHTML: function() {
         return `
     <nav class="landing-nav">
+        <button class="nav-hamburger" onclick="NavbarComponent.toggleMobileMenu()" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
         <a href="/index.html">
             <img src="/assets/brand_logo.png" alt="Ragenaizer" class="nav-logo">
         </a>
@@ -173,7 +176,36 @@ const NavbarComponent = {
             <a href="/pages/login.html" class="btn-secondary" data-nav="signin">Sign In</a>
             <a href="/pages/pricing.html" class="btn-primary" data-nav="getstarted">Get Started</a>
         </div>
-    </nav>`;
+    </nav>
+    <div class="nav-mobile-overlay" onclick="NavbarComponent.toggleMobileMenu()"></div>
+    <div class="nav-mobile-menu">
+        <div class="nav-mobile-header">
+            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="nav-logo" style="filter:invert(1);">
+            <button class="nav-mobile-close" onclick="NavbarComponent.toggleMobileMenu()">&times;</button>
+        </div>
+        <div class="nav-mobile-body">
+            <div class="nav-mobile-section">Products</div>
+            <a href="/pages/vision.html" class="nav-mobile-link" data-nav="vision">Vision <span>Video Conferencing</span></a>
+            <a href="/pages/chat.html" class="nav-mobile-link" data-nav="chat">Chat <span>Team Messaging</span></a>
+            <a href="/pages/drive.html" class="nav-mobile-link" data-nav="drive">Drive <span>Cloud Storage</span></a>
+            <a href="/pages/hrms.html" class="nav-mobile-link" data-nav="hrms">HRMS <span>HR & Payroll</span></a>
+            <a href="/pages/research.html" class="nav-mobile-link" data-nav="research">Research <span>AI Analytics</span></a>
+            <a href="/pages/crm.html" class="nav-mobile-link" data-nav="crm">CRM <span>Sales Pipeline</span></a>
+            <a href="/pages/pms.html" class="nav-mobile-link" data-nav="pms">PMS <span>Project & Time</span></a>
+            <div class="nav-mobile-divider"></div>
+            <a href="/pages/kip.html" class="nav-mobile-link" data-nav="kip">KIP <span>News Intelligence</span></a>
+            <a href="/pages/pricing.html" class="nav-mobile-link" data-nav="pricing">Pricing</a>
+            <div class="nav-mobile-divider"></div>
+            <div class="nav-mobile-section">Resources</div>
+            <a href="/pages/insights/" class="nav-mobile-link" data-nav="all-insights">Insights & Reports</a>
+            <a href="/pages/blog/" class="nav-mobile-link" data-nav="blog">Blog</a>
+            <div class="nav-mobile-divider"></div>
+            <div class="nav-mobile-cta">
+                <a href="/pages/login.html" class="btn-secondary" data-nav="signin">Sign In</a>
+                <a href="/pages/pricing.html" class="btn-primary" data-nav="getstarted">Get Started</a>
+            </div>
+        </div>
+    </div>`;
     },
 
     /**
@@ -200,6 +232,18 @@ const NavbarComponent = {
      * Reads data-hide attribute for items to remove.
      * @param {string} containerId - ID of the placeholder div (default: 'navbar')
      */
+    toggleMobileMenu: function() {
+        var menu = document.querySelector('.nav-mobile-menu');
+        var overlay = document.querySelector('.nav-mobile-overlay');
+        var hamburger = document.querySelector('.nav-hamburger');
+        if (!menu) return;
+        var isOpen = menu.classList.contains('open');
+        menu.classList.toggle('open');
+        overlay.classList.toggle('open');
+        if (hamburger) hamburger.classList.toggle('open');
+        document.body.style.overflow = isOpen ? '' : 'hidden';
+    },
+
     init: function(containerId = 'navbar') {
         const container = document.getElementById(containerId);
         const html = this.getHTML();
