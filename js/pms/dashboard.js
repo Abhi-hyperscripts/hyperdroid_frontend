@@ -179,9 +179,9 @@ async function loadRecentActivity() {
                         </div>
                     </div>
                 </td>
-                <td><span class="status-badge ${(activity.action || '').toLowerCase()}">${capitalizeFirst(activity.action || '-')}</span></td>
-                <td>${escapeHtml(activity.entity_type || activity.entity || '-')}</td>
-                <td>${escapeHtml(activity.description || activity.details || '-')}</td>
+                <td><span class="status-badge ${(activity.action || '').toLowerCase().replace(/_/g, '-')}">${capitalizeFirst(activity.action || '-')}</span></td>
+                <td>${capitalizeFirst(activity.entity_type || activity.entity || '-')}</td>
+                <td>${formatActivityDetails(activity.description || activity.details, activity.action, activity.entity_type)}</td>
                 <td>${formatDate(activity.created_at || activity.timestamp)}</td>
             </tr>
         `).join('');
@@ -232,7 +232,24 @@ function formatDate(dateStr) {
 
 function capitalizeFirst(str) {
     if (!str) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1);
+    return str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function formatActivityDetails(details, action, entityType) {
+    if (!details) return '-';
+    try {
+        const data = typeof details === 'string' ? JSON.parse(details) : details;
+        const parts = [];
+        // Show human-readable key-value pairs, skip IDs
+        for (const [key, value] of Object.entries(data)) {
+            if (!value || key.endsWith('_id')) continue;
+            const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            parts.push(`<strong>${label}:</strong> ${escapeHtml(String(value))}`);
+        }
+        return parts.length > 0 ? parts.join(' &middot; ') : '-';
+    } catch {
+        return escapeHtml(details);
+    }
 }
 
 function escapeHtml(str) {

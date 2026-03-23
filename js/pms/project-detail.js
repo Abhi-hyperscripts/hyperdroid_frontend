@@ -1198,19 +1198,36 @@ async function loadProjectActivity() {
             return;
         }
 
-        container.innerHTML = projectActivity.map(a => `
+        container.innerHTML = projectActivity.map(a => {
+            const action = (a.action || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            const entity = (a.entity_type || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            let details = '';
+            if (a.description || a.details) {
+                try {
+                    const data = JSON.parse(a.description || a.details);
+                    const parts = [];
+                    for (const [key, value] of Object.entries(data)) {
+                        if (!value || key.endsWith('_id')) continue;
+                        const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                        parts.push(`${label}: ${escapeHtml(String(value))}`);
+                    }
+                    if (parts.length) details = ` — ${parts.join(', ')}`;
+                } catch {
+                    details = ` — ${escapeHtml(a.description || a.details)}`;
+                }
+            }
+            return `
             <div class="pms-activity-item">
                 <div class="pms-activity-avatar">${getInitials(a.user_name || a.performed_by || 'U')}</div>
                 <div class="pms-activity-content">
                     <div class="pms-activity-text">
                         <strong>${escapeHtml(a.user_name || a.performed_by || 'Unknown')}</strong>
-                        ${escapeHtml(a.action || '')} ${escapeHtml(a.entity_type || '')}
-                        ${a.description ? ` — ${escapeHtml(a.description)}` : ''}
+                        ${action} ${entity}${details}
                     </div>
                     <div class="pms-activity-time">${formatDateTime(a.created_at || a.timestamp)}</div>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     } catch (error) {
         container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px;">Failed to load activity</p>';
     }
