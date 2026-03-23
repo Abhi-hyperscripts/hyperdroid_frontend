@@ -906,6 +906,11 @@ async function uploadFile(file, queueItem) {
     const status = queueItem.querySelector('.upload-item-status');
 
     try {
+        // Block uploads at root level — must be inside a folder
+        if (!currentFolderId) {
+            throw new Error('Please create or open a folder first. Files cannot be uploaded to the root.');
+        }
+
         // Use chunked upload for large files to avoid timeouts
         if (file.size > CHUNKED_UPLOAD_THRESHOLD) {
             await uploadFileChunked(file, queueItem);
