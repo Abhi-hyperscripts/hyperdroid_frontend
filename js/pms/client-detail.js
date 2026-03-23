@@ -96,6 +96,13 @@ async function loadClientProjects() {
         clientProjects = response.data || response || [];
         document.getElementById('clientProjectCount').textContent = clientProjects.length;
 
+        // Update stats cards
+        const el = (id) => document.getElementById(id);
+        if (el('statProjects')) el('statProjects').textContent = clientProjects.length;
+        if (el('statTotalTasks')) el('statTotalTasks').textContent = clientProjects.reduce((sum, p) => sum + (p.task_count || 0), 0);
+        if (el('statTotalMembers')) el('statTotalMembers').textContent = clientProjects.reduce((sum, p) => sum + (p.member_count || 0), 0);
+        if (el('statTotalHours')) el('statTotalHours').textContent = clientProjects.reduce((sum, p) => sum + (p.total_hours_logged || 0), 0).toFixed(1);
+
         if (!clientProjects.length) {
             tbody.innerHTML = `<tr><td colspan="7" class="crm-empty-state"><div class="crm-empty-content"><p>No projects yet</p><button class="btn btn-sm btn-primary" onclick="openNewProjectModal()">Create first project</button></div></td></tr>`;
             return;

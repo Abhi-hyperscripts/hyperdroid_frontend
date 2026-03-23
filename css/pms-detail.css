@@ -24,8 +24,7 @@
 }
 
 .pms-page-header .active-tab-title {
-    margin-top: 4px;
-    margin-left: 54px; /* align with title text (past hamburger button) */
+    margin-top: 2px;
 }
 
 /* Project Meta Bar (compact, no card wrapper) */

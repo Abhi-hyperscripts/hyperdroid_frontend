@@ -65,8 +65,16 @@
                             <path d="M12 19l-7-7 7-7"></path>
                         </svg>
                     </button>
-                    <h1 id="projectTitle">Loading...</h1>
-                    <span class="crm-status-badge" id="projectStatusBadge"></span>
+                    <div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <h1 id="projectTitle">Loading...</h1>
+                            <span class="crm-status-badge" id="projectStatusBadge"></span>
+                        </div>
+                        <div class="active-tab-title" id="activeTabTitle">
+                            <span class="tab-indicator"></span>
+                            <span id="activeTabName">Overview</span>
+                        </div>
+                    </div>
                     <div class="pms-detail-actions" id="projectActions">
                         <div class="pms-meeting-dropdown" id="joinMeetingBtnWrap" style="display: none;">
                             <a class="btn btn-primary btn-sm" id="joinMeetingBtn" target="_blank">
@@ -112,10 +120,6 @@
                             Delete
                         </button>
                     </div>
-                </div>
-                <div class="active-tab-title" id="activeTabTitle">
-                    <span class="tab-indicator"></span>
-                    <span id="activeTabName">Overview</span>
                 </div>
             </div><!-- /header-content -->
         </div><!-- /crm-header -->
