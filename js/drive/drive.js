@@ -4,6 +4,9 @@ let folderStack = []; // For breadcrumb navigation
 let contextMenuTarget = null;
 let currentShareId = null;
 let driveHubConnection = null;
+let currentViewMode = localStorage.getItem('driveViewMode') || 'grid';
+let cachedFolders = [];
+let cachedFiles = [];
 
 // Flags to prevent race conditions
 let isCreatingFolder = false;
@@ -22,6 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initializeUser();
     setupEventListeners();
     setupBrowserNavigation();
+    updateViewToggleIcon();
     await loadDriveContents();
     initializeSignalR();
     renderStorageQuotaBar();
@@ -270,6 +274,9 @@ function updateUploadButtonState() {
 }
 
 function renderDriveContents(folders, files) {
+    cachedFolders = folders;
+    cachedFiles = files;
+
     const container = document.getElementById('driveContents');
     const emptyState = document.getElementById('emptyState');
 
@@ -282,15 +289,138 @@ function renderDriveContents(folders, files) {
 
     emptyState.style.display = 'none';
 
-    // Render folders first
-    folders.forEach(folder => {
-        container.appendChild(createFolderCard(folder));
+    if (currentViewMode === 'table') {
+        container.classList.remove('drive-grid');
+        container.appendChild(renderTableView(folders, files));
+    } else {
+        container.classList.add('drive-grid');
+        // Render folders first
+        folders.forEach(folder => {
+            container.appendChild(createFolderCard(folder));
+        });
+        // Then render files
+        files.forEach(file => {
+            container.appendChild(createFileCard(file));
+        });
+    }
+}
+
+function renderTableView(folders, files) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'drive-table-wrap';
+    wrapper.style.width = '100%';
+
+    const starSvgFilled = '<svg width="16" height="16" viewBox="0 0 24 24" fill="var(--color-warning)" stroke="var(--color-warning)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+    const starSvgEmpty = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity="0.3"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+
+    let html = `<table class="data-table">
+        <thead><tr>
+            <th style="width:40px;"></th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Size</th>
+            <th>Uploaded</th>
+            <th>Actions</th>
+        </tr></thead><tbody>`;
+
+    // Folders
+    folders.forEach(f => {
+        html += `<tr class="folder-row" style="cursor:pointer;" ondblclick="navigateToFolder('${f.folderId}')">
+            <td></td>
+            <td><div class="table-name-cell">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--color-warning)" stroke="var(--color-warning)" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <span>${escapeHtml(f.folderName)}</span>
+                ${f.isShared ? '<span class="shared-badge" style="font-size:10px;padding:1px 5px;">Shared</span>' : ''}
+            </div></td>
+            <td style="color:var(--text-secondary);font-size:0.8rem;">Folder</td>
+            <td style="color:var(--text-secondary);font-size:0.8rem;">${f.fileCount} files, ${formatBytes(f.totalSize)}</td>
+            <td></td>
+            <td class="actions-cell">
+                <button class="action-btn" onclick="event.stopPropagation(); navigateToFolder('${f.folderId}')" data-tooltip="Open"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></button>
+                <button class="action-btn" onclick="event.stopPropagation(); shareItem('${f.folderId}', 'folder', '${escapeHtml(f.folderName)}')" data-tooltip="Share"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+                <button class="action-btn action-btn-danger" onclick="event.stopPropagation(); deleteItem('${f.folderId}', 'folder', '${escapeHtml(f.folderName)}')" data-tooltip="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            </td>
+        </tr>`;
     });
 
-    // Then render files
-    files.forEach(file => {
-        container.appendChild(createFileCard(file));
+    // Files
+    files.forEach(f => {
+        const ext = f.fileName.split('.').pop().toLowerCase();
+        const typeLabel = getFileTypeLabel(f.contentType, ext);
+        const uploaded = f.createdAt ? new Date(f.createdAt).toLocaleString() : '—';
+        const starred = f.isStarred;
+        const icon = getFileIcon(f.contentType, f.fileName);
+
+        html += `<tr style="cursor:pointer;" ondblclick="downloadFile('${f.fileId}')">
+            <td><button class="star-btn ${starred ? 'starred' : ''}" onclick="event.stopPropagation(); toggleStarFile('${f.fileId}', ${starred})" title="${starred ? 'Unstar' : 'Star'}">${starred ? starSvgFilled : starSvgEmpty}</button></td>
+            <td><div class="table-name-cell">
+                <span class="table-file-icon">${icon}</span>
+                <span>${escapeHtml(f.fileName)}</span>
+                ${f.isShared ? '<span class="shared-badge" style="font-size:10px;padding:1px 5px;">Shared</span>' : ''}
+            </div></td>
+            <td style="color:var(--text-secondary);font-size:0.8rem;">${typeLabel}</td>
+            <td style="color:var(--text-secondary);font-size:0.8rem;">${formatBytes(f.fileSize)}</td>
+            <td style="color:var(--text-secondary);font-size:0.8rem;white-space:nowrap;">${uploaded}</td>
+            <td class="actions-cell">
+                <button class="action-btn" onclick="event.stopPropagation(); downloadFile('${f.fileId}')" data-tooltip="Download"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+                <button class="action-btn" onclick="event.stopPropagation(); shareItem('${f.fileId}', 'file', '${escapeHtml(f.fileName)}')" data-tooltip="Share"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+                <button class="action-btn" onclick="event.stopPropagation(); renameItem('${f.fileId}', 'file', '${escapeHtml(f.fileName)}')" data-tooltip="Rename"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                <button class="action-btn action-btn-danger" onclick="event.stopPropagation(); deleteItem('${f.fileId}', 'file', '${escapeHtml(f.fileName)}')" data-tooltip="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+            </td>
+        </tr>`;
     });
+
+    html += '</tbody></table>';
+    wrapper.innerHTML = html;
+    return wrapper;
+}
+
+function getFileTypeLabel(contentType, ext) {
+    if (contentType.startsWith('image/')) return 'Image';
+    if (contentType.startsWith('video/')) return 'Video';
+    if (contentType.startsWith('audio/')) return 'Audio';
+    if (contentType === 'application/pdf') return 'PDF';
+    if (['doc','docx'].includes(ext)) return 'Document';
+    if (['xls','xlsx','csv'].includes(ext)) return 'Spreadsheet';
+    if (['ppt','pptx'].includes(ext)) return 'Presentation';
+    if (['zip','rar','7z','tar','gz'].includes(ext)) return 'Archive';
+    if (['js','ts','py','java','c','cpp','html','css','json','xml'].includes(ext)) return 'Code';
+    return ext.toUpperCase();
+}
+
+function toggleViewMode() {
+    currentViewMode = currentViewMode === 'grid' ? 'table' : 'grid';
+    localStorage.setItem('driveViewMode', currentViewMode);
+    updateViewToggleIcon();
+    renderDriveContents(cachedFolders, cachedFiles);
+}
+
+function updateViewToggleIcon() {
+    const icon = document.getElementById('viewToggleIcon');
+    if (!icon) return;
+    if (currentViewMode === 'table') {
+        // Show grid icon (to switch back to grid)
+        icon.innerHTML = '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>';
+    } else {
+        // Show list icon (to switch to table)
+        icon.innerHTML = '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>';
+    }
+}
+
+async function toggleStarFile(fileId, currentState) {
+    try {
+        const result = await api.toggleStarFile(fileId, !currentState);
+        if (result.success) {
+            // Update cached data
+            const file = cachedFiles.find(f => f.fileId === fileId);
+            if (file) file.isStarred = !currentState;
+            // Re-render current view
+            renderDriveContents(cachedFolders, cachedFiles);
+        }
+    } catch (e) {
+        console.error('[Drive] Star toggle failed:', e);
+        Toast.error('Failed to update star');
+    }
 }
 
 function createFolderCard(folder) {
@@ -353,6 +483,9 @@ function createFileCard(file) {
     const icon = getFileIcon(file.contentType, file.fileName);
 
     card.innerHTML = `
+        <button class="star-card-btn ${file.isStarred ? 'starred' : ''}" onclick="event.stopPropagation(); toggleStarFile('${file.fileId}', ${file.isStarred})" title="${file.isStarred ? 'Unstar' : 'Star'}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="${file.isStarred ? 'var(--color-warning)' : 'none'}" stroke="${file.isStarred ? 'var(--color-warning)' : 'currentColor'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
         <div class="drive-item-icon">
             ${icon}
             ${file.isShared ? '<span class="shared-badge">Shared</span>' : ''}

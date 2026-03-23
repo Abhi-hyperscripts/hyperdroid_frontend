@@ -1085,6 +1085,13 @@ class API {
         return this.request(`/drive/browse${query}`);
     }
 
+    async toggleStarFile(fileId, isStarred) {
+        return this.request(`/drive/files/${fileId}/star`, {
+            method: 'PUT',
+            body: JSON.stringify({ isStarred })
+        });
+    }
+
     // Sharing operations
     async createShareLink(itemId, itemType, accessType = 'download', expiryHours = 0, password = null, allowAnonymous = true, maxDownloads = 0) {
         return this.request('/drive/share', {
