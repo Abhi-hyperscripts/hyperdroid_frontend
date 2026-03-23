@@ -1128,6 +1128,27 @@ async function loadAnalytics() {
         } else {
             tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);">No data yet</td></tr>';
         }
+
+        // Recent visitors
+        const recent = data.recent || [];
+        const rvBody = document.getElementById('recentVisitorsBody');
+        if (recent.length) {
+            rvBody.innerHTML = recent.map(v => {
+                const time = new Date(v.createdAt).toLocaleString();
+                const ua = (v.userAgent || '').substring(0, 60) + ((v.userAgent || '').length > 60 ? '...' : '');
+                const ref = v.referrer || '—';
+                const vid = (v.visitorId || '—').substring(0, 8) + '...';
+                return `<tr>
+                    <td style="font-family:monospace;font-size:0.75rem;">${esc(v.ipAddress || '—')}</td>
+                    <td style="font-size:0.72rem;color:var(--text-secondary);" title="${esc(v.visitorId || '')}">${esc(vid)}</td>
+                    <td style="font-size:0.72rem;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(ref)}">${esc(ref)}</td>
+                    <td style="font-size:0.68rem;color:var(--text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(v.userAgent || '')}">${esc(ua)}</td>
+                    <td style="font-size:0.72rem;white-space:nowrap;">${time}</td>
+                </tr>`;
+            }).join('');
+        } else {
+            rvBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">No visitors yet</td></tr>';
+        }
     }
 
     // Ad performance
