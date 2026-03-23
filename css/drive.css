@@ -311,6 +311,10 @@
 .star-card-btn:hover { transform: scale(1.3); }
 
 /* ── Table View ── */
+.drive-table-wrap .shared-badge {
+    position: static;
+    flex-shrink: 0;
+}
 .drive-table-wrap {
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
