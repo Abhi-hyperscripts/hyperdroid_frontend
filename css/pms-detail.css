@@ -1,5 +1,33 @@
 /* ─── PMS Detail Pages (Project Detail, Client Detail) ────────────────────── */
 
+/* Page Header — contains breadcrumb, title row, active tab indicator */
+.pms-page-header {
+    padding: 16px 24px 0;
+}
+
+.pms-page-header .header-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.pms-header-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.pms-header-row h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.pms-page-header .active-tab-title {
+    margin-top: 4px;
+    margin-left: 54px; /* align with title text (past hamburger button) */
+}
+
 /* Project Meta Bar (compact, no card wrapper) */
 .pms-detail-meta {
     display: flex;
