@@ -1133,21 +1133,24 @@ async function loadAnalytics() {
         const recent = data.recent || [];
         const rvBody = document.getElementById('recentVisitorsBody');
         if (recent.length) {
-            rvBody.innerHTML = recent.map(v => {
+            rvBody.innerHTML = recent.map((v, i) => {
                 const time = new Date(v.createdAt).toLocaleString();
                 const ua = (v.userAgent || '').substring(0, 60) + ((v.userAgent || '').length > 60 ? '...' : '');
                 const ref = v.referrer || '—';
                 const vid = (v.visitorId || '—').substring(0, 8) + '...';
                 return `<tr>
                     <td style="font-family:monospace;font-size:0.75rem;">${esc(v.ipAddress || '—')}</td>
+                    <td id="geo-${i}" style="font-size:0.72rem;color:var(--text-secondary);">${v.ipAddress ? '...' : '—'}</td>
                     <td style="font-size:0.72rem;color:var(--text-secondary);" title="${esc(v.visitorId || '')}">${esc(vid)}</td>
                     <td style="font-size:0.72rem;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(ref)}">${esc(ref)}</td>
                     <td style="font-size:0.68rem;color:var(--text-secondary);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(v.userAgent || '')}">${esc(ua)}</td>
                     <td style="font-size:0.72rem;white-space:nowrap;">${time}</td>
                 </tr>`;
             }).join('');
+            // Resolve IP to country
+            resolveVisitorGeo(recent);
         } else {
-            rvBody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">No visitors yet</td></tr>';
+            rvBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);">No visitors yet</td></tr>';
         }
     }
 
@@ -1168,4 +1171,46 @@ async function loadAnalytics() {
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);">No ads yet</td></tr>';
         }
     }
+}
+
+// ── IP to Country Resolution ──
+function countryCodeToFlag(code) {
+    if (!code || code.length !== 2) return '';
+    const base = 0x1F1E6;
+    return String.fromCodePoint(base + code.charCodeAt(0) - 65, base + code.charCodeAt(1) - 65);
+}
+
+async function resolveVisitorGeo(visitors) {
+    const uniqueIps = [...new Set(visitors.map(v => v.ipAddress).filter(ip => ip && !ip.startsWith('::') && ip !== '127.0.0.1'))];
+    if (!uniqueIps.length) {
+        visitors.forEach((v, i) => {
+            const el = document.getElementById('geo-' + i);
+            if (el) el.textContent = v.ipAddress ? 'Local' : '—';
+        });
+        return;
+    }
+    const geoMap = {};
+    await Promise.allSettled(uniqueIps.map(async ip => {
+        try {
+            const resp = await fetch('https://ipapi.co/' + ip + '/json/');
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.country_name) {
+                    geoMap[ip] = { country: data.country_name, countryCode: data.country_code, city: data.city };
+                }
+            }
+        } catch (e) {}
+    }));
+    visitors.forEach((v, i) => {
+        const el = document.getElementById('geo-' + i);
+        if (!el) return;
+        const geo = geoMap[v.ipAddress];
+        if (geo && geo.country) {
+            const flag = countryCodeToFlag(geo.countryCode);
+            el.innerHTML = flag + ' ' + esc(geo.city ? geo.city + ', ' + geo.country : geo.country);
+            el.style.color = 'var(--text-primary)';
+        } else {
+            el.textContent = v.ipAddress && (v.ipAddress.startsWith('::') || v.ipAddress === '127.0.0.1') ? 'Local' : '—';
+        }
+    });
 }
