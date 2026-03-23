@@ -1,0 +1,363 @@
+/**
+ * Issue Tracker Styles
+ * Uses CSS variables from theme.css - NEVER hardcode colors
+ */
+
+/* ==================== SEVERITY BADGES ==================== */
+.severity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+.severity-cosmetic {
+    background: rgba(128, 128, 128, 0.15);
+    color: var(--text-secondary);
+}
+.severity-low {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--color-info, #3b82f6);
+}
+.severity-medium {
+    background: rgba(234, 179, 8, 0.15);
+    color: var(--color-warning);
+}
+.severity-high {
+    background: rgba(249, 115, 22, 0.15);
+    color: var(--color-warning);
+    border: 1px solid rgba(249, 115, 22, 0.3);
+}
+.severity-critical {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--color-error);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    animation: pulse-critical 2s ease-in-out infinite;
+}
+@keyframes pulse-critical {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* ==================== PRIORITY BADGES ==================== */
+.priority-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    white-space: nowrap;
+}
+.priority-P0 {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--color-error);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    animation: pulse-critical 1.5s ease-in-out infinite;
+}
+.priority-P1 {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--color-error);
+}
+.priority-P2 {
+    background: rgba(249, 115, 22, 0.15);
+    color: var(--color-warning);
+}
+.priority-P3 {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--color-info, #3b82f6);
+}
+.priority-P4 {
+    background: rgba(128, 128, 128, 0.12);
+    color: var(--text-secondary);
+}
+
+/* ==================== STATUS BADGES ==================== */
+.issue-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.issue-status-reported {
+    background: rgba(234, 179, 8, 0.15);
+    color: var(--color-warning);
+}
+.issue-status-in_progress {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--color-info, #3b82f6);
+}
+.issue-status-qa_testing {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+}
+.issue-status-closed {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--color-success);
+}
+.issue-status-reopened {
+    background: rgba(249, 115, 22, 0.15);
+    color: var(--color-warning);
+}
+.issue-status-wontfix {
+    background: rgba(128, 128, 128, 0.15);
+    color: var(--text-secondary);
+}
+
+/* ==================== RESOLUTION BADGES ==================== */
+.resolution-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.resolution-fixed {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--color-success);
+}
+.resolution-wontfix {
+    background: rgba(128, 128, 128, 0.15);
+    color: var(--text-secondary);
+}
+.resolution-duplicate {
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--color-info, #3b82f6);
+}
+.resolution-cannot_reproduce {
+    background: rgba(234, 179, 8, 0.12);
+    color: var(--color-warning);
+}
+
+/* ==================== TYPE BADGES ==================== */
+.issue-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+.issue-type-badge svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* ==================== ISSUE NUMBER ==================== */
+.issue-number {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+    white-space: nowrap;
+}
+
+/* ==================== ISSUE TABLE ==================== */
+.issues-table .issue-title-cell {
+    max-width: 300px;
+}
+.issues-table .issue-title-cell a {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.82rem;
+}
+.issues-table .issue-title-cell a:hover {
+    color: var(--brand-primary);
+    text-decoration: underline;
+}
+.issues-table .component-tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-primary);
+    color: var(--text-secondary);
+    margin-left: 4px;
+}
+.issues-table td {
+    vertical-align: middle;
+}
+
+/* ==================== CREATE ISSUE MODAL ==================== */
+#issueModal .modal-dialog {
+    max-width: 1300px;
+    width: 96vw;
+    max-height: 90vh;
+}
+#issueModal .modal-body {
+    max-height: calc(90vh - 110px);
+    overflow-y: auto;
+}
+
+/* ==================== QUILL EDITOR (Light + Dark Mode) ==================== */
+.issue-quill-wrap .ql-toolbar.ql-snow {
+    background: var(--bg-card, #fff);
+    border-color: var(--border-color, rgba(0,0,0,0.1));
+}
+.issue-quill-wrap .ql-container.ql-snow {
+    border-color: var(--border-color, rgba(0,0,0,0.1));
+    background: var(--bg-input, #fff);
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+.issue-quill-wrap .ql-editor {
+    color: var(--text-primary);
+}
+.issue-quill-wrap .ql-editor.ql-blank::before {
+    color: var(--text-muted, #94a3b8);
+    font-style: italic;
+}
+.issue-quill-wrap .ql-snow .ql-stroke {
+    stroke: var(--text-secondary, #64748b);
+}
+.issue-quill-wrap .ql-snow .ql-fill {
+    fill: var(--text-secondary, #64748b);
+}
+.issue-quill-wrap .ql-snow .ql-picker-label {
+    color: var(--text-secondary, #64748b);
+}
+.issue-quill-wrap .ql-snow .ql-picker-options {
+    background: var(--bg-card, #fff);
+    border-color: var(--border-color, rgba(0,0,0,0.1));
+}
+.issue-quill-wrap .ql-snow .ql-picker-item {
+    color: var(--text-primary);
+}
+.issue-quill-wrap .ql-editor img {
+    max-width: 100%;
+    border-radius: 6px;
+    margin: 8px 0;
+    border: 1px solid var(--border-color, rgba(0,0,0,0.1));
+}
+
+/* ==================== EDITOR TABS ==================== */
+.issue-editor-tabs {
+    border: 1px solid var(--border-color, rgba(0,0,0,0.1));
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+.issue-tab-nav {
+    display: flex;
+    background: var(--bg-card, #fff);
+    border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.1));
+    gap: 0;
+}
+.issue-tab-btn {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.issue-tab-btn:hover {
+    color: var(--text-primary);
+    background: rgba(var(--brand-primary-rgb, 59,130,246), 0.05);
+}
+.issue-tab-btn.active {
+    color: var(--brand-primary);
+    border-bottom-color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb, 59,130,246), 0.08);
+}
+.issue-tab-btn .required {
+    color: var(--color-error);
+}
+.issue-tab-panels {
+    position: relative;
+}
+.issue-tab-panel {
+    display: none;
+}
+.issue-tab-panel.active {
+    display: block;
+}
+/* Quill inside tabs — tall editor area */
+.issue-tab-panel .ql-container.ql-snow {
+    min-height: 320px;
+    border: none;
+    border-radius: 0;
+}
+.issue-tab-panel .ql-toolbar.ql-snow {
+    border: none;
+    border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.1));
+    border-radius: 0;
+}
+.issue-tab-panel .ql-editor {
+    min-height: 320px;
+}
+
+.issue-form-section {
+    margin-bottom: 12px;
+}
+.issue-form-section label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    display: block;
+}
+.issue-form-section label .required {
+    color: var(--color-error);
+}
+
+.issue-template-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--glass-bg);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+}
+.issue-template-fields label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.issue-template-fields textarea {
+    min-height: 60px;
+    font-size: 0.8rem;
+}
+
+/* ==================== ISSUE AGE ==================== */
+.issue-age {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    #issueModal .modal-dialog {
+        max-width: 100%;
+        margin: 16px;
+    }
+    .issues-table .component-tag {
+        display: none;
+    }
+}

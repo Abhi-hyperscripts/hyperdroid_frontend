@@ -329,6 +329,7 @@ function switchTab(tabName) {
             case 'time': loadProjectTime(); break;
             case 'subprojects': loadProjectSubProjects(); break;
             case 'activity': loadProjectActivity(); break;
+            case 'issues': loadProjectIssues(); break;
         }
     }
 }
@@ -1432,4 +1433,349 @@ function getTaskStatusClass(status) {
 function getPriorityClass(priority) {
     const map = { 'low': 'new', 'medium': 'contacted', 'high': 'qualified', 'urgent': 'lost' };
     return map[priority] || 'new';
+}
+
+// ==================== ISSUES TAB ====================
+
+let projectIssues = [];
+let issueQuillSteps = null, issueQuillExpected = null, issueQuillActual = null, issueQuillDesc = null;
+
+const ISSUE_QUILL_TOOLBAR = [
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    ['code-block'],
+    ['link', 'image'],
+    ['clean']
+];
+
+// Searchable dropdown instances for issues
+let issueFilterSubProjectDD = null, issueFilterStatusDD = null, issueFilterSeverityDD = null;
+let issueTypeDD = null, issueSeverityDD = null, issuePriorityDD = null, issueAssigneeDD = null;
+let issueSubProjectDD = null, issueReproducibilityDD = null;
+
+function initIssueSearchableDropdowns() {
+    // Filter bar dropdowns
+    issueFilterSubProjectDD = convertSelectToSearchable('issueFilterSubProject', { compact: true, placeholder: 'All Sub-Projects', onChange: () => loadProjectIssues() });
+    issueFilterStatusDD = convertSelectToSearchable('issueFilterStatus', { compact: true, placeholder: 'All', onChange: () => loadProjectIssues() });
+    issueFilterSeverityDD = convertSelectToSearchable('issueFilterSeverity', { compact: true, placeholder: 'All', onChange: () => loadProjectIssues() });
+}
+
+function initIssueModalDropdowns() {
+    // Modal dropdowns — destroy and recreate each time
+    issueTypeDD = convertSelectToSearchable('issueType', { placeholder: 'Bug' });
+    issueSeverityDD = convertSelectToSearchable('issueSeverity', { placeholder: 'Medium' });
+    issuePriorityDD = convertSelectToSearchable('issuePriority', { placeholder: 'P2' });
+    issueAssigneeDD = convertSelectToSearchable('issueAssignee', { placeholder: 'Unassigned' });
+    issueSubProjectDD = convertSelectToSearchable('issueSubProject', { placeholder: 'None' });
+    issueReproducibilityDD = convertSelectToSearchable('issueReproducibility', { placeholder: 'Always' });
+}
+
+function destroyIssueModalDropdowns() {
+    [issueTypeDD, issueSeverityDD, issuePriorityDD, issueAssigneeDD, issueSubProjectDD, issueReproducibilityDD].forEach(dd => {
+        if (dd && dd.destroy) dd.destroy();
+    });
+    issueTypeDD = issueSeverityDD = issuePriorityDD = issueAssigneeDD = issueSubProjectDD = issueReproducibilityDD = null;
+}
+
+async function loadProjectIssues() {
+    const tbody = document.getElementById('projectIssuesBody');
+    try {
+        // Populate sub-project filter if not already done
+        const spFilter = document.getElementById('issueFilterSubProject');
+        if (spFilter && spFilter.options.length <= 1) {
+            try {
+                const sps = await api.request(`/pms/sub-projects?projectId=${projectId}`);
+                (sps || []).forEach(sp => {
+                    spFilter.innerHTML += `<option value="${sp.id}">${sp.sub_project_name}</option>`;
+                });
+            } catch (_) {}
+        }
+
+        const params = new URLSearchParams();
+        params.set('projectId', projectId);
+        const subProjectId = document.getElementById('issueFilterSubProject')?.value;
+        const status = document.getElementById('issueFilterStatus')?.value;
+        const severity = document.getElementById('issueFilterSeverity')?.value;
+        if (subProjectId) params.set('subProjectId', subProjectId);
+        if (status) params.set('status', status);
+        if (severity) params.set('severity', severity);
+
+        projectIssues = await api.request(`/pms/issues?${params.toString()}`);
+        renderProjectIssues(projectIssues);
+
+        // Init searchable dropdowns on first load
+        if (!issueFilterStatusDD) initIssueSearchableDropdowns();
+
+        // Update tab count
+        const countEl = document.getElementById('tabIssuesCount');
+        if (countEl) countEl.textContent = projectIssues.length || '';
+    } catch (e) {
+        console.error('[Issues] Failed to load:', e);
+        tbody.innerHTML = '<tr><td colspan="8"><div class="crm-empty-content"><p>Failed to load issues</p></div></td></tr>';
+    }
+}
+
+function renderProjectIssues(issues) {
+    const tbody = document.getElementById('projectIssuesBody');
+    if (!issues || issues.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9"><div class="crm-empty-content">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <p>No issues found</p>
+            <button class="btn btn-primary btn-sm" onclick="openIssueModal()">Report your first issue</button>
+        </div></td></tr>`;
+        return;
+    }
+
+    const statusLabels = { reported: 'Reported', in_progress: 'In Progress', qa_testing: 'QA Testing', closed: 'Closed', reopened: 'Reopened', wontfix: "Won't Fix" };
+
+    tbody.innerHTML = issues.map(issue => {
+        const code = issue.project_code || (project?.project_code) || (project?.project_name?.substring(0, 3).toUpperCase()) || 'PRJ';
+        const ref = `${code}-${issue.issue_number}`;
+        const created = new Date(issue.created_at).toLocaleString();
+        const comp = issue.component ? `<span class="component-tag">${escapeHtml(issue.component)}</span>` : '';
+
+        return `<tr>
+            <td><span class="issue-number">${escapeHtml(ref)}</span></td>
+            <td class="issue-title-cell">
+                <span style="font-weight:500;font-size:0.82rem;">${escapeHtml(issue.title)}</span>
+                ${comp}
+            </td>
+            <td><span class="severity-badge severity-${issue.severity}">${issue.severity}</span></td>
+            <td><span class="priority-badge priority-${issue.priority}">${issue.priority}</span></td>
+            <td><span class="issue-status-badge issue-status-${issue.status}">${statusLabels[issue.status] || issue.status}</span></td>
+            <td style="font-size:0.8rem;">${escapeHtml(issue.reported_by_name || '—')}</td>
+            <td style="font-size:0.8rem;">${escapeHtml(issue.assigned_to_name || 'Unassigned')}</td>
+            <td style="font-size:0.75rem;white-space:nowrap;color:var(--text-secondary);">${created}</td>
+            <td>
+                <div class="action-btns">
+                    <button class="action-btn" onclick="editProjectIssue('${issue.id}')" data-tooltip="Edit">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="action-btn action-btn-danger" onclick="deleteProjectIssue('${issue.id}')" data-tooltip="Delete">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function issueAge(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h`;
+    const days = Math.floor(hrs / 24);
+    if (days < 30) return `${days}d`;
+    return `${Math.floor(days / 30)}mo`;
+}
+
+// ---- Issue Modal ----
+
+async function openIssueModal() {
+    document.getElementById('issueForm').reset();
+    document.getElementById('issueModal').classList.add('active');
+
+    // Populate assignee from project members (fetch if not loaded)
+    if (!projectMembers || !projectMembers.length) {
+        try {
+            const resp = await api.request(`/pms/project-members?projectId=${projectId}`, { _skipSpinner: true });
+            projectMembers = resp.data || resp || [];
+        } catch (_) {}
+    }
+    const assigneeSelect = document.getElementById('issueAssignee');
+    assigneeSelect.innerHTML = '<option value="">Unassigned</option>';
+    projectMembers.forEach(m => {
+        // Skip orphaned members with no resolved name
+        if (!m.user_name && !m.user_email) return;
+        const label = m.user_name || m.user_email;
+        assigneeSelect.innerHTML += `<option value="${m.user_id}">${label}</option>`;
+    });
+
+    // Populate sub-project dropdown in modal
+    const spSelect = document.getElementById('issueSubProject');
+    if (spSelect) {
+        spSelect.innerHTML = '<option value="">None</option>';
+        try {
+            const sps = await api.request(`/pms/sub-projects?projectId=${projectId}`);
+            (sps || []).forEach(sp => {
+                spSelect.innerHTML += `<option value="${sp.id}">${sp.sub_project_name}</option>`;
+            });
+        } catch (_) {}
+    }
+
+    // Init dropdowns + Quill editors after modal visible
+    setTimeout(() => {
+        initIssueModalDropdowns();
+        initIssueQuillEditors();
+    }, 100);
+}
+
+function closeIssueModal() {
+    document.getElementById('issueModal').classList.remove('active');
+    destroyIssueQuillEditors();
+    destroyIssueModalDropdowns();
+}
+
+function initIssueQuillEditors() {
+    destroyIssueQuillEditors();
+    const opts = { theme: 'snow', modules: { toolbar: ISSUE_QUILL_TOOLBAR } };
+    issueQuillSteps = new Quill('#issueEditorSteps', { ...opts, placeholder: '1. Go to...\n2. Click on...\n3. Observe...' });
+    issueQuillExpected = new Quill('#issueEditorExpected', { ...opts, placeholder: 'What should happen' });
+    issueQuillActual = new Quill('#issueEditorActual', { ...opts, placeholder: 'What actually happened (paste screenshots here)' });
+    issueQuillDesc = new Quill('#issueEditorDesc', { ...opts, placeholder: 'Any additional context, notes, or screenshots...' });
+}
+
+function destroyIssueQuillEditors() {
+    ['issueEditorSteps', 'issueEditorExpected', 'issueEditorActual', 'issueEditorDesc'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const parent = el.parentElement;
+            const toolbar = parent?.querySelector('.ql-toolbar');
+            if (toolbar) toolbar.remove();
+            el.innerHTML = '';
+            el.className = '';
+        }
+    });
+    issueQuillSteps = issueQuillExpected = issueQuillActual = issueQuillDesc = null;
+}
+
+function switchIssueEditorTab(tab, btnEl) {
+    document.querySelectorAll('#issueModal .issue-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#issueModal .issue-tab-panel').forEach(p => p.classList.remove('active'));
+    btnEl.classList.add('active');
+    const map = { steps: 'issueTabSteps', expected: 'issueTabExpected', actual: 'issueTabActual', desc: 'issueTabDesc' };
+    document.getElementById(map[tab]).classList.add('active');
+}
+
+function getQuillHtml(q) {
+    if (!q || !q.getText().trim()) return '';
+    return q.root.innerHTML;
+}
+
+async function handleIssueSubmit(e) {
+    e.preventDefault();
+    const title = document.getElementById('issueTitle').value.trim();
+    if (!title) { Toast.error('Title is required'); return; }
+
+    const stepsText = issueQuillSteps?.getText().trim();
+    const expectedText = issueQuillExpected?.getText().trim();
+    const actualText = issueQuillActual?.getText().trim();
+    if (!stepsText) { Toast.error('Steps to Reproduce is required'); return; }
+    if (!expectedText) { Toast.error('Expected Result is required'); return; }
+    if (!actualText) { Toast.error('Actual Result is required'); return; }
+
+    const btn = document.getElementById('issueSubmitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Creating...';
+
+    try {
+        const payload = {
+            project_id: projectId,
+            sub_project_id: document.getElementById('issueSubProject')?.value || null,
+            title,
+            steps_to_reproduce: getQuillHtml(issueQuillSteps),
+            expected_result: getQuillHtml(issueQuillExpected),
+            actual_result: getQuillHtml(issueQuillActual),
+            description: getQuillHtml(issueQuillDesc) || null,
+            component: document.getElementById('issueComponent').value.trim() || null,
+            environment: document.getElementById('issueEnvironment').value.trim() || null,
+            issue_type: document.getElementById('issueType').value,
+            severity: document.getElementById('issueSeverity').value,
+            priority: document.getElementById('issuePriority').value,
+            reproducibility: document.getElementById('issueReproducibility').value,
+            assigned_to: document.getElementById('issueAssignee').value || null
+        };
+
+        const result = await api.request('/pms/issues', { method: 'POST', body: JSON.stringify(payload) });
+        Toast.success(`Issue #${result.issue_number} created`);
+        closeIssueModal();
+        loadedTabs.delete('issues');
+        loadProjectIssues();
+    } catch (err) {
+        Toast.error(err.message || 'Failed to create issue');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Report Issue';
+    }
+}
+
+async function editProjectIssue(issueId) {
+    try {
+        const issue = await api.request(`/pms/issues/${issueId}`);
+        if (!issue) { Toast.error('Issue not found'); return; }
+
+        document.getElementById('issueForm').reset();
+        document.getElementById('issueModal').classList.add('active');
+        document.getElementById('issueTitle').value = issue.title;
+
+        // Populate dropdowns
+        if (!projectMembers || !projectMembers.length) {
+            try {
+                const resp = await api.request(`/pms/project-members?projectId=${projectId}`, { _skipSpinner: true });
+                projectMembers = resp.data || resp || [];
+            } catch (_) {}
+        }
+        const assigneeSelect = document.getElementById('issueAssignee');
+        assigneeSelect.innerHTML = '<option value="">Unassigned</option>';
+        projectMembers.forEach(m => {
+            if (!m.user_name && !m.user_email) return;
+            const label = m.user_name || m.user_email;
+            assigneeSelect.innerHTML += `<option value="${m.user_id}"${m.user_id === issue.assigned_to ? ' selected' : ''}>${label}</option>`;
+        });
+
+        // Sub-project
+        const spSelect = document.getElementById('issueSubProject');
+        spSelect.innerHTML = '<option value="">None</option>';
+        try {
+            const sps = await api.request(`/pms/sub-projects?projectId=${projectId}`);
+            (sps || []).forEach(sp => {
+                spSelect.innerHTML += `<option value="${sp.id}"${sp.id === issue.sub_project_id ? ' selected' : ''}>${sp.sub_project_name}</option>`;
+            });
+        } catch (_) {}
+
+        // Set select values
+        document.getElementById('issueType').value = issue.issue_type || 'bug';
+        document.getElementById('issueSeverity').value = issue.severity || 'medium';
+        document.getElementById('issuePriority').value = issue.priority || 'P2';
+        document.getElementById('issueComponent').value = issue.component || '';
+        document.getElementById('issueEnvironment').value = issue.environment || '';
+        document.getElementById('issueReproducibility').value = issue.reproducibility || 'always';
+
+        // Init dropdowns + Quill
+        setTimeout(() => {
+            initIssueModalDropdowns();
+            initIssueQuillEditors();
+
+            // Populate Quill editors with existing content
+            setTimeout(() => {
+                if (issueQuillSteps && issue.steps_to_reproduce) issueQuillSteps.root.innerHTML = issue.steps_to_reproduce;
+                if (issueQuillExpected && issue.expected_result) issueQuillExpected.root.innerHTML = issue.expected_result;
+                if (issueQuillActual && issue.actual_result) issueQuillActual.root.innerHTML = issue.actual_result;
+                if (issueQuillDesc && issue.description) issueQuillDesc.root.innerHTML = issue.description;
+            }, 50);
+        }, 100);
+
+        // Store edit mode
+        document.getElementById('issueForm').dataset.editId = issueId;
+        document.querySelector('#issueModal .modal-title').textContent = 'Edit Issue';
+        document.getElementById('issueSubmitBtn').textContent = 'Update Issue';
+    } catch (err) {
+        Toast.error('Failed to load issue for editing');
+        console.error(err);
+    }
+}
+
+async function deleteProjectIssue(issueId) {
+    const confirmed = await Confirm.danger('Are you sure you want to delete this issue? This action cannot be undone.', 'Delete Issue');
+    if (!confirmed) return;
+    try {
+        await api.request(`/pms/issues/${issueId}`, { method: 'DELETE' });
+        Toast.success('Issue deleted');
+        loadedTabs.delete('issues');
+        loadProjectIssues();
+    } catch (err) {
+        Toast.error('Failed to delete issue');
+    }
 }

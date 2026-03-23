@@ -3133,4 +3133,9 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
     padding: 16px 0;
 }
 
+/* Task modal — wider to fit 4-column rows (priority, due date, est hours, est min) */
+#taskModal .modal-dialog {
+    max-width: 700px;
+}
+
 /* Responsive — slide-panel.css handles mobile bottom sheet */
