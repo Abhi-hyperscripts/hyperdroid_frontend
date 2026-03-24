@@ -98,8 +98,8 @@ async function loadClientProjects() {
 
         // Update stats cards
         const el = (id) => document.getElementById(id);
-        if (el('statProjects')) el('statProjects').textContent = clientProjects.length;
         if (el('statTotalTasks')) el('statTotalTasks').textContent = clientProjects.reduce((sum, p) => sum + (p.task_count || 0), 0);
+        if (el('statCompletedTasks')) el('statCompletedTasks').textContent = clientProjects.reduce((sum, p) => sum + (p.completed_task_count || 0), 0);
         if (el('statTotalMembers')) el('statTotalMembers').textContent = clientProjects.reduce((sum, p) => sum + (p.member_count || 0), 0);
         if (el('statTotalHours')) el('statTotalHours').textContent = clientProjects.reduce((sum, p) => sum + (p.total_hours_logged || 0), 0).toFixed(1);
 

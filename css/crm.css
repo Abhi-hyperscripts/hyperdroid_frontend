@@ -1375,6 +1375,14 @@ body.crm-dashboard .crm-container {
     background: linear-gradient(135deg, var(--brand-secondary), var(--color-purple-dark));
 }
 
+.crm-stat-icon.stat-active {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.crm-stat-icon.stat-completed {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+}
+
 .crm-stat-text {
     display: flex;
     flex-direction: column;
