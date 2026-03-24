@@ -34,15 +34,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 160px;
+    max-width: 200px;
 }
 .pms-meta-link:hover { text-decoration: underline; }
 
-/* Meta stats grid — smaller value font for text values */
-.pms-meta-stats-grid .crm-stat-value {
-    font-size: 0.9rem;
-    font-weight: 600;
-}
 
 /* Project Meta Bar (compact, no card wrapper) */
 .pms-detail-meta {
