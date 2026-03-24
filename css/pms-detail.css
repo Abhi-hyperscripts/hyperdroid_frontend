@@ -27,6 +27,23 @@
     margin-top: 2px;
 }
 
+/* Meta stats link style */
+.pms-meta-link {
+    color: var(--brand-primary);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 160px;
+}
+.pms-meta-link:hover { text-decoration: underline; }
+
+/* Meta stats grid — smaller value font for text values */
+.pms-meta-stats-grid .crm-stat-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
 /* Project Meta Bar (compact, no card wrapper) */
 .pms-detail-meta {
     display: flex;
