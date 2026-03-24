@@ -471,6 +471,30 @@
     -webkit-backdrop-filter: none;
 }
 
+/* ==================== Issue Detail Subtitle (Client > Project > Sub-Project) ==================== */
+.issue-detail-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-top: 6px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+.issue-subtitle-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.issue-subtitle-item svg {
+    opacity: 0.6;
+    flex-shrink: 0;
+}
+.issue-subtitle-sep {
+    margin: 0 8px;
+    color: var(--text-secondary);
+    opacity: 0.4;
+}
+
 /* ==================== Issue Detail Header ==================== */
 .issue-detail-header {
     margin-bottom: 20px;
