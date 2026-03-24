@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Issue - PMS | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/issues.css?v=' + CACHE_VERSION + '">');</script>
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Breadcrumb -->
+        <div class="crm-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">PMS</a>
+                    <span class="separator">/</span>
+                    <a href="issues.html">Issues</a>
+                    <span class="separator">/</span>
+                    <span class="current" id="breadcrumbIssue">Loading...</span>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Issue Header -->
+        <div class="issue-detail-header" id="issueHeader">
+            <div class="issue-detail-header-top">
+                <a href="javascript:void(0)" onclick="goBack()" class="issue-detail-back" title="Go Back">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                </a>
+                <span class="issue-detail-ref" id="issueRef">---</span>
+                <div class="issue-status-dropdown" id="statusDropdown">
+                    <button class="issue-status-trigger" id="statusTrigger" onclick="toggleStatusDropdown()">
+                        <span class="issue-status-badge" id="statusBadge">--</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <div class="issue-status-menu" id="statusMenu"></div>
+                </div>
+                <div class="issue-detail-header-actions no-print" id="headerActions"></div>
+                <button class="issue-detail-back no-print" onclick="window.print()" title="Print / Save as PDF">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                </button>
+            </div>
+            <h1 class="issue-detail-title" id="issueTitle">Loading...</h1>
+        </div>
+
+        <!-- Metadata Grid -->
+        <div class="issue-detail-meta" id="issueMeta">
+            <!-- Populated by JS -->
+        </div>
+
+        <!-- Content Sections (stacked for print) -->
+        <div class="issue-content-sections" id="contentSections">
+            <div class="issue-content-section">
+                <h3 class="issue-section-heading">Issue Description</h3>
+                <div class="issue-content-display" id="contentActual"><p class="text-muted">No content</p></div>
+            </div>
+            <div class="issue-content-section">
+                <h3 class="issue-section-heading">Expected Result</h3>
+                <div class="issue-content-display" id="contentExpected"><p class="text-muted">No content</p></div>
+            </div>
+            <div class="issue-content-section">
+                <h3 class="issue-section-heading">Steps to Reproduce</h3>
+                <div class="issue-content-display" id="contentSteps"><p class="text-muted">No content</p></div>
+            </div>
+            <div class="issue-content-section">
+                <h3 class="issue-section-heading">Notes</h3>
+                <div class="issue-content-display" id="contentNotes"><p class="text-muted">No content</p></div>
+            </div>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="issue-comments-section" id="commentsSection">
+            <div class="issue-comments-header">
+                <h3>Comments <span class="issue-comments-count" id="commentCount">0</span></h3>
+            </div>
+            <div class="issue-comments-list" id="commentsList">
+                <!-- Populated by JS -->
+            </div>
+
+            <!-- New Comment Form -->
+            <div class="issue-comment-form" id="commentForm">
+                <div class="issue-comment-form-editor issue-quill-wrap">
+                    <div id="commentEditor"></div>
+                </div>
+                <div class="issue-comment-form-footer">
+                    <span class="issue-comment-hint">Paste images directly into the editor</span>
+                    <button type="button" class="btn btn-primary btn-sm" id="submitCommentBtn" onclick="submitComment()">
+                        Add Comment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/firebase-init.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    <script>document.write('<script src="../../js/pms/issue-detail.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</body>
+</html>

@@ -434,6 +434,43 @@
    ISSUE DETAIL PAGE
    ================================================================ */
 
+/* ==================== Stacked Content Sections ==================== */
+.issue-content-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 20px;
+}
+.issue-content-section {
+    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    background: var(--bg-card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+.issue-section-heading {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    padding: 10px 16px;
+    margin: 0;
+    background: var(--bg-card-hover);
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+.issue-content-section .issue-content-display {
+    padding: 14px 16px;
+    min-height: 40px;
+    background: var(--bg-card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
 /* ==================== Issue Detail Header ==================== */
 .issue-detail-header {
     margin-bottom: 20px;
