@@ -108,6 +108,9 @@ a.pms-meta-value:hover {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     border-right: 1px solid rgba(255, 255, 255, 0.25);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .pms-meeting-dropdown-toggle {
@@ -202,6 +205,16 @@ a.pms-meta-value:hover {
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+}
+
+/* Top spacing for tab content (buttons moved to header) */
+#tab-tasks,
+#tab-members,
+#tab-time,
+#tab-subprojects,
+#tab-issues,
+#tab-activity {
+    padding-top: 16px;
 }
 
 /* Client Avatar */

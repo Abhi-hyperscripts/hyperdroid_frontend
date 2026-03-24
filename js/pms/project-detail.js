@@ -43,6 +43,9 @@ async function loadUserRole() {
         isPmsAdmin = data.is_admin || data.is_super_admin || false;
         currentUserId = data.user_id || null;
         applyRoleBasedUI();
+        // Re-apply tab button visibility now that RBAC is known
+        const currentTab = document.querySelector('.sidebar-btn.active')?.dataset?.tab || 'overview';
+        switchTab(currentTab);
     } catch (e) {
         console.error('Failed to load user role', e);
     }
@@ -206,6 +209,13 @@ function renderProjectHeader() {
             overviewBtn.href = meetingUrl;
             overviewCard.style.display = '';
         }
+        // Hide create card if meeting exists
+        const createCard = document.getElementById('createMeetingCard');
+        if (createCard) createCard.style.display = 'none';
+    } else {
+        // Show "Create Meeting Room" card when no meeting exists
+        const createCard = document.getElementById('createMeetingCard');
+        if (createCard) createCard.style.display = '';
     }
 }
 
@@ -274,6 +284,34 @@ function copyEmailCard(type) {
     closeMeetingDropdowns();
 }
 
+async function createMeetingRoom() {
+    if (!projectId) return;
+    const btn = document.getElementById('createMeetingRoomBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><circle cx="12" cy="12" r="10"/></svg> Creating...';
+    }
+    try {
+        const result = await api.request(`/pms/projects/${projectId}/meeting-room`, { method: 'POST' });
+        const updated = result.data || result;
+        if (updated.vision_meeting_id) {
+            project = updated;
+            renderProjectHeader(project);
+            Toast.success('Meeting room created!');
+        } else {
+            Toast.error('Failed to create meeting room');
+        }
+    } catch (err) {
+        const msg = err?.error || err?.message || 'Failed to create meeting room';
+        Toast.error(msg);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Create Meeting Room';
+        }
+    }
+}
+
 async function loadOverviewData() {
     try {
         const [tasks, members] = await Promise.all([
@@ -315,6 +353,31 @@ function switchTab(tabName) {
     if (activeBtn && activeTabName) {
         const label = activeBtn.querySelector('.nav-label');
         activeTabName.textContent = label ? label.textContent : tabName;
+    }
+
+    // Show Edit/Delete only on overview tab
+    const editBtn = document.getElementById('editProjectBtn');
+    const deleteBtn = document.getElementById('deleteProjectBtn');
+    const isOverview = tabName === 'overview';
+    if (editBtn) editBtn.style.display = isOverview ? '' : 'none';
+    if (deleteBtn) deleteBtn.style.display = isOverview ? '' : 'none';
+
+    // Show tab-specific action buttons in header
+    const tabActionMap = {
+        tasks: 'headerNewTaskBtn',
+        members: 'headerAddMemberBtn',
+        time: 'headerLogTimeBtn',
+        subprojects: 'headerNewSubProjectBtn'
+    };
+    document.querySelectorAll('.tab-action-btn').forEach(b => b.style.display = 'none');
+    const activeActionId = tabActionMap[tabName];
+    if (activeActionId) {
+        const btn = document.getElementById(activeActionId);
+        if (btn) {
+            // Respect admin-only for buttons that require it
+            const needsAdmin = btn.hasAttribute('data-admin-action');
+            btn.style.display = (!needsAdmin || isPmsAdmin) ? '' : 'none';
+        }
     }
 
     // Update URL hash
@@ -1535,7 +1598,7 @@ async function loadProjectIssues() {
 function renderProjectIssues(issues) {
     const tbody = document.getElementById('projectIssuesBody');
     if (!issues || issues.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9"><div class="crm-empty-content">
+        tbody.innerHTML = `<tr><td colspan="10"><div class="crm-empty-content">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="36" height="36"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <p>No issues found</p>
             <button class="btn btn-primary btn-sm" onclick="openIssueModal()">Report your first issue</button>
@@ -1551,6 +1614,17 @@ function renderProjectIssues(issues) {
         const created = new Date(issue.created_at).toLocaleString();
         const comp = issue.component ? `<span class="component-tag">${escapeHtml(issue.component)}</span>` : '';
 
+        // Permission: Edit only for reporter or admin, Delete only for admin
+        const isReporter = issue.reported_by === currentUserId;
+        const canEdit = isReporter || isPmsAdmin;
+        const canDelete = isPmsAdmin;
+        const editBtn = canEdit ? `<button class="action-btn" onclick="editProjectIssue('${issue.id}')" data-tooltip="Edit">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>` : '';
+        const deleteBtn = canDelete ? `<button class="action-btn action-btn-danger" onclick="deleteProjectIssue('${issue.id}')" data-tooltip="Delete">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>` : '';
+
         return `<tr>
             <td><span class="issue-number">${escapeHtml(ref)}</span></td>
             <td class="issue-title-cell">
@@ -1562,15 +1636,15 @@ function renderProjectIssues(issues) {
             <td><span class="issue-status-badge issue-status-${issue.status}">${statusLabels[issue.status] || issue.status}</span></td>
             <td style="font-size:0.8rem;">${escapeHtml(issue.reported_by_name || '—')}</td>
             <td style="font-size:0.8rem;">${escapeHtml(issue.assigned_to_name || 'Unassigned')}</td>
+            <td style="font-size:0.8rem;text-align:center;">${issue.comment_count || 0}</td>
             <td style="font-size:0.75rem;white-space:nowrap;color:var(--text-secondary);">${created}</td>
             <td>
                 <div class="action-btns">
-                    <button class="action-btn" onclick="editProjectIssue('${issue.id}')" data-tooltip="Edit">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                    <button class="action-btn action-btn-danger" onclick="deleteProjectIssue('${issue.id}')" data-tooltip="Delete">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    </button>
+                    <a class="action-btn" href="issue-detail.html?id=${issue.id}" data-tooltip="View">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </a>
+                    ${editBtn}
+                    ${deleteBtn}
                 </div>
             </td>
         </tr>`;

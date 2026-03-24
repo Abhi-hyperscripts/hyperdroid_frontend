@@ -119,6 +119,23 @@
                             </svg>
                             Delete
                         </button>
+                        <!-- Tab-specific action buttons (shown/hidden per tab) -->
+                        <button class="btn btn-primary btn-sm tab-action-btn" id="headerNewTaskBtn" onclick="openNewTaskModal()" style="display: none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            New Task
+                        </button>
+                        <button class="btn btn-primary btn-sm tab-action-btn" id="headerAddMemberBtn" onclick="openAddMemberModal()" data-admin-action style="display: none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Member
+                        </button>
+                        <button class="btn btn-primary btn-sm tab-action-btn" id="headerLogTimeBtn" onclick="openLogTimeModal()" style="display: none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Log Time
+                        </button>
+                        <button class="btn btn-primary btn-sm tab-action-btn" id="headerNewSubProjectBtn" onclick="openNewSubProjectModal()" data-admin-action style="display: none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            New Sub-Project
+                        </button>
                     </div>
                 </div>
             </div><!-- /header-content -->
@@ -255,6 +272,22 @@
                     <div class="crm-stat-label">Members</div></div>
                 </div>
             </div>
+            <!-- Create Meeting Room Card (shown when no meeting exists) -->
+            <div class="pms-meeting-card" id="createMeetingCard" style="display: none;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-weight: 600; color: var(--text-primary); font-size: 14px;">No Meeting Room</div>
+                        <div style="color: var(--text-secondary); font-size: 12px; margin-top: 2px;">Create a dedicated video room for this project</div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="createMeetingRoomBtn" onclick="createMeetingRoom()" style="white-space: nowrap;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Create Meeting Room
+                    </button>
+                </div>
+            </div>
             <!-- Meeting Room Card -->
             <div class="pms-meeting-card" id="overviewMeetingCard" style="display: none;">
                 <div style="display: flex; align-items: center; gap: 12px;">
@@ -298,13 +331,6 @@
 
         <!-- ============ TASKS TAB ============ -->
         <div class="crm-tab-content" id="tab-tasks">
-            <div class="crm-header-row" style="margin-top: 20px; margin-bottom: 16px;">
-                <div></div>
-                <button class="btn btn-primary btn-sm" onclick="openNewTaskModal()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    New Task
-                </button>
-            </div>
             <div class="crm-filter-bar" style="margin-bottom: 16px;">
                 <div class="crm-filter-group">
                     <label for="taskFilterStatus">Status</label>
@@ -348,13 +374,6 @@
 
         <!-- ============ MEMBERS TAB ============ -->
         <div class="crm-tab-content" id="tab-members">
-            <div class="crm-header-row" style="margin-bottom: 16px;">
-                <div></div>
-                <button class="btn btn-primary btn-sm" onclick="openAddMemberModal()" data-admin-only>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Add Member
-                </button>
-            </div>
             <div class="crm-table-wrapper data-table-container">
                 <table class="crm-table data-table">
                     <thead>
@@ -375,13 +394,6 @@
 
         <!-- ============ TIME TRACKING TAB ============ -->
         <div class="crm-tab-content" id="tab-time">
-            <div class="crm-header-row" style="margin-bottom: 16px;">
-                <div></div>
-                <button class="btn btn-primary btn-sm" onclick="openLogTimeModal()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Log Time
-                </button>
-            </div>
             <div class="crm-table-wrapper data-table-container">
                 <table class="crm-table data-table">
                     <thead>
@@ -405,13 +417,6 @@
 
         <!-- ============ SUB-PROJECTS TAB ============ -->
         <div class="crm-tab-content" id="tab-subprojects">
-            <div class="crm-header-row" style="margin-bottom: 16px;">
-                <div></div>
-                <button class="btn btn-primary btn-sm" onclick="openNewSubProjectModal()" data-admin-only>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    New Sub-Project
-                </button>
-            </div>
             <div class="crm-table-wrapper data-table-container">
                 <table class="crm-table data-table">
                     <thead>
@@ -480,12 +485,13 @@
                                     <th>Status</th>
                                     <th>Reporter</th>
                                     <th>Assignee</th>
+                                    <th>Comments</th>
                                     <th>Created</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="projectIssuesBody">
-                                <tr><td colspan="9"><div class="crm-empty-content"><p>Loading issues...</p></div></td></tr>
+                                <tr><td colspan="10"><div class="crm-empty-content"><p>Loading issues...</p></div></td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -504,63 +510,58 @@
                             </div>
                             <div class="modal-body">
                                 <form id="issueForm" onsubmit="handleIssueSubmit(event)">
-                                    <!-- Row 1: Title (full width) -->
-                                    <div class="row mb-2">
-                                        <div class="col-12">
-                                            <label class="form-label">Title <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="issueTitle" required placeholder="Brief summary of the issue">
+                                    <!-- Compact: Title + all metadata in 2 rows -->
+                                    <div class="issue-compact-header">
+                                        <div class="issue-title-row">
+                                            <input type="text" class="form-control" id="issueTitle" required placeholder="Issue title *">
                                         </div>
-                                    </div>
-                                    <!-- Row 2: Type + Severity + Priority + Reproducibility -->
-                                    <div class="row mb-2">
-                                        <div class="col-md-3">
-                                            <label class="form-label">Type</label>
-                                            <select class="form-select" id="issueType"><option value="bug">Bug</option><option value="improvement">Improvement</option><option value="task">Task</option><option value="question">Question</option></select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Severity</label>
-                                            <select class="form-select" id="issueSeverity"><option value="cosmetic">Cosmetic</option><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="critical">Critical</option></select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Priority</label>
-                                            <select class="form-select" id="issuePriority"><option value="P0">P0</option><option value="P1">P1</option><option value="P2" selected>P2</option><option value="P3">P3</option><option value="P4">P4</option></select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Assigned To</label>
-                                            <select class="form-select" id="issueAssignee"><option value="">Unassigned</option></select>
-                                        </div>
-                                    </div>
-                                    <!-- Row 3: Sub-Project + Component + Environment -->
-                                    <div class="row mb-2">
-                                        <div class="col-md-3">
-                                            <label class="form-label">Sub-Project</label>
-                                            <select class="form-select" id="issueSubProject"><option value="">None</option></select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Component</label>
-                                            <input type="text" class="form-control" id="issueComponent" placeholder="e.g. Dashboard UI">
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Environment</label>
-                                            <input type="text" class="form-control" id="issueEnvironment" placeholder="e.g. Chrome, macOS">
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Reproducibility</label>
-                                            <select class="form-select" id="issueReproducibility"><option value="always" selected>Always</option><option value="sometimes">Sometimes</option><option value="rarely">Rarely</option><option value="cannot_reproduce">Cannot Reproduce</option></select>
+                                        <div class="issue-meta-grid">
+                                            <div class="issue-meta-field">
+                                                <label>Type</label>
+                                                <select class="form-select" id="issueType"><option value="bug">Bug</option><option value="improvement">Improvement</option><option value="task">Task</option><option value="question">Question</option></select>
+                                            </div>
+                                            <div class="issue-meta-field">
+                                                <label>Severity</label>
+                                                <select class="form-select" id="issueSeverity"><option value="cosmetic">Cosmetic</option><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="critical">Critical</option></select>
+                                            </div>
+                                            <div class="issue-meta-field">
+                                                <label>Priority</label>
+                                                <select class="form-select" id="issuePriority"><option value="P0">P0</option><option value="P1">P1</option><option value="P2" selected>P2</option><option value="P3">P3</option><option value="P4">P4</option></select>
+                                            </div>
+                                            <div class="issue-meta-field">
+                                                <label>Assigned To</label>
+                                                <select class="form-select" id="issueAssignee"><option value="">Unassigned</option></select>
+                                            </div>
+                                            <div class="issue-meta-field">
+                                                <label>Sub-Project</label>
+                                                <select class="form-select" id="issueSubProject"><option value="">None</option></select>
+                                            </div>
+                                            <div class="issue-meta-field">
+                                                <label>Component</label>
+                                                <input type="text" class="form-control" id="issueComponent" placeholder="e.g. Dashboard UI">
+                                            </div>
+                                            <div class="issue-meta-field">
+                                                <label>Environment</label>
+                                                <input type="text" class="form-control" id="issueEnvironment" placeholder="e.g. Chrome, macOS">
+                                            </div>
+                                            <div class="issue-meta-field">
+                                                <label>Reproducibility</label>
+                                                <select class="form-select" id="issueReproducibility"><option value="always" selected>Always</option><option value="sometimes">Sometimes</option><option value="rarely">Rarely</option><option value="cannot_reproduce">Cannot Reproduce</option></select>
+                                            </div>
                                         </div>
                                     </div>
                                     <!-- Tabbed Quill Editors -->
                                     <div class="issue-editor-tabs">
                                         <div class="issue-tab-nav">
-                                            <button type="button" class="issue-tab-btn active" onclick="switchIssueEditorTab('steps', this)">Steps to Reproduce <span class="required">*</span></button>
+                                            <button type="button" class="issue-tab-btn active" onclick="switchIssueEditorTab('actual', this)">Issues <span class="required">*</span></button>
                                             <button type="button" class="issue-tab-btn" onclick="switchIssueEditorTab('expected', this)">Expected <span class="required">*</span></button>
-                                            <button type="button" class="issue-tab-btn" onclick="switchIssueEditorTab('actual', this)">Actual <span class="required">*</span></button>
+                                            <button type="button" class="issue-tab-btn" onclick="switchIssueEditorTab('steps', this)">Steps to Reproduce <span class="required">*</span></button>
                                             <button type="button" class="issue-tab-btn" onclick="switchIssueEditorTab('desc', this)">Notes</button>
                                         </div>
                                         <div class="issue-tab-panels issue-quill-wrap">
-                                            <div class="issue-tab-panel active" id="issueTabSteps"><div id="issueEditorSteps"></div></div>
+                                            <div class="issue-tab-panel active" id="issueTabActual"><div id="issueEditorActual"></div></div>
                                             <div class="issue-tab-panel" id="issueTabExpected"><div id="issueEditorExpected"></div></div>
-                                            <div class="issue-tab-panel" id="issueTabActual"><div id="issueEditorActual"></div></div>
+                                            <div class="issue-tab-panel" id="issueTabSteps"><div id="issueEditorSteps"></div></div>
                                             <div class="issue-tab-panel" id="issueTabDesc"><div id="issueEditorDesc"></div></div>
                                         </div>
                                     </div>
