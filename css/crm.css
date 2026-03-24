@@ -1315,6 +1315,10 @@ body.crm-dashboard .crm-container {
     margin-bottom: 20px;
 }
 
+.crm-stats-grid.pms-stats-5col {
+    grid-template-columns: repeat(5, 1fr);
+}
+
 .crm-stat-card {
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
