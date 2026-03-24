@@ -38,6 +38,8 @@
 }
 .pms-meta-link:hover { text-decoration: underline; }
 
+#projectMeta { margin-top: 20px; }
+
 
 /* Project Meta Bar (compact, no card wrapper) */
 .pms-detail-meta {
