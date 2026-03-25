@@ -691,25 +691,123 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* ─── Show More Button ─── */
+        .vc-show-more {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--brand-primary);
+            cursor: pointer;
+            transition: background 0.15s;
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+        .vc-show-more:hover {
+            background: rgba(var(--brand-primary-rgb, 59,130,246), 0.06);
+        }
+
+        /* ─── Select All Button ─── */
+        .vc-select-all-btn {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--brand-primary);
+            background: rgba(var(--brand-primary-rgb, 59,130,246), 0.08);
+            border: none;
+            border-radius: 6px;
+            padding: 4px 10px;
+            cursor: pointer;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .vc-select-all-btn:hover {
+            background: rgba(var(--brand-primary-rgb, 59,130,246), 0.15);
+        }
+
+        /* ─── Mobile Card Layout ─── */
+        .vc-mobile-only { display: none; }
+        .vc-desktop-only { display: grid; }
+
+        .vc-item-card {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            transition: background 0.15s;
+        }
+        .vc-item-card:last-child { border-bottom: none; }
+        .vc-item-card.selected {
+            background: rgba(var(--brand-primary-rgb, 59,130,246), 0.04);
+            border-left: 3px solid var(--brand-primary);
+            padding-left: 13px;
+        }
+        .vc-card-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .vc-card-info { flex: 1; min-width: 0; }
+        .vc-card-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 2px;
+        }
+        .vc-card-unit {
+            font-size: 0.7rem;
+            color: var(--text-secondary, #94a3b8);
+            background: rgba(255,255,255,0.06);
+            padding: 1px 8px;
+            border-radius: 4px;
+        }
+        .vc-card-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-left: 48px;
+        }
+        .vc-card-field label {
+            display: block;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-secondary, #94a3b8);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 3px;
+        }
+        .vc-card-field input {
+            width: 100%;
+            background: var(--bg-body, #0f172a);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 0.8rem;
+            color: var(--text-primary, #f1f5f9);
+            font-family: inherit;
+        }
+        .vc-card-field input:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+        }
+
+        /* ─── Spin animation ─── */
+        .spin { animation: spin 0.7s linear infinite; }
+
         /* ─── Responsive ─── */
         @media (max-width: 768px) {
-            .vc-page { padding: 16px 12px 80px; }
-            .vc-hero { padding: 20px; border-radius: 12px; }
-            .vc-hero h2 { font-size: 1.1rem; }
-            .vc-stats { gap: 16px; }
-            .vc-item-row, .vc-item-header {
-                grid-template-columns: 36px 1fr 56px;
-            }
-            .vc-item-price, .vc-item-notes,
-            .vc-item-header span:nth-child(4),
-            .vc-item-header span:nth-child(5) {
-                display: none;
-            }
-            .vc-footer { padding: 12px 16px; }
+            .vc-page { padding: 12px 12px 140px; }
+            .vc-hero { padding: 14px 16px; border-radius: 10px; }
+            .vc-hero h2 { font-size: 1rem; }
+            .vc-desktop-only { display: none !important; }
+            .vc-mobile-only { display: block !important; }
+            .vc-footer { padding: 10px 16px; }
             .vc-footer-btns { flex-direction: column; width: 100%; }
             .vc-footer-btns .vc-btn { width: 100%; }
             .vc-footer-info { display: none; }
-            .vc-auth-card { padding: 28px 24px; }
+            .vc-auth-card { padding: 28px 20px; }
+            .vc-search input { font-size: 0.82rem; }
+            .vc-category-header { padding: 12px 14px; }
         }
     </style>
 </head>

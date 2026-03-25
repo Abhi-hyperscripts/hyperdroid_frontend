@@ -2,6 +2,13 @@
  * Vendor Catalog Portal - Public Page
  * No authentication required. Accessed via token URL parameter + password.
  * Allows vendors to self-register their item offerings.
+ *
+ * Performance optimizations:
+ * - Lazy render: category body only rendered when expanded
+ * - Paginated: show first 25 items per category + "Show all" button
+ * - Debounced search: 300ms delay before re-render
+ * - Select All / Deselect All per category
+ * - Mobile: card layout instead of table rows
  */
 
 // ==================== State ====================
@@ -12,6 +19,10 @@ let categories = [];
 let selectedItems = new Map(); // master_item_id -> { price, notes }
 let isEditable = true;
 let searchQuery = '';
+let searchTimer = null;
+const ITEMS_PER_PAGE = 25;
+let expandedCategories = new Set(); // track which categories have been expanded
+let showAllItems = new Set(); // categories showing all items (not paginated)
 
 // ==================== Initialization ====================
 
@@ -24,13 +35,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Fetch vendor name from status endpoint (no password needed)
-    fetchVendorPreview();
+    // Check if we have a saved session (survives page reload)
+    const savedPassword = sessionStorage.getItem(`vc_pass_${catalogToken}`);
+    if (savedPassword) {
+        catalogPassword = savedPassword;
+        autoRestore();
+        return;
+    }
 
-    // Show password form
+    fetchVendorPreview();
     showAuthForm();
 
-    // Enter key on password field
     const passwordInput = document.getElementById('catalogPassword');
     if (passwordInput) {
         passwordInput.addEventListener('keydown', (e) => {
@@ -48,7 +63,6 @@ async function fetchVendorPreview() {
         const response = await fetch(`${baseUrl}/vendor-catalog/${catalogToken}/status`);
         if (response.ok) {
             const data = await response.json();
-            // Update auth card with vendor name if available
             const titleEl = document.getElementById('authTitle');
             const subEl = document.getElementById('authSubtitle');
             if (data.vendor_name && titleEl) {
@@ -56,9 +70,56 @@ async function fetchVendorPreview() {
                 if (subEl) subEl.textContent = 'Enter your password to manage your item catalog.';
             }
         }
+    } catch (e) { /* silent */ }
+}
+
+// ==================== Session Restore ====================
+
+async function autoRestore() {
+    showLoading();
+    try {
+        const baseUrl = CONFIG.procurementApiBaseUrl;
+        const response = await fetch(`${baseUrl}/vendor-catalog/access`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: catalogToken, password: catalogPassword })
+        });
+
+        if (!response.ok) {
+            // Session invalid — clear and show login
+            sessionStorage.removeItem(`vc_pass_${catalogToken}`);
+            fetchVendorPreview();
+            showAuthForm();
+            return;
+        }
+
+        const data = await response.json();
+        catalogData = data;
+        categories = data.categories || [];
+        isEditable = data.is_editable;
+
+        if (data.selected_items) {
+            data.selected_items.forEach(item => {
+                selectedItems.set(item.master_item_id, { price: item.price, notes: item.notes });
+            });
+        }
+
+        if (categories.length > 0) expandedCategories.add(0);
+        renderCatalog();
+        showMainContent();
     } catch (e) {
-        // Silently fail - vendor name is optional on login screen
+        sessionStorage.removeItem(`vc_pass_${catalogToken}`);
+        fetchVendorPreview();
+        showAuthForm();
     }
+}
+
+function showLoading() {
+    document.getElementById('authState').style.display = 'none';
+    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('errorState').style.display = 'none';
+    document.getElementById('successState').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'none';
 }
 
 // ==================== Authentication ====================
@@ -95,10 +156,11 @@ async function handleAccess() {
         const data = await response.json();
         catalogData = data;
         catalogPassword = password;
+        // Save session so page reload doesn't require re-auth
+        sessionStorage.setItem(`vc_pass_${catalogToken}`, password);
         categories = data.categories || [];
         isEditable = data.is_editable;
 
-        // Load pre-selected items
         if (data.selected_items) {
             data.selected_items.forEach(item => {
                 selectedItems.set(item.master_item_id, {
@@ -107,6 +169,9 @@ async function handleAccess() {
                 });
             });
         }
+
+        // Auto-expand first category
+        if (categories.length > 0) expandedCategories.add(0);
 
         renderCatalog();
         showMainContent();
@@ -124,7 +189,6 @@ async function handleAccess() {
 function renderCatalog() {
     if (!catalogData) return;
 
-    // Title and badge
     const title = document.getElementById('catalogTitle');
     title.textContent = escapeHtml(catalogData.vendor_name || 'Vendor Catalog');
     const subtitle = document.getElementById('catalogSubtitle');
@@ -139,16 +203,10 @@ function renderCatalog() {
         badge.className = 'vc-badge vc-badge-active';
     }
 
-    // Hint text
     const hint = document.getElementById('catalogHint');
     if (!isEditable) {
         hint.textContent = 'This catalog has been submitted. You can view your selections but cannot make changes.';
-    }
-
-    // Hide actions if not editable
-    if (!isEditable) {
         document.getElementById('footerActions').style.display = 'none';
-        document.getElementById('searchInput').placeholder = 'Search items...';
     }
 
     renderCategories();
@@ -160,44 +218,41 @@ function renderCategories() {
     container.innerHTML = '';
 
     if (!categories || categories.length === 0) {
-        container.innerHTML = `
-            <div class="vc-card" style="text-align: center; color: var(--text-secondary); padding: 40px;">
-                No items available in the catalog.
-            </div>
-        `;
+        container.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 40px;">No items available in the catalog.</div>`;
         return;
     }
 
     categories.forEach((category, catIndex) => {
-        const items = filterItems(category.items || []);
-        if (searchQuery && items.length === 0) return; // Hide empty categories when searching
+        const allItems = category.items || [];
+        const filteredItems = filterItems(allItems);
+        if (searchQuery && filteredItems.length === 0) return;
 
-        const selectedInCategory = items.filter(i => selectedItems.has(i.id)).length;
-        const totalInCategory = items.length;
+        const selectedInCategory = allItems.filter(i => selectedItems.has(i.id)).length;
+        const isExpanded = expandedCategories.has(catIndex);
+        const collapsedClass = isExpanded ? '' : ' collapsed';
 
         const categoryDiv = document.createElement('div');
-        categoryDiv.className = 'vc-category';
+        categoryDiv.className = `vc-category${collapsedClass}`;
         categoryDiv.id = `category-${catIndex}`;
+
+        const allSelectedInCat = filteredItems.length > 0 && filteredItems.every(i => selectedItems.has(i.id));
 
         categoryDiv.innerHTML = `
             <div class="vc-category-header" onclick="toggleCategory(${catIndex})">
-                <div>
+                <div class="vc-cat-left">
+                    <div class="vc-cat-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    </div>
                     <span class="vc-category-name">${escapeHtml(category.category_name)}</span>
-                    <span class="vc-category-count">${selectedInCategory}/${totalInCategory} selected</span>
+                    <span class="vc-category-count">${selectedInCategory}/${allItems.length}</span>
                 </div>
-                <svg class="vc-category-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="6 9 12 15 18 9"/>
-                </svg>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    ${isEditable && filteredItems.length > 1 ? `<button class="vc-select-all-btn" onclick="event.stopPropagation(); toggleSelectAll(${catIndex}, ${!allSelectedInCat})" title="${allSelectedInCat ? 'Deselect All' : 'Select All'}">${allSelectedInCat ? 'Deselect All' : 'Select All'}</button>` : ''}
+                    <svg class="vc-category-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
             </div>
-            <div class="vc-category-body">
-                <div class="vc-item-header">
-                    <span></span>
-                    <span>Item</span>
-                    <span style="text-align: center;">Unit</span>
-                    <span>Price (Optional)</span>
-                    <span>Notes (Optional)</span>
-                </div>
-                ${items.map(item => renderItem(item)).join('')}
+            <div class="vc-category-body" id="catbody-${catIndex}">
+                ${isExpanded ? renderCategoryBody(catIndex, filteredItems) : ''}
             </div>
         `;
 
@@ -205,42 +260,87 @@ function renderCategories() {
     });
 }
 
+function renderCategoryBody(catIndex, items) {
+    if (!items || items.length === 0) return '<div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:0.82rem;">No items match your search.</div>';
+
+    const showAll = showAllItems.has(catIndex);
+    const visibleItems = showAll ? items : items.slice(0, ITEMS_PER_PAGE);
+    const hasMore = !showAll && items.length > ITEMS_PER_PAGE;
+    const remaining = items.length - ITEMS_PER_PAGE;
+
+    // Desktop: table header
+    let html = `<div class="vc-item-header vc-desktop-only">
+        <span></span><span>Item</span><span style="text-align:center;">Unit</span><span>Price (Optional)</span><span>Notes (Optional)</span>
+    </div>`;
+
+    // Items
+    html += visibleItems.map(item => renderItem(item)).join('');
+
+    // Show more button
+    if (hasMore) {
+        html += `<div class="vc-show-more" onclick="showMoreItems(${catIndex})">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            Show all ${items.length} items (${remaining} more)
+        </div>`;
+    }
+
+    return html;
+}
+
 function renderItem(item) {
     const isSelected = selectedItems.has(item.id);
     const itemData = selectedItems.get(item.id) || {};
     const disabledAttr = !isEditable ? 'disabled' : '';
-    const checkedAttr = isSelected ? 'checked' : '';
-    const rowClass = isSelected ? 'vc-item-row selected' : 'vc-item-row';
-
     const toggleClass = isSelected ? 'vc-toggle active' : 'vc-toggle';
+    const rowClass = isSelected ? 'vc-item-row selected' : 'vc-item-row';
+    const priceVal = itemData.price != null ? itemData.price : '';
+    const notesVal = escapeHtml(itemData.notes || '');
 
-    return `
-        <div class="${rowClass}" id="item-row-${item.id}">
+    // Desktop row
+    const desktopRow = `
+        <div class="${rowClass} vc-desktop-only" id="item-row-${item.id}">
             <div class="vc-item-check">
-                <button class="${toggleClass}" ${disabledAttr}
-                    onclick="handleItemToggle('${item.id}', !this.classList.contains('active'))"
-                    id="check-${item.id}"></button>
+                <button class="${toggleClass}" ${disabledAttr} onclick="handleItemToggle('${item.id}', !this.classList.contains('active'))" id="check-${item.id}"></button>
             </div>
             <div class="vc-item-info">
                 <div class="vc-item-name">${escapeHtml(item.item_name)}</div>
                 ${item.item_code ? `<span class="vc-item-code">${escapeHtml(item.item_code)}</span>` : ''}
-                ${item.description ? `<div class="vc-item-desc" title="${escapeHtml(item.description)}">${escapeHtml(item.description)}</div>` : ''}
             </div>
             <div class="vc-item-unit">${escapeHtml(item.unit)}</div>
             <div class="vc-item-price">
-                <input type="number" min="0" step="0.01" placeholder="0.00" ${disabledAttr}
-                    value="${itemData.price != null ? itemData.price : ''}"
-                    onchange="handlePriceChange('${item.id}', this.value)"
-                    id="price-${item.id}">
+                <input type="number" min="0" step="0.01" placeholder="0.00" ${disabledAttr} value="${priceVal}" onchange="handlePriceChange('${item.id}', this.value)" id="price-${item.id}">
             </div>
             <div class="vc-item-notes">
-                <input type="text" placeholder="Optional notes" ${disabledAttr}
-                    value="${escapeHtml(itemData.notes || '')}"
-                    onchange="handleNotesChange('${item.id}', this.value)"
-                    id="notes-${item.id}">
+                <input type="text" placeholder="Optional notes" ${disabledAttr} value="${notesVal}" onchange="handleNotesChange('${item.id}', this.value)" id="notes-${item.id}">
             </div>
-        </div>
-    `;
+        </div>`;
+
+    // Mobile card
+    const mobileCard = `
+        <div class="vc-item-card vc-mobile-only ${isSelected ? 'selected' : ''}" id="item-card-${item.id}">
+            <div class="vc-card-top">
+                <button class="${toggleClass}" ${disabledAttr} onclick="handleItemToggle('${item.id}', !this.classList.contains('active'))" id="check-m-${item.id}"></button>
+                <div class="vc-card-info">
+                    <div class="vc-item-name">${escapeHtml(item.item_name)}</div>
+                    <div class="vc-card-meta">
+                        ${item.item_code ? `<span class="vc-item-code">${escapeHtml(item.item_code)}</span>` : ''}
+                        <span class="vc-card-unit">${escapeHtml(item.unit)}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="vc-card-fields">
+                <div class="vc-card-field">
+                    <label>Price</label>
+                    <input type="number" min="0" step="0.01" placeholder="0.00" ${disabledAttr} value="${priceVal}" onchange="handlePriceChange('${item.id}', this.value)" id="price-m-${item.id}">
+                </div>
+                <div class="vc-card-field">
+                    <label>Notes</label>
+                    <input type="text" placeholder="Optional" ${disabledAttr} value="${notesVal}" onchange="handleNotesChange('${item.id}', this.value)" id="notes-m-${item.id}">
+                </div>
+            </div>
+        </div>`;
+
+    return desktopRow + mobileCard;
 }
 
 function filterItems(items) {
@@ -255,16 +355,10 @@ function filterItems(items) {
 
 function updateSelectedCount() {
     const count = selectedItems.size;
-    // Hero stats
     const countEl = document.getElementById('selectedCount');
     if (countEl) countEl.textContent = count;
-    // Footer count
-    const footerCount = document.getElementById('footerCount');
-    if (footerCount) footerCount.textContent = count;
-    // Also update footer info text directly
     const footerInfo = document.querySelector('.vc-footer-info');
     if (footerInfo) footerInfo.innerHTML = `<strong>${count}</strong> items selected`;
-    // Total items
     let total = 0;
     categories.forEach(c => { total += (c.items || []).length; });
     const totalEl = document.getElementById('totalItemsCount');
@@ -275,28 +369,87 @@ function updateSelectedCount() {
 
 function toggleCategory(catIndex) {
     const el = document.getElementById(`category-${catIndex}`);
-    if (el) {
-        el.classList.toggle('collapsed');
+    if (!el) return;
+
+    const isCollapsing = !el.classList.contains('collapsed');
+    el.classList.toggle('collapsed');
+
+    if (!isCollapsing && !expandedCategories.has(catIndex)) {
+        // First time expanding — lazy render the body
+        expandedCategories.add(catIndex);
+        const body = document.getElementById(`catbody-${catIndex}`);
+        if (body && !body.innerHTML.trim()) {
+            const items = filterItems(categories[catIndex]?.items || []);
+            body.innerHTML = renderCategoryBody(catIndex, items);
+        }
+    }
+
+    if (isCollapsing) {
+        expandedCategories.delete(catIndex);
+    } else {
+        expandedCategories.add(catIndex);
     }
 }
 
+function showMoreItems(catIndex) {
+    showAllItems.add(catIndex);
+    const body = document.getElementById(`catbody-${catIndex}`);
+    if (body) {
+        const items = filterItems(categories[catIndex]?.items || []);
+        body.innerHTML = renderCategoryBody(catIndex, items);
+    }
+}
+
+function toggleSelectAll(catIndex, selectAll) {
+    const items = filterItems(categories[catIndex]?.items || []);
+    items.forEach(item => {
+        if (selectAll) {
+            if (!selectedItems.has(item.id)) {
+                selectedItems.set(item.id, { price: null, notes: null });
+            }
+        } else {
+            selectedItems.delete(item.id);
+        }
+    });
+
+    // Re-render this category body
+    const body = document.getElementById(`catbody-${catIndex}`);
+    if (body) {
+        body.innerHTML = renderCategoryBody(catIndex, items);
+    }
+    updateSelectedCount();
+    updateCategoryCounts();
+}
+
 function handleItemToggle(itemId, checked) {
-    const toggle = document.getElementById(`check-${itemId}`);
+    // Update both desktop and mobile toggles
+    ['check-', 'check-m-'].forEach(prefix => {
+        const toggle = document.getElementById(`${prefix}${itemId}`);
+        if (toggle) {
+            if (checked) toggle.classList.add('active');
+            else toggle.classList.remove('active');
+        }
+    });
+
     if (checked) {
-        const priceInput = document.getElementById(`price-${itemId}`);
-        const notesInput = document.getElementById(`notes-${itemId}`);
+        // Read from whichever input exists (desktop or mobile)
+        const priceInput = document.getElementById(`price-${itemId}`) || document.getElementById(`price-m-${itemId}`);
+        const notesInput = document.getElementById(`notes-${itemId}`) || document.getElementById(`notes-m-${itemId}`);
         selectedItems.set(itemId, {
             price: priceInput?.value ? parseFloat(priceInput.value) : null,
             notes: notesInput?.value || null
         });
+        // Highlight rows/cards
         const row = document.getElementById(`item-row-${itemId}`);
         if (row) row.classList.add('selected');
-        if (toggle) toggle.classList.add('active');
+        const card = document.getElementById(`item-card-${itemId}`);
+        if (card) card.classList.add('selected');
     } else {
         selectedItems.delete(itemId);
         const row = document.getElementById(`item-row-${itemId}`);
         if (row) row.classList.remove('selected');
-        if (toggle) toggle.classList.remove('active');
+        const card = document.getElementById(`item-card-${itemId}`);
+        if (card) card.classList.remove('selected');
     }
     updateSelectedCount();
     updateCategoryCounts();
@@ -304,30 +457,32 @@ function handleItemToggle(itemId, checked) {
 
 function handlePriceChange(itemId, value) {
     if (selectedItems.has(itemId)) {
+        selectedItems.get(itemId).price = value ? parseFloat(value) : null;
+    } else if (value) {
+        // Auto-select
+        handleItemToggle(itemId, true);
         const data = selectedItems.get(itemId);
-        data.price = value ? parseFloat(value) : null;
-    } else {
-        // Auto-select item if price is entered
-        const checkbox = document.getElementById(`check-${itemId}`);
-        if (checkbox && value) {
-            checkbox.checked = true;
-            handleItemToggle(itemId, true);
-            const data = selectedItems.get(itemId);
-            if (data) data.price = parseFloat(value);
-        }
+        if (data) data.price = parseFloat(value);
     }
 }
 
 function handleNotesChange(itemId, value) {
     if (selectedItems.has(itemId)) {
-        const data = selectedItems.get(itemId);
-        data.notes = value || null;
+        selectedItems.get(itemId).notes = value || null;
     }
 }
 
 function handleSearch(query) {
-    searchQuery = query;
-    renderCategories();
+    // Debounce 300ms
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+        searchQuery = query;
+        // When searching, expand all categories and show all items
+        if (query) {
+            categories.forEach((_, i) => expandedCategories.add(i));
+        }
+        renderCategories();
+    }, 300);
 }
 
 function updateCategoryCounts() {
@@ -335,9 +490,7 @@ function updateCategoryCounts() {
         const items = category.items || [];
         const selectedInCategory = items.filter(i => selectedItems.has(i.id)).length;
         const el = document.querySelector(`#category-${catIndex} .vc-category-count`);
-        if (el) {
-            el.textContent = `${selectedInCategory}/${items.length} selected`;
-        }
+        if (el) el.textContent = `${selectedInCategory}/${items.length}`;
     });
 }
 
@@ -346,19 +499,16 @@ function updateCategoryCounts() {
 function getSelections() {
     const items = [];
     selectedItems.forEach((data, masterItemId) => {
-        items.push({
-            master_item_id: masterItemId,
-            price: data.price,
-            notes: data.notes
-        });
+        items.push({ master_item_id: masterItemId, price: data.price, notes: data.notes });
     });
     return items;
 }
 
 async function handleSaveDraft() {
     const btn = document.getElementById('saveDraftBtn');
+    const origHtml = btn.innerHTML;
     btn.disabled = true;
-    btn.textContent = 'Saving...';
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><circle cx="12" cy="12" r="10"/></svg> Saving...';
 
     try {
         const baseUrl = CONFIG.procurementApiBaseUrl;
@@ -373,13 +523,13 @@ async function handleSaveDraft() {
             throw new Error(errorData.error || 'Failed to save draft');
         }
 
-        _toast(`Draft saved - ${selectedItems.size} items`, 'success');
+        _toast(`Draft saved — ${selectedItems.size} items`, 'success');
     } catch (error) {
         console.error('Save draft failed:', error);
         _toast(error.message || 'Failed to save draft', 'error');
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Save Draft';
+        btn.innerHTML = origHtml;
     }
 }
 
@@ -401,7 +551,6 @@ async function handleSubmitCatalog() {
     submitBtn.textContent = 'Submitting...';
 
     try {
-        // Save draft first to ensure all selections are persisted
         const baseUrl = CONFIG.procurementApiBaseUrl;
         await fetch(`${baseUrl}/vendor-catalog/${catalogToken}/save-draft`, {
             method: 'POST',
@@ -409,7 +558,6 @@ async function handleSubmitCatalog() {
             body: JSON.stringify({ items: getSelections() })
         });
 
-        // Then submit
         const response = await fetch(`${baseUrl}/vendor-catalog/${catalogToken}/submit`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
@@ -440,14 +588,6 @@ function showAuthForm() {
     document.getElementById('mainContent').style.display = 'none';
 }
 
-function showLoading() {
-    document.getElementById('authState').style.display = 'none';
-    document.getElementById('loadingState').style.display = 'block';
-    document.getElementById('errorState').style.display = 'none';
-    document.getElementById('successState').style.display = 'none';
-    document.getElementById('mainContent').style.display = 'none';
-}
-
 function showMainContent() {
     document.getElementById('authState').style.display = 'none';
     document.getElementById('loadingState').style.display = 'none';
@@ -462,9 +602,7 @@ function showError(message) {
     document.getElementById('errorState').style.display = 'block';
     document.getElementById('successState').style.display = 'none';
     document.getElementById('mainContent').style.display = 'none';
-    if (message) {
-        document.getElementById('errorMessage').textContent = message;
-    }
+    if (message) document.getElementById('errorMessage').textContent = message;
 }
 
 function showSuccess() {
@@ -484,9 +622,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-/**
- * Toast wrapper — uses Toast.js (loaded via script tag)
- */
 function _toast(message, type) {
     if (typeof Toast !== 'undefined') {
         if (type === 'error') Toast.error(message);
