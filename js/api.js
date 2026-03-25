@@ -120,6 +120,10 @@ class API {
         if (endpoint.startsWith('/pms/')) {
             return CONFIG.pmsApiBaseUrl;
         }
+        // Procurement endpoints go to Procurement service
+        if (endpoint.startsWith('/procurement/')) {
+            return CONFIG.procurementApiBaseUrl;
+        }
         // Notification endpoints go to Notification service
         if (endpoint.startsWith('/notifications/')) {
             return CONFIG.notificationApiBaseUrl;
@@ -164,6 +168,10 @@ class API {
         // For PMS endpoints, strip /pms prefix since baseUrl already has /api
         if (endpoint.startsWith('/pms/')) {
             actualEndpoint = endpoint.substring(4); // Remove '/pms' prefix, keep the rest
+        }
+        // For Procurement endpoints, strip /procurement prefix since baseUrl already has /api
+        if (endpoint.startsWith('/procurement/')) {
+            actualEndpoint = endpoint.substring(12); // Remove '/procurement' prefix, keep the rest
         }
         const url = `${baseUrl}${actualEndpoint}`;
         const headers = {

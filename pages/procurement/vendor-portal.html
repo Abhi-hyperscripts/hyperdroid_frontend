@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Vendor Portal - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <style>
+        body.vendor-portal {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+        }
+
+        .vp-header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-primary);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .vp-header img {
+            height: 32px;
+        }
+
+        .vp-header h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .vp-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 24px;
+            width: 100%;
+            flex: 1;
+        }
+
+        .vp-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-primary);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .vp-card h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 16px 0;
+        }
+
+        .vp-meta {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .vp-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .vp-meta-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .vp-meta-value {
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .vp-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .vp-table th {
+            background: var(--bg-tertiary);
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .vp-table td {
+            padding: 12px;
+            font-size: 14px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-primary);
+            vertical-align: middle;
+        }
+
+        .vp-table input[type="number"],
+        .vp-table input[type="text"] {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 13px;
+            color: var(--text-primary);
+            width: 100%;
+            max-width: 120px;
+        }
+
+        .vp-table input:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 2px rgba(var(--brand-primary-rgb), 0.2);
+        }
+
+        .vp-form-group {
+            margin-bottom: 16px;
+        }
+
+        .vp-form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .vp-form-group input,
+        .vp-form-group textarea,
+        .vp-form-group select {
+            width: 100%;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .vp-form-group input:focus,
+        .vp-form-group textarea:focus,
+        .vp-form-group select:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 2px rgba(var(--brand-primary-rgb), 0.2);
+        }
+
+        .vp-submit-btn {
+            background: var(--brand-primary);
+            color: var(--text-inverse);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 32px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .vp-submit-btn:hover {
+            background: var(--brand-primary-hover);
+        }
+
+        .vp-submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .vp-success {
+            text-align: center;
+            padding: 48px 24px;
+        }
+
+        .vp-success svg {
+            color: var(--color-success);
+            margin-bottom: 16px;
+        }
+
+        .vp-success h2 {
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+        }
+
+        .vp-success p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .vp-error {
+            text-align: center;
+            padding: 48px 24px;
+        }
+
+        .vp-error svg {
+            color: var(--color-error);
+            margin-bottom: 16px;
+        }
+
+        .vp-error h2 {
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+        }
+
+        .vp-error p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .vp-loading {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .vp-container {
+                padding: 16px;
+            }
+            .vp-meta {
+                gap: 12px;
+            }
+            .vp-table input[type="number"] {
+                max-width: 80px;
+            }
+        }
+    </style>
+</head>
+<body class="vendor-portal">
+    <!-- Simple Header - No navbar/sidebar -->
+    <div class="vp-header">
+        <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo">
+        <h1>Vendor Portal</h1>
+    </div>
+
+    <div class="vp-container">
+        <!-- Loading State -->
+        <div id="loadingState" class="vp-loading">
+            <p>Loading RFQ details...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" style="display: none;">
+            <div class="vp-card vp-error">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                <h2>Invalid or Expired Link</h2>
+                <p id="errorMessage">This vendor portal link is invalid or has expired. Please contact the buyer for a new link.</p>
+            </div>
+        </div>
+
+        <!-- Success State -->
+        <div id="successState" style="display: none;">
+            <div class="vp-card vp-success">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <h2>Quote Submitted Successfully</h2>
+                <p>Thank you for submitting your quote. The buyer will review your submission and get back to you.</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent" style="display: none;">
+            <!-- RFQ Info -->
+            <div class="vp-card">
+                <h2>Request for Quotation</h2>
+                <div class="vp-meta">
+                    <div class="vp-meta-item">
+                        <span class="vp-meta-label">RFQ Number</span>
+                        <span class="vp-meta-value" id="rfqNumber">-</span>
+                    </div>
+                    <div class="vp-meta-item">
+                        <span class="vp-meta-label">Inquiry</span>
+                        <span class="vp-meta-value" id="rfqInquiry">-</span>
+                    </div>
+                    <div class="vp-meta-item">
+                        <span class="vp-meta-label">Due Date</span>
+                        <span class="vp-meta-value" id="rfqDueDate">-</span>
+                    </div>
+                    <div class="vp-meta-item">
+                        <span class="vp-meta-label">Buyer</span>
+                        <span class="vp-meta-value" id="rfqBuyer">-</span>
+                    </div>
+                </div>
+                <div id="rfqNotes" style="display: none;">
+                    <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Notes</div>
+                    <div style="font-size: 14px; color: var(--text-primary); line-height: 1.6;" id="rfqNotesText"></div>
+                </div>
+            </div>
+
+            <!-- Items Table with Quote Input -->
+            <div class="vp-card">
+                <h2>Items</h2>
+                <div style="overflow-x: auto;">
+                    <table class="vp-table" id="rfqItemsTable">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Qty</th>
+                                <th>Unit</th>
+                                <th>Description</th>
+                                <th>Unit Price</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rfqItemsBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-secondary);">Loading items...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quote Details -->
+            <div class="vp-card">
+                <h2>Your Quote Details</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="vp-form-group">
+                        <label for="quoteDeliveryDays">Delivery Days</label>
+                        <input type="number" id="quoteDeliveryDays" min="1" placeholder="e.g. 15">
+                    </div>
+                    <div class="vp-form-group">
+                        <label for="quotePaymentTerms">Payment Terms</label>
+                        <input type="text" id="quotePaymentTerms" placeholder="e.g. Net 30, 50% Advance">
+                    </div>
+                </div>
+                <div class="vp-form-group">
+                    <label for="quoteNotes">Additional Notes</label>
+                    <textarea id="quoteNotes" rows="3" placeholder="Any additional remarks, conditions, or clarifications..."></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+                    <button class="vp-submit-btn" id="submitQuoteBtn" onclick="submitQuote()">
+                        Submit Quote
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/procurement/vendor-portal.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

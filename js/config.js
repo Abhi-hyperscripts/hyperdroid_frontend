@@ -17,7 +17,8 @@ const ENVIRONMENTS = {
         research: 'https://localhost:5114',
         notification: 'https://localhost:5110',
         pms: 'https://localhost:5116',
-        news: 'https://localhost:5120'
+        news: 'https://localhost:5120',
+        procurement: 'https://localhost:5124'
     },
     production: {
         auth: 'https://auth.ragenaizer.com',
@@ -29,7 +30,8 @@ const ENVIRONMENTS = {
         research: 'https://research.ragenaizer.com',
         notification: 'https://notification.ragenaizer.com',
         pms: 'https://pms.ragenaizer.com',
-        news: 'https://news.ragenaizer.com'
+        news: 'https://news.ragenaizer.com',
+        procurement: 'https://procurement.ragenaizer.com'
     }
 };
 
@@ -104,6 +106,10 @@ const CONFIG = {
 
     get newsApiBaseUrl() {
         return `${this.endpoints.news}/api`;
+    },
+
+    get procurementApiBaseUrl() {
+        return `${this.endpoints.procurement}/api`;
     },
 
     // Legacy alias for backwards compatibility

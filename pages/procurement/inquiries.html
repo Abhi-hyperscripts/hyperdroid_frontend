@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Inquiries - Procurement | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Header -->
+        <div class="crm-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Procurement</a>
+                    <span class="separator">/</span>
+                    <span class="current">Inquiries</span>
+                </nav>
+                <div class="crm-header-row">
+                    <h1>Inquiries</h1>
+                    <button class="btn btn-primary" id="newInquiryBtn" onclick="openNewInquiryModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        New Inquiry
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="crm-filter-bar">
+            <div class="crm-filter-group crm-search-group">
+                <label for="filterSearch">Search</label>
+                <input type="text" id="filterSearch" class="form-control form-control-sm" placeholder="Search inquiries..." oninput="applyFilters()">
+            </div>
+            <div class="crm-filter-group">
+                <label for="filterStatus">Status</label>
+                <select id="filterStatus" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">All Statuses</option>
+                    <option value="draft">Draft</option>
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="rfq_sent">RFQ Sent</option>
+                    <option value="quoted">Quoted</option>
+                    <option value="closed">Closed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div class="crm-filter-group">
+                <label for="filterPriority">Priority</label>
+                <select id="filterPriority" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">All Priorities</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Inquiries Table -->
+        <div class="crm-table-wrapper data-table-container">
+            <table class="crm-table data-table" id="inquiriesTable">
+                <thead>
+                    <tr>
+                        <th>Inquiry #</th>
+                        <th>Title</th>
+                        <th class="hide-mobile">Client</th>
+                        <th class="hide-mobile">Project</th>
+                        <th>Status</th>
+                        <th class="hide-mobile">Priority</th>
+                        <th class="hide-mobile">Items</th>
+                        <th class="hide-mobile">Due Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="inquiriesTableBody">
+                    <tr>
+                        <td colspan="9" class="crm-empty-state">
+                            <div class="crm-empty-content">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="12"/>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                                <p>Loading inquiries...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- New Inquiry Modal -->
+    <div class="modal" id="inquiryModal">
+        <div class="modal-backdrop" onclick="closeInquiryModal()"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="inquiryModalTitle">New Inquiry</h5>
+                    <button class="close-btn" onclick="closeInquiryModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="inquiryForm" onsubmit="handleInquirySubmit(event)">
+                        <div class="mb-3">
+                            <label for="inquiryTitle" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="inquiryTitle" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="inquiryDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="inquiryDescription" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="inquiryClientName" class="form-label">Client Name</label>
+                                <input type="text" class="form-control" id="inquiryClientName" name="client_name">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="inquiryProjectName" class="form-label">Project Name</label>
+                                <input type="text" class="form-control" id="inquiryProjectName" name="project_name">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="inquiryPriority" class="form-label">Priority</label>
+                                <select class="form-select" id="inquiryPriority" name="priority">
+                                    <option value="low">Low</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="high">High</option>
+                                    <option value="urgent">Urgent</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="inquiryDueDate" class="form-label">Due Date</label>
+                                <input type="date" class="form-control" id="inquiryDueDate" name="due_date">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeInquiryModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="inquiryForm" id="inquirySubmitBtn">
+                        <span class="btn-spinner" id="inquirySubmitSpinner" style="display:none;"></span>
+                        Create Inquiry
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/procurement/inquiries.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>
