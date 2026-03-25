@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Purchase Orders - Procurement | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <style>
+        #filterStatus-searchable-container .searchable-dropdown-trigger {
+            height: 32px !important; min-height: 32px !important; max-height: 32px !important;
+            padding: 5px 8px !important; font-size: 13px !important;
+        }
+    </style>
+</head>
+<body class="dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- ==================== LIST VIEW ==================== -->
+        <div id="listView">
+            <div class="crm-header">
+                <div class="header-content">
+                    <nav class="breadcrumb-nav">
+                        <a href="dashboard.html">Procurement</a>
+                        <span class="separator">/</span>
+                        <span class="current">Purchase Orders</span>
+                    </nav>
+                    <div class="crm-header-row">
+                        <h1>Purchase Orders</h1>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:16px;">
+                <div style="flex:1; min-width:200px;">
+                    <label style="display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:4px;">Search</label>
+                    <input type="text" id="filterSearch" placeholder="Search POs..." oninput="applyFilters()"
+                        style="width:100%; height:32px; padding:0 10px; font-size:13px; border:1px solid var(--border-primary); border-radius:4px; background:var(--bg-input, var(--bg-secondary)); color:var(--text-primary); outline:none; box-sizing:border-box;">
+                </div>
+                <div style="min-width:160px;">
+                    <label style="display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:4px;">Status</label>
+                    <select id="filterStatus" class="form-select form-select-sm" onchange="applyFilters()" style="height:32px;">
+                        <option value="">All Statuses</option>
+                        <option value="draft">Draft</option>
+                        <option value="approved">Approved</option>
+                        <option value="sent">Sent</option>
+                        <option value="acknowledged">Acknowledged</option>
+                        <option value="partially_received">Partially Received</option>
+                        <option value="received">Received</option>
+                        <option value="closed">Closed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="openCreatePoModal()" style="height:32px; padding:0 14px; white-space:nowrap; display:flex; align-items:center; gap:5px; font-size:13px; border-radius:4px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New PO
+                </button>
+            </div>
+
+            <!-- POs Table -->
+            <div class="crm-table-wrapper data-table-container">
+                <table class="crm-table data-table" id="posTable">
+                    <thead>
+                        <tr>
+                            <th>PO #</th>
+                            <th>Title</th>
+                            <th class="hide-mobile">Vendor</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th class="hide-mobile">Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="posTableBody">
+                        <tr>
+                            <td colspan="7" class="crm-empty-state">
+                                <div class="crm-empty-content">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+                                        <rect x="9" y="3" width="6" height="4" rx="1"/>
+                                    </svg>
+                                    <p>Loading purchase orders...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==================== DETAIL VIEW ==================== -->
+        <div id="detailView" style="display: none;">
+            <div class="crm-header">
+                <div class="header-content">
+                    <nav class="breadcrumb-nav">
+                        <a href="dashboard.html">Procurement</a>
+                        <span class="separator">/</span>
+                        <a href="purchase-orders.html" onclick="showListView(); return false;">Purchase Orders</a>
+                        <span class="separator">/</span>
+                        <span class="current" id="breadcrumbPoNumber">Detail</span>
+                    </nav>
+                    <div class="crm-header-row">
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <a href="#" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;" onclick="showListView(); return false;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="15 18 9 12 15 6"/>
+                                </svg>
+                                Back
+                            </a>
+                            <h1 id="detailTitle" style="margin: 0;">Loading...</h1>
+                            <span id="detailStatusBadge"></span>
+                        </div>
+                        <div class="header-actions" id="detailActions"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metadata Row -->
+            <div style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px;">
+                <div>
+                    <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">PO Number</div>
+                    <div style="font-size: 14px; color: var(--text-primary); font-weight: 600;" id="metaPoNumber">-</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Vendor</div>
+                    <div style="font-size: 14px; color: var(--text-primary);" id="metaVendor">-</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Total Amount</div>
+                    <div style="font-size: 14px; color: var(--text-primary); font-weight: 700;" id="metaTotal">-</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Created</div>
+                    <div style="font-size: 14px; color: var(--text-primary);" id="metaCreated">-</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Expected Delivery</div>
+                    <div style="font-size: 14px; color: var(--text-primary);" id="metaDelivery">-</div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div id="poNotesSection" style="display: none; margin-bottom: 24px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px;">
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Notes</div>
+                <div style="font-size: 14px; color: var(--text-primary); line-height: 1.6;" id="detailNotes">-</div>
+            </div>
+
+            <!-- Line Items -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="color: var(--text-primary); font-size: 1rem; font-weight: 600; margin: 0;">Line Items</h3>
+            </div>
+
+            <div class="crm-table-wrapper data-table-container">
+                <table class="crm-table data-table" id="lineItemsTable">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Quantity</th>
+                            <th class="hide-mobile">Unit</th>
+                            <th>Unit Price</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lineItemsTableBody">
+                        <tr>
+                            <td colspan="5" class="crm-empty-state">
+                                <div class="crm-empty-content"><p>Loading items...</p></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create PO Modal (standalone) -->
+    <div class="modal" id="createPoModal">
+        <div class="modal-backdrop" onclick="closeCreatePoModal()"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Purchase Order</h5>
+                    <button class="close-btn" onclick="closeCreatePoModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="createPoForm" onsubmit="handleCreatePo(event)">
+                        <div class="mb-3">
+                            <label for="poVendor" class="form-label">Vendor <span class="text-danger">*</span></label>
+                            <select class="form-select" id="poVendor" required>
+                                <option value="">Select a vendor...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="poTitle" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="poTitle" placeholder="Auto-generated if empty">
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="poDeliveryDate" class="form-label">Expected Delivery</label>
+                                <input type="date" class="form-control" id="poDeliveryDate">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="poPaymentTerms" class="form-label">Payment Terms</label>
+                                <input type="text" class="form-control" id="poPaymentTerms" placeholder="e.g. Net 30">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="poNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="poNotes" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreatePoModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="createPoForm" id="createPoSubmitBtn">
+                        <span class="btn-spinner" id="createPoSpinner" style="display:none;"></span>
+                        Create PO
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Status Modal -->
+    <div class="modal" id="statusModal">
+        <div class="modal-backdrop" onclick="closeStatusModal()"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update PO Status</h5>
+                    <button class="close-btn" onclick="closeStatusModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="statusForm" onsubmit="handleStatusUpdate(event)">
+                        <div class="mb-3">
+                            <label for="newStatus" class="form-label">New Status <span class="text-danger">*</span></label>
+                            <select class="form-select" id="newStatus" required>
+                                <option value="sent">Sent</option>
+                                <option value="acknowledged">Acknowledged</option>
+                                <option value="partially_received">Partially Received</option>
+                                <option value="received">Received</option>
+                                <option value="closed">Closed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeStatusModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="statusForm" id="statusSubmitBtn">
+                        <span class="btn-spinner" id="statusSpinner" style="display:none;"></span>
+                        Update Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/procurement/purchase-orders.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

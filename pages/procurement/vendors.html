@@ -25,6 +25,20 @@
     <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <style>
+        .vendor-pick-item:hover { background: var(--bg-tertiary); }
+        .vendor-pick-item.vendor-pick-selected { background: rgba(59,130,246,0.06); }
+        .vendor-pick-item.vendor-pick-selected:hover { background: rgba(59,130,246,0.1); }
+        [data-theme="dark"] .vendor-pick-item.vendor-pick-selected { background: rgba(59,130,246,0.12); }
+        [data-theme="dark"] .vendor-pick-item.vendor-pick-selected:hover { background: rgba(59,130,246,0.18); }
+        .vendor-toggle-track { width:36px; height:20px; border-radius:10px; position:relative; flex-shrink:0; transition:background 0.2s; cursor:pointer; }
+        .vendor-toggle-track.off { background:#cbd5e1; }
+        .vendor-toggle-track.on { background:var(--brand-primary); }
+        .vendor-toggle-knob { width:16px; height:16px; border-radius:50%; background:#fff; position:absolute; top:2px; transition:left 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.08); }
+        .vendor-toggle-track.off .vendor-toggle-knob { left:2px; }
+        .vendor-toggle-track.on .vendor-toggle-knob { left:18px; }
+        [data-theme="dark"] .vendor-toggle-track.off { background:#475569; }
+    </style>
 </head>
 <body class="dashboard crm-page">
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
@@ -103,7 +117,7 @@
     <!-- New/Edit Vendor Modal -->
     <div class="modal" id="vendorModal">
         <div class="modal-backdrop" onclick="closeVendorModal()"></div>
-        <div class="modal-dialog">
+        <div class="modal-dialog" style="max-width:920px; width:95vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="vendorModalTitle">Add Vendor</h5>
@@ -118,78 +132,74 @@
                     <form id="vendorForm" onsubmit="handleVendorSubmit(event)">
                         <input type="hidden" id="vendorId" value="">
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="vendorName" class="form-label">Vendor Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="vendorName" name="vendor_name" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="vendorCode" class="form-label">Vendor Code</label>
                                 <input type="text" class="form-control" id="vendorCode" name="vendor_code" placeholder="Auto-generated if empty">
                             </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="vendorEmail" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="vendorEmail" name="email">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="vendorPhone" class="form-label">Phone</label>
-                                <input type="tel" class="form-control" id="vendorPhone" name="phone">
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="vendorContactPerson" class="form-label">Contact Person</label>
                                 <input type="text" class="form-control" id="vendorContactPerson" name="contact_person">
                             </div>
-                            <div class="col-md-6">
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="vendorEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="vendorEmail" name="email">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="vendorPhone" class="form-label">Phone</label>
+                                <input type="tel" class="form-control" id="vendorPhone" name="phone">
+                            </div>
+                            <div class="col-md-4">
                                 <label for="vendorWebsite" class="form-label">Website</label>
                                 <input type="url" class="form-control" id="vendorWebsite" name="website" placeholder="https://...">
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="vendorAddress" class="form-label">Address</label>
                                 <input type="text" class="form-control" id="vendorAddress" name="address">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="vendorCity" class="form-label">City</label>
                                 <input type="text" class="form-control" id="vendorCity" name="city">
                             </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="vendorState" class="form-label">State</label>
                                 <input type="text" class="form-control" id="vendorState" name="state">
                             </div>
-                            <div class="col-md-6">
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
                                 <label for="vendorCountry" class="form-label">Country</label>
                                 <input type="text" class="form-control" id="vendorCountry" name="country">
                             </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="vendorPostalCode" class="form-label">Postal Code</label>
                                 <input type="text" class="form-control" id="vendorPostalCode" name="postal_code">
                             </div>
-                            <div class="col-md-6">
-                                <label for="vendorGstNumber" class="form-label">GST / Tax Number</label>
-                                <input type="text" class="form-control" id="vendorGstNumber" name="gst_number">
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="vendorPanNumber" class="form-label">PAN / Tax ID</label>
-                                <input type="text" class="form-control" id="vendorPanNumber" name="pan_number">
-                            </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="vendorPaymentTerms" class="form-label">Payment Terms</label>
                                 <input type="text" class="form-control" id="vendorPaymentTerms" name="payment_terms" placeholder="e.g. Net 30">
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="vendorNotes" class="form-label">Notes</label>
-                            <textarea class="form-control" id="vendorNotes" name="notes" rows="3"></textarea>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="vendorGstNumber" class="form-label">GST / Tax Number</label>
+                                <input type="text" class="form-control" id="vendorGstNumber" name="gst_number">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="vendorPanNumber" class="form-label">PAN / Tax ID</label>
+                                <input type="text" class="form-control" id="vendorPanNumber" name="pan_number">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="vendorNotes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="vendorNotes" name="notes" rows="2"></textarea>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -199,6 +209,62 @@
                         <span class="btn-spinner" id="vendorSubmitSpinner" style="display:none;"></span>
                         Add Vendor
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Catalog Link Modal -->
+    <div class="modal" id="catalogLinkModal">
+        <div class="modal-backdrop" onclick="closeCatalogLinkModal()"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Vendor Catalog Link</h5>
+                    <button class="close-btn" onclick="closeCatalogLinkModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="catalogLinkLoading" style="text-align: center; padding: 20px;">
+                        <p style="color: var(--text-secondary);">Generating link...</p>
+                    </div>
+                    <div id="catalogLinkResult" style="display: none;">
+                        <div style="padding: 12px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 8px; color: var(--color-warning); font-weight: 600; font-size: 13px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                    <line x1="12" y1="9" x2="12" y2="13"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                The link and password are shown only once
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Catalog URL</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" class="form-control" id="catalogUrl" readonly>
+                                <button class="btn btn-secondary btn-sm" onclick="copyCatalogUrl()" style="white-space: nowrap;">Copy</button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600;">Password</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" class="form-control" id="catalogPassword" readonly>
+                                <button class="btn btn-secondary btn-sm" onclick="copyCatalogPassword()" style="white-space: nowrap;">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-weight: 600;">Expires</label>
+                            <p style="color: var(--text-secondary); margin: 0;" id="catalogExpiry">-</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeCatalogLinkModal()">Close</button>
                 </div>
             </div>
         </div>

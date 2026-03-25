@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>RFQs - Procurement | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <style>
+        .vendor-pick-item:hover { background: var(--bg-tertiary); }
+        .vendor-pick-item.vendor-pick-selected { background: rgba(59,130,246,0.06); }
+        .vendor-pick-item.vendor-pick-selected:hover { background: rgba(59,130,246,0.1); }
+        [data-theme="dark"] .vendor-pick-item.vendor-pick-selected { background: rgba(59,130,246,0.12); }
+        [data-theme="dark"] .vendor-pick-item.vendor-pick-selected:hover { background: rgba(59,130,246,0.18); }
+        /* Toggle switch */
+        .vendor-toggle-track { width:36px; height:20px; border-radius:10px; position:relative; flex-shrink:0; transition:background 0.2s; cursor:pointer; }
+        .vendor-toggle-track.off { background:#cbd5e1; }
+        .vendor-toggle-track.on { background:var(--brand-primary); }
+        .vendor-toggle-knob { width:16px; height:16px; border-radius:50%; background:#fff; position:absolute; top:2px; transition:left 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.08); }
+        .vendor-toggle-track.off .vendor-toggle-knob { left:2px; }
+        .vendor-toggle-track.on .vendor-toggle-knob { left:18px; }
+        [data-theme="dark"] .vendor-toggle-track.off { background:#475569; }
+        #filterStatus-searchable-container .searchable-dropdown-trigger {
+            height: 32px !important; min-height: 32px !important; max-height: 32px !important;
+            padding: 5px 8px !important; font-size: 13px !important;
+        }
+    </style>
+</head>
+<body class="dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- ==================== LIST VIEW ==================== -->
+        <div id="listView">
+            <div class="crm-header">
+                <div class="header-content">
+                    <nav class="breadcrumb-nav">
+                        <a href="dashboard.html">Procurement</a>
+                        <span class="separator">/</span>
+                        <span class="current">RFQs</span>
+                    </nav>
+                    <div class="crm-header-row">
+                        <h1>Requests for Quotation</h1>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:16px;">
+                <div style="flex:1; min-width:200px;">
+                    <label style="display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:4px;">Search</label>
+                    <input type="text" id="filterSearch" placeholder="Search RFQs..." oninput="applyFilters()"
+                        style="width:100%; height:32px; padding:0 10px; font-size:13px; border:1px solid var(--border-primary); border-radius:4px; background:var(--bg-input, var(--bg-secondary)); color:var(--text-primary); outline:none; box-sizing:border-box;">
+                </div>
+                <div style="min-width:150px;">
+                    <label style="display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:4px;">Status</label>
+                    <select id="filterStatus" class="form-select form-select-sm" onchange="applyFilters()" style="height:32px;">
+                        <option value="">All Statuses</option>
+                        <option value="draft">Draft</option>
+                        <option value="sent">Sent</option>
+                        <option value="partially_quoted">Partially Quoted</option>
+                        <option value="fully_quoted">Fully Quoted</option>
+                        <option value="closed">Closed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="openCreateRfqModal()" style="height:32px; padding:0 14px; white-space:nowrap; display:flex; align-items:center; gap:5px; font-size:13px; border-radius:4px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New RFQ
+                </button>
+            </div>
+
+            <!-- RFQs Table -->
+            <div class="crm-table-wrapper data-table-container">
+                <table class="crm-table data-table" id="rfqsTable">
+                    <thead>
+                        <tr>
+                            <th>RFQ #</th>
+                            <th>Title</th>
+                            <th class="hide-mobile">Inquiry</th>
+                            <th>Status</th>
+                            <th class="hide-mobile">Vendors</th>
+                            <th class="hide-mobile">Items</th>
+                            <th class="hide-mobile">Quotes</th>
+                            <th class="hide-mobile">Deadline</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rfqsTableBody">
+                        <tr>
+                            <td colspan="9" class="crm-empty-state">
+                                <div class="crm-empty-content">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                    <p>Loading RFQs...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ==================== DETAIL VIEW ==================== -->
+        <div id="detailView" style="display: none;">
+            <div class="crm-header">
+                <div class="header-content">
+                    <nav class="breadcrumb-nav">
+                        <a href="dashboard.html">Procurement</a>
+                        <span class="separator">/</span>
+                        <a href="rfqs.html" onclick="showListView(); return false;">RFQs</a>
+                        <span class="separator">/</span>
+                        <span class="current" id="breadcrumbRfqNumber">Detail</span>
+                    </nav>
+                    <div class="crm-header-row">
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <a href="#" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;" onclick="showListView(); return false;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="15 18 9 12 15 6"/>
+                                </svg>
+                                Back
+                            </a>
+                            <h1 id="detailTitle" style="margin: 0;">Loading...</h1>
+                            <span id="detailStatusBadge"></span>
+                        </div>
+                        <div class="header-actions" id="detailActions"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metadata Row -->
+            <div id="detailMetadata" style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px;">
+                <div>
+                    <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">RFQ Number</div>
+                    <div style="font-size: 14px; color: var(--text-primary); font-weight: 600;" id="metaRfqNumber">-</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Inquiry</div>
+                    <div style="font-size: 14px; color: var(--brand-primary); cursor: pointer;" id="metaInquiry" onclick="navigateToInquiry()">-</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Quote Deadline</div>
+                    <div style="font-size: 14px; color: var(--text-primary);" id="metaDeadline">-</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Created</div>
+                    <div style="font-size: 14px; color: var(--text-primary);" id="metaCreated">-</div>
+                </div>
+            </div>
+
+            <!-- Notes to Vendor -->
+            <div id="notesSection" style="display: none; margin-bottom: 24px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px;">
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Notes to Vendor</div>
+                <div style="font-size: 14px; color: var(--text-primary); line-height: 1.6;" id="detailNotes">-</div>
+            </div>
+
+            <!-- Vendors Section -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="color: var(--text-primary); font-size: 1rem; font-weight: 600; margin: 0;">Vendors</h3>
+                <div style="display: flex; gap: 8px;" id="vendorActionBtns">
+                    <button class="btn btn-primary btn-sm" onclick="openAddVendorModal()" id="addVendorBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Vendor
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="sendRfq()" id="sendRfqBtn" style="display: none;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                        Send RFQ
+                    </button>
+                </div>
+            </div>
+
+            <div class="crm-table-wrapper data-table-container" style="margin-bottom: 24px;">
+                <table class="crm-table data-table" id="rfqVendorsTable">
+                    <thead>
+                        <tr>
+                            <th>Vendor Name</th>
+                            <th>Status</th>
+                            <th class="hide-mobile">Portal Link</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rfqVendorsTableBody">
+                        <tr>
+                            <td colspan="4" class="crm-empty-state">
+                                <div class="crm-empty-content">
+                                    <p>No vendors assigned yet</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Items Section -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="color: var(--text-primary); font-size: 1rem; font-weight: 600; margin: 0;">Items</h3>
+            </div>
+
+            <div class="crm-table-wrapper data-table-container" style="margin-bottom: 24px;">
+                <table class="crm-table data-table" id="rfqItemsTable">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Quantity</th>
+                            <th class="hide-mobile">Unit</th>
+                            <th class="hide-mobile">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rfqItemsTableBody">
+                        <tr>
+                            <td colspan="4" class="crm-empty-state">
+                                <div class="crm-empty-content">
+                                    <p>Loading items...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create RFQ Modal -->
+    <div class="modal" id="createRfqModal">
+        <div class="modal-backdrop" onclick="closeCreateRfqModal()"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create RFQ</h5>
+                    <button class="close-btn" onclick="closeCreateRfqModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="createRfqForm" onsubmit="handleCreateRfq(event)">
+                        <div class="mb-3">
+                            <label for="rfqInquiry" class="form-label">Inquiry <span class="text-danger">*</span></label>
+                            <select class="form-select" id="rfqInquiry" required>
+                                <option value="">Select an inquiry...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rfqTitle" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="rfqTitle" placeholder="Auto-generated if empty">
+                        </div>
+                        <div class="mb-3">
+                            <label for="rfqDeadline" class="form-label">Quote Deadline</label>
+                            <input type="date" class="form-control" id="rfqDeadline">
+                        </div>
+                        <div class="mb-3">
+                            <label for="rfqNotes" class="form-label">Notes to Vendor</label>
+                            <textarea class="form-control" id="rfqNotes" rows="3" placeholder="Instructions or requirements for vendors..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateRfqModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="createRfqForm" id="createRfqSubmitBtn">
+                        <span class="btn-spinner" id="createRfqSpinner" style="display:none;"></span>
+                        Create RFQ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Vendor to RFQ Modal (Two-Pane Picker) -->
+    <div class="modal" id="addVendorModal">
+        <div class="modal-backdrop" onclick="closeAddVendorModal()"></div>
+        <div class="modal-dialog" style="max-width:860px; width:95vw;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Vendors to RFQ</h5>
+                    <button class="close-btn" onclick="closeAddVendorModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body" style="padding:12px;">
+                    <div id="vendorPickerContainer" style="display:flex; gap:12px; height:380px;">
+                        <!-- LEFT PANE: Available vendors -->
+                        <div style="flex:1; display:flex; flex-direction:column; border:1px solid var(--border-primary); border-radius:8px; overflow:hidden; min-width:0;">
+                            <div style="padding:8px 10px; background:var(--bg-tertiary); border-bottom:1px solid var(--border-primary); display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+                                <span style="font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">Available</span>
+                                <span id="vendorAvailableCount" style="font-size:11px; color:var(--text-secondary);">0</span>
+                            </div>
+                            <div style="padding:6px 8px; border-bottom:1px solid var(--border-primary); flex-shrink:0; display:flex; gap:6px; align-items:center;">
+                                <div style="position:relative; flex:1;">
+                                    <input type="text" id="vendorSearchInput" placeholder="Search vendors..." autocomplete="off"
+                                        style="padding:6px 10px; width:100%; box-sizing:border-box; height:30px; font-size:12px; border:1px solid var(--border-primary); border-radius:6px; background:var(--bg-input, var(--bg-secondary)); color:var(--text-primary); outline:none;">
+                                </div>
+                                <button type="button" id="vendorSelectAllBtn" onclick="selectAllFilteredVendors()" style="background:none; border:none; color:var(--brand-primary); font-size:11px; cursor:pointer; padding:4px 6px; white-space:nowrap; font-weight:600;">All</button>
+                            </div>
+                            <div id="vendorAvailableList" style="flex:1; overflow-y:auto; padding:2px 0;">
+                                <div style="padding:20px; text-align:center; color:var(--text-secondary); font-size:13px;">Loading...</div>
+                            </div>
+                        </div>
+                        <!-- RIGHT PANE: Selected vendors -->
+                        <div style="flex:1; display:flex; flex-direction:column; border:1px solid var(--border-primary); border-radius:8px; overflow:hidden; min-width:0;">
+                            <div style="padding:8px 10px; background:var(--bg-tertiary); border-bottom:1px solid var(--border-primary); display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+                                <span style="font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">Selected</span>
+                                <span id="vendorSelectedCount" style="font-size:11px; font-weight:600; color:var(--brand-primary);">0</span>
+                            </div>
+                            <div style="padding:6px 8px; border-bottom:1px solid var(--border-primary); flex-shrink:0;">
+                                <button type="button" id="vendorClearAllBtn" onclick="clearAllVendorSelections()" style="background:none; border:none; color:var(--color-error); font-size:11px; cursor:pointer; padding:4px 0; font-weight:500; display:none;">Clear all</button>
+                            </div>
+                            <div id="vendorSelectedList" style="flex:1; overflow-y:auto; padding:2px 0;">
+                                <div style="padding:20px; text-align:center; color:var(--text-secondary); font-size:12px;">
+                                    <svg style="width:32px; height:32px; margin-bottom:8px; opacity:0.3;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                    <div>Select vendors from the left</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddVendorModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="addVendorSubmitBtn" onclick="handleAddVendor(event)">
+                        <span class="btn-spinner" id="addVendorSpinner" style="display:none;"></span>
+                        Add Vendors
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/procurement/rfqs.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

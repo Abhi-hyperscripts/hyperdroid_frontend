@@ -24,7 +24,19 @@
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <style>
+        /* Match filter bar heights */
+        #filterStatus-searchable-container .searchable-dropdown-trigger,
+        #filterPriority-searchable-container .searchable-dropdown-trigger {
+            height: 32px !important;
+            min-height: 32px !important;
+            max-height: 32px !important;
+            padding: 5px 8px !important;
+            font-size: 13px !important;
+        }
+    </style>
 </head>
 <body class="dashboard crm-page">
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
@@ -48,26 +60,20 @@
                 </nav>
                 <div class="crm-header-row">
                     <h1>Inquiries</h1>
-                    <button class="btn btn-primary" id="newInquiryBtn" onclick="openNewInquiryModal()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        New Inquiry
-                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Filter Bar -->
-        <div class="crm-filter-bar">
-            <div class="crm-filter-group crm-search-group">
-                <label for="filterSearch">Search</label>
-                <input type="text" id="filterSearch" class="form-control form-control-sm" placeholder="Search inquiries..." oninput="applyFilters()">
+        <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:16px;">
+            <div style="flex:1; min-width:200px;">
+                <label style="display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:4px;">Search</label>
+                <input type="text" id="filterSearch" placeholder="Search inquiries..." oninput="applyFilters()"
+                    style="width:100%; height:32px; padding:0 10px; font-size:13px; border:1px solid var(--border-primary); border-radius:4px; background:var(--bg-input, var(--bg-secondary)); color:var(--text-primary); outline:none; box-sizing:border-box;">
             </div>
-            <div class="crm-filter-group">
-                <label for="filterStatus">Status</label>
-                <select id="filterStatus" class="form-select form-select-sm" onchange="applyFilters()">
+            <div style="min-width:140px;">
+                <label style="display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:4px;">Status</label>
+                <select id="filterStatus" class="form-select form-select-sm" onchange="applyFilters()" style="height:32px;">
                     <option value="">All Statuses</option>
                     <option value="draft">Draft</option>
                     <option value="open">Open</option>
@@ -78,9 +84,9 @@
                     <option value="cancelled">Cancelled</option>
                 </select>
             </div>
-            <div class="crm-filter-group">
-                <label for="filterPriority">Priority</label>
-                <select id="filterPriority" class="form-select form-select-sm" onchange="applyFilters()">
+            <div style="min-width:140px;">
+                <label style="display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:4px;">Priority</label>
+                <select id="filterPriority" class="form-select form-select-sm" onchange="applyFilters()" style="height:32px;">
                     <option value="">All Priorities</option>
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -88,6 +94,10 @@
                     <option value="urgent">Urgent</option>
                 </select>
             </div>
+            <button class="btn btn-primary btn-sm" onclick="openNewInquiryModal()" style="height:32px; padding:0 14px; white-space:nowrap; display:flex; align-items:center; gap:5px; font-size:13px; border-radius:4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New Inquiry
+            </button>
         </div>
 
         <!-- Inquiries Table -->
@@ -193,6 +203,7 @@
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/procurement/inquiries.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

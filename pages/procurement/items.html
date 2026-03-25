@@ -24,7 +24,18 @@
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <style>
+        /* Match filter bar heights: search, dropdown trigger, buttons all 32px */
+        #filterCategory-searchable-container .searchable-dropdown-trigger {
+            height: 32px !important;
+            min-height: 32px !important;
+            max-height: 32px !important;
+            padding: 5px 8px !important;
+            font-size: 13px !important;
+        }
+    </style>
 </head>
 <body class="dashboard crm-page">
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
@@ -48,28 +59,35 @@
                 </nav>
                 <div class="crm-header-row">
                     <h1>Master Items</h1>
-                    <button class="btn btn-primary" id="newItemBtn" onclick="openNewItemModal()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Add Item
-                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Filter Bar -->
-        <div class="crm-filter-bar">
-            <div class="crm-filter-group crm-search-group">
-                <label for="filterSearch">Search</label>
-                <input type="text" id="filterSearch" class="form-control form-control-sm" placeholder="Search items..." oninput="applyFilters()">
+        <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:16px;">
+            <!-- Search -->
+            <div style="flex:1; min-width:200px;">
+                <label style="display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:4px;">Search</label>
+                <input type="text" id="filterSearch" placeholder="Search items..." oninput="applyFilters()"
+                    style="width:100%; height:32px; padding:0 10px; font-size:13px; border:1px solid var(--border-primary); border-radius:4px; background:var(--bg-input, var(--bg-secondary)); color:var(--text-primary); outline:none; box-sizing:border-box;">
             </div>
-            <div class="crm-filter-group">
-                <label for="filterCategory">Category</label>
-                <select id="filterCategory" class="form-select form-select-sm" onchange="applyFilters()">
+            <!-- Category dropdown -->
+            <div style="min-width:180px;">
+                <label style="display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); margin-bottom:4px;">Category</label>
+                <select id="filterCategory" class="form-select form-select-sm" onchange="applyFilters()" style="height:32px;">
                     <option value="">All Categories</option>
                 </select>
+            </div>
+            <!-- Buttons -->
+            <div style="display:flex; gap:8px; align-items:flex-end;">
+                <button class="btn btn-primary btn-sm" onclick="openNewItemModal()" style="height:32px; padding:0 14px; white-space:nowrap; display:flex; align-items:center; gap:5px; font-size:13px; border-radius:4px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add Item
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="openCategoryModal()" style="height:32px; padding:0 14px; white-space:nowrap; display:flex; align-items:center; gap:5px; font-size:13px; border-radius:4px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    Categories
+                </button>
             </div>
         </div>
 
@@ -132,8 +150,9 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="itemCategory" class="form-label">Category</label>
-                                <input type="text" class="form-control" id="itemCategory" name="category" list="categoryList">
-                                <datalist id="categoryList"></datalist>
+                                <select class="form-select" id="itemCategory" name="category_id">
+                                    <option value="">No Category</option>
+                                </select>
                             </div>
                             <div class="col-md-6">
                                 <label for="itemUnit" class="form-label">Unit</label>
@@ -181,6 +200,38 @@
         </div>
     </div>
 
+    <!-- Category Management Modal -->
+    <div class="modal" id="categoryModal">
+        <div class="modal-backdrop" onclick="closeCategoryModal()"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage Categories</h5>
+                    <button class="close-btn" onclick="closeCategoryModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Add New Category -->
+                    <div style="display: flex; gap: 8px; margin-bottom: 16px; align-items: stretch;">
+                        <input type="text" class="form-control" id="newCategoryName" placeholder="New category name..." style="flex:1 1 auto !important; min-width:0 !important; width:auto !important; height:34px !important;">
+                        <button class="btn btn-primary btn-sm" onclick="addCategory()" style="white-space: nowrap; padding:0 16px; flex:0 0 auto; width:auto; height:34px !important; line-height:34px; font-size:13px; margin:0 !important; border-radius:4px;">+ Add</button>
+                    </div>
+                    <!-- Category List -->
+                    <div id="categoryListContainer" style="max-height: 300px; overflow-y: auto;">
+                        <p style="color: var(--text-secondary); text-align: center;">Loading categories...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeCategoryModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
@@ -188,6 +239,7 @@
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/procurement/items.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

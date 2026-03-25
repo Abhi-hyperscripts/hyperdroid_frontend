@@ -5,6 +5,9 @@
 
 // ==================== State ====================
 let allInquiries = [];
+let _inqFiltered = [];
+let _inqCurrentPage = 1;
+const INQ_PAGE_SIZE = 20;
 
 // ==================== Initialization ====================
 
@@ -17,6 +20,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     loadInquiries();
+
+    // Convert filter dropdowns to searchable after script loads
+    setTimeout(() => {
+        if (typeof convertSelectToSearchable === 'function') {
+            convertSelectToSearchable('filterStatus', {
+                placeholder: 'All Statuses',
+                searchPlaceholder: 'Search status...',
+                compact: true,
+                onChange: () => applyFilters()
+            });
+            convertSelectToSearchable('filterPriority', {
+                placeholder: 'All Priorities',
+                searchPlaceholder: 'Search priority...',
+                compact: true,
+                onChange: () => applyFilters()
+            });
+        }
+    }, 100);
 });
 
 // ==================== Data Loading ====================
@@ -25,6 +46,7 @@ async function loadInquiries() {
     try {
         const response = await api.request('/procurement/inquiries');
         allInquiries = response.data || response || [];
+        _inqFiltered = allInquiries;
         renderInquiriesTable(allInquiries);
     } catch (error) {
         console.error('Failed to load inquiries:', error);
@@ -60,6 +82,8 @@ function applyFilters() {
         filtered = filtered.filter(inq => inq.priority === priority);
     }
 
+    _inqFiltered = filtered;
+    _inqCurrentPage = 1;
     renderInquiriesTable(filtered);
 }
 
@@ -84,10 +108,17 @@ function renderInquiriesTable(inquiries) {
                 </td>
             </tr>
         `;
+        inqRenderPagination(0, 0);
         return;
     }
 
-    tbody.innerHTML = inquiries.map(inq => `
+    const totalItems = inquiries.length;
+    const totalPages = Math.ceil(totalItems / INQ_PAGE_SIZE);
+    if (_inqCurrentPage > totalPages) _inqCurrentPage = totalPages;
+    const startIdx = (_inqCurrentPage - 1) * INQ_PAGE_SIZE;
+    const pageItems = inquiries.slice(startIdx, startIdx + INQ_PAGE_SIZE);
+
+    tbody.innerHTML = pageItems.map(inq => `
         <tr style="cursor: pointer;" onclick="window.location.href='inquiry-detail.html?id=${inq.id}'">
             <td>
                 <span style="color: var(--brand-primary); font-weight: 600; font-size: 13px;">${escapeHtml(inq.inquiry_number || '-')}</span>
@@ -115,6 +146,8 @@ function renderInquiriesTable(inquiries) {
             </td>
         </tr>
     `).join('');
+
+    inqRenderPagination(totalItems, totalPages);
 }
 
 function renderStatusBadge(status) {
@@ -239,4 +272,58 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ==================== Pagination ====================
+
+function inqGoToPage(page) {
+    const totalPages = Math.ceil(_inqFiltered.length / INQ_PAGE_SIZE);
+    if (page < 1 || page > totalPages) return;
+    _inqCurrentPage = page;
+    renderInquiriesTable(_inqFiltered);
+    const table = document.getElementById('inquiriesTableBody')?.closest('table');
+    if (table) table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function inqRenderPagination(totalItems, totalPages) {
+    let container = document.getElementById('inquiriesPagination');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'inquiriesPagination';
+        const table = document.getElementById('inquiriesTableBody')?.closest('table');
+        if (table) table.parentNode.insertBefore(container, table.nextSibling);
+    }
+    if (totalPages <= 1) {
+        container.innerHTML = totalItems > 0
+            ? `<div style="padding:10px 0; text-align:center; font-size:12px; color:var(--text-secondary);">${totalItems} record${totalItems !== 1 ? 's' : ''}</div>`
+            : '';
+        return;
+    }
+    const startItem = (_inqCurrentPage - 1) * INQ_PAGE_SIZE + 1;
+    const endItem = Math.min(_inqCurrentPage * INQ_PAGE_SIZE, totalItems);
+    let pages = [];
+    if (totalPages <= 7) { for (let i = 1; i <= totalPages; i++) pages.push(i); }
+    else {
+        pages.push(1);
+        if (_inqCurrentPage > 3) pages.push('...');
+        const start = Math.max(2, _inqCurrentPage - 1);
+        const end = Math.min(totalPages - 1, _inqCurrentPage + 1);
+        for (let i = start; i <= end; i++) pages.push(i);
+        if (_inqCurrentPage < totalPages - 2) pages.push('...');
+        pages.push(totalPages);
+    }
+    const base = 'padding:6px 12px; border-radius:6px; font-size:13px; min-width:34px; text-align:center; transition:all 0.15s;';
+    const btnStyle = `${base} background:var(--bg-tertiary); color:var(--text-primary); cursor:pointer; border:1px solid var(--border-primary);`;
+    const activeBtnStyle = `${base} background:var(--brand-primary); color:#fff; cursor:default; font-weight:600; box-shadow:0 2px 6px rgba(59,130,246,0.35); border:1px solid var(--brand-primary);`;
+    const navStyle = `${base} background:var(--bg-tertiary); color:var(--text-primary); cursor:pointer; font-weight:500; border:1px solid var(--border-primary);`;
+    const disabledNavStyle = `${base} background:transparent; color:var(--text-secondary); cursor:not-allowed; opacity:0.4; border:1px solid var(--border-primary);`;
+    container.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 4px; flex-wrap:wrap; gap:10px; border-top:1px solid var(--border-primary);">
+            <span style="font-size:13px; color:var(--text-secondary);">Showing <strong style="color:var(--text-primary);">${startItem}–${endItem}</strong> of <strong style="color:var(--text-primary);">${totalItems}</strong></span>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <button onclick="inqGoToPage(${_inqCurrentPage - 1})" style="${_inqCurrentPage === 1 ? disabledNavStyle : navStyle}" ${_inqCurrentPage === 1 ? 'disabled' : ''}>&lsaquo; Prev</button>
+                ${pages.map(p => p === '...' ? '<span style="padding:4px 4px; font-size:13px; color:var(--text-secondary);">…</span>' : `<button onclick="inqGoToPage(${p})" style="${p === _inqCurrentPage ? activeBtnStyle : btnStyle}">${p}</button>`).join('')}
+                <button onclick="inqGoToPage(${_inqCurrentPage + 1})" style="${_inqCurrentPage === totalPages ? disabledNavStyle : navStyle}" ${_inqCurrentPage === totalPages ? 'disabled' : ''}>Next &rsaquo;</button>
+            </div>
+        </div>`;
 }
