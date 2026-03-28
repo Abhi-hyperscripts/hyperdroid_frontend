@@ -202,6 +202,54 @@
                             </div>
                         </div>
                     </form>
+
+                    <!-- Contacts Section (visible only when editing) -->
+                    <div id="contactsSection" style="display:none; margin-top: 20px; padding-top: 16px; border-top: 2px solid rgba(128,128,128,0.2);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                            <span style="font-size: 14px; font-weight: 700; flex-shrink: 0;">Contacts</span>
+                            <div style="flex: 1; height: 1px; background: rgba(128,128,128,0.15);"></div>
+                            <button type="button" onclick="showAddContactForm()" style="font-size: 11px; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--brand-primary); background: none; color: var(--brand-primary); cursor: pointer; white-space: nowrap; font-weight: 600;">+ Add</button>
+                        </div>
+                        <!-- Add Contact Form (hidden by default) -->
+                        <div id="addContactForm" style="display:none; padding: 12px; border: 1px solid color-mix(in srgb, currentColor 10%, transparent); border-radius: 8px; margin-bottom: 10px;">
+                            <div class="row mb-2">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control form-control-sm" id="newContactName" placeholder="Name *">
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="email" class="form-control form-control-sm" id="newContactEmail" placeholder="Email">
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control form-control-sm" id="newContactPhone" placeholder="Phone">
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="text" class="form-control form-control-sm" id="newContactDesignation" placeholder="Role">
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 6px; align-items: center;">
+                                <label style="font-size: 11px; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" id="newContactPrimary"> Primary
+                                </label>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="saveNewContact()" style="font-size: 11px; padding: 3px 12px;">Save</button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="hideAddContactForm()" style="font-size: 11px; padding: 3px 12px;">Cancel</button>
+                            </div>
+                        </div>
+                        <!-- Contact List -->
+                        <div id="contactsList" style="font-size: 12px;">
+                            <span style="opacity: 0.5;">Loading contacts...</span>
+                        </div>
+                    </div>
+
+                    <!-- Catalog Links Section (visible only when editing) -->
+                    <div id="catalogLinksSection" style="display:none; margin-top: 20px; padding-top: 16px; border-top: 2px solid rgba(128,128,128,0.2);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                            <span style="font-size: 14px; font-weight: 700; flex-shrink: 0;">Catalog Links</span>
+                            <div style="flex: 1; height: 1px; background: rgba(128,128,128,0.15);"></div>
+                        </div>
+                        <div id="catalogLinksList" style="font-size: 12px;">
+                            <span style="opacity: 0.5;">Loading...</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeVendorModal()">Cancel</button>
@@ -209,6 +257,27 @@
                         <span class="btn-spinner" id="vendorSubmitSpinner" style="display:none;"></span>
                         Add Vendor
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor Intelligence Modal -->
+    <div class="modal" id="vendorIntelModal">
+        <div class="modal-backdrop" onclick="closeIntelModal()"></div>
+        <div class="modal-dialog" style="max-width:820px; width:95vw;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><span id="intelVendorName">Vendor</span> — Intelligence</h5>
+                    <button class="close-btn" onclick="closeIntelModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body" id="intelBody" style="max-height:70vh;overflow-y:auto;">
+                    <div style="text-align:center;padding:40px;opacity:0.5;">Loading...</div>
                 </div>
             </div>
         </div>

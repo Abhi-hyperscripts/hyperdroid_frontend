@@ -200,6 +200,35 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Vendor Performance Section -->
+            <div id="vendorPerformanceSection" style="display: none; margin-top: 32px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="color: var(--text-primary); font-size: 1rem; font-weight: 600; margin: 0;">Vendor Performance</h3>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="perfActionButtons"></div>
+                </div>
+
+                <!-- Performance Summary Cards -->
+                <div id="perfSummaryCards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;"></div>
+
+                <!-- Performance History -->
+                <div id="perfHistorySection" style="display: none;">
+                    <div class="crm-table-wrapper data-table-container">
+                        <table class="crm-table data-table" id="perfHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Details</th>
+                                    <th class="hide-mobile">Score</th>
+                                    <th class="hide-mobile">Notes</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="perfHistoryBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -280,7 +309,6 @@
                                 <option value="partially_received">Partially Received</option>
                                 <option value="received">Received</option>
                                 <option value="closed">Closed</option>
-                                <option value="cancelled">Cancelled</option>
                             </select>
                         </div>
                     </form>
@@ -290,6 +318,224 @@
                     <button type="submit" class="btn btn-primary" form="statusForm" id="statusSubmitBtn">
                         <span class="btn-spinner" id="statusSpinner" style="display:none;"></span>
                         Update Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit PO Modal -->
+    <div class="modal" id="editPoModal">
+        <div class="modal-backdrop" onclick="closeEditPoModal()"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Purchase Order</h5>
+                    <button class="close-btn" onclick="closeEditPoModal()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editPoForm" onsubmit="handleEditPo(event)">
+                        <div class="mb-3">
+                            <label for="editPoTitle" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="editPoTitle">
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editPoDeliveryDate" class="form-label">Expected Delivery Date</label>
+                                <input type="date" class="form-control" id="editPoDeliveryDate">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editPoPaymentTerms" class="form-label">Payment Terms</label>
+                                <input type="text" class="form-control" id="editPoPaymentTerms" placeholder="e.g. Net 30">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPoShippingAddress" class="form-label">Shipping Address</label>
+                            <textarea class="form-control" id="editPoShippingAddress" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPoNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="editPoNotes" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditPoModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="editPoForm" id="editPoSubmitBtn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel PO Modal -->
+    <div class="modal" id="cancelPoModal">
+        <div class="modal-backdrop" onclick="closeCancelPoModal()"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cancel Purchase Order</h5>
+                    <button class="close-btn" onclick="closeCancelPoModal()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p style="color: var(--color-error); font-weight: 600; margin-bottom: 12px;">This action cannot be undone. The PO will be permanently cancelled.</p>
+                    <form id="cancelPoForm" onsubmit="handleCancelPo(event)">
+                        <div class="mb-3">
+                            <label for="cancelReason" class="form-label">Reason for Cancellation <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="cancelReason" rows="3" required placeholder="e.g., Vendor failed to deliver, pricing changed, duplicate PO..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeCancelPoModal()">Keep PO</button>
+                    <button type="submit" class="btn" form="cancelPoForm" id="cancelPoSubmitBtn" style="background: var(--color-error); color: white;">
+                        <span class="btn-spinner" id="cancelPoSpinner" style="display:none;"></span>
+                        Cancel Purchase Order
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record Delivery Modal -->
+    <div class="modal" id="deliveryModal">
+        <div class="modal-backdrop" onclick="closeModal('deliveryModal')"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Record Delivery</h5>
+                    <button class="close-btn" onclick="closeModal('deliveryModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="deliveryForm" onsubmit="handleRecordDelivery(event)">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="promisedDays" class="form-label">Promised Delivery Days <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="promisedDays" min="1" required placeholder="e.g. 14">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="actualDays" class="form-label">Actual Delivery Days <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="actualDays" min="1" required placeholder="e.g. 12">
+                            </div>
+                        </div>
+                        <div class="mb-3" style="padding: 12px; border-radius: 8px; background: var(--bg-tertiary);">
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Delivery Variance</div>
+                            <div id="deliveryVariance" style="font-size: 18px; font-weight: 700; color: var(--color-success);">-</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('deliveryModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="deliveryForm" id="deliverySubmitBtn">
+                        <span class="btn-spinner" id="deliverySpinner" style="display:none;"></span>
+                        Record Delivery
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Goods Receipt Modal -->
+    <div class="modal" id="goodsReceiptModal">
+        <div class="modal-backdrop" onclick="closeModal('goodsReceiptModal')"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Record Goods Receipt</h5>
+                    <button class="close-btn" onclick="closeModal('goodsReceiptModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="goodsReceiptForm" onsubmit="handleRecordGoodsReceipt(event)">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="itemsOrdered" class="form-label">Items Ordered <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="itemsOrdered" min="0" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="itemsRejected" class="form-label">Items Rejected</label>
+                                <input type="number" class="form-control" id="itemsRejected" min="0" value="0">
+                            </div>
+                        </div>
+                        <div class="mb-3" style="padding: 12px; border-radius: 8px; background: var(--bg-tertiary);">
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Acceptance Rate</div>
+                            <div id="acceptanceRate" style="font-size: 18px; font-weight: 700; color: var(--color-success);">100%</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="grNotes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="grNotes" rows="2" placeholder="Quality observations, issues found..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('goodsReceiptModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="goodsReceiptForm" id="grSubmitBtn">
+                        <span class="btn-spinner" id="grSpinner" style="display:none;"></span>
+                        Record Receipt
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rate Quality Modal -->
+    <div class="modal" id="rateQualityModal">
+        <div class="modal-backdrop" onclick="closeModal('rateQualityModal')"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Rate Vendor Quality</h5>
+                    <button class="close-btn" onclick="closeModal('rateQualityModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="rateQualityForm" onsubmit="handleRateQuality(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Quality Rating <span class="text-danger">*</span></label>
+                            <div id="starRating" style="display: flex; gap: 8px; padding: 8px 0;">
+                                <button type="button" class="star-btn" onclick="setRating(1)" data-star="1" style="background:none; border:none; cursor:pointer; padding:4px;">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                </button>
+                                <button type="button" class="star-btn" onclick="setRating(2)" data-star="2" style="background:none; border:none; cursor:pointer; padding:4px;">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                </button>
+                                <button type="button" class="star-btn" onclick="setRating(3)" data-star="3" style="background:none; border:none; cursor:pointer; padding:4px;">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                </button>
+                                <button type="button" class="star-btn" onclick="setRating(4)" data-star="4" style="background:none; border:none; cursor:pointer; padding:4px;">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                </button>
+                                <button type="button" class="star-btn" onclick="setRating(5)" data-star="5" style="background:none; border:none; cursor:pointer; padding:4px;">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                </button>
+                            </div>
+                            <input type="hidden" id="qualityScore" value="0">
+                            <div id="ratingLabel" style="font-size: 13px; color: var(--text-secondary);">Click a star to rate</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ratingNotes" class="form-label">Feedback</label>
+                            <textarea class="form-control" id="ratingNotes" rows="3" placeholder="Quality observations, communication, packaging..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('rateQualityModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="rateQualityForm" id="rateSubmitBtn">
+                        <span class="btn-spinner" id="rateSpinner" style="display:none;"></span>
+                        Submit Rating
                     </button>
                 </div>
             </div>

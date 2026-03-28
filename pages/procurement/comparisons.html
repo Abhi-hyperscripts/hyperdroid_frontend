@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Quote Comparison - Procurement | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>
+        (function() {
+            var tip = null;
+            document.addEventListener('mouseover', function(e) {
+                var el = e.target.closest('[data-items]');
+                if (!el) return;
+                if (tip) tip.remove();
+                var items = el.getAttribute('data-items').split('|');
+                tip = document.createElement('div');
+                tip.style.cssText = 'position:fixed;background:#1e293b;border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:8px 12px;font-size:11px;color:rgba(255,255,255,0.85);white-space:nowrap;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.5);line-height:1.6;pointer-events:none;';
+                tip.innerHTML = items.map(function(n) { return '<div style="padding:1px 0;">' + n + '</div>'; }).join('');
+                document.body.appendChild(tip);
+                var rect = el.getBoundingClientRect();
+                tip.style.left = rect.left + 'px';
+                tip.style.top = (rect.bottom + 6) + 'px';
+            });
+            document.addEventListener('mouseout', function(e) {
+                var el = e.target.closest('[data-items]');
+                if (!el) return;
+                if (tip) { tip.remove(); tip = null; }
+            });
+        })();
+    </script>
+</head>
+<body class="dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Header -->
+        <div class="crm-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Procurement</a>
+                    <span class="separator">/</span>
+                    <a href="rfqs.html">RFQs</a>
+                    <span class="separator">/</span>
+                    <span class="current" id="breadcrumbTitle">Comparison</span>
+                </nav>
+                <div class="crm-header-row">
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <a href="#" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 4px;" onclick="goBack(); return false;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                            Back to RFQ
+                        </a>
+                        <h1 id="comparisonTitle" style="margin: 0;">Quote Comparison</h1>
+                    </div>
+                    <div class="header-actions" id="headerActions"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metadata Row -->
+        <div id="metadataRow" class="glass-card" style="display: flex; justify-content: space-evenly; flex-wrap: wrap; margin-bottom: 24px; padding: 16px 24px; gap: 16px 0;">
+            <div>
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">RFQ Number</div>
+                <div style="font-size: 14px; color: var(--text-primary); font-weight: 600;" id="metaRfqNumber">-</div>
+            </div>
+            <div>
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Confidence</div>
+                <div style="font-size: 14px;" id="metaConfidence">-</div>
+            </div>
+            <div>
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Version</div>
+                <div style="font-size: 14px; color: var(--text-primary);" id="metaVersion">-</div>
+            </div>
+            <div>
+                <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Generated</div>
+                <div style="font-size: 14px; color: var(--text-primary);" id="metaGenerated">-</div>
+            </div>
+        </div>
+
+        <!-- No Comparison State -->
+        <div id="noComparisonState" style="display: none; text-align: center; padding: 60px 24px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px; margin-bottom: 24px;">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" style="margin-bottom: 16px;">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <h3 style="color: var(--text-primary); margin-bottom: 8px;">No comparison generated yet</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Generate a comparison to analyze vendor quotes side by side.</p>
+            <button class="btn btn-primary" onclick="generateComparison()" id="generateBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10"/>
+                    <line x1="12" y1="20" x2="12" y2="4"/>
+                    <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                Generate Comparison
+            </button>
+        </div>
+
+        <!-- Comparison Content (hidden until loaded) -->
+        <div id="comparisonContent" style="display: none;">
+
+            <!-- 1. FINAL RECOMMENDATION BANNER — The Decision -->
+            <div id="finalRecommendation" style="margin-bottom: 24px;"></div>
+
+            <!-- 1b. AWARD MODE TOGGLE + SPLIT AWARD UI -->
+            <div id="splitAwardSection" style="display: none; margin-bottom: 24px;"></div>
+
+            <!-- 2. ALTERNATIVES — Secondary options -->
+            <div id="alternativesSection" style="margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">Alternative Options</div>
+                    <a href="ranking-methodology.html" target="_blank" style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-secondary); text-decoration: none; padding: 3px 8px; border: 1px solid var(--border-primary); border-radius: 6px; transition: all 0.15s;" onmouseenter="this.style.color='var(--brand-primary)'; this.style.borderColor='var(--brand-primary)'" onmouseleave="this.style.color='var(--text-secondary)'; this.style.borderColor='var(--border-primary)'">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        How we rank
+                    </a>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;" id="alternativesGrid"></div>
+            </div>
+
+            <!-- 3. AI INSIGHTS — Compressed bullets -->
+            <div id="aiAnalysisSection" style="display: none; margin-bottom: 24px;">
+                <div class="glass-card" style="padding: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="toggleAiDetails()">
+                        <h3 style="color: var(--text-primary); font-size: 0.85rem; font-weight: 600; margin: 0; display:flex; align-items:center; gap:8px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></svg>
+                            AI Insights
+                        </h3>
+                        <svg id="aiToggleIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="transition: transform 0.3s;"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div id="aiCompactSummary" style="margin-top: 12px;"></div>
+                    <div id="aiDetailedInsights" style="display: none; margin-top: 16px;"></div>
+                </div>
+            </div>
+
+            <!-- 4. PRICE COMPARISON — Supporting data -->
+            <div style="margin-bottom: 24px;">
+              <div class="glass-card" style="padding: 20px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="toggleSection('priceDetails', 'priceToggleIcon')">
+                    <h3 style="color: var(--text-primary); font-size: 0.85rem; font-weight: 600; margin: 0;">Price Comparison</h3>
+                    <svg id="priceToggleIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="transition: transform 0.3s;"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div id="priceDetails" style="display: none; margin-top: 12px;">
+                    <div class="crm-table-wrapper data-table-container" style="overflow-x: auto;">
+                        <table class="crm-table data-table" id="priceMatrixTable">
+                            <thead id="priceMatrixHead"><tr><th>Item</th></tr></thead>
+                            <tbody id="priceMatrixBody"><tr><td class="crm-empty-state"><p>Loading...</p></td></tr></tbody>
+                        </table>
+                    </div>
+                    <!-- Vendor Scores inline -->
+                    <div style="margin-top: 16px;">
+                        <div class="crm-table-wrapper data-table-container">
+                            <table class="crm-table data-table" id="scoresTable">
+                                <thead>
+                                    <tr>
+                                        <th>Vendor</th>
+                                        <th>Price Score</th>
+                                        <th>Quality Score</th>
+                                        <th>Delivery Score</th>
+                                        <th>Weighted Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scoresTableBody">
+                                    <tr><td colspan="5" class="crm-empty-state"><p>Loading...</p></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. LEARNING PROGRESS — Collapsed at bottom -->
+            <div id="learningProgressSection" style="display: none; margin-bottom: 24px;">
+                <div class="glass-card" style="padding: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" onclick="toggleLearningDetails()">
+                        <h3 style="color: var(--text-primary); font-size: 0.85rem; font-weight: 600; margin: 0; display:flex; align-items:center; gap:8px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                            System Learning
+                            <span id="learningCycleBadge" style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--bg-tertiary); color: var(--color-success); font-weight: 600;"></span>
+                        </h3>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span id="learningConfidenceChip" style="font-size: 12px; font-weight: 600;"></span>
+                            <svg id="learningToggleIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="transition: transform 0.3s;"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                    </div>
+
+                    <!-- Compact summary (always visible) -->
+                    <div id="learningSummaryStrip" class="glass-card-sm" style="display: flex; justify-content: space-evenly; flex-wrap: wrap; margin-top: 12px; padding: 12px 16px; gap: 12px 0;"></div>
+
+                    <!-- Expandable details -->
+                    <div id="learningDetails" style="display: none; margin-top: 16px;">
+                        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin-bottom: 10px;">Score Evolution</div>
+                        <div class="crm-table-wrapper data-table-container" style="margin-bottom: 16px;">
+                            <table class="crm-table data-table" id="learningScoresTable">
+                                <thead>
+                                    <tr>
+                                        <th>Vendor</th>
+                                        <th>Quality Before</th>
+                                        <th>Quality After</th>
+                                        <th>Delivery Before</th>
+                                        <th>Delivery After</th>
+                                        <th>Weighted Before</th>
+                                        <th>Weighted After</th>
+                                        <th>Change</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="learningScoresBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="learningDataPoints" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/procurement/comparisons.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

@@ -501,6 +501,11 @@ function renderDetailHeader() {
     const actionsDiv = document.getElementById('detailActions');
     let actionsHtml = '';
 
+    // Edit button (draft only)
+    if (rfq.status === 'draft') {
+        actionsHtml += `<button class="btn btn-secondary btn-sm" onclick="openEditRfqModal()">Edit</button>`;
+    }
+
     // AI Suggest Vendors button (visible when RFQ is in draft or sent status AND AI is available)
     if (aiAvailable && (rfq.status === 'draft' || rfq.status === 'sent')) {
         actionsHtml += `
@@ -600,6 +605,13 @@ function renderRfqVendorsTable() {
                 </td>
                 <td>
                     <div class="crm-actions">
+                        ${vendorStatus === 'submitted' || vendorStatus === 'revised' ? `
+                            <button class="crm-action-btn" onclick="viewVendorQuote('${v.vendor_id || v.id}')" title="View Quote">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                </svg>
+                            </button>
+                        ` : ''}
                         ${currentRfq && currentRfq.status === 'draft' ? `
                             <button class="crm-action-btn action-delete" onclick="removeVendorFromRfq('${v.vendor_id || v.id}')" title="Remove">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1226,4 +1238,118 @@ function rfqRenderPagination(totalItems, totalPages) {
                 <button onclick="rfqGoToPage(${_rfqCurrentPage + 1})" style="${_rfqCurrentPage === totalPages ? disabledNavStyle : navStyle}" ${_rfqCurrentPage === totalPages ? 'disabled' : ''}>Next &rsaquo;</button>
             </div>
         </div>`;
+}
+
+// ==================== EDIT RFQ ====================
+
+function openEditRfqModal() {
+    if (!currentRfq) return;
+    document.getElementById('editRfqTitle').value = currentRfq.title || '';
+    document.getElementById('editRfqDeadline').value = currentRfq.quote_deadline ? new Date(currentRfq.quote_deadline).toISOString().split('T')[0] : '';
+    document.getElementById('editRfqNotes').value = currentRfq.notes_to_vendor || '';
+    openModal('editRfqModal');
+}
+
+async function handleEditRfq(event) {
+    event.preventDefault();
+    const btn = document.getElementById('editRfqSubmitBtn');
+    btn.disabled = true;
+    try {
+        await api.request('/procurement/rfqs', {
+            method: 'PUT',
+            body: JSON.stringify({
+                id: currentRfq.id,
+                title: document.getElementById('editRfqTitle').value.trim() || null,
+                quote_deadline: document.getElementById('editRfqDeadline').value || null,
+                notes_to_vendor: document.getElementById('editRfqNotes').value.trim() || null
+            })
+        });
+        Toast.success('RFQ updated');
+        closeModal('editRfqModal');
+        loadRfqDetail(currentRfq.id);
+    } catch (e) {
+        Toast.error(e.message || 'Failed to update RFQ');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// ==================== VIEW / DELETE QUOTE ====================
+
+let currentQuoteId = null;
+
+async function viewVendorQuote(vendorId) {
+    const body = document.getElementById('viewQuoteBody');
+    const footer = document.getElementById('viewQuoteFooter');
+    body.innerHTML = '<div style="text-align:center;padding:30px;opacity:0.5;">Loading quote...</div>';
+    footer.style.display = 'none';
+    currentQuoteId = null;
+    openModal('viewQuoteModal');
+
+    try {
+        // Get quotes for this RFQ, find the one for this vendor
+        const data = await api.request(`/procurement/vendor-quotes?rfqId=${currentRfq.id}`);
+        const quotes = data.data || data || [];
+        const quote = quotes.find(q => q.vendor_id === vendorId);
+        if (!quote) { body.innerHTML = '<div style="text-align:center;padding:30px;opacity:0.5;">No quote found for this vendor.</div>'; return; }
+
+        // Load full quote detail
+        const detail = await api.request(`/procurement/vendor-quotes/${quote.id}`);
+        const q = detail.data || detail;
+        currentQuoteId = q.id;
+
+        document.getElementById('viewQuoteTitle').textContent = `Quote — ${escapeHtml(q.vendor_name || 'Vendor')}`;
+
+        let html = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">
+            <div><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;">Total</div><div style="font-size:16px;font-weight:700;">${q.total_amount != null ? parseFloat(q.total_amount).toLocaleString('en-IN', {minimumFractionDigits:2}) : '-'}</div></div>
+            <div><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;">Delivery</div><div style="font-weight:600;">${q.delivery_days ? q.delivery_days + ' days' : '-'}</div></div>
+            <div><div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;">Payment</div><div style="font-weight:600;">${escapeHtml(q.payment_terms || '-')}</div></div>
+        </div>`;
+
+        if (q.vendor_notes) {
+            html += `<div style="padding:8px 12px;border:1px solid var(--border-primary);border-radius:6px;margin-bottom:16px;font-size:12px;"><strong>Vendor Notes:</strong> ${escapeHtml(q.vendor_notes)}</div>`;
+        }
+
+        const items = q.items || [];
+        if (items.length > 0) {
+            html += `<table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid var(--border-primary);border-radius:6px;overflow:hidden;">
+                <thead><tr style="background:var(--bg-tertiary);">
+                    <th style="padding:6px 10px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Item</th>
+                    <th style="padding:6px 10px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Qty</th>
+                    <th style="padding:6px 10px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Unit Price</th>
+                    <th style="padding:6px 10px;text-align:right;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Total</th>
+                </tr></thead>
+                <tbody>${items.map(it => `<tr style="border-top:1px solid var(--border-primary);">
+                    <td style="padding:5px 10px;">${escapeHtml(it.vendor_item_name || it.normalized_item_name || it.inquiry_item_name || '-')}</td>
+                    <td style="padding:5px 10px;text-align:right;">${it.quantity || '-'}</td>
+                    <td style="padding:5px 10px;text-align:right;">${it.unit_price != null ? parseFloat(it.unit_price).toLocaleString('en-IN', {minimumFractionDigits:2}) : '-'}</td>
+                    <td style="padding:5px 10px;text-align:right;font-weight:600;">${it.total_price != null ? parseFloat(it.total_price).toLocaleString('en-IN', {minimumFractionDigits:2}) : '-'}</td>
+                </tr>`).join('')}</tbody>
+            </table>`;
+        }
+
+        body.innerHTML = html;
+        footer.style.display = '';
+        // Only show Delete Quote if RFQ is still in draft (quotes not yet used in comparisons)
+        const deleteBtn = document.getElementById('deleteQuoteBtn');
+        if (deleteBtn) {
+            deleteBtn.style.display = (currentRfq && currentRfq.status === 'draft') ? '' : 'none';
+        }
+    } catch (e) {
+        body.innerHTML = `<div style="text-align:center;padding:30px;color:var(--color-error);">Failed to load quote: ${escapeHtml(e.message || '')}</div>`;
+    }
+}
+
+async function deleteCurrentQuote() {
+    if (!currentQuoteId) return;
+    const confirmed = await showConfirm('Delete this vendor quote? This cannot be undone.', 'Delete Quote', 'danger');
+    if (!confirmed) return;
+    try {
+        await api.request(`/procurement/vendor-quotes/${currentQuoteId}`, { method: 'DELETE' });
+        Toast.success('Quote deleted');
+        closeModal('viewQuoteModal');
+        loadRfqDetail(currentRfq.id);
+    } catch (e) {
+        Toast.error(e.message || 'Failed to delete quote');
+    }
 }

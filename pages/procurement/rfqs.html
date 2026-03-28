@@ -256,6 +256,63 @@
         </div>
     </div>
 
+    <!-- Edit RFQ Modal -->
+    <div class="modal" id="editRfqModal">
+        <div class="modal-backdrop" onclick="closeModal('editRfqModal')"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit RFQ</h5>
+                    <button class="close-btn" onclick="closeModal('editRfqModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editRfqForm" onsubmit="handleEditRfq(event)">
+                        <div class="mb-3">
+                            <label for="editRfqTitle" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="editRfqTitle" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editRfqDeadline" class="form-label">Quote Deadline</label>
+                            <input type="date" class="form-control" id="editRfqDeadline">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editRfqNotes" class="form-label">Notes to Vendor</label>
+                            <textarea class="form-control" id="editRfqNotes" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editRfqModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="editRfqForm" id="editRfqSubmitBtn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Quote Modal -->
+    <div class="modal" id="viewQuoteModal">
+        <div class="modal-backdrop" onclick="closeModal('viewQuoteModal')"></div>
+        <div class="modal-dialog" style="max-width:700px;width:95vw;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewQuoteTitle">Quote Details</h5>
+                    <button class="close-btn" onclick="closeModal('viewQuoteModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body" id="viewQuoteBody" style="max-height:60vh;overflow-y:auto;">
+                    <div style="text-align:center;padding:30px;opacity:0.5;">Loading...</div>
+                </div>
+                <div class="modal-footer" id="viewQuoteFooter" style="display:none;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('viewQuoteModal')">Close</button>
+                    <button type="button" class="btn" id="deleteQuoteBtn" style="background:none;color:var(--color-error);border:1px solid var(--color-error);" onclick="deleteCurrentQuote()">Delete Quote</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Create RFQ Modal -->
     <div class="modal" id="createRfqModal">
         <div class="modal-backdrop" onclick="closeCreateRfqModal()"></div>

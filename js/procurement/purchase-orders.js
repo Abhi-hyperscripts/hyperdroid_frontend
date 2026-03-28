@@ -86,6 +86,7 @@ async function loadPoDetail(poId) {
         currentPo = response.data || response;
         renderDetailHeader();
         renderLineItems();
+        renderVendorPerformanceSection();
     } catch (error) {
         console.error('Failed to load PO detail:', error);
         Toast.error('Failed to load purchase order details');
@@ -253,15 +254,53 @@ function renderDetailHeader() {
         `;
     }
 
+    if (po.status === 'draft' || po.status === 'approved') {
+        actionsHtml += `
+            <button class="btn btn-secondary btn-sm" onclick="openEditPoModal()">
+                Edit
+            </button>
+        `;
+    }
+
     if (po.status !== 'closed' && po.status !== 'cancelled') {
         actionsHtml += `
             <button class="btn btn-secondary btn-sm" onclick="openStatusModal()">
                 Update Status
             </button>
+            <button class="btn btn-sm" onclick="openCancelPoModal()" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);">
+                Cancel PO
+            </button>
+        `;
+    }
+
+    if (po.status === 'draft') {
+        actionsHtml += `
+            <button class="btn btn-sm" onclick="deletePo()" style="background: none; color: #ef4444; border: none; padding: 4px 8px;" title="Delete PO">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
         `;
     }
 
     actionsDiv.innerHTML = actionsHtml;
+
+    // Show cancellation info banner for cancelled POs
+    let cancelBanner = document.getElementById('cancelInfoBanner');
+    if (!cancelBanner) {
+        cancelBanner = document.createElement('div');
+        cancelBanner.id = 'cancelInfoBanner';
+        const metaSection = document.getElementById('metaPoNumber')?.parentElement?.parentElement;
+        if (metaSection) metaSection.parentNode.insertBefore(cancelBanner, metaSection);
+    }
+    if (po.status === 'cancelled' && po.cancelled_reason) {
+        cancelBanner.style.display = '';
+        cancelBanner.style.cssText = 'padding:12px 16px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;margin-bottom:16px;';
+        cancelBanner.innerHTML = `
+            <div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:4px;">Cancelled${po.cancelled_at ? ' on ' + formatDate(po.cancelled_at) : ''}</div>
+            <div style="font-size:13px;color:inherit;">Reason: ${escapeHtml(po.cancelled_reason)}</div>
+        `;
+    } else {
+        cancelBanner.style.display = 'none';
+    }
 
     document.title = `${po.po_number || 'PO'} - Procurement | Ragenaizer`;
 }
@@ -363,11 +402,123 @@ function closeCreatePoModal() {
 
 function openStatusModal() {
     document.getElementById('statusForm').reset();
+
+    // Filter dropdown to only show valid transitions for current status
+    const transitions = {
+        'draft': ['approved'],
+        'approved': ['sent'],
+        'sent': ['acknowledged'],
+        'acknowledged': ['partially_received', 'received'],
+        'partially_received': ['received'],
+        'received': ['closed']
+    };
+    const allowed = transitions[currentPo?.status] || [];
+    const select = document.getElementById('newStatus');
+    Array.from(select.options).forEach(opt => {
+        opt.style.display = allowed.includes(opt.value) ? '' : 'none';
+        opt.disabled = !allowed.includes(opt.value);
+    });
+    // Select first allowed option
+    if (allowed.length > 0) select.value = allowed[0];
+
     openModal('statusModal');
 }
 
 function closeStatusModal() {
     closeModal('statusModal');
+}
+
+function openCancelPoModal() {
+    document.getElementById('cancelPoForm').reset();
+    openModal('cancelPoModal');
+}
+
+function closeCancelPoModal() {
+    closeModal('cancelPoModal');
+}
+
+async function handleCancelPo(event) {
+    event.preventDefault();
+    const reason = document.getElementById('cancelReason').value.trim();
+    if (!reason) { Toast.error('Cancellation reason is required'); return; }
+
+    const submitBtn = document.getElementById('cancelPoSubmitBtn');
+    const spinner = document.getElementById('cancelPoSpinner');
+    submitBtn.disabled = true;
+    if (spinner) spinner.style.display = 'inline-block';
+
+    try {
+        await api.request(`/procurement/purchase-orders/${currentPo.id}/cancel`, {
+            method: 'POST',
+            body: JSON.stringify({ reason })
+        });
+        Toast.success('Purchase order cancelled');
+        closeCancelPoModal();
+        loadPoDetail(currentPo.id);
+    } catch (error) {
+        console.error('Failed to cancel PO:', error);
+        Toast.error(error.message || 'Failed to cancel purchase order');
+    } finally {
+        submitBtn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+    }
+}
+
+// ==================== EDIT & DELETE PO ====================
+
+function openEditPoModal() {
+    if (!currentPo) return;
+    document.getElementById('editPoTitle').value = currentPo.title || '';
+    document.getElementById('editPoDeliveryDate').value = currentPo.delivery_date ? new Date(currentPo.delivery_date).toISOString().split('T')[0] : '';
+    document.getElementById('editPoPaymentTerms').value = currentPo.payment_terms || '';
+    document.getElementById('editPoShippingAddress').value = currentPo.shipping_address || '';
+    document.getElementById('editPoNotes').value = currentPo.notes || '';
+    openModal('editPoModal');
+}
+
+function closeEditPoModal() {
+    closeModal('editPoModal');
+}
+
+async function handleEditPo(event) {
+    event.preventDefault();
+    const submitBtn = document.getElementById('editPoSubmitBtn');
+    submitBtn.disabled = true;
+
+    try {
+        await api.request('/procurement/purchase-orders', {
+            method: 'PUT',
+            body: JSON.stringify({
+                id: currentPo.id,
+                title: document.getElementById('editPoTitle').value.trim() || null,
+                delivery_date: document.getElementById('editPoDeliveryDate').value || null,
+                payment_terms: document.getElementById('editPoPaymentTerms').value.trim() || null,
+                shipping_address: document.getElementById('editPoShippingAddress').value.trim() || null,
+                notes: document.getElementById('editPoNotes').value.trim() || null
+            })
+        });
+        Toast.success('Purchase order updated');
+        closeEditPoModal();
+        loadPoDetail(currentPo.id);
+    } catch (e) {
+        Toast.error(e.message || 'Failed to update purchase order');
+    } finally {
+        submitBtn.disabled = false;
+    }
+}
+
+async function deletePo() {
+    if (!currentPo) return;
+    const confirmed = await showConfirm('Delete this draft purchase order? This cannot be undone.', 'Delete PO', 'danger');
+    if (!confirmed) return;
+
+    try {
+        await api.request(`/procurement/purchase-orders/${currentPo.id}`, { method: 'DELETE' });
+        Toast.success('Purchase order deleted');
+        window.location.href = 'purchase-orders.html';
+    } catch (e) {
+        Toast.error(e.message || 'Failed to delete purchase order');
+    }
 }
 
 // ==================== CRUD Operations ====================
@@ -508,6 +659,375 @@ function getInitials(name) {
         return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
     return parts[0].substring(0, 2).toUpperCase();
+}
+
+// ==================== Vendor Performance ====================
+
+let _currentRating = 0;
+
+function renderVendorPerformanceSection() {
+    const section = document.getElementById('vendorPerformanceSection');
+    if (!currentPo || !currentPo.vendor_id) {
+        if (section) section.style.display = 'none';
+        return;
+    }
+
+    // Show section for approved/sent/acknowledged/received/closed POs
+    const showStatuses = ['approved', 'sent', 'acknowledged', 'partially_received', 'received', 'closed'];
+    if (!showStatuses.includes(currentPo.status)) {
+        if (section) section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+
+    // Render action buttons
+    const btnsDiv = document.getElementById('perfActionButtons');
+    const canRecord = currentPo.status !== 'closed' && currentPo.status !== 'cancelled';
+    btnsDiv.innerHTML = canRecord ? `
+        <button class="btn btn-sm" onclick="openDeliveryModal()" style="background: rgba(59,130,246,0.1); color: var(--brand-primary); border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; padding: 4px 12px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            Record Delivery
+        </button>
+        <button class="btn btn-sm" onclick="openGoodsReceiptModal()" style="background: rgba(16,185,129,0.1); color: var(--color-success); border: 1px solid rgba(16,185,129,0.2); border-radius: 6px; padding: 4px 12px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+            Goods Receipt
+        </button>
+        <button class="btn btn-sm" onclick="openRateQualityModal()" style="background: rgba(245,158,11,0.1); color: var(--color-warning); border: 1px solid rgba(245,158,11,0.2); border-radius: 6px; padding: 4px 12px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Rate Quality
+        </button>
+    ` : '';
+
+    loadVendorPerformanceData();
+}
+
+async function loadVendorPerformanceData() {
+    if (!currentPo || !currentPo.vendor_id) return;
+
+    try {
+        const [perfData, summaryData] = await Promise.allSettled([
+            api.request(`/procurement/vendor-performance/vendor/${currentPo.vendor_id}`, { _skipSpinner: true }),
+            api.request(`/procurement/vendor-performance/vendor/${currentPo.vendor_id}/summary`, { _skipSpinner: true })
+        ]);
+
+        const records = perfData.status === 'fulfilled' ? (perfData.value.data || perfData.value || []) : [];
+        const summary = summaryData.status === 'fulfilled' ? (summaryData.value.data || summaryData.value || null) : null;
+
+        renderPerfSummaryCards(summary, records);
+        renderPerfHistory(records);
+    } catch (error) {
+        console.error('Failed to load vendor performance:', error);
+    }
+}
+
+function renderPerfSummaryCards(summary, records) {
+    const container = document.getElementById('perfSummaryCards');
+
+    // Calculate metrics from records if no summary
+    const deliveryRecords = records.filter(r => r.promised_delivery_days != null && r.actual_delivery_days != null);
+    const qualityRecords = records.filter(r => r.quality_score != null);
+    const receiptRecords = records.filter(r => r.items_ordered != null);
+
+    const avgDeliveryDays = deliveryRecords.length > 0
+        ? (deliveryRecords.reduce((s, r) => s + (r.actual_delivery_days - r.promised_delivery_days), 0) / deliveryRecords.length)
+        : null;
+
+    const avgQuality = summary?.avg_quality_score
+        || (qualityRecords.length > 0 ? qualityRecords.reduce((s, r) => s + r.quality_score, 0) / qualityRecords.length : null);
+
+    const avgRejection = receiptRecords.length > 0
+        ? (receiptRecords.reduce((s, r) => s + (r.items_rejected || 0), 0) / receiptRecords.reduce((s, r) => s + (r.items_ordered || 0), 0) * 100)
+        : null;
+
+    const totalRecords = records.length;
+
+    const cardStyle = `padding: 16px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 10px;`;
+    const labelStyle = `font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;`;
+    const valueStyle = `font-size: 22px; font-weight: 700;`;
+
+    let deliveryColor = 'var(--text-secondary)';
+    let deliveryText = 'No data';
+    if (avgDeliveryDays !== null) {
+        if (avgDeliveryDays <= 0) { deliveryColor = 'var(--color-success)'; deliveryText = avgDeliveryDays === 0 ? 'On time' : `${Math.abs(avgDeliveryDays).toFixed(0)}d early`; }
+        else { deliveryColor = 'var(--color-error)'; deliveryText = `${avgDeliveryDays.toFixed(0)}d late`; }
+    }
+
+    let qualityColor = 'var(--text-secondary)';
+    let qualityText = 'No rating';
+    if (avgQuality !== null) {
+        qualityColor = avgQuality >= 4 ? 'var(--color-success)' : avgQuality >= 3 ? 'var(--color-warning)' : 'var(--color-error)';
+        qualityText = `${avgQuality.toFixed(1)} / 5`;
+    }
+
+    let rejectionColor = 'var(--text-secondary)';
+    let rejectionText = 'No data';
+    if (avgRejection !== null) {
+        rejectionColor = avgRejection <= 2 ? 'var(--color-success)' : avgRejection <= 5 ? 'var(--color-warning)' : 'var(--color-error)';
+        rejectionText = `${avgRejection.toFixed(1)}%`;
+    }
+
+    container.innerHTML = `
+        <div style="${cardStyle}">
+            <div style="${labelStyle}">Delivery</div>
+            <div style="${valueStyle} color: ${deliveryColor};">${deliveryText}</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">${deliveryRecords.length} record${deliveryRecords.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div style="${cardStyle}">
+            <div style="${labelStyle}">Quality Rating</div>
+            <div style="${valueStyle} color: ${qualityColor};">${qualityText}</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">${qualityRecords.length} rating${qualityRecords.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div style="${cardStyle}">
+            <div style="${labelStyle}">Rejection Rate</div>
+            <div style="${valueStyle} color: ${rejectionColor};">${rejectionText}</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">${receiptRecords.length} receipt${receiptRecords.length !== 1 ? 's' : ''}</div>
+        </div>
+        <div style="${cardStyle}">
+            <div style="${labelStyle}">Total Records</div>
+            <div style="${valueStyle} color: var(--text-primary);">${totalRecords}</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">for this vendor</div>
+        </div>
+    `;
+}
+
+function renderPerfHistory(records) {
+    const section = document.getElementById('perfHistorySection');
+    const tbody = document.getElementById('perfHistoryBody');
+    if (!records || records.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    tbody.innerHTML = records.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(r => {
+        let type = 'Record';
+        let details = '-';
+        let score = '-';
+
+        if (r.promised_delivery_days != null) {
+            type = 'Delivery';
+            const diff = (r.actual_delivery_days || 0) - r.promised_delivery_days;
+            details = `Promised: ${r.promised_delivery_days}d, Actual: ${r.actual_delivery_days}d`;
+            score = diff <= 0
+                ? `<span style="color: var(--color-success);">${diff === 0 ? 'On time' : Math.abs(diff) + 'd early'}</span>`
+                : `<span style="color: var(--color-error);">${diff}d late</span>`;
+        } else if (r.items_ordered != null) {
+            type = 'Goods Receipt';
+            const accepted = (r.items_ordered || 0) - (r.items_rejected || 0);
+            details = `Ordered: ${r.items_ordered}, Rejected: ${r.items_rejected || 0}`;
+            const rate = r.items_ordered > 0 ? ((accepted / r.items_ordered) * 100).toFixed(0) : 100;
+            const color = rate >= 98 ? 'var(--color-success)' : rate >= 95 ? 'var(--color-warning)' : 'var(--color-error)';
+            score = `<span style="color: ${color};">${rate}% accepted</span>`;
+        } else if (r.quality_score != null) {
+            type = 'Quality Rating';
+            details = `Score: ${r.quality_score}/5`;
+            const stars = '&#9733;'.repeat(Math.round(r.quality_score)) + '&#9734;'.repeat(5 - Math.round(r.quality_score));
+            score = `<span style="color: var(--color-warning);">${stars}</span>`;
+        }
+
+        const typeBadge = {
+            'Delivery': 'background: rgba(59,130,246,0.1); color: var(--brand-primary);',
+            'Goods Receipt': 'background: rgba(16,185,129,0.1); color: var(--color-success);',
+            'Quality Rating': 'background: rgba(245,158,11,0.1); color: var(--color-warning);'
+        }[type] || 'background: var(--bg-tertiary); color: var(--text-secondary);';
+
+        return `<tr>
+            <td><span style="${typeBadge} padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">${type}</span></td>
+            <td style="color: var(--text-primary); font-size: 13px;">${details}</td>
+            <td class="hide-mobile">${score}</td>
+            <td class="hide-mobile"><span class="crm-cell-secondary">${escapeHtml(r.notes || '-')}</span></td>
+            <td><span class="crm-cell-secondary">${formatDate(r.created_at)}</span></td>
+        </tr>`;
+    }).join('');
+}
+
+// --- Delivery Modal ---
+
+function openDeliveryModal() {
+    document.getElementById('deliveryForm').reset();
+    document.getElementById('deliveryVariance').textContent = '-';
+    document.getElementById('deliveryVariance').style.color = 'var(--color-success)';
+    openModal('deliveryModal');
+}
+
+// Live variance calculation
+document.addEventListener('DOMContentLoaded', () => {
+    const promisedInput = document.getElementById('promisedDays');
+    const actualInput = document.getElementById('actualDays');
+    if (promisedInput && actualInput) {
+        const updateVariance = () => {
+            const promised = parseInt(promisedInput.value) || 0;
+            const actual = parseInt(actualInput.value) || 0;
+            const el = document.getElementById('deliveryVariance');
+            if (!promised || !actual) { el.textContent = '-'; el.style.color = 'var(--text-secondary)'; return; }
+            const diff = actual - promised;
+            if (diff <= 0) {
+                el.textContent = diff === 0 ? 'On time' : `${Math.abs(diff)} day${Math.abs(diff) > 1 ? 's' : ''} early`;
+                el.style.color = 'var(--color-success)';
+            } else {
+                el.textContent = `${diff} day${diff > 1 ? 's' : ''} late`;
+                el.style.color = 'var(--color-error)';
+            }
+        };
+        promisedInput.addEventListener('input', updateVariance);
+        actualInput.addEventListener('input', updateVariance);
+    }
+
+    // Goods receipt acceptance rate calculation
+    const orderedInput = document.getElementById('itemsOrdered');
+    const rejectedInput = document.getElementById('itemsRejected');
+    if (orderedInput && rejectedInput) {
+        const updateRate = () => {
+            const ordered = parseInt(orderedInput.value) || 0;
+            const rejected = parseInt(rejectedInput.value) || 0;
+            const el = document.getElementById('acceptanceRate');
+            if (!ordered) { el.textContent = '-'; el.style.color = 'var(--text-secondary)'; return; }
+            const rate = ((ordered - rejected) / ordered * 100);
+            el.textContent = rate.toFixed(1) + '%';
+            el.style.color = rate >= 98 ? 'var(--color-success)' : rate >= 95 ? 'var(--color-warning)' : 'var(--color-error)';
+        };
+        orderedInput.addEventListener('input', updateRate);
+        rejectedInput.addEventListener('input', updateRate);
+    }
+});
+
+async function handleRecordDelivery(event) {
+    event.preventDefault();
+    const btn = document.getElementById('deliverySubmitBtn');
+    const spinner = document.getElementById('deliverySpinner');
+    btn.disabled = true;
+    if (spinner) spinner.style.display = 'inline-block';
+
+    try {
+        await api.request('/procurement/vendor-performance/delivery', {
+            method: 'POST',
+            body: JSON.stringify({
+                po_id: currentPo.id,
+                vendor_id: currentPo.vendor_id,
+                promised_days: parseInt(document.getElementById('promisedDays').value),
+                actual_days: parseInt(document.getElementById('actualDays').value)
+            })
+        });
+        Toast.success('Delivery recorded');
+        closeModal('deliveryModal');
+        loadVendorPerformanceData();
+    } catch (error) {
+        console.error('Failed to record delivery:', error);
+        Toast.error(error.message || 'Failed to record delivery');
+    } finally {
+        btn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+    }
+}
+
+// --- Goods Receipt Modal ---
+
+function openGoodsReceiptModal() {
+    document.getElementById('goodsReceiptForm').reset();
+    // Auto-fill items ordered from line items count
+    const totalItems = (currentPo.line_items || currentPo.items || []).reduce((s, i) => s + (i.quantity || 0), 0);
+    document.getElementById('itemsOrdered').value = totalItems;
+    document.getElementById('itemsRejected').value = 0;
+    document.getElementById('acceptanceRate').textContent = '100%';
+    document.getElementById('acceptanceRate').style.color = 'var(--color-success)';
+    openModal('goodsReceiptModal');
+}
+
+async function handleRecordGoodsReceipt(event) {
+    event.preventDefault();
+    const btn = document.getElementById('grSubmitBtn');
+    const spinner = document.getElementById('grSpinner');
+    btn.disabled = true;
+    if (spinner) spinner.style.display = 'inline-block';
+
+    try {
+        await api.request('/procurement/vendor-performance/goods-receipt', {
+            method: 'POST',
+            body: JSON.stringify({
+                po_id: currentPo.id,
+                vendor_id: currentPo.vendor_id,
+                items_ordered: parseInt(document.getElementById('itemsOrdered').value),
+                items_rejected: parseInt(document.getElementById('itemsRejected').value) || 0,
+                notes: document.getElementById('grNotes').value || null
+            })
+        });
+        Toast.success('Goods receipt recorded');
+        closeModal('goodsReceiptModal');
+        loadVendorPerformanceData();
+    } catch (error) {
+        console.error('Failed to record goods receipt:', error);
+        Toast.error(error.message || 'Failed to record goods receipt');
+    } finally {
+        btn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+    }
+}
+
+// --- Rate Quality Modal ---
+
+function openRateQualityModal() {
+    document.getElementById('rateQualityForm').reset();
+    _currentRating = 0;
+    document.getElementById('qualityScore').value = 0;
+    updateStarDisplay(0);
+    document.getElementById('ratingLabel').textContent = 'Click a star to rate';
+    openModal('rateQualityModal');
+}
+
+function setRating(stars) {
+    _currentRating = stars;
+    document.getElementById('qualityScore').value = stars;
+    updateStarDisplay(stars);
+    const labels = ['', 'Poor', 'Below Average', 'Average', 'Good', 'Excellent'];
+    document.getElementById('ratingLabel').textContent = `${labels[stars]} (${stars}/5)`;
+}
+
+function updateStarDisplay(rating) {
+    const buttons = document.querySelectorAll('#starRating .star-btn');
+    buttons.forEach((btn, i) => {
+        const svg = btn.querySelector('svg polygon');
+        if (i < rating) {
+            svg.setAttribute('fill', '#f59e0b');
+            svg.setAttribute('stroke', '#f59e0b');
+        } else {
+            svg.setAttribute('fill', 'none');
+            svg.setAttribute('stroke', 'var(--text-secondary)');
+        }
+    });
+}
+
+async function handleRateQuality(event) {
+    event.preventDefault();
+    if (_currentRating === 0) {
+        Toast.error('Please select a rating');
+        return;
+    }
+
+    const btn = document.getElementById('rateSubmitBtn');
+    const spinner = document.getElementById('rateSpinner');
+    btn.disabled = true;
+    if (spinner) spinner.style.display = 'inline-block';
+
+    try {
+        await api.request('/procurement/vendor-performance/rating', {
+            method: 'POST',
+            body: JSON.stringify({
+                vendor_id: currentPo.vendor_id,
+                quality_score: _currentRating,
+                notes: document.getElementById('ratingNotes').value || null
+            })
+        });
+        Toast.success('Quality rating submitted');
+        closeModal('rateQualityModal');
+        loadVendorPerformanceData();
+    } catch (error) {
+        console.error('Failed to submit rating:', error);
+        Toast.error(error.message || 'Failed to submit rating');
+    } finally {
+        btn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+    }
 }
 
 // ==================== Pagination ====================

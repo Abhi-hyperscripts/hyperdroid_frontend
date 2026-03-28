@@ -417,6 +417,15 @@ function toggleSelectAll(catIndex, selectAll) {
     if (body) {
         body.innerHTML = renderCategoryBody(catIndex, items);
     }
+
+    // Update the Select All / Deselect All button in the header
+    const allNowSelected = items.length > 0 && items.every(i => selectedItems.has(i.id));
+    const btn = document.querySelector(`#category-${catIndex} .vc-select-all-btn`);
+    if (btn) {
+        btn.textContent = allNowSelected ? 'Deselect All' : 'Select All';
+        btn.setAttribute('onclick', `event.stopPropagation(); toggleSelectAll(${catIndex}, ${!allNowSelected})`);
+    }
+
     updateSelectedCount();
     updateCategoryCounts();
 }

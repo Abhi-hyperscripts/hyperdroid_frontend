@@ -188,6 +188,11 @@ function renderItemsTable(items) {
                 <td class="hide-mobile"><span class="crm-cell-secondary">${item.vendor_count || 0}</span></td>
                 <td>
                     <div class="crm-actions">
+                        <button class="crm-action-btn" onclick="openItemDetailModal('${item.id}')" title="Details">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
                         <button class="crm-action-btn" onclick="openEditItemModal('${item.id}')" title="Edit">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -455,12 +460,20 @@ function renderCategoryList() {
         return `
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--border-primary);">
                 <span style="color: var(--text-primary); font-weight: 500;">${escapeHtml(name)}</span>
-                <button class="crm-action-btn action-delete" onclick="deleteCategory('${id}', '${escapeHtml(name)}')" title="Delete category">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
-                </button>
+                <div style="display:flex;gap:4px;">
+                    <button class="crm-action-btn" onclick="editCategory('${id}', '${escapeHtml(name)}')" title="Rename">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </button>
+                    <button class="crm-action-btn action-delete" onclick="deleteCategory('${id}', '${escapeHtml(name)}')" title="Delete category">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         `;
     }).join('');
@@ -521,4 +534,292 @@ function getInitials(name) {
         return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
     return parts[0].substring(0, 2).toUpperCase();
+}
+
+// ==================== ITEM DETAIL MODAL ====================
+
+let currentDetailItemId = null;
+
+function openItemDetailModal(itemId) {
+    const item = allItems.find(i => i.id === itemId);
+    if (!item) return;
+    currentDetailItemId = itemId;
+    document.getElementById('itemDetailTitle').textContent = item.item_name || 'Item Details';
+    switchItemDetailTab('vendors');
+    openModal('itemDetailModal');
+}
+
+function switchItemDetailTab(tab) {
+    document.querySelectorAll('.item-detail-tab').forEach(btn => {
+        const isActive = btn.dataset.tab === tab;
+        btn.classList.toggle('active', isActive);
+        btn.style.color = isActive ? 'var(--brand-primary)' : 'var(--text-secondary)';
+        btn.style.borderBottomColor = isActive ? 'var(--brand-primary)' : 'transparent';
+    });
+    document.querySelectorAll('.item-detail-content').forEach(el => el.style.display = 'none');
+    document.getElementById(`tab-${tab}`).style.display = '';
+
+    if (tab === 'vendors') loadItemVendors();
+    if (tab === 'synonyms') loadItemSynonyms();
+    if (tab === 'mappings') loadItemMappings();
+}
+
+// ---- Tab 1: Linked Vendors ----
+
+async function loadItemVendors() {
+    const container = document.getElementById('tab-vendors');
+    container.innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
+    try {
+        const [vendorData, rankingData] = await Promise.all([
+            api.request(`/procurement/master-items/${currentDetailItemId}/vendors`),
+            api.request(`/procurement/vendor-history/item/${currentDetailItemId}/ranking`).catch(() => ({ data: [] }))
+        ]);
+        const vendors = vendorData.data || vendorData || [];
+        const rankings = rankingData.data || rankingData || [];
+
+        let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <span style="font-size:13px;font-weight:600;">Linked Vendors (${vendors.length})</span>
+            <button onclick="showLinkVendorInput()" style="font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid var(--brand-primary);background:none;color:var(--brand-primary);cursor:pointer;">+ Link</button>
+        </div>
+        <div id="linkVendorInputRow" style="display:none;margin-bottom:10px;"></div>`;
+
+        if (vendors.length > 0) {
+            html += `<div style="border:1px solid var(--border-primary);border-radius:6px;overflow:hidden;margin-bottom:16px;">
+                ${vendors.map(v => `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border-primary);">
+                    <div><span style="font-weight:500;">${escapeHtml(v.vendor_name || '-')}</span>
+                    ${v.last_quoted_price ? `<span style="opacity:0.5;font-size:11px;margin-left:8px;">Last: ${parseFloat(v.last_quoted_price).toLocaleString('en-IN')}</span>` : ''}</div>
+                    <button onclick="unlinkVendor('${v.vendor_id}')" style="font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid var(--color-error);background:none;color:var(--color-error);cursor:pointer;">Unlink</button>
+                </div>`).join('')}
+            </div>`;
+        }
+
+        if (rankings.length > 0) {
+            html += `<div style="font-size:13px;font-weight:600;margin-bottom:8px;">Vendor Rankings</div>
+            <div style="border:1px solid var(--border-primary);border-radius:6px;overflow:hidden;">
+                <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                    <thead><tr style="background:var(--bg-tertiary);">
+                        <th style="padding:5px 10px;text-align:left;font-size:11px;color:var(--text-secondary);">Vendor</th>
+                        <th style="padding:5px 10px;text-align:center;font-size:11px;color:var(--text-secondary);">Quoted</th>
+                        <th style="padding:5px 10px;text-align:center;font-size:11px;color:var(--text-secondary);">Won</th>
+                        <th style="padding:5px 10px;text-align:center;font-size:11px;color:var(--text-secondary);">Win %</th>
+                        <th style="padding:5px 10px;text-align:right;font-size:11px;color:var(--text-secondary);">Last Price</th>
+                    </tr></thead>
+                    <tbody>${rankings.map(r => `<tr style="border-top:1px solid var(--border-primary);">
+                        <td style="padding:5px 10px;font-weight:500;">${escapeHtml(r.vendor_name || '-')}</td>
+                        <td style="padding:5px 10px;text-align:center;">${r.times_quoted || 0}</td>
+                        <td style="padding:5px 10px;text-align:center;">${r.times_selected || 0}</td>
+                        <td style="padding:5px 10px;text-align:center;">${r.selection_rate != null ? (r.selection_rate * 100).toFixed(0) + '%' : '-'}</td>
+                        <td style="padding:5px 10px;text-align:right;">${r.last_quoted_price != null ? parseFloat(r.last_quoted_price).toLocaleString('en-IN') : '-'}</td>
+                    </tr>`).join('')}</tbody>
+                </table>
+            </div>`;
+        }
+
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = `<div style="color:var(--color-error);padding:20px;">${e.message || 'Failed to load'}</div>`;
+    }
+}
+
+function showLinkVendorInput() {
+    const row = document.getElementById('linkVendorInputRow');
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    row.innerHTML = `<select id="linkVendorSelect" class="form-control form-control-sm" style="flex:1;"><option value="">Loading...</option></select>
+        <button onclick="linkSelectedVendor()" class="btn btn-primary btn-sm" style="font-size:11px;padding:3px 12px;">Link</button>
+        <button onclick="document.getElementById('linkVendorInputRow').style.display='none'" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;">Cancel</button>`;
+    // Load vendors
+    api.request('/procurement/vendors').then(data => {
+        const vendors = data.data || data || [];
+        const select = document.getElementById('linkVendorSelect');
+        select.innerHTML = '<option value="">Select vendor...</option>' + vendors.map(v => `<option value="${v.id}">${escapeHtml(v.vendor_name)}</option>`).join('');
+    });
+}
+
+async function linkSelectedVendor() {
+    const vendorId = document.getElementById('linkVendorSelect').value;
+    if (!vendorId) { Toast.error('Select a vendor'); return; }
+    try {
+        await api.request(`/procurement/master-items/${currentDetailItemId}/vendors`, {
+            method: 'POST', body: JSON.stringify({ vendor_id: vendorId })
+        });
+        Toast.success('Vendor linked');
+        loadItemVendors();
+    } catch (e) { Toast.error(e.message || 'Failed to link vendor'); }
+}
+
+async function unlinkVendor(vendorId) {
+    const confirmed = await showConfirm('Unlink this vendor from this item?', 'Unlink Vendor', 'danger');
+    if (!confirmed) return;
+    try {
+        await api.request(`/procurement/master-items/${currentDetailItemId}/vendors/${vendorId}`, { method: 'DELETE' });
+        Toast.success('Vendor unlinked');
+        loadItemVendors();
+    } catch (e) { Toast.error(e.message || 'Failed to unlink vendor'); }
+}
+
+// ---- Tab 2: Synonyms ----
+
+async function loadItemSynonyms() {
+    const container = document.getElementById('tab-synonyms');
+    container.innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
+    try {
+        const data = await api.request(`/procurement/item-synonyms?masterItemId=${currentDetailItemId}`);
+        const synonyms = data.data || data || [];
+
+        let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <input type="text" id="newSynonymInput" class="form-control form-control-sm" placeholder="Add synonym..." style="flex:1;max-width:300px;">
+            <button onclick="addSynonym()" class="btn btn-primary btn-sm" style="font-size:11px;padding:3px 12px;">Add</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+            ${synonyms.length > 0 ? synonyms.map(s => `
+                <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:16px;background:var(--bg-tertiary);border:1px solid var(--border-primary);font-size:12px;">
+                    ${escapeHtml(s.synonym || s.name || '')}
+                    <button onclick="deleteSynonym('${s.id}')" style="border:none;background:none;color:var(--color-error);cursor:pointer;font-size:14px;line-height:1;padding:0 2px;">&times;</button>
+                </span>
+            `).join('') : '<span style="opacity:0.4;font-size:12px;">No synonyms yet.</span>'}
+        </div>
+        <div style="border-top:1px solid var(--border-primary);padding-top:12px;">
+            <div style="font-size:12px;font-weight:600;margin-bottom:6px;">Search Synonyms</div>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="synonymSearchInput" class="form-control form-control-sm" placeholder="Search across all items..." style="flex:1;max-width:300px;">
+                <button onclick="searchSynonyms()" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 12px;">Search</button>
+            </div>
+            <div id="synonymSearchResults" style="margin-top:8px;font-size:12px;"></div>
+        </div>`;
+
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = `<div style="color:var(--color-error);padding:20px;">${e.message || 'Failed to load'}</div>`;
+    }
+}
+
+async function addSynonym() {
+    const input = document.getElementById('newSynonymInput');
+    const synonym = input.value.trim();
+    if (!synonym) return;
+    try {
+        await api.request('/procurement/item-synonyms', {
+            method: 'POST', body: JSON.stringify({ master_item_id: currentDetailItemId, synonym })
+        });
+        Toast.success('Synonym added');
+        loadItemSynonyms();
+    } catch (e) { Toast.error(e.message || 'Failed to add synonym'); }
+}
+
+async function deleteSynonym(id) {
+    try {
+        await api.request(`/procurement/item-synonyms/${id}`, { method: 'DELETE' });
+        Toast.success('Synonym removed');
+        loadItemSynonyms();
+    } catch (e) { Toast.error(e.message || 'Failed to delete synonym'); }
+}
+
+async function searchSynonyms() {
+    const query = document.getElementById('synonymSearchInput').value.trim();
+    if (!query) return;
+    const results = document.getElementById('synonymSearchResults');
+    results.innerHTML = '<span style="opacity:0.5;">Searching...</span>';
+    try {
+        const data = await api.request('/procurement/item-synonyms/search', {
+            method: 'POST', body: JSON.stringify({ query })
+        });
+        const items = data.data || data || [];
+        if (items.length === 0) { results.innerHTML = '<span style="opacity:0.4;">No matches found.</span>'; return; }
+        results.innerHTML = items.map(s => `<div style="padding:3px 0;">"${escapeHtml(s.synonym || '')}" → <strong>${escapeHtml(s.item_name || s.master_item_name || '?')}</strong></div>`).join('');
+    } catch (e) { results.innerHTML = `<span style="color:var(--color-error);">${e.message || 'Search failed'}</span>`; }
+}
+
+// ---- Tab 3: Mappings ----
+
+async function loadItemMappings() {
+    const container = document.getElementById('tab-mappings');
+    container.innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div>';
+    try {
+        const data = await api.request(`/procurement/item-mappings?masterItemId=${currentDetailItemId}`);
+        const mappings = data.data || data || [];
+
+        let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <input type="text" id="newMappingInput" class="form-control form-control-sm" placeholder="Raw name to map..." style="flex:1;max-width:300px;">
+            <button onclick="addMapping()" class="btn btn-primary btn-sm" style="font-size:11px;padding:3px 12px;">Add</button>
+        </div>`;
+
+        if (mappings.length > 0) {
+            html += `<div style="border:1px solid var(--border-primary);border-radius:6px;overflow:hidden;margin-bottom:16px;">
+                ${mappings.map(m => `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-bottom:1px solid var(--border-primary);font-size:12px;">
+                    <span>"${escapeHtml(m.raw_name || '')}"</span>
+                    <button onclick="deleteMapping('${m.id}')" style="border:none;background:none;color:var(--color-error);cursor:pointer;font-size:14px;">&times;</button>
+                </div>`).join('')}
+            </div>`;
+        } else {
+            html += '<div style="opacity:0.4;font-size:12px;margin-bottom:16px;">No mappings yet.</div>';
+        }
+
+        html += `<div style="border-top:1px solid var(--border-primary);padding-top:12px;">
+            <div style="font-size:12px;font-weight:600;margin-bottom:6px;">Test Resolve</div>
+            <div style="display:flex;gap:8px;">
+                <input type="text" id="resolveInput" class="form-control form-control-sm" placeholder="Enter raw item name..." style="flex:1;max-width:300px;">
+                <button onclick="testResolve()" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 12px;">Resolve</button>
+            </div>
+            <div id="resolveResult" style="margin-top:8px;font-size:12px;"></div>
+        </div>`;
+
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = `<div style="color:var(--color-error);padding:20px;">${e.message || 'Failed to load'}</div>`;
+    }
+}
+
+async function addMapping() {
+    const input = document.getElementById('newMappingInput');
+    const rawName = input.value.trim();
+    if (!rawName) return;
+    try {
+        await api.request('/procurement/item-mappings', {
+            method: 'POST', body: JSON.stringify({ raw_name: rawName, master_item_id: currentDetailItemId })
+        });
+        Toast.success('Mapping added');
+        loadItemMappings();
+    } catch (e) { Toast.error(e.message || 'Failed to add mapping'); }
+}
+
+async function deleteMapping(id) {
+    try {
+        await api.request(`/procurement/item-mappings/${id}`, { method: 'DELETE' });
+        Toast.success('Mapping removed');
+        loadItemMappings();
+    } catch (e) { Toast.error(e.message || 'Failed to delete mapping'); }
+}
+
+async function testResolve() {
+    const rawName = document.getElementById('resolveInput').value.trim();
+    if (!rawName) return;
+    const result = document.getElementById('resolveResult');
+    result.innerHTML = '<span style="opacity:0.5;">Resolving...</span>';
+    try {
+        const data = await api.request('/procurement/item-mappings/resolve', {
+            method: 'POST', body: JSON.stringify({ raw_name: rawName })
+        });
+        const r = data.data || data;
+        if (r.resolved && r.master_item) {
+            result.innerHTML = `<span style="color:var(--color-success);">Resolved → <strong>${escapeHtml(r.master_item.item_name || '')}</strong></span>`;
+        } else {
+            result.innerHTML = `<span style="color:var(--color-warning);">Not resolved — no mapping found for "${escapeHtml(rawName)}"</span>`;
+        }
+    } catch (e) { result.innerHTML = `<span style="color:var(--color-error);">${e.message || 'Resolve failed'}</span>`; }
+}
+
+// ==================== CATEGORY EDIT ====================
+
+async function editCategory(id, currentName) {
+    const newName = prompt('Rename category:', currentName);
+    if (!newName || newName.trim() === currentName) return;
+    try {
+        await api.request('/procurement/item-categories', {
+            method: 'PUT', body: JSON.stringify({ id, category_name: newName.trim() })
+        });
+        Toast.success('Category renamed');
+        loadCategories();
+        renderCategoryList();
+    } catch (e) { Toast.error(e.message || 'Failed to rename category'); }
 }

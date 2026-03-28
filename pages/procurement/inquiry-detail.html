@@ -24,6 +24,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard crm-page">
@@ -68,7 +69,7 @@
         </div>
 
         <!-- Metadata Row -->
-        <div id="metadataRow" style="display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 24px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px;">
+        <div id="metadataRow" class="glass-card" style="display: flex; justify-content: space-evenly; flex-wrap: wrap; margin-bottom: 24px; padding: 16px 24px; gap: 16px 0;">
             <div>
                 <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Inquiry Number</div>
                 <div style="font-size: 14px; color: var(--text-primary); font-weight: 600;" id="metaInquiryNumber">-</div>
@@ -92,7 +93,7 @@
         </div>
 
         <!-- Description -->
-        <div id="descriptionSection" style="display: none; margin-bottom: 24px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 12px;">
+        <div id="descriptionSection" class="glass-card" style="display: none; margin-bottom: 24px; padding: 16px;">
             <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Description</div>
             <div style="font-size: 14px; color: var(--text-primary); line-height: 1.6;" id="inquiryDescription">-</div>
         </div>
@@ -100,13 +101,16 @@
         <!-- Items Section -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h3 style="color: var(--text-primary); font-size: 1rem; font-weight: 600; margin: 0;">Items</h3>
-            <button class="btn btn-primary btn-sm" onclick="openAddItemModal()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Add Item
-            </button>
+            <div id="itemActionButtons" style="display:none;gap:6px;">
+                <button class="btn btn-secondary btn-sm" onclick="openBulkImportModal()">Bulk Add</button>
+                <button class="btn btn-primary btn-sm" onclick="openAddItemModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Add Item
+                </button>
+            </div>
         </div>
 
         <div class="crm-table-wrapper data-table-container">
@@ -150,9 +154,12 @@
                 <div class="modal-body">
                     <form id="addItemForm" onsubmit="handleAddItemSubmit(event)">
                         <input type="hidden" id="editItemId" value="">
+                        <input type="hidden" id="addItemMasterItemId" value="">
                         <div class="mb-3">
-                            <label for="addItemName" class="form-label">Item Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="addItemName" name="item_name" required>
+                            <label for="addItemName" class="form-label">Select Item from Catalog <span class="text-danger">*</span></label>
+                            <select class="form-select" id="addItemName" name="item_name" required>
+                                <option value="">Choose an item...</option>
+                            </select>
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6">
@@ -195,6 +202,103 @@
         </div>
     </div>
 
+    <!-- Edit Inquiry Modal -->
+    <div class="modal" id="editInquiryModal">
+        <div class="modal-backdrop" onclick="closeModal('editInquiryModal')"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Inquiry</h5>
+                    <button class="close-btn" onclick="closeModal('editInquiryModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="editInquiryForm" onsubmit="handleEditInquiry(event)">
+                        <div class="mb-3">
+                            <label for="editInqTitle" class="form-label">Title *</label>
+                            <input type="text" class="form-control" id="editInqTitle" required>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editInqClient" class="form-label">Client</label>
+                                <input type="text" class="form-control" id="editInqClient">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editInqProject" class="form-label">Project</label>
+                                <input type="text" class="form-control" id="editInqProject">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editInqPriority" class="form-label">Priority</label>
+                                <select class="form-control" id="editInqPriority">
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                    <option value="urgent">Urgent</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editInqDueDate" class="form-label">Due Date</label>
+                                <input type="date" class="form-control" id="editInqDueDate">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editInqDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editInqDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editInquiryModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="editInquiryForm" id="editInqSubmitBtn">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Add Items Modal (Two-Pane Picker) -->
+    <div class="modal" id="bulkImportModal">
+        <div class="modal-backdrop" onclick="closeModal('bulkImportModal')"></div>
+        <div class="modal-dialog" style="max-width:900px;width:95vw;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Bulk Add Items from Catalog</h5>
+                    <button class="close-btn" onclick="closeModal('bulkImportModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body" style="padding:0;">
+                    <!-- Search + Category Filter -->
+                    <div style="display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border-primary);">
+                        <input type="text" class="form-control form-control-sm" id="bulkSearchInput" placeholder="Search items..." style="flex:1;" oninput="filterBulkItems()">
+                        <select class="form-control form-control-sm" id="bulkCategoryFilter" style="width:180px;" onchange="filterBulkItems()">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                    <!-- Two Panes -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;min-height:400px;max-height:60vh;">
+                        <!-- Left: Available Items -->
+                        <div style="border-right:1px solid var(--border-primary);overflow-y:auto;padding:8px;">
+                            <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);padding:4px 8px;margin-bottom:4px;">Available Items</div>
+                            <div id="bulkAvailableItems"></div>
+                        </div>
+                        <!-- Right: Selected Items with Quantities -->
+                        <div style="overflow-y:auto;padding:8px;">
+                            <div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--text-secondary);padding:4px 8px;margin-bottom:4px;">Selected Items (<span id="bulkSelectedCount">0</span>)</div>
+                            <div id="bulkSelectedItems" style="font-size:12px;color:var(--text-secondary);padding:8px;">Click items on the left to add them</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('bulkImportModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="bulkImportBtn" onclick="handleBulkImport()">Add Selected Items</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
@@ -202,6 +306,7 @@
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/procurement/inquiry-detail.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

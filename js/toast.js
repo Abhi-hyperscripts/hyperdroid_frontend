@@ -652,6 +652,7 @@ const Confirm = (function() {
             .confirm-btn-ok {
                 border: none;
                 color: var(--text-inverse, white);
+                background: linear-gradient(135deg, var(--brand-primary, #3b82f6), var(--brand-primary-hover, #2563eb));
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             }
 
@@ -690,6 +691,14 @@ const Confirm = (function() {
 
             .confirm-btn-ok.success:hover {
                 box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+            }
+
+            .confirm-btn-ok.primary {
+                background: linear-gradient(135deg, var(--brand-primary, #3b82f6), var(--brand-primary-hover, #2563eb));
+            }
+
+            .confirm-btn-ok.primary:hover {
+                box-shadow: 0 6px 16px rgba(var(--brand-primary-rgb, 59, 130, 246), 0.4);
             }
 
             /* Loading spinner */

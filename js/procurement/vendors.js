@@ -121,6 +121,11 @@ function renderVendorsTable(vendors) {
             <td class="hide-mobile"><span class="crm-cell-secondary">${vendor.item_count || 0}</span></td>
             <td>
                 <div class="crm-actions">
+                    <button class="crm-action-btn" onclick="openVendorIntelligence('${vendor.id}')" title="Intelligence">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                    </button>
                     <button class="crm-action-btn" onclick="openEditVendorModal('${vendor.id}')" title="Edit">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -247,6 +252,7 @@ function openNewVendorModal() {
     submitBtn.innerHTML = '<span class="btn-spinner" id="vendorSubmitSpinner" style="display:none;"></span> Add Vendor';
     document.getElementById('vendorForm').reset();
     document.getElementById('vendorId').value = '';
+    document.getElementById('contactsSection').style.display = 'none';
     openModal('vendorModal');
 }
 
@@ -277,12 +283,107 @@ function openEditVendorModal(id) {
     document.getElementById('vendorPanNumber').value = vendor.pan_number || '';
     document.getElementById('vendorPaymentTerms').value = vendor.payment_terms || '';
     document.getElementById('vendorNotes').value = vendor.notes || '';
+    document.getElementById('contactsSection').style.display = '';
+    document.getElementById('catalogLinksSection').style.display = '';
+    loadContacts(id);
+    loadCatalogLinks(id);
     openModal('vendorModal');
 }
 
 function closeVendorModal() {
     closeModal('vendorModal');
     currentEditVendorId = null;
+    document.getElementById('contactsSection').style.display = 'none';
+    document.getElementById('catalogLinksSection').style.display = 'none';
+}
+
+// ==================== VENDOR CONTACTS ====================
+
+let vendorContacts = [];
+
+async function loadContacts(vendorId) {
+    const list = document.getElementById('contactsList');
+    list.innerHTML = '<span style="opacity:0.5;">Loading...</span>';
+    try {
+        const data = await api.request(`/procurement/vendor-contacts?vendorId=${vendorId}`, { _skipSpinner: true });
+        vendorContacts = data.data || data || [];
+        renderContacts();
+    } catch (e) {
+        list.innerHTML = '<span style="opacity:0.5;">Failed to load contacts</span>';
+    }
+}
+
+function renderContacts() {
+    const list = document.getElementById('contactsList');
+    if (vendorContacts.length === 0) {
+        list.innerHTML = '<span style="opacity:0.5;">No contacts yet</span>';
+        return;
+    }
+    list.innerHTML = vendorContacts.map(c => `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid color-mix(in srgb, currentColor 6%, transparent);">
+            <div style="flex:1;min-width:0;">
+                <span style="font-weight:600;">${escapeHtml(c.contact_name)}</span>
+                ${c.is_primary ? '<span style="font-size:9px;background:rgba(16,185,129,0.15);color:var(--color-success);padding:1px 5px;border-radius:8px;margin-left:4px;">Primary</span>' : ''}
+                ${c.designation ? `<span style="opacity:0.5;margin-left:4px;">${escapeHtml(c.designation)}</span>` : ''}
+            </div>
+            <span style="opacity:0.6;">${escapeHtml(c.email || '')}</span>
+            <span style="opacity:0.6;">${escapeHtml(c.phone || '')}</span>
+            <button type="button" onclick="deleteContact('${c.id}')" style="background:none;border:none;color:var(--color-danger);cursor:pointer;padding:2px 4px;" title="Delete">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+        </div>
+    `).join('');
+}
+
+function showAddContactForm() {
+    document.getElementById('addContactForm').style.display = '';
+    document.getElementById('newContactName').value = '';
+    document.getElementById('newContactEmail').value = '';
+    document.getElementById('newContactPhone').value = '';
+    document.getElementById('newContactDesignation').value = '';
+    document.getElementById('newContactPrimary').checked = false;
+    document.getElementById('newContactName').focus();
+}
+
+function hideAddContactForm() {
+    document.getElementById('addContactForm').style.display = 'none';
+}
+
+async function saveNewContact() {
+    const name = document.getElementById('newContactName').value.trim();
+    if (!name) { Toast.error('Contact name is required'); return; }
+
+    try {
+        await api.request('/procurement/vendor-contacts', {
+            method: 'POST',
+            body: JSON.stringify({
+                vendor_id: currentEditVendorId,
+                contact_name: name,
+                email: document.getElementById('newContactEmail').value.trim() || null,
+                phone: document.getElementById('newContactPhone').value.trim() || null,
+                designation: document.getElementById('newContactDesignation').value.trim() || null,
+                is_primary: document.getElementById('newContactPrimary').checked
+            })
+        });
+        Toast.success('Contact added');
+        hideAddContactForm();
+        loadContacts(currentEditVendorId);
+    } catch (e) {
+        Toast.error(e.message || 'Failed to add contact');
+    }
+}
+
+async function deleteContact(contactId) {
+    const confirmed = await showConfirm('Delete this contact?', 'Delete Contact', 'danger');
+    if (!confirmed) return;
+
+    try {
+        await api.request(`/procurement/vendor-contacts/${contactId}`, { method: 'DELETE' });
+        Toast.success('Contact deleted');
+        loadContacts(currentEditVendorId);
+    } catch (e) {
+        Toast.error(e.message || 'Failed to delete contact');
+    }
 }
 
 // ==================== CRUD Operations ====================
@@ -740,4 +841,201 @@ async function handleSaveVendorItems() {
         saveBtn.disabled = false;
         if (spinner) spinner.style.display = 'none';
     }
+}
+
+// ==================== VENDOR CATALOG LINKS ====================
+
+async function loadCatalogLinks(vendorId) {
+    const container = document.getElementById('catalogLinksList');
+    container.innerHTML = '<span style="opacity:0.5;">Loading...</span>';
+    try {
+        const data = await api.request(`/procurement/vendor-catalog/links/${vendorId}`, { _skipSpinner: true });
+        const links = data.data || data || [];
+        if (links.length === 0) {
+            container.innerHTML = '<span style="opacity:0.4;">No catalog links generated yet.</span>';
+            return;
+        }
+        container.innerHTML = links.map(link => `
+            <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(128,128,128,0.1);">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:500;">${escapeHtml(link.status || 'active')}</div>
+                    <div style="opacity:0.5;font-size:11px;">
+                        Expires: ${link.expires_at ? new Date(link.expires_at).toLocaleDateString() : 'Never'}
+                        | Accessed: ${link.access_count || 0}x
+                        ${link.submitted_at ? ' | Submitted' : ''}
+                    </div>
+                </div>
+                <button onclick="revokeCatalogLink('${link.id}')" style="font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid var(--color-error);background:none;color:var(--color-error);cursor:pointer;" title="Revoke">Revoke</button>
+            </div>
+        `).join('');
+    } catch (e) {
+        container.innerHTML = '<span style="opacity:0.4;">Failed to load links.</span>';
+    }
+}
+
+async function revokeCatalogLink(tokenId) {
+    const confirmed = await showConfirm('Revoke this catalog link? The vendor will no longer be able to access it.', 'Revoke Link', 'danger');
+    if (!confirmed) return;
+    try {
+        await api.request(`/procurement/vendor-catalog/links/${tokenId}`, { method: 'DELETE' });
+        Toast.success('Catalog link revoked');
+        if (currentEditVendorId) loadCatalogLinks(currentEditVendorId);
+    } catch (e) {
+        Toast.error(e.message || 'Failed to revoke link');
+    }
+}
+
+// ==================== VENDOR INTELLIGENCE ====================
+
+async function openVendorIntelligence(vendorId) {
+    const modal = document.getElementById('vendorIntelModal');
+    const body = document.getElementById('intelBody');
+    body.innerHTML = '<div style="text-align:center;padding:40px;opacity:0.5;">Loading intelligence...</div>';
+    openModal('vendorIntelModal');
+
+    try {
+        const data = await api.request(`/procurement/vendor-intelligence/vendor/${vendorId}`);
+        const profile = data.data || data;
+        renderIntelligence(profile);
+    } catch (e) {
+        body.innerHTML = `<div style="text-align:center;padding:40px;color:var(--color-error);">Failed to load intelligence: ${escapeHtml(e.message || 'Unknown error')}</div>`;
+    }
+}
+
+function closeIntelModal() {
+    closeModal('vendorIntelModal');
+}
+
+function renderIntelligence(profile) {
+    const body = document.getElementById('intelBody');
+    const vendor = profile.vendor || {};
+    const perf = profile.performance_summary || {};
+    const items = profile.item_history || [];
+    const topItems = profile.top_items || [];
+    const decisions = profile.recent_decisions || [];
+
+    // Title
+    document.getElementById('intelVendorName').textContent = vendor.vendor_name || 'Vendor';
+
+    let html = '';
+
+    // Performance Summary Cards
+    html += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px;">
+        ${intelStatCard('Quality', formatScore(perf.avg_quality_score), 'var(--color-success)')}
+        ${intelStatCard('Delivery Var.', perf.avg_delivery_variance != null ? (perf.avg_delivery_variance > 0 ? '+' : '') + perf.avg_delivery_variance.toFixed(1) + 'd' : '-', perf.avg_delivery_variance > 0 ? 'var(--color-warning)' : 'var(--color-success)')}
+        ${intelStatCard('Total Orders', perf.total_orders || 0, 'var(--brand-primary)')}
+        ${intelStatCard('Times Selected', perf.times_selected || 0, 'var(--brand-primary)')}
+        ${intelStatCard('Avg Price Rank', perf.avg_price_rank ? '#' + perf.avg_price_rank.toFixed(1) : '-', 'var(--text-secondary)')}
+    </div>`;
+
+    // Top Items (ranked)
+    if (topItems.length > 0) {
+        html += `<div style="margin-bottom:20px;">
+            <h4 style="font-size:13px;font-weight:700;margin-bottom:8px;">Top Items by Selection Rate</h4>
+            <div style="border:1px solid var(--border-primary);border-radius:8px;overflow:hidden;">
+                <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                    <thead><tr style="background:var(--bg-tertiary);">
+                        <th style="padding:6px 10px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Item</th>
+                        <th style="padding:6px 10px;text-align:center;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Quoted</th>
+                        <th style="padding:6px 10px;text-align:center;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Won</th>
+                        <th style="padding:6px 10px;text-align:center;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Win Rate</th>
+                        <th style="padding:6px 10px;text-align:right;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Last Price</th>
+                    </tr></thead>
+                    <tbody>
+                        ${topItems.slice(0, 10).map(item => `<tr style="border-top:1px solid var(--border-primary);">
+                            <td style="padding:6px 10px;font-weight:500;">${escapeHtml(item.vendor_name || item.item_name || '-')}</td>
+                            <td style="padding:6px 10px;text-align:center;">${item.times_quoted || 0}</td>
+                            <td style="padding:6px 10px;text-align:center;">${item.times_selected || 0}</td>
+                            <td style="padding:6px 10px;text-align:center;">
+                                <span style="padding:1px 6px;border-radius:10px;font-size:11px;font-weight:600;background:${getWinRateColor(item.selection_rate)};color:var(--text-inverse);">
+                                    ${item.selection_rate != null ? (item.selection_rate * 100).toFixed(0) + '%' : '-'}
+                                </span>
+                            </td>
+                            <td style="padding:6px 10px;text-align:right;">${item.last_quoted_price != null ? formatCurrency(item.last_quoted_price) : '-'}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+    }
+
+    // Recent Item History
+    if (items.length > 0) {
+        html += `<div style="margin-bottom:20px;">
+            <h4 style="font-size:13px;font-weight:700;margin-bottom:8px;">Recent Quote History</h4>
+            <div style="border:1px solid var(--border-primary);border-radius:8px;overflow:hidden;max-height:250px;overflow-y:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                    <thead style="position:sticky;top:0;"><tr style="background:var(--bg-tertiary);">
+                        <th style="padding:6px 10px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Item</th>
+                        <th style="padding:6px 10px;text-align:right;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Quoted Price</th>
+                        <th style="padding:6px 10px;text-align:center;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Selected</th>
+                        <th style="padding:6px 10px;text-align:right;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Date</th>
+                    </tr></thead>
+                    <tbody>
+                        ${items.slice(0, 20).map(h => `<tr style="border-top:1px solid var(--border-primary);">
+                            <td style="padding:5px 10px;">${escapeHtml(h.item_name || '-')}</td>
+                            <td style="padding:5px 10px;text-align:right;">${h.quoted_price != null ? formatCurrency(h.quoted_price) : '-'}</td>
+                            <td style="padding:5px 10px;text-align:center;">${h.was_selected ? '<span style="color:var(--color-success);font-weight:600;">Yes</span>' : '<span style="opacity:0.4;">No</span>'}</td>
+                            <td style="padding:5px 10px;text-align:right;opacity:0.6;">${formatIntelDate(h.created_at)}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+    }
+
+    // Recent Decisions
+    if (decisions.length > 0) {
+        html += `<div>
+            <h4 style="font-size:13px;font-weight:700;margin-bottom:8px;">Recent Decisions</h4>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                ${decisions.slice(0, 10).map(d => `
+                    <div style="padding:8px 12px;border:1px solid var(--border-primary);border-radius:6px;font-size:12px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-weight:600;">${escapeHtml(d.decision_type || 'manual').replace(/_/g, ' ')}</span>
+                            <span style="opacity:0.5;font-size:11px;">${formatIntelDate(d.created_at)}</span>
+                        </div>
+                        ${d.reason ? `<div style="margin-top:3px;opacity:0.7;">${escapeHtml(d.reason)}</div>` : ''}
+                        ${d.decided_by_name ? `<div style="margin-top:2px;opacity:0.4;font-size:11px;">by ${escapeHtml(d.decided_by_name)}</div>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        </div>`;
+    }
+
+    if (!topItems.length && !items.length && !decisions.length) {
+        html += '<div style="text-align:center;padding:30px;opacity:0.5;">No intelligence data available for this vendor yet.</div>';
+    }
+
+    body.innerHTML = html;
+}
+
+function intelStatCard(label, value, color) {
+    return `<div style="padding:12px 14px;border:1px solid var(--border-primary);border-radius:8px;background:var(--bg-secondary);">
+        <div style="font-size:18px;font-weight:700;color:${color};">${value}</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${label}</div>
+    </div>`;
+}
+
+function formatScore(score) {
+    if (score == null || isNaN(score)) return '-';
+    return parseFloat(score).toFixed(1);
+}
+
+function getWinRateColor(rate) {
+    if (rate == null) return 'var(--text-secondary)';
+    if (rate >= 0.7) return 'var(--color-success)';
+    if (rate >= 0.4) return 'var(--color-warning)';
+    return 'var(--color-error)';
+}
+
+function formatCurrency(amount) {
+    if (amount == null) return '-';
+    return parseFloat(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatIntelDate(dateStr) {
+    if (!dateStr) return '-';
+    try { return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+    catch { return '-'; }
 }

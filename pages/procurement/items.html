@@ -232,6 +232,35 @@
         </div>
     </div>
 
+    <!-- Item Detail Modal -->
+    <div class="modal" id="itemDetailModal">
+        <div class="modal-backdrop" onclick="closeModal('itemDetailModal')"></div>
+        <div class="modal-dialog" style="max-width:820px;width:95vw;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="itemDetailTitle">Item Details</h5>
+                    <button class="close-btn" onclick="closeModal('itemDetailModal')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body" style="padding:0;">
+                    <!-- Tabs -->
+                    <div style="display:flex;border-bottom:2px solid var(--border-primary);padding:0 16px;">
+                        <button class="item-detail-tab active" data-tab="vendors" onclick="switchItemDetailTab('vendors')" style="padding:10px 16px;font-size:13px;font-weight:600;border:none;background:none;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;">Linked Vendors</button>
+                        <button class="item-detail-tab" data-tab="synonyms" onclick="switchItemDetailTab('synonyms')" style="padding:10px 16px;font-size:13px;font-weight:600;border:none;background:none;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;">Synonyms</button>
+                        <button class="item-detail-tab" data-tab="mappings" onclick="switchItemDetailTab('mappings')" style="padding:10px 16px;font-size:13px;font-weight:600;border:none;background:none;color:var(--text-secondary);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;">Mappings</button>
+                    </div>
+                    <!-- Tab Content -->
+                    <div style="padding:16px;">
+                        <div id="tab-vendors" class="item-detail-content"></div>
+                        <div id="tab-synonyms" class="item-detail-content" style="display:none;"></div>
+                        <div id="tab-mappings" class="item-detail-content" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');

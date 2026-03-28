@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Settings - Procurement | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <style>
+        .settings-tabs { display: flex; gap: 2px; margin-bottom: 24px; border-bottom: 2px solid color-mix(in srgb, currentColor 10%, transparent); }
+        .settings-tab { padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: none; color: inherit; opacity: 0.5; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+        .settings-tab.active { opacity: 1; border-bottom-color: var(--brand-primary); color: var(--brand-primary); }
+        .settings-tab:hover { opacity: 0.8; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Weight sliders */
+        .weight-row { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
+        .weight-label { width: 100px; font-weight: 600; font-size: 13px; }
+        .weight-slider { flex: 1; -webkit-appearance: none; height: 8px; border-radius: 4px; outline: none; cursor: pointer; }
+        .weight-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+        .weight-pct { width: 60px; text-align: right; font-weight: 700; font-size: 16px; }
+        .weight-slider.price { background: linear-gradient(to right, var(--color-success) var(--val), color-mix(in srgb, currentColor 10%, transparent) var(--val)); }
+        .weight-slider.price::-webkit-slider-thumb { background: var(--color-success); }
+        .weight-slider.quality { background: linear-gradient(to right, var(--color-info) var(--val), color-mix(in srgb, currentColor 10%, transparent) var(--val)); }
+        .weight-slider.quality::-webkit-slider-thumb { background: var(--color-info); }
+        .weight-slider.delivery { background: linear-gradient(to right, var(--color-warning) var(--val), color-mix(in srgb, currentColor 10%, transparent) var(--val)); }
+        .weight-slider.delivery::-webkit-slider-thumb { background: var(--color-warning); }
+        .weight-total { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding: 16px 0; font-weight: 700; font-size: 14px; }
+        .weight-total-val { font-size: 18px; }
+        .weight-total-val.ok { color: var(--color-success); }
+        .weight-total-val.bad { color: var(--color-danger); }
+
+        /* Memory type badges */
+        .mem-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .mem-badge.preference { background: rgba(16,185,129,0.15); color: var(--color-success); }
+        .mem-badge.rejection { background: rgba(239,68,68,0.15); color: var(--color-danger); }
+        .mem-badge.pricing { background: rgba(59,130,246,0.15); color: var(--color-info); }
+        .mem-badge.pattern { background: rgba(139,92,246,0.15); color: var(--color-purple); }
+
+        /* Filter pills */
+        .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+        .filter-pill { padding: 5px 14px; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid color-mix(in srgb, currentColor 15%, transparent); background: none; color: inherit; opacity: 0.6; transition: all 0.2s; }
+        .filter-pill.active { opacity: 1; background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+        .filter-pill:hover { opacity: 0.9; }
+
+        /* Memory cards */
+        .mem-card { padding: 14px 16px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); display: flex; align-items: flex-start; gap: 12px; }
+        .mem-card:last-child { border-bottom: none; }
+        .mem-card-body { flex: 1; min-width: 0; }
+        .mem-card-meta { font-size: 11px; opacity: 0.5; margin-top: 4px; }
+        .mem-card-actions { flex-shrink: 0; }
+    </style>
+</head>
+<body class="dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Header -->
+        <div class="crm-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Procurement</a>
+                    <span class="separator">/</span>
+                    <span class="current">Settings</span>
+                </nav>
+                <h1>Settings</h1>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="settings-tabs">
+            <button class="settings-tab active" onclick="switchTab('weights')">Scoring Weights</button>
+            <button class="settings-tab" onclick="switchTab('memory')">AI Memory</button>
+        </div>
+
+        <!-- Tab 1: Scoring Weights -->
+        <div id="tab-weights" class="tab-content active">
+            <div class="glass-card" style="padding: 24px; max-width: 640px;">
+                <h3 style="margin: 0 0 4px 0; font-size: 15px;">Vendor Scoring Weights</h3>
+                <p style="font-size: 12px; opacity: 0.6; margin: 0 0 20px 0;">Adjust how price, quality, and delivery are weighted when ranking vendors. Total must equal 100%.</p>
+
+                <div class="weight-row">
+                    <span class="weight-label" style="color: var(--color-success);">Price</span>
+                    <input type="range" id="weightPrice" class="weight-slider price" min="0" max="100" value="50" oninput="onWeightChange('price')">
+                    <span class="weight-pct" id="pctPrice" style="color: var(--color-success);">50%</span>
+                </div>
+                <div class="weight-row">
+                    <span class="weight-label" style="color: var(--color-info);">Quality</span>
+                    <input type="range" id="weightQuality" class="weight-slider quality" min="0" max="100" value="30" oninput="onWeightChange('quality')">
+                    <span class="weight-pct" id="pctQuality" style="color: var(--color-info);">30%</span>
+                </div>
+                <div class="weight-row" style="border-bottom: none;">
+                    <span class="weight-label" style="color: var(--color-warning);">Delivery</span>
+                    <input type="range" id="weightDelivery" class="weight-slider delivery" min="0" max="100" value="20" oninput="onWeightChange('delivery')">
+                    <span class="weight-pct" id="pctDelivery" style="color: var(--color-warning);">20%</span>
+                </div>
+
+                <div class="weight-total">
+                    <span>Total:</span>
+                    <span class="weight-total-val ok" id="weightTotal">100%</span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+                    <button class="btn btn-primary btn-sm" onclick="saveWeights()" id="saveWeightsBtn">Save Weights</button>
+                    <span id="weightsLastUpdated" style="font-size: 11px; opacity: 0.5;"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: AI Memory -->
+        <div id="tab-memory" class="tab-content">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                <div class="filter-pills">
+                    <button class="filter-pill active" onclick="filterMemories('all')">All</button>
+                    <button class="filter-pill" onclick="filterMemories('preference')">Preferences</button>
+                    <button class="filter-pill" onclick="filterMemories('rejection')">Rejections</button>
+                    <button class="filter-pill" onclick="filterMemories('pricing')">Pricing</button>
+                    <button class="filter-pill" onclick="filterMemories('pattern')">Patterns</button>
+                </div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button class="btn btn-sm" style="background: rgba(16,185,129,0.1); color: var(--color-success); border: 1px solid rgba(16,185,129,0.3);" onclick="openAddMemory('preference')">+ Preference</button>
+                    <button class="btn btn-sm" style="background: rgba(239,68,68,0.1); color: var(--color-danger); border: 1px solid rgba(239,68,68,0.3);" onclick="openAddMemory('rejection')">+ Rejection</button>
+                    <button class="btn btn-sm" style="background: rgba(59,130,246,0.1); color: var(--color-info); border: 1px solid rgba(59,130,246,0.3);" onclick="openAddMemory('pricing')">+ Pricing</button>
+                    <button class="btn btn-sm" style="background: rgba(139,92,246,0.1); color: var(--color-purple); border: 1px solid rgba(139,92,246,0.3);" onclick="openAddMemory('pattern')">+ Pattern</button>
+                </div>
+            </div>
+
+            <div class="glass-card" style="padding: 0;" id="memoryList">
+                <div class="crm-empty-state"><div class="crm-empty-content"><p>Loading...</p></div></div>
+            </div>
+            <div id="memoryCount" style="font-size: 11px; opacity: 0.5; margin-top: 8px; text-align: right;"></div>
+        </div>
+    </div>
+
+    <!-- Add Preference Modal -->
+    <div class="modal" id="preferenceModal">
+        <div class="modal-backdrop" onclick="closeModal('preferenceModal')"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Vendor Preference</h5>
+                    <button class="close-btn" onclick="closeModal('preferenceModal')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="preferenceForm" onsubmit="handleAddPreference(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Category <span class="text-danger">*</span></label>
+                            <select class="form-control" id="prefCategory" required><option value="">Select category...</option></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Preferred Vendors <span class="text-danger">*</span></label>
+                            <div id="prefVendorContainer"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason</label>
+                            <textarea class="form-control" id="prefReason" rows="2" placeholder="Why these vendors are preferred..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('preferenceModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="preferenceForm">Save Preference</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Rejection Modal -->
+    <div class="modal" id="rejectionModal">
+        <div class="modal-backdrop" onclick="closeModal('rejectionModal')"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Vendor Rejection</h5>
+                    <button class="close-btn" onclick="closeModal('rejectionModal')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="rejectionForm" onsubmit="handleAddRejection(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Vendor <span class="text-danger">*</span></label>
+                            <div id="rejVendorContainer"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Category</label>
+                            <select class="form-control" id="rejCategory"><option value="">All categories (optional)</option></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="rejReason" rows="2" required placeholder="Why this vendor is rejected..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('rejectionModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="rejectionForm">Save Rejection</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Pricing Modal -->
+    <div class="modal" id="pricingModal">
+        <div class="modal-backdrop" onclick="closeModal('pricingModal')"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Pricing Expectation</h5>
+                    <button class="close-btn" onclick="closeModal('pricingModal')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="pricingForm" onsubmit="handleAddPricing(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Category <span class="text-danger">*</span></label>
+                            <select class="form-control" id="pricingCategory" required><option value="">Select category...</option></select>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Avg Price</label>
+                                <input type="number" class="form-control" id="pricingAvg" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Max Price</label>
+                                <input type="number" class="form-control" id="pricingMax" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Currency</label>
+                                <input type="text" class="form-control" id="pricingCurrency" value="INR" placeholder="INR">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('pricingModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="pricingForm">Save Pricing</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Pattern Modal -->
+    <div class="modal" id="patternModal">
+        <div class="modal-backdrop" onclick="closeModal('patternModal')"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Decision Pattern</h5>
+                    <button class="close-btn" onclick="closeModal('patternModal')">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="patternForm" onsubmit="handleAddPattern(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Pattern Description <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="patternText" rows="3" required placeholder="e.g., Always prefer local vendors for urgent orders. Split award when savings exceed 10%."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('patternModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="patternForm">Save Pattern</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/procurement/settings.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

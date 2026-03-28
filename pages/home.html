@@ -269,6 +269,38 @@
                 </div>
             </div>
 
+            <!-- Procurement Card -->
+            <div class="bento-card procurement" onclick="navigateToModule('procurement')" id="procurementCard">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                                <line x1="3" y1="6" x2="21" y2="6"/>
+                                <path d="M16 10a4 4 0 0 1-8 0"/>
+                            </svg>
+                        </div>
+                        <div class="app-status" id="procurementStatus">
+                            <span class="status-indicator"></span>
+                            <span>Checking...</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3>Procurement</h3>
+                        <p>Vendor management, RFQs, quote comparison, and purchase orders</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="app-action">
+                            Launch
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <!-- KIP News Card (SUPERADMIN only) -->
             <div class="bento-card news" onclick="navigateToModule('news')" id="newsCard">
                 <div class="card-border"></div>
@@ -401,6 +433,7 @@
                 'crmCard': 'CRM_USER',
                 'researchCard': 'RESEARCH_USER',
                 'pmsCard': 'PMS_USER',
+                'procurementCard': 'PROCUREMENT_USER',
                 'newsCard': 'SUPERADMIN',
                 'adminCard': 'SUPERADMIN'
             };
@@ -413,7 +446,8 @@
                 'hrmsCard': 'HRMS',
                 'crmCard': 'CRM',
                 'researchCard': 'Research',
-                'pmsCard': 'PMS'
+                'pmsCard': 'PMS',
+                'procurementCard': 'Procurement'
             };
 
             // Get licensed services from cached organization info (populated at login from JWT)
@@ -426,7 +460,7 @@
             const cardToModule = {
                 'visionCard': 'vision', 'driveCard': 'drive', 'chatCard': 'chat',
                 'hrmsCard': 'hrms', 'crmCard': 'crm', 'researchCard': 'research',
-                'pmsCard': 'pms', 'newsCard': 'news', 'adminCard': 'admin'
+                'pmsCard': 'pms', 'procurementCard': 'procurement', 'newsCard': 'news', 'adminCard': 'admin'
             };
             const accessibleModules = [];
 
@@ -435,9 +469,10 @@
                 if (card) {
                     const hasRole = user.roles.includes('SUPERADMIN') || user.roles.includes(role);
 
-                    // Check if service is licensed (Admin panel is always shown if user has SUPERADMIN role)
+                    // Check if service is licensed (SUPERADMIN bypasses licensing)
                     const serviceName = serviceNameMapping[cardId];
-                    const isLicensed = cardId === 'adminCard' || cardId === 'newsCard' ||
+                    const isLicensed = user.roles.includes('SUPERADMIN') ||
+                                       cardId === 'adminCard' || cardId === 'newsCard' ||
                                        !licensedServices ||
                                        licensedServices.includes(serviceName);
 
@@ -470,6 +505,7 @@
             checkServiceHealth('crm', CONFIG.endpoints.crm);
             checkServiceHealth('research', CONFIG.endpoints.research);
             checkServiceHealth('pms', CONFIG.endpoints.pms);
+            checkServiceHealth('procurement', CONFIG.endpoints.procurement);
         }
 
         async function checkServiceHealth(moduleName, endpoint) {
@@ -520,6 +556,9 @@
                     break;
                 case 'pms':
                     window.location.href = 'pms/dashboard.html';
+                    break;
+                case 'procurement':
+                    window.location.href = 'procurement/dashboard.html';
                     break;
                 case 'news':
                     window.location.href = 'news/admin.html';

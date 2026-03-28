@@ -14,362 +14,718 @@
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <style>
+        *, *::before, *::after { box-sizing: border-box; }
+
         body.vendor-portal {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            background: var(--bg-primary);
+            background: var(--bg-body, #0f172a);
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            position: relative;
         }
 
-        .vp-header {
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border-primary);
-            padding: 16px 24px;
+        /* --- Gradient Mesh Background --- */
+        .vp-bg {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .vp-bg .gradient-mesh {
+            position: absolute;
+            inset: 0;
+        }
+        .vp-bg .gradient-mesh::before {
+            content: '';
+            position: absolute;
+            width: 140%;
+            height: 140%;
+            top: -20%;
+            left: -20%;
+            background:
+                radial-gradient(ellipse 80% 50% at 20% 30%, rgba(var(--brand-primary-rgb, 59,130,246), 0.18) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 80% at 80% 15%, rgba(139, 92, 246, 0.15) 0%, transparent 45%),
+                radial-gradient(ellipse 50% 60% at 60% 75%, rgba(6, 182, 212, 0.1) 0%, transparent 45%),
+                radial-gradient(ellipse 80% 40% at 30% 85%, rgba(var(--brand-primary-rgb, 59,130,246), 0.12) 0%, transparent 50%);
+            animation: vpGradientShift 25s ease-in-out infinite;
+        }
+        .vp-bg .gradient-mesh::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.04) 0%, transparent 25%),
+                radial-gradient(circle at 30% 60%, rgba(var(--brand-primary-rgb, 59,130,246), 0.06) 0%, transparent 30%);
+            animation: vpGradientPulse 15s ease-in-out infinite;
+        }
+        @keyframes vpGradientShift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            25% { transform: translate(5%, -3%) rotate(1deg) scale(1.02); }
+            50% { transform: translate(-3%, 5%) rotate(-1deg) scale(0.98); }
+            75% { transform: translate(3%, 2%) rotate(0.5deg) scale(1.01); }
+        }
+        @keyframes vpGradientPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* All content above the gradient */
+        .vp-topbar, .vp-page, .vp-footer, .vp-loading, .vp-result-screen {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* --- Top Bar --- */
+        .vp-topbar {
+            background: var(--bg-card, #1e293b);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 0 32px;
+            height: 56px;
             display: flex;
             align-items: center;
-            gap: 16px;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(12px);
+        }
+        .vp-topbar img { height: 28px; filter: brightness(0) invert(1); }
+        .vp-topbar-toggle {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: transparent;
+            color: var(--text-secondary, #94a3b8);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .vp-topbar-toggle:hover {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-primary, #f1f5f9);
         }
 
-        .vp-header img {
-            height: 32px;
-        }
-
-        .vp-header h1 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
-        }
-
-        .vp-container {
+        /* --- Page Container --- */
+        .vp-page {
             max-width: 900px;
             margin: 0 auto;
-            padding: 32px 24px;
+            padding: 24px 24px 100px;
             width: 100%;
             flex: 1;
         }
 
-        .vp-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-primary);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-
-        .vp-card h2 {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0 0 16px 0;
-        }
-
-        .vp-meta {
-            display: flex;
-            gap: 24px;
-            flex-wrap: wrap;
+        /* --- Hero Card (glassmorphic) --- */
+        .vp-hero {
+            background: rgba(var(--bg-card-rgb, 30,41,59), 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 20px 24px;
             margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        .vp-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--brand-primary), var(--brand-accent, #6366f1), var(--color-success, #10b981));
+        }
+        .vp-hero-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+        .vp-hero h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary, #f1f5f9);
+            margin: 0;
+        }
+        .vp-hero .vp-vendor-label {
+            font-size: 0.78rem;
+            color: var(--text-secondary, #94a3b8);
+            margin-top: 2px;
+        }
+        .vp-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 14px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            flex-shrink: 0;
+        }
+        .vp-badge-open {
+            background: rgba(16,185,129,0.12);
+            color: var(--color-success, #10b981);
+            border: 1px solid rgba(16,185,129,0.2);
+        }
+        .vp-badge-open::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse-dot 2s ease infinite;
+        }
+        .vp-badge-submitted {
+            background: rgba(var(--brand-primary-rgb, 59,130,246), 0.12);
+            color: var(--brand-primary);
+            border: 1px solid rgba(var(--brand-primary-rgb, 59,130,246), 0.2);
+        }
+        .vp-badge-closed {
+            background: rgba(255,255,255,0.06);
+            color: var(--text-secondary, #94a3b8);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
         }
 
-        .vp-meta-item {
+        .vp-hero-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .vp-stat-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .vp-stat-pill.primary {
+            background: rgba(var(--brand-primary-rgb, 59,130,246), 0.1);
+            color: var(--brand-primary);
+        }
+        .vp-stat-pill.muted {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-secondary, #94a3b8);
+        }
+
+        /* --- Glass Card --- */
+        .vp-card {
+            background: rgba(var(--bg-card-rgb, 30,41,59), 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+            transition: box-shadow 0.2s;
+        }
+        .vp-card:hover {
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+        }
+        .vp-card-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .vp-card-header h3 {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-primary, #f1f5f9);
+            margin: 0;
+        }
+        .vp-card-body {
+            padding: 0;
+        }
+
+        /* --- Items Table --- */
+        .vp-item-header {
+            display: grid;
+            grid-template-columns: 1fr 72px 72px 130px;
+            padding: 8px 20px;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            background: rgba(255,255,255,0.01);
+        }
+        .vp-item-header span {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-secondary, #94a3b8);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .vp-item-row {
+            display: grid;
+            grid-template-columns: 1fr 72px 72px 130px;
+            align-items: center;
+            padding: 12px 20px;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            transition: background 0.15s;
+        }
+        .vp-item-row:last-child { border-bottom: none; }
+        .vp-item-row:hover { background: rgba(255,255,255,0.02); }
+
+        .vp-item-info { min-width: 0; }
+        .vp-item-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary, #f1f5f9);
+            margin-bottom: 1px;
+        }
+        .vp-item-desc {
+            font-size: 0.73rem;
+            color: var(--text-secondary, #94a3b8);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .vp-item-unit, .vp-item-qty {
+            font-size: 0.8rem;
+            color: var(--text-secondary, #94a3b8);
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .vp-item-price input {
+            width: 100%;
+            background: var(--bg-body, #0f172a);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 0.8rem;
+            color: var(--text-primary, #f1f5f9);
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+        .vp-item-price input:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 2px rgba(var(--brand-primary-rgb, 59,130,246), 0.12);
+        }
+
+        /* --- Mobile card layout for items --- */
+        .vp-mobile-items { display: none; }
+        .vp-item-card {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .vp-item-card:last-child { border-bottom: none; }
+        .vp-card-top-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .vp-card-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 2px;
+        }
+        .vp-card-unit {
+            font-size: 0.7rem;
+            color: var(--text-secondary, #94a3b8);
+            background: rgba(255,255,255,0.06);
+            padding: 1px 8px;
+            border-radius: 4px;
+        }
+        .vp-card-price-field {
+            margin-top: 10px;
+        }
+        .vp-card-price-field label {
+            display: block;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-secondary, #94a3b8);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 3px;
+        }
+        .vp-card-price-field input {
+            width: 100%;
+            background: var(--bg-body, #0f172a);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 0.8rem;
+            color: var(--text-primary, #f1f5f9);
+            font-family: inherit;
+        }
+        .vp-card-price-field input:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+        }
+
+        /* --- Quote Details Form --- */
+        .vp-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            padding: 20px;
+        }
+        .vp-form-grid.full-width {
+            grid-template-columns: 1fr;
+        }
+        .vp-field { }
+        .vp-field label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary, #94a3b8);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 6px;
+        }
+        .vp-field input,
+        .vp-field textarea {
+            width: 100%;
+            background: var(--bg-body, #0f172a);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 0.9rem;
+            color: var(--text-primary, #f1f5f9);
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .vp-field input:focus,
+        .vp-field textarea:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb, 59,130,246), 0.15);
+        }
+
+        /* --- Footer --- */
+        .vp-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(var(--bg-card-rgb, 30,41,59), 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding: 12px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            z-index: 40;
+        }
+        .vp-footer-info {
+            font-size: 0.8rem;
+            color: var(--text-secondary, #94a3b8);
+        }
+        .vp-footer-info strong {
+            color: var(--text-primary, #f1f5f9);
+        }
+
+        /* --- Buttons --- */
+        .vp-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+            border-radius: 10px;
+            padding: 11px 24px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .vp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .vp-btn-primary {
+            background: var(--brand-primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(var(--brand-primary-rgb, 59,130,246), 0.3);
+        }
+        .vp-btn-primary:hover:not(:disabled) {
+            background: var(--brand-primary-dark, #2563eb);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(var(--brand-primary-rgb, 59,130,246), 0.4);
+        }
+
+        /* --- Result Screens --- */
+        .vp-result-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 56px);
+            padding: 24px;
+        }
+        .vp-result-card {
+            text-align: center;
+            max-width: 440px;
+            background: var(--bg-card, #1e293b);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 20px;
+            padding: 48px 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .vp-result-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .vp-result-icon-success {
+            background: rgba(16,185,129,0.12);
+            color: var(--color-success, #10b981);
+        }
+        .vp-result-icon-error {
+            background: rgba(239,68,68,0.12);
+            color: var(--color-danger, #ef4444);
+        }
+        .vp-result-card h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary, #f1f5f9);
+            margin: 0 0 8px;
+        }
+        .vp-result-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary, #94a3b8);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* --- Loading --- */
+        .vp-loading-screen {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 56px);
+            gap: 16px;
+            color: var(--text-secondary, #94a3b8);
         }
+        .vp-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(255,255,255,0.08);
+            border-top-color: var(--brand-primary);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .vp-meta-label {
-            font-size: 11px;
-            color: var(--text-secondary);
+        /* --- Notes display --- */
+        .vp-notes-box {
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            border-left: 3px solid var(--brand-primary);
+        }
+        .vp-notes-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: var(--text-secondary, #94a3b8);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .vp-meta-value {
-            font-size: 14px;
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-
-        .vp-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .vp-table th {
-            background: var(--bg-tertiary);
-            padding: 10px 12px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-primary);
-        }
-
-        .vp-table td {
-            padding: 12px;
-            font-size: 14px;
-            color: var(--text-primary);
-            border-bottom: 1px solid var(--border-primary);
-            vertical-align: middle;
-        }
-
-        .vp-table input[type="number"],
-        .vp-table input[type="text"] {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-primary);
-            border-radius: 6px;
-            padding: 6px 10px;
-            font-size: 13px;
-            color: var(--text-primary);
-            width: 100%;
-            max-width: 120px;
-        }
-
-        .vp-table input:focus {
-            outline: none;
-            border-color: var(--brand-primary);
-            box-shadow: 0 0 0 2px rgba(var(--brand-primary-rgb), 0.2);
-        }
-
-        .vp-form-group {
-            margin-bottom: 16px;
-        }
-
-        .vp-form-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-primary);
+            letter-spacing: 0.06em;
             margin-bottom: 4px;
         }
-
-        .vp-form-group input,
-        .vp-form-group textarea,
-        .vp-form-group select {
-            width: 100%;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-primary);
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 14px;
-            color: var(--text-primary);
+        .vp-notes-text {
+            font-size: 0.82rem;
+            color: var(--text-primary, #f1f5f9);
+            line-height: 1.5;
         }
 
-        .vp-form-group input:focus,
-        .vp-form-group textarea:focus,
-        .vp-form-group select:focus {
-            outline: none;
-            border-color: var(--brand-primary);
-            box-shadow: 0 0 0 2px rgba(var(--brand-primary-rgb), 0.2);
-        }
-
-        .vp-submit-btn {
-            background: var(--brand-primary);
-            color: var(--text-inverse);
-            border: none;
-            border-radius: 8px;
-            padding: 12px 32px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .vp-submit-btn:hover {
-            background: var(--brand-primary-hover);
-        }
-
-        .vp-submit-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .vp-success {
-            text-align: center;
-            padding: 48px 24px;
-        }
-
-        .vp-success svg {
-            color: var(--color-success);
-            margin-bottom: 16px;
-        }
-
-        .vp-success h2 {
-            color: var(--text-primary);
-            font-size: 1.3rem;
-            margin-bottom: 8px;
-        }
-
-        .vp-success p {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        .vp-error {
-            text-align: center;
-            padding: 48px 24px;
-        }
-
-        .vp-error svg {
-            color: var(--color-error);
-            margin-bottom: 16px;
-        }
-
-        .vp-error h2 {
-            color: var(--text-primary);
-            font-size: 1.3rem;
-            margin-bottom: 8px;
-        }
-
-        .vp-error p {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        .vp-loading {
-            text-align: center;
-            padding: 48px 24px;
-            color: var(--text-secondary);
-        }
-
+        /* --- Responsive --- */
         @media (max-width: 768px) {
-            .vp-container {
-                padding: 16px;
-            }
-            .vp-meta {
-                gap: 12px;
-            }
-            .vp-table input[type="number"] {
-                max-width: 80px;
-            }
+            .vp-page { padding: 12px 12px 120px; }
+            .vp-hero { padding: 14px 16px; border-radius: 10px; }
+            .vp-hero h2 { font-size: 1rem; }
+            .vp-desktop-items { display: none !important; }
+            .vp-mobile-items { display: block !important; }
+            .vp-footer { padding: 10px 16px; }
+            .vp-footer-info { display: none; }
+            .vp-footer .vp-btn { width: 100%; }
+            .vp-form-grid { grid-template-columns: 1fr; padding: 14px 16px; }
+            .vp-topbar { padding: 0 16px; }
         }
     </style>
 </head>
 <body class="vendor-portal">
-    <!-- Simple Header - No navbar/sidebar -->
-    <div class="vp-header">
+    <!-- Gradient Mesh Background -->
+    <div class="vp-bg"><div class="gradient-mesh"></div></div>
+
+    <!-- Top Bar -->
+    <div class="vp-topbar">
         <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo">
-        <h1>Vendor Portal</h1>
+        <button class="vp-topbar-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" id="themeToggleBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="themeIcon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+    </div>
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const isDark = body.classList.contains('dark-mode') || document.documentElement.getAttribute('data-theme') === 'dark';
+            if (typeof window.ThemeManager !== 'undefined' && ThemeManager.toggle) {
+                ThemeManager.toggle();
+            } else {
+                document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+            }
+            updateThemeIcon();
+        }
+        function updateThemeIcon() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark' || document.body.classList.contains('dark-mode');
+            const icon = document.getElementById('themeIcon');
+            if (icon) {
+                icon.innerHTML = isDark
+                    ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'
+                    : '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+            }
+        }
+        setTimeout(updateThemeIcon, 100);
+    </script>
+
+    <!-- Loading State -->
+    <div id="loadingState">
+        <div class="vp-loading-screen">
+            <div class="vp-spinner"></div>
+            <span>Loading RFQ details...</span>
+        </div>
     </div>
 
-    <div class="vp-container">
-        <!-- Loading State -->
-        <div id="loadingState" class="vp-loading">
-            <p>Loading RFQ details...</p>
-        </div>
-
-        <!-- Error State -->
-        <div id="errorState" style="display: none;">
-            <div class="vp-card vp-error">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="15" y1="9" x2="9" y2="15"/>
-                    <line x1="9" y1="9" x2="15" y2="15"/>
-                </svg>
+    <!-- Error State -->
+    <div id="errorState" style="display: none;">
+        <div class="vp-result-screen">
+            <div class="vp-result-card">
+                <div class="vp-result-icon vp-result-icon-error">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </div>
                 <h2>Invalid or Expired Link</h2>
                 <p id="errorMessage">This vendor portal link is invalid or has expired. Please contact the buyer for a new link.</p>
             </div>
         </div>
+    </div>
 
-        <!-- Success State -->
-        <div id="successState" style="display: none;">
-            <div class="vp-card vp-success">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                    <polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
+    <!-- Success State -->
+    <div id="successState" style="display: none;">
+        <div class="vp-result-screen">
+            <div class="vp-result-card">
+                <div class="vp-result-icon vp-result-icon-success">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
                 <h2>Quote Submitted Successfully</h2>
                 <p>Thank you for submitting your quote. The buyer will review your submission and get back to you.</p>
             </div>
         </div>
+    </div>
 
-        <!-- Main Content -->
-        <div id="mainContent" style="display: none;">
-            <!-- RFQ Info -->
-            <div class="vp-card">
-                <h2>Request for Quotation</h2>
-                <div class="vp-meta">
-                    <div class="vp-meta-item">
-                        <span class="vp-meta-label">RFQ Number</span>
-                        <span class="vp-meta-value" id="rfqNumber">-</span>
+    <!-- Main Content -->
+    <div id="mainContent" style="display: none;">
+        <div class="vp-page">
+            <!-- Hero Card -->
+            <div class="vp-hero">
+                <div class="vp-hero-top">
+                    <div>
+                        <h2 id="rfqTitle">Request for Quotation</h2>
+                        <span class="vp-vendor-label" id="vendorLabel"></span>
                     </div>
-                    <div class="vp-meta-item">
-                        <span class="vp-meta-label">Inquiry</span>
-                        <span class="vp-meta-value" id="rfqInquiry">-</span>
-                    </div>
-                    <div class="vp-meta-item">
-                        <span class="vp-meta-label">Due Date</span>
-                        <span class="vp-meta-value" id="rfqDueDate">-</span>
-                    </div>
-                    <div class="vp-meta-item">
-                        <span class="vp-meta-label">Buyer</span>
-                        <span class="vp-meta-value" id="rfqBuyer">-</span>
-                    </div>
+                    <span class="vp-badge" id="statusBadge"></span>
+                </div>
+                <div class="vp-hero-meta">
+                    <span class="vp-stat-pill primary" id="rfqNumberPill"></span>
+                    <span class="vp-stat-pill muted" id="rfqDeadlinePill"></span>
+                    <span class="vp-stat-pill muted" id="rfqItemsPill"></span>
                 </div>
                 <div id="rfqNotes" style="display: none;">
-                    <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Notes</div>
-                    <div style="font-size: 14px; color: var(--text-primary); line-height: 1.6;" id="rfqNotesText"></div>
+                    <div class="vp-notes-box">
+                        <div class="vp-notes-label">Notes from Buyer</div>
+                        <div class="vp-notes-text" id="rfqNotesText"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Items Table with Quote Input -->
+            <!-- Items Card -->
             <div class="vp-card">
-                <h2>Items</h2>
-                <div style="overflow-x: auto;">
-                    <table class="vp-table" id="rfqItemsTable">
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Qty</th>
-                                <th>Unit</th>
-                                <th>Description</th>
-                                <th>Unit Price</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rfqItemsBody">
-                            <tr>
-                                <td colspan="5" style="text-align: center; color: var(--text-secondary);">Loading items...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="vp-card-header">
+                    <h3>Items & Pricing</h3>
+                </div>
+                <div class="vp-card-body">
+                    <!-- Desktop Table -->
+                    <div class="vp-desktop-items">
+                        <div class="vp-item-header">
+                            <span>Item</span>
+                            <span style="text-align: center;">Qty</span>
+                            <span style="text-align: center;">Unit</span>
+                            <span>Unit Price</span>
+                        </div>
+                        <div id="rfqItemsDesktop"></div>
+                    </div>
+                    <!-- Mobile Cards -->
+                    <div class="vp-mobile-items" id="rfqItemsMobile"></div>
                 </div>
             </div>
 
-            <!-- Quote Details -->
+            <!-- Quote Details Card -->
             <div class="vp-card">
-                <h2>Your Quote Details</h2>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                    <div class="vp-form-group">
+                <div class="vp-card-header">
+                    <h3>Quote Details</h3>
+                </div>
+                <div class="vp-form-grid">
+                    <div class="vp-field">
                         <label for="quoteDeliveryDays">Delivery Days</label>
                         <input type="number" id="quoteDeliveryDays" min="1" placeholder="e.g. 15">
                     </div>
-                    <div class="vp-form-group">
+                    <div class="vp-field">
                         <label for="quotePaymentTerms">Payment Terms</label>
                         <input type="text" id="quotePaymentTerms" placeholder="e.g. Net 30, 50% Advance">
                     </div>
                 </div>
-                <div class="vp-form-group">
-                    <label for="quoteNotes">Additional Notes</label>
-                    <textarea id="quoteNotes" rows="3" placeholder="Any additional remarks, conditions, or clarifications..."></textarea>
-                </div>
-
-                <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
-                    <button class="vp-submit-btn" id="submitQuoteBtn" onclick="submitQuote()">
-                        Submit Quote
-                    </button>
+                <div class="vp-form-grid full-width" style="padding-top: 0;">
+                    <div class="vp-field">
+                        <label for="quoteNotes">Additional Notes</label>
+                        <textarea id="quoteNotes" rows="3" placeholder="Any additional remarks, conditions, or clarifications..."></textarea>
+                    </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Sticky Footer -->
+        <div class="vp-footer">
+            <div class="vp-footer-info">
+                Enter unit prices for each item, then submit your quote.
+            </div>
+            <button class="vp-btn vp-btn-primary" id="submitQuoteBtn" onclick="submitQuote()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Submit Quote
+            </button>
         </div>
     </div>
 
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/procurement/vendor-portal.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

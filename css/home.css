@@ -214,6 +214,10 @@ body.dashboard .navbar {
     background: linear-gradient(135deg, var(--brand-secondary), #a78bfa);
 }
 
+.bento-card.procurement:hover .card-border {
+    background: linear-gradient(135deg, #e11d48, #fb7185);
+}
+
 .bento-card.pms:hover .card-border {
     background: linear-gradient(135deg, #f59e0b, #fbbf24);
 }
@@ -251,6 +255,10 @@ body.dashboard .navbar {
     box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
 }
 
+.bento-card.procurement:hover {
+    box-shadow: 0 8px 24px rgba(225, 29, 72, 0.15);
+}
+
 .bento-card.pms:hover {
     box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
 }
@@ -285,6 +293,10 @@ body.dashboard .navbar {
 
 [data-theme="dark"] .bento-card.research:hover {
     box-shadow: 0 8px 30px rgba(139, 92, 246, 0.25);
+}
+
+[data-theme="dark"] .bento-card.procurement:hover {
+    box-shadow: 0 8px 30px rgba(225, 29, 72, 0.25);
 }
 
 [data-theme="dark"] .bento-card.pms:hover {
@@ -381,6 +393,14 @@ body.dashboard .navbar {
 }
 
 .bento-card.crm .app-icon svg {
+    color: white;
+}
+
+.bento-card.procurement .app-icon {
+    background: linear-gradient(135deg, #e11d48, #fb7185);
+}
+
+.bento-card.procurement .app-icon svg {
     color: white;
 }
 

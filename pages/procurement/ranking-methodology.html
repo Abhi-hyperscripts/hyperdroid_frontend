@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Ranking Methodology - Procurement | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <style>
+        .meth-page { max-width: 900px; margin: 0 auto; padding-bottom: 60px; }
+        .meth-hero { text-align: center; padding: 40px 20px 32px; }
+        .meth-hero h1 { font-size: 2rem; font-weight: 700; color: var(--text-primary); margin: 0 0 10px; letter-spacing: -0.5px; }
+        .meth-hero p { font-size: 15px; color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.6; }
+
+        .meth-card {
+            padding: 28px; margin-bottom: 24px; border-radius: 16px;
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+        [data-theme="light"] .meth-card {
+            background: rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+        }
+
+        .meth-section-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+        .meth-num {
+            width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 15px; font-weight: 700; color: #fff; flex-shrink: 0;
+        }
+        .meth-section-header h2 { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1.3; }
+        .meth-section-header h2 small { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .meth-text { color: var(--text-secondary); font-size: 14px; line-height: 1.7; margin-bottom: 14px; }
+        .meth-text strong { color: var(--text-primary); }
+
+        /* Step headers within a card */
+        .meth-step {
+            display: flex; align-items: center; gap: 10px; margin: 20px 0 10px; padding-top: 14px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .meth-step:first-of-type { border-top: none; padding-top: 0; margin-top: 14px; }
+        [data-theme="light"] .meth-step { border-top-color: rgba(0,0,0,0.05); }
+        .meth-step-num {
+            width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+        }
+        .meth-step h3 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0; }
+
+        /* Flow diagram */
+        .meth-flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0; }
+        .meth-flow-card {
+            padding: 18px 16px; border-radius: 12px; text-align: center;
+            border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .meth-flow-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+        [data-theme="light"] .meth-flow-card { background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.06); }
+        [data-theme="light"] .meth-flow-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+        .meth-flow-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+        .meth-flow-card h4 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0 0 4px; }
+        .meth-flow-card p { font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.4; }
+        .meth-flow-arrow { display: none; }
+
+        /* Formula box */
+        .meth-formula {
+            padding: 18px 20px; border-radius: 10px; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 14px; color: var(--text-primary); margin: 14px 0;
+            background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15); line-height: 1.8;
+        }
+        [data-theme="light"] .meth-formula { background: rgba(59,130,246,0.04); }
+
+        /* Score breakdown */
+        .meth-scores { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+        .meth-score-card {
+            padding: 16px; border-radius: 10px; text-align: center;
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+        }
+        [data-theme="light"] .meth-score-card { background: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05); }
+        .meth-score-pct { font-size: 28px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+        .meth-score-label { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+        .meth-score-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+
+        /* Example calc */
+        .meth-example {
+            padding: 16px 18px; border-radius: 10px; margin: 14px 0;
+            background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15);
+        }
+        .meth-example-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-success); margin-bottom: 8px; }
+
+        /* Confidence table */
+        .meth-conf-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+        .meth-conf-table th { text-align: left; padding: 8px 12px; font-weight: 600; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-primary); }
+        .meth-conf-table td { padding: 10px 12px; color: var(--text-primary); border-bottom: 1px solid rgba(255,255,255,0.04); }
+        [data-theme="light"] .meth-conf-table td { border-bottom: 1px solid rgba(0,0,0,0.04); }
+        .meth-conf-table td:last-child { text-align: right; font-weight: 700; font-family: 'SF Mono', monospace; }
+
+        /* Recommendation cards */
+        .meth-recs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+        .meth-rec-card { padding: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); }
+        [data-theme="light"] .meth-rec-card { border: 1px solid rgba(0,0,0,0.06); background: rgba(0,0,0,0.02); }
+        .meth-rec-card h5 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px; display: flex; align-items: center; gap: 6px; }
+        .meth-rec-card h5::before { content: ''; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: currentColor; box-shadow: 0 0 6px currentColor; }
+        .meth-rec-card h4 { font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px; }
+        .meth-rec-card p { font-size: 12px; color: var(--text-secondary); margin: 0; line-height: 1.5; }
+
+        /* Bullet list */
+        .meth-list { padding-left: 0; list-style: none; margin: 12px 0; }
+        .meth-list li { padding: 6px 0 6px 24px; position: relative; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+        .meth-list li::before { content: ''; position: absolute; left: 6px; top: 14px; width: 8px; height: 8px; border-radius: 50%; }
+        .meth-list li strong { color: var(--text-primary); }
+
+        /* Footer */
+        .meth-footer { text-align: center; padding: 32px 20px; margin-top: 20px; border-top: 1px solid var(--border-primary); }
+        .meth-footer p { font-size: 14px; color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.6; font-style: italic; }
+
+        /* Back link */
+        .meth-back { display: inline-flex; align-items: center; gap: 6px; color: var(--brand-primary); font-size: 13px; font-weight: 600; text-decoration: none; margin-bottom: 8px; }
+        .meth-back:hover { text-decoration: underline; }
+
+        /* Phase divider */
+        .meth-phase {
+            display: flex; align-items: center; gap: 16px; margin: 36px 0 24px; padding: 0 4px;
+        }
+        .meth-phase-badge {
+            flex-shrink: 0; padding: 6px 16px; border-radius: 20px; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.8px; color: #fff;
+        }
+        .meth-phase-line { flex: 1; height: 1px; background: var(--border-primary); }
+        .meth-phase-desc { font-size: 13px; color: var(--text-secondary); flex-shrink: 0; }
+
+        /* Print */
+        @media print {
+            body, .dashboard { background: #fff !important; color: #000 !important; }
+            .navbar, .sidebar-panel, .sidebar-overlay { display: none !important; }
+            .crm-container { padding: 0 !important; margin: 0 !important; }
+            .meth-page { max-width: 100%; padding: 0; }
+            .meth-card { background: #fff !important; border: 1px solid #ddd !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; box-shadow: none !important; break-inside: avoid; page-break-inside: avoid; }
+            .meth-flow-card, .meth-score-card, .meth-rec-card { background: #f8f8f8 !important; border: 1px solid #ddd !important; }
+            .meth-formula { background: #f0f4ff !important; border: 1px solid #c0d0f0 !important; color: #000 !important; }
+            .meth-example { background: #f0fdf4 !important; border: 1px solid #a0d8b0 !important; }
+            .meth-text, .meth-text strong, p, li, td, th, h1, h2, h3, h4, h5 { color: #000 !important; }
+            .meth-text strong { font-weight: 700 !important; }
+            .meth-hero h1 { font-size: 1.5rem; }
+            .meth-hero p, .meth-section-header h2 small { color: #555 !important; }
+            .meth-num, .meth-step-num, .meth-phase-badge { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .meth-flow-icon { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .meth-conf-table td, .meth-conf-table th { border-bottom: 1px solid #ddd !important; color: #000 !important; }
+            .meth-rec-card h5::before { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .meth-score-pct { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .meth-phase-line { background: #ccc !important; }
+            .meth-footer { border-top-color: #ddd !important; }
+            .meth-footer p { color: #555 !important; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .meth-flow, .meth-scores, .meth-recs { grid-template-columns: 1fr; }
+            .meth-hero h1 { font-size: 1.5rem; }
+            .meth-card { padding: 20px; }
+        }
+    </style>
+</head>
+<body class="dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="crm-container">
+        <div class="meth-page">
+
+            <!-- Breadcrumb -->
+            <div class="crm-header" style="padding-bottom:0;">
+                <div class="header-content">
+                    <nav class="breadcrumb-nav">
+                        <a href="dashboard.html">Procurement</a>
+                        <span class="separator">/</span>
+                        <span class="current">Ranking Methodology</span>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Hero -->
+            <div class="meth-hero">
+                <h1>How We Rank &amp; Recommend Vendors</h1>
+                <p>A transparent look at our two-phase vendor evaluation — from choosing who to invite, to selecting the winner after quotes arrive.</p>
+            </div>
+
+            <!-- ========== SECTION 1: Overview ========== -->
+            <div class="meth-card">
+                <div class="meth-section-header">
+                    <div class="meth-num" style="background: var(--brand-primary);">1</div>
+                    <h2>Two Phases, Three Layers <small>Overview</small></h2>
+                </div>
+                <p class="meth-text">Vendor evaluation happens at two distinct moments in the procurement lifecycle. Each phase uses different data and different methods.</p>
+
+                <div class="meth-flow">
+                    <div class="meth-flow-card" style="">
+                        <div class="meth-flow-icon" style="background: rgba(139,92,246,0.12);">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <h4>Phase 1</h4>
+                        <p><strong>Before quotes arrive.</strong> AI suggests which vendors to invite based on history &amp; performance.</p>
+                    </div>
+                    <div class="meth-flow-card" style="">
+                        <div class="meth-flow-icon" style="background: rgba(59,130,246,0.12);">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        </div>
+                        <h4>Phase 2</h4>
+                        <p><strong>After quotes are received.</strong> Three layers analyze the quotes: math, scoring, and AI insights.</p>
+                    </div>
+                    <div class="meth-flow-card" style="">
+                        <div class="meth-flow-icon" style="background: rgba(16,185,129,0.12);">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
+                        <h4>Your Decision</h4>
+                        <p><strong>Always human.</strong> Three recommendations inform your judgment — they never replace it.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== PHASE 1 ==================== -->
+            <div class="meth-phase">
+                <div class="meth-phase-badge" style="background: #8b5cf6;">Phase 1</div>
+                <div class="meth-phase-line"></div>
+                <div class="meth-phase-desc">Before RFQ is sent — <strong>Who should we invite?</strong></div>
+            </div>
+
+            <!-- ========== SECTION 2: AI Vendor Suggestions ========== -->
+            <div class="meth-card">
+                <div class="meth-section-header">
+                    <div class="meth-num" style="background: #8b5cf6;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <h2>AI Vendor Suggestions <small>Phase 1 &middot; Choosing Which Vendors to Invite</small></h2>
+                </div>
+                <p class="meth-text">Before quotes come in, you need to decide <em>which vendors to invite</em>. The <strong>"AI Suggest Vendors"</strong> button on an RFQ uses AI to analyze your procurement history and recommend the best candidates for each item.</p>
+
+                <style>.meth-list li::before { background: var(--dot-color, var(--text-secondary)); }</style>
+
+                <div class="meth-step"><div class="meth-step-num" style="background:#8b5cf6;">1</div><h3>Data Gathering</h3></div>
+                <p class="meth-text">For every active vendor in your system, we collect a performance profile:</p>
+                <ul class="meth-list">
+                    <li style="--dot-color: #8b5cf6;"><strong>Selection history:</strong> How many times was this vendor chosen when they participated in past RFQs? Vendors you consistently select rank higher.</li>
+                    <li style="--dot-color: #8b5cf6;"><strong>Quality rating:</strong> Average quality score (1–5 stars) from past transaction reviews and goods inspections.</li>
+                    <li style="--dot-color: #8b5cf6;"><strong>Average pricing:</strong> Historical average quoted price across past quotes — gives the AI a sense of where they sit in the market.</li>
+                    <li style="--dot-color: #8b5cf6;"><strong>Category count:</strong> How many item categories they supply — indicates breadth of expertise.</li>
+                </ul>
+
+                <div class="meth-step"><div class="meth-step-num" style="background:#8b5cf6;">2</div><h3>AI Analysis</h3></div>
+                <p class="meth-text">The AI receives three inputs and produces per-item vendor recommendations:</p>
+                <div class="meth-flow" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 14px;">
+                    <div class="meth-flow-card" style="text-align:left; padding:14px;">
+                        <h4 style="font-size:12px; color:#8b5cf6; margin-bottom:6px;">INPUT 1: Items</h4>
+                        <p style="font-size:12px;">Each RFQ item with name, quantity, unit, specifications, and master catalog ID.</p>
+                    </div>
+                    <div class="meth-flow-card" style="text-align:left; padding:14px;">
+                        <h4 style="font-size:12px; color:#8b5cf6; margin-bottom:6px;">INPUT 2: Vendor Profiles</h4>
+                        <p style="font-size:12px;">All active vendors with quality scores, selection history, avg pricing, and categories.</p>
+                    </div>
+                    <div class="meth-flow-card" style="text-align:left; padding:14px;">
+                        <h4 style="font-size:12px; color:#8b5cf6; margin-bottom:6px;">INPUT 3: Memories</h4>
+                        <p style="font-size:12px;">Your organization's procurement preferences, vendor rejections, and documented decision patterns.</p>
+                    </div>
+                </div>
+                <p class="meth-text">The AI evaluates each vendor against each item and returns a <strong>confidence score (0–100%)</strong> plus 3–4 concise reasoning bullets for every recommendation.</p>
+
+                <div class="meth-step"><div class="meth-step-num" style="background:#8b5cf6;">3</div><h3>Per-Item Ranking</h3></div>
+                <p class="meth-text">For each item in the RFQ, the AI ranks vendors independently. A vendor that's great for towels may not be recommended for kitchen equipment — <strong>each item gets its own ranked list</strong>.</p>
+
+                <div class="meth-formula" style="background: rgba(139,92,246,0.06); border-color: rgba(139,92,246,0.15);">
+                    <strong>Per-item output:</strong> Vendor A → 95% confidence, Vendor B → 78% confidence, Vendor C → 62% confidence<br>
+                    Each vendor gets concise reasoning: <em>"Selected 8 of 10 times when quoted"</em>, <em>"Avg quality 4.8/5.0"</em>, etc.
+                </div>
+
+                <div class="meth-step"><div class="meth-step-num" style="background:#8b5cf6;">4</div><h3>Overall Ranking (Aggregation)</h3></div>
+                <p class="meth-text">The "Overall Ranking" view aggregates across all items. This is done on the frontend, not by AI:</p>
+
+                <div class="meth-formula" style="background: rgba(139,92,246,0.06); border-color: rgba(139,92,246,0.15);">
+                    <strong>Average Confidence</strong> = Σ(confidence per item) ÷ number of items recommended for<br>
+                    <strong>Tiebreaker:</strong> Number of items where this vendor was #1 pick (topPicks)<br>
+                    <strong>Overall Rank:</strong> Sort by Average Confidence desc, then topPicks desc
+                </div>
+
+                <div class="meth-example">
+                    <div class="meth-example-title">Example</div>
+                    <p class="meth-text" style="margin-bottom:0;">
+                        RFQ has 3 items: Towels, Bedsheets, Pillows.<br>
+                        Vendor A: Towels 95%, Bedsheets 88%, Pillows 92% → <strong>Avg 91.7%, 2 top picks</strong><br>
+                        Vendor B: Towels 78%, Bedsheets 95%, Pillows 70% → <strong>Avg 81.0%, 1 top pick</strong><br>
+                        → Vendor A ranks #1 overall. Shown as "Recommended for 3/3 items, 91% avg confidence."
+                    </p>
+                </div>
+
+                <p class="meth-text">You can switch between "Overall Ranking" and per-item views in the suggestions modal. The suggestions are cached per RFQ and can be regenerated.</p>
+
+                <div class="meth-formula" style="background: rgba(139,92,246,0.06); border-color: rgba(139,92,246,0.15);">
+                    <strong>This phase answers:</strong> <em>"Based on our history and AI analysis, which vendors should we invite to quote?"</em><br>
+                    You can accept the suggestions, modify them, or add vendors manually — the AI informs, you decide.
+                </div>
+            </div>
+
+            <!-- ==================== PHASE 2 ==================== -->
+            <div class="meth-phase">
+                <div class="meth-phase-badge" style="background: var(--brand-primary);">Phase 2</div>
+                <div class="meth-phase-line"></div>
+                <div class="meth-phase-desc">After quotes received — <strong>Which vendor should we select?</strong></div>
+            </div>
+
+            <!-- ========== SECTION 3: Deterministic ========== -->
+            <div class="meth-card">
+                <div class="meth-section-header">
+                    <div class="meth-num" style="background: var(--color-success);">1</div>
+                    <h2>Layer 1 — Deterministic Price Comparison <small>Step 1 &middot; Pure Math &middot; No AI</small></h2>
+                </div>
+                <p class="meth-text">The first layer is <strong>completely objective</strong>. No weights, no history, no opinions — just arithmetic.</p>
+
+                <ul class="meth-list">
+                    <li style="--dot-color: var(--color-success);"><strong>Item-by-item collection:</strong> For every item in the RFQ, we collect each vendor's quoted unit price.</li>
+                    <li style="--dot-color: var(--color-success);"><strong>Total calculation:</strong> Each vendor's total = sum of (unit price × quantity) for all items.</li>
+                    <li style="--dot-color: var(--color-success);"><strong>Cheapest vendor:</strong> The vendor with the lowest total across all items.</li>
+                    <li style="--dot-color: var(--color-success);"><strong>Per-item tracking:</strong> We also track which vendor is cheapest on each individual item — a vendor might win overall but be expensive on specific items.</li>
+                </ul>
+
+                <div class="meth-formula">
+                    Vendor Total = Σ (unit_price<sub>i</sub> × quantity<sub>i</sub>) &nbsp;for all items i<br>
+                    Cheapest Vendor = min(Vendor Total) across all vendors
+                </div>
+
+                <p class="meth-text" style="margin-bottom:0;"><strong>This layer answers:</strong> <em>"Who is the cheapest?"</em> — nothing more, nothing less. Zero subjectivity.</p>
+            </div>
+
+            <!-- ========== SECTION 4: Heuristic ========== -->
+            <div class="meth-card">
+                <div class="meth-section-header">
+                    <div class="meth-num" style="background: var(--brand-primary);">2</div>
+                    <h2>Layer 2 — Heuristic Weighted Scoring <small>Step 2 &middot; Multi-Factor Analysis &middot; No AI</small></h2>
+                </div>
+                <p class="meth-text">The cheapest vendor isn't always the best. Layer 2 combines <strong>price, quality, and delivery</strong> into a single weighted score. All weights are configurable by your admin.</p>
+
+                <div class="meth-scores">
+                    <div class="meth-score-card">
+                        <div class="meth-score-pct" style="color: var(--color-success);">50%</div>
+                        <div class="meth-score-label">Price Score</div>
+                        <div class="meth-score-desc">Linear scale 0–100. Cheapest vendor = 100, most expensive = 0. Interpolated for everyone in between.</div>
+                    </div>
+                    <div class="meth-score-card">
+                        <div class="meth-score-pct" style="color: var(--brand-primary);">30%</div>
+                        <div class="meth-score-label">Quality Score</div>
+                        <div class="meth-score-desc">From historical vendor performance (1–5 stars → 0–100). New vendors default to 50 — no penalty, no advantage.</div>
+                    </div>
+                    <div class="meth-score-card">
+                        <div class="meth-score-pct" style="color: var(--color-warning);">20%</div>
+                        <div class="meth-score-label">Delivery Score</div>
+                        <div class="meth-score-desc">100 for on-time delivery, minus 10 per day late. Floor at 0. Early delivery = 100.</div>
+                    </div>
+                </div>
+
+                <div class="meth-formula">
+                    <strong>Weighted Total</strong> = (Price Score × 0.50) + (Quality Score × 0.30) + (Delivery Score × 0.20)<br>
+                    <strong>Best Value Vendor</strong> = highest Weighted Total
+                </div>
+
+                <div class="meth-example">
+                    <div class="meth-example-title">Example Calculation</div>
+                    <p class="meth-text" style="margin-bottom:0;">
+                        Vendor A: Price 78 × 0.50 + Quality 92 × 0.30 + Delivery 100 × 0.20 = <strong>86.6</strong><br>
+                        Vendor B: Price 100 × 0.50 + Quality 50 × 0.30 + Delivery 80 × 0.20 = <strong>81.0</strong><br>
+                        → Vendor A wins on <em>value</em> despite costing more, because of superior quality and delivery.
+                    </p>
+                </div>
+
+                <p class="meth-text" style="margin-bottom:0;"><strong>This layer answers:</strong> <em>"Who offers the best overall value?"</em> — price matters most (50%), but reliability and quality count too.</p>
+            </div>
+
+            <!-- ========== SECTION 5: AI Qualitative ========== -->
+            <div class="meth-card">
+                <div class="meth-section-header">
+                    <div class="meth-num" style="background: var(--color-warning);">3</div>
+                    <h2>Layer 3 — AI Qualitative Analysis <small>Step 3 &middot; Expert Insights &middot; With AI</small></h2>
+                </div>
+                <p class="meth-text">Numbers tell you <em>what</em>. AI tells you <em>why</em>. When you click <strong>"AI Analysis"</strong> on a comparison, the AI receives all quote data and vendor history, then provides:</p>
+
+                <ul class="meth-list">
+                    <li style="--dot-color: var(--color-warning);"><strong>Summary analysis:</strong> A human-readable overview of the competitive landscape.</li>
+                    <li style="--dot-color: var(--color-warning);"><strong>Per-vendor quality assessment:</strong> What do the prices suggest about material quality, construction, and brand positioning?</li>
+                    <li style="--dot-color: var(--color-warning);"><strong>Price justification:</strong> Why one vendor charges more — premium materials, certifications, warranty terms, etc.</li>
+                    <li style="--dot-color: var(--color-warning);"><strong>Contextual recommendation:</strong> Which vendor fits <em>your</em> specific use case (luxury hotel vs. budget property, etc.).</li>
+                </ul>
+
+                <div class="meth-formula" style="background: rgba(245,158,11,0.06); border-color: rgba(245,158,11,0.15);">
+                    <strong>Key principle:</strong> AI never decides alone. It always supplements the heuristic layer.<br>
+                    The AI may recommend a <em>different</em> vendor than the cheapest or best-value — and that's the point. It adds context that numbers cannot capture.
+                </div>
+
+                <p class="meth-text" style="margin-bottom:0;">AI insights are cached per comparison and can be regenerated on demand. They help you justify procurement decisions to stakeholders.</p>
+            </div>
+
+            <!-- ========== SECTION 6: Confidence ========== -->
+            <div class="meth-card">
+                <div class="meth-section-header">
+                    <div class="meth-num" style="background: #ec4899;">4</div>
+                    <h2>Confidence Score <small>Step 4 &middot; Data Quality Indicator</small></h2>
+                </div>
+                <p class="meth-text">Every comparison shows a <strong>confidence percentage</strong>. This tells you how much data was available to make the ranking — not how certain the result is, but how complete the inputs are.</p>
+
+                <table class="meth-conf-table">
+                    <thead><tr><th>Factor</th><th>Points</th></tr></thead>
+                    <tbody>
+                        <tr><td>All invited vendors submitted quotes</td><td>+30%</td></tr>
+                        <tr><td>Historical performance data exists</td><td>+20%</td></tr>
+                        <tr><td>Quality ratings available</td><td>+10%</td></tr>
+                        <tr><td>3 or more quotes received</td><td>+10%</td></tr>
+                        <tr><td>All items mapped to master catalog</td><td>+10%</td></tr>
+                        <tr><td>Vendor item history records present</td><td>+20%</td></tr>
+                        <tr><td style="font-weight:700; color: var(--text-primary);">Maximum possible</td><td style="color: var(--color-success);">100%</td></tr>
+                    </tbody>
+                </table>
+
+                <p class="meth-text" style="margin-bottom:0;">
+                    <strong>80–100%:</strong> High confidence — comprehensive data.<br>
+                    <strong>50–80%:</strong> Moderate — some gaps in history.<br>
+                    <strong>Below 50%:</strong> Low — consider gathering more quotes or performance data.
+                </p>
+            </div>
+
+            <!-- ========== SECTION 7: Three Recommendations ========== -->
+            <div class="meth-card">
+                <div class="meth-section-header">
+                    <div class="meth-num" style="background: linear-gradient(135deg, var(--color-success), var(--brand-primary));">5</div>
+                    <h2>Three Recommendations <small>Step 5 &middot; The Final Output</small></h2>
+                </div>
+                <p class="meth-text">Every comparison produces up to three independent recommendations — one from each layer. When they <strong>agree</strong>, you can be confident. When they <strong>differ</strong>, that's where the real insight lives.</p>
+
+                <div class="meth-recs">
+                    <div class="meth-rec-card">
+                        <h5 style="color: var(--color-success);">Cheapest</h5>
+                        <h4>Lowest Price</h4>
+                        <p>From Layer 1 (deterministic). The vendor with the lowest total quote. No weighting, no history — just arithmetic.</p>
+                    </div>
+                    <div class="meth-rec-card">
+                        <h5 style="color: var(--brand-primary);">Best Value</h5>
+                        <h4>Highest Weighted Score</h4>
+                        <p>From Layer 2 (heuristic). Balances price (50%), quality (30%), and delivery (20%). May differ from cheapest.</p>
+                    </div>
+                    <div class="meth-rec-card">
+                        <h5 style="color: var(--color-warning);">AI Recommended</h5>
+                        <h4>Contextual Best Fit</h4>
+                        <p>From Layer 3 (AI). Considers your specific use case, material quality, brand positioning, and risk factors.</p>
+                    </div>
+                </div>
+
+                <p class="meth-text" style="margin-bottom:0;">
+                    <strong>When all three agree:</strong> Strong signal — the choice is clear.<br>
+                    <strong>When they differ:</strong> The system is surfacing a nuance. The cheapest might have quality concerns. The best-value might not fit a luxury context. The AI pick might cost more but last longer. <em>That tension is the value of having three layers.</em>
+                </p>
+            </div>
+
+            <!-- ==================== LEARNING LOOP ==================== -->
+            <div class="meth-phase">
+                <div class="meth-phase-badge" style="background: linear-gradient(135deg, #10b981, #3b82f6);">Learning Loop</div>
+                <div class="meth-phase-line"></div>
+                <div class="meth-phase-desc">How the system <strong>gets smarter</strong> over time</div>
+            </div>
+
+            <div class="meth-card">
+                <div class="meth-section-header">
+                    <div class="meth-num" style="background: linear-gradient(135deg, #10b981, #3b82f6);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    </div>
+                    <h2>The Continuous Learning Loop <small>How Every Decision Makes the System Smarter</small></h2>
+                </div>
+                <p class="meth-text">This is our most important feature. Every procurement cycle — from sending an RFQ to receiving goods — feeds data back into the system. The AI doesn't just make one-time recommendations; it <strong>learns from every outcome</strong> to improve future suggestions.</p>
+
+                <div class="meth-step"><div class="meth-step-num" style="background: #10b981;">1</div><h3>Quote Capture</h3></div>
+                <p class="meth-text"><strong>When:</strong> A vendor submits a quote for an RFQ.<br>
+                <strong>What's recorded:</strong> Every quoted price for every item is permanently stored in the vendor's history. Over time, this builds a comprehensive pricing database — the system learns what each vendor typically charges for each type of item, and how their pricing trends over months.</p>
+
+                <div class="meth-step"><div class="meth-step-num" style="background: #3b82f6;">2</div><h3>Decision Recording</h3></div>
+                <p class="meth-text"><strong>When:</strong> You select a vendor from the comparison.<br>
+                <strong>What's recorded:</strong> The chosen vendor is marked as the winner, and all other participating vendors are marked as not selected — for every item in the RFQ. This creates a <strong>win/loss record</strong> per vendor per item. The system also records whether you followed the AI recommendation, chose manually, or overrode the AI — and <em>why</em>.</p>
+                <div class="meth-formula" style="background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.15);">
+                    <strong>Selection Rate</strong> = times won ÷ times quoted<br>
+                    A vendor that was chosen 8 out of 10 times they quoted has an 80% selection rate — a strong signal for future recommendations.
+                </div>
+
+                <div class="meth-step"><div class="meth-step-num" style="background: #f59e0b;">3</div><h3>Delivery Tracking</h3></div>
+                <p class="meth-text"><strong>When:</strong> A purchase order is fulfilled and goods arrive.<br>
+                <strong>What's recorded:</strong> The promised delivery timeline vs. the actual arrival date. The system automatically calculates whether the vendor was early, on time, or late — and by how many days. This directly feeds the <strong>Delivery Score</strong> used in Phase 2's heuristic scoring.</p>
+
+                <div class="meth-step"><div class="meth-step-num" style="background: #ef4444;">4</div><h3>Quality Inspection</h3></div>
+                <p class="meth-text"><strong>When:</strong> Goods are inspected upon receipt.<br>
+                <strong>What's recorded:</strong> The number of items ordered vs. items rejected, which the system uses to automatically compute a rejection percentage. Additionally, inspectors can add manual quality ratings (1–5 stars) with notes. All of this feeds the <strong>Quality Score</strong> in heuristic scoring.</p>
+
+                <div class="meth-step"><div class="meth-step-num" style="background: #8b5cf6;">5</div><h3>AI Memory Formation</h3></div>
+                <p class="meth-text"><strong>When:</strong> Admins explicitly teach the system, or patterns emerge from accumulated data.<br>
+                <strong>What's stored:</strong> Six types of structured knowledge that the AI references when making recommendations:</p>
+                <div class="meth-scores" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="meth-score-card">
+                        <div class="meth-score-label" style="color: #10b981;">Vendor Preferences</div>
+                        <div class="meth-score-desc">"For electronics, prefer TechSupplies Inc — consistent delivery, quality >4.5"</div>
+                    </div>
+                    <div class="meth-score-card">
+                        <div class="meth-score-label" style="color: #ef4444;">Vendor Rejections</div>
+                        <div class="meth-score-desc">"Avoid BadSteel Co — late 3/5 times, quality score 2.1"</div>
+                    </div>
+                    <div class="meth-score-card">
+                        <div class="meth-score-label" style="color: #f59e0b;">Pricing Expectations</div>
+                        <div class="meth-score-desc">"Chemicals should average ₹320/unit, max ₹450"</div>
+                    </div>
+                    <div class="meth-score-card">
+                        <div class="meth-score-label" style="color: #3b82f6;">Decision Patterns</div>
+                        <div class="meth-score-desc">"For electrical components, quality (50%) over price (30%)"</div>
+                    </div>
+                    <div class="meth-score-card">
+                        <div class="meth-score-label" style="color: #8b5cf6;">Quality Notes</div>
+                        <div class="meth-score-desc">"ISO certification required for food-grade packaging"</div>
+                    </div>
+                    <div class="meth-score-card">
+                        <div class="meth-score-label" style="color: #ec4899;">Item Preferences</div>
+                        <div class="meth-score-desc">"600GSM towels only — 400GSM rejected by guest feedback"</div>
+                    </div>
+                </div>
+                <p class="meth-text">Each memory carries a <strong>confidence level</strong> indicating how reliable it is, a <strong>source</strong> showing where it came from (admin input, AI-derived pattern, learned from usage, or user feedback), and a <strong>usage count</strong> tracking how often the AI has referenced it in past recommendations. Stale memories that haven't been used gradually lose influence.</p>
+
+                <div class="meth-step"><div class="meth-step-num" style="background: linear-gradient(135deg, #10b981, #3b82f6);">6</div><h3>Next Cycle Benefits</h3></div>
+                <p class="meth-text"><strong>When:</strong> The next RFQ is created for similar items.<br>
+                <strong>What happens:</strong> All accumulated data flows back into both phases:</p>
+                <ul class="meth-list">
+                    <li style="--dot-color: #8b5cf6;"><strong>Phase 1 (Vendor Suggestions):</strong> AI sees vendor win rates, quality scores, pricing history, preferences, rejections, and decision patterns — all from past cycles.</li>
+                    <li style="--dot-color: var(--brand-primary);"><strong>Phase 2 (Quote Comparison):</strong> Heuristic scoring uses updated quality scores, delivery variance, and rejection rates. AI analysis references accumulated memories for context.</li>
+                </ul>
+                <div class="meth-formula" style="background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.15);">
+                    <strong>The result:</strong> A vendor that delivered late and had quality issues last month will automatically score lower in the next comparison — without anyone manually adjusting weights. The system learns from outcomes, not just inputs.
+                </div>
+            </div>
+
+            <!-- Visual loop diagram -->
+            <div class="meth-card">
+                <div class="meth-section-header">
+                    <div class="meth-num" style="background: linear-gradient(135deg, #10b981, #3b82f6);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    </div>
+                    <h2>The Loop Visualized <small>Every Cycle Strengthens the Next</small></h2>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; text-align: center; margin: 16px 0;">
+                    <div style="padding: 12px 8px; border-radius: 10px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.15);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" style="margin-bottom:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <div style="font-size: 11px; font-weight: 600; color: var(--text-primary);">RFQ Sent</div>
+                        <div style="font-size: 10px; color: var(--text-secondary);">Vendors invited</div>
+                    </div>
+                    <div style="padding: 12px 8px; border-radius: 10px; background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.15);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" style="margin-bottom:4px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        <div style="font-size: 11px; font-weight: 600; color: var(--text-primary);">Quotes In</div>
+                        <div style="font-size: 10px; color: var(--text-secondary);">Prices logged</div>
+                    </div>
+                    <div style="padding: 12px 8px; border-radius: 10px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.15);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="margin-bottom:4px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        <div style="font-size: 11px; font-weight: 600; color: var(--text-primary);">Decision</div>
+                        <div style="font-size: 10px; color: var(--text-secondary);">Win/loss logged</div>
+                    </div>
+                    <div style="padding: 12px 8px; border-radius: 10px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.15);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" style="margin-bottom:4px;"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                        <div style="font-size: 11px; font-weight: 600; color: var(--text-primary);">Delivery</div>
+                        <div style="font-size: 10px; color: var(--text-secondary);">Timeliness tracked</div>
+                    </div>
+                    <div style="padding: 12px 8px; border-radius: 10px; background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.15);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" style="margin-bottom:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <div style="font-size: 11px; font-weight: 600; color: var(--text-primary);">Rating</div>
+                        <div style="font-size: 10px; color: var(--text-secondary);">Quality scored</div>
+                    </div>
+                    <div style="padding: 12px 8px; border-radius: 10px; background: rgba(236,72,153,0.08); border: 1px solid rgba(236,72,153,0.15);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" style="margin-bottom:4px;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                        <div style="font-size: 11px; font-weight: 600; color: var(--text-primary);">AI Learns</div>
+                        <div style="font-size: 10px; color: var(--text-secondary);">Next cycle better</div>
+                    </div>
+                </div>
+                <p class="meth-text" style="text-align: center; margin-bottom: 0;"><em>Each complete cycle adds data points that make the next recommendation more accurate. The more you use the system, the smarter it gets.</em></p>
+            </div>
+
+            <!-- Footer -->
+            <div class="meth-footer">
+                <p>"The final decision always rests with you. Our system provides data-driven insights to inform — not replace — your procurement judgment."</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            Navigation.init('procurement', '../');
+        });
+    </script>
+</body>
+</html>

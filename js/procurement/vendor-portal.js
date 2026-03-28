@@ -58,11 +58,30 @@ async function loadRFQData() {
 function renderRFQData() {
     if (!rfqData) return;
 
-    document.getElementById('rfqNumber').textContent = rfqData.rfq_number || rfqData.inquiry_number || '-';
-    document.getElementById('rfqInquiry').textContent = rfqData.inquiry_title || rfqData.title || '-';
-    document.getElementById('rfqDueDate').textContent = formatDate(rfqData.due_date);
-    document.getElementById('rfqBuyer').textContent = rfqData.buyer_name || rfqData.organization_name || '-';
+    // Hero card
+    document.getElementById('rfqTitle').textContent = rfqData.inquiry_title || rfqData.title || 'Request for Quotation';
+    document.getElementById('vendorLabel').textContent = rfqData.vendor_name ? `For ${rfqData.vendor_name}` : (rfqData.buyer_name || rfqData.organization_name || '');
 
+    // Status badge
+    const badgeEl = document.getElementById('statusBadge');
+    const status = rfqData.quote_status || rfqData.status || 'open';
+    if (status === 'submitted') {
+        badgeEl.className = 'vp-badge vp-badge-submitted';
+        badgeEl.textContent = 'Submitted';
+    } else if (status === 'closed' || status === 'cancelled') {
+        badgeEl.className = 'vp-badge vp-badge-closed';
+        badgeEl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+    } else {
+        badgeEl.className = 'vp-badge vp-badge-open';
+        badgeEl.textContent = 'Open';
+    }
+
+    // Stat pills
+    document.getElementById('rfqNumberPill').textContent = rfqData.rfq_number || rfqData.inquiry_number || 'RFQ';
+    document.getElementById('rfqDeadlinePill').textContent = rfqData.due_date ? `Due: ${formatDate(rfqData.due_date)}` : 'No deadline';
+    document.getElementById('rfqItemsPill').textContent = `${rfqItems.length} item${rfqItems.length !== 1 ? 's' : ''}`;
+
+    // Notes
     if (rfqData.notes) {
         document.getElementById('rfqNotes').style.display = 'block';
         document.getElementById('rfqNotesText').textContent = rfqData.notes;
@@ -72,58 +91,120 @@ function renderRFQData() {
 }
 
 function renderItems() {
-    const tbody = document.getElementById('rfqItemsBody');
+    const desktopContainer = document.getElementById('rfqItemsDesktop');
+    const mobileContainer = document.getElementById('rfqItemsMobile');
 
     if (!rfqItems || rfqItems.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 24px;">No items in this RFQ</td>
-            </tr>
-        `;
+        const emptyHtml = '<div style="text-align: center; padding: 32px; color: var(--text-secondary, #94a3b8); font-size: 0.85rem;">No items in this RFQ</div>';
+        desktopContainer.innerHTML = emptyHtml;
+        mobileContainer.innerHTML = emptyHtml;
         return;
     }
 
-    tbody.innerHTML = rfqItems.map((item, index) => `
-        <tr>
-            <td style="font-weight: 500;">${escapeHtml(item.item_name || '')}</td>
-            <td>${item.quantity || 0}</td>
-            <td>${escapeHtml(item.unit || '-')}</td>
-            <td style="color: var(--text-secondary); font-size: 13px;">${escapeHtml(item.description || '-')}</td>
-            <td>
+    // Desktop rows
+    desktopContainer.innerHTML = rfqItems.map((item, index) => `
+        <div class="vp-item-row">
+            <div class="vp-item-info">
+                <div class="vp-item-name">${escapeHtml(item.item_name || '')}</div>
+                ${item.description ? `<div class="vp-item-desc">${escapeHtml(item.description)}</div>` : ''}
+            </div>
+            <div class="vp-item-qty">${item.quantity || 0}</div>
+            <div class="vp-item-unit">${escapeHtml(item.unit || '-')}</div>
+            <div class="vp-item-price">
                 <input type="number"
                     id="price_${index}"
-                    data-item-id="${item.id}"
+                    data-item-id="${item.rfq_item_id || item.id}"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00">
+            </div>
+        </div>
+    `).join('');
+
+    // Mobile cards
+    mobileContainer.innerHTML = rfqItems.map((item, index) => `
+        <div class="vp-item-card">
+            <div class="vp-card-top-row">
+                <div>
+                    <div class="vp-item-name">${escapeHtml(item.item_name || '')}</div>
+                    <div class="vp-card-meta">
+                        <span class="vp-card-unit">${escapeHtml(item.unit || '-')}</span>
+                        <span style="font-size: 0.73rem; color: var(--text-secondary, #94a3b8);">Qty: ${item.quantity || 0}</span>
+                    </div>
+                </div>
+            </div>
+            ${item.description ? `<div class="vp-item-desc" style="margin-bottom: 8px;">${escapeHtml(item.description)}</div>` : ''}
+            <div class="vp-card-price-field">
+                <label>Unit Price</label>
+                <input type="number"
+                    id="price_mobile_${index}"
+                    data-item-id="${item.rfq_item_id || item.id}"
+                    data-desktop-pair="price_${index}"
                     min="0"
                     step="0.01"
                     placeholder="0.00"
-                    style="max-width: 120px;">
-            </td>
-        </tr>
+                    oninput="syncPrice(this, 'price_${index}')">
+            </div>
+        </div>
     `).join('');
+
+    // Sync desktop to mobile
+    rfqItems.forEach((_, index) => {
+        const desktopInput = document.getElementById(`price_${index}`);
+        if (desktopInput) {
+            desktopInput.addEventListener('input', function() {
+                const mobileInput = document.getElementById(`price_mobile_${index}`);
+                if (mobileInput) mobileInput.value = this.value;
+            });
+        }
+    });
+}
+
+function syncPrice(mobileInput, desktopId) {
+    const desktopInput = document.getElementById(desktopId);
+    if (desktopInput) desktopInput.value = mobileInput.value;
 }
 
 // ==================== Submit Quote ====================
 
 async function submitQuote() {
+    // Use showConfirm if available (from toast.js), otherwise use native confirm
+    let confirmed;
+    if (typeof showConfirm === 'function') {
+        confirmed = await showConfirm(
+            'Are you sure you want to submit your quote? You will not be able to modify it after submission.',
+            'Submit Quote',
+            'primary'
+        );
+    } else {
+        confirmed = confirm('Are you sure you want to submit your quote?');
+    }
+    if (!confirmed) return;
+
     const submitBtn = document.getElementById('submitQuoteBtn');
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting...';
+    submitBtn.innerHTML = '<div class="vp-spinner" style="width: 16px; height: 16px; border-width: 2px;"></div> Submitting...';
 
-    // Collect item prices
+    // Collect item prices (use desktop inputs as source of truth)
     const itemQuotes = rfqItems.map((item, index) => {
         const priceInput = document.getElementById(`price_${index}`);
         return {
-            item_id: item.id,
-            unit_price: parseFloat(priceInput?.value) || 0
+            rfq_item_id: item.rfq_item_id || item.id,
+            unit_price: parseFloat(priceInput?.value) || 0,
+            quantity: item.quantity || 0
         };
     });
 
     // Validate at least one price is entered
     const hasAnyPrice = itemQuotes.some(q => q.unit_price > 0);
     if (!hasAnyPrice) {
-        showToastMessage('Please enter at least one unit price', 'error');
+        if (typeof Toast !== 'undefined') {
+            Toast.error('Please enter at least one unit price');
+        } else {
+            alert('Please enter at least one unit price');
+        }
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Quote';
+        submitBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Submit Quote';
         return;
     }
 
@@ -150,9 +231,13 @@ async function submitQuote() {
         showSuccess();
     } catch (error) {
         console.error('Failed to submit quote:', error);
-        showToastMessage(error.message || 'Failed to submit quote. Please try again.', 'error');
+        if (typeof Toast !== 'undefined') {
+            Toast.error(error.message || 'Failed to submit quote. Please try again.');
+        } else {
+            alert(error.message || 'Failed to submit quote. Please try again.');
+        }
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Submit Quote';
+        submitBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Submit Quote';
     }
 }
 
@@ -206,38 +291,4 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-}
-
-/**
- * Simple toast notification for the vendor portal (no dependency on Toast.js)
- */
-function showToastMessage(message, type) {
-    // Remove any existing toast
-    const existing = document.querySelector('.vp-toast');
-    if (existing) existing.remove();
-
-    const toast = document.createElement('div');
-    toast.className = 'vp-toast';
-    const bgColor = type === 'error' ? 'var(--color-error)' : 'var(--color-success)';
-    toast.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${bgColor};
-        color: var(--text-inverse);
-        padding: 12px 20px;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 500;
-        z-index: 10000;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transition: opacity 0.3s;
-    `;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
 }
