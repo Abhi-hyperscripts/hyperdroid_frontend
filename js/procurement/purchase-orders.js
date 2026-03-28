@@ -742,7 +742,8 @@ function renderPerfSummaryCards(summary, records) {
 
     const totalRecords = records.length;
 
-    const cardStyle = `padding: 16px; background: var(--bg-card); border: 1px solid var(--border-primary); border-radius: 10px;`;
+    const cardClass = `glass-card`;
+    const cardStyle = `padding: 16px 20px;`;
     const labelStyle = `font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;`;
     const valueStyle = `font-size: 22px; font-weight: 700;`;
 
@@ -768,22 +769,22 @@ function renderPerfSummaryCards(summary, records) {
     }
 
     container.innerHTML = `
-        <div style="${cardStyle}">
+        <div class="${cardClass}" style="${cardStyle}">
             <div style="${labelStyle}">Delivery</div>
             <div style="${valueStyle} color: ${deliveryColor};">${deliveryText}</div>
             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">${deliveryRecords.length} record${deliveryRecords.length !== 1 ? 's' : ''}</div>
         </div>
-        <div style="${cardStyle}">
+        <div class="${cardClass}" style="${cardStyle}">
             <div style="${labelStyle}">Quality Rating</div>
             <div style="${valueStyle} color: ${qualityColor};">${qualityText}</div>
             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">${qualityRecords.length} rating${qualityRecords.length !== 1 ? 's' : ''}</div>
         </div>
-        <div style="${cardStyle}">
+        <div class="${cardClass}" style="${cardStyle}">
             <div style="${labelStyle}">Rejection Rate</div>
             <div style="${valueStyle} color: ${rejectionColor};">${rejectionText}</div>
             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">${receiptRecords.length} receipt${receiptRecords.length !== 1 ? 's' : ''}</div>
         </div>
-        <div style="${cardStyle}">
+        <div class="${cardClass}" style="${cardStyle}">
             <div style="${labelStyle}">Total Records</div>
             <div style="${valueStyle} color: var(--text-primary);">${totalRecords}</div>
             <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">for this vendor</div>
@@ -799,8 +800,19 @@ function renderPerfHistory(records) {
         return;
     }
 
+    // Filter out rfq_response records — they have no displayable performance data
+    const displayRecords = records.filter(r =>
+        r.source !== 'rfq_response' &&
+        (r.promised_delivery_days != null || r.items_ordered != null || r.quality_score != null)
+    );
+
+    if (displayRecords.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
     section.style.display = 'block';
-    tbody.innerHTML = records.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(r => {
+    tbody.innerHTML = displayRecords.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(r => {
         let type = 'Record';
         let details = '-';
         let score = '-';
