@@ -1439,7 +1439,7 @@ body.crm-dashboard .crm-container {
     border-color: var(--border-color);
     background-color: var(--bg-input);
     color: var(--text-primary);
-    border-radius: var(--border-radius-md);
+    border-radius: 4px;
 }
 
 .crm-filter-group .form-select:focus,
