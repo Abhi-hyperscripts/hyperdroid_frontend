@@ -205,11 +205,14 @@
                 }
             } catch (error) {
                 console.error('Error accessing shared item:', error);
+                const msg = error.message || '';
 
-                if (error.message.toLowerCase().includes('password')) {
+                if (msg.toLowerCase().includes('password')) {
                     showPasswordForm();
+                } else if (msg.toLowerCase().includes('expired')) {
+                    showError('Link Expired', 'This share link has expired and is no longer available.');
                 } else {
-                    showError('Error', error.message || 'Something went wrong while loading the shared content.');
+                    showError('Error', msg || 'Something went wrong while loading the shared content.');
                 }
             }
         }
@@ -260,14 +263,18 @@
             document.getElementById('fileIconSvg').innerHTML = iconSvg;
             document.getElementById('fileIconLarge').innerHTML = iconSvg;
 
-            // Handle download button
+            // Handle download button — fetch fresh pre-signed URL on click
             const downloadBtn = document.getElementById('downloadBtn');
             const viewOnlyNotice = document.getElementById('viewOnlyNotice');
 
-            if (result.download_url && result.access_type !== 'view') {
+            if (result.access_type !== 'view') {
                 downloadBtn.style.display = 'inline-flex';
-                downloadBtn.href = result.download_url;
-                downloadBtn.setAttribute('download', file.fileName);
+                downloadBtn.href = '#';
+                downloadBtn.removeAttribute('download');
+                downloadBtn.onclick = async (e) => {
+                    e.preventDefault();
+                    await downloadWithFreshUrl(file.fileName);
+                };
                 viewOnlyNotice.style.display = 'none';
             } else {
                 downloadBtn.style.display = 'none';
@@ -299,6 +306,7 @@
                 result.files.forEach(file => {
                     const item = document.createElement('div');
                     item.className = 'folder-file-item';
+                    const canDownload = result.access_type === 'download';
                     item.innerHTML = `
                         <div class="folder-file-info">
                             <div class="folder-file-icon">
@@ -309,12 +317,52 @@
                                 <div class="folder-file-size">${formatBytes(file.fileSize)}</div>
                             </div>
                         </div>
-                        ${file.url ? `<a href="${file.url}" download="${file.fileName}" class="folder-file-download">Download</a>` : ''}
+                        ${canDownload ? `<a href="#" class="folder-file-download" data-filename="${file.fileName}">Download</a>` : ''}
                     `;
+                    if (canDownload) {
+                        item.querySelector('.folder-file-download').onclick = async (e) => {
+                            e.preventDefault();
+                            await downloadWithFreshUrl(file.fileName);
+                        };
+                    }
                     filesList.appendChild(item);
                 });
             } else {
                 filesList.innerHTML = '<p class="text-muted" style="text-align: center; padding: 20px;">This folder is empty</p>';
+            }
+        }
+
+        async function downloadWithFreshUrl(fileName) {
+            try {
+                const password = document.getElementById('password')?.value || null;
+                const result = await api.accessSharedItem(shareToken, password);
+                if (!result.success) {
+                    showError('Link Expired', result.message || 'This share link is no longer available.');
+                    return;
+                }
+                // Find the fresh URL for this file
+                let url = result.download_url;
+                if (result.item_type === 'folder' && result.files) {
+                    const match = result.files.find(f => f.fileName === fileName);
+                    url = match?.url;
+                }
+                if (url) {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                } else {
+                    Toast.error('Download link not available');
+                }
+            } catch (error) {
+                const msg = error.message || '';
+                if (msg.toLowerCase().includes('expired')) {
+                    showError('Link Expired', 'This share link has expired and is no longer available.');
+                } else {
+                    Toast.error(msg || 'Failed to download file');
+                }
             }
         }
 
