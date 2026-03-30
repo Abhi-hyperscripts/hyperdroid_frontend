@@ -1435,6 +1435,7 @@ body.crm-dashboard .crm-container {
 .crm-filter-group .form-select,
 .crm-filter-group .form-control {
     font-size: 0.85rem;
+    height: 38px;
     border-color: var(--border-color);
     background-color: var(--bg-input);
     color: var(--text-primary);
