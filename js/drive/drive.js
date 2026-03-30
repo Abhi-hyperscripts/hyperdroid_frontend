@@ -795,11 +795,30 @@ async function handleRenameFile(e) {
 }
 
 // File operations
-async function downloadFile(fileId) {
+async function downloadFile(fileId, forceDownload = false) {
     try {
         const result = await api.getDownloadUrl(fileId);
         if (result.success) {
-            window.open(result.url, '_blank');
+            const ct = (result.content_type || '').toLowerCase();
+            const isPreviewable = ct.startsWith('image/') || ct === 'application/pdf' ||
+                ct.startsWith('video/') || ct.startsWith('audio/') || ct.startsWith('text/');
+            const isOfficeDoc = /\.(docx?|xlsx?|pptx?)$/i.test(result.file_name || '');
+
+            if (!forceDownload && isPreviewable) {
+                // Browser can render these inline
+                window.open(result.url, '_blank');
+            } else if (!forceDownload && isOfficeDoc) {
+                // Use Google Docs Viewer for Office files
+                window.open(`https://docs.google.com/gview?url=${encodeURIComponent(result.url)}&embedded=false`, '_blank');
+            } else {
+                // Force download via temporary link
+                const a = document.createElement('a');
+                a.href = result.url;
+                a.download = result.file_name || 'download';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
         } else {
             Toast.error(result.message || 'Failed to get download URL');
         }
