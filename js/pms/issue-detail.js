@@ -18,6 +18,7 @@ const STATUSES = [
     { value: 'in_progress', label: 'In Progress' },
     { value: 'qa_testing', label: 'QA Testing' },
     { value: 'closed', label: 'Closed' },
+    { value: 'verified', label: 'Verified' },
     { value: 'reopened', label: 'Reopened' },
     { value: 'wontfix', label: "Won't Fix" }
 ];
@@ -27,7 +28,8 @@ const VALID_TRANSITIONS = {
     reported:    ['in_progress', 'wontfix'],
     in_progress: ['qa_testing', 'reported'],
     qa_testing:  ['closed', 'reopened'],
-    closed:      ['reopened'],
+    closed:      ['reopened', 'verified'],
+    verified:    ['reopened'],
     reopened:    ['in_progress', 'wontfix'],
     wontfix:     ['reopened']
 };

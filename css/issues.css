@@ -104,6 +104,10 @@
     background: rgba(34, 197, 94, 0.15);
     color: var(--color-success);
 }
+.issue-status-verified {
+    background: rgba(20, 184, 166, 0.15);
+    color: #14b8a6;
+}
 .issue-status-reopened {
     background: rgba(249, 115, 22, 0.15);
     color: var(--color-warning);
@@ -614,6 +618,7 @@
 .issue-status-dot-in_progress { background: var(--color-info, #3b82f6); }
 .issue-status-dot-qa_testing { background: #a855f7; }
 .issue-status-dot-closed { background: var(--color-success); }
+.issue-status-dot-verified { background: #14b8a6; }
 .issue-status-dot-reopened { background: var(--color-warning); }
 .issue-status-dot-wontfix { background: var(--text-secondary); }
 

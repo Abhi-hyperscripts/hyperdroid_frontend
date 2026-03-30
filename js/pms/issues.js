@@ -200,6 +200,7 @@ function formatStatus(status) {
         in_progress: 'In Progress',
         qa_testing: 'QA Testing',
         closed: 'Closed',
+        verified: 'Verified',
         reopened: 'Reopened',
         wontfix: "Won't Fix"
     };
