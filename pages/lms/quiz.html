@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Quiz - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/lms.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard lms-dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Breadcrumb -->
+        <div class="lms-breadcrumb">
+            <a href="dashboard.html">LMS</a>
+            <span class="separator">/</span>
+            <span class="current" id="quizBreadcrumb">Quiz</span>
+        </div>
+
+        <!-- Quiz Loading State -->
+        <div id="quizLoading" class="lms-empty-state">
+            <p>Loading quiz...</p>
+        </div>
+
+        <!-- Quiz Start Screen -->
+        <div id="quizStartScreen" style="display:none;">
+            <div class="lms-card glass-card">
+                <div class="lms-card-header">
+                    <h2 id="quizTitle"></h2>
+                </div>
+                <div style="padding: var(--space-5);">
+                    <p id="quizDescription" style="color: var(--text-secondary); margin-bottom: var(--space-4);"></p>
+                    <div style="display: flex; gap: var(--space-6); flex-wrap: wrap; margin-bottom: var(--space-5);">
+                        <div>
+                            <span style="color: var(--text-muted); font-size: var(--font-size-sm);">Questions</span>
+                            <p style="font-weight: var(--font-weight-semibold); color: var(--text-primary);" id="quizQuestionCount">-</p>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); font-size: var(--font-size-sm);">Time Limit</span>
+                            <p style="font-weight: var(--font-weight-semibold); color: var(--text-primary);" id="quizTimeLimit">-</p>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); font-size: var(--font-size-sm);">Passing Score</span>
+                            <p style="font-weight: var(--font-weight-semibold); color: var(--text-primary);" id="quizPassingScore">-</p>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); font-size: var(--font-size-sm);">Attempts</span>
+                            <p style="font-weight: var(--font-weight-semibold); color: var(--text-primary);" id="quizAttempts">-</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="startQuiz()">Start Quiz</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz In-Progress Screen -->
+        <div id="quizInProgress" style="display:none;">
+            <!-- Timer Bar -->
+            <div class="lms-card glass-card" style="margin-bottom: var(--space-4);">
+                <div style="padding: var(--space-3) var(--space-5); display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: var(--space-3);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span id="timerDisplay" style="font-weight: var(--font-weight-semibold); color: var(--text-primary); font-size: var(--font-size-lg);">--:--</span>
+                    </div>
+                    <span style="color: var(--text-secondary); font-size: var(--font-size-sm);">
+                        Question <span id="currentQuestionNum">1</span> of <span id="totalQuestionNum">0</span>
+                    </span>
+                </div>
+                <div style="height: 4px; background: var(--bg-tertiary);">
+                    <div id="timerProgressBar" style="height: 100%; background: var(--brand-primary); transition: width 1s linear; width: 100%;"></div>
+                </div>
+            </div>
+
+            <!-- Question Navigation Dots -->
+            <div style="display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-4); justify-content: center;" id="questionDots"></div>
+
+            <!-- Question Display -->
+            <div class="lms-card glass-card" style="margin-bottom: var(--space-4);">
+                <div style="padding: var(--space-5);">
+                    <h3 id="questionText" style="color: var(--text-primary); margin-bottom: var(--space-5);"></h3>
+
+                    <!-- Answer Area -->
+                    <div id="answerArea"></div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button class="btn btn-outline-primary" id="prevBtn" onclick="previousQuestion()" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                    Previous
+                </button>
+                <button class="btn btn-primary" id="submitQuizBtn" onclick="confirmSubmitQuiz()" style="display:none;">Submit Quiz</button>
+                <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">
+                    Next
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Quiz Results Screen -->
+        <div id="quizResults" style="display:none;">
+            <div class="lms-card glass-card" style="text-align: center; padding: var(--space-8);">
+                <div id="resultIcon" style="font-size: 64px; margin-bottom: var(--space-4);"></div>
+                <h2 id="resultTitle" style="color: var(--text-primary); margin-bottom: var(--space-2);"></h2>
+                <p id="resultSubtitle" style="color: var(--text-secondary); margin-bottom: var(--space-6);"></p>
+
+                <div style="display: flex; justify-content: center; gap: var(--space-8); margin-bottom: var(--space-6); flex-wrap: wrap;">
+                    <div>
+                        <span style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); color: var(--text-primary);" id="resultScore">-</span>
+                        <p style="color: var(--text-muted); font-size: var(--font-size-sm);">Your Score</p>
+                    </div>
+                    <div>
+                        <span style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); color: var(--text-primary);" id="resultCorrect">-</span>
+                        <p style="color: var(--text-muted); font-size: var(--font-size-sm);">Correct</p>
+                    </div>
+                    <div>
+                        <span style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); color: var(--text-primary);" id="resultTotal">-</span>
+                        <p style="color: var(--text-muted); font-size: var(--font-size-sm);">Total</p>
+                    </div>
+                    <div>
+                        <span style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); color: var(--text-primary);" id="resultTimeTaken">-</span>
+                        <p style="color: var(--text-muted); font-size: var(--font-size-sm);">Time Taken</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: var(--space-3);">
+                    <button class="btn btn-outline-primary" onclick="toggleReviewAnswers()">Review Answers</button>
+                    <button class="btn btn-primary" onclick="window.location.href='my-learning.html'">Back to My Learning</button>
+                </div>
+            </div>
+
+            <!-- Answer Review -->
+            <div id="answerReview" style="display:none; margin-top: var(--space-5);"></div>
+        </div>
+    </div>
+
+    <!-- Confirm Submit Modal -->
+    <div class="modal-overlay" id="confirmSubmitModal">
+        <div class="modal-container" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>Submit Quiz?</h3>
+                <button class="modal-close" onclick="closeConfirmSubmitModal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary);">You have answered <strong id="answeredCount">0</strong> of <strong id="totalCount">0</strong> questions.</p>
+                <p id="unansweredWarning" style="color: var(--color-warning); margin-top: var(--space-2); display:none;">Some questions are unanswered. They will be marked as incorrect.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeConfirmSubmitModal()">Continue Quiz</button>
+                <button class="btn btn-primary" onclick="submitQuiz()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/quiz.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

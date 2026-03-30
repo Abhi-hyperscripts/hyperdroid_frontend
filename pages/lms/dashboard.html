@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <title>LMS Dashboard - Ragenaizer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>
+        document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/lms.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/lms-dashboard.css?v=' + CACHE_VERSION + '">');
+    </script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard lms-dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Welcome Section -->
+        <div class="crm-header">
+            <div class="header-content">
+                <div class="crm-header-row">
+                    <div>
+                        <h1 id="welcomeMessage">Welcome back!</h1>
+                        <p class="header-subtitle">Learning Management System</p>
+                    </div>
+                    <button class="refresh-btn" id="refreshBtn" onclick="refreshDashboard()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <polyline points="1 20 1 14 7 14"/>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-icon enrolled">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                    </svg>
+                </div>
+                <div class="stat-text">
+                    <div class="stat-value" id="statEnrolled">-</div>
+                    <div class="stat-label">Enrolled Courses</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon completed">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                </div>
+                <div class="stat-text">
+                    <div class="stat-value" id="statCompleted">-</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon certificates">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="8" r="7"/>
+                        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+                    </svg>
+                </div>
+                <div class="stat-text">
+                    <div class="stat-value" id="statCertificates">-</div>
+                    <div class="stat-label">Certificates</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon hours">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <div class="stat-text">
+                    <div class="stat-value" id="statHoursSpent">-</div>
+                    <div class="stat-label">Hours Spent</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Continue Learning Section -->
+        <div class="lms-section-header">
+            <h3>Continue Learning</h3>
+            <a href="my-learning.html">View All</a>
+        </div>
+        <div class="lms-continue-grid" id="continueLearningGrid">
+            <div class="lms-empty-state">
+                <p>Loading courses...</p>
+            </div>
+        </div>
+
+        <!-- Two-column layout for Deadlines + Announcements -->
+        <div class="lms-two-col">
+            <div class="lms-panel">
+                <h3>Upcoming Deadlines</h3>
+                <div id="deadlinesPanel">
+                    <div class="lms-empty-state"><p>Loading...</p></div>
+                </div>
+            </div>
+            <div class="lms-panel">
+                <h3>Announcements</h3>
+                <div id="announcementsPanel">
+                    <div class="lms-empty-state"><p>Loading...</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Live Sessions -->
+        <div class="lms-section-header">
+            <h3>Upcoming Live Sessions</h3>
+        </div>
+        <div id="liveSessionsList">
+            <div class="lms-empty-state"><p>Loading...</p></div>
+        </div>
+
+        <!-- Quick Actions (role-based navigation) -->
+        <div class="lms-section-header" style="margin-top:24px">
+            <h3>Quick Actions</h3>
+        </div>
+        <div class="quick-actions" id="quickActionsGrid">
+            <div class="action-card" onclick="window.location.href='catalog.html'">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Course Catalog</h4>
+                    <p>Browse and enroll in courses</p>
+                </div>
+                <svg class="action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="action-card" onclick="window.location.href='my-learning.html'">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>My Learning</h4>
+                    <p>Track your progress and enrollments</p>
+                </div>
+                <svg class="action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="action-card" onclick="window.location.href='certificates.html'">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Certificates</h4>
+                    <p>View earned certificates</p>
+                </div>
+                <svg class="action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="action-card" onclick="window.location.href='learning-paths.html'">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Learning Paths</h4>
+                    <p>Structured course sequences</p>
+                </div>
+                <svg class="action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <!-- Instructor/Admin only -->
+            <div class="action-card" id="actionCourseBuilder" style="display:none" onclick="window.location.href='course-builder.html'">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Create Course</h4>
+                    <p>Build and publish new courses</p>
+                </div>
+                <svg class="action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="action-card" id="actionLiveSessions" style="display:none" onclick="window.location.href='live-sessions.html'">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Live Sessions</h4>
+                    <p>Schedule and manage live classes</p>
+                </div>
+                <svg class="action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <!-- Admin only -->
+            <div class="action-card" id="actionReports" style="display:none" onclick="window.location.href='reports.html'">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Reports & Analytics</h4>
+                    <p>View learning metrics and compliance</p>
+                </div>
+                <svg class="action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="action-card" id="actionAdmin" style="display:none" onclick="window.location.href='admin.html'">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Administration</h4>
+                    <p>Categories, rules, templates</p>
+                </div>
+                <svg class="action-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lmsRoles.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/dashboard.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

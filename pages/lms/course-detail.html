@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Course Detail - LMS | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>
+        document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/lms.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/lms-dashboard.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');
+    </script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard lms-dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-nav">
+            <a href="dashboard.html">LMS</a>
+            <span class="separator">/</span>
+            <a href="catalog.html">Catalog</a>
+            <span class="separator">/</span>
+            <span class="current" id="breadcrumbTitle">Course</span>
+        </div>
+
+        <!-- Header row: title + actions -->
+        <div class="crm-header">
+            <div>
+                <h1 id="courseTitle">Loading...</h1>
+                <p class="header-subtitle" id="courseSubtitle"></p>
+            </div>
+            <div class="header-actions" id="courseActions">
+                <!-- Enroll / Continue button rendered by JS -->
+            </div>
+        </div>
+
+        <!-- Instructor/Admin Stats Panel (hidden by default, shown by JS) -->
+        <div id="instructorStatsPanel" style="display:none;margin-bottom:16px">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon enrolled">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    </div>
+                    <div class="stat-text">
+                        <div class="stat-value" id="instrStatEnrollments">-</div>
+                        <div class="stat-label">Enrollments</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon completed">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <div class="stat-text">
+                        <div class="stat-value" id="instrStatCompletion">-</div>
+                        <div class="stat-label">Completion Rate</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon certificates">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>
+                    </div>
+                    <div class="stat-text">
+                        <div class="stat-value" id="instrStatAvgScore">-</div>
+                        <div class="stat-label">Avg Score</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon hours">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                    </div>
+                    <div class="stat-text">
+                        <div class="stat-value" id="instrStatActive">-</div>
+                        <div class="stat-label">Active Learners</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="stats-grid" id="courseStatsGrid">
+            <div class="stat-card">
+                <div class="stat-icon enrolled">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                </div>
+                <div class="stat-text">
+                    <div class="stat-value" id="statDifficulty">--</div>
+                    <div class="stat-label">Difficulty</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon completed">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div class="stat-text">
+                    <div class="stat-value" id="statLessons">-</div>
+                    <div class="stat-label">Lessons</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon certificates">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="stat-text">
+                    <div class="stat-value" id="statDuration">-</div>
+                    <div class="stat-label">Duration</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon hours">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div class="stat-text">
+                    <div class="stat-value" id="statEnrolled">-</div>
+                    <div class="stat-label">Enrolled</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="lms-tabs" id="courseTabs">
+            <button class="lms-tab active" data-tab="overview">Overview</button>
+            <button class="lms-tab" data-tab="modules">Modules</button>
+            <button class="lms-tab" data-tab="reviews">Reviews</button>
+            <button class="lms-tab" data-tab="discussions">Discussions</button>
+        </div>
+
+        <!-- Tab Panes -->
+        <!-- Overview -->
+        <div class="lms-tab-pane active" id="tab-overview">
+            <div class="glass-card" style="margin-bottom:16px">
+                <h3 style="font-size:0.95rem;font-weight:600;color:var(--text-primary);margin:0 0 8px">About this Course</h3>
+                <p style="font-size:0.85rem;color:var(--text-secondary);line-height:1.6;margin:0" id="courseDescription">Loading...</p>
+            </div>
+            <div class="glass-card" style="margin-bottom:16px">
+                <h3 style="font-size:0.95rem;font-weight:600;color:var(--text-primary);margin:0 0 8px">Instructor</h3>
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin:0" id="courseInstructor">--</p>
+            </div>
+            <div class="glass-card">
+                <h3 style="font-size:0.95rem;font-weight:600;color:var(--text-primary);margin:0 0 8px">Prerequisites</h3>
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin:0" id="coursePrerequisites">None</p>
+            </div>
+        </div>
+
+        <!-- Modules -->
+        <div class="lms-tab-pane" id="tab-modules">
+            <div id="modulesList">
+                <div class="glass-card" style="text-align:center;padding:40px;color:var(--text-secondary)">
+                    <p style="margin:0">Loading modules...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews -->
+        <div class="lms-tab-pane" id="tab-reviews">
+            <div class="glass-card" id="reviewsContent">
+                <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+                    <div style="font-size:2rem;font-weight:700;color:var(--text-primary)" id="reviewsAvgValue">0.0</div>
+                    <div>
+                        <div id="reviewsAvgStars" style="color:var(--color-warning)"></div>
+                        <span style="font-size:0.78rem;color:var(--text-secondary)" id="reviewsTotal">0 reviews</span>
+                    </div>
+                </div>
+                <div id="reviewsList" style="border-top:1px solid var(--border-color-light);padding-top:12px">
+                    <p style="text-align:center;color:var(--text-secondary);font-size:0.85rem">No reviews yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discussions -->
+        <div class="lms-tab-pane" id="tab-discussions">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <h3 style="font-size:0.95rem;font-weight:600;color:var(--text-primary);margin:0">Discussions</h3>
+                <button class="btn-enroll" onclick="openNewDiscussion()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    New Thread
+                </button>
+            </div>
+            <div id="discussionsList">
+                <div class="glass-card" style="text-align:center;padding:30px;color:var(--text-secondary)">
+                    <p style="margin:0;font-size:0.85rem">No discussions yet. Start the conversation!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lmsRoles.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/course-detail.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

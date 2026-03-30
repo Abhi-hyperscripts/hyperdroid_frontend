@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Reports - LMS | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/lms.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');
+    </script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard lms-dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Header -->
+        <div class="crm-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav" style="margin-bottom: 8px;">
+                    <a href="dashboard.html">LMS</a>
+                    <span class="separator">/</span>
+                    <span class="current">Reports</span>
+                </nav>
+                <div class="crm-header-row">
+                    <div>
+                        <h1>Reports & Analytics</h1>
+                        <p class="header-subtitle">Learning metrics and insights</p>
+                    </div>
+                    <button class="btn btn-secondary" id="btnExportCsv" onclick="exportCsv()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Export CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview Stats -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-icon enrolled">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+                        <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+                    </svg>
+                </div>
+                <div class="stat-text">
+                    <div class="stat-value" id="statTotalCourses">-</div>
+                    <div class="stat-label">Total Courses</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon hours">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 010 7.75"/>
+                    </svg>
+                </div>
+                <div class="stat-text">
+                    <div class="stat-value" id="statTotalLearners">-</div>
+                    <div class="stat-label">Total Learners</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon completed">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                </div>
+                <div class="stat-text">
+                    <div class="stat-value" id="statCompletionRate">-</div>
+                    <div class="stat-label">Completion Rate</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon certificates">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                </div>
+                <div class="stat-text">
+                    <div class="stat-value" id="statAvgScore">-</div>
+                    <div class="stat-label">Avg Score</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Area -->
+        <div class="section-header">
+            <h3 class="section-title">Analytics</h3>
+        </div>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h4 class="chart-title">Enrollments Over Time</h4>
+                <div style="position:relative;height:250px">
+                    <canvas id="chartEnrollments"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h4 class="chart-title">Completion by Category</h4>
+                <div style="position:relative;height:250px">
+                    <canvas id="chartCompletion"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compliance Table -->
+        <div class="section-header" style="margin-top: 32px;">
+            <h3 class="section-title">Compliance Training</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table" id="complianceTable">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Course</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Completed On</th>
+                    </tr>
+                </thead>
+                <tbody id="complianceTableBody">
+                    <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="section-header" style="margin-top: 32px;">
+            <h3 class="section-title">Leaderboard</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table" id="leaderboardTable">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Learner</th>
+                        <th>Courses Completed</th>
+                        <th>Avg Score</th>
+                        <th>Certificates</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardTableBody">
+                    <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Team Report (Manager/Admin) -->
+        <div id="teamReportSection" style="display:none;">
+            <div class="section-header" style="margin-top: 32px;">
+                <h3 class="section-title">Team Learning</h3>
+            </div>
+            <div class="stats-grid" style="margin-bottom:12px;">
+                <div class="stat-card">
+                    <div class="stat-text">
+                        <div class="stat-value" id="teamStatMembers">-</div>
+                        <div class="stat-label">Team Members</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-text">
+                        <div class="stat-value" id="teamStatEnrollments">-</div>
+                        <div class="stat-label">Total Enrollments</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-text">
+                        <div class="stat-value" id="teamStatProgress">-</div>
+                        <div class="stat-label">Avg Progress</div>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Enrolled</th>
+                            <th>Completed</th>
+                            <th>Avg Progress</th>
+                            <th>Avg Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teamReportBody">
+                        <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Course Drill-Down Report -->
+        <div class="section-header" style="margin-top: 32px;">
+            <h3 class="section-title">Course Report</h3>
+        </div>
+        <div style="margin-bottom:12px;">
+            <select id="courseReportSelect" onchange="loadCourseReport()" class="form-select" style="width:auto;max-width:400px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border-primary);font-size:0.85rem;">
+                <option value="">Select a course to view details...</option>
+            </select>
+        </div>
+        <div id="courseReportPanel" style="display:none;">
+            <div class="stats-grid" id="courseReportStats">
+                <div class="stat-card">
+                    <div class="stat-text">
+                        <div class="stat-value" id="crStatEnrollments">-</div>
+                        <div class="stat-label">Enrollments</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-text">
+                        <div class="stat-value" id="crStatCompletion">-</div>
+                        <div class="stat-label">Completion Rate</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-text">
+                        <div class="stat-value" id="crStatAvgScore">-</div>
+                        <div class="stat-label">Avg Score</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-text">
+                        <div class="stat-value" id="crStatAvgProgress">-</div>
+                        <div class="stat-label">Avg Progress</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Learner Report -->
+        <div class="section-header" style="margin-top: 32px;">
+            <h3 class="section-title">Learner Report</h3>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <input type="text" id="learnerSearchInput" class="form-control" placeholder="Enter user ID to look up..." style="max-width:400px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border-primary);font-size:0.85rem;">
+            <button class="btn btn-secondary" onclick="searchLearnerReport()">Search</button>
+        </div>
+        <div id="learnerReportPanel" style="display:none;">
+            <div class="glass-card" style="padding:var(--space-4);">
+                <h4 style="color:var(--text-primary);margin:0 0 12px;font-size:0.9rem;" id="learnerReportName">Learner</h4>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-text">
+                            <div class="stat-value" id="lrStatEnrolled">-</div>
+                            <div class="stat-label">Enrolled</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-text">
+                            <div class="stat-value" id="lrStatCompleted">-</div>
+                            <div class="stat-label">Completed</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-text">
+                            <div class="stat-value" id="lrStatAvgScore">-</div>
+                            <div class="stat-label">Avg Score</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-text">
+                            <div class="stat-value" id="lrStatCerts">-</div>
+                            <div class="stat-label">Certificates</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lmsRoles.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/reports.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

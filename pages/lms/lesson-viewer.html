@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Lesson - LMS | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/lms.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard lms-dashboard crm-page lms-lesson-viewer-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+
+    <!-- Lesson Viewer Layout (no main navbar, full-width) -->
+    <div class="lesson-viewer-layout">
+        <!-- Sidebar TOC -->
+        <aside class="lesson-sidebar" id="lessonSidebar">
+            <div class="lesson-sidebar-header">
+                <a href="#" class="lesson-sidebar-back" id="backToCourse">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    <span id="sidebarCourseTitle">Course</span>
+                </a>
+                <button class="lesson-sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Course Progress Bar -->
+            <div class="lesson-progress-bar">
+                <div class="lesson-progress-fill" id="courseProgressFill" style="width: 0%"></div>
+            </div>
+            <div class="lesson-progress-text" id="courseProgressText">0% complete</div>
+
+            <!-- Module/Lesson TOC -->
+            <div class="lesson-toc" id="lessonToc">
+                <div class="lms-loading">Loading...</div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="lesson-main" id="lessonMain">
+            <!-- Mobile sidebar toggle -->
+            <button class="lesson-mobile-toggle" id="mobileSidebarToggle" onclick="toggleSidebar()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+            </button>
+
+            <!-- Lesson Content -->
+            <div class="lesson-content-area" id="lessonContentArea">
+                <!-- Video Player (hidden by default) -->
+                <div class="lesson-video-wrapper" id="videoWrapper" style="display:none;">
+                    <video id="lessonVideo" controls preload="metadata">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
+                <!-- Document Viewer (hidden by default) -->
+                <div class="lesson-document-wrapper" id="documentWrapper" style="display:none;">
+                    <iframe id="lessonDocument" title="Lesson Document"></iframe>
+                </div>
+
+                <!-- Rich Text Content (hidden by default) -->
+                <div class="lesson-text-content" id="textContentWrapper" style="display:none;">
+                    <div id="lessonTextContent"></div>
+                </div>
+
+                <!-- Lesson not found / loading -->
+                <div class="lesson-placeholder" id="lessonPlaceholder">
+                    <div class="lms-loading">Loading lesson...</div>
+                </div>
+            </div>
+
+            <!-- Lesson Footer Actions -->
+            <div class="lesson-footer" id="lessonFooter">
+                <button class="btn-lms-secondary" id="prevLessonBtn" onclick="navigateLesson('prev')" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    Previous
+                </button>
+                <button class="btn btn-primary" id="markCompleteBtn" onclick="markComplete()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Mark Complete
+                </button>
+                <button class="btn-lms-secondary" id="nextLessonBtn" onclick="navigateLesson('next')" disabled>
+                    Next
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lesson-viewer.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

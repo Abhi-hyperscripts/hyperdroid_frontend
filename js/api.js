@@ -124,6 +124,10 @@ class API {
         if (endpoint.startsWith('/procurement/')) {
             return CONFIG.procurementApiBaseUrl;
         }
+        // LMS endpoints go to LMS service (independent microservice)
+        if (endpoint.startsWith('/lms/')) {
+            return CONFIG.lmsApiBaseUrl;
+        }
         // Notification endpoints go to Notification service
         if (endpoint.startsWith('/notifications/')) {
             return CONFIG.notificationApiBaseUrl;
@@ -172,6 +176,10 @@ class API {
         // For Procurement endpoints, strip /procurement prefix since baseUrl already has /api
         if (endpoint.startsWith('/procurement/')) {
             actualEndpoint = endpoint.substring(12); // Remove '/procurement' prefix, keep the rest
+        }
+        // For LMS endpoints, strip /lms prefix since baseUrl already has /api
+        if (endpoint.startsWith('/lms/')) {
+            actualEndpoint = endpoint.substring(4); // Remove '/lms' prefix, keep the rest
         }
         const url = `${baseUrl}${actualEndpoint}`;
         const headers = {

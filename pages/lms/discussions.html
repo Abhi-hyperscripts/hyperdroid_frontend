@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Discussions - LMS | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>
+        document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/lms.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');
+    </script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard lms-dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Header -->
+        <div class="crm-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav" style="margin-bottom: 8px;">
+                    <a href="dashboard.html">LMS</a>
+                    <span class="separator">/</span>
+                    <a href="#" id="breadcrumbCourse">Course</a>
+                    <span class="separator">/</span>
+                    <span class="current">Discussions</span>
+                </nav>
+                <div class="crm-header-row">
+                    <div>
+                        <h1 id="pageTitle">Discussions</h1>
+                        <p class="header-subtitle" id="courseTitle">Course discussions</p>
+                    </div>
+                    <button class="btn btn-primary" id="btnCreateThread" onclick="showCreateThreadModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        New Thread
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thread List View -->
+        <div id="threadListView">
+            <!-- Pinned Threads -->
+            <div id="pinnedThreadsSection" style="display: none;">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                        </svg>
+                        Pinned
+                    </h3>
+                </div>
+                <div class="discussions-list" id="pinnedThreadsList"></div>
+            </div>
+
+            <!-- All Threads -->
+            <div class="section-header">
+                <h3 class="section-title">All Threads</h3>
+                <span class="thread-count" id="threadCount">0 threads</span>
+            </div>
+            <div class="discussions-list" id="threadsList">
+                <div class="lms-loading">Loading discussions...</div>
+            </div>
+        </div>
+
+        <!-- Thread Detail View (hidden by default) -->
+        <div id="threadDetailView" style="display: none;">
+            <div class="thread-detail-header">
+                <button class="btn btn-secondary" onclick="backToThreads()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5"/>
+                        <polyline points="12 19 5 12 12 5"/>
+                    </svg>
+                    Back to Threads
+                </button>
+            </div>
+
+            <!-- Thread content -->
+            <div class="thread-detail-card" id="threadContent">
+                <div class="thread-detail-title" id="threadTitle"></div>
+                <div class="thread-detail-meta" id="threadMeta"></div>
+                <div class="thread-detail-body" id="threadBody"></div>
+                <div class="thread-detail-tags" id="threadTags"></div>
+            </div>
+
+            <!-- Solution marker -->
+            <div class="thread-solution" id="threadSolution" style="display: none;">
+                <div class="solution-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Solution
+                </div>
+                <div class="solution-content" id="solutionContent"></div>
+            </div>
+
+            <!-- Replies -->
+            <div class="section-header" style="margin-top: 24px;">
+                <h3 class="section-title">Replies</h3>
+                <span class="thread-count" id="replyCount">0 replies</span>
+            </div>
+            <div class="replies-list" id="repliesList">
+                <div class="lms-loading">Loading replies...</div>
+            </div>
+
+            <!-- Reply Input -->
+            <div class="reply-input-card">
+                <h4>Post a Reply</h4>
+                <textarea id="replyBody" class="form-textarea" rows="4" placeholder="Write your reply..."></textarea>
+                <div class="reply-actions">
+                    <button class="btn btn-primary" id="btnPostReply" onclick="postReply()">Post Reply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Thread Modal -->
+    <div class="modal-overlay" id="createThreadModal" style="display: none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Create New Thread</h3>
+                <button class="modal-close" onclick="closeCreateThreadModal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="threadTitleInput">Title</label>
+                    <input type="text" id="threadTitleInput" class="form-input" placeholder="Enter thread title" maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="threadBodyInput">Body</label>
+                    <textarea id="threadBodyInput" class="form-textarea" rows="6" placeholder="Describe your question or topic..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCreateThreadModal()">Cancel</button>
+                <button class="btn btn-primary" id="btnSubmitThread" onclick="createThread()">Create Thread</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/discussions.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

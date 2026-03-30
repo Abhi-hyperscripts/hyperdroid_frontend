@@ -16,6 +16,7 @@ const Navigation = {
         crm: 'CRM_USER',
         research: 'RESEARCH_USER',
         pms: 'PMS_USER',
+        lms: 'LMS_USER',
         procurement: 'PROCUREMENT_USER',
         admin: 'SUPERADMIN'
     },
@@ -104,6 +105,18 @@ const Navigation = {
             </svg>`,
             href: 'pms/dashboard.html',
             requiresRole: 'PMS_USER'
+        },
+        {
+            id: 'lms',
+            label: 'Learning',
+            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                <path d="M8 7h8"/>
+                <path d="M8 11h6"/>
+            </svg>`,
+            href: 'lms/dashboard.html',
+            requiresRole: 'LMS_USER'
         },
         {
             id: 'procurement',
@@ -230,6 +243,7 @@ const Navigation = {
         'crm': 'CRM',
         'research': 'Research',
         'pms': 'PMS',
+        'lms': 'LMS',
         'procurement': 'Procurement'
         // 'admin' and 'home' don't require service licensing
     },
@@ -967,6 +981,9 @@ async function loadNavigation() {
         basePath = '../';
     } else if (path.includes('/pms/')) {
         currentPageId = 'pms';
+        basePath = '../';
+    } else if (path.includes('/lms/')) {
+        currentPageId = 'lms';
         basePath = '../';
     } else if (path.includes('/procurement/')) {
         currentPageId = 'procurement';

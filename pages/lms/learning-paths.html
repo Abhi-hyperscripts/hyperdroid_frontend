@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Learning Paths - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/lms.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard lms-dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Breadcrumb -->
+        <div class="lms-breadcrumb">
+            <a href="dashboard.html">LMS</a>
+            <span class="separator">/</span>
+            <span class="current" id="pathBreadcrumb">Learning Paths</span>
+        </div>
+
+        <!-- Header -->
+        <div class="lms-header" id="pathListHeader">
+            <div>
+                <h1>Learning Paths</h1>
+                <p class="header-subtitle">Structured course sequences to build your skills</p>
+            </div>
+        </div>
+
+        <!-- Path Cards Grid -->
+        <div id="pathGrid" class="lms-course-grid">
+            <div class="lms-empty-state" id="pathLoading">
+                <p>Loading learning paths...</p>
+            </div>
+        </div>
+
+        <!-- Path Detail View -->
+        <div id="pathDetail" style="display:none;">
+            <button class="btn btn-outline-primary" onclick="backToPathList()" style="margin-bottom: var(--space-4);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Back to Learning Paths
+            </button>
+
+            <div class="lms-card" style="margin-bottom: var(--space-5);">
+                <div style="padding: var(--space-5);">
+                    <!-- Path Header -->
+                    <div style="display: flex; gap: var(--space-5); flex-wrap: wrap; margin-bottom: var(--space-5);">
+                        <div id="pathThumbnailWrap" style="width: 200px; height: 120px; border-radius: var(--radius-md); overflow: hidden; background: var(--bg-tertiary); flex-shrink: 0;">
+                            <img id="pathThumbnail" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none;">
+                            <div id="pathThumbnailPlaceholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <h2 id="pathTitle" style="color: var(--text-primary); margin: 0 0 var(--space-2) 0;"></h2>
+                            <p id="pathDescription" style="color: var(--text-secondary); margin-bottom: var(--space-3);"></p>
+                            <div style="display: flex; gap: var(--space-4); flex-wrap: wrap; align-items: center;">
+                                <span class="lms-difficulty-badge" id="pathDifficulty"></span>
+                                <span style="color: var(--text-muted); font-size: var(--font-size-sm);" id="pathCourseCount"></span>
+                                <span style="color: var(--text-muted); font-size: var(--font-size-sm);" id="pathDuration"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress (if enrolled) -->
+                    <div id="pathProgressSection" style="display:none; margin-bottom: var(--space-5);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2);">
+                            <span style="color: var(--text-secondary); font-size: var(--font-size-sm);">Your Progress</span>
+                            <span style="color: var(--text-primary); font-weight: var(--font-weight-semibold); font-size: var(--font-size-sm);" id="pathProgressPct">0%</span>
+                        </div>
+                        <div class="lms-progress-bar">
+                            <div class="lms-progress-fill" id="pathProgressFill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Enroll Button -->
+                    <div id="pathEnrollSection">
+                        <button class="btn btn-primary" id="enrollBtn" onclick="enrollInPath()">Enroll in Path</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Sequence -->
+            <h3 style="color: var(--text-primary); margin-bottom: var(--space-4);">Course Sequence</h3>
+            <div id="courseSequence"></div>
+
+            <!-- Admin: Enrolled Users (hidden by default) -->
+            <div id="pathEnrollmentsSection" style="display:none;margin-top:24px;">
+                <h3 style="font-size:0.95rem;font-weight:600;color:var(--text-primary);margin:0 0 12px">Enrolled Users</h3>
+                <div class="crm-table-wrapper data-table-container">
+                    <table class="crm-table data-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                                <th>Enrolled</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pathEnrollmentsBody">
+                            <tr><td colspan="4" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lmsRoles.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/learning-paths.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>

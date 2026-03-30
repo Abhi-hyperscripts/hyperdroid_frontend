@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Assignments - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/lms.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard lms-dashboard crm-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Breadcrumb -->
+        <div class="lms-breadcrumb">
+            <a href="dashboard.html">LMS</a>
+            <span class="separator">/</span>
+            <span class="current">Assignments</span>
+        </div>
+
+        <!-- Header -->
+        <div class="lms-header">
+            <div>
+                <h1>Assignments</h1>
+                <p class="header-subtitle">Your course assignments and submissions</p>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="lms-tabs" id="assignmentTabs">
+            <button class="lms-tab active" data-tab="pending" onclick="switchTab('pending')">Pending</button>
+            <button class="lms-tab" data-tab="submitted" onclick="switchTab('submitted')">Submitted</button>
+            <button class="lms-tab" data-tab="graded" onclick="switchTab('graded')">Graded</button>
+        </div>
+
+        <!-- Assignment List -->
+        <div class="glass-card" style="padding: var(--space-4);">
+            <div id="assignmentList" class="lms-tab-content">
+                <div class="lms-empty-state" id="assignmentLoading">
+                    <p>Loading assignments...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructor Grading Panel (hidden by default) -->
+        <div id="instructorGradingPanel" style="display:none;">
+            <div class="glass-card" style="padding: var(--space-4); margin-bottom: var(--space-4);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-4);">
+                    <h3 style="color:var(--text-primary);margin:0;font-size:0.95rem;">Submissions to Grade</h3>
+                    <select id="gradingCourseFilter" onchange="filterGradingCourse()" class="form-select" style="width:auto;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border-primary);font-size:0.8rem;padding:4px 8px;">
+                        <option value="">All Courses</option>
+                    </select>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="gradingTable">
+                        <thead>
+                            <tr>
+                                <th>Learner</th>
+                                <th>Assignment</th>
+                                <th>Course</th>
+                                <th>Submitted</th>
+                                <th>Status</th>
+                                <th>Score</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gradingTableBody">
+                            <tr><td colspan="7" class="text-center">Loading submissions...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grade Modal -->
+        <div class="glassmorphic-modal" id="gradeModal" style="display:none;">
+            <div class="glassmorphic-modal-content" style="max-width:500px;">
+                <div class="glassmorphic-modal-header">
+                    <h4 id="gradeModalTitle">Grade Submission</h4>
+                    <button class="glassmorphic-modal-close" onclick="closeGradeModal()">&times;</button>
+                </div>
+                <div class="glassmorphic-modal-body">
+                    <input type="hidden" id="gradeSubmissionId">
+                    <div style="margin-bottom:var(--space-3);">
+                        <label style="color:var(--text-secondary);font-size:0.8rem;">Learner</label>
+                        <p style="color:var(--text-primary);font-weight:500;" id="gradeModalLearner">-</p>
+                    </div>
+                    <div style="margin-bottom:var(--space-3);">
+                        <label style="color:var(--text-secondary);font-size:0.8rem;">Submission Text</label>
+                        <div id="gradeModalSubmissionText" style="color:var(--text-primary);background:var(--bg-tertiary);padding:var(--space-3);border-radius:6px;font-size:0.82rem;max-height:150px;overflow-y:auto;white-space:pre-wrap;margin-top:4px;">-</div>
+                    </div>
+                    <div style="margin-bottom:var(--space-3);">
+                        <label style="color:var(--text-secondary);font-size:0.8rem;">Score <span id="gradeModalMaxScore"></span></label>
+                        <input type="number" id="gradeScoreInput" class="form-control" min="0" step="0.5" placeholder="Enter score" style="background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border-primary);">
+                    </div>
+                    <div style="margin-bottom:var(--space-4);">
+                        <label style="color:var(--text-secondary);font-size:0.8rem;">Feedback</label>
+                        <textarea id="gradeFeedbackInput" class="form-control" rows="3" placeholder="Optional feedback for the learner..." style="background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border-primary);resize:vertical;"></textarea>
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="submitGrade()">Submit Grade</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignment Detail View -->
+        <div id="assignmentDetail" style="display:none;">
+            <button class="btn btn-outline-primary" onclick="backToList()" style="margin-bottom: var(--space-4);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Back to Assignments
+            </button>
+
+            <div class="lms-card glass-card" style="margin-bottom: var(--space-4);">
+                <div class="lms-card-header">
+                    <h2 id="detailTitle"></h2>
+                    <span class="lms-badge" id="detailStatus"></span>
+                </div>
+                <div style="padding: var(--space-5);">
+                    <div style="display: flex; gap: var(--space-6); flex-wrap: wrap; margin-bottom: var(--space-4);">
+                        <div>
+                            <span style="color: var(--text-muted); font-size: var(--font-size-sm);">Course</span>
+                            <p style="color: var(--text-primary); font-weight: var(--font-weight-medium);" id="detailCourse">-</p>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); font-size: var(--font-size-sm);">Due Date</span>
+                            <p style="color: var(--text-primary); font-weight: var(--font-weight-medium);" id="detailDueDate">-</p>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); font-size: var(--font-size-sm);">Max Score</span>
+                            <p style="color: var(--text-primary); font-weight: var(--font-weight-medium);" id="detailMaxScore">-</p>
+                        </div>
+                    </div>
+
+                    <h4 style="color: var(--text-primary); margin-bottom: var(--space-3);">Instructions</h4>
+                    <div id="detailInstructions" style="color: var(--text-secondary); line-height: 1.7; margin-bottom: var(--space-5);"></div>
+
+                    <!-- Submission Form (for pending) -->
+                    <div id="submissionForm" style="display:none;">
+                        <h4 style="color: var(--text-primary); margin-bottom: var(--space-3);">Your Submission</h4>
+                        <textarea id="submissionText" class="form-control" rows="8"
+                                  placeholder="Write your answer here..."
+                                  style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-primary); margin-bottom: var(--space-4); resize: vertical;"></textarea>
+
+                        <div style="margin-bottom: var(--space-4);">
+                            <label style="color: var(--text-secondary); font-size: var(--font-size-sm); display: block; margin-bottom: var(--space-2);">Attach Files (optional)</label>
+                            <div id="fileUploadArea" style="border: 2px dashed var(--border-primary); border-radius: var(--radius-md); padding: var(--space-5);
+                                        text-align: center; cursor: pointer; transition: border-color var(--transition-fast);"
+                                 onclick="document.getElementById('fileInput').click()"
+                                 ondragover="event.preventDefault(); this.style.borderColor='var(--brand-primary)'"
+                                 ondragleave="this.style.borderColor='var(--border-primary)'"
+                                 ondrop="handleFileDrop(event)">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                                <p style="color: var(--text-muted); margin-top: var(--space-2);">Click or drag files here</p>
+                            </div>
+                            <input type="file" id="fileInput" multiple style="display:none;" onchange="handleFileSelect(event)">
+                            <div id="fileList" style="margin-top: var(--space-2);"></div>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="submitAssignment()">Submit Assignment</button>
+                    </div>
+
+                    <!-- Submitted View -->
+                    <div id="submittedView" style="display:none;">
+                        <h4 style="color: var(--text-primary); margin-bottom: var(--space-3);">Your Submission</h4>
+                        <div id="submittedText" style="color: var(--text-secondary); background: var(--bg-tertiary); padding: var(--space-4);
+                                    border-radius: var(--radius-md); margin-bottom: var(--space-4); white-space: pre-wrap;"></div>
+                        <div id="submittedFiles" style="margin-bottom: var(--space-4);"></div>
+                    </div>
+
+                    <!-- Grade Display -->
+                    <div id="gradeDisplay" style="display:none; margin-top: var(--space-4);">
+                        <div style="background: var(--bg-tertiary); border-radius: var(--radius-md); padding: var(--space-5);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-3);">
+                                <h4 style="color: var(--text-primary); margin: 0;">Grade</h4>
+                                <span style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--brand-primary);" id="gradeScore"></span>
+                            </div>
+                            <div>
+                                <span style="color: var(--text-muted); font-size: var(--font-size-sm);">Instructor Feedback</span>
+                                <p style="color: var(--text-secondary); margin-top: var(--space-2);" id="gradeFeedback">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/lmsRoles.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/lms/assignments.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>
