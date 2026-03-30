@@ -295,15 +295,49 @@ function setContentHtml(elementId, html) {
 }
 
 function renderComments() {
-    document.getElementById('commentCount').textContent = comments.length;
+    const userComments = comments.filter(c => !c.is_system);
+    const systemComments = comments.filter(c => c.is_system);
+
+    document.getElementById('commentCount').textContent = userComments.length;
 
     const list = document.getElementById('commentsList');
-    if (!comments || comments.length === 0) {
-        list.innerHTML = '<div class="issue-comment-empty">No comments yet. Be the first to comment.</div>';
-        return;
+
+    let html = '';
+
+    // User comments
+    if (userComments.length === 0) {
+        html += '<div class="issue-comment-empty">No comments yet. Be the first to comment.</div>';
+    } else {
+        html += userComments.map(c => renderSingleComment(c)).join('');
     }
 
-    list.innerHTML = comments.map(c => renderSingleComment(c)).join('');
+    // Activity log (system comments) — collapsible
+    if (systemComments.length > 0) {
+        html += `<div class="issue-activity-section">
+            <div class="issue-activity-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                <span>Activity Log</span>
+                <span class="issue-activity-count">${systemComments.length}</span>
+            </div>
+            <div class="issue-activity-list">
+                ${systemComments.map(c => renderActivityItem(c)).join('')}
+            </div>
+        </div>`;
+    }
+
+    list.innerHTML = html;
+}
+
+function renderActivityItem(c) {
+    const name = c.user_name || 'Unknown';
+    const initials = getInitials(name);
+    const timeStr = formatRelativeTime(c.created_at);
+    return `
+        <div class="issue-activity-item">
+            <span class="issue-activity-dot"></span>
+            <span class="issue-activity-text">${c.comment || ''}</span>
+            <span class="issue-activity-meta">— ${escapeHtml(name)}, ${timeStr}</span>
+        </div>`;
 }
 
 function renderSingleComment(c) {
