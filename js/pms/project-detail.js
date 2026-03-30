@@ -1571,6 +1571,20 @@ async function loadProjectIssues() {
             } catch (_) {}
         }
 
+        // Restore saved filters on first load
+        const savedFilters = sessionStorage.getItem(`issueFilters_${projectId}`);
+        if (savedFilters && !loadProjectIssues._restored) {
+            loadProjectIssues._restored = true;
+            try {
+                const f = JSON.parse(savedFilters);
+                if (f.subProjectId) document.getElementById('issueFilterSubProject').value = f.subProjectId;
+                if (f.status) document.getElementById('issueFilterStatus').value = f.status;
+                if (f.severity) document.getElementById('issueFilterSeverity').value = f.severity;
+                if (f.fromDate) document.getElementById('issueFilterFromDate').value = f.fromDate;
+                if (f.toDate) document.getElementById('issueFilterToDate').value = f.toDate;
+            } catch (_) {}
+        }
+
         const params = new URLSearchParams();
         params.set('projectId', projectId);
         const subProjectId = document.getElementById('issueFilterSubProject')?.value;
@@ -1583,6 +1597,9 @@ async function loadProjectIssues() {
         if (severity) params.set('severity', severity);
         if (fromDate) params.set('fromDate', fromDate);
         if (toDate) params.set('toDate', toDate);
+
+        // Save current filters
+        sessionStorage.setItem(`issueFilters_${projectId}`, JSON.stringify({ subProjectId, status, severity, fromDate, toDate }));
 
         projectIssues = await api.request(`/pms/issues?${params.toString()}`);
         renderProjectIssues(projectIssues);
@@ -1644,7 +1661,7 @@ function renderProjectIssues(issues) {
             <td style="font-size:0.75rem;white-space:nowrap;color:var(--text-secondary);">${created}</td>
             <td>
                 <div class="action-btns">
-                    <a class="action-btn" href="issue-detail.html?id=${issue.id}" data-tooltip="View">
+                    <a class="action-btn" href="issue-detail.html?id=${issue.id}&from=project&projectId=${projectId}" data-tooltip="View">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     </a>
                     ${editBtn}

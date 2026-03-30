@@ -50,7 +50,12 @@ const QUILL_COMPACT_TOOLBAR = [
 // ==================== Navigation ====================
 
 function goBack() {
-    if (document.referrer && document.referrer.includes(window.location.origin)) {
+    const params = new URLSearchParams(window.location.search);
+    const from = params.get('from');
+    const pid = params.get('projectId');
+    if (from === 'project' && pid) {
+        window.location.href = `project-detail.html?id=${pid}#issues`;
+    } else if (document.referrer && document.referrer.includes(window.location.origin)) {
         history.back();
     } else {
         window.location.href = 'issues.html';
@@ -156,9 +161,26 @@ function getIssueRef() {
 
 function renderHeader() {
     const ref = getIssueRef();
-    document.getElementById('breadcrumbIssue').textContent = ref;
     document.getElementById('issueRef').textContent = ref;
     document.getElementById('issueTitle').textContent = issue.title;
+
+    // Update breadcrumb based on origin context
+    const params = new URLSearchParams(window.location.search);
+    const breadcrumbNav = document.querySelector('.breadcrumb-nav');
+    if (params.get('from') === 'project' && issue.project_name) {
+        const pid = params.get('projectId');
+        breadcrumbNav.innerHTML = `
+            <a href="dashboard.html">PMS</a>
+            <span class="separator">/</span>
+            <a href="projects.html">Projects</a>
+            <span class="separator">/</span>
+            <a href="project-detail.html?id=${pid}#issues">${escapeHtml(issue.project_name)}</a>
+            <span class="separator">/</span>
+            <span class="current">${ref}</span>
+        `;
+    } else {
+        document.getElementById('breadcrumbIssue').textContent = ref;
+    }
 
     // Project / Sub-Project / Client subtitle
     const subtitleEl = document.getElementById('issueSubtitle');
