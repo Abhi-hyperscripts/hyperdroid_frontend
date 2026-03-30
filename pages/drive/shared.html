@@ -202,7 +202,7 @@
                     if (result.message && result.message.toLowerCase().includes('password')) {
                         showPasswordForm();
                     } else {
-                        showError('Access Denied', result.message || 'Unable to access this shared content.');
+                        showError('Link Unavailable', 'This share link is no longer available. It may have been revoked, expired, or the content may have been removed.');
                     }
                 }
             } catch (error) {
@@ -211,10 +211,10 @@
 
                 if (msg.toLowerCase().includes('password')) {
                     showPasswordForm();
-                } else if (msg.toLowerCase().includes('expired')) {
-                    showError('Link Expired', 'This share link has expired and is no longer available.');
+                } else if (msg.toLowerCase().includes('expired') || msg.toLowerCase().includes('invalid')) {
+                    showError('Link Unavailable', 'This share link is no longer available. It may have been revoked, expired, or the content may have been removed.');
                 } else {
-                    showError('Error', msg || 'Something went wrong while loading the shared content.');
+                    showError('Link Unavailable', 'This shared content is not accessible. The link may have been revoked or the content no longer exists.');
                 }
             }
         }
@@ -350,7 +350,7 @@
                 const password = document.getElementById('password')?.value || null;
                 const result = await api.accessSharedItem(shareToken, password);
                 if (!result.success) {
-                    showError('Link Expired', result.message || 'This share link is no longer available.');
+                    showError('Link Unavailable', 'This share link is no longer available. It may have been revoked, expired, or the content may have been removed.');
                     return;
                 }
                 // Find the fresh URL for this file
@@ -370,12 +370,7 @@
                     Toast.error('Download link not available');
                 }
             } catch (error) {
-                const msg = error.message || '';
-                if (msg.toLowerCase().includes('expired')) {
-                    showError('Link Expired', 'This share link has expired and is no longer available.');
-                } else {
-                    Toast.error(msg || 'Failed to download file');
-                }
+                showError('Link Unavailable', 'This share link is no longer available. It may have been revoked, expired, or the content may have been removed.');
             }
         }
 
