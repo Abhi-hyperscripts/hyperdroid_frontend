@@ -722,11 +722,15 @@ function shareItem(itemId, itemType, itemName) {
     showShareModal(itemId, itemType, itemName);
 }
 
-function renameItem(itemId, itemType, itemName) {
+async function renameItem(itemId, itemType, itemName) {
     if (itemType === 'folder') {
-        // Create a folder object for the edit modal
-        // Note: description will be empty since we don't have it in the card
-        showEditFolderModal({ folderId: itemId, folderName: itemName, description: '' });
+        // Fetch folder details to get the description
+        let description = '';
+        try {
+            const resp = await api.request(`/drive/folders/${itemId}`, { _skipSpinner: true });
+            description = resp?.folder?.description || resp?.description || '';
+        } catch (_) {}
+        showEditFolderModal({ folderId: itemId, folderName: itemName, description });
     } else {
         // For files, we'll show a simple rename prompt for now
         showRenameFileModal(itemId, itemName);
