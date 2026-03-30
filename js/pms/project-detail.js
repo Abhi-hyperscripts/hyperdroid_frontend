@@ -1752,6 +1752,14 @@ async function openIssueModal() {
     setTimeout(() => {
         initIssueModalDropdowns();
         initIssueQuillEditors();
+
+        // Reset to first tab (Steps to Reproduce)
+        document.querySelectorAll('#issueModal .issue-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#issueModal .issue-tab-panel').forEach(p => p.classList.remove('active'));
+        const firstBtn = document.querySelector('#issueModal .issue-tab-btn');
+        if (firstBtn) firstBtn.classList.add('active');
+        const stepsPanel = document.getElementById('issueTabSteps');
+        if (stepsPanel) stepsPanel.classList.add('active');
     }, 100);
 }
 

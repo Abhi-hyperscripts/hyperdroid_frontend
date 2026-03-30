@@ -564,15 +564,15 @@
                                     <!-- Tabbed Quill Editors -->
                                     <div class="issue-editor-tabs">
                                         <div class="issue-tab-nav">
-                                            <button type="button" class="issue-tab-btn active" onclick="switchIssueEditorTab('actual', this)">Issues <span class="required">*</span></button>
-                                            <button type="button" class="issue-tab-btn" onclick="switchIssueEditorTab('expected', this)">Expected <span class="required">*</span></button>
-                                            <button type="button" class="issue-tab-btn" onclick="switchIssueEditorTab('steps', this)">Steps to Reproduce <span class="required">*</span></button>
+                                            <button type="button" class="issue-tab-btn active" onclick="switchIssueEditorTab('steps', this)">Steps to Reproduce <span class="required">*</span></button>
+                                            <button type="button" class="issue-tab-btn" onclick="switchIssueEditorTab('expected', this)">Expected Result <span class="required">*</span></button>
+                                            <button type="button" class="issue-tab-btn" onclick="switchIssueEditorTab('actual', this)">Actual Result <span class="required">*</span></button>
                                             <button type="button" class="issue-tab-btn" onclick="switchIssueEditorTab('desc', this)">Notes</button>
                                         </div>
                                         <div class="issue-tab-panels issue-quill-wrap">
-                                            <div class="issue-tab-panel active" id="issueTabActual"><div id="issueEditorActual"></div></div>
+                                            <div class="issue-tab-panel active" id="issueTabSteps"><div id="issueEditorSteps"></div></div>
                                             <div class="issue-tab-panel" id="issueTabExpected"><div id="issueEditorExpected"></div></div>
-                                            <div class="issue-tab-panel" id="issueTabSteps"><div id="issueEditorSteps"></div></div>
+                                            <div class="issue-tab-panel" id="issueTabActual"><div id="issueEditorActual"></div></div>
                                             <div class="issue-tab-panel" id="issueTabDesc"><div id="issueEditorDesc"></div></div>
                                         </div>
                                     </div>
