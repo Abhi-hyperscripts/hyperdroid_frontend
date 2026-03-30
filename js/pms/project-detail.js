@@ -1627,7 +1627,8 @@ function renderProjectIssues(issues) {
         return;
     }
 
-    const statusLabels = { reported: 'Reported', in_progress: 'In Progress', qa_testing: 'QA Testing', closed: 'Closed', reopened: 'Reopened', wontfix: "Won't Fix" };
+    const statusLabels = { reported: 'Reported', in_progress: 'In Progress', qa_testing: 'QA Testing', closed: 'Closed', verified: 'Verified', reopened: 'Reopened', wontfix: "Won't Fix" };
+    const resolutionLabels = { fixed: 'Fixed', wontfix: "Won't Fix", duplicate: 'Duplicate', cannot_reproduce: 'Cannot Reproduce' };
 
     tbody.innerHTML = issues.map(issue => {
         const code = issue.project_code || (project?.project_code) || (project?.project_name?.substring(0, 3).toUpperCase()) || 'PRJ';
@@ -1654,7 +1655,7 @@ function renderProjectIssues(issues) {
             </td>
             <td><span class="severity-badge severity-${issue.severity}">${issue.severity}</span></td>
             <td><span class="priority-badge priority-${issue.priority}">${issue.priority}</span></td>
-            <td><span class="issue-status-badge issue-status-${issue.status}">${statusLabels[issue.status] || issue.status}</span></td>
+            <td><span class="issue-status-badge issue-status-${issue.status}">${(issue.resolution && (issue.status === 'closed' || issue.status === 'verified')) ? `${statusLabels[issue.status]} — ${resolutionLabels[issue.resolution] || issue.resolution}` : (statusLabels[issue.status] || issue.status)}</span></td>
             <td style="font-size:0.8rem;">${escapeHtml(issue.reported_by_name || '—')}</td>
             <td style="font-size:0.8rem;">${escapeHtml(issue.assigned_to_name || 'Unassigned')}</td>
             <td style="font-size:0.8rem;text-align:center;">${issue.comment_count || 0}</td>
