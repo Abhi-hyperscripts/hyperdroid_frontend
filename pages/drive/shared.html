@@ -269,13 +269,23 @@
             const downloadBtn = document.getElementById('downloadBtn');
             const viewOnlyNotice = document.getElementById('viewOnlyNotice');
 
-            if (result.access_type !== 'view') {
+            if (result.access_type === 'download') {
                 downloadBtn.style.display = 'inline-flex';
+                downloadBtn.textContent = 'Download';
                 downloadBtn.href = '#';
                 downloadBtn.removeAttribute('download');
                 downloadBtn.onclick = async (e) => {
                     e.preventDefault();
                     await downloadWithFreshUrl(file.fileName);
+                };
+                viewOnlyNotice.style.display = 'none';
+            } else if (result.access_type === 'view' && result.download_url) {
+                downloadBtn.style.display = 'inline-flex';
+                downloadBtn.textContent = 'Preview';
+                downloadBtn.href = '#';
+                downloadBtn.onclick = (e) => {
+                    e.preventDefault();
+                    previewFile(result.download_url, file.fileName, file.contentType);
                 };
                 viewOnlyNotice.style.display = 'none';
             } else {
@@ -320,6 +330,13 @@
                     const item = document.createElement('div');
                     item.className = 'folder-file-item';
                     const canDownload = result.access_type === 'download';
+                    const canView = result.access_type === 'view';
+                    let actionHtml = '';
+                    if (canDownload) {
+                        actionHtml = `<a href="#" class="folder-file-download" data-filename="${file.fileName}">Download</a>`;
+                    } else if (canView && file.url) {
+                        actionHtml = `<a href="#" class="folder-file-download" style="background:var(--color-info);" data-filename="${file.fileName}">Preview</a>`;
+                    }
                     item.innerHTML = `
                         <div class="folder-file-info">
                             <div class="folder-file-icon">
@@ -330,18 +347,38 @@
                                 <div class="folder-file-size">${formatBytes(file.fileSize)}</div>
                             </div>
                         </div>
-                        ${canDownload ? `<a href="#" class="folder-file-download" data-filename="${file.fileName}">Download</a>` : ''}
+                        ${actionHtml}
                     `;
-                    if (canDownload) {
+                    if (canDownload && item.querySelector('.folder-file-download')) {
                         item.querySelector('.folder-file-download').onclick = async (e) => {
                             e.preventDefault();
                             await downloadWithFreshUrl(file.fileName);
+                        };
+                    } else if (canView && item.querySelector('.folder-file-download')) {
+                        item.querySelector('.folder-file-download').onclick = (e) => {
+                            e.preventDefault();
+                            previewFile(file.url, file.fileName, file.contentType);
                         };
                     }
                     filesList.appendChild(item);
                 });
             } else {
                 filesList.innerHTML = '<p class="text-muted" style="text-align: center; padding: 20px;">This folder is empty</p>';
+            }
+        }
+
+        function previewFile(url, fileName, contentType) {
+            const ct = (contentType || '').toLowerCase();
+            const isPreviewable = ct.startsWith('image/') || ct === 'application/pdf' ||
+                ct.startsWith('video/') || ct.startsWith('audio/') || ct.startsWith('text/');
+            const isOfficeDoc = /\.(docx?|xlsx?|pptx?)$/i.test(fileName || '');
+
+            if (isPreviewable) {
+                window.open(url, '_blank');
+            } else if (isOfficeDoc) {
+                window.open(`https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=false`, '_blank');
+            } else {
+                window.open(url, '_blank');
             }
         }
 
