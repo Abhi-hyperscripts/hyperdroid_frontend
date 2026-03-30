@@ -225,6 +225,17 @@ body.pms-dashboard .action-card[data-action="timesheets"]:hover {
     border-color: var(--color-info);
 }
 
+/* Issues - Danger/Red */
+body.pms-dashboard .action-card[data-action="issues"] .action-icon {
+    background: var(--gradient-danger);
+}
+body.pms-dashboard .action-card[data-action="issues"] .action-icon svg {
+    color: var(--text-inverse);
+}
+body.pms-dashboard .action-card[data-action="issues"]:hover {
+    border-color: var(--color-danger);
+}
+
 /* Activity Log - Accent */
 body.pms-dashboard .action-card[data-action="activity"] .action-icon {
     background: var(--gradient-accent);
