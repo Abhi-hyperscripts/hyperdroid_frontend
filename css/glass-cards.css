@@ -164,7 +164,14 @@
 .bulk-import-template-section,
 
 /* ── Proof cards ── */
-.proof-card {
+.proof-card,
+
+/* ── Issue Tracker cards ── */
+.issue-detail-meta,
+.issue-content-section,
+.issue-comment,
+.issue-comment-form,
+.issue-activity-section {
     background:
         linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
         rgba(255, 255, 255, 0.55) !important;
@@ -253,7 +260,12 @@
 .nfc-cards-section:hover,
 .nfc-profile-section:hover,
 .bulk-import-template-section:hover,
-.proof-card:hover {
+.proof-card:hover,
+.issue-detail-meta:hover,
+.issue-content-section:hover,
+.issue-comment:hover,
+.issue-comment-form:hover,
+.issue-activity-section:hover {
     border-color: rgba(var(--brand-primary-rgb), 0.4) !important;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.3),
@@ -316,7 +328,12 @@
 [data-theme="dark"] .nfc-cards-section,
 [data-theme="dark"] .nfc-profile-section,
 [data-theme="dark"] .bulk-import-template-section,
-[data-theme="dark"] .proof-card {
+[data-theme="dark"] .proof-card,
+[data-theme="dark"] .issue-detail-meta,
+[data-theme="dark"] .issue-content-section,
+[data-theme="dark"] .issue-comment,
+[data-theme="dark"] .issue-comment-form,
+[data-theme="dark"] .issue-activity-section {
     background:
         linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
         rgba(var(--bg-card-rgb), 0.06) !important;
@@ -379,7 +396,12 @@
 [data-theme="dark"] .nfc-cards-section:hover,
 [data-theme="dark"] .nfc-profile-section:hover,
 [data-theme="dark"] .bulk-import-template-section:hover,
-[data-theme="dark"] .proof-card:hover {
+[data-theme="dark"] .proof-card:hover,
+[data-theme="dark"] .issue-detail-meta:hover,
+[data-theme="dark"] .issue-content-section:hover,
+[data-theme="dark"] .issue-comment:hover,
+[data-theme="dark"] .issue-comment-form:hover,
+[data-theme="dark"] .issue-activity-section:hover {
     border-color: var(--border-color-strong) !important;
     box-shadow:
         0 4px 16px rgba(0, 0, 0, 0.4),

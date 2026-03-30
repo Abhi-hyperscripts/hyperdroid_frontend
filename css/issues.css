@@ -442,12 +442,10 @@
 .issue-content-sections {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 12px;
     margin-bottom: 20px;
 }
 .issue-content-section {
-    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
-    border-radius: 10px;
     overflow: hidden;
     margin-bottom: 12px;
     background: var(--bg-card);
@@ -711,9 +709,6 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 8px 12px;
     padding: 16px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-primary);
-    border-radius: 10px;
     margin-bottom: 20px;
 }
 .issue-detail-meta-item {
@@ -821,15 +816,9 @@
 }
 
 /* ==================== Single Comment ==================== */
+/* Glass effect handled by glass-cards.css */
 .issue-comment {
     padding: 14px 16px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-primary);
-    border-radius: 10px;
-    transition: border-color 0.2s;
-}
-.issue-comment:hover {
-    border-color: var(--border-focus, var(--border-primary));
 }
 .issue-comment.system {
     background: var(--bg-card-hover, #253348);
@@ -841,14 +830,9 @@
     color: var(--text-secondary);
 }
 
-/* Activity log (system comments) — glassy bento card */
+/* Activity log (system comments) — glass-cards.css handles the glass effect */
 .issue-activity-section {
     margin-top: 20px;
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
     padding: 16px 20px;
 }
 .issue-activity-header {
@@ -1037,10 +1021,7 @@
 
 /* ==================== Comment Form ==================== */
 .issue-comment-form {
-    border: 1px solid var(--border-primary);
-    border-radius: 10px;
     overflow: hidden;
-    background: var(--bg-card);
 }
 .issue-comment-form-editor .ql-toolbar.ql-snow {
     background: var(--bg-card);
