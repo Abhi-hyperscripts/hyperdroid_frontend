@@ -467,6 +467,14 @@
                                 <option value="low">Low</option>
                             </select>
                         </div>
+                        <div class="crm-filter-group">
+                            <label>From</label>
+                            <input type="date" id="issueFilterFromDate" class="form-control form-control-sm" onchange="loadProjectIssues()">
+                        </div>
+                        <div class="crm-filter-group">
+                            <label>To</label>
+                            <input type="date" id="issueFilterToDate" class="form-control form-control-sm" onchange="loadProjectIssues()">
+                        </div>
                         <div style="margin-left: auto;">
                             <button class="btn btn-primary btn-sm" onclick="openIssueModal()">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>

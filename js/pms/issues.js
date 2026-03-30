@@ -85,11 +85,16 @@ async function loadIssues() {
         const priority = document.getElementById('filterPriority').value;
         const search = document.getElementById('filterSearch').value;
 
+        const fromDate = document.getElementById('filterFromDate').value;
+        const toDate = document.getElementById('filterToDate').value;
+
         if (project) params.set('projectId', project);
         if (status) params.set('status', status);
         if (severity) params.set('severity', severity);
         if (priority) params.set('priority', priority);
         if (search) params.set('search', search);
+        if (fromDate) params.set('fromDate', fromDate);
+        if (toDate) params.set('toDate', toDate);
 
         const qs = params.toString();
         allIssues = await api.request(`/pms/issues${qs ? '?' + qs : ''}`);

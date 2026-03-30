@@ -1576,9 +1576,13 @@ async function loadProjectIssues() {
         const subProjectId = document.getElementById('issueFilterSubProject')?.value;
         const status = document.getElementById('issueFilterStatus')?.value;
         const severity = document.getElementById('issueFilterSeverity')?.value;
+        const fromDate = document.getElementById('issueFilterFromDate')?.value;
+        const toDate = document.getElementById('issueFilterToDate')?.value;
         if (subProjectId) params.set('subProjectId', subProjectId);
         if (status) params.set('status', status);
         if (severity) params.set('severity', severity);
+        if (fromDate) params.set('fromDate', fromDate);
+        if (toDate) params.set('toDate', toDate);
 
         projectIssues = await api.request(`/pms/issues?${params.toString()}`);
         renderProjectIssues(projectIssues);
@@ -1666,6 +1670,9 @@ function issueAge(dateStr) {
 
 async function openIssueModal() {
     document.getElementById('issueForm').reset();
+    delete document.getElementById('issueForm').dataset.editId;
+    document.querySelector('#issueModal .modal-title').textContent = 'Report Issue';
+    document.getElementById('issueSubmitBtn').textContent = 'Report Issue';
     document.getElementById('issueModal').classList.add('active');
 
     // Populate assignee from project members (fetch if not loaded)
@@ -1758,8 +1765,9 @@ async function handleIssueSubmit(e) {
     if (!actualText) { Toast.error('Actual Result is required'); return; }
 
     const btn = document.getElementById('issueSubmitBtn');
+    const editId = document.getElementById('issueForm').dataset.editId;
     btn.disabled = true;
-    btn.textContent = 'Creating...';
+    btn.textContent = editId ? 'Updating...' : 'Creating...';
 
     try {
         const payload = {
@@ -1779,16 +1787,21 @@ async function handleIssueSubmit(e) {
             assigned_to: document.getElementById('issueAssignee').value || null
         };
 
-        const result = await api.request('/pms/issues', { method: 'POST', body: JSON.stringify(payload) });
-        Toast.success(`Issue #${result.issue_number} created`);
+        if (editId) {
+            await api.request(`/pms/issues/${editId}`, { method: 'PUT', body: JSON.stringify(payload) });
+            Toast.success('Issue updated');
+        } else {
+            const result = await api.request('/pms/issues', { method: 'POST', body: JSON.stringify(payload) });
+            Toast.success(`Issue #${result.issue_number} created`);
+        }
         closeIssueModal();
         loadedTabs.delete('issues');
         loadProjectIssues();
     } catch (err) {
-        Toast.error(err.message || 'Failed to create issue');
+        Toast.error(err.message || (editId ? 'Failed to update issue' : 'Failed to create issue'));
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Report Issue';
+        btn.textContent = editId ? 'Update Issue' : 'Report Issue';
     }
 }
 
