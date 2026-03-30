@@ -1802,12 +1802,16 @@ async function handleIssueSubmit(e) {
     const title = document.getElementById('issueTitle').value.trim();
     if (!title) { Toast.error('Title is required'); return; }
 
+    const issueType = document.getElementById('issueType').value;
     const stepsText = issueQuillSteps?.getText().trim();
     const expectedText = issueQuillExpected?.getText().trim();
     const actualText = issueQuillActual?.getText().trim();
     if (!stepsText) { Toast.error('Steps to Reproduce is required'); return; }
-    if (!expectedText) { Toast.error('Expected Result is required'); return; }
-    if (!actualText) { Toast.error('Actual Result is required'); return; }
+    // Expected/Actual only required for bugs and improvements, not questions/tasks
+    if (issueType === 'bug' || issueType === 'improvement') {
+        if (!expectedText) { Toast.error('Expected Result is required'); return; }
+        if (!actualText) { Toast.error('Actual Result is required'); return; }
+    }
 
     const btn = document.getElementById('issueSubmitBtn');
     const editId = document.getElementById('issueForm').dataset.editId;

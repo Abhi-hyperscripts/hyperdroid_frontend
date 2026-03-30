@@ -1110,25 +1110,46 @@
 /* ==================== Print Styles ==================== */
 @media print {
     .navbar, .no-print, .issue-comment-form, .issue-status-trigger svg,
-    .issue-comment-actions, .issue-detail-back, .breadcrumb-nav {
+    .issue-comment-actions, .issue-detail-back, .breadcrumb-nav,
+    #activityLogContainer {
         display: none !important;
     }
     body { background: #fff !important; color: #000 !important; }
-    .crm-container { padding: 0 !important; max-width: 100% !important; }
-    .issue-detail-meta {
-        background: #f8f9fa !important;
-        border-color: #dee2e6 !important;
+    .crm-container { padding: 0 !important; max-width: 100% !important; overflow: visible !important; }
+
+    /* Prevent truncation */
+    * { overflow: visible !important; text-overflow: unset !important; max-height: none !important; }
+    .issue-content-section, .issue-detail-meta, .issue-comment,
+    .issue-comments-section, .issue-content-sections {
+        overflow: visible !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
     }
+
+    /* Remove glass effects for clean print */
+    .issue-detail-meta, .issue-content-section, .issue-comment,
+    .issue-comment-form, .issue-activity-section {
+        background: #f8f9fa !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border: 1px solid #dee2e6 !important;
+        box-shadow: none !important;
+    }
+
     .issue-detail-meta-label { color: #6c757d !important; }
     .issue-detail-meta-value { color: #000 !important; }
     .issue-detail-title { color: #000 !important; }
     .issue-detail-ref { color: #0d6efd !important; }
     .issue-editor-tabs { border-color: #dee2e6 !important; }
     .issue-tab-nav { background: #f8f9fa !important; }
+    .issue-section-heading { color: #000 !important; background: #e9ecef !important; }
     .issue-content-display { color: #000 !important; }
     .issue-content-display pre { background: #f1f3f5 !important; border-color: #dee2e6 !important; }
+    .issue-content-display img { max-width: 100% !important; page-break-inside: avoid; }
     .issue-comment { background: #f8f9fa !important; border-color: #dee2e6 !important; }
     .issue-comment-body { color: #000 !important; }
     .issue-comment-author { color: #000 !important; }
     .issue-comments-section { page-break-before: auto; }
+    .issue-status-badge { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .severity-badge, .priority-badge, .issue-type-pill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
