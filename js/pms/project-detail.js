@@ -1616,7 +1616,34 @@ async function loadProjectIssues() {
     }
 }
 
+function renderIssueStats(issues) {
+    const row = document.getElementById('issueStatsRow');
+    if (!row) return;
+    const statuses = [
+        { key: 'reported', label: 'Reported', color: 'var(--color-warning)' },
+        { key: 'in_progress', label: 'In Progress', color: 'var(--color-info, #3b82f6)' },
+        { key: 'qa_testing', label: 'QA Testing', color: '#a855f7' },
+        { key: 'closed', label: 'Closed', color: 'var(--color-success)' },
+        { key: 'verified', label: 'Verified', color: '#14b8a6' },
+        { key: 'reopened', label: 'Reopened', color: '#f97316' },
+        { key: 'wontfix', label: "Won't Fix", color: 'var(--text-secondary)' }
+    ];
+    const counts = {};
+    (issues || []).forEach(i => { counts[i.status] = (counts[i.status] || 0) + 1; });
+    const total = (issues || []).length;
+    row.innerHTML = `<div class="glass-card-sm issue-stat-card" style="flex:1;min-width:80px;text-align:center;">
+            <div style="font-size:1.3rem;font-weight:700;color:var(--brand-primary);">${total}</div>
+            <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.3px;color:var(--text-secondary);font-weight:600;">Total</div>
+        </div>` +
+        statuses.filter(s => counts[s.key]).map(s => `
+        <div class="glass-card-sm issue-stat-card" style="flex:1;min-width:80px;text-align:center;">
+            <div style="font-size:1.3rem;font-weight:700;color:${s.color};">${counts[s.key]}</div>
+            <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.3px;color:var(--text-secondary);font-weight:600;">${s.label}</div>
+        </div>`).join('');
+}
+
 function renderProjectIssues(issues) {
+    renderIssueStats(issues);
     const tbody = document.getElementById('projectIssuesBody');
     if (!issues || issues.length === 0) {
         tbody.innerHTML = `<tr><td colspan="10"><div class="crm-empty-content">
