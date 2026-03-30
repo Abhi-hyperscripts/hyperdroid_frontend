@@ -121,6 +121,10 @@ async function loadIssueDetail() {
         renderContentTabs();
         loadProjectMembers();
         document.title = `${getIssueRef()} - ${issue.title} | Ragenaizer`;
+
+        // Show edit button only when status is 'reported'
+        const editBtn = document.getElementById('editIssueBtn');
+        if (editBtn) editBtn.style.display = issue.status === 'reported' ? '' : 'none';
     } catch (e) {
         console.error('[IssueDetail] Failed to load issue:', e);
         Toast.error('Failed to load issue');
@@ -693,4 +697,126 @@ function formatRelativeTime(dateStr) {
     if (diffDays < 7) return `${diffDays}d ago`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// ==================== Inline Issue Editing ====================
+
+let isEditMode = false;
+let editQuills = {};
+
+function toggleEditMode() {
+    if (issue.status !== 'reported') {
+        Toast.error('Issues can only be edited while in Reported status');
+        return;
+    }
+    if (isEditMode) {
+        cancelEditMode();
+    } else {
+        enterEditMode();
+    }
+}
+
+function enterEditMode() {
+    isEditMode = true;
+    document.getElementById('editIssueBtn').title = 'Cancel Edit';
+
+    const sections = [
+        { id: 'contentActual', field: 'actual_result', label: 'Issue Description' },
+        { id: 'contentExpected', field: 'expected_result', label: 'Expected Result' },
+        { id: 'contentSteps', field: 'steps_to_reproduce', label: 'Steps to Reproduce' },
+        { id: 'contentNotes', field: 'description', label: 'Notes' }
+    ];
+
+    sections.forEach(s => {
+        const el = document.getElementById(s.id);
+        const originalHtml = issue[s.field] || '';
+        el.dataset.originalHtml = originalHtml;
+        el.innerHTML = `<div id="editQuill_${s.field}"></div>`;
+        const quill = new Quill(`#editQuill_${s.field}`, {
+            theme: 'snow',
+            modules: { toolbar: [['bold', 'italic', 'underline'], [{ list: 'ordered' }, { list: 'bullet' }], ['link', 'image'], ['clean']] },
+            placeholder: `Enter ${s.label.toLowerCase()}...`
+        });
+        quill.root.innerHTML = originalHtml;
+        editQuills[s.field] = quill;
+    });
+
+    // Also make title editable
+    const titleEl = document.getElementById('issueTitle');
+    titleEl.contentEditable = true;
+    titleEl.style.borderBottom = '2px solid var(--brand-primary)';
+    titleEl.style.outline = 'none';
+    titleEl.dataset.originalTitle = issue.title;
+
+    // Add save/cancel bar
+    const contentSections = document.getElementById('contentSections');
+    const bar = document.createElement('div');
+    bar.id = 'editActionsBar';
+    bar.className = 'glass-card-sm';
+    bar.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;margin-top:12px;';
+    bar.innerHTML = `
+        <button class="btn btn-secondary btn-sm" onclick="cancelEditMode()">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="saveIssueBtn" onclick="saveIssueEdits()">Save Changes</button>
+    `;
+    contentSections.after(bar);
+}
+
+function cancelEditMode() {
+    isEditMode = false;
+    document.getElementById('editIssueBtn').title = 'Edit Issue';
+
+    // Restore title
+    const titleEl = document.getElementById('issueTitle');
+    titleEl.contentEditable = false;
+    titleEl.style.borderBottom = '';
+    titleEl.textContent = issue.title;
+
+    // Restore content sections
+    renderContentTabs();
+
+    // Destroy quills
+    editQuills = {};
+
+    // Remove save bar
+    const bar = document.getElementById('editActionsBar');
+    if (bar) bar.remove();
+}
+
+async function saveIssueEdits() {
+    const btn = document.getElementById('saveIssueBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    try {
+        const titleEl = document.getElementById('issueTitle');
+        const title = titleEl.textContent.trim();
+        if (!title) { Toast.error('Title is required'); return; }
+
+        const getHtml = (field) => {
+            const q = editQuills[field];
+            if (!q) return undefined;
+            const text = q.getText().trim();
+            return text ? q.root.innerHTML : '';
+        };
+
+        const payload = {
+            title,
+            actual_result: getHtml('actual_result'),
+            expected_result: getHtml('expected_result'),
+            steps_to_reproduce: getHtml('steps_to_reproduce'),
+            description: getHtml('description')
+        };
+
+        await api.request(`/pms/issues/${issueId}`, { method: 'PUT', body: JSON.stringify(payload) });
+        Toast.success('Issue updated');
+
+        // Reload to get fresh data
+        await loadIssueDetail();
+        cancelEditMode();
+    } catch (e) {
+        Toast.error(e.message || 'Failed to update issue');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Changes';
+    }
 }
