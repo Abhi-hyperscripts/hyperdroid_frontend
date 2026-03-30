@@ -159,6 +159,8 @@
                     </div>
                 </div>
 
+                <p id="folderDescription" style="display:none; text-align:center; color:var(--text-secondary); font-size:0.9rem; margin: 0 0 16px; padding: 0 20px;"></p>
+
                 <div class="folder-files-list" id="folderFilesList">
                     <!-- Files will be listed here -->
                 </div>
@@ -297,6 +299,17 @@
             }
             document.getElementById('folderName').textContent = folder.folderName;
             document.getElementById('folderMeta').textContent = `${folder.fileCount} files, ${formatBytes(folder.totalSize)}`;
+
+            // Show description if available
+            const descEl = document.getElementById('folderDescription');
+            if (descEl) {
+                if (folder.description) {
+                    descEl.textContent = folder.description;
+                    descEl.style.display = 'block';
+                } else {
+                    descEl.style.display = 'none';
+                }
+            }
 
             // Render files
             const filesList = document.getElementById('folderFilesList');
