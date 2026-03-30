@@ -1103,6 +1103,22 @@ async function handleFileSelect(e) {
         files.push(...validFiles);
     }
 
+    // Check for duplicate file names against existing files in the current folder
+    const existingNames = cachedFiles.map(f => (f.fileName || f.file_name).toLowerCase());
+    const duplicateFiles = files.filter(f => existingNames.includes(f.name.toLowerCase()));
+    if (duplicateFiles.length > 0) {
+        const names = duplicateFiles.map(f => f.name).join(', ');
+        Toast.error(`These files already exist in this folder: ${names}. Please rename them or delete the existing files first.`);
+        // Filter out duplicates, continue with unique files only
+        const uniqueFiles = files.filter(f => !existingNames.includes(f.name.toLowerCase()));
+        if (uniqueFiles.length === 0) {
+            document.getElementById('fileInput').value = '';
+            return;
+        }
+        files.length = 0;
+        files.push(...uniqueFiles);
+    }
+
     const queue = document.getElementById('uploadQueue');
     const queueList = document.getElementById('uploadQueueList');
 
@@ -1180,6 +1196,9 @@ async function uploadFile(file, queueItem) {
         progressBar.style.backgroundColor = 'var(--color-success)';
         status.textContent = 'Complete';
         queueItem.classList.add('complete');
+
+        // Track uploaded file name in cache so subsequent uploads in the same session detect duplicates
+        cachedFiles.push({ file_name: file.name });
 
         // Note: loadDriveContents is called once after all uploads in handleFileSelect
 
