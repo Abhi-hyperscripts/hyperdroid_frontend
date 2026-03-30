@@ -1279,19 +1279,37 @@ async function uploadFileChunked(file, queueItem) {
 // Sharing
 let currentShareItemName = '';
 
-function showShareModal(itemId, itemType, itemName) {
+async function showShareModal(itemId, itemType, itemName) {
     document.getElementById('shareItemId').value = itemId;
     document.getElementById('shareItemType').value = itemType;
-    document.getElementById('shareForm').style.display = 'block';
-    document.getElementById('shareExistingLink').style.display = 'none';
     currentShareId = null;
     currentShareItemName = itemName || 'Shared File';
 
-    // Reset form
+    // Reset form defaults
     document.getElementById('shareAccessType').value = 'download';
     document.getElementById('shareExpiry').value = '0';
     document.getElementById('sharePassword').value = '';
     document.getElementById('shareMaxDownloads').value = '0';
+
+    // Check for existing active shares for this item
+    let existingShare = null;
+    try {
+        const resp = await api.request('/drive/shared', { _skipSpinner: true });
+        const shares = resp?.shares || [];
+        existingShare = shares.find(s => s.itemId === itemId && s.isActive);
+    } catch (_) {}
+
+    if (existingShare) {
+        // Show existing share with revoke option
+        currentShareId = existingShare.shareId;
+        document.getElementById('existingShareUrl').value = existingShare.shareUrl;
+        document.getElementById('shareForm').style.display = 'none';
+        document.getElementById('shareExistingLink').style.display = 'block';
+    } else {
+        // Show create form
+        document.getElementById('shareForm').style.display = 'block';
+        document.getElementById('shareExistingLink').style.display = 'none';
+    }
 
     showModal('shareModal');
 }
