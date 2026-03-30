@@ -8,6 +8,96 @@ let currentViewMode = localStorage.getItem('driveViewMode') || 'grid';
 let cachedFolders = [];
 let cachedFiles = [];
 
+// Tab switching
+function switchDriveTab(tab) {
+    const myDrive = document.getElementById('myDriveSection');
+    const shared = document.getElementById('sharedByMeSection');
+    const tabMyDrive = document.getElementById('tabMyDrive');
+    const tabShared = document.getElementById('tabSharedByMe');
+
+    if (tab === 'shared') {
+        myDrive.style.display = 'none';
+        shared.style.display = 'block';
+        tabMyDrive.style.borderBottomColor = 'transparent';
+        tabMyDrive.style.color = 'var(--text-secondary)';
+        tabShared.style.borderBottomColor = 'var(--brand-primary)';
+        tabShared.style.color = 'var(--brand-primary)';
+        loadSharedByMe();
+    } else {
+        myDrive.style.display = 'block';
+        shared.style.display = 'none';
+        tabMyDrive.style.borderBottomColor = 'var(--brand-primary)';
+        tabMyDrive.style.color = 'var(--brand-primary)';
+        tabShared.style.borderBottomColor = 'transparent';
+        tabShared.style.color = 'var(--text-secondary)';
+    }
+}
+
+async function loadSharedByMe() {
+    const container = document.getElementById('sharedByMeContent');
+    container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:40px;">Loading shared links...</p>';
+    try {
+        const resp = await api.request('/drive/shared');
+        const shares = (resp?.shares || []).filter(s => s.isActive);
+
+        if (shares.length === 0) {
+            container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text-secondary);">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.5;">
+                    <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+                <p style="font-weight:600;margin:0 0 4px;">No active shares</p>
+                <p style="font-size:0.85rem;">Share a file or folder from My Files to see it here.</p>
+            </div>`;
+            return;
+        }
+
+        let html = `<table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+            <thead>
+                <tr style="border-bottom:2px solid var(--border-primary);text-align:left;">
+                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Name</th>
+                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Type</th>
+                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Access</th>
+                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Downloads</th>
+                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Expires</th>
+                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Created</th>
+                    <th style="padding:10px 12px;font-weight:600;color:var(--text-secondary);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        shares.forEach(s => {
+            const access = s.accessType === 'download' ? '<span style="color:var(--color-success);font-weight:600;">Download</span>' : '<span style="color:var(--color-info);font-weight:600;">View only</span>';
+            const typeIcon = s.itemType === 'folder' ? '&#128193;' : '&#128196;';
+            const expiry = s.expiresAt ? new Date(s.expiresAt).toLocaleDateString() : 'Never';
+            const created = new Date(s.createdAt).toLocaleDateString();
+            const downloads = `${s.downloadCount}/${s.maxDownloads || '&infin;'}`;
+            const hasPassword = s.hasPassword ? '<span title="Password protected" style="margin-left:4px;">&#128274;</span>' : '';
+
+            html += `<tr style="border-bottom:1px solid var(--border-primary);cursor:default;" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='transparent'">
+                <td style="padding:10px 12px;"><span style="margin-right:6px;">${typeIcon}</span>${escapeHtml(s.itemName || 'Unknown')}${hasPassword}</td>
+                <td style="padding:10px 12px;text-transform:capitalize;">${s.itemType}</td>
+                <td style="padding:10px 12px;">${access}</td>
+                <td style="padding:10px 12px;">${downloads}</td>
+                <td style="padding:10px 12px;">${expiry}</td>
+                <td style="padding:10px 12px;color:var(--text-secondary);">${created}</td>
+                <td style="padding:10px 12px;">
+                    <div style="display:flex;gap:6px;">
+                        <button onclick="navigator.clipboard.writeText('${s.shareUrl}');Toast.success('Link copied!')" style="padding:4px 10px;font-size:0.75rem;background:var(--brand-primary);color:var(--text-inverse);border:none;border-radius:4px;cursor:pointer;">Copy</button>
+                        <button onclick="revokeShareById('${s.shareId}')" style="padding:4px 10px;font-size:0.75rem;background:var(--color-danger);color:var(--text-inverse);border:none;border-radius:4px;cursor:pointer;">Revoke</button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    } catch (e) {
+        console.error('[Drive] Failed to load shared links:', e);
+        container.innerHTML = '<p style="text-align:center;color:var(--color-danger);padding:40px;">Failed to load shared links</p>';
+    }
+}
+
 // Flags to prevent race conditions
 let isCreatingFolder = false;
 let isLoadingContents = false;

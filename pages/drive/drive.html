@@ -71,6 +71,22 @@
             </div>
         </div>
 
+        <!-- View Toggle Tabs -->
+        <div class="drive-view-tabs" style="display:flex;gap:0;margin-bottom:12px;border-bottom:2px solid var(--border-primary);">
+            <button id="tabMyDrive" class="drive-tab active" onclick="switchDriveTab('mydrive')" style="padding:8px 20px;font-size:0.85rem;font-weight:600;background:none;border:none;border-bottom:2px solid var(--brand-primary);margin-bottom:-2px;color:var(--brand-primary);cursor:pointer;">My Files</button>
+            <button id="tabSharedByMe" class="drive-tab" onclick="switchDriveTab('shared')" style="padding:8px 20px;font-size:0.85rem;font-weight:600;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--text-secondary);cursor:pointer;">Shared by me</button>
+        </div>
+
+        <!-- Shared By Me Section (hidden by default) -->
+        <div id="sharedByMeSection" style="display:none;">
+            <div id="sharedByMeContent" style="min-height:200px;">
+                <p style="text-align:center;color:var(--text-secondary);padding:40px;">Loading shared links...</p>
+            </div>
+        </div>
+
+        <!-- My Drive Section (wraps everything below) -->
+        <div id="myDriveSection">
+
         <!-- Storage Info -->
         <div class="storage-info" id="storageInfo">
             <div class="storage-text">
@@ -107,6 +123,8 @@
             <div class="spinner"></div>
             <p>Loading...</p>
         </div>
+
+        </div><!-- /myDriveSection -->
     </div>
 
     <!-- Create Folder Modal -->
