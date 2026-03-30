@@ -302,18 +302,17 @@ function renderComments() {
 
     const list = document.getElementById('commentsList');
 
-    let html = '';
-
     // User comments
     if (userComments.length === 0) {
-        html += '<div class="issue-comment-empty">No comments yet. Be the first to comment.</div>';
+        list.innerHTML = '<div class="issue-comment-empty">No comments yet. Be the first to comment.</div>';
     } else {
-        html += userComments.map(c => renderSingleComment(c)).join('');
+        list.innerHTML = userComments.map(c => renderSingleComment(c)).join('');
     }
 
-    // Activity log (system comments) — collapsible
+    // Activity log (system comments) — rendered in separate container at the end
+    const activityContainer = document.getElementById('activityLogContainer');
     if (systemComments.length > 0) {
-        html += `<div class="issue-activity-section">
+        activityContainer.innerHTML = `<div class="issue-activity-section">
             <div class="issue-activity-header" onclick="this.parentElement.classList.toggle('collapsed')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 <span>Activity Log</span>
@@ -323,9 +322,9 @@ function renderComments() {
                 ${systemComments.map(c => renderActivityItem(c)).join('')}
             </div>
         </div>`;
+    } else {
+        activityContainer.innerHTML = '';
     }
-
-    list.innerHTML = html;
 }
 
 function renderActivityItem(c) {

@@ -841,28 +841,33 @@
     color: var(--text-secondary);
 }
 
-/* Activity log (system comments) */
+/* Activity log (system comments) — glassy bento card */
 .issue-activity-section {
-    margin-top: 16px;
-    border-top: 1px solid var(--border-primary);
-    padding-top: 12px;
+    margin-top: 20px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 16px 20px;
 }
 .issue-activity-header {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    color: var(--text-secondary);
-    padding: 6px 0;
+    color: var(--text-primary);
+    padding: 0;
     user-select: none;
 }
 .issue-activity-header:hover {
-    color: var(--text-primary);
+    color: var(--brand-primary);
 }
 .issue-activity-header svg {
     transition: transform 0.2s;
+    opacity: 0.6;
 }
 .issue-activity-section.collapsed .issue-activity-header svg {
     transform: rotate(-90deg);
@@ -871,44 +876,53 @@
     display: none;
 }
 .issue-activity-count {
-    background: var(--bg-tertiary);
-    padding: 1px 7px;
+    background: var(--brand-primary);
+    color: var(--text-inverse, #fff);
+    padding: 1px 8px;
     border-radius: 10px;
     font-size: 0.7rem;
     font-weight: 600;
 }
 .issue-activity-list {
-    padding: 8px 0 0 8px;
-    border-left: 2px solid var(--border-primary);
-    margin-left: 6px;
+    padding: 12px 0 0 10px;
+    border-left: 2px solid var(--glass-border);
+    margin-left: 7px;
+    margin-top: 12px;
 }
 .issue-activity-item {
     display: flex;
     align-items: baseline;
     gap: 8px;
-    padding: 4px 0 4px 12px;
-    font-size: 0.78rem;
+    padding: 6px 0 6px 14px;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     position: relative;
 }
+.issue-activity-item:hover {
+    color: var(--text-primary);
+}
 .issue-activity-dot {
-    width: 6px;
-    height: 6px;
-    min-width: 6px;
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
     border-radius: 50%;
-    background: var(--text-secondary);
+    background: var(--brand-primary);
     position: absolute;
-    left: -5px;
+    left: -6px;
     top: 10px;
+    box-shadow: 0 0 6px var(--brand-primary);
 }
 .issue-activity-text {
     color: var(--text-secondary);
 }
+.issue-activity-item:hover .issue-activity-text {
+    color: var(--text-primary);
+}
 .issue-activity-meta {
     white-space: nowrap;
-    font-size: 0.7rem;
-    color: var(--text-tertiary, var(--text-secondary));
-    opacity: 0.7;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    opacity: 0.6;
 }
 
 .issue-comment-header {
