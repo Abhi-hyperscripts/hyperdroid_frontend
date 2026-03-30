@@ -149,7 +149,9 @@ function renderIssuesTable(issues) {
         const typeIcon = getTypeIcon(issue.issue_type);
         const componentTag = issue.component ? `<span class="component-tag">${escapeHtml(issue.component)}</span>` : '';
         const subProjectTag = issue.sub_project_name ? `<span class="component-tag">${escapeHtml(issue.sub_project_name)}</span>` : '';
-        const resolutionBadge = issue.resolution ? `<span class="resolution-badge resolution-${issue.resolution}">${issue.resolution}</span>` : '';
+        const statusLabel = issue.resolution && (issue.status === 'closed' || issue.status === 'verified')
+            ? `${formatStatus(issue.status)} — ${formatResolution(issue.resolution)}`
+            : formatStatus(issue.status);
 
         return `
             <tr>
@@ -162,8 +164,7 @@ function renderIssuesTable(issues) {
                 <td><span class="severity-badge severity-${issue.severity}">${issue.severity}</span></td>
                 <td><span class="priority-badge priority-${issue.priority}">${issue.priority}</span></td>
                 <td>
-                    <span class="issue-status-badge issue-status-${issue.status}">${formatStatus(issue.status)}</span>
-                    ${resolutionBadge}
+                    <span class="issue-status-badge issue-status-${issue.status}">${statusLabel}</span>
                 </td>
                 <td>${escapeHtml(issue.assigned_to_name || 'Unassigned')}</td>
                 <td>${escapeHtml(issue.reported_by_name || '—')}</td>
@@ -205,6 +206,16 @@ function formatStatus(status) {
         wontfix: "Won't Fix"
     };
     return labels[status] || status;
+}
+
+function formatResolution(resolution) {
+    const labels = {
+        fixed: 'Fixed',
+        wontfix: "Won't Fix",
+        duplicate: 'Duplicate',
+        cannot_reproduce: 'Cannot Reproduce'
+    };
+    return labels[resolution] || resolution;
 }
 
 function getAge(dateStr) {
