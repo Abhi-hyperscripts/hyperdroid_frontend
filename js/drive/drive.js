@@ -1291,25 +1291,36 @@ async function showShareModal(itemId, itemType, itemName) {
     document.getElementById('sharePassword').value = '';
     document.getElementById('shareMaxDownloads').value = '0';
 
-    // Check for existing active shares for this item
-    let existingShare = null;
+    // Fetch existing active shares for this item
+    const listEl = document.getElementById('shareExistingList');
+    listEl.innerHTML = '';
+    listEl.style.display = 'none';
+    document.getElementById('shareExistingLink').style.display = 'none';
+    document.getElementById('shareForm').style.display = 'block';
+
     try {
         const resp = await api.request('/drive/shared', { _skipSpinner: true });
-        const shares = resp?.shares || [];
-        existingShare = shares.find(s => s.itemId === itemId && s.isActive);
+        const shares = (resp?.shares || []).filter(s => s.itemId === itemId && s.isActive);
+        if (shares.length > 0) {
+            listEl.style.display = 'block';
+            listEl.innerHTML = `<p style="font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary);margin:0 0 8px;">Active Share Links</p>` +
+                shares.map(s => {
+                    const access = s.accessType === 'download' ? 'Download' : 'View only';
+                    const expiry = s.expiresAt ? new Date(s.expiresAt).toLocaleDateString() : 'Never';
+                    return `<div style="background:var(--bg-tertiary);border:1px solid var(--border-primary);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                            <span style="font-size:0.8rem;font-weight:600;color:var(--text-primary);">${access}</span>
+                            <span style="font-size:0.7rem;color:var(--text-secondary);">Expires: ${expiry} | Downloads: ${s.downloadCount}/${s.maxDownloads || '∞'}</span>
+                        </div>
+                        <div style="display:flex;gap:6px;">
+                            <input type="text" value="${s.shareUrl}" readonly style="flex:1;font-size:0.75rem;padding:4px 8px;background:var(--bg-secondary);border:1px solid var(--border-primary);border-radius:4px;color:var(--text-primary);">
+                            <button onclick="navigator.clipboard.writeText('${s.shareUrl}');Toast.success('Copied!')" style="padding:4px 10px;font-size:0.75rem;background:var(--brand-primary);color:var(--text-inverse);border:none;border-radius:4px;cursor:pointer;">Copy</button>
+                            <button onclick="revokeShareById('${s.shareId}')" style="padding:4px 10px;font-size:0.75rem;background:var(--color-danger);color:var(--text-inverse);border:none;border-radius:4px;cursor:pointer;">Revoke</button>
+                        </div>
+                    </div>`;
+                }).join('');
+        }
     } catch (_) {}
-
-    if (existingShare) {
-        // Show existing share with revoke option
-        currentShareId = existingShare.shareId;
-        document.getElementById('existingShareUrl').value = existingShare.shareUrl;
-        document.getElementById('shareForm').style.display = 'none';
-        document.getElementById('shareExistingLink').style.display = 'block';
-    } else {
-        // Show create form
-        document.getElementById('shareForm').style.display = 'block';
-        document.getElementById('shareExistingLink').style.display = 'none';
-    }
 
     showModal('shareModal');
 }
@@ -1388,6 +1399,32 @@ function copyEmailCard() {
             Toast.error('Failed to copy email card');
         });
     });
+}
+
+async function revokeShareById(shareId) {
+    const confirmed = await Confirm.show({
+        title: 'Revoke Share',
+        message: 'Are you sure you want to revoke this share link?',
+        type: 'warning',
+        confirmText: 'Revoke',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) return;
+    try {
+        const result = await api.revokeShareLink(shareId);
+        if (result.success) {
+            Toast.success('Share link revoked');
+            // Refresh the share modal
+            const itemId = document.getElementById('shareItemId').value;
+            const itemType = document.getElementById('shareItemType').value;
+            showShareModal(itemId, itemType, currentShareItemName);
+            loadDriveContents();
+        } else {
+            Toast.error(result.message || 'Failed to revoke share link');
+        }
+    } catch (error) {
+        Toast.error(error.message);
+    }
 }
 
 async function revokeCurrentShare() {

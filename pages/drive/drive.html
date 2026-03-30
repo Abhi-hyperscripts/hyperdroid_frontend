@@ -173,7 +173,10 @@
                     <button class="close-btn" onclick="closeModal('shareModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Existing Share Link View -->
+                    <!-- Existing Active Shares List -->
+                    <div id="shareExistingList" style="display: none; margin-bottom: 16px;"></div>
+
+                    <!-- Existing Share Link View (shown after creating a new share) -->
                     <div id="shareExistingLink" class="share-existing-section" style="display: none;">
                         <div class="share-success-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -207,7 +210,7 @@
                         <button class="btn-revoke" onclick="revokeCurrentShare()">Revoke Link</button>
                     </div>
 
-                    <!-- Create Share Form -->
+                    <!-- Create Share Form (always visible) -->
                     <form id="shareForm" onsubmit="handleCreateShare(event)">
                         <input type="hidden" id="shareItemId">
                         <input type="hidden" id="shareItemType">
