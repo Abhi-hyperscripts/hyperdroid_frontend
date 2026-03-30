@@ -98,6 +98,18 @@ async function loadSharedByMe() {
     }
 }
 
+function formatShareBadge(shares) {
+    if (!shares || shares.length === 0) return '';
+    const details = shares.map(s => {
+        const access = s.accessType === 'download' ? 'Download' : 'View only';
+        const expiry = s.expiresAt ? 'Expires: ' + new Date(s.expiresAt).toLocaleDateString() : 'No expiry';
+        const dl = s.maxDownloads ? `${s.downloadCount}/${s.maxDownloads} downloads` : 'Unlimited downloads';
+        const pw = s.hasPassword ? ', Password protected' : '';
+        return `${access} — ${expiry}, ${dl}${pw}`;
+    }).join('\n');
+    return `<span class="shared-badge" title="${details.replace(/"/g, '&quot;')}" style="cursor:help;">Shared (${shares.length})</span>`;
+}
+
 // Flags to prevent race conditions
 let isCreatingFolder = false;
 let isLoadingContents = false;
@@ -420,7 +432,7 @@ function renderTableView(folders, files) {
             <td><div class="table-name-cell">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--color-warning)" stroke="var(--color-warning)" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                 <span>${escapeHtml(f.folderName)}</span>
-                ${f.isShared ? '<span class="shared-badge" style="font-size:10px;padding:1px 5px;">Shared</span>' : ''}
+                ${f.shares?.length ? formatShareBadge(f.shares).replace(/font-size:[^;]*;?/,'font-size:10px;').replace(/padding:[^;]*;?/,'padding:1px 5px;') : ''}
             </div></td>
             <td style="color:var(--text-secondary);font-size:0.8rem;">Folder</td>
             <td style="color:var(--text-secondary);font-size:0.8rem;">${f.fileCount} files, ${formatBytes(f.totalSize)}</td>
@@ -446,7 +458,7 @@ function renderTableView(folders, files) {
             <td><div class="table-name-cell">
                 <span class="table-file-icon">${icon}</span>
                 <span>${escapeHtml(f.fileName)}</span>
-                ${f.isShared ? '<span class="shared-badge" style="font-size:10px;padding:1px 5px;">Shared</span>' : ''}
+                ${f.shares?.length ? formatShareBadge(f.shares).replace(/font-size:[^;]*;?/,'font-size:10px;').replace(/padding:[^;]*;?/,'padding:1px 5px;') : ''}
             </div></td>
             <td style="color:var(--text-secondary);font-size:0.8rem;">${typeLabel}</td>
             <td style="color:var(--text-secondary);font-size:0.8rem;">${formatBytes(f.fileSize)}</td>
@@ -525,7 +537,7 @@ function createFolderCard(folder) {
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>
-            ${folder.isShared ? '<span class="shared-badge">Shared</span>' : ''}
+            ${formatShareBadge(folder.shares)}
         </div>
         <div class="drive-item-info">
             <span class="drive-item-name" title="${folder.folderName}">${folder.folderName}</span>
@@ -578,7 +590,7 @@ function createFileCard(file) {
         </button>
         <div class="drive-item-icon">
             ${icon}
-            ${file.isShared ? '<span class="shared-badge">Shared</span>' : ''}
+            ${formatShareBadge(file.shares)}
         </div>
         <div class="drive-item-info">
             <span class="drive-item-name" title="${file.fileName}">${file.fileName}</span>
