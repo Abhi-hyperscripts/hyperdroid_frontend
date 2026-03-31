@@ -125,6 +125,11 @@ async function loadIssueDetail() {
         // Show edit button only when status is 'reported'
         const editBtn = document.getElementById('editIssueBtn');
         if (editBtn) editBtn.style.display = issue.status === 'reported' ? '' : 'none';
+
+        // Load and show attachments
+        loadAttachments();
+        const attachBtn = document.getElementById('attachUploadBtn');
+        if (attachBtn) attachBtn.style.display = '';
     } catch (e) {
         console.error('[IssueDetail] Failed to load issue:', e);
         Toast.error('Failed to load issue');
@@ -697,6 +702,124 @@ function formatRelativeTime(dateStr) {
     if (diffDays < 7) return `${diffDays}d ago`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// ==================== Attachments ====================
+
+let attachments = [];
+
+async function loadAttachments() {
+    try {
+        const result = await api.request(`/pms/issue-attachments?issueId=${issueId}`);
+        attachments = result.data || result || [];
+        renderAttachments();
+    } catch (e) {
+        console.error('Failed to load attachments:', e);
+        attachments = [];
+        renderAttachments();
+    }
+}
+
+function renderAttachments() {
+    document.getElementById('attachmentCount').textContent = attachments.length;
+    const list = document.getElementById('attachmentsList');
+
+    if (!attachments || attachments.length === 0) {
+        list.innerHTML = '<div class="issue-attachment-empty">No attachments</div>';
+        return;
+    }
+
+    list.innerHTML = '<div class="issue-attachment-list">' + attachments.map(a => {
+        const ext = (a.file_name || '').split('.').pop().toUpperCase().substring(0, 4) || 'FILE';
+        const size = formatFileSize(a.file_size);
+        const time = formatRelativeTime(a.created_at);
+        return `
+            <div class="issue-attachment-item">
+                <div class="issue-attachment-icon">${escapeHtml(ext)}</div>
+                <div class="issue-attachment-info">
+                    <div class="issue-attachment-name" title="${escapeHtml(a.file_name)}">${escapeHtml(a.file_name)}</div>
+                    <div class="issue-attachment-meta">${size} &middot; ${time}</div>
+                </div>
+                <div class="issue-attachment-actions">
+                    <button onclick="downloadAttachment('${a.id}')" title="Download">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </button>
+                    <button class="delete-btn" onclick="deleteAttachment('${a.id}','${escapeHtml(a.file_name)}')" title="Delete">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    </button>
+                </div>
+            </div>`;
+    }).join('') + '</div>';
+}
+
+function formatFileSize(bytes) {
+    if (!bytes) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let i = 0;
+    let size = bytes;
+    while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
+    return `${size.toFixed(i > 0 ? 1 : 0)} ${units[i]}`;
+}
+
+async function handleAttachFiles(files) {
+    if (!files || files.length === 0) return;
+    const progress = document.getElementById('attachUploadProgress');
+
+    for (const file of files) {
+        if (file.size > 50 * 1024 * 1024) {
+            Toast.error(`${file.name} exceeds 50MB limit`);
+            continue;
+        }
+
+        progress.style.display = '';
+        progress.innerHTML = `<div class="issue-upload-progress"><div class="spinner"></div> Uploading ${escapeHtml(file.name)}...</div>`;
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const token = getAuthToken();
+            const baseUrl = CONFIG.pmsApiBaseUrl;
+            const resp = await fetch(`${baseUrl}/api/issue-attachments/${issueId}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            const result = await resp.json();
+            if (!resp.ok) throw new Error(result.error || 'Upload failed');
+
+            Toast.success(`${file.name} attached`);
+        } catch (e) {
+            Toast.error(`Failed to upload ${file.name}: ${e.message}`);
+        }
+    }
+
+    progress.style.display = 'none';
+    document.getElementById('attachFileInput').value = '';
+    loadAttachments();
+}
+
+async function downloadAttachment(attachmentId) {
+    try {
+        const result = await api.request(`/pms/issue-attachments/${attachmentId}/download`);
+        const url = result.url || result.data?.url;
+        if (url) window.open(url, '_blank');
+        else Toast.error('Failed to get download URL');
+    } catch (e) {
+        Toast.error('Download failed: ' + e.message);
+    }
+}
+
+async function deleteAttachment(attachmentId, fileName) {
+    if (!confirm(`Delete attachment "${fileName}"?`)) return;
+    try {
+        await api.request(`/pms/issue-attachments/${attachmentId}`, { method: 'DELETE' });
+        Toast.success('Attachment deleted');
+        loadAttachments();
+    } catch (e) {
+        Toast.error('Delete failed: ' + e.message);
+    }
 }
 
 // ==================== Inline Issue Editing ====================

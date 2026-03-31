@@ -171,6 +171,7 @@
 .issue-content-section,
 .issue-comment,
 .issue-comment-form,
+.issue-attachment-item,
 .issue-activity-section {
     background:
         linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
