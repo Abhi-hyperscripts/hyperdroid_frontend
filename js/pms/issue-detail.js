@@ -741,7 +741,10 @@ function renderAttachments() {
                     <div class="issue-attachment-meta">${size} &middot; ${time}</div>
                 </div>
                 <div class="issue-attachment-actions">
-                    <button onclick="downloadAttachment('${a.id}')" title="Download">
+                    <button onclick="previewAttachment('${a.id}','${escapeHtml(a.file_name)}','${escapeHtml(a.content_type || '')}')" title="Preview">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                    <button onclick="downloadAttachment('${a.id}','${escapeHtml(a.file_name)}')" title="Download">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     </button>
                     <button class="delete-btn" onclick="deleteAttachment('${a.id}','${escapeHtml(a.file_name)}')" title="Delete">
@@ -800,12 +803,41 @@ async function handleAttachFiles(files) {
     loadAttachments();
 }
 
-async function downloadAttachment(attachmentId) {
+async function previewAttachment(attachmentId, fileName, contentType) {
     try {
         const result = await api.request(`/pms/issue-attachments/${attachmentId}/download`);
         const url = result.url || result.data?.url;
-        if (url) window.open(url, '_blank');
-        else Toast.error('Failed to get download URL');
+        if (!url) { Toast.error('Failed to get URL'); return; }
+
+        const ct = (contentType || '').toLowerCase();
+        const isPreviewable = ct.startsWith('image/') || ct === 'application/pdf' ||
+            ct.startsWith('video/') || ct.startsWith('audio/') || ct.startsWith('text/');
+        const isOfficeDoc = /\.(docx?|xlsx?|pptx?)$/i.test(fileName || '');
+
+        if (isPreviewable) {
+            window.open(url, '_blank');
+        } else if (isOfficeDoc) {
+            window.open(`https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=false`, '_blank');
+        } else {
+            window.open(url, '_blank');
+        }
+    } catch (e) {
+        Toast.error('Preview failed: ' + e.message);
+    }
+}
+
+async function downloadAttachment(attachmentId, fileName) {
+    try {
+        const result = await api.request(`/pms/issue-attachments/${attachmentId}/download`);
+        const url = result.url || result.data?.url;
+        if (!url) { Toast.error('Failed to get download URL'); return; }
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName || 'download';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
     } catch (e) {
         Toast.error('Download failed: ' + e.message);
     }
