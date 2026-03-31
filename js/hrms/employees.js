@@ -3770,50 +3770,19 @@ function validateDocumentsStep() {
     const employeeId = document.getElementById('employeeId').value;
     const isEdit = !!employeeId;
 
-    // Check for photo - either pending upload or existing document
-    const hasPhoto = pendingDocuments.photo || (existingDocuments.photo && !existingDocuments.photo.markedForDeletion);
-    if (!hasPhoto) {
-        showToast('Employee photo is required', 'error');
-        return false;
-    }
-
-    // Check for PAN front - either pending upload or existing document
+    // Photo, PAN, and Aadhaar documents are all optional — only validate consistency
+    // If PAN number is provided, front image should also be provided (and vice versa)
     const hasPanFront = pendingDocuments.pan_front || (existingDocuments.pan_front && !existingDocuments.pan_front.markedForDeletion);
-    if (!hasPanFront) {
-        showToast('PAN Card front is required', 'error');
-        return false;
-    }
-
-    // Check for PAN back - either pending upload or existing document
-    const hasPanBack = pendingDocuments.pan_back || (existingDocuments.pan_back && !existingDocuments.pan_back.markedForDeletion);
-    if (!hasPanBack) {
-        showToast('PAN Card back is required', 'error');
-        return false;
-    }
-
-    // Check for Aadhar front - either pending upload or existing document
-    const hasAadharFront = pendingDocuments.aadhar_front || (existingDocuments.aadhar_front && !existingDocuments.aadhar_front.markedForDeletion);
-    if (!hasAadharFront) {
-        showToast('Aadhar Card front is required', 'error');
-        return false;
-    }
-
-    // Check for Aadhar back - either pending upload or existing document
-    const hasAadharBack = pendingDocuments.aadhar_back || (existingDocuments.aadhar_back && !existingDocuments.aadhar_back.markedForDeletion);
-    if (!hasAadharBack) {
-        showToast('Aadhar Card back is required', 'error');
-        return false;
-    }
-
-    // Validate document numbers are filled
     const panNumber = document.getElementById('pan-number')?.value?.trim();
-    if (!panNumber) {
-        showToast('PAN number is required', 'error');
+    if (panNumber && !hasPanFront) {
+        showToast('PAN Card front image is required when PAN number is provided', 'error');
         return false;
     }
+
+    const hasAadharFront = pendingDocuments.aadhar_front || (existingDocuments.aadhar_front && !existingDocuments.aadhar_front.markedForDeletion);
     const aadharNumber = document.getElementById('aadhar-number')?.value?.trim();
-    if (!aadharNumber) {
-        showToast('Aadhar number is required', 'error');
+    if (aadharNumber && !hasAadharFront) {
+        showToast('Aadhaar Card front image is required when Aadhaar number is provided', 'error');
         return false;
     }
 
