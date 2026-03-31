@@ -469,7 +469,15 @@ const SearchableDropdown = (function() {
 
         destroy() {
             instances.delete(this.id);
-            this.container.innerHTML = '';
+            // Restore the original select element visibility
+            if (this.linkedSelect) {
+                this.linkedSelect.style.display = '';
+                this.linkedSelect.removeAttribute('data-searchable');
+            }
+            // Remove the container from DOM entirely
+            if (this.container && this.container.parentNode) {
+                this.container.parentNode.removeChild(this.container);
+            }
         }
 
         // Static method to get instance by ID
@@ -498,6 +506,14 @@ function convertSelectToSearchable(selectId, options = {}) {
         console.warn(`convertSelectToSearchable: Select element '${selectId}' not found`);
         return null;
     }
+
+    // Remove any existing searchable container for this select
+    const existingContainer = document.getElementById(`${selectId}-searchable-container`);
+    if (existingContainer) {
+        existingContainer.remove();
+    }
+    select.style.display = '';
+    select.removeAttribute('data-searchable');
 
     // Extract options from select
     const selectOptions = Array.from(select.options).map(opt => ({

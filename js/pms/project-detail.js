@@ -1555,6 +1555,13 @@ function destroyIssueModalDropdowns() {
         if (dd && dd.destroy) dd.destroy();
     });
     issueTypeDD = issueSeverityDD = issuePriorityDD = issueAssigneeDD = issueSubProjectDD = issueReproducibilityDD = null;
+    // Safety: remove any leftover searchable containers from the modal DOM
+    document.querySelectorAll('#issueModal .searchable-dropdown-wrapper').forEach(el => el.remove());
+    // Restore native selects visibility
+    document.querySelectorAll('#issueModal select[data-searchable]').forEach(sel => {
+        sel.style.display = '';
+        sel.removeAttribute('data-searchable');
+    });
 }
 
 async function loadProjectIssues() {
@@ -1814,6 +1821,7 @@ async function openIssueModal() {
 
     // Init dropdowns + Quill editors after modal visible
     setTimeout(() => {
+        destroyIssueModalDropdowns();
         initIssueModalDropdowns();
         initIssueQuillEditors();
 
@@ -1992,6 +2000,7 @@ async function editProjectIssue(issueId) {
 
         // Init dropdowns + Quill
         setTimeout(() => {
+            destroyIssueModalDropdowns();
             initIssueModalDropdowns();
             initIssueQuillEditors();
 
