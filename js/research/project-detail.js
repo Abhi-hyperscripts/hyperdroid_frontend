@@ -376,6 +376,10 @@ async function connectFileProgressSignalR() {
             handleQuestionnaireProgressUpdate(data);
         });
 
+        fileProgressConnection.on('OpenEndCodingProgress', (data) => {
+            if (typeof handleOeCodingProgress === 'function') handleOeCodingProgress(data);
+        });
+
         fileProgressConnection.on('InsightsProgressUpdate', (data) => {
             handleInsightsProgressUpdate(data);
         });
@@ -972,7 +976,7 @@ function switchTab(tabName) {
 
     // Update active tab title
     const nameEl = document.getElementById('activeTabName');
-    const tabDisplayNames = { files:'Files', variables:'Variables', questions:'Questions', query:'Query', functions:'Functions', ailogs:'AI Logs' };
+    const tabDisplayNames = { files:'Files', variables:'Variables', questions:'Questions', query:'Query', functions:'Functions', ailogs:'AI Logs', opencoding:'Open-End Coding' };
     if (nameEl && tabDisplayNames[tabName]) nameEl.textContent = tabDisplayNames[tabName];
 
     // Update tab content
@@ -1002,6 +1006,9 @@ function switchTab(tabName) {
         if (!document.getElementById('aiLogsContent').innerHTML) loadAiLogs();
         if (!eaLoaded) loadEmbedAnalytics('');
         updateAiLogsBadges();
+    }
+    if (tabName === 'opencoding') {
+        if (typeof initOpenEndCoding === 'function') initOpenEndCoding();
     }
 }
 

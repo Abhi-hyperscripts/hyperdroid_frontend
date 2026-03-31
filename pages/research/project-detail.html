@@ -5149,6 +5149,200 @@
             color: var(--text-secondary);
             font-size: 0.82rem;
         }
+
+        /* ===== OPEN-END CODING ===== */
+        #codeframeModal, #codeEditModal, #costBreakdownModal {
+            display: none !important;
+            pointer-events: none;
+        }
+        #codeframeModal.active, #codeEditModal.active, #costBreakdownModal.active {
+            display: flex !important;
+            opacity: 1 !important;
+            pointer-events: auto;
+        }
+        /* Fix gm-modal inputs/buttons inside OE modals */
+        #codeframeModal .gm-input,
+        #codeEditModal .gm-input,
+        #costBreakdownModal .gm-input {
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input, var(--bg-tertiary));
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            outline: none;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        #codeframeModal .gm-input:focus,
+        #codeEditModal .gm-input:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+        }
+        #codeframeModal textarea.gm-input,
+        #codeEditModal textarea.gm-input {
+            resize: vertical;
+            min-height: 60px;
+        }
+        #codeframeModal .gm-form-group,
+        #codeEditModal .gm-form-group {
+            margin-bottom: 12px;
+        }
+        #codeframeModal .gm-form-group label,
+        #codeEditModal .gm-form-group label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        /* Fix footer buttons */
+        #codeframeModal .gm-footer,
+        #codeEditModal .gm-footer,
+        #costBreakdownModal .gm-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 14px 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        #codeframeModal .gm-btn-primary,
+        #codeEditModal .gm-btn-primary,
+        #costBreakdownModal .gm-btn-primary {
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            background: var(--brand-primary);
+            color: #fff;
+        }
+        #codeframeModal .gm-btn-primary:hover,
+        #codeEditModal .gm-btn-primary:hover { background: var(--brand-primary-dark); }
+        #codeframeModal .gm-btn-secondary,
+        #codeEditModal .gm-btn-secondary,
+        #costBreakdownModal .gm-btn-secondary {
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-secondary);
+        }
+        #codeframeModal .gm-btn-secondary:hover,
+        #codeEditModal .gm-btn-secondary:hover { background: var(--bg-tertiary); }
+
+        .oe-toolbar { display: flex; align-items: center; gap: 10px; padding: 12px 0; flex-wrap: wrap; border-bottom: 1px solid var(--border-color); margin-bottom: 16px; }
+        .oe-toolbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+        .oe-dropdown-container { min-width: 200px; }
+        .oe-dropdown-container.oe-dropdown-wide { min-width: 300px; flex: 1; }
+        .oe-dropdown-container.oe-dropdown-sm { min-width: 140px; }
+        .oe-dropdown-container .searchable-dropdown { font-size: 0.82rem; }
+        .oe-btn { padding: 7px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+        .oe-btn-primary { background: var(--brand-primary); color: #fff; }
+        .oe-btn-primary:hover { background: var(--brand-primary-hover, var(--brand-primary-dark)); }
+        .oe-btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .oe-btn-secondary:hover { background: var(--bg-secondary); }
+        .oe-btn-danger { background: var(--color-danger); color: #fff; }
+        .oe-btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+        .oe-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .oe-section-title { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 20px 0 12px; display: flex; align-items: center; gap: 12px; }
+        .oe-results-filters { display: flex; align-items: center; gap: 10px; margin-left: auto; font-weight: 400; }
+        .oe-checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; }
+
+        .oe-variable-card { padding: 14px 16px; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 10px; cursor: pointer; transition: all 0.15s; background: var(--bg-card); }
+        .oe-variable-card:hover { border-color: var(--brand-primary); background: var(--bg-secondary); }
+        .oe-variable-card.selected { border-color: var(--brand-primary); box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+        .oe-var-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .oe-var-name { font-weight: 700; font-size: 0.88rem; color: var(--text-primary); font-family: var(--font-family-mono, monospace); }
+        .oe-var-fill { font-size: 0.75rem; color: var(--text-secondary); }
+        .oe-var-label { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 8px; }
+        .oe-var-fill-bar { height: 4px; background: var(--bg-tertiary); border-radius: 2px; overflow: hidden; margin-bottom: 8px; }
+        .oe-var-fill-progress { height: 100%; background: var(--brand-primary); border-radius: 2px; }
+        .oe-var-samples { display: flex; flex-direction: column; gap: 4px; }
+        .oe-var-sample { font-size: 0.75rem; color: var(--text-muted); font-style: italic; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .oe-job-card { padding: 16px; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 12px; background: var(--bg-card); }
+        .oe-job-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .oe-job-title { display: flex; align-items: center; gap: 10px; }
+        .oe-job-var { font-weight: 700; font-size: 0.9rem; color: var(--text-primary); font-family: var(--font-family-mono, monospace); }
+        .oe-job-time { font-size: 0.78rem; color: var(--text-muted); }
+        .oe-job-error { font-size: 0.8rem; color: var(--color-danger); margin-bottom: 10px; padding: 8px 12px; background: var(--color-danger-light); border-radius: 6px; }
+        .oe-job-progress { margin-bottom: 12px; }
+        .oe-job-progress-label { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 4px; }
+        .oe-job-progress-pct { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; text-align: right; }
+        .oe-job-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 8px; margin-bottom: 12px; }
+        .oe-job-stat { text-align: center; }
+        .oe-stat-value { display: block; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+        .oe-stat-label { display: block; font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .oe-job-actions { display: flex; gap: 8px; }
+
+        .oe-results-summary { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px; }
+        .oe-results-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .oe-results-table th { text-align: left; padding: 8px 10px; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 2px solid var(--border-color); }
+        .oe-results-table td { padding: 10px; border-bottom: 1px solid var(--border-color); vertical-align: top; }
+        .oe-results-row { cursor: pointer; transition: background 0.1s; }
+        .oe-results-row:hover { background: var(--bg-secondary); }
+        .oe-results-row.oe-flagged { background: rgba(245,158,11,0.06); }
+        .oe-response-cell { max-width: 350px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
+        .oe-flag-icon { color: var(--color-warning); margin-right: 4px; }
+        .oe-code-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; background: var(--bg-tertiary); color: var(--brand-primary); margin: 1px 2px; font-family: var(--font-family-mono, monospace); }
+        .oe-code-more { font-size: 0.7rem; color: var(--text-muted); }
+        .oe-sentiment-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; font-family: var(--font-family-mono, monospace); }
+        .oe-sentiment-badge.positive { background: rgba(16,185,129,0.12); color: var(--color-success); }
+        .oe-sentiment-badge.negative { background: rgba(239,68,68,0.12); color: var(--color-danger); }
+        .oe-sentiment-badge.neutral { background: var(--bg-tertiary); color: var(--text-muted); }
+        .oe-sentiment-badge.small { font-size: 0.65rem; padding: 1px 5px; }
+        .oe-method-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+        .oe-method-direct { background: rgba(59,130,246,0.12); color: var(--brand-primary); }
+        .oe-method-propagated { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+        .oe-method-verified { background: rgba(6,182,212,0.12); color: #06b6d4; }
+        .oe-method-trivial { background: var(--bg-tertiary); color: var(--text-muted); }
+        .oe-method-manual { background: rgba(16,185,129,0.12); color: var(--color-success); }
+
+        .oe-expanded-row td { padding: 0 !important; border-bottom: 2px solid var(--brand-primary); }
+        .oe-claims-panel { padding: 14px 16px 14px 70px; background: var(--bg-secondary); border-left: 3px solid var(--brand-primary); }
+        .oe-full-response { font-size: 0.82rem; color: var(--text-primary); margin-bottom: 12px; line-height: 1.5; }
+        .oe-claims-list { margin-bottom: 10px; }
+        .oe-claim-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border-color); }
+        .oe-claim-item:last-child { border-bottom: none; }
+        .oe-claim-num { font-weight: 700; color: var(--text-muted); font-size: 0.78rem; min-width: 20px; }
+        .oe-claim-text { font-size: 0.82rem; color: var(--text-primary); flex: 1; }
+        .oe-claim-codes { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+        .oe-claim-actions { margin-top: 8px; }
+        .oe-flag-reason { font-size: 0.75rem; color: var(--color-warning); margin-bottom: 8px; font-style: italic; }
+        .oe-pagination { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 16px 0; }
+        .oe-page-info { font-size: 0.8rem; color: var(--text-secondary); }
+
+        .oe-codeframe-list { max-height: 350px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; }
+        .oe-codes-empty { padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+        .oe-code-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--border-color); font-size: 0.82rem; }
+        .oe-code-item:last-child { border-bottom: none; }
+        .oe-code-child { padding-left: 32px; }
+        .oe-code-other { background: var(--bg-secondary); }
+        .oe-code-value { font-weight: 700; font-family: var(--font-family-mono, monospace); min-width: 36px; color: var(--brand-primary); }
+        .oe-code-label { font-weight: 600; color: var(--text-primary); }
+        .oe-code-def { flex: 1; font-size: 0.75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .oe-code-tag { font-size: 0.65rem; padding: 1px 6px; border-radius: 3px; background: var(--color-warning-light); color: var(--color-warning-text); font-weight: 600; }
+        .oe-code-actions { display: flex; gap: 4px; margin-left: auto; }
+        .oe-code-edit-btn, .oe-code-delete-btn { background: none; border: none; cursor: pointer; padding: 4px; border-radius: 4px; color: var(--text-muted); }
+        .oe-code-edit-btn:hover { color: var(--brand-primary); background: var(--bg-tertiary); }
+        .oe-code-delete-btn:hover { color: var(--color-danger); background: rgba(239,68,68,0.08); }
+
+        .oe-autogen-section { margin: 16px 0; padding: 14px; border: 1px dashed var(--border-color); border-radius: 8px; background: var(--bg-secondary); }
+        .oe-autogen-section h4 { font-size: 0.85rem; margin: 0 0 10px; color: var(--text-primary); }
+        .oe-autogen-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+        .oe-cost-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        .oe-cost-stat { text-align: center; padding: 12px; background: var(--bg-secondary); border-radius: 8px; }
+        .oe-cost-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .oe-cost-table th { text-align: left; padding: 8px 10px; font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); border-bottom: 2px solid var(--border-color); }
+        .oe-cost-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-color); }
+        .oe-cost-model { font-family: var(--font-family-mono, monospace); font-size: 0.75rem; }
     </style>
 </head>
 <body class="dashboard">
@@ -5357,6 +5551,14 @@
                                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                                 </svg>
                                 <span class="nav-label">AI Logs</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="opencoding">
+                                <span class="nav-number">7</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                                    <line x1="7" y1="7" x2="7.01" y2="7"/>
+                                </svg>
+                                <span class="nav-label">Open-End Coding</span>
                             </button>
                         </div>
                     </nav>
@@ -5716,8 +5918,88 @@
                     </div>
                 </div>
             </div>
+            <!-- Tab Content: Open-End Coding -->
+            <div class="tab-content" id="opencodingTab">
+                <div class="oe-toolbar">
+                    <div id="oeFileSelectContainer" class="oe-dropdown-container"></div>
+                    <div id="oeVariableSelectContainer" class="oe-dropdown-container oe-dropdown-wide"></div>
+                    <div class="oe-toolbar-actions">
+                        <div id="oeCodeframeSelectContainer" class="oe-dropdown-container"></div>
+                        <button class="oe-btn oe-btn-secondary" onclick="openCodeframeModal()">New Codeframe</button>
+                        <button class="oe-btn oe-btn-primary" onclick="startCodingJob()">Start Coding</button>
+                    </div>
+                </div>
+                <div id="oeDetectedVars"></div>
+                <div id="oeJobSection">
+                    <h3 class="oe-section-title">Coding Jobs</h3>
+                    <div id="oeJobsList"></div>
+                </div>
+                <div id="oeResultsSection" style="display:none;">
+                    <h3 class="oe-section-title">
+                        Results
+                        <div class="oe-results-filters">
+                            <div id="oeMethodFilterContainer" class="oe-dropdown-container oe-dropdown-sm"></div>
+                            <label class="oe-checkbox-label">
+                                <input type="checkbox" id="oeFlaggedFilter" onchange="oeFilterChanged()"> Flagged only
+                            </label>
+                        </div>
+                    </h3>
+                    <div id="oeResultsContainer"></div>
+                </div>
+            </div>
+
                 </main>
             </div><!-- /research-layout -->
+        </div>
+    </div>
+
+    <!-- Codeframe Modal -->
+    <div class="gm-overlay" id="codeframeModal">
+        <div class="gm-modal gm-lg">
+            <div class="gm-header"><h3>Codeframe</h3><button class="gm-close" onclick="closeCodeframeModal()">&times;</button></div>
+            <div class="gm-body">
+                <div class="gm-form-group"><label>Name</label><input type="text" id="cfModalName" class="gm-input" placeholder="e.g., Brand Satisfaction Codes v1"></div>
+                <div class="gm-form-group"><label>Description</label><input type="text" id="cfModalDescription" class="gm-input" placeholder="Optional description"></div>
+                <div id="cfAutoGenSection" class="oe-autogen-section">
+                    <h4>Auto-Generate from Responses</h4>
+                    <div class="oe-autogen-controls">
+                        <div class="gm-form-group"><label>Sample Size</label><input type="number" id="cfAutoSampleSize" class="gm-input" value="200" min="50" max="1000"></div>
+                        <div class="gm-form-group"><label>Target Codes</label><input type="number" id="cfAutoTargetCodes" class="gm-input" value="20" min="5" max="50"></div>
+                    </div>
+                    <div class="gm-form-group"><label>Context (optional)</label><input type="text" id="cfAutoContext" class="gm-input" placeholder="e.g., Brand satisfaction survey for automotive industry"></div>
+                    <button class="oe-btn oe-btn-primary" id="cfAutoGenerateBtn" onclick="autoGenerateCodeframe()">Generate</button>
+                </div>
+                <h4 style="margin-top:16px;">Codes</h4>
+                <div id="cfCodesList" class="oe-codeframe-list"></div>
+                <button class="oe-btn oe-btn-secondary" onclick="addNewCode()" style="margin-top:8px;">+ Add Code</button>
+            </div>
+            <div class="gm-footer"><button class="gm-btn-secondary" onclick="closeCodeframeModal()">Cancel</button><button class="gm-btn-primary" onclick="saveCodeframe()">Save Codeframe</button></div>
+        </div>
+    </div>
+
+    <!-- Code Edit Modal -->
+    <div class="gm-overlay" id="codeEditModal">
+        <div class="gm-modal gm-sm">
+            <div class="gm-header"><h3>Edit Code</h3><button class="gm-close" onclick="closeCodeEditModal()">&times;</button></div>
+            <div class="gm-body">
+                <input type="hidden" id="codeEditIdx" value="-1">
+                <div class="gm-form-group"><label>Code Value</label><input type="text" id="codeEditValue" class="gm-input" placeholder="e.g., 1 or 1.1"></div>
+                <div class="gm-form-group"><label>Label</label><input type="text" id="codeEditLabel" class="gm-input" placeholder="e.g., Product Quality"></div>
+                <div class="gm-form-group"><label>Definition</label><textarea id="codeEditDefinition" class="gm-input" rows="2" placeholder="What this code captures..."></textarea></div>
+                <div class="gm-form-group"><label>Includes (comma-separated)</label><input type="text" id="codeEditIncludes" class="gm-input" placeholder="quality, durable, well-made"></div>
+                <div class="gm-form-group"><label>Excludes (comma-separated)</label><input type="text" id="codeEditExcludes" class="gm-input" placeholder="price, service"></div>
+                <label class="oe-checkbox-label"><input type="checkbox" id="codeEditIsOther"> This is the catch-all "Other" code</label>
+            </div>
+            <div class="gm-footer"><button class="gm-btn-secondary" onclick="closeCodeEditModal()">Cancel</button><button class="gm-btn-primary" onclick="saveCodeEdit()">Save Code</button></div>
+        </div>
+    </div>
+
+    <!-- Cost Breakdown Modal -->
+    <div class="gm-overlay" id="costBreakdownModal">
+        <div class="gm-modal gm-lg">
+            <div class="gm-header"><h3>Cost Breakdown</h3><button class="gm-close" onclick="closeCostBreakdownModal()">&times;</button></div>
+            <div class="gm-body" id="costBreakdownContent"><div class="loading-state"><div class="spinner"></div><p>Loading...</p></div></div>
+            <div class="gm-footer"><button class="gm-btn-secondary" onclick="closeCostBreakdownModal()">Close</button></div>
         </div>
     </div>
 
@@ -6230,6 +6512,7 @@
         document.write('<script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"><\/script>');
         document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@4.3.0/dist/apexcharts.min.js"><\/script>');
         document.write('<script src="../../js/research/project-detail.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/research/openend-coding.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
