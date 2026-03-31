@@ -1733,7 +1733,12 @@ function removeModalFile(index) {
 
 function renderModalFileList() {
     const el = document.getElementById('issueModalFileList');
-    if (!modalPendingFiles.length) { el.innerHTML = ''; return; }
+    const countEl = document.getElementById('issueModalAttachCount');
+    if (countEl) {
+        countEl.textContent = modalPendingFiles.length;
+        countEl.style.display = modalPendingFiles.length > 0 ? '' : 'none';
+    }
+    if (!modalPendingFiles.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-secondary);font-style:italic;">No files attached. Click "Add Files" to attach.</div>'; return; }
     el.innerHTML = modalPendingFiles.map((f, i) => {
         const ext = f.name.split('.').pop().toUpperCase().substring(0, 4);
         const size = f.size < 1024 ? f.size + ' B' : f.size < 1048576 ? (f.size/1024).toFixed(1) + ' KB' : (f.size/1048576).toFixed(1) + ' MB';
@@ -1831,7 +1836,7 @@ function switchIssueEditorTab(tab, btnEl) {
     document.querySelectorAll('#issueModal .issue-tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('#issueModal .issue-tab-panel').forEach(p => p.classList.remove('active'));
     btnEl.classList.add('active');
-    const map = { steps: 'issueTabSteps', expected: 'issueTabExpected', actual: 'issueTabActual', desc: 'issueTabDesc' };
+    const map = { steps: 'issueTabSteps', expected: 'issueTabExpected', actual: 'issueTabActual', desc: 'issueTabDesc', attachments: 'issueTabAttachments' };
     document.getElementById(map[tab]).classList.add('active');
 }
 
