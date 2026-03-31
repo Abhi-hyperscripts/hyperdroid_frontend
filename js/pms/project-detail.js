@@ -1642,6 +1642,22 @@ function renderIssueStats(issues) {
         </div>`).join('');
 }
 
+function filterIssuesBySearch() {
+    const query = (document.getElementById('issueSearchInput')?.value || '').toLowerCase().trim();
+    if (!query) {
+        renderProjectIssues(projectIssues);
+        return;
+    }
+    const filtered = (projectIssues || []).filter(issue => {
+        const ref = String(issue.issue_ref || issue.issue_number || '').toLowerCase();
+        const title = String(issue.title || '').toLowerCase();
+        const reporter = String(issue.reporter_name || '').toLowerCase();
+        const assignee = String(issue.assignee_name || '').toLowerCase();
+        return ref.includes(query) || title.includes(query) || reporter.includes(query) || assignee.includes(query);
+    });
+    renderProjectIssues(filtered);
+}
+
 function renderProjectIssues(issues) {
     renderIssueStats(issues);
     const tbody = document.getElementById('projectIssuesBody');

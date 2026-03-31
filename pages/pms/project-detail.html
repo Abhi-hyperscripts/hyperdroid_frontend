@@ -440,6 +440,10 @@
                 <!-- ============ ISSUES TAB ============ -->
                 <div class="crm-tab-content" id="tab-issues">
                     <div class="crm-filter-bar" style="margin-top: 20px; margin-bottom: 12px;">
+                        <div class="crm-filter-group" style="min-width: 200px;">
+                            <label>Search</label>
+                            <input type="text" id="issueSearchInput" class="form-control form-control-sm" placeholder="Search issues..." oninput="filterIssuesBySearch()">
+                        </div>
                         <div class="crm-filter-group">
                             <label>Sub-Project</label>
                             <select id="issueFilterSubProject" class="form-select form-select-sm" onchange="loadProjectIssues()">
