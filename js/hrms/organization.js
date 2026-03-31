@@ -3051,6 +3051,12 @@ function showCreateHolidayModal() {
     document.getElementById('holidayId').value = '';
     document.getElementById('holidayModalTitle').textContent = 'Create Holiday';
     openModal('holidayModal');
+
+    // Initialize HRMSDatePicker on date field (needed for Safari compatibility)
+    const dateInput = document.getElementById('holidayDate');
+    if (typeof HRMSDatePicker !== 'undefined' && dateInput && !dateInput._flatpickr) {
+        HRMSDatePicker.init(dateInput, {});
+    }
 }
 
 function editHoliday(id) {
@@ -3482,9 +3488,15 @@ async function saveShift() {
 }
 
 async function saveHoliday() {
-    const form = document.getElementById('holidayForm');
-    if (!form.checkValidity()) {
-        form.reportValidity();
+    const holidayName = document.getElementById('holidayName').value.trim();
+    const holidayDate = document.getElementById('holidayDate').value;
+
+    if (!holidayName) {
+        showToast('Holiday name is required', 'error');
+        return;
+    }
+    if (!holidayDate) {
+        showToast('Holiday date is required', 'error');
         return;
     }
 
@@ -3499,8 +3511,8 @@ async function saveHoliday() {
         const holidayType = holidayTypeDropdown ? holidayTypeDropdown.getValue() : document.getElementById('holidayTypeSelect')?.value;
 
         const baseData = {
-            holiday_name: document.getElementById('holidayName').value,
-            holiday_date: document.getElementById('holidayDate').value,
+            holiday_name: holidayName,
+            holiday_date: holidayDate,
             holiday_type: holidayType || 'public',
             description: document.getElementById('holidayDescription').value
         };
