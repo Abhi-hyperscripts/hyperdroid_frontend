@@ -5075,8 +5075,11 @@ async function showEditLoanModal(loanId) {
         document.getElementById('editLoanPriority').value = loan.priority || 100;
         document.getElementById('editLoanPurpose').value = loan.purpose || '';
 
-        // Show current EMI (will be recalculated on save)
-        document.getElementById('editCurrentEmi').value = formatCurrency(loan.emi_amount, null, loan.currency_symbol);
+        // Show current EMI as editable number
+        document.getElementById('editCurrentEmi').value = loan.emi_amount || 0;
+
+        // Attach auto-calculation listeners
+        attachLoanCalcListeners();
 
         closeModal('viewLoanModal');
         openModal('editLoanModal');
@@ -5101,6 +5104,7 @@ async function submitEditLoan() {
         interest_rate: parseFloat(document.getElementById('editInterestRate').value) || 0,
         interest_calculation_type: document.getElementById('editInterestType').value,
         tenure_months: parseInt(document.getElementById('editTenureMonths').value) || 6,
+        emi_amount: parseFloat(document.getElementById('editCurrentEmi').value) || null,
         start_date: document.getElementById('editLoanStartDate').value || null,
         priority: parseInt(document.getElementById('editLoanPriority').value) || 100,
         purpose: document.getElementById('editLoanPurpose').value?.trim() || null
@@ -5135,6 +5139,75 @@ async function submitEditLoan() {
         console.error('Error updating loan:', error);
         showToast(error.message || error.error || 'Failed to update loan', 'error');
         hideLoading();
+    }
+}
+
+// Auto-calculate EMI or Tenure when loan fields change
+let _loanCalcListenersAttached = false;
+function attachLoanCalcListeners() {
+    if (_loanCalcListenersAttached) return;
+    _loanCalcListenersAttached = true;
+
+    const principal = document.getElementById('editPrincipalAmount');
+    const rate = document.getElementById('editInterestRate');
+    const tenure = document.getElementById('editTenureMonths');
+    const interestType = document.getElementById('editInterestType');
+    const emi = document.getElementById('editCurrentEmi');
+
+    // When principal, rate, or tenure change → calculate EMI
+    [principal, rate, tenure, interestType].forEach(el => {
+        el.addEventListener('input', () => calcLoanEmi());
+    });
+
+    // When EMI is manually edited → calculate tenure
+    emi.addEventListener('input', () => calcLoanTenure());
+}
+
+function calcLoanEmi() {
+    const P = parseFloat(document.getElementById('editPrincipalAmount').value) || 0;
+    const annualRate = parseFloat(document.getElementById('editInterestRate').value) || 0;
+    const N = parseInt(document.getElementById('editTenureMonths').value) || 0;
+    const type = document.getElementById('editInterestType').value;
+    if (P <= 0 || N <= 0) return;
+
+    let emiAmount;
+    if (annualRate === 0) {
+        emiAmount = P / N;
+    } else if (type === 'simple') {
+        const totalInterest = P * (annualRate / 100) * (N / 12);
+        emiAmount = (P + totalInterest) / N;
+    } else {
+        // Compound (reducing balance)
+        const r = (annualRate / 100) / 12;
+        emiAmount = P * r * Math.pow(1 + r, N) / (Math.pow(1 + r, N) - 1);
+    }
+    document.getElementById('editCurrentEmi').value = Math.round(emiAmount * 100) / 100;
+}
+
+function calcLoanTenure() {
+    const P = parseFloat(document.getElementById('editPrincipalAmount').value) || 0;
+    const annualRate = parseFloat(document.getElementById('editInterestRate').value) || 0;
+    const emiAmount = parseFloat(document.getElementById('editCurrentEmi').value) || 0;
+    const type = document.getElementById('editInterestType').value;
+    if (P <= 0 || emiAmount <= 0) return;
+
+    let months;
+    if (annualRate === 0) {
+        months = Math.ceil(P / emiAmount);
+    } else if (type === 'simple') {
+        // P + P*r*(N/12) = EMI*N → solve for N
+        const r = annualRate / 100;
+        months = Math.ceil(P / (emiAmount - P * r / 12));
+        if (months <= 0 || !isFinite(months)) return;
+    } else {
+        // Compound: N = log(EMI / (EMI - P*r)) / log(1+r)
+        const r = (annualRate / 100) / 12;
+        if (emiAmount <= P * r) return; // EMI too low to cover interest
+        months = Math.ceil(Math.log(emiAmount / (emiAmount - P * r)) / Math.log(1 + r));
+        if (!isFinite(months)) return;
+    }
+    if (months >= 1 && months <= 360) {
+        document.getElementById('editTenureMonths').value = months;
     }
 }
 
