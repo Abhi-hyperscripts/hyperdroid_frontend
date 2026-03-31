@@ -1685,7 +1685,9 @@ function renderProjectIssues(issues) {
             <td><span class="issue-status-badge issue-status-${issue.status}">${(issue.resolution && (issue.status === 'closed' || issue.status === 'verified')) ? `${statusLabels[issue.status]} — ${resolutionLabels[issue.resolution] || issue.resolution}` : (statusLabels[issue.status] || issue.status)}</span></td>
             <td style="font-size:0.8rem;">${escapeHtml(issue.reported_by_name || '—')}</td>
             <td style="font-size:0.8rem;">${escapeHtml(issue.assigned_to_name || 'Unassigned')}</td>
-            <td style="font-size:0.8rem;text-align:center;">${issue.comment_count || 0}</td>
+            <td style="font-size:0.8rem;text-align:center;">
+                <span title="Comments">${issue.comment_count || 0}</span>${issue.attachment_count ? ` / <span title="Attachments" style="color:var(--brand-primary);">${issue.attachment_count}</span>` : ''}
+            </td>
             <td style="font-size:0.75rem;white-space:nowrap;color:var(--text-secondary);">${created}</td>
             <td>
                 <div class="action-btns">
