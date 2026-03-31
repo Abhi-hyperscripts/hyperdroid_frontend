@@ -1626,7 +1626,7 @@ function renderIssueStats(issues) {
         { key: 'closed', label: 'Closed', color: 'var(--color-success)' },
         { key: 'verified', label: 'Verified', color: '#14b8a6' },
         { key: 'reopened', label: 'Reopened', color: '#f97316' },
-        { key: 'wontfix', label: "Won't Fix", color: 'var(--text-secondary)' }
+        { key: 'wontfix', label: "By Design", color: 'var(--text-secondary)' }
     ];
     const counts = {};
     (issues || []).forEach(i => { counts[i.status] = (counts[i.status] || 0) + 1; });
@@ -1670,8 +1670,14 @@ function renderProjectIssues(issues) {
         return;
     }
 
-    const statusLabels = { reported: 'Reported', in_progress: 'In Progress', qa_testing: 'QA Testing', closed: 'Closed', verified: 'Verified', reopened: 'Reopened', wontfix: "Won't Fix" };
-    const resolutionLabels = { fixed: 'Fixed', wontfix: "Won't Fix", duplicate: 'Duplicate', cannot_reproduce: 'Cannot Reproduce' };
+    const statusLabels = { reported: 'Reported', in_progress: 'In Progress', qa_testing: 'QA Testing', closed: 'Closed', verified: 'Verified', reopened: 'Reopened', wontfix: "By Design" };
+    const resolutionLabels = { fixed: 'Fixed', wontfix: "By Design", duplicate: 'Duplicate', cannot_reproduce: 'Cannot Reproduce' };
+    const resolutionIcons = {
+        fixed: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><path d="M20 6L9 17l-5-5"/></svg>',
+        wontfix: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+        duplicate: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>',
+        cannot_reproduce: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px;"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+    };
 
     tbody.innerHTML = issues.map(issue => {
         const code = issue.project_code || (project?.project_code) || (project?.project_name?.substring(0, 3).toUpperCase()) || 'PRJ';
@@ -1698,7 +1704,7 @@ function renderProjectIssues(issues) {
             </td>
             <td><span class="severity-badge severity-${issue.severity}">${issue.severity}</span></td>
             <td><span class="priority-badge priority-${issue.priority}">${issue.priority}</span></td>
-            <td><span class="issue-status-badge issue-status-${issue.status}">${(issue.resolution && (issue.status === 'closed' || issue.status === 'verified')) ? `${statusLabels[issue.status]} — ${resolutionLabels[issue.resolution] || issue.resolution}` : (statusLabels[issue.status] || issue.status)}</span></td>
+            <td><span class="issue-status-badge issue-status-${issue.status}${issue.resolution && issue.status === 'closed' ? ' issue-resolution-' + issue.resolution : ''}">${(issue.resolution && (issue.status === 'closed' || issue.status === 'verified')) ? `${resolutionIcons[issue.resolution] || ''}${statusLabels[issue.status]} — ${resolutionLabels[issue.resolution] || issue.resolution}` : (statusLabels[issue.status] || issue.status)}</span></td>
             <td style="font-size:0.8rem;">${escapeHtml(issue.reported_by_name || '—')}</td>
             <td style="font-size:0.8rem;">${escapeHtml(issue.assigned_to_name || 'Unassigned')}</td>
             <td style="font-size:0.8rem;text-align:center;">

@@ -20,7 +20,7 @@ const STATUSES = [
     { value: 'closed', label: 'Closed' },
     { value: 'verified', label: 'Verified' },
     { value: 'reopened', label: 'Reopened' },
-    { value: 'wontfix', label: "Won't Fix" }
+    { value: 'wontfix', label: "By Design" }
 ];
 
 // Must match backend ValidIssueTransitions
@@ -36,7 +36,7 @@ const VALID_TRANSITIONS = {
 
 const RESOLUTIONS = [
     { value: 'fixed', label: 'Fixed' },
-    { value: 'wontfix', label: "Won't Fix" },
+    { value: 'wontfix', label: "By Design" },
     { value: 'duplicate', label: 'Duplicate' },
     { value: 'cannot_reproduce', label: 'Cannot Reproduce' }
 ];
@@ -397,10 +397,22 @@ function renderActivityItem(c) {
     const name = c.user_name || 'Unknown';
     const initials = getInitials(name);
     const timeStr = formatRelativeTime(c.created_at);
+    // Replace raw backend codes with human-readable labels in activity text
+    const codeLabels = {
+        'reported': 'Reported', 'in_progress': 'In Progress', 'qa_testing': 'QA Testing',
+        'closed': 'Closed', 'verified': 'Verified', 'reopened': 'Reopened', 'wontfix': 'By Design',
+        'fixed': 'Fixed', 'duplicate': 'Duplicate', 'cannot_reproduce': 'Cannot Reproduce'
+    };
+    let text = (c.comment || '').replace(/\*\*([a-z_]+)\*\*/g, (_, code) =>
+        `<strong>${codeLabels[code] || code}</strong>`
+    ).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>'
+    ).replace(/resolution: ([a-z_]+)/g, (_, code) =>
+        `resolution: ${codeLabels[code] || code}`
+    );
     return `
         <div class="issue-activity-item">
             <span class="issue-activity-dot"></span>
-            <span class="issue-activity-text">${c.comment || ''}</span>
+            <span class="issue-activity-text">${text}</span>
             <span class="issue-activity-meta">— ${escapeHtml(name)}, ${timeStr}</span>
         </div>`;
 }
@@ -709,7 +721,7 @@ function formatStatus(status) {
         qa_testing: 'QA Testing',
         closed: 'Closed',
         reopened: 'Reopened',
-        wontfix: "Won't Fix"
+        wontfix: "By Design"
     };
     return labels[status] || status;
 }
