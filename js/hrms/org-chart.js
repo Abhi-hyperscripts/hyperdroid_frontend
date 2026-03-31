@@ -90,9 +90,28 @@ function populateFilters() {
 
     if (deptSelect) {
         deptSelect.innerHTML = '<option value="">All Departments</option>';
+
+        // Build parent lookup for hierarchy display
+        const deptMap = new Map(departments.map(d => [d.id, d]));
+        function getParentPath(dept) {
+            const parts = [];
+            let current = dept;
+            while (current.parent_department_id) {
+                const parent = deptMap.get(current.parent_department_id);
+                if (!parent) break;
+                parts.unshift(parent.department_name || parent.name);
+                current = parent;
+            }
+            return parts;
+        }
+
         departments.forEach(dept => {
             const name = dept.department_name || dept.name;
-            deptSelect.innerHTML += `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+            const parentPath = getParentPath(dept);
+            const displayText = parentPath.length > 0
+                ? `${parentPath.join(' > ')} > ${name}`
+                : name;
+            deptSelect.innerHTML += `<option value="${escapeHtml(name)}">${escapeHtml(displayText)}</option>`;
         });
     }
 
