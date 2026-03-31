@@ -91,8 +91,10 @@ function populateFilters() {
     if (deptSelect) {
         deptSelect.innerHTML = '<option value="">All Departments</option>';
 
-        // Build parent lookup for hierarchy display
+        // Build parent lookup for hierarchy display + deduplicate by display text
         const deptMap = new Map(departments.map(d => [d.id, d]));
+        const seen = new Set();
+
         function getParentPath(dept) {
             const parts = [];
             let current = dept;
@@ -111,6 +113,9 @@ function populateFilters() {
             const displayText = parentPath.length > 0
                 ? `${parentPath.join(' > ')} > ${name}`
                 : name;
+            const key = displayText.toLowerCase();
+            if (seen.has(key)) return; // skip duplicates
+            seen.add(key);
             deptSelect.innerHTML += `<option value="${escapeHtml(name)}">${escapeHtml(displayText)}</option>`;
         });
     }
