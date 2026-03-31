@@ -9843,6 +9843,10 @@ input:checked + .slider:before {
 }
 
 /* Employee Cell - name with code below */
+.text-left, th.text-left, td.text-left {
+    text-align: left !important;
+}
+
 .employee-cell {
     display: flex;
     flex-direction: column;
@@ -23053,6 +23057,7 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 
 #nfcCardsTable .employee-cell {
     display: flex;
+    flex-direction: row;
     align-items: center;
     gap: 10px;
 }

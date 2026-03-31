@@ -132,8 +132,45 @@ async function loadIssueDetail() {
         if (attachBtn) attachBtn.style.display = issue.status === 'reported' ? '' : 'none';
     } catch (e) {
         console.error('[IssueDetail] Failed to load issue:', e);
+        // Parse error into a human-readable message with details
+        let errorMsg = 'The issue content may be too large to display.';
+        let errorDetails = '';
+        try {
+            const raw = e.message || '';
+            if (raw.startsWith('{')) {
+                const parsed = JSON.parse(raw);
+                errorMsg = parsed.title || parsed.error || parsed.message || errorMsg;
+                // Extract detailed validation errors
+                if (parsed.errors) {
+                    const details = [];
+                    for (const [field, msgs] of Object.entries(parsed.errors)) {
+                        const msgList = Array.isArray(msgs) ? msgs : [msgs];
+                        details.push(...msgList.map(m => `<strong>${field}</strong>: ${m}`));
+                    }
+                    if (details.length) errorDetails = details.join('<br>');
+                }
+            } else if (raw.includes('Failed to fetch')) {
+                errorMsg = 'Could not connect to the server. Please check your connection.';
+            } else if (raw.length < 200) {
+                errorMsg = raw;
+            }
+        } catch (_) { /* keep default message */ }
+
+        const main = document.querySelector('.issue-detail-content') || document.querySelector('main') || document.body;
+        main.innerHTML = `
+            <div style="padding: 40px; text-align: center; color: var(--text-secondary);">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 16px;">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <h3 style="color: var(--text-primary); margin-bottom: 8px;">Failed to load issue</h3>
+                <p>${errorMsg}</p>
+                ${errorDetails ? `<div style="margin-top: 12px; padding: 12px 20px; background: var(--bg-tertiary, rgba(255,255,255,0.05)); border-radius: 8px; display: inline-block; text-align: left; font-size: 0.85rem; line-height: 1.6;">${errorDetails}</div>` : ''}
+                <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: center;">
+                    <button onclick="loadIssueDetail()" class="btn btn-primary" style="padding: 8px 20px; cursor: pointer;">Retry</button>
+                    <button onclick="goBack()" class="btn btn-outline" style="padding: 8px 20px; cursor: pointer;">Go Back</button>
+                </div>
+            </div>`;
         Toast.error('Failed to load issue');
-        setTimeout(() => window.location.href = 'issues.html', 1500);
     }
 }
 
@@ -297,7 +334,27 @@ function renderContentTabs() {
 function setContentHtml(elementId, html) {
     const el = document.getElementById(elementId);
     if (html && html.trim()) {
-        el.innerHTML = html;
+        // Lazy-load embedded images to prevent memory issues with large base64 content
+        const processed = html.replace(/<img\s+([^>]*?)src=["']([^"']+)["']/gi, (match, before, src) => {
+            return `<img ${before}src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src="${src}" loading="lazy" style="max-width:100%;height:auto;"`;
+        });
+        el.innerHTML = processed;
+
+        // Use IntersectionObserver to load images as they scroll into view
+        const lazyImages = el.querySelectorAll('img[data-src]');
+        if (lazyImages.length > 0) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        delete img.dataset.src;
+                        observer.unobserve(img);
+                    }
+                });
+            }, { rootMargin: '200px' });
+            lazyImages.forEach(img => observer.observe(img));
+        }
     } else {
         el.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No content provided</p>';
     }

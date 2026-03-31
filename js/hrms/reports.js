@@ -19,19 +19,19 @@ const reportConfig = {
     'employee-headcount': {
         title: 'Employee Headcount Report',
         endpoint: '/hrms/reports/headcount',
-        columns: ['Department', 'Count', 'Percentage'],
+        columns: ['Office', 'Department', 'Count', 'Percentage'],
         dataExtractor: (response) => response.by_department || []
     },
     'employee-demographics': {
         title: 'Demographics Report',
         endpoint: '/hrms/reports/demographics',
-        columns: ['Department', 'Count', 'Percentage'],
+        columns: ['Office', 'Department', 'Count', 'Percentage'],
         dataExtractor: null
     },
     'employee-turnover': {
         title: 'Turnover Analysis',
         endpoint: '/hrms/reports/turnover',
-        columns: ['Department', 'Exit Count', 'Attrition Rate'],
+        columns: ['Office', 'Department', 'Exit Count', 'Attrition Rate'],
         dataExtractor: null
     },
     'employee-directory': {
@@ -49,25 +49,25 @@ const reportConfig = {
     'monthly-attendance': {
         title: 'Monthly Attendance Summary',
         endpoint: '/hrms/reports/monthly-attendance',
-        columns: ['Department', 'Employee Count', 'Present Days', 'Absent Days', 'Late Arrivals', 'Attendance Rate'],
+        columns: ['Office', 'Department', 'Employee Count', 'Present Days', 'Absent Days', 'Late Arrivals', 'Attendance Rate'],
         dataExtractor: null
     },
     'late-arrivals': {
         title: 'Late Arrivals Report',
         endpoint: '/hrms/reports/late-arrivals',
-        columns: ['Department', 'Late Arrivals'],
+        columns: ['Office', 'Department', 'Late Arrivals'],
         dataExtractor: (response) => response.by_department || []
     },
     'overtime-report': {
         title: 'Overtime Report',
         endpoint: '/hrms/reports/overtime',
-        columns: ['Department', 'Average Working Hours'],
+        columns: ['Office', 'Department', 'Average Working Hours'],
         dataExtractor: (response) => response.by_department || []
     },
     'absenteeism': {
         title: 'Absenteeism Analysis',
         endpoint: '/hrms/reports/absenteeism',
-        columns: ['Department', 'Absent Days'],
+        columns: ['Office', 'Department', 'Absent Days'],
         dataExtractor: (response) => response.by_department || []
     },
     'leave-balance': {
@@ -346,12 +346,27 @@ function updateDepartmentsForOffice(officeId) {
         ? departments.filter(d => d.is_active !== false && d.office_id === officeId)
         : departments.filter(d => d.is_active !== false);
 
-    // Build options with "All Departments" first
+    // Deduplicate by (office_id + department_name) — collect ALL IDs for duplicates
+    // Value stores comma-separated IDs so backend can filter by all matching departments
+    const showOfficeSuffix = !officeId;
+    const groupMap = new Map(); // key: "officeId_deptNameLower" -> { ids: [], label, deptName }
+    for (const d of filteredDepts) {
+        const deptName = d.department_name || d.name || '';
+        const dedupeKey = `${d.office_id}_${deptName.toLowerCase()}`;
+        if (groupMap.has(dedupeKey)) {
+            groupMap.get(dedupeKey).ids.push(d.id);
+        } else {
+            const office = showOfficeSuffix ? offices.find(o => o.id === d.office_id) : null;
+            const label = office ? `${deptName} (${office.office_name})` : deptName;
+            groupMap.set(dedupeKey, { ids: [d.id], label });
+        }
+    }
+
     const deptOptions = [
         { value: '', label: 'All Departments' },
-        ...filteredDepts.map(d => ({
-            value: d.id,
-            label: d.department_name || d.name
+        ...Array.from(groupMap.values()).map(g => ({
+            value: g.ids.join(','),
+            label: g.label
         }))
     ];
 
@@ -720,7 +735,8 @@ function exportToPDF(columns, data, title) {
     const officeValue = officeDropdown ? officeDropdown.getValue() : '';
     const deptValue = departmentDropdown ? departmentDropdown.getValue() : '';
     const selectedOffice = offices.find(o => o.id === officeValue);
-    const selectedDept = departments.find(d => d.id === deptValue);
+    const firstDeptId = deptValue ? deptValue.split(',')[0] : '';
+    const selectedDept = departments.find(d => d.id === firstDeptId);
     const officeName = selectedOffice ? selectedOffice.office_name : 'All Offices';
     const deptName = selectedDept ? (selectedDept.department_name || selectedDept.name) : 'All Departments';
 

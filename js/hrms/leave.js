@@ -885,27 +885,39 @@ async function loadLeaveBalances() {
     }
 }
 
+// Stores dynamically discovered leave type columns
+let leaveTypeColumns = [];
+
 /**
  * Transform raw LeaveBalance records from backend to aggregated format per employee.
- * Backend returns: [{ employee_id, employee_name, leave_type_code, available_days, ... }, ...]
- * Frontend expects: [{ employee_id, employee_name, annual_leave, sick_leave, casual_leave, ... }, ...]
+ * Dynamically discovers leave type columns from the data — no hardcoded codes.
  */
 function transformLeaveBalancesToAggregated(rawBalances) {
-    if (!rawBalances || rawBalances.length === 0) return [];
+    if (!rawBalances || rawBalances.length === 0) {
+        leaveTypeColumns = [];
+        return [];
+    }
 
-    // Map leave_type_code to property names for display
-    const codeToProperty = {
-        'EL': 'annual_leave',      // Earned Leave → Annual Leave
-        'BL': 'annual_leave',      // Base Leave → Annual Leave (alternative)
-        'SL': 'sick_leave',        // Sick Leave
-        'CL': 'casual_leave',      // Casual Leave
-        'CO': 'comp_off',          // Comp Off
-        'LWP': 'lop',              // Leave Without Pay
-        'LOP': 'lop',              // Loss of Pay (alias)
-        'UL': 'lop',               // Unpaid Leave
-        'PL': 'paternity_leave',   // Paternity Leave
-        'ML': 'maternity_leave'    // Maternity Leave
-    };
+    // Discover all unique leave types from the data
+    const leaveTypeMap = new Map();
+    for (const b of rawBalances) {
+        const code = b.leave_type_code || b.leave_code || '';
+        if (code && !leaveTypeMap.has(code)) {
+            leaveTypeMap.set(code, b.leave_type_name || b.leave_name || code);
+        }
+    }
+    leaveTypeColumns = Array.from(leaveTypeMap.entries()).map(([code, name]) => ({ code, name }));
+
+    // Update table headers dynamically
+    const thead = document.getElementById('leaveBalanceHead');
+    if (thead) {
+        thead.innerHTML = `<tr>
+            <th class="text-left">Employee</th>
+            <th>Department</th>
+            ${leaveTypeColumns.map(lt => `<th>${lt.name}</th>`).join('')}
+            <th>Actions</th>
+        </tr>`;
+    }
 
     // Group by employee_id
     const employeeMap = new Map();
@@ -914,29 +926,24 @@ function transformLeaveBalancesToAggregated(rawBalances) {
         const empId = balance.employee_id;
 
         if (!employeeMap.has(empId)) {
-            employeeMap.set(empId, {
+            const emp = {
                 employee_id: empId,
                 employee_name: balance.employee_name || 'Unknown',
                 user_id: balance.user_id,
                 department_name: balance.department_name || '-',
-                annual_leave: '-',
-                sick_leave: '-',
-                casual_leave: '-',
-                comp_off: '-',
-                lop: '-',
-                paternity_leave: '-',
-                maternity_leave: '-'
-            });
+                balances: {}
+            };
+            // Initialize all leave types to '-'
+            for (const lt of leaveTypeColumns) {
+                emp.balances[lt.code] = '-';
+            }
+            employeeMap.set(empId, emp);
         }
 
         const employee = employeeMap.get(empId);
-        const code = (balance.leave_type_code || '').toUpperCase();
-        const propName = codeToProperty[code];
-
-        if (propName) {
-            // Use available_days for display (total - used - pending)
-            const available = balance.available_days ?? balance.total_days ?? 0;
-            employee[propName] = available;
+        const code = balance.leave_type_code || balance.leave_code || '';
+        if (code) {
+            employee.balances[code] = balance.available_days ?? balance.total_days ?? 0;
         }
     }
 
@@ -950,7 +957,7 @@ function updateLeaveBalanceTable(balances) {
     if (!balances || balances.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
-                <td colspan="8">
+                <td colspan="${3 + leaveTypeColumns.length}">
                     <div class="empty-message">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -986,7 +993,7 @@ function renderLeaveBalanceRows(balances) {
     if (!balances || balances.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-state">
-                <td colspan="8">
+                <td colspan="${3 + leaveTypeColumns.length}">
                     <div class="empty-message">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -1000,19 +1007,13 @@ function renderLeaveBalanceRows(balances) {
     }
 
     tbody.innerHTML = balances.map(emp => {
-        // Support both snake_case (backend) and camelCase property names
-        const employeeName = emp.employee_name || emp.employeeName || 'Unknown';
-        const departmentName = emp.department_name || emp.departmentName || '-';
-        const employeeId = emp.employee_id || emp.employeeId;
-        const annualLeave = emp.annual_leave ?? emp.annualLeave ?? '-';
-        const sickLeave = emp.sick_leave ?? emp.sickLeave ?? '-';
-        const casualLeave = emp.casual_leave ?? emp.casualLeave ?? '-';
-        const compOff = emp.comp_off ?? emp.compOff ?? '-';
-        const lop = emp.lop ?? '-';
+        const employeeName = emp.employee_name || 'Unknown';
+        const departmentName = emp.department_name || '-';
+        const employeeId = emp.employee_id;
 
         return `
         <tr>
-            <td class="employee-cell">
+            <td class="employee-cell text-left">
                 <div class="employee-info">
                     <div class="avatar">${getInitials(employeeName)}</div>
                     <div class="details">
@@ -1021,11 +1022,7 @@ function renderLeaveBalanceRows(balances) {
                 </div>
             </td>
             <td>${departmentName}</td>
-            <td>${annualLeave}</td>
-            <td>${sickLeave}</td>
-            <td>${casualLeave}</td>
-            <td>${compOff}</td>
-            <td>${lop}</td>
+            ${leaveTypeColumns.map(lt => `<td>${emp.balances[lt.code] ?? '-'}</td>`).join('')}
             <td>
                 <div class="action-buttons">
                     <button class="action-btn" onclick="viewEmployeeBalance('${employeeId}')" title="View Details">
@@ -1136,12 +1133,26 @@ async function loadDepartments() {
         const response = await api.request('/hrms/departments');
         departments = response || [];
 
-        // Build department options for SearchableDropdown
-        const deptOptions = [{ value: '', label: 'All Departments' }];
-        departments.forEach(dept => {
+        // Build department options — deduplicate by (office_id + name), append office name for disambiguation
+        const groupMap = new Map();
+        departments.filter(d => d.is_active !== false).forEach(dept => {
             const deptName = dept.department_name || dept.name || 'Unknown';
-            deptOptions.push({ value: dept.id, label: deptName });
+            const dedupeKey = `${dept.office_id}_${deptName.toLowerCase()}`;
+            if (groupMap.has(dedupeKey)) {
+                groupMap.get(dedupeKey).ids.push(dept.id);
+            } else {
+                const office = offices.find(o => o.id === dept.office_id);
+                const label = office ? `${deptName} (${office.office_name})` : deptName;
+                groupMap.set(dedupeKey, { ids: [dept.id], label });
+            }
         });
+        const deptOptions = [
+            { value: '', label: 'All Departments' },
+            ...Array.from(groupMap.values()).map(g => ({
+                value: g.ids.join(','),
+                label: g.label
+            }))
+        ];
 
         // Update SearchableDropdown instances if available
         if (requestDepartmentDropdown) {
@@ -2310,18 +2321,7 @@ function initializeTeamCalendar() {
             });
         }
 
-        // Populate department filter using SearchableDropdown if available
-        if (calendarDepartmentDropdown && departments.length > 0) {
-            const deptOptions = [
-                { value: '', label: 'All Departments' },
-                ...departments.map(d => ({
-                    value: d.id,
-                    label: d.department_name || d.name
-                }))
-            ];
-            calendarDepartmentDropdown.setOptions(deptOptions);
-        }
-
+        // Department options already populated by loadDepartments() with deduplication
         calendarInitialized = true;
     }
 
@@ -2414,8 +2414,8 @@ function renderTeamCalendar(year, month) {
 function getLeaveEntriesForDate(dateStr) {
     const date = new Date(dateStr);
     return calendarData.filter(leave => {
-        const fromDate = new Date(leave.from_date);
-        const toDate = new Date(leave.to_date);
+        const fromDate = new Date(leave.start_date || leave.from_date);
+        const toDate = new Date(leave.end_date || leave.to_date);
         return date >= fromDate && date <= toDate;
     });
 }

@@ -748,7 +748,13 @@ function selectUser(userId) {
 }
 
 async function editEmployee(id) {
-    const emp = employees.find(e => e.id === id);
+    // Fetch full employee record (includes personal info: blood_group, marital_status, etc.)
+    let emp;
+    try {
+        emp = await api.request(`/hrms/employees/${id}`);
+    } catch (e) {
+        emp = employees.find(e => e.id === id);
+    }
     if (!emp) return;
 
     document.getElementById('employeeModalTitle').textContent = 'Edit Employee';
@@ -5280,8 +5286,8 @@ function getFilteredNfcCards() {
         }
 
         // Status filter
-        if (statusFilter === 'active' && !card.is_active) return false;
-        if (statusFilter === 'inactive' && card.is_active) return false;
+        if (statusFilter === 'active' && card.status !== 'active') return false;
+        if (statusFilter === 'inactive' && card.status === 'active') return false;
 
         // Office filter
         if (officeFilter && card.employee_office_id !== officeFilter) return false;
@@ -5338,16 +5344,23 @@ function renderNfcCardsRows(filteredCards) {
     }
 
     tbody.innerHTML = filteredCards.map(card => {
-        const statusClass = card.is_active ? 'active' : 'inactive';
-        const statusText = card.is_active ? 'Active' : 'Inactive';
-        const employeeName = `${card.employee_first_name || ''} ${card.employee_last_name || ''}`.trim() || '-';
-        const dept = departments.find(d => d.id === card.employee_department_id);
+        const isActive = card.status === 'active';
+        const statusClass = isActive ? 'active' : 'inactive';
+        const statusText = isActive ? 'Active' : 'Inactive';
+        // employee_name from API, or look up from employees array
+        const emp = employees.find(e => e.id === card.employee_id);
+        const employeeName = card.employee_name
+            || (emp ? `${emp.first_name || ''} ${emp.last_name || ''}`.trim() : null)
+            || '-';
+        const initials = emp
+            ? getInitials(emp.first_name, emp.last_name)
+            : getInitials(employeeName);
 
         return `
             <tr data-card-id="${card.id}">
                 <td>
                     <div class="employee-cell">
-                        <div class="employee-avatar-sm">${getInitials(card.employee_first_name, card.employee_last_name)}</div>
+                        <div class="employee-avatar-sm">${initials}</div>
                         <div class="employee-info-cell">
                             <span class="employee-name">${escapeHtml(employeeName)}</span>
                             <span class="employee-code">${escapeHtml(card.employee_code || '-')}</span>
@@ -5355,7 +5368,7 @@ function renderNfcCardsRows(filteredCards) {
                     </div>
                 </td>
                 <td><code class="card-uid">${formatCardUid(card.card_uid)}</code></td>
-                <td>${escapeHtml(card.card_label || '-')}</td>
+                <td>${escapeHtml(card.card_serial || '-')}</td>
                 <td><span class="badge badge-${statusClass}">${statusText}</span></td>
                 <td>${card.is_primary ? '<span class="badge badge-primary">Primary</span>' : '-'}</td>
                 <td>${formatDate(card.issued_at)}</td>
@@ -5367,14 +5380,14 @@ function renderNfcCardsRows(filteredCards) {
                                 <circle cx="12" cy="12" r="3"/>
                             </svg>
                         </button>
-                        ${card.is_active && !card.is_primary ? `
+                        ${isActive && !card.is_primary ? `
                             <button class="btn btn-sm btn-outline-primary" onclick="setNfcCardPrimaryFromTable('${card.id}')" title="Set as primary">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                                 </svg>
                             </button>
                         ` : ''}
-                        ${card.is_active ? `
+                        ${isActive ? `
                             <button class="btn btn-sm btn-outline-warning" onclick="openDeactivateCardModal('${card.id}')" title="Deactivate">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="10"/>
@@ -5617,7 +5630,7 @@ async function onNfcEmployeeSelect(employeeId) {
         const infoEl = document.getElementById('nfcExistingCardsInfo');
 
         if (existingCards && existingCards.length > 0) {
-            const activeCount = existingCards.filter(c => c.is_active).length;
+            const activeCount = existingCards.filter(c => c.status === 'active').length;
             infoEl.innerHTML = `<span class="existing-cards-badge">${activeCount} active card(s)</span>`;
         } else {
             infoEl.innerHTML = '<span class="no-cards-badge">No cards assigned</span>';
@@ -5639,17 +5652,18 @@ async function submitIssueNfcCard() {
         return;
     }
 
-    const cardUid = document.getElementById('nfcNewCardUid').value.trim().toUpperCase().replace(/[^A-F0-9]/g, '');
-    const cardLabel = document.getElementById('nfcNewCardLabel').value.trim();
+    const rawUid = document.getElementById('nfcNewCardUid').value.trim();
+    const cardUid = rawUid.toUpperCase().replace(/[^A-F0-9]/g, '');
+    const cardSerial = document.getElementById('nfcNewCardLabel').value.trim();
     const isPrimary = document.getElementById('nfcNewCardPrimary').checked;
 
     if (!cardUid) {
-        showToast('Card UID is required', 'error');
+        showToast('Card UID is required. Only hexadecimal characters (0-9, A-F) are valid.', 'error');
         return;
     }
 
     if (cardUid.length < 8) {
-        showToast('Card UID must be at least 8 hex characters', 'error');
+        showToast(`Card UID must be at least 8 hex characters. "${rawUid}" normalized to "${cardUid}" (${cardUid.length} chars).`, 'error');
         return;
     }
 
@@ -5657,7 +5671,7 @@ async function submitIssueNfcCard() {
         await api.issueNfcCard({
             employee_id: employeeId,
             card_uid: cardUid,
-            card_label: cardLabel || null,
+            card_serial: cardSerial || null,
             is_primary: isPrimary
         });
 
@@ -5736,11 +5750,12 @@ async function loadViewEmployeeCards() {
         }
 
         listEl.innerHTML = cards.map(card => {
-            const statusClass = card.is_active ? 'active' : 'inactive';
-            const statusText = card.is_active ? 'Active' : 'Inactive';
+            const isActive = card.status === 'active';
+            const statusClass = isActive ? 'active' : 'inactive';
+            const statusText = isActive ? 'Active' : 'Inactive';
 
             return `
-                <div class="nfc-card-item-modal ${card.is_active ? '' : 'inactive'}">
+                <div class="nfc-card-item-modal ${isActive ? '' : 'inactive'}">
                     <div class="nfc-card-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="2" y="5" width="20" height="14" rx="2"/>
@@ -5749,21 +5764,21 @@ async function loadViewEmployeeCards() {
                     </div>
                     <div class="nfc-card-info-modal">
                         <code class="card-uid">${formatCardUid(card.card_uid)}</code>
-                        <span class="card-label">${escapeHtml(card.card_label || 'No label')}</span>
+                        <span class="card-label">${escapeHtml(card.card_serial || 'No label')}</span>
                         <div class="card-badges">
                             <span class="badge badge-${statusClass}">${statusText}</span>
                             ${card.is_primary ? '<span class="badge badge-primary">Primary</span>' : ''}
                         </div>
                     </div>
                     <div class="nfc-card-actions-modal">
-                        ${card.is_active && !card.is_primary ? `
+                        ${isActive && !card.is_primary ? `
                             <button class="btn btn-sm btn-outline-primary" onclick="setNfcCardPrimaryFromModal('${card.id}')" title="Set as primary">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                                 </svg>
                             </button>
                         ` : ''}
-                        ${card.is_active ? `
+                        ${isActive ? `
                             <button class="btn btn-sm btn-outline-warning" onclick="deactivateCardFromModal('${card.id}')" title="Deactivate">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="12" cy="12" r="10"/>

@@ -2935,10 +2935,10 @@ class API {
 
     /**
      * Issue a new NFC card to an employee
-     * @param {Object} cardData - { employee_id, card_uid, card_label?, is_primary? }
+     * @param {Object} cardData - { employee_id, card_uid, card_serial?, is_primary? }
      */
     async issueNfcCard(cardData) {
-        return this.request('/hrms/nfc-cards/issue', {
+        return this.request('/hrms/nfc-cards', {
             method: 'POST',
             body: JSON.stringify(cardData)
         });
