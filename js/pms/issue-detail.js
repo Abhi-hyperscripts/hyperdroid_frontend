@@ -780,7 +780,7 @@ async function handleAttachFiles(files) {
 
             const token = getAuthToken();
             const baseUrl = CONFIG.pmsApiBaseUrl;
-            const resp = await fetch(`${baseUrl}/api/issue-attachments/${issueId}`, {
+            const resp = await fetch(`${baseUrl}/issue-attachments/${issueId}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: formData

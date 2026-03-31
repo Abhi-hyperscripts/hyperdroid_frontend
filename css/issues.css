@@ -840,14 +840,7 @@
     align-items: center;
     gap: 10px;
     padding: 8px 12px;
-    border-radius: 8px;
-    background: var(--glass-bg, var(--bg-secondary));
-    border: 1px solid var(--glass-border, var(--border-primary));
     font-size: 0.82rem;
-    transition: border-color 0.2s;
-}
-.issue-attachment-item:hover {
-    border-color: var(--brand-primary);
 }
 .issue-attachment-icon {
     width: 28px;

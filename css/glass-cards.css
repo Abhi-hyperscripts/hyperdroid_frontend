@@ -266,6 +266,7 @@
 .issue-content-section:hover,
 .issue-comment:hover,
 .issue-comment-form:hover,
+.issue-attachment-item:hover,
 .issue-activity-section:hover {
     border-color: rgba(var(--brand-primary-rgb), 0.4) !important;
     box-shadow:
@@ -334,6 +335,7 @@
 [data-theme="dark"] .issue-content-section,
 [data-theme="dark"] .issue-comment,
 [data-theme="dark"] .issue-comment-form,
+[data-theme="dark"] .issue-attachment-item,
 [data-theme="dark"] .issue-activity-section {
     background:
         linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
@@ -402,6 +404,7 @@
 [data-theme="dark"] .issue-content-section:hover,
 [data-theme="dark"] .issue-comment:hover,
 [data-theme="dark"] .issue-comment-form:hover,
+[data-theme="dark"] .issue-attachment-item:hover,
 [data-theme="dark"] .issue-activity-section:hover {
     border-color: var(--border-color-strong) !important;
     box-shadow:
