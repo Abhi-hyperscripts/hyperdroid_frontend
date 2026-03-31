@@ -1621,11 +1621,13 @@ function renderMeetingsList(meetings, employeeId, empName) {
 
     const baseUrl = window.location.origin;
     body.innerHTML = sorted.map(m => {
-        const date = m.created_at ? new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-        const time = m.created_at ? new Date(m.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
+        const scheduledDate = m.scheduled_at || m.created_at;
+        const date = scheduledDate ? new Date(scheduledDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+        const time = scheduledDate ? new Date(scheduledDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
         const lobbyUrl = `${baseUrl}/pages/vision/lobby.html?meetingId=${m.vision_meeting_id}`;
         const statusClass = (m.status || 'scheduled').toLowerCase();
         const isCancelled = statusClass === 'cancelled';
+        const isScheduled = statusClass === 'scheduled';
 
         const badgeVariant = statusClass === 'scheduled' ? 'gm-badge-info' :
                               statusClass === 'completed' ? 'gm-badge-success' :
@@ -1640,6 +1642,7 @@ function renderMeetingsList(meetings, employeeId, empName) {
                         ${m.created_by_name ? `<span>by ${m.created_by_name}</span>` : ''}
                         <span class="gm-badge ${badgeVariant}">${m.status || 'scheduled'}</span>
                     </div>
+                    ${m.notes ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${m.notes}</div>` : ''}
                 </div>
                 <div class="gm-card-actions">
                     <button class="gm-btn gm-btn-secondary" onclick="copyMeetingLink(this, '${lobbyUrl}')" title="Copy link">
@@ -1657,10 +1660,38 @@ function renderMeetingsList(meetings, employeeId, empName) {
                         </svg>
                         Join
                     </button>` : ''}
+                    ${isScheduled ? `
+                    <button class="gm-btn gm-btn-secondary" onclick="cancelEmployeeMeeting('${m.id}', '${employeeId}', '${empName.replace(/'/g, "\\'")}')" title="Cancel meeting" style="color:var(--color-error);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                    </button>` : ''}
                 </div>
             </div>
         `;
     }).join('');
+}
+
+async function cancelEmployeeMeeting(meetingId, employeeId, empName) {
+    const confirmed = await Confirm.show({
+        title: 'Cancel Meeting',
+        message: 'Are you sure you want to cancel this meeting?',
+        type: 'danger',
+        confirmText: 'Cancel Meeting',
+        cancelText: 'Keep'
+    });
+    if (!confirmed) return;
+
+    try {
+        await api.request(`/hrms/meetings/${meetingId}/cancel`, { method: 'POST' });
+        showToast('Meeting cancelled', 'success');
+        const listResult = await api.getEmployeeMeetings(employeeId);
+        if (listResult && listResult.success) {
+            renderMeetingsList(listResult.meetings || [], employeeId, empName);
+        }
+    } catch (err) {
+        showToast(err.message || 'Failed to cancel meeting', 'error');
+    }
 }
 
 function copyMeetingLink(btn, url) {
@@ -1682,61 +1713,121 @@ function copyMeetingLink(btn, url) {
     });
 }
 
+// Phase 1: Show scheduling form instead of simple confirm
 async function handleCreateNewMeeting(employeeId, empName) {
-    const confirmed = await Confirm.show({
-        title: 'Create Meeting',
-        message: `Create a new video meeting with ${empName}?`,
-        type: 'info',
-        confirmText: 'Create Meeting',
-        cancelText: 'Cancel'
-    });
+    // Show inline scheduling form in the modal footer area
+    const body = document.getElementById('meetingsModalBody');
+    const footer = body?.closest('.gm-modal')?.querySelector('.gm-footer');
+    if (!footer) return;
 
-    if (!confirmed) return;
+    // Round to next 15-min slot
+    const now = new Date();
+    now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
+    const defaultDate = now.toISOString().split('T')[0];
+    const defaultTime = now.toTimeString().slice(0, 5);
+
+    footer.innerHTML = `
+        <div style="width:100%;padding:4px 0;">
+            <div style="font-weight:600;font-size:13px;margin-bottom:10px;color:var(--text-primary);">Schedule Meeting with ${empName}</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+                <div style="flex:1;">
+                    <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:3px;">Date</label>
+                    <input type="date" id="meetingScheduleDate" class="form-control" value="${defaultDate}" style="font-size:12px;padding:6px 8px;">
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:3px;">Start Time</label>
+                    <input type="time" id="meetingScheduleTime" class="form-control" value="${defaultTime}" style="font-size:12px;padding:6px 8px;">
+                </div>
+            </div>
+            <div style="margin-bottom:10px;">
+                <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:3px;">Notes (optional)</label>
+                <input type="text" id="meetingScheduleNotes" class="form-control" placeholder="Meeting agenda or notes..." style="font-size:12px;padding:6px 8px;">
+            </div>
+            <div style="display:flex;gap:8px;">
+                <button class="gm-btn gm-btn-secondary" onclick="cancelScheduleForm('${employeeId}', '${empName.replace(/'/g, "\\'")}')">Back</button>
+                <button class="gm-btn gm-btn-primary" style="flex:1;" id="meetingScheduleBtn" onclick="submitScheduledMeeting('${employeeId}', '${empName.replace(/'/g, "\\'")}')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Schedule Meeting
+                </button>
+                <button class="gm-btn gm-btn-secondary" onclick="submitImmediateMeeting('${employeeId}', '${empName.replace(/'/g, "\\'")}')">
+                    Start Now
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function cancelScheduleForm(employeeId, empName) {
+    const body = document.getElementById('meetingsModalBody');
+    const footer = body?.closest('.gm-modal')?.querySelector('.gm-footer');
+    if (footer) {
+        footer.innerHTML = `
+            <button class="gm-btn gm-btn-primary gm-btn-block" id="meetingsCreateBtn" onclick="handleCreateNewMeeting('${employeeId}', '${empName.replace(/'/g, "\\'")}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Create New Meeting
+            </button>
+        `;
+    }
+}
+
+async function submitScheduledMeeting(employeeId, empName) {
+    const dateVal = document.getElementById('meetingScheduleDate')?.value;
+    const timeVal = document.getElementById('meetingScheduleTime')?.value;
+    const notes = document.getElementById('meetingScheduleNotes')?.value?.trim() || null;
+
+    if (!dateVal || !timeVal) {
+        showToast('Please select a date and time', 'error');
+        return;
+    }
+
+    const scheduledAt = new Date(`${dateVal}T${timeVal}`).toISOString();
+    await createMeetingWithParams(employeeId, empName, scheduledAt, notes);
+}
+
+async function submitImmediateMeeting(employeeId, empName) {
+    await createMeetingWithParams(employeeId, empName, null, null);
+}
+
+async function createMeetingWithParams(employeeId, empName, scheduledAt, notes) {
+    const btn = document.getElementById('meetingScheduleBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<div class="gm-spinner" style="width:14px;height:14px;border-width:2px;"></div> Creating...`;
+    }
 
     try {
-        const createBtn = document.getElementById('meetingsCreateBtn');
-        if (createBtn) {
-            createBtn.disabled = true;
-            createBtn.innerHTML = `<div class="gm-spinner" style="width:16px;height:16px;border-width:2px;"></div> Creating...`;
-        }
-
-        const result = await api.createEmployeeMeeting(employeeId);
+        const result = await api.createEmployeeMeeting(employeeId, scheduledAt, notes);
 
         if (result && result.success) {
-            showToast(`Meeting created with ${empName}`, 'success');
+            const msg = scheduledAt ? `Meeting scheduled with ${empName}` : `Meeting created with ${empName}`;
+            showToast(msg, 'success');
+
+            // Email invites are sent automatically by the HRMS backend via gRPC to Vision
+
             // Re-fetch and re-render the list
             const listResult = await api.getEmployeeMeetings(employeeId);
             if (listResult && listResult.success) {
                 renderMeetingsList(listResult.meetings || [], employeeId, empName);
             }
+            // Reset footer back to create button
+            cancelScheduleForm(employeeId, empName);
         } else {
             showToast(result?.error || 'Failed to create meeting', 'error');
         }
-
-        if (createBtn) {
-            createBtn.disabled = false;
-            createBtn.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Create New Meeting
-            `;
-        }
     } catch (err) {
         console.error('Error creating meeting:', err);
-        showToast('Failed to create meeting. Please try again.', 'error');
-        const createBtn = document.getElementById('meetingsCreateBtn');
-        if (createBtn) {
-            createBtn.disabled = false;
-            createBtn.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Create New Meeting
-            `;
-        }
+        showToast(err.message || 'Failed to create meeting', 'error');
+    }
+
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Schedule Meeting
+        `;
     }
 }
 
