@@ -3735,7 +3735,7 @@ function updateLoansTable(loans) {
             `;
         }
 
-        // v3.0.30: Add Edit/Cancel buttons for editable loans
+        // v3.0.30: Add Edit button for editable loans
         if (isAdmin && isEditable) {
             actionButtons += `
                 <button class="action-btn" onclick="showEditLoanModal('${loan.id}')" title="Edit Loan">
@@ -3744,6 +3744,12 @@ function updateLoansTable(loans) {
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
                 </button>
+            `;
+        }
+
+        // Cancel button only for approved/active loans (not pending — use Reject instead)
+        if (isAdmin && isEditable && status !== 'pending') {
+            actionButtons += `
                 <button class="action-btn danger" onclick="confirmCancelLoan('${loan.id}')" title="Cancel Loan">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"></polyline>
