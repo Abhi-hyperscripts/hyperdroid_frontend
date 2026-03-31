@@ -862,6 +862,24 @@ async function executeUnifiedImport(validRows) {
             return;
         }
 
+        // Check for other failures (e.g., Auth service error, connection failure)
+        if (response.success === false) {
+            updatePhase1Progress(100, 0, validRows.length, 'failed');
+            updatePhase2Progress(100, 0, 0, 'failed');
+            document.getElementById('phase2').style.opacity = '1';
+            document.getElementById('phase2Status').textContent = 'Import failed';
+
+            const errorMsg = response.message || 'Unknown error during import';
+            validRows.forEach(row => {
+                row.user_created = false;
+                row.employee_created = false;
+                row.user_error = errorMsg;
+            });
+
+            showToast(errorMsg, 'error', 8000);
+            return;
+        }
+
         // Success!
         const created = response.totalCreated || 0;
         const failed = response.totalFailed || 0;
