@@ -3959,10 +3959,26 @@ async function showBulkRosterModal() {
         }
     }
 
-    // Department filter options
+    // Department filter options — deduplicate by (office_id + department_name)
+    const showOfficeSuffix = true;
+    const deptGroupMap = new Map();
+    for (const d of departments.filter(d => d.is_active !== false)) {
+        const deptName = d.department_name || d.name || '';
+        const dedupeKey = `${d.office_id}_${deptName.toLowerCase()}`;
+        if (deptGroupMap.has(dedupeKey)) {
+            deptGroupMap.get(dedupeKey).ids.push(d.id);
+        } else {
+            const office = showOfficeSuffix ? offices.find(o => o.id === d.office_id) : null;
+            const label = office ? `${deptName} (${office.office_name})` : deptName;
+            deptGroupMap.set(dedupeKey, { ids: [d.id], label });
+        }
+    }
     const deptOptions = [
         { value: '', label: 'All Departments' },
-        ...departments.map(d => ({ value: d.id, label: d.department_name || d.name }))
+        ...Array.from(deptGroupMap.values()).map(g => ({
+            value: g.ids.join(','),
+            label: g.label
+        }))
     ];
 
     // Update searchable dropdown if exists, otherwise fallback to select
@@ -3974,8 +3990,8 @@ async function showBulkRosterModal() {
         const deptFilter = document.getElementById('bulkRosterDepartmentFilter');
         if (deptFilter && deptFilter.tagName === 'SELECT') {
             deptFilter.innerHTML = '<option value="">All Departments</option>';
-            departments.forEach(dept => {
-                deptFilter.innerHTML += `<option value="${dept.id}">${dept.department_name || dept.name}</option>`;
+            Array.from(deptGroupMap.values()).forEach(g => {
+                deptFilter.innerHTML += `<option value="${g.ids.join(',')}">${g.label}</option>`;
             });
         }
     }
@@ -4009,7 +4025,7 @@ function renderBulkRosterEmployees() {
 
     container.innerHTML = '';
     allEmployeesForBulkRoster.forEach(emp => {
-        const deptMatch = !deptFilter || emp.department_id === deptFilter;
+        const deptMatch = !deptFilter || deptFilter.split(',').includes(emp.department_id);
         const deptName = departments.find(d => d.id === emp.department_id)?.department_name || 'No Dept';
 
         const item = document.createElement('label');
@@ -4017,7 +4033,7 @@ function renderBulkRosterEmployees() {
         item.innerHTML = `
             <input type="checkbox" value="${emp.id}" onchange="updateBulkRosterCount()">
             <span class="employee-checkbox-label">
-                ${emp.first_name} ${emp.last_name || ''}
+                ${emp.first_name || emp.employee_code || 'Unknown'} ${emp.last_name || ''}
                 <span class="employee-checkbox-dept">${deptName}</span>
             </span>
         `;
@@ -4072,18 +4088,17 @@ async function saveBulkRosters() {
         return;
     }
 
-    const rosters = selectedEmployees.map(empId => ({
-        employee_id: empId,
+    const payload = {
+        employee_ids: selectedEmployees,
         shift_id: shiftId,
         start_date: startDate,
         end_date: endDate,
-        roster_type: rosterType,
-        is_active: true
-    }));
+        roster_type: rosterType
+    };
 
     try {
         showLoading();
-        await api.createBulkShiftRosters(rosters);
+        await api.createBulkShiftRosters(payload);
         closeModal('bulkRosterModal');
         showToast(`Successfully assigned shift to ${selectedEmployees.length} employee(s)`, 'success');
         await loadShiftRosters();

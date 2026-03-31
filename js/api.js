@@ -1701,7 +1701,7 @@ class API {
     }
 
     async createBulkShiftRosters(rosters) {
-        return this.request('/hrms/shift-rosters/bulk', {
+        return this.request('/hrms/shifts/roster/bulk', {
             method: 'POST',
             body: JSON.stringify(rosters)
         });
