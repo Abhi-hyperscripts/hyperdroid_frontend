@@ -126,10 +126,10 @@ async function loadIssueDetail() {
         const editBtn = document.getElementById('editIssueBtn');
         if (editBtn) editBtn.style.display = issue.status === 'reported' ? '' : 'none';
 
-        // Load and show attachments
+        // Load and show attachments — upload/delete only when reported
         loadAttachments();
         const attachBtn = document.getElementById('attachUploadBtn');
-        if (attachBtn) attachBtn.style.display = '';
+        if (attachBtn) attachBtn.style.display = issue.status === 'reported' ? '' : 'none';
     } catch (e) {
         console.error('[IssueDetail] Failed to load issue:', e);
         Toast.error('Failed to load issue');
@@ -747,9 +747,9 @@ function renderAttachments() {
                     <button onclick="downloadAttachment('${a.id}','${escapeHtml(a.file_name)}')" title="Download">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     </button>
-                    <button class="delete-btn" onclick="deleteAttachment('${a.id}','${escapeHtml(a.file_name)}')" title="Delete">
+                    ${issue.status === 'reported' ? `<button class="delete-btn" onclick="deleteAttachment('${a.id}','${escapeHtml(a.file_name)}')" title="Delete">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                    </button>
+                    </button>` : ''}
                 </div>
             </div>`;
     }).join('') + '</div>';
@@ -769,8 +769,8 @@ async function handleAttachFiles(files) {
     const progress = document.getElementById('attachUploadProgress');
 
     for (const file of files) {
-        if (file.size > 50 * 1024 * 1024) {
-            Toast.error(`${file.name} exceeds 50MB limit`);
+        if (file.size > 10 * 1024 * 1024) {
+            Toast.error(`${file.name} exceeds 10MB limit`);
             continue;
         }
 

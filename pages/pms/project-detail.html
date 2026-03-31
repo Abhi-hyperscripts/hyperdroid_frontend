@@ -578,6 +578,18 @@
                                     </div>
                                 </form>
                             </div>
+                            <!-- Attachments in modal -->
+                            <div style="padding:0 20px 12px;">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                                    <span style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);">Attachments</span>
+                                    <label class="btn btn-secondary btn-sm" style="cursor:pointer;font-size:0.72rem;padding:2px 8px;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                                        Add Files
+                                        <input type="file" id="issueModalFileInput" style="display:none;" multiple onchange="handleModalFileSelect(this)">
+                                    </label>
+                                </div>
+                                <div id="issueModalFileList" style="font-size:0.78rem;color:var(--text-secondary);"></div>
+                            </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" onclick="closeIssueModal()">Cancel</button>
                                 <button type="submit" class="btn btn-primary" form="issueForm" id="issueSubmitBtn">Report Issue</button>

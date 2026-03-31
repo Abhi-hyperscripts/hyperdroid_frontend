@@ -1713,12 +1713,47 @@ function issueAge(dateStr) {
 
 // ---- Issue Modal ----
 
+let modalPendingFiles = [];
+
+function handleModalFileSelect(input) {
+    const files = Array.from(input.files);
+    files.forEach(f => {
+        if (f.size > 10 * 1024 * 1024) { Toast.error(`${f.name} exceeds 10MB`); return; }
+        if (!modalPendingFiles.some(p => p.name === f.name && p.size === f.size))
+            modalPendingFiles.push(f);
+    });
+    input.value = '';
+    renderModalFileList();
+}
+
+function removeModalFile(index) {
+    modalPendingFiles.splice(index, 1);
+    renderModalFileList();
+}
+
+function renderModalFileList() {
+    const el = document.getElementById('issueModalFileList');
+    if (!modalPendingFiles.length) { el.innerHTML = ''; return; }
+    el.innerHTML = modalPendingFiles.map((f, i) => {
+        const ext = f.name.split('.').pop().toUpperCase().substring(0, 4);
+        const size = f.size < 1024 ? f.size + ' B' : f.size < 1048576 ? (f.size/1024).toFixed(1) + ' KB' : (f.size/1048576).toFixed(1) + ' MB';
+        return `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;">
+            <span style="background:var(--brand-primary);color:#fff;padding:1px 4px;border-radius:3px;font-size:0.6rem;font-weight:700;">${ext}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(f.name)}</span>
+            <span style="color:var(--text-secondary);font-size:0.7rem;">${size}</span>
+            <button type="button" onclick="removeModalFile(${i})" style="background:none;border:none;cursor:pointer;color:var(--color-error);font-size:0.8rem;padding:0 4px;">&times;</button>
+        </div>`;
+    }).join('');
+}
+
 async function openIssueModal() {
     document.getElementById('issueForm').reset();
     delete document.getElementById('issueForm').dataset.editId;
     document.querySelector('#issueModal .modal-title').textContent = 'Report Issue';
     document.getElementById('issueSubmitBtn').textContent = 'Report Issue';
     document.getElementById('issueModal').classList.add('active');
+    modalPendingFiles = [];
+    renderModalFileList();
 
     // Populate assignee from project members (fetch if not loaded)
     if (!projectMembers || !projectMembers.length) {
@@ -1844,13 +1879,35 @@ async function handleIssueSubmit(e) {
             assigned_to: document.getElementById('issueAssignee').value || null
         };
 
+        let issueId;
         if (editId) {
             await api.request(`/pms/issues/${editId}`, { method: 'PUT', body: JSON.stringify(payload) });
+            issueId = editId;
             Toast.success('Issue updated');
         } else {
             const result = await api.request('/pms/issues', { method: 'POST', body: JSON.stringify(payload) });
+            issueId = result.id;
             Toast.success(`Issue #${result.issue_number} created`);
         }
+
+        // Upload pending attachments
+        if (modalPendingFiles.length > 0 && issueId) {
+            const baseUrl = CONFIG.pmsApiBaseUrl;
+            const token = getAuthToken();
+            for (const file of modalPendingFiles) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    await fetch(`${baseUrl}/issue-attachments/${issueId}`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+                } catch (_) {}
+            }
+            modalPendingFiles = [];
+        }
+
         closeIssueModal();
         loadedTabs.delete('issues');
         loadProjectIssues();
