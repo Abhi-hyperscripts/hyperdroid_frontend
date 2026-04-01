@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<!-- Ragenaizer v2026.04.01 -->
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>AI Procurement Software | Stop Overpaying Vendors | Ragenaizer</title>
+    <meta name="description" content="Stop losing money to wrong vendors. AI-powered procurement compares quotes on price, quality, and delivery — so you pick the best vendor, not just the cheapest. Self-serve vendor portal. No spreadsheets.">
+
+    <meta name="keywords" content="procurement software, vendor management, RFQ automation, purchase order software, AI procurement, quote comparison, vendor portal, procurement analytics, vendor intelligence, procurement workflow, request for quotation, stop overpaying vendors">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/features/procurement.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/features/procurement.html">
+    <meta property="og:title" content="Stop Overpaying Vendors — AI Procurement by Ragenaizer">
+    <meta property="og:description" content="AI compares vendor quotes on price, quality & delivery. Self-serve vendor portal. No spreadsheets. No email chaos.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-procurement-features.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Stop Overpaying Vendors — AI Procurement by Ragenaizer">
+    <meta name="twitter:description" content="AI-powered procurement that picks the right vendor, not just the cheapest. Self-serve vendor portal. No spreadsheets.">
+
+    <meta name="theme-color" content="#050810">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Ragenaizer Procurement",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "description": "AI-powered procurement that helps teams stop overpaying vendors. Automated RFQs, self-serve vendor portal, intelligent quote comparison, and purchase order tracking.",
+        "url": "https://ragenaizer.com/pages/features/procurement.html",
+        "featureList": ["Vendor Management", "RFQ Automation", "AI Quote Comparison", "Purchase Orders", "Self-Serve Vendor Portal", "Split Awards", "Vendor Intelligence", "Smart Item Catalog", "Procurement Dashboard"]
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        .feature-hero { padding: 120px 60px 80px; position: relative; overflow: hidden; }
+        .feature-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 100% 60% at 30% -10%, rgba(245, 158, 11, 0.15), transparent), radial-gradient(ellipse 80% 50% at 80% 10%, rgba(239, 68, 68, 0.1), transparent); }
+        .feature-hero-content { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; max-width: 1200px; margin: 0 auto; position: relative; }
+        .feature-hero-text h1 { font-size: clamp(36px, 4vw, 52px); font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-bottom: 20px; }
+        .feature-hero-text h1 .highlight { background: linear-gradient(135deg, #f59e0b, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .feature-hero-text p { font-size: 18px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 32px; }
+        .feature-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 100px; font-size: 13px; font-weight: 600; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; }
+        .hero-stats { display: flex; gap: 32px; margin-top: 32px; }
+        .hero-stat { text-align: center; }
+        .hero-stat-value { font-size: 32px; font-weight: 800; color: var(--text-primary); }
+        .hero-stat-label { font-size: 13px; color: var(--text-tertiary); }
+        .feature-hero-visual { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 24px; }
+        .hero-visual-mockup { background: var(--bg-tertiary); border-radius: 12px; padding: 20px; }
+
+        .rfq-summary { margin-bottom: 16px; }
+        .rfq-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .rfq-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .rfq-badge { padding: 4px 10px; background: rgba(245, 158, 11, 0.2); border-radius: 100px; font-size: 11px; font-weight: 600; color: #fbbf24; }
+        .rfq-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+        .rfq-stat-item { background: var(--bg-secondary); border-radius: 8px; padding: 12px; text-align: center; }
+        .rfq-stat-label { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+        .rfq-stat-value { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+        .rfq-stat-value.best { color: #10b981; }
+        .rfq-stat-value.vendors { color: #f59e0b; }
+        .rfq-stat-value.savings { color: #8b5cf6; }
+        .vendor-row { display: flex; align-items: center; gap: 12px; background: var(--bg-secondary); border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+        .vendor-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; }
+        .vendor-avatar.v1 { background: linear-gradient(135deg, #10b981, #06b6d4); }
+        .vendor-avatar.v2 { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+        .vendor-avatar.v3 { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+        .vendor-info { flex: 1; }
+        .vendor-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .vendor-detail { font-size: 11px; color: var(--text-tertiary); }
+        .vendor-score { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        .vendor-score.top { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+        .vendor-score.mid { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .ai-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; background: rgba(139, 92, 246, 0.15); border-radius: 4px; font-size: 10px; font-weight: 600; color: #a78bfa; margin-top: 8px; }
+
+        /* The Problem Section */
+        .problem-section { padding: 80px 60px; background: var(--bg-secondary); }
+        .problem-content { max-width: 1200px; margin: 0 auto; }
+        .problem-grid { display: grid; grid-template-columns: 1fr 40px 1fr; gap: 24px; align-items: start; margin-top: 48px; }
+        .problem-column { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; }
+        .problem-column.before { border-color: rgba(239, 68, 68, 0.3); }
+        .problem-column.after { border-color: rgba(16, 185, 129, 0.3); }
+        .problem-column-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .problem-column-badge { padding: 6px 14px; border-radius: 100px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .problem-column-badge.before { background: rgba(239, 68, 68, 0.1); color: #f87171; }
+        .problem-column-badge.after { background: rgba(16, 185, 129, 0.1); color: #34d399; }
+        .problem-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-top: 1px solid var(--border-secondary); }
+        .problem-item:first-child { border-top: none; }
+        .problem-item svg { width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; }
+        .problem-item.bad svg { color: #ef4444; }
+        .problem-item.good svg { color: #10b981; }
+        .problem-item-text { font-size: 15px; color: var(--text-secondary); line-height: 1.5; }
+        .problem-item-text strong { color: var(--text-primary); font-weight: 600; }
+        .problem-arrow { display: flex; align-items: center; justify-content: center; align-self: center; }
+        .problem-arrow svg { width: 32px; height: 32px; color: var(--text-tertiary); }
+
+        .features-deep { padding: 80px 60px; max-width: 1200px; margin: 0 auto; }
+        .section-header { text-align: center; margin-bottom: 60px; }
+        .section-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
+        .section-desc { font-size: 18px; color: var(--text-secondary); max-width: 600px; margin: 0 auto; }
+
+        .feature-deep-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .feature-deep-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; transition: all 0.3s ease; }
+        .feature-deep-card:hover { border-color: var(--border-focus); transform: translateY(-4px); }
+        .feature-deep-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .feature-deep-icon svg { width: 28px; height: 28px; color: #fff; }
+        .icon-amber { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .icon-red { background: linear-gradient(135deg, #ef4444, #f87171); }
+        .icon-cyan { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+        .icon-purple { background: linear-gradient(135deg, #8b5cf6, #a78bfa); }
+        .icon-green { background: linear-gradient(135deg, #10b981, #34d399); }
+        .icon-blue { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+        .icon-pink { background: linear-gradient(135deg, #ec4899, #f472b6); }
+        .icon-orange { background: linear-gradient(135deg, #f97316, #fb923c); }
+        .feature-deep-card h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
+        .feature-deep-card p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+        .feature-deep-card ul { list-style: none; padding: 0; margin: 0; }
+        .feature-deep-card ul li { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: var(--text-tertiary); border-top: 1px solid var(--border-secondary); }
+        .feature-deep-card ul li:first-child { border-top: none; }
+        .feature-deep-card ul li svg { width: 16px; height: 16px; color: #f59e0b; flex-shrink: 0; }
+
+        /* ROI Section */
+        .roi-section { background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(16, 185, 129, 0.05)); padding: 80px 60px; }
+        .roi-content { max-width: 1200px; margin: 0 auto; }
+        .roi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 48px; }
+        .roi-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; text-align: center; }
+        .roi-card:hover { border-color: rgba(245, 158, 11, 0.4); }
+        .roi-value { font-size: 42px; font-weight: 800; margin-bottom: 8px; }
+        .roi-value.amber { color: #f59e0b; }
+        .roi-value.green { color: #10b981; }
+        .roi-value.purple { color: #8b5cf6; }
+        .roi-value.cyan { color: #06b6d4; }
+        .roi-label { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+        .roi-desc { font-size: 13px; color: var(--text-tertiary); line-height: 1.5; }
+
+        .workflow-section { background: var(--bg-secondary); padding: 60px; margin-top: 40px; border-radius: 20px; border: 1px solid var(--border-primary); }
+        .workflow-title { font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; text-align: center; }
+        .workflow-desc { font-size: 16px; color: var(--text-secondary); text-align: center; margin-bottom: 32px; }
+        .workflow-steps { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+        .workflow-step { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 12px; padding: 20px 24px; text-align: center; flex: 1; min-width: 140px; max-width: 180px; position: relative; }
+        .workflow-step-num { width: 32px; height: 32px; background: linear-gradient(135deg, #f59e0b, #ef4444); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; margin: 0 auto 12px; }
+        .workflow-step-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+        .workflow-step-detail { font-size: 11px; color: var(--text-tertiary); }
+
+        .ai-highlight { background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(139, 92, 246, 0.05)); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 20px; padding: 40px; margin-top: 40px; }
+        .ai-highlight h3 { font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+        .ai-highlight h3 svg { width: 28px; height: 28px; color: #f59e0b; }
+        .ai-highlight p { font-size: 16px; color: var(--text-secondary); margin-bottom: 24px; }
+        .ai-features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .ai-feature { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--bg-secondary); border-radius: 10px; }
+        .ai-feature svg { width: 18px; height: 18px; color: #f59e0b; flex-shrink: 0; }
+        .ai-feature span { font-size: 14px; color: var(--text-primary); }
+
+        .feature-cta { text-align: center; padding: 80px 60px; position: relative; }
+        .feature-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(245, 158, 11, 0.1), transparent); }
+        .cta-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
+        .cta-desc { font-size: 18px; color: var(--text-secondary); margin-bottom: 32px; position: relative; max-width: 600px; margin-left: auto; margin-right: auto; }
+        .cta-buttons { display: flex; gap: 16px; justify-content: center; position: relative; }
+
+        @media (max-width: 968px) {
+            .feature-hero-content { grid-template-columns: 1fr; }
+            .feature-deep-grid { grid-template-columns: 1fr; }
+            .problem-grid { grid-template-columns: 1fr; }
+            .problem-arrow { transform: rotate(90deg); }
+            .roi-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .feature-hero { padding: 100px 24px 60px; }
+            .problem-section { padding: 60px 24px; }
+            .features-deep { padding: 60px 24px; }
+            .roi-section { padding: 60px 24px; }
+            .feature-cta { padding: 60px 24px; }
+            .hero-stats { flex-wrap: wrap; gap: 20px; }
+            .workflow-section { padding: 40px 24px; }
+            .ai-highlight { padding: 24px; }
+            .rfq-stats-row { grid-template-columns: 1fr; }
+            .workflow-steps { flex-direction: column; align-items: center; }
+            .workflow-step { max-width: 100%; }
+            .roi-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body class="landing-page">
+    <!-- Navigation -->
+    <div id="navbar"></div>
+
+    <section class="feature-hero">
+        <div class="feature-hero-content">
+            <div class="feature-hero-text">
+                <div class="feature-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    Procurement
+                </div>
+                <h1>Stop overpaying.<br><span class="highlight">Start outsmarting.</span></h1>
+                <p>You're losing money every time you pick a vendor from a spreadsheet. Ragenaizer compares quotes on price, quality, and delivery&mdash;and tells you exactly which vendor is the best value, not just the cheapest.</p>
+                <div class="cta-buttons">
+                    <a href="../activate.html" class="btn-primary">Start Free Trial</a>
+                    <a href="../compare/ragenaizer-vs-zoho.html" class="btn-secondary">Compare to Zoho</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">30%</div>
+                        <div class="hero-stat-label">Cost Savings</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">5x</div>
+                        <div class="hero-stat-label">Faster RFQs</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">Zero</div>
+                        <div class="hero-stat-label">Spreadsheets</div>
+                    </div>
+                </div>
+            </div>
+            <div class="feature-hero-visual">
+                <div class="hero-visual-mockup">
+                    <div class="rfq-summary">
+                        <div class="rfq-header">
+                            <span class="rfq-title">Office Furniture &mdash; 12 items</span>
+                            <span class="rfq-badge">All Quoted</span>
+                        </div>
+                        <div class="rfq-stats-row">
+                            <div class="rfq-stat-item">
+                                <div class="rfq-stat-label">Best Price</div>
+                                <div class="rfq-stat-value best">$12,450</div>
+                            </div>
+                            <div class="rfq-stat-item">
+                                <div class="rfq-stat-label">Vendors Quoted</div>
+                                <div class="rfq-stat-value vendors">4</div>
+                            </div>
+                            <div class="rfq-stat-item">
+                                <div class="rfq-stat-label">You Save</div>
+                                <div class="rfq-stat-value savings">$3,750</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="vendor-row">
+                        <div class="vendor-avatar v1">AF</div>
+                        <div class="vendor-info">
+                            <div class="vendor-name">Apex Furnishings</div>
+                            <div class="vendor-detail">$12,450 &middot; 14 days &middot; 4.8 stars</div>
+                        </div>
+                        <span class="vendor-score top">Best Value</span>
+                    </div>
+                    <div class="vendor-row">
+                        <div class="vendor-avatar v2">NF</div>
+                        <div class="vendor-info">
+                            <div class="vendor-name">Nova Furniture Co.</div>
+                            <div class="vendor-detail">$13,200 &middot; 10 days &middot; 4.5 stars</div>
+                        </div>
+                        <span class="vendor-score mid">Fastest</span>
+                    </div>
+                    <div class="vendor-row">
+                        <div class="vendor-avatar v3">PW</div>
+                        <div class="vendor-info">
+                            <div class="vendor-name">Prime Workspace</div>
+                            <div class="vendor-detail">$14,800 &middot; 7 days &middot; 4.9 stars</div>
+                        </div>
+                        <span class="vendor-score mid">Top Quality</span>
+                    </div>
+                    <div class="ai-tag">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M12 14c-4 0-7 2-7 4v2h14v-2c0-2-3-4-7-4z"/></svg>
+                        AI Recommended: Apex Furnishings &mdash; best price-to-quality ratio
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Spreadsheet Problem -->
+    <section class="problem-section">
+        <div class="problem-content">
+            <div class="section-header">
+                <h2 class="section-title">The spreadsheet problem</h2>
+                <p class="section-desc">Most teams run procurement on email and Excel. It works&mdash;until it doesn't.</p>
+            </div>
+            <div class="problem-grid">
+                <div class="problem-column before">
+                    <div class="problem-column-header">
+                        <span class="problem-column-badge before">Without Ragenaizer</span>
+                    </div>
+                    <div class="problem-item bad">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        <div class="problem-item-text"><strong>Email vendors one by one,</strong> then chase them for replies. Quotes arrive as PDFs, WhatsApp messages, phone calls.</div>
+                    </div>
+                    <div class="problem-item bad">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        <div class="problem-item-text"><strong>Copy-paste into Excel</strong> to compare. Hope you didn't miss a column. Always pick the cheapest&mdash;and regret it when they deliver late.</div>
+                    </div>
+                    <div class="problem-item bad">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        <div class="problem-item-text"><strong>No memory.</strong> When procurement person leaves, all vendor knowledge walks out the door. Next person starts from scratch.</div>
+                    </div>
+                    <div class="problem-item bad">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        <div class="problem-item-text"><strong>No accountability.</strong> Can't prove why you picked Vendor A over Vendor B. No audit trail when things go wrong.</div>
+                    </div>
+                </div>
+
+                <div class="problem-arrow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </div>
+
+                <div class="problem-column after">
+                    <div class="problem-column-header">
+                        <span class="problem-column-badge after">With Ragenaizer</span>
+                    </div>
+                    <div class="problem-item good">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        <div class="problem-item-text"><strong>Send one link.</strong> Vendors submit structured quotes in a portal. No chasing, no lost attachments, no phone tag.</div>
+                    </div>
+                    <div class="problem-item good">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        <div class="problem-item-text"><strong>AI compares instantly</strong> on price, quality, and delivery. Recommends the best overall vendor&mdash;not just the cheapest.</div>
+                    </div>
+                    <div class="problem-item good">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        <div class="problem-item-text"><strong>Institutional memory.</strong> Every quote, every decision, every vendor rating stays in the system. Knowledge compounds, never leaves.</div>
+                    </div>
+                    <div class="problem-item good">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        <div class="problem-item-text"><strong>Full audit trail.</strong> Every decision is recorded with reasons. Prove compliance, justify spend, and hold vendors accountable.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features-deep">
+        <div class="section-header">
+            <h2 class="section-title">Everything you need, nothing you don't</h2>
+            <p class="section-desc">From first inquiry to final delivery&mdash;one platform, zero spreadsheets</p>
+        </div>
+
+        <div class="feature-deep-grid">
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-amber">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <h3>Vendor Management</h3>
+                <p>Build a reliable vendor network. Track ratings, delivery performance, and quality scores so you always know who to trust.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Centralized vendor directory with ratings</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Track delivery reliability & quality scores</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Full contact management per vendor</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-red">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </div>
+                <h3>RFQ in One Click</h3>
+                <p>List what you need, pick your vendors, and send. Vendors get a link to submit quotes&mdash;no more email threads.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Create an RFQ from any purchase request</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Send full or partial item lists per vendor</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Bulk import items from spreadsheets</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                </div>
+                <h3>AI-Powered Comparison</h3>
+                <p>Go beyond cheapest price. AI evaluates vendors on price, quality, and delivery&mdash;and explains exactly why one vendor is the better pick.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Side-by-side vendor comparison</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Weighted scoring you can customize</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Plain-English AI recommendation</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-cyan">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h3>Self-Serve Vendor Portal</h3>
+                <p>Send vendors a secure link&mdash;they submit quotes without creating an account. No back-and-forth emails, no lost attachments.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> One-click vendor access, no signup needed</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Vendors upload quotes with photos & specs</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Vendors manage their own product catalog</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                </div>
+                <h3>Purchase Orders</h3>
+                <p>Generate POs with one click after selecting a vendor. Track approvals, deliveries, and goods receipt from a single dashboard.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> One-click PO from vendor selection</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Multi-step approval workflow</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Track delivery dates & goods receipt</li>
+                </ul>
+            </div>
+
+            <div class="feature-deep-card">
+                <div class="feature-deep-icon icon-blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </div>
+                <h3>Split Awards</h3>
+                <p>Don't settle for one vendor. Award different items to different vendors to get the best price on every line item.</p>
+                <ul>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Pick the best vendor for each item</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Preview savings before confirming</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Separate POs generated automatically</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Workflow Section -->
+        <div class="workflow-section">
+            <h3 class="workflow-title">5 steps, fully tracked</h3>
+            <p class="workflow-desc">From purchase request to goods receipt&mdash;nothing falls through the cracks</p>
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <div class="workflow-step-num">1</div>
+                    <div class="workflow-step-name">Request</div>
+                    <div class="workflow-step-detail">List what you need to buy</div>
+                </div>
+                <div class="workflow-step">
+                    <div class="workflow-step-num">2</div>
+                    <div class="workflow-step-name">RFQ</div>
+                    <div class="workflow-step-detail">Send to vendors in one click</div>
+                </div>
+                <div class="workflow-step">
+                    <div class="workflow-step-num">3</div>
+                    <div class="workflow-step-name">Quotes</div>
+                    <div class="workflow-step-detail">Vendors submit via portal</div>
+                </div>
+                <div class="workflow-step">
+                    <div class="workflow-step-num">4</div>
+                    <div class="workflow-step-name">Compare</div>
+                    <div class="workflow-step-detail">AI picks the best vendor</div>
+                </div>
+                <div class="workflow-step">
+                    <div class="workflow-step-num">5</div>
+                    <div class="workflow-step-name">Order</div>
+                    <div class="workflow-step-detail">Create PO & track delivery</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Intelligence Highlight -->
+        <div class="ai-highlight">
+            <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M5 10l7 7 7-7"/><line x1="12" y1="17" x2="12" y2="22"/></svg>
+                AI that gets smarter every cycle
+            </h3>
+            <p>The more you use it, the smarter it gets. After a few procurement cycles, AI auto-suggests the right vendors, flags overpriced quotes, and warns you about unreliable suppliers&mdash;before you even ask.</p>
+            <div class="ai-features">
+                <div class="ai-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Auto-suggest the best vendors for each item</span>
+                </div>
+                <div class="ai-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Explain why one quote is better value</span>
+                </div>
+                <div class="ai-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Flag vendors with poor delivery history</span>
+                </div>
+                <div class="ai-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Spot overpriced quotes instantly</span>
+                </div>
+                <div class="ai-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Remembers your preferences & patterns</span>
+                </div>
+                <div class="ai-feature">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Tune scoring weights to your priorities</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ROI Section -->
+    <section class="roi-section">
+        <div class="roi-content">
+            <div class="section-header">
+                <h2 class="section-title">The ROI is obvious</h2>
+                <p class="section-desc">Teams using structured procurement consistently save money and time</p>
+            </div>
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-value amber">30%</div>
+                    <div class="roi-label">Lower Costs</div>
+                    <div class="roi-desc">Comparing more vendors on the right criteria means you stop leaving money on the table</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-value green">80%</div>
+                    <div class="roi-label">Less Admin Time</div>
+                    <div class="roi-desc">No more emailing vendors, copy-pasting into Excel, or manually creating POs</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-value purple">100%</div>
+                    <div class="roi-label">Audit-Ready</div>
+                    <div class="roi-desc">Every decision recorded with reasons. Prove compliance instantly when asked</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-value cyan">0</div>
+                    <div class="roi-label">Knowledge Lost</div>
+                    <div class="roi-desc">Vendor ratings, price history, and decision context stay in the system&mdash;even when people leave</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="feature-cta">
+        <h2 class="cta-title">Your vendors aren't getting cheaper.<br>Your process should get smarter.</h2>
+        <p class="cta-desc">AI-powered procurement built into the same platform as your HR, video, chat, and files. No extra tool, no extra cost.</p>
+        <div class="cta-buttons">
+            <a href="../activate.html" class="btn-primary">Start Free Trial</a>
+            <a href="../compare/ragenaizer-vs-zoho.html" class="btn-secondary">Compare to Zoho</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <div id="footer"></div>
+
+    <!-- Global Components -->
+    <script src="/js/navbar.js"></script>
+    <script src="/js/footer.js"></script>
+</body>
+</html>
