@@ -6101,9 +6101,6 @@
                     <div id="oeFileSelectContainer" class="oe-dropdown-container"></div>
                     <div id="oeVariableSelectContainer" class="oe-dropdown-container oe-dropdown-wide"></div>
                     <div class="oe-toolbar-actions">
-                        <div id="oeCodeframeSelectContainer" class="oe-dropdown-container"></div>
-                        <button class="oe-btn oe-btn-ghost" id="oeViewCodeframeBtn" onclick="toggleCodeframeViewer()" style="display:none;" title="View codeframe codes">View</button>
-                        <button class="oe-btn oe-btn-secondary" onclick="openCodeframeModal()">New Codeframe</button>
                         <button class="oe-btn oe-btn-primary" onclick="startCodingJob()">Start Coding</button>
                     </div>
                 </div>
@@ -6129,47 +6126,6 @@
 
                 </main>
             </div><!-- /research-layout -->
-        </div>
-    </div>
-
-    <!-- Codeframe Modal -->
-    <div class="gm-overlay" id="codeframeModal">
-        <div class="gm-modal gm-lg">
-            <div class="gm-header"><h3>Codeframe</h3><button class="gm-close" onclick="closeCodeframeModal()">&times;</button></div>
-            <div class="gm-body">
-                <div class="gm-form-group"><label>Name</label><input type="text" id="cfModalName" class="gm-input" placeholder="e.g., Brand Satisfaction Codes v1"></div>
-                <div class="gm-form-group"><label>Description</label><input type="text" id="cfModalDescription" class="gm-input" placeholder="Optional description"></div>
-                <div id="cfAutoGenSection" class="oe-autogen-section">
-                    <h4>Auto-Generate from Responses</h4>
-                    <div class="oe-autogen-controls">
-                        <div class="gm-form-group"><label>Sample Size</label><input type="number" id="cfAutoSampleSize" class="gm-input" value="200" min="50" max="1000"></div>
-                        <div class="gm-form-group"><label>Target Codes</label><input type="number" id="cfAutoTargetCodes" class="gm-input" value="20" min="5" max="50"></div>
-                    </div>
-                    <div class="gm-form-group"><label>Context (optional)</label><input type="text" id="cfAutoContext" class="gm-input" placeholder="e.g., Brand satisfaction survey for automotive industry"></div>
-                    <button class="oe-btn oe-btn-primary" id="cfAutoGenerateBtn" onclick="autoGenerateCodeframe()">Generate</button>
-                </div>
-                <h4 style="margin-top:16px;">Codes</h4>
-                <div id="cfCodesList" class="oe-codeframe-list"></div>
-                <button class="oe-btn oe-btn-secondary" onclick="addNewCode()" style="margin-top:8px;">+ Add Code</button>
-            </div>
-            <div class="gm-footer"><button class="gm-btn-secondary" onclick="closeCodeframeModal()">Cancel</button><button class="gm-btn-primary" onclick="saveCodeframe()">Save Codeframe</button></div>
-        </div>
-    </div>
-
-    <!-- Code Edit Modal -->
-    <div class="gm-overlay" id="codeEditModal">
-        <div class="gm-modal gm-sm">
-            <div class="gm-header"><h3>Edit Code</h3><button class="gm-close" onclick="closeCodeEditModal()">&times;</button></div>
-            <div class="gm-body">
-                <input type="hidden" id="codeEditIdx" value="-1">
-                <div class="gm-form-group"><label>Code Value</label><input type="text" id="codeEditValue" class="gm-input" placeholder="e.g., 1 or 1.1"></div>
-                <div class="gm-form-group"><label>Label</label><input type="text" id="codeEditLabel" class="gm-input" placeholder="e.g., Product Quality"></div>
-                <div class="gm-form-group"><label>Definition</label><textarea id="codeEditDefinition" class="gm-input" rows="2" placeholder="What this code captures..."></textarea></div>
-                <div class="gm-form-group"><label>Includes (comma-separated)</label><input type="text" id="codeEditIncludes" class="gm-input" placeholder="quality, durable, well-made"></div>
-                <div class="gm-form-group"><label>Excludes (comma-separated)</label><input type="text" id="codeEditExcludes" class="gm-input" placeholder="price, service"></div>
-                <label class="oe-checkbox-label"><input type="checkbox" id="codeEditIsOther"> This is the catch-all "Other" code</label>
-            </div>
-            <div class="gm-footer"><button class="gm-btn-secondary" onclick="closeCodeEditModal()">Cancel</button><button class="gm-btn-primary" onclick="saveCodeEdit()">Save Code</button></div>
         </div>
     </div>
 
