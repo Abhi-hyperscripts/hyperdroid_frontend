@@ -678,6 +678,7 @@ function renderJobCard(job) {
         <button class="oe-btn oe-btn-primary oe-btn-xs" onclick="loadOeResults('${job.id}')">View Results</button>
         <button class="oe-btn oe-btn-ghost oe-btn-xs" onclick="openCostBreakdown('${job.id}')">Cost</button>
         <button class="oe-btn oe-btn-secondary oe-btn-xs" onclick="rerunCoding('${job.id}')">Re-run</button>
+        <button class="oe-btn oe-btn-ghost oe-btn-xs" onclick="exportCoding('${job.id}')">Export</button>
     </div>`;
 }
 
@@ -688,6 +689,110 @@ function formatDuration(ms) {
     const min = Math.floor(sec / 60);
     const rem = sec % 60;
     return `${min}m ${rem}s`;
+}
+
+async function exportCoding(jobId) {
+    const job = oeJobs.find(j => j.id === jobId);
+    if (!job) { Toast.error('Job not found'); return; }
+
+    const fileId = job.fileId || job.file_id;
+    const varName = job.variableName || job.variable_name;
+    const version = job.version || 1;
+
+    // Load all variables from the SPSS file for respondent ID selection
+    let allVars = [];
+    try {
+        const fileData = await api.request(`/research/projects/${projectId}/files/${fileId}/variables`);
+        allVars = fileData.variables || [];
+    } catch { }
+
+    // Build export modal with variable selection
+    const existing = document.getElementById('exportModal');
+    if (existing) existing.remove();
+
+    const varOptions = allVars.map(v => {
+        const vn = v.variable_name || v.variableName || '';
+        const vl = v.variable_label || v.variableLabel || '';
+        const vt = v.variable_type || v.variableType || '';
+        return { value: vn, label: vn, description: `${vl || 'No label'} (${vt})` };
+    });
+
+    const modal = document.createElement('div');
+    modal.id = 'exportModal';
+    modal.className = 'gm-overlay active';
+    modal.style.zIndex = '10001';
+    modal.innerHTML = `
+        <div class="gm-modal" style="width:480px;margin:auto;overflow:visible;">
+            <div class="gm-header">
+                <h3 class="gm-title">Export Coded Data</h3>
+                <button class="gm-close" onclick="document.getElementById('exportModal')?.remove()">&times;</button>
+            </div>
+            <div class="gm-body" style="padding:16px 20px;overflow:visible;">
+                <p style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:12px;">
+                    Export <strong>${escapeHtml(varName)} v${version}</strong> as Excel with 3 sheets: Coded Responses, Code Summary, and Codeframe.
+                </p>
+                <label style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">
+                    Respondent ID Variable (optional)
+                </label>
+                <div id="exportRespIdContainer" style="margin-bottom:12px;position:relative;z-index:10002;"></div>
+                <style>#exportModal .searchable-dropdown-container.open .searchable-dropdown-panel { z-index: 10003; }</style>
+                <p style="font-size:0.68rem;color:var(--text-muted);margin-bottom:16px;">
+                    Select a variable from the SPSS file to use as the Respondent ID column. Leave blank to use row numbers.
+                </p>
+                <div style="display:flex;justify-content:flex-end;gap:8px;">
+                    <button class="oe-btn oe-btn-ghost oe-btn-xs" onclick="document.getElementById('exportModal')?.remove()">Cancel</button>
+                    <button class="oe-btn oe-btn-primary oe-btn-xs" onclick="doExportDownload('${jobId}')">Download Excel</button>
+                </div>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+
+    // Initialize searchable dropdown for respondent ID variable
+    const container = document.getElementById('exportRespIdContainer');
+    window._exportRespIdDropdown = new SearchableDropdown(container, {
+        id: 'exportRespIdVar',
+        options: [{ value: '', label: 'Use row number (default)', description: 'No respondent ID variable' }, ...varOptions],
+        placeholder: 'Select respondent ID variable...',
+        searchPlaceholder: 'Search variables...',
+        onChange: () => {}
+    });
+}
+
+async function doExportDownload(jobId) {
+    const job = oeJobs.find(j => j.id === jobId);
+    if (!job) return;
+
+    const respondentIdVariable = window._exportRespIdDropdown ? (window._exportRespIdDropdown.getValue() || '') : '';
+    document.getElementById('exportModal')?.remove();
+
+    try {
+        Toast.info('Generating Excel export...');
+        const params = respondentIdVariable ? `?respondentIdVariable=${encodeURIComponent(respondentIdVariable)}` : '';
+        const response = await fetch(`${CONFIG.researchApiBaseUrl}/projects/${projectId}/openend-coding/jobs/${jobId}/export${params}`, {
+            headers: { 'Authorization': `Bearer ${api.token}` }
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({ error: 'Export failed' }));
+            Toast.error(err.error || 'Export failed');
+            return;
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const varName = job.variableName || job.variable_name;
+        const version = job.version || 1;
+        a.download = `${varName}_v${version}_coded.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        Toast.success('Excel exported');
+    } catch (e) {
+        Toast.error(`Export failed: ${e.message}`);
+    }
 }
 
 async function rerunCoding(jobId) {
