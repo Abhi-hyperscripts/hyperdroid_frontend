@@ -51,8 +51,30 @@ const OE_STAGE_LABELS = {
     codeframe_mapping_mixed: 'Codeframe (Mixed)',
     qa_audit: 'QA Audit',
     classify: 'Classify',
-    verify: 'Verify'
+    verify: 'Verify',
+    review: 'Review Pass',
+    reviewing: 'Reviewing coded responses',
+    recycling_other: 'Recycling OTHER codes',
+    recycle_other: 'Recycle OTHER',
+    decompose_batch: 'Decompose (Batch)',
+    classify_batch: 'Classify (Batch)',
+    verify_batch: 'Verify (Batch)',
 };
+
+// Resolve stage name with dynamic retry pattern support
+function resolveStageLabel(raw) {
+    if (OE_STAGE_LABELS[raw]) return OE_STAGE_LABELS[raw];
+    // Handle retry patterns: "classify_all_retry_0" → "Classify All Claims (Retry 1)"
+    const retryMatch = raw.match(/^(.+)_retry_(\d+)$/);
+    if (retryMatch) {
+        const base = OE_STAGE_LABELS[retryMatch[1]] || retryMatch[1];
+        return `${base} (Retry ${parseInt(retryMatch[2]) + 1})`;
+    }
+    // Handle codeframe_mapping_* patterns
+    const cfMatch = raw.match(/^codeframe_mapping_(.+)$/);
+    if (cfMatch) return `Codeframe (${cfMatch[1].charAt(0).toUpperCase() + cfMatch[1].slice(1)})`;
+    return raw;
+}
 
 // ============================================
 // INIT
@@ -1349,7 +1371,7 @@ async function openCostBreakdown(jobId) {
             <tbody>
                 ${stages.map(s => {
                     const model = (s.model || '').includes('haiku') ? 'Haiku' : (s.model || '').includes('sonnet') ? 'Sonnet' : (s.model || '').split('-').pop();
-                    const stageName = OE_STAGE_LABELS[s.stage] || s.stage;
+                    const stageName = resolveStageLabel(s.stage || s.call_type || '');
                     const inTok = s.inputTokens || s.input_tokens || 0;
                     const outTok = s.outputTokens || s.output_tokens || 0;
                     const sCost = s.costUsd || s.cost_usd || 0;
