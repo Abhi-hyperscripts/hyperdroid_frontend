@@ -626,6 +626,7 @@ function renderJobCard(job) {
     const stageDetail = job.currentStage || job.current_stage || '';
     const stage = OE_STAGE_LABELS[stageKey] || OE_STAGE_LABELS[stageDetail] || stageDetail || status;
     const varName = job.variableName || job.variable_name;
+    const version = job.version || 1;
     const totalResp = job.totalResponses || job.total_responses || 0;
     const trivial = job.trivialFiltered || job.trivial_filtered || 0;
     const repsCoded = job.representativesCoded || job.representatives_coded || 0;
@@ -646,9 +647,11 @@ function renderJobCard(job) {
         ? formatDuration(new Date(job.completedAt || job.completed_at) - new Date(job.createdAt || job.created_at))
         : '';
 
+    const vBadge = `<span style="font-size:0.65rem;padding:1px 5px;border-radius:3px;background:var(--brand-primary);color:var(--text-inverse);font-weight:600;margin-left:4px;">v${version}</span>`;
+
     if (isFailed) {
         return `<div class="oe-job-row oe-job-row-failed" id="oe-job-${job.id}" data-job-id="${job.id}">
-            <span class="oe-job-var">${escapeHtml(varName)}</span>
+            <span class="oe-job-var">${escapeHtml(varName)}${vBadge}</span>
             <span class="status-badge failed">Failed</span>
             <span class="oe-job-row-err" title="${escapeHtml(job.errorMessage || job.error_message || '')}">${escapeHtml((job.errorMessage || job.error_message || 'Error').substring(0, 60))}</span>
         </div>`;
@@ -656,7 +659,7 @@ function renderJobCard(job) {
 
     if (isRunning) {
         return `<div class="oe-job-row oe-job-row-running" id="oe-job-${job.id}" data-job-id="${job.id}">
-            <span class="oe-job-var">${escapeHtml(varName)}</span>
+            <span class="oe-job-var">${escapeHtml(varName)}${vBadge}</span>
             <span class="status-badge active">Processing</span>
             <span class="oe-job-row-stage">${escapeHtml(stage)}</span>
             <div class="oe-job-row-bar"><div class="file-progress-fill" style="width:${pct}%"></div></div>
@@ -668,12 +671,13 @@ function renderJobCard(job) {
     // Complete
     const coded = repsCoded + propagated + verified;
     return `<div class="oe-job-row" id="oe-job-${job.id}" data-job-id="${job.id}">
-        <span class="oe-job-var">${escapeHtml(varName)}</span>
+        <span class="oe-job-var">${escapeHtml(varName)}${vBadge}</span>
         <span class="status-badge ready">Complete</span>
         <span class="oe-job-row-info">${totalResp.toLocaleString()} responses &middot; ${clusters} clusters &middot; ${coded.toLocaleString()} coded</span>
         <span class="oe-job-row-info">${elapsed}</span>
         <button class="oe-btn oe-btn-primary oe-btn-xs" onclick="loadOeResults('${job.id}')">View Results</button>
         <button class="oe-btn oe-btn-ghost oe-btn-xs" onclick="openCostBreakdown('${job.id}')">Cost</button>
+        <button class="oe-btn oe-btn-secondary oe-btn-xs" onclick="rerunCoding('${job.id}')">Re-run</button>
     </div>`;
 }
 
@@ -684,6 +688,40 @@ function formatDuration(ms) {
     const min = Math.floor(sec / 60);
     const rem = sec % 60;
     return `${min}m ${rem}s`;
+}
+
+async function rerunCoding(jobId) {
+    const job = oeJobs.find(j => j.id === jobId);
+    if (!job) { Toast.error('Job not found'); return; }
+
+    const varName = job.variableName || job.variable_name;
+    const fileId = job.fileId || job.file_id;
+    const version = job.version || 1;
+
+    if (!confirm(`Re-run coding for ${varName}? This will create version ${version + 1} while keeping v${version} results.`)) return;
+
+    try {
+        const body = {
+            file_id: fileId,
+            variable_name: varName
+            // No codeframe_id — let the pipeline generate a fresh one
+        };
+
+        const result = await api.request(`/research/projects/${projectId}/openend-coding/jobs`, {
+            method: 'POST',
+            body: JSON.stringify(body)
+        });
+
+        Toast.success(`Coding v${version + 1} started`);
+
+        if (fileProgressConnected && fileProgressConnection) {
+            try { await fileProgressConnection.invoke('JoinOpenEndCodingProgress', result.job_id); } catch {}
+        }
+
+        await loadOeJobs();
+    } catch (e) {
+        Toast.error(`Failed to re-run: ${e.message}`);
+    }
 }
 
 async function startCodingJob() {
