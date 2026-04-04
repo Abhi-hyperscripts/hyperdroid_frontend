@@ -1747,31 +1747,134 @@ textarea.form-control {
     white-space: nowrap;
 }
 
-/* Unified filter bar — match HRMS alignment */
-.accounts-filter-bar, .filter-bar, .filters-row {
+/* ================================================================
+   UNIFIED CONTROLS — exact match with HRMS filters-bar
+   HRMS ref: .filters-bar { display:flex; align-items:center; gap:12px }
+   Heights: search=34px, dropdown=38px, buttons=33px
+   ================================================================ */
+
+/* Filter bar container */
+.glass-card-body,
+.accounts-filter-bar,
+.filter-bar,
+.filters-row {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 12px;
     flex-wrap: wrap;
-    padding: 0.75rem 0;
 }
 
-.accounts-filter-bar .form-control,
-.filter-bar .form-control,
-.filters-row .form-control,
-.accounts-filter-bar select,
-.filter-bar select,
-.filters-row select {
-    height: 40px;
-    min-width: 140px;
+/* ALL form controls in accounts — uniform 36px height */
+.tab-content .form-control,
+.tab-content select,
+.tab-content input[type="text"],
+.tab-content input[type="search"],
+.tab-content input[type="date"],
+.tab-content input[type="number"],
+.filters-bar .form-control,
+.filters-bar select,
+.filters-bar input[type="text"],
+.filters-bar input[type="date"],
+.glass-card-body .form-control,
+.glass-card-body select,
+.glass-card-body input[type="text"],
+.glass-card-body input[type="date"] {
+    height: 36px;
+    padding: 6px 12px;
+    font-size: 13px;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    box-sizing: border-box;
 }
 
-.accounts-filter-bar input[type="text"],
-.filter-bar input[type="text"],
-.filters-row input[type="text"],
-.accounts-filter-bar input[type="search"],
-.filter-bar input[type="search"] {
-    height: 40px;
+/* SearchableDropdown wrapper — match height */
+.tab-content .searchable-dropdown-wrapper,
+.tab-content .searchable-dropdown-container,
+.filters-bar .searchable-dropdown-wrapper,
+.filters-bar .searchable-dropdown-container,
+.glass-card-body .searchable-dropdown-wrapper,
+.glass-card-body .searchable-dropdown-container {
+    min-width: 160px;
+}
+
+.tab-content .searchable-dropdown,
+.filters-bar .searchable-dropdown,
+.glass-card-body .searchable-dropdown {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 6px 12px;
+    font-size: 13px;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+/* ALL buttons in filter bars — uniform 36px height */
+.glass-card-body .btn,
+.filters-bar .btn,
+.tab-content .filters-bar .btn,
+.tab-content .glass-card-body .btn {
+    height: 36px;
+    padding: 6px 14px;
+    font-size: 13px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+/* Primary button keeps brand color */
+.glass-card-body .btn-primary {
+    background: var(--brand-primary);
+    color: #fff;
+    border: 1px solid var(--brand-primary);
+}
+
+/* Outline buttons */
+.glass-card-body .btn-outline {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
+}
+
+/* Search box within filter bar */
+.glass-card-body .search-box,
+.glass-card-body .search-wrapper {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    background: var(--bg-secondary);
+    padding: 0 12px;
+    flex: 1;
+    min-width: 180px;
+}
+
+.glass-card-body .search-box input,
+.glass-card-body .search-wrapper input {
+    border: none;
+    background: transparent;
+    height: 34px;
+    padding: 0 8px;
+    color: var(--text-primary);
+    width: 100%;
+    font-size: 13px;
+}
+
+/* Date input labels — make inline instead of above */
+.glass-card-body label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 0;
+    white-space: nowrap;
 }
 
 /* Stat card value overflow protection */
@@ -1779,5 +1882,5 @@ textarea.form-control {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: clamp(1rem, 2.5vw, 1.75rem);
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
 }
