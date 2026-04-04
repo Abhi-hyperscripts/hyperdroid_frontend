@@ -544,6 +544,7 @@ async function saveCustomerPayment() {
         amount: parseFloat(document.getElementById('paymentAmount').value) || 0,
         bank_account_id: document.getElementById('paymentBankAccountId').value,
         reference: document.getElementById('paymentReference').value,
+        payment_method: document.getElementById('paymentMethod')?.value || 'bank_transfer',
         allocations
     };
 
@@ -568,8 +569,10 @@ async function loadCreditNotes() {
     const dateFrom = document.getElementById('cnDateFrom')?.value;
     const dateTo = document.getElementById('cnDateTo')?.value;
     const search = document.getElementById('cnSearch')?.value?.trim();
+    const statusFilter = document.getElementById('creditNoteStatusFilter')?.value;
 
     if (customerId) params.customer_id = customerId;
+    if (statusFilter) params.status = statusFilter;
     if (dateFrom) params.date_from = dateFrom;
     if (dateTo) params.date_to = dateTo;
     if (search) params.search = search;

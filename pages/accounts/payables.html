@@ -514,10 +514,21 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="form-row">
+                        <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="paymentReference">Reference Number</label>
                                 <input type="text" id="paymentReference" class="form-control" placeholder="e.g., CHK-1234 or TXN-ID">
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentMethod">Payment Method</label>
+                                <select id="paymentMethod" class="form-control">
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="cheque">Cheque</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="upi">UPI</option>
+                                    <option value="card">Card</option>
+                                    <option value="other">Other</option>
+                                </select>
                             </div>
                         </div>
 

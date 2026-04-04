@@ -596,7 +596,8 @@ async function saveChecklist() {
         return;
     }
 
-    const payload = { name, fiscal_year_id, description };
+    const closing_type = document.getElementById('checklistClosingType')?.value || 'month_end';
+    const payload = { name, fiscal_year_id, closing_type, description };
 
     try {
         if (id) {

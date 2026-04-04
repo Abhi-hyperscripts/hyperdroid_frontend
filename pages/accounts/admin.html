@@ -165,13 +165,32 @@
                     <div class="filters-bar">
                         <select id="auditEntityFilter" class="form-control" style="max-width: 180px;" onchange="loadAuditLogs()">
                             <option value="">All Entities</option>
+                            <option value="gl_entry">GL Entry</option>
+                            <option value="journal_type">Journal Type</option>
                             <option value="account">Account</option>
-                            <option value="journal">Journal</option>
-                            <option value="invoice">Invoice</option>
-                            <option value="payment">Payment</option>
-                            <option value="expense">Expense</option>
-                            <option value="asset">Asset</option>
-                            <option value="tax">Tax</option>
+                            <option value="account_group">Account Group</option>
+                            <option value="vendor">Vendor</option>
+                            <option value="customer">Customer</option>
+                            <option value="vendor_bill">Vendor Bill</option>
+                            <option value="vendor_payment">Vendor Payment</option>
+                            <option value="customer_invoice">Customer Invoice</option>
+                            <option value="customer_payment">Customer Payment</option>
+                            <option value="credit_note">Credit Note</option>
+                            <option value="bank_account">Bank Account</option>
+                            <option value="bank_transaction">Bank Transaction</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="bank_reconciliation">Bank Reconciliation</option>
+                            <option value="expense_claim">Expense Claim</option>
+                            <option value="expense_policy">Expense Policy</option>
+                            <option value="fixed_asset">Fixed Asset</option>
+                            <option value="depreciation">Depreciation</option>
+                            <option value="billing_plan">Billing Plan</option>
+                            <option value="subscription">Subscription</option>
+                            <option value="token_balance">Token Balance</option>
+                            <option value="fiscal_year">Fiscal Year</option>
+                            <option value="fiscal_period">Fiscal Period</option>
+                            <option value="closing_checklist">Closing Checklist</option>
+                            <option value="system">System</option>
                         </select>
                         <div class="form-group" style="margin-bottom:0;">
                             <input type="date" id="auditFrom" class="form-control" onchange="loadAuditLogs()">
@@ -449,6 +468,16 @@
                                 <label for="checklistFY">Fiscal Year *</label>
                                 <select id="checklistFY" class="form-control" required>
                                     <option value="">Select...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="checklistClosingType">Closing Type *</label>
+                                <select id="checklistClosingType" class="form-control" required>
+                                    <option value="month_end">Month End</option>
+                                    <option value="quarter_end">Quarter End</option>
+                                    <option value="year_end">Year End</option>
                                 </select>
                             </div>
                         </div>

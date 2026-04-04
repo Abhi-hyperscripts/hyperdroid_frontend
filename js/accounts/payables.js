@@ -592,6 +592,7 @@ async function saveVendorPayment() {
     const payload = {
         vendor_id: vendorId, payment_date: paymentDate, amount,
         bank_account_id: bankAccountId, reference_number: referenceNumber,
+        payment_method: document.getElementById('paymentMethod')?.value || 'bank_transfer',
         allocations
     };
 

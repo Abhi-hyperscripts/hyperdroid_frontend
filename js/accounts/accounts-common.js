@@ -424,8 +424,14 @@ const AccountsCommon = {
         const s = String(status).toLowerCase();
         const classMap = {
             active: 'status-active', approved: 'status-active', paid: 'status-active',
+            submitted: 'status-active', sent: 'status-active', reimbursed: 'status-active',
+            completed: 'status-active', posted: 'status-active',
             pending: 'status-pending', draft: 'status-pending', partial: 'status-pending',
+            partially_paid: 'status-pending', in_progress: 'status-pending',
+            trial: 'status-pending', not_started: 'status-pending',
             rejected: 'status-rejected', overdue: 'status-rejected', cancelled: 'status-rejected',
+            disposed: 'status-rejected', written_off: 'status-rejected', past_due: 'status-rejected',
+            expired: 'status-rejected', reversed: 'status-rejected', failed: 'status-rejected',
             inactive: 'status-inactive', closed: 'status-inactive'
         };
         const cls = classMap[s] || 'status-pending';

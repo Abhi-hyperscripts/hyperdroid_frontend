@@ -144,6 +144,23 @@
                             <option value="posted">Posted</option>
                             <option value="reversed">Reversed</option>
                         </select>
+                        <select id="glRefTypeFilter" class="form-control" style="width:auto; min-width:180px;" onchange="currentGlPage=1; loadGlEntries()">
+                            <option value="">All Sources</option>
+                            <option value="manual">Manual</option>
+                            <option value="vendor_bill">Vendor Bill</option>
+                            <option value="customer_invoice">Customer Invoice</option>
+                            <option value="vendor_payment">Vendor Payment</option>
+                            <option value="customer_payment">Customer Payment</option>
+                            <option value="credit_note">Credit Note</option>
+                            <option value="expense">Expense</option>
+                            <option value="depreciation">Depreciation</option>
+                            <option value="disposal">Disposal</option>
+                            <option value="transfer">Transfer</option>
+                            <option value="opening_balance">Opening Balance</option>
+                            <option value="reversal">Reversal</option>
+                            <option value="closing">Closing</option>
+                            <option value="payroll">Payroll</option>
+                        </select>
                         <div class="search-box-modern">
                             <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="11" cy="11" r="8"/>

@@ -169,9 +169,10 @@
                             <option value="draft">Draft</option>
                             <option value="approved">Approved</option>
                             <option value="sent">Sent</option>
-                            <option value="partial">Partial</option>
+                            <option value="partially_paid">Partially Paid</option>
                             <option value="paid">Paid</option>
                             <option value="overdue">Overdue</option>
+                            <option value="written_off">Written Off</option>
                             <option value="cancelled">Cancelled</option>
                         </select>
                         <input type="text" id="invoiceDateFrom" class="form-control" placeholder="From date" style="max-width: 140px;">
@@ -292,6 +293,13 @@
                 <div class="tab-content" id="credit-notes">
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="cnCustomerFilterContainer"></div>
+                        <select id="creditNoteStatusFilter" class="form-control" style="max-width:200px;" onchange="loadCreditNotes()">
+                            <option value="">All Statuses</option>
+                            <option value="draft">Draft</option>
+                            <option value="approved">Approved</option>
+                            <option value="applied">Applied</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
                         <input type="text" id="cnDateFrom" class="form-control" placeholder="From date" style="max-width: 140px;">
                         <input type="text" id="cnDateTo" class="form-control" placeholder="To date" style="max-width: 140px;">
                         <div class="search-box-modern">
@@ -602,10 +610,22 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="form-row">
+                        <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="paymentReference">Reference</label>
                                 <input type="text" id="paymentReference" class="form-control" placeholder="Cheque/UTR/Transaction ref">
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentMethod">Payment Method</label>
+                                <select id="paymentMethod" class="form-control">
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="cheque">Cheque</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="upi">UPI</option>
+                                    <option value="card">Card</option>
+                                    <option value="payment_gateway">Payment Gateway</option>
+                                    <option value="other">Other</option>
+                                </select>
                             </div>
                         </div>
 

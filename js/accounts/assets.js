@@ -104,7 +104,7 @@ function renderCategories() {
 
     const methodLabels = {
         'straight_line': 'Straight Line',
-        'written_down_value': 'Written Down Value',
+        'written_down': 'Written Down Value',
         'units_of_production': 'Units of Production'
     };
 

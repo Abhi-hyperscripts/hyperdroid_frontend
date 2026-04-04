@@ -136,7 +136,7 @@ function renderPlans() {
             <td>${AccountsCommon.escapeHtml(p.name)}</td>
             <td><code>${AccountsCommon.escapeHtml(p.plan_code || p.code || '-')}</code></td>
             <td class="text-right">${AccountsCommon.formatCurrency(p.amount)}</td>
-            <td>${AccountsCommon.escapeHtml(intervalLabels[p.billing_type || p.interval] || p.billing_type || p.interval || '-')}</td>
+            <td>${AccountsCommon.escapeHtml(intervalLabels[p.billing_cycle || p.interval] || p.billing_cycle || p.interval || '-')}</td>
             <td>${AccountsCommon.statusBadge(status)}</td>
             <td class="actions-cell">${actions}</td>
         </tr>`;
@@ -160,7 +160,8 @@ async function viewPlan(id) {
                 <div class="detail-row"><span class="detail-label">Name</span><span class="detail-value">${esc(p.name || '-')}</span></div>
                 <div class="detail-row"><span class="detail-label">Code</span><span class="detail-value"><code>${esc(p.plan_code || p.code || '-')}</code></span></div>
                 <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value">${fmt(p.amount)}</span></div>
-                <div class="detail-row"><span class="detail-label">Interval</span><span class="detail-value">${esc(intervalLabels[p.billing_type || p.interval] || p.billing_type || p.interval || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Billing Type</span><span class="detail-value">${esc(p.billing_type || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Billing Cycle</span><span class="detail-value">${esc(intervalLabels[p.billing_cycle || p.interval] || p.billing_cycle || p.interval || '-')}</span></div>
                 <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${AccountsCommon.statusBadge(status)}</span></div>
                 <div class="detail-row"><span class="detail-label">Description</span><span class="detail-value">${esc(p.description || '-')}</span></div>
                 <div class="detail-row"><span class="detail-label">Created</span><span class="detail-value">${AccountsCommon.formatDate(p.created_at)}</span></div>
@@ -190,7 +191,8 @@ function editPlan(id) {
     document.getElementById('planName').value = plan.name || '';
     document.getElementById('planCode').value = plan.plan_code || plan.code || '';
     document.getElementById('planAmount').value = plan.amount ?? '';
-    document.getElementById('planInterval').value = plan.billing_type || plan.interval || '';
+    document.getElementById('planBillingType').value = plan.billing_type || 'subscription';
+    document.getElementById('planInterval').value = plan.billing_cycle || plan.interval || '';
     document.getElementById('planStatus').value = plan.is_active === false ? 'inactive' : (plan.status || 'active');
     document.getElementById('planDescription').value = plan.description || '';
     AccountsCommon.openModal('planModal');
@@ -210,7 +212,8 @@ async function savePlan() {
         return;
     }
 
-    const createPayload = { name, plan_code: code, amount, billing_type: interval, description };
+    const billingType = document.getElementById('planBillingType')?.value || 'subscription';
+    const createPayload = { name, plan_code: code, amount, billing_type: billingType, billing_cycle: interval, description };
     const updatePayload = { name, description, amount, is_active: status !== 'inactive' };
 
     try {

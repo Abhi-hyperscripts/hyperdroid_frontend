@@ -483,10 +483,11 @@
                     <div class="filters-bar">
                         <select id="ledgerTxnTypeFilter" class="form-control" style="max-width: 180px;" onchange="loadTaxLedger()">
                             <option value="">All Transactions</option>
-                            <option value="invoice">Invoice</option>
-                            <option value="payment">Payment</option>
-                            <option value="credit_note">Credit Note</option>
-                            <option value="debit_note">Debit Note</option>
+                            <option value="sales">Sales</option>
+                            <option value="purchase">Purchase</option>
+                            <option value="tds_deducted">TDS Deducted</option>
+                            <option value="tds_collected">TDS Collected</option>
+                            <option value="tcs_collected">TCS Collected</option>
                         </select>
                         <div class="form-group" style="margin-bottom:0;">
                             <input type="date" id="ledgerFrom" class="form-control" onchange="loadTaxLedger()">

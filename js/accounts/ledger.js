@@ -145,6 +145,8 @@ async function loadGlEntries() {
         if (fromDate) params.fromDate = fromDate;
         if (toDate) params.toDate = toDate;
         if (search) params.search = search;
+        const refType = document.getElementById('glRefTypeFilter')?.value;
+        if (refType) params.referenceType = refType;
 
         const url = AccountsCommon.buildUrl('gl', params);
         const res = await api.request(url, { _skipSpinner: true });
