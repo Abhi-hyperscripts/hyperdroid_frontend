@@ -202,8 +202,11 @@ function renderGlTable() {
             actions += `<button class="btn-icon" onclick="reverseGlEntry('${e.id}')" data-tooltip="Reverse">${reverseSvg}</button>`;
         }
 
+        const entryNum = (e.entry_number || e.gl_number || '-');
+        const entryNumDisplay = entryNum.length > 16 ? entryNum.substring(0, 14) + '...' : entryNum;
+
         return `<tr>
-            <td><code>${esc(e.entry_number || e.gl_number || '-')}</code></td>
+            <td data-tooltip="${esc(entryNum)}"><code>${esc(entryNumDisplay)}</code></td>
             <td>${fmtD(e.entry_date || e.date)}</td>
             <td>${esc(journalMap[e.journal_type_id] || e.journal_type_name || e.journal_type || '-')}</td>
             <td>${esc(e.description || '-')}</td>
@@ -679,14 +682,18 @@ function renderJournalEntriesTable(entries) {
     journalTypes.forEach(j => { journalMap[j.id] = j.name || j.journal_type_name || j.type; });
     const esc = AccountsCommon.escapeHtml, fmt = AccountsCommon.formatCurrency, fmtD = AccountsCommon.formatDate;
 
-    tbody.innerHTML = entries.map(e => `<tr>
-        <td><code>${esc(e.entry_number || e.gl_number || '-')}</code></td>
+    tbody.innerHTML = entries.map(e => {
+        const entryNum = (e.entry_number || e.gl_number || '-');
+        const entryNumDisplay = entryNum.length > 16 ? entryNum.substring(0, 14) + '...' : entryNum;
+        return `<tr>
+        <td data-tooltip="${esc(entryNum)}"><code>${esc(entryNumDisplay)}</code></td>
         <td>${esc(journalMap[e.journal_type_id] || e.journal_type || '-')}</td>
         <td>${fmtD(e.entry_date || e.date)}</td>
         <td>${esc(e.description || '-')}</td>
         <td class="text-right">${fmt(e.total_debit || e.total_amount || 0)}</td>
         <td>${AccountsCommon.statusBadge(e.status)}</td>
-    </tr>`).join('');
+    </tr>`;
+    }).join('');
 }
 
 // ============================================================================

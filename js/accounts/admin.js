@@ -180,7 +180,7 @@ function renderAuditLogs() {
             <td>${AccountsCommon.escapeHtml(l.entity_type || '-')}</td>
             <td><span class="badge ${actionBadge}">${AccountsCommon.escapeHtml(l.action || '-')}</span></td>
             <td>${AccountsCommon.escapeHtml(l.performed_by_name || l.user_name || (l.performed_by === 'system' ? 'System' : l.performed_by ? l.performed_by.substring(0, 8) + '...' : '-'))}</td>
-            <td><span title="${AccountsCommon.escapeHtml(JSON.stringify(l.details || ''))}">${AccountsCommon.escapeHtml(truncateStr(l.details_summary || JSON.stringify(l.details || '-'), 60))}</span>${trailLink}</td>
+            <td style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><span data-tooltip="${AccountsCommon.escapeHtml(typeof l.details === 'string' ? l.details : JSON.stringify(l.details || ''))}">${AccountsCommon.escapeHtml(truncateStr(l.details_summary || (typeof l.details === 'string' ? l.details : JSON.stringify(l.details || '-')), 60))}</span>${trailLink}</td>
         </tr>`;
     }).join('');
 }

@@ -168,7 +168,7 @@ function renderAccountTypes() {
         <tr>
             <td>${AccountsCommon.escapeHtml(t.name)}</td>
             <td><span class="badge ${t.normal_balance === 'debit' ? 'status-active' : 'status-pending'}">${AccountsCommon.escapeHtml(t.normal_balance || '-')}</span></td>
-            <td>${AccountsCommon.escapeHtml(t.normal_balance || '-')}</td>
+            <td class="actions-cell">-</td>
         </tr>
     `).join('');
 }

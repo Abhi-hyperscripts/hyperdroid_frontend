@@ -1736,3 +1736,48 @@ textarea.form-control {
         border-radius: 12px;
     }
 }
+
+/* Code elements in tables — theme-aware */
+.data-table code, .report-table code {
+    color: var(--brand-primary);
+    background: rgba(255,255,255,0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+
+/* Unified filter bar — match HRMS alignment */
+.accounts-filter-bar, .filter-bar, .filters-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.75rem 0;
+}
+
+.accounts-filter-bar .form-control,
+.filter-bar .form-control,
+.filters-row .form-control,
+.accounts-filter-bar select,
+.filter-bar select,
+.filters-row select {
+    height: 40px;
+    min-width: 140px;
+}
+
+.accounts-filter-bar input[type="text"],
+.filter-bar input[type="text"],
+.filters-row input[type="text"],
+.accounts-filter-bar input[type="search"],
+.filter-bar input[type="search"] {
+    height: 40px;
+}
+
+/* Stat card value overflow protection */
+.stat-card .stat-value {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: clamp(1rem, 2.5vw, 1.75rem);
+}

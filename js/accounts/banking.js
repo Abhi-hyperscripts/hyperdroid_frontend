@@ -78,8 +78,9 @@ async function loadInitialData() {
         updateBankAccountStats();
         renderBankAccountsTable();
 
-        // Load dashboard summary (supplementary - fail silently)
-        loadBankDashboard();
+        // Dashboard stats are already shown by updateBankAccountStats() above.
+        // loadBankDashboard() was duplicating the same info — disabled.
+        // loadBankDashboard();
     } catch (err) {
         console.error('[Banking] loadInitialData error:', err);
     }
