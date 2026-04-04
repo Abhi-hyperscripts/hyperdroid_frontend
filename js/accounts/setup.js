@@ -21,6 +21,8 @@ let journalTypes = [];
 let fiscalPeriods = [];
 let openingBalances = [];
 
+let activeFiscalYear = null;
+
 let currentPage = 1;
 const PAGE_SIZE = 50;
 
@@ -89,12 +91,28 @@ async function loadInitialData() {
             loadAccountTypes(),
             loadAccountGroups(),
             loadFiscalYears(),
-            loadJournalTypes()
+            loadJournalTypes(),
+            loadActiveFiscalYear()
         ]);
         // Accounts loaded after types/groups are available for filters
         await loadAccounts();
     } catch (err) {
         console.error('[Setup] loadInitialData error:', err);
+    }
+}
+
+// ============================================================================
+// ACTIVE FISCAL YEAR
+// ============================================================================
+
+async function loadActiveFiscalYear() {
+    try {
+        const url = AccountsCommon.buildUrl('fiscal/years/active');
+        const res = await api.request(url, { _skipSpinner: true });
+        activeFiscalYear = res || null;
+    } catch (err) {
+        console.warn('[Setup] No active fiscal year found:', err.message);
+        activeFiscalYear = null;
     }
 }
 
@@ -364,10 +382,11 @@ function renderAccounts() {
         const status = a.is_active === false ? 'inactive' : 'active';
         const balance = (a.current_balance ?? a.balance) != null ? AccountsCommon.formatCurrency(a.current_balance ?? a.balance) : '-';
 
+        const viewBtn = `<button class="btn-icon" onclick="viewAccountDetail('${a.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
         const actions = accountsRoles.isAdmin()
-            ? `<button class="btn-icon" onclick="editAccount('${a.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+            ? viewBtn + `<button class="btn-icon" onclick="editAccount('${a.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                ${a.is_active !== false ? `<button class="btn-icon danger" onclick="deactivateAccount('${a.id}')" data-tooltip="Deactivate"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>` : ''}`
-            : '-';
+            : viewBtn;
 
         return `<tr>
             <td><code>${AccountsCommon.escapeHtml(a.account_code || a.code || '-')}</code></td>
@@ -459,6 +478,71 @@ async function deactivateAccount(id) {
     } catch (err) {
         console.error('[Setup] deactivateAccount error:', err);
         Toast.error(err.message || 'Failed to deactivate account');
+    }
+}
+
+async function viewAccountDetail(id) {
+    try {
+        const url = AccountsCommon.buildUrl(`coa/${id}`);
+        const a = await api.request(url);
+
+        const typeMap = {};
+        accountTypes.forEach(t => { typeMap[t.id] = t.name; });
+        const groupMap = {};
+        accountGroups.forEach(g => { groupMap[g.id] = g.name; });
+
+        const parentName = a.parent_account_id
+            ? (accounts.find(x => x.id === a.parent_account_id)?.account_name || accounts.find(x => x.id === a.parent_account_id)?.name || a.parent_account_id)
+            : '-';
+
+        document.getElementById('acctDetailCode').textContent = a.account_code || a.code || '-';
+        document.getElementById('acctDetailName').textContent = a.account_name || a.name || '-';
+        document.getElementById('acctDetailType').textContent = typeMap[a.account_type_id] || a.account_type_name || '-';
+        document.getElementById('acctDetailGroup').textContent = groupMap[a.account_group_id] || a.account_group_name || '-';
+        document.getElementById('acctDetailParent').textContent = parentName;
+        document.getElementById('acctDetailNormalBalance').innerHTML = `<span class="badge ${a.normal_balance === 'debit' ? 'status-active' : 'status-pending'}">${AccountsCommon.escapeHtml(a.normal_balance || '-')}</span>`;
+        document.getElementById('acctDetailDescription').textContent = a.description || '-';
+        document.getElementById('acctDetailIsActive').innerHTML = a.is_active !== false ? '<span class="badge status-active">Active</span>' : '<span class="badge status-rejected">Inactive</span>';
+        document.getElementById('acctDetailBalance').textContent = (a.current_balance ?? a.balance) != null ? AccountsCommon.formatCurrency(a.current_balance ?? a.balance) : '-';
+        document.getElementById('acctDetailDirectPosting').innerHTML = a.allow_direct_posting !== false ? '<span class="badge status-active">Yes</span>' : '<span class="badge status-pending">No</span>';
+
+        AccountsCommon.openModal('accountDetailModal');
+    } catch (err) {
+        console.error('[Setup] viewAccountDetail error:', err);
+        Toast.error(err.message || 'Failed to load account detail');
+    }
+}
+
+function showImportModal() {
+    const fileInput = document.getElementById('importCsvFile');
+    if (fileInput) fileInput.value = '';
+    AccountsCommon.openModal('importAccountsModal');
+}
+
+async function importAccounts() {
+    const fileInput = document.getElementById('importCsvFile');
+    if (!fileInput || !fileInput.files.length) {
+        Toast.error('Please select a CSV file');
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const url = AccountsCommon.buildUrl('coa/import');
+        await api.request(url, {
+            method: 'POST',
+            body: formData,
+            _skipContentType: true
+        });
+        Toast.success('Accounts imported successfully');
+        AccountsCommon.closeModal('importAccountsModal');
+        await loadAccounts();
+    } catch (err) {
+        console.error('[Setup] importAccounts error:', err);
+        Toast.error(err.message || 'Failed to import accounts');
     }
 }
 
@@ -739,9 +823,9 @@ function renderFiscalYears() {
     tbody.innerHTML = fiscalYears.map(fy => {
         const status = fy.status || (fy.is_active ? 'active' : 'closed');
         const canClose = accountsRoles.isAdmin() && status !== 'closed';
-        const actions = canClose
-            ? `<button class="btn btn-sm btn-outline" onclick="closeFiscalYear('${fy.id}')">Close Year</button>`
-            : '<span class="text-secondary">-</span>';
+        const viewBtn = `<button class="btn-icon" onclick="viewFiscalYearDetail('${fy.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+        const closeBtn = canClose ? `<button class="btn btn-sm btn-outline" onclick="closeFiscalYear('${fy.id}')">Close Year</button>` : '';
+        const actions = viewBtn + closeBtn || viewBtn;
 
         return `<tr>
             <td>${AccountsCommon.escapeHtml(fy.name)}</td>
@@ -804,6 +888,27 @@ async function closeFiscalYear(id) {
     } catch (err) {
         console.error('[Setup] closeFiscalYear error:', err);
         Toast.error(err.message || 'Failed to close fiscal year');
+    }
+}
+
+async function viewFiscalYearDetail(id) {
+    try {
+        const url = AccountsCommon.buildUrl(`fiscal/years/${id}`);
+        const fy = await api.request(url);
+        const status = fy.status || (fy.is_active ? 'active' : 'closed');
+        const isClosed = fy.is_closed || fy.status === 'closed';
+
+        document.getElementById('fyDetailName').textContent = fy.name || '-';
+        document.getElementById('fyDetailStartDate').textContent = AccountsCommon.formatDate(fy.start_date);
+        document.getElementById('fyDetailEndDate').textContent = AccountsCommon.formatDate(fy.end_date);
+        document.getElementById('fyDetailIsActive').innerHTML = fy.is_active ? '<span class="badge status-active">Yes</span>' : '<span class="badge status-pending">No</span>';
+        document.getElementById('fyDetailIsClosed').innerHTML = isClosed ? '<span class="badge status-rejected">Yes</span>' : '<span class="badge status-active">No</span>';
+        document.getElementById('fyDetailCreatedAt').textContent = fy.created_at ? AccountsCommon.formatDate(fy.created_at) : '-';
+
+        AccountsCommon.openModal('fiscalYearDetailModal');
+    } catch (err) {
+        console.error('[Setup] viewFiscalYearDetail error:', err);
+        Toast.error(err.message || 'Failed to load fiscal year detail');
     }
 }
 
@@ -923,10 +1028,11 @@ function renderJournalTypes() {
     tbody.innerHTML = journalTypes.map(jt => {
         const isSystem = jt.is_system || jt.system || false;
         const canEdit = accountsRoles.isAdmin() && !isSystem;
+        const viewBtn = `<button class="btn-icon" onclick="viewJournalTypeDetail('${jt.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
         const actions = canEdit
-            ? `<button class="btn-icon" onclick="editJournalType('${jt.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+            ? viewBtn + `<button class="btn-icon" onclick="editJournalType('${jt.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                <button class="btn-icon danger" onclick="deleteJournalType('${jt.id}')" data-tooltip="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`
-            : '<span class="text-secondary">-</span>';
+            : viewBtn;
 
         return `<tr>
             <td><code>${AccountsCommon.escapeHtml(jt.code || '-')}</code></td>
@@ -996,6 +1102,25 @@ async function deleteJournalType(id) {
     } catch (err) {
         console.error('[Setup] deleteJournalType error:', err);
         Toast.error(err.message || 'Failed to delete journal type');
+    }
+}
+
+async function viewJournalTypeDetail(id) {
+    try {
+        const url = AccountsCommon.buildUrl(`journals/types/${id}`);
+        const jt = await api.request(url);
+        const isSystem = jt.is_system || jt.system || false;
+
+        document.getElementById('jtDetailCode').textContent = jt.code || '-';
+        document.getElementById('jtDetailName').textContent = jt.name || '-';
+        document.getElementById('jtDetailDescription').textContent = jt.description || '-';
+        document.getElementById('jtDetailIsSystem').innerHTML = isSystem ? '<span class="badge status-active">System</span>' : '<span class="badge status-pending">Custom</span>';
+        document.getElementById('jtDetailCreatedAt').textContent = jt.created_at ? AccountsCommon.formatDate(jt.created_at) : '-';
+
+        AccountsCommon.openModal('journalTypeDetailModal');
+    } catch (err) {
+        console.error('[Setup] viewJournalTypeDetail error:', err);
+        Toast.error(err.message || 'Failed to load journal type detail');
     }
 }
 
@@ -1071,24 +1196,30 @@ function initDropdowns() {
     // Opening balances fiscal year dropdown
     const obContainer = document.getElementById('obFiscalYearContainer');
     if (obContainer) {
+        const activeId = activeFiscalYear?.id || '';
         obFiscalYearDropdown = new SearchableDropdown(obContainer, {
             id: 'obFiscalYear',
             options: [{ value: '', label: 'Select Fiscal Year' }, ...fiscalYears.map(fy => ({ value: fy.id, label: fy.name }))],
             placeholder: 'Select Fiscal Year',
             compact: true,
+            value: activeId,
             onChange: () => loadOpeningBalances()
         });
+        if (activeId) loadOpeningBalances();
     }
 
     // Fiscal periods fiscal year dropdown
     const periodContainer = document.getElementById('periodFiscalYearContainer');
     if (periodContainer) {
+        const activeId = activeFiscalYear?.id || '';
         periodFiscalYearDropdown = new SearchableDropdown(periodContainer, {
             id: 'periodFiscalYear',
             options: [{ value: '', label: 'Select Fiscal Year' }, ...fiscalYears.map(fy => ({ value: fy.id, label: fy.name }))],
             placeholder: 'Select Fiscal Year',
             compact: true,
+            value: activeId,
             onChange: () => loadFiscalPeriods()
         });
+        if (activeId) loadFiscalPeriods();
     }
 }

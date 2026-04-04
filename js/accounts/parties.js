@@ -135,9 +135,11 @@ function renderVendorsTable() {
     tbody.innerHTML = filtered.map(v => {
         const statusClass = v.is_active !== false ? 'status-active' : 'status-rejected';
         const statusText = v.is_active !== false ? 'Active' : 'Inactive';
-        const actions = accountsRoles.isAdmin()
+        const viewBtn = `<button class="btn-icon" onclick="viewVendor('${v.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+        const editBtn = accountsRoles.isAdmin()
             ? `<button class="btn-icon" onclick="editVendor('${v.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`
-            : '-';
+            : '';
+        const actions = viewBtn + editBtn || '-';
         return `<tr>
             <td>${AccountsCommon.escapeHtml(v.vendor_code || v.code || '-')}</td>
             <td>${AccountsCommon.escapeHtml(v.name)}</td>
@@ -149,6 +151,93 @@ function renderVendorsTable() {
             <td class="actions-cell">${actions}</td>
         </tr>`;
     }).join('');
+}
+
+// ============================================================================
+// VENDOR DETAIL VIEW
+// ============================================================================
+
+async function viewVendor(id) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl(`vendors/${id}`));
+        const v = res?.data || res;
+        if (!v) { Toast.error('Vendor not found'); return; }
+
+        const esc = AccountsCommon.escapeHtml;
+        const fmt = AccountsCommon.formatCurrency;
+        const statusText = v.is_active !== false ? 'Active' : 'Inactive';
+
+        document.getElementById('partyDetailModalTitle').textContent = 'Vendor Details';
+        document.getElementById('partyDetailBody').innerHTML = `
+            <div class="detail-grid">
+                <div class="detail-row"><span class="detail-label">Vendor Code</span><span class="detail-value">${esc(v.vendor_code || v.code || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Name</span><span class="detail-value">${esc(v.name || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Display Name</span><span class="detail-value">${esc(v.display_name || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">${esc(v.email || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Phone</span><span class="detail-value">${esc(v.phone || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Tax ID</span><span class="detail-value">${esc(v.tax_id || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Payment Terms</span><span class="detail-value">${v.payment_terms_days != null ? v.payment_terms_days + ' days' : '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${statusText}</span></div>
+                <div class="detail-row"><span class="detail-label">Address Line 1</span><span class="detail-value">${esc(v.address_line1 || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Address Line 2</span><span class="detail-value">${esc(v.address_line2 || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">City</span><span class="detail-value">${esc(v.city || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">State</span><span class="detail-value">${esc(v.state || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">State Code</span><span class="detail-value">${esc(v.state_code || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Country</span><span class="detail-value">${esc(v.country || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Postal Code</span><span class="detail-value">${esc(v.postal_code || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Bank Name</span><span class="detail-value">${esc(v.bank_name || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Bank Account</span><span class="detail-value">${esc(v.bank_account_number || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Bank IFSC</span><span class="detail-value">${esc(v.bank_ifsc || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Bank SWIFT</span><span class="detail-value">${esc(v.bank_swift || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Notes</span><span class="detail-value">${esc(v.notes || '-')}</span></div>
+            </div>`;
+        AccountsCommon.openModal('partyDetailModal');
+    } catch (err) {
+        console.error('[Parties] viewVendor error:', err);
+        Toast.error('Failed to load vendor details');
+    }
+}
+
+// ============================================================================
+// CUSTOMER DETAIL VIEW
+// ============================================================================
+
+async function viewCustomer(id) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl(`customers/${id}`));
+        const c = res?.data || res;
+        if (!c) { Toast.error('Customer not found'); return; }
+
+        const esc = AccountsCommon.escapeHtml;
+        const fmt = AccountsCommon.formatCurrency;
+        const statusText = c.is_active !== false ? 'Active' : 'Inactive';
+
+        document.getElementById('partyDetailModalTitle').textContent = 'Customer Details';
+        document.getElementById('partyDetailBody').innerHTML = `
+            <div class="detail-grid">
+                <div class="detail-row"><span class="detail-label">Customer Code</span><span class="detail-value">${esc(c.customer_code || c.code || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Name</span><span class="detail-value">${esc(c.name || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Display Name</span><span class="detail-value">${esc(c.display_name || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">${esc(c.email || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Phone</span><span class="detail-value">${esc(c.phone || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Tax ID</span><span class="detail-value">${esc(c.tax_id || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Payment Terms</span><span class="detail-value">${c.payment_terms_days != null ? c.payment_terms_days + ' days' : '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">Credit Limit</span><span class="detail-value">${c.credit_limit != null ? fmt(c.credit_limit) : '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${statusText}</span></div>
+                <div class="detail-row"><span class="detail-label">Address Line 1</span><span class="detail-value">${esc(c.address_line1 || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Address Line 2</span><span class="detail-value">${esc(c.address_line2 || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">City</span><span class="detail-value">${esc(c.city || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">State</span><span class="detail-value">${esc(c.state || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">State Code</span><span class="detail-value">${esc(c.state_code || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Country</span><span class="detail-value">${esc(c.country || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Postal Code</span><span class="detail-value">${esc(c.postal_code || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Notes</span><span class="detail-value">${esc(c.notes || '-')}</span></div>
+            </div>`;
+        AccountsCommon.openModal('partyDetailModal');
+    } catch (err) {
+        console.error('[Parties] viewCustomer error:', err);
+        Toast.error('Failed to load customer details');
+    }
 }
 
 // ============================================================================
@@ -298,9 +387,11 @@ function renderCustomersTable() {
         const statusClass = c.is_active !== false ? 'status-active' : 'status-rejected';
         const statusText = c.is_active !== false ? 'Active' : 'Inactive';
         const creditDisplay = c.credit_limit != null ? AccountsCommon.formatCurrency(c.credit_limit) : '-';
-        const actions = accountsRoles.isAdmin()
+        const viewBtn = `<button class="btn-icon" onclick="viewCustomer('${c.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+        const editBtn = accountsRoles.isAdmin()
             ? `<button class="btn-icon" onclick="editCustomer('${c.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`
-            : '-';
+            : '';
+        const actions = viewBtn + editBtn || '-';
         return `<tr>
             <td>${AccountsCommon.escapeHtml(c.customer_code || c.code || '-')}</td>
             <td>${AccountsCommon.escapeHtml(c.name)}</td>

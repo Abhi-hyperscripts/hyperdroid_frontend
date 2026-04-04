@@ -473,6 +473,34 @@
         </div>
     </div>
 
+    <!-- Asset Detail Modal -->
+    <div class="glassmorphic-modal" id="assetDetailModal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assetDetailTitle">Asset Details</h5>
+                <button class="close-btn" onclick="AccountsCommon.closeModal('assetDetailModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <div class="modal-body" id="assetDetailBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('assetDetailModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Depreciation Schedule Modal -->
+    <div class="glassmorphic-modal" id="depScheduleModal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h5 class="modal-title" id="depScheduleTitle">Depreciation Schedule</h5>
+                <button class="close-btn" onclick="AccountsCommon.closeModal('depScheduleModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+            <div class="modal-body" id="depScheduleBody"></div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="AccountsCommon.closeModal('depScheduleModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>

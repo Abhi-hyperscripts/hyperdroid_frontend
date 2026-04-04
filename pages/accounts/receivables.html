@@ -183,6 +183,10 @@
                             </svg>
                             <input type="text" id="invoiceSearch" placeholder="Search invoices...">
                         </div>
+                        <button class="btn btn-outline" onclick="showBulkInvoiceModal()" data-admin-only>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            Bulk Import
+                        </button>
                         <button class="btn btn-primary" onclick="showCreateInvoiceModal()" data-admin-only>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -432,6 +436,44 @@
     <!-- ================================================================== -->
     <!-- MODALS -->
     <!-- ================================================================== -->
+
+    <!-- Bulk Invoice Import Modal -->
+    <div id="bulkInvoiceModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Bulk Import Invoices</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('bulkInvoiceModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="bulkInvoiceFile">Upload CSV File</label>
+                        <input type="file" id="bulkInvoiceFile" class="form-control" accept=".csv,.json" onchange="handleBulkInvoiceFileUpload(event)">
+                    </div>
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label for="bulkInvoiceData">Or Paste JSON Array</label>
+                        <textarea id="bulkInvoiceData" class="form-control" rows="10" placeholder='[
+  {
+    "customer_id": "...",
+    "invoice_date": "2026-04-01",
+    "due_date": "2026-04-30",
+    "lines": [
+      { "description": "Service", "quantity": 1, "unit_price": 500 }
+    ]
+  }
+]'></textarea>
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
+                        Paste a JSON array of invoices, or upload a CSV/JSON file. Each invoice must have customer_id, invoice_date, due_date, and lines.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('bulkInvoiceModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitBulkInvoices()">Import Invoices</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Customer Invoice Modal -->
     <div id="customerInvoiceModal" class="modal">

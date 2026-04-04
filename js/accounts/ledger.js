@@ -16,6 +16,7 @@ let coaAccounts = [];
 let glLines = [];
 let currentGlPage = 1;
 const GL_PAGE_SIZE = 50;
+let editingGlId = null;
 
 // Dropdown instances
 let glAccountFilterDropdown = null;
@@ -179,14 +180,20 @@ function renderGlTable() {
     const isAdmin = accountsRoles.isAdmin();
 
     const viewSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const editSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
     const postSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+    const lockSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+    const unlockSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>';
     const reverseSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
     const deleteSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 
     tbody.innerHTML = glEntries.map(e => {
         let actions = `<button class="btn-icon" onclick="viewGlEntry('${e.id}')" data-tooltip="View">${viewSvg}</button>`;
         if (isAdmin && e.status === 'draft') {
+            actions += `<button class="btn-icon" onclick="editGlEntry('${e.id}')" data-tooltip="Edit">${editSvg}</button>`;
             actions += `<button class="btn-icon" onclick="postGlEntry('${e.id}')" data-tooltip="Post">${postSvg}</button>`;
+            actions += `<button class="btn-icon" onclick="lockGlEntry('${e.id}')" data-tooltip="Lock">${lockSvg}</button>`;
+            actions += `<button class="btn-icon" onclick="unlockGlEntry('${e.id}')" data-tooltip="Unlock">${unlockSvg}</button>`;
             actions += `<button class="btn-icon danger" onclick="deleteGlEntry('${e.id}')" data-tooltip="Delete">${deleteSvg}</button>`;
         }
         if (isAdmin && e.status === 'posted' && !e.is_reversed && e.reference_type !== 'reversal') {
@@ -347,10 +354,102 @@ async function deleteGlEntry(id) {
 }
 
 // ============================================================================
+// GL ENTRY — EDIT DRAFT
+// ============================================================================
+
+async function editGlEntry(id) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl(`gl/${id}`));
+        const entry = res?.data || res;
+        if (!entry) { Toast.error('Entry not found'); return; }
+
+        // Switch to Create Entry tab (Tab 2)
+        const btn = document.querySelector('[data-tab="create-gl"]');
+        if (btn) btn.click();
+
+        // Wait a tick for the tab to render, then populate
+        await new Promise(r => setTimeout(r, 100));
+
+        editingGlId = id;
+
+        // Populate form fields
+        if (glJournalTypeDropdown && entry.journal_type_id) {
+            glJournalTypeDropdown.setValue(entry.journal_type_id);
+        }
+        const dateEl = document.getElementById('glEntryDate');
+        if (dateEl) dateEl.value = (entry.entry_date || entry.date || '').split('T')[0];
+        const descEl = document.getElementById('glDescription');
+        if (descEl) descEl.value = entry.description || '';
+
+        // Clear existing lines and populate from entry
+        clearGlLines();
+        const lines = entry.lines || entry.line_items || [];
+        if (lines.length) {
+            lines.forEach(l => {
+                addGlLine({
+                    account_id: l.account_id || '',
+                    description: l.description || '',
+                    debit: l.debit_amount || l.debit || 0,
+                    credit: l.credit_amount || l.credit || 0
+                });
+            });
+        } else {
+            addGlLine();
+            addGlLine();
+        }
+        calculateGlTotals();
+
+        // Update form title/button to indicate editing
+        const formTitle = document.getElementById('glFormTitle');
+        if (formTitle) formTitle.textContent = `Edit GL Entry: ${entry.entry_number || entry.gl_number || id}`;
+
+        Toast.info('Editing draft GL entry — make changes and save');
+    } catch (err) {
+        console.error('[Ledger] editGlEntry error:', err);
+        Toast.error(err.message || 'Failed to load entry for editing');
+    }
+}
+
+// ============================================================================
+// GL ENTRY — LOCK DRAFT
+// ============================================================================
+
+async function lockGlEntry(id) {
+    const ok = await Confirm.show({ title: 'Lock GL Entry', message: 'Lock this draft GL entry? It will not be editable until unlocked.', confirmText: 'Lock', type: 'warning' });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`gl/${id}/lock`), { method: 'POST' });
+        Toast.success('GL entry locked');
+        await loadGlEntries();
+    } catch (err) {
+        console.error('[Ledger] lockGlEntry error:', err);
+        Toast.error(err.message || 'Failed to lock GL entry');
+    }
+}
+
+// ============================================================================
+// GL ENTRY — UNLOCK DRAFT
+// ============================================================================
+
+async function unlockGlEntry(id) {
+    const ok = await Confirm.show({ title: 'Unlock GL Entry', message: 'Unlock this GL entry? It will become editable again.', confirmText: 'Unlock', type: 'warning' });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`gl/${id}/unlock`), { method: 'POST' });
+        Toast.success('GL entry unlocked');
+        await loadGlEntries();
+    } catch (err) {
+        console.error('[Ledger] unlockGlEntry error:', err);
+        Toast.error(err.message || 'Failed to unlock GL entry');
+    }
+}
+
+// ============================================================================
 // GL ENTRY — CREATE FORM (LINE ITEMS)
 // ============================================================================
 
 function resetGlForm() {
+    editingGlId = null;
     const form = document.getElementById('glForm');
     if (form) form.reset();
     document.getElementById('glEntryDate').value = new Date().toISOString().split('T')[0];
@@ -359,6 +458,8 @@ function resetGlForm() {
     addGlLine();
     addGlLine();
     calculateGlTotals();
+    const formTitle = document.getElementById('glFormTitle');
+    if (formTitle) formTitle.textContent = 'Create GL Entry';
 }
 
 function clearGlLines() {
@@ -510,14 +611,24 @@ async function saveGlEntry(post = false) {
     };
 
     try {
-        const created = await api.request(AccountsCommon.buildUrl('gl'), { method: 'POST', body: JSON.stringify(payload) });
-        if (post && created?.id) {
-            await api.request(AccountsCommon.buildUrl(`gl/${created.id}/post`), { method: 'POST' });
+        let saved;
+        if (editingGlId) {
+            saved = await api.request(AccountsCommon.buildUrl(`gl/${editingGlId}`), { method: 'PUT', body: JSON.stringify(payload) });
+            if (post) {
+                const entryId = saved?.id || editingGlId;
+                await api.request(AccountsCommon.buildUrl(`gl/${entryId}/post`), { method: 'POST' });
+            }
+            Toast.success(post ? 'GL entry updated and posted' : 'GL entry updated');
+        } else {
+            saved = await api.request(AccountsCommon.buildUrl('gl'), { method: 'POST', body: JSON.stringify(payload) });
+            if (post && saved?.id) {
+                await api.request(AccountsCommon.buildUrl(`gl/${saved.id}/post`), { method: 'POST' });
+            }
+            Toast.success(post ? 'GL entry created and posted' : 'GL entry saved as draft');
         }
-        Toast.success(post ? 'GL entry created and posted' : 'GL entry saved as draft');
         resetGlForm();
 
-        // Switch to GL entries tab to see the new entry
+        // Switch to GL entries tab to see the new/updated entry
         const btn = document.querySelector('[data-tab="gl-entries"]');
         if (btn) btn.click();
     } catch (err) {

@@ -284,6 +284,25 @@
     </div>
 
     <!-- ================================================================== -->
+    <!-- Party Detail Modal (shared for vendor/customer view) -->
+    <!-- ================================================================== -->
+    <div id="partyDetailModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="partyDetailModalTitle">Details</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('partyDetailModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body" id="partyDetailBody">
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('partyDetailModal')">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
     <!-- Vendor Modal -->
     <!-- ================================================================== -->
     <div id="vendorModal" class="modal">

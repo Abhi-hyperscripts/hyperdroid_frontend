@@ -232,6 +232,74 @@ function invoiceActions(inv) {
 }
 
 // ============================================================================
+// BULK INVOICE IMPORT
+// ============================================================================
+
+function showBulkInvoiceModal() {
+    document.getElementById('bulkInvoiceData').value = '';
+    const fileInput = document.getElementById('bulkInvoiceFile');
+    if (fileInput) fileInput.value = '';
+    AccountsCommon.openModal('bulkInvoiceModal');
+}
+
+function handleBulkInvoiceFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const content = e.target.result;
+        if (file.name.endsWith('.json')) {
+            document.getElementById('bulkInvoiceData').value = content;
+        } else if (file.name.endsWith('.csv')) {
+            try {
+                const lines = content.split('\n').filter(l => l.trim());
+                if (lines.length < 2) { Toast.error('CSV must have a header row and at least one data row'); return; }
+                const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+                const rows = lines.slice(1).map(line => {
+                    const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                    const obj = {};
+                    headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
+                    return obj;
+                });
+                document.getElementById('bulkInvoiceData').value = JSON.stringify(rows, null, 2);
+            } catch (csvErr) {
+                Toast.error('Failed to parse CSV file');
+            }
+        } else {
+            Toast.error('Unsupported file type. Use .json or .csv');
+        }
+    };
+    reader.readAsText(file);
+}
+
+async function submitBulkInvoices() {
+    const text = document.getElementById('bulkInvoiceData').value.trim();
+    if (!text) { Toast.error('Please paste invoice data or upload a file'); return; }
+    try {
+        const invoices = JSON.parse(text);
+        if (!Array.isArray(invoices)) { Toast.error('Data must be a JSON array'); return; }
+        if (!invoices.length) { Toast.error('Array is empty'); return; }
+        const res = await api.request(AccountsCommon.buildUrl('invoices/bulk'), {
+            method: 'POST',
+            body: JSON.stringify({ invoices }),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const created = res?.created || res?.success_count || invoices.length;
+        const failed = res?.failed || res?.error_count || 0;
+        if (failed > 0) {
+            Toast.warning(`${created} invoices created, ${failed} failed`);
+        } else {
+            Toast.success(`${created} invoices created successfully`);
+        }
+        AccountsCommon.closeModal('bulkInvoiceModal');
+        await loadCustomerInvoices();
+    } catch (err) {
+        console.error('[AR] submitBulkInvoices error:', err);
+        Toast.error(err.message || 'Failed to import invoices');
+    }
+}
+
+// ============================================================================
 // INVOICE MODAL & CRUD
 // ============================================================================
 

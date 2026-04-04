@@ -290,6 +290,7 @@
                             <input type="checkbox" id="showInactiveAccounts" onchange="loadAccounts()">
                             <span>Show Inactive</span>
                         </label>
+                        <button class="btn btn-outline" onclick="showImportModal()" data-admin-only><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Import</button>
                         <button class="btn btn-primary" onclick="showCreateAccountModal()" data-admin-only>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -814,6 +815,190 @@
                 <div class="modal-footer">
                     <button class="btn btn-outline" onclick="AccountsCommon.closeModal('journalTypeModal')">Cancel</button>
                     <button class="btn btn-primary" onclick="saveJournalType()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fiscal Year Detail Modal -->
+    <div id="fiscalYearDetailModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Fiscal Year Detail</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('fiscalYearDetailModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Name</label>
+                            <div class="form-value" id="fyDetailName">-</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Created At</label>
+                            <div class="form-value" id="fyDetailCreatedAt">-</div>
+                        </div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Start Date</label>
+                            <div class="form-value" id="fyDetailStartDate">-</div>
+                        </div>
+                        <div class="form-group">
+                            <label>End Date</label>
+                            <div class="form-value" id="fyDetailEndDate">-</div>
+                        </div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Active</label>
+                            <div class="form-value" id="fyDetailIsActive">-</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Closed</label>
+                            <div class="form-value" id="fyDetailIsClosed">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('fiscalYearDetailModal')">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Detail Modal -->
+    <div id="accountDetailModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Account Detail</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('accountDetailModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Account Code</label>
+                            <div class="form-value" id="acctDetailCode">-</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Account Name</label>
+                            <div class="form-value" id="acctDetailName">-</div>
+                        </div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Account Type</label>
+                            <div class="form-value" id="acctDetailType">-</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Account Group</label>
+                            <div class="form-value" id="acctDetailGroup">-</div>
+                        </div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Parent Account</label>
+                            <div class="form-value" id="acctDetailParent">-</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Normal Balance</label>
+                            <div class="form-value" id="acctDetailNormalBalance">-</div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Description</label>
+                            <div class="form-value" id="acctDetailDescription">-</div>
+                        </div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Status</label>
+                            <div class="form-value" id="acctDetailIsActive">-</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Current Balance</label>
+                            <div class="form-value" id="acctDetailBalance">-</div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Allow Direct Posting</label>
+                            <div class="form-value" id="acctDetailDirectPosting">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('accountDetailModal')">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Accounts Modal -->
+    <div id="importAccountsModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Accounts (CSV)</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('importAccountsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="importCsvFile">Select CSV File *</label>
+                        <input type="file" id="importCsvFile" class="form-control" accept=".csv">
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">
+                        Upload a CSV file containing account data. The file should include columns for code, name, type, group, and normal balance.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('importAccountsModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="importAccounts()">Import</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Journal Type Detail Modal -->
+    <div id="journalTypeDetailModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Journal Type Detail</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('journalTypeDetailModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Code</label>
+                            <div class="form-value" id="jtDetailCode">-</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Name</label>
+                            <div class="form-value" id="jtDetailName">-</div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Description</label>
+                            <div class="form-value" id="jtDetailDescription">-</div>
+                        </div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <div class="form-value" id="jtDetailIsSystem">-</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Created At</label>
+                            <div class="form-value" id="jtDetailCreatedAt">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('journalTypeDetailModal')">Close</button>
                 </div>
             </div>
         </div>

@@ -1,8 +1,8 @@
 # Accounts Module — Backend vs Frontend API Gap Analysis
 
-**Generated:** 2026-04-04
-**Backend Endpoints:** 167 | **Frontend Implemented:** 139 | **Not Implemented:** 28
-**Coverage:** 83%
+**Generated:** 2026-04-04 | **Updated:** 2026-04-04
+**Backend Endpoints:** 169 | **Frontend Implemented:** 166 | **Not Implemented:** 3 (webhooks + health)
+**Coverage:** 98%
 
 ---
 
@@ -19,7 +19,7 @@
 
 | Controller | Route | Method | Frontend Page | Implemented |
 |-----------|-------|--------|---------------|-------------|
-| HealthController | `/api/health` | GET | - | FALSE |
+| HealthController | `/api/health` | GET | - | FALSE (server infra) |
 
 ---
 
@@ -28,8 +28,8 @@
 | Controller | Route | Method | Frontend Page | Implemented |
 |-----------|-------|--------|---------------|-------------|
 | FiscalController | `/fiscal/years` | GET | setup.js, reports.js, admin.js | TRUE |
-| FiscalController | `/fiscal/years/active` | GET | - | FALSE |
-| FiscalController | `/fiscal/years/{id}` | GET | - | FALSE |
+| FiscalController | `/fiscal/years/active` | GET | setup.js | TRUE |
+| FiscalController | `/fiscal/years/{id}` | GET | setup.js | TRUE |
 | FiscalController | `/fiscal/years` | POST | setup.js | TRUE |
 | FiscalController | `/fiscal/periods` | GET | setup.js | TRUE |
 | FiscalController | `/fiscal/periods/{id}/lock` | POST | setup.js | TRUE |
@@ -43,7 +43,7 @@
 | Controller | Route | Method | Frontend Page | Implemented |
 |-----------|-------|--------|---------------|-------------|
 | VendorsController | `/vendors` | GET | parties.js, payables.js | TRUE |
-| VendorsController | `/vendors/{id}` | GET | - | FALSE |
+| VendorsController | `/vendors/{id}` | GET | parties.js | TRUE |
 | VendorsController | `/vendors` | POST | parties.js | TRUE |
 | VendorsController | `/vendors/{id}` | PUT | parties.js | TRUE |
 
@@ -54,7 +54,7 @@
 | Controller | Route | Method | Frontend Page | Implemented |
 |-----------|-------|--------|---------------|-------------|
 | CustomersController | `/customers` | GET | parties.js, receivables.js | TRUE |
-| CustomersController | `/customers/{id}` | GET | - | FALSE |
+| CustomersController | `/customers/{id}` | GET | parties.js | TRUE |
 | CustomersController | `/customers` | POST | parties.js | TRUE |
 | CustomersController | `/customers/{id}` | PUT | parties.js | TRUE |
 
@@ -70,14 +70,14 @@
 | ChartOfAccountsController | `/coa/groups/{id}` | PUT | setup.js | TRUE |
 | ChartOfAccountsController | `/coa` | GET | setup.js, reports.js, ledger.js, expenses.js, assets.js, taxation.js, payables.js, receivables.js | TRUE |
 | ChartOfAccountsController | `/coa/tree` | GET | setup.js | TRUE |
-| ChartOfAccountsController | `/coa/{id}` | GET | - | FALSE |
+| ChartOfAccountsController | `/coa/{id}` | GET | setup.js | TRUE |
 | ChartOfAccountsController | `/coa` | POST | setup.js | TRUE |
 | ChartOfAccountsController | `/coa/{id}` | PUT | setup.js | TRUE |
 | ChartOfAccountsController | `/coa/{id}` | DELETE | setup.js | TRUE |
 | ChartOfAccountsController | `/coa/opening-balances` | POST | setup.js | TRUE |
 | ChartOfAccountsController | `/coa/balances` | GET | setup.js | TRUE |
 | ChartOfAccountsController | `/coa/setup-template` | POST | setup.js | TRUE |
-| ChartOfAccountsController | `/coa/import` | POST | - | FALSE |
+| ChartOfAccountsController | `/coa/import` | POST | setup.js | TRUE |
 
 ---
 
@@ -88,10 +88,10 @@
 | GeneralLedgerController | `/gl` | GET | ledger.js, dashboard.js | TRUE |
 | GeneralLedgerController | `/gl/{id}` | GET | ledger.js | TRUE |
 | GeneralLedgerController | `/gl` | POST | ledger.js | TRUE |
-| GeneralLedgerController | `/gl/{id}` | PUT | - | FALSE |
+| GeneralLedgerController | `/gl/{id}` | PUT | ledger.js | TRUE |
 | GeneralLedgerController | `/gl/{id}` | DELETE | ledger.js | TRUE |
-| GeneralLedgerController | `/gl/{id}/lock` | POST | - | FALSE |
-| GeneralLedgerController | `/gl/{id}/unlock` | POST | - | FALSE |
+| GeneralLedgerController | `/gl/{id}/lock` | POST | ledger.js | TRUE |
+| GeneralLedgerController | `/gl/{id}/unlock` | POST | ledger.js | TRUE |
 | GeneralLedgerController | `/gl/{id}/post` | POST | ledger.js | TRUE |
 | GeneralLedgerController | `/gl/{id}/reverse` | POST | ledger.js | TRUE |
 
@@ -102,7 +102,7 @@
 | Controller | Route | Method | Frontend Page | Implemented |
 |-----------|-------|--------|---------------|-------------|
 | JournalsController | `/journals/types` | GET | ledger.js, setup.js | TRUE |
-| JournalsController | `/journals/types/{id}` | GET | - | FALSE |
+| JournalsController | `/journals/types/{id}` | GET | setup.js | TRUE |
 | JournalsController | `/journals/types` | POST | setup.js | TRUE |
 | JournalsController | `/journals/types/{id}` | PUT | setup.js | TRUE |
 | JournalsController | `/journals/entries` | GET | ledger.js | TRUE |
@@ -123,7 +123,7 @@
 | VendorBillsController | `/vendor-bills/payments` | GET | payables.js | TRUE |
 | VendorBillsController | `/vendor-bills/aging` | GET | payables.js | TRUE |
 | VendorBillsController | `/vendor-bills/vendors/{vendorId}/statement` | GET | payables.js | TRUE |
-| VendorBillsController | `/vendor-bills/bulk` | POST | - | FALSE |
+| VendorBillsController | `/vendor-bills/bulk` | POST | payables.js | TRUE |
 
 ---
 
@@ -143,7 +143,7 @@
 | CustomerInvoicesController | `/invoices/customers/{customerId}/statement` | GET | receivables.js | TRUE |
 | CustomerInvoicesController | `/invoices/credit-notes` | POST | receivables.js | TRUE |
 | CustomerInvoicesController | `/invoices/credit-notes` | GET | receivables.js | TRUE |
-| CustomerInvoicesController | `/invoices/bulk` | POST | - | FALSE |
+| CustomerInvoicesController | `/invoices/bulk` | POST | receivables.js | TRUE |
 
 ---
 
@@ -163,9 +163,9 @@
 | BankController | `/bank/reconciliations` | POST | banking.js | TRUE |
 | BankController | `/bank/reconciliations/{id}` | PUT | banking.js | TRUE |
 | BankController | `/bank/reconciliations/{id}/complete` | POST | banking.js | TRUE |
-| BankController | `/bank/dashboard` | GET | - | FALSE |
-| BankController | `/bank/webhooks/razorpay` | POST | - | FALSE |
-| BankController | `/bank/webhooks/stripe` | POST | - | FALSE |
+| BankController | `/bank/dashboard` | GET | banking.js | TRUE |
+| BankController | `/bank/webhooks/razorpay` | POST | - | FALSE (server webhook) |
+| BankController | `/bank/webhooks/stripe` | POST | - | FALSE (server webhook) |
 
 ---
 
@@ -210,7 +210,7 @@
 | Controller | Route | Method | Frontend Page | Implemented |
 |-----------|-------|--------|---------------|-------------|
 | TaxationController | `/tax/configurations` | GET | taxation.js | TRUE |
-| TaxationController | `/tax/configurations/{id}` | GET | - | FALSE |
+| TaxationController | `/tax/configurations/{id}` | GET | taxation.js | TRUE |
 | TaxationController | `/tax/configurations` | POST | taxation.js | TRUE |
 | TaxationController | `/tax/configurations/{id}` | PUT | taxation.js | TRUE |
 | TaxationController | `/tax/configurations/{id}` | DELETE | taxation.js | TRUE |
@@ -240,10 +240,10 @@
 | FixedAssetsController | `/assets/categories/{id}` | PUT | assets.js | TRUE |
 | FixedAssetsController | `/assets/categories/{id}` | DELETE | assets.js | TRUE |
 | FixedAssetsController | `/assets` | GET | assets.js | TRUE |
-| FixedAssetsController | `/assets/{id}` | GET | - | FALSE |
+| FixedAssetsController | `/assets/{id}` | GET | assets.js | TRUE |
 | FixedAssetsController | `/assets` | POST | assets.js | TRUE |
 | FixedAssetsController | `/assets/{id}` | PUT | assets.js | TRUE |
-| FixedAssetsController | `/assets/{id}/depreciation` | GET | - | FALSE |
+| FixedAssetsController | `/assets/{id}/depreciation` | GET | assets.js | TRUE |
 | FixedAssetsController | `/assets/run-depreciation` | POST | assets.js | TRUE |
 | FixedAssetsController | `/assets/{id}/dispose` | POST | assets.js | TRUE |
 
@@ -254,15 +254,15 @@
 | Controller | Route | Method | Frontend Page | Implemented |
 |-----------|-------|--------|---------------|-------------|
 | BillingController | `/billing/plans` | GET | billing.js | TRUE |
-| BillingController | `/billing/plans/{id}` | GET | - | FALSE |
+| BillingController | `/billing/plans/{id}` | GET | billing.js | TRUE |
 | BillingController | `/billing/plans` | POST | billing.js | TRUE |
 | BillingController | `/billing/plans/{id}` | PUT | billing.js | TRUE |
 | BillingController | `/billing/plans/{id}` | DELETE | billing.js | TRUE |
 | BillingController | `/billing/subscriptions` | GET | billing.js | TRUE |
-| BillingController | `/billing/subscriptions/{id}` | GET | - | FALSE |
+| BillingController | `/billing/subscriptions/{id}` | GET | billing.js | TRUE |
 | BillingController | `/billing/subscriptions` | POST | billing.js | TRUE |
 | BillingController | `/billing/subscriptions/{id}/cancel` | POST | billing.js | TRUE |
-| BillingController | `/billing/generate-invoices` | POST | - | FALSE |
+| BillingController | `/billing/generate-invoices` | POST | billing.js | TRUE |
 | BillingController | `/billing/usage-meters` | GET | billing.js | TRUE |
 | BillingController | `/billing/usage-meters` | POST | billing.js | TRUE |
 | BillingController | `/billing/usage-meters/{id}` | PUT | billing.js | TRUE |
@@ -279,7 +279,7 @@
 | Controller | Route | Method | Frontend Page | Implemented |
 |-----------|-------|--------|---------------|-------------|
 | AuditController | `/audit/logs` | GET | admin.js | TRUE |
-| AuditController | `/audit/logs/{entityType}/{entityId}` | GET | - | FALSE |
+| AuditController | `/audit/logs/{entityType}/{entityId}` | GET | admin.js | TRUE |
 | AuditController | `/audit/approvals/pending` | GET | admin.js, dashboard.js | TRUE |
 | AuditController | `/audit/export` | POST | admin.js | TRUE |
 
@@ -292,7 +292,7 @@
 | SystemController | `/system/integrity-check` | POST | admin.js | TRUE |
 | SystemController | `/system/gl-summary` | GET | dashboard.js | TRUE |
 | SystemController | `/system/recompute-balances` | POST | admin.js | TRUE |
-| SystemController | `/system/integrity-check/results` | GET | - | FALSE |
+| SystemController | `/system/integrity-check/results` | GET | admin.js | TRUE |
 | SystemController | `/system/job-log` | GET | admin.js | TRUE |
 
 ---
@@ -304,44 +304,19 @@
 | ClosingController | `/closing/checklists` | GET | admin.js | TRUE |
 | ClosingController | `/closing/checklists` | POST | admin.js | TRUE |
 | ClosingController | `/closing/checklists/{id}` | GET | admin.js | TRUE |
-| ClosingController | `/closing/checklists/{id}/items/{itemId}/complete` | POST | - | FALSE |
-| ClosingController | `/closing/checklists/{id}/complete` | POST | - | FALSE |
+| ClosingController | `/closing/checklists/{id}/items/{itemId}/complete` | POST | admin.js | TRUE |
+| ClosingController | `/closing/checklists/{id}/complete` | POST | admin.js | TRUE |
 | ClosingController | `/closing/year-end/{fiscalYearId}` | POST | admin.js | TRUE |
 
 ---
 
-## Summary: Unimplemented Endpoints (28)
+## Summary: Unimplemented Endpoints (3 — server-side only)
 
 | # | Controller | Route | Method | Reason |
 |---|-----------|-------|--------|--------|
-| 1 | HealthController | `/api/health` | GET | Infrastructure, not user-facing |
-| 2 | FiscalController | `/fiscal/years/active` | GET | Not needed — full list fetched |
-| 3 | FiscalController | `/fiscal/years/{id}` | GET | Not needed — full list fetched |
-| 4 | VendorsController | `/vendors/{id}` | GET | Not needed — full list fetched |
-| 5 | CustomersController | `/customers/{id}` | GET | Not needed — full list fetched |
-| 6 | ChartOfAccountsController | `/coa/{id}` | GET | Not needed — full list fetched |
-| 7 | ChartOfAccountsController | `/coa/import` | POST | Phase 2 feature |
-| 8 | GeneralLedgerController | `/gl/{id}` | PUT | Edit draft GL — not exposed in UI |
-| 9 | GeneralLedgerController | `/gl/{id}/lock` | POST | Lock/unlock draft — not exposed in UI |
-| 10 | GeneralLedgerController | `/gl/{id}/unlock` | POST | Lock/unlock draft — not exposed in UI |
-| 11 | JournalsController | `/journals/types/{id}` | GET | Not needed — full list fetched |
-| 12 | VendorBillsController | `/vendor-bills/bulk` | POST | Bulk operations — Phase 2 |
-| 13 | CustomerInvoicesController | `/invoices/bulk` | POST | Bulk operations — Phase 2 |
-| 14 | BankController | `/bank/dashboard` | GET | Separate banking dashboard — not used |
-| 15 | BankController | `/bank/webhooks/razorpay` | POST | Server-to-server webhook |
-| 16 | BankController | `/bank/webhooks/stripe` | POST | Server-to-server webhook |
-| 17 | TaxationController | `/tax/configurations/{id}` | GET | Not needed — full list fetched |
-| 18 | FixedAssetsController | `/assets/{id}` | GET | Not needed — full list fetched |
-| 19 | FixedAssetsController | `/assets/{id}/depreciation` | GET | Per-asset depreciation schedule — Phase 2 |
-| 20 | BillingController | `/billing/plans/{id}` | GET | Not needed — full list fetched |
-| 21 | BillingController | `/billing/subscriptions/{id}` | GET | Not needed — full list fetched |
-| 22 | BillingController | `/billing/generate-invoices` | POST | Admin-only batch operation — Phase 2 |
-| 23 | AuditController | `/audit/logs/{entityType}/{entityId}` | GET | Entity-specific trail — Phase 2 |
-| 24 | SystemController | `/system/integrity-check/results` | GET | Results shown inline after POST |
-| 25 | ClosingController | `/closing/checklists/{id}/items/{itemId}/complete` | POST | Granular checklist item completion — Phase 2 |
-| 26 | ClosingController | `/closing/checklists/{id}/complete` | POST | Full checklist completion — Phase 2 |
-| 27 | FiscalController | `/fiscal/years` | PUT | Edit fiscal year — not exposed |
-| 28 | FiscalController | `/fiscal/periods` | POST | Create period — auto-created with FY |
+| 1 | HealthController | `/api/health` | GET | Infrastructure health check — not user-facing |
+| 2 | BankController | `/bank/webhooks/razorpay` | POST | Server-to-server payment webhook |
+| 3 | BankController | `/bank/webhooks/stripe` | POST | Server-to-server payment webhook |
 
 ---
 
@@ -349,22 +324,24 @@
 
 | Controller | Total Endpoints | Implemented | Coverage |
 |-----------|:-:|:-:|:-:|
-| FiscalController | 8 | 6 | 75% |
-| VendorsController | 4 | 3 | 75% |
-| CustomersController | 4 | 3 | 75% |
-| ChartOfAccountsController | 14 | 12 | 86% |
-| GeneralLedgerController | 9 | 6 | 67% |
-| JournalsController | 5 | 4 | 80% |
-| VendorBillsController | 11 | 10 | 91% |
-| CustomerInvoicesController | 13 | 12 | 92% |
-| BankController | 15 | 12 | 80% |
+| FiscalController | 8 | 8 | **100%** |
+| VendorsController | 4 | 4 | **100%** |
+| CustomersController | 4 | 4 | **100%** |
+| ChartOfAccountsController | 14 | 14 | **100%** |
+| GeneralLedgerController | 9 | 9 | **100%** |
+| JournalsController | 5 | 5 | **100%** |
+| VendorBillsController | 11 | 11 | **100%** |
+| CustomerInvoicesController | 13 | 13 | **100%** |
+| BankController | 15 | 13 | 87% |
 | ExpenseController | 12 | 12 | **100%** |
 | ReportsController | 10 | 10 | **100%** |
-| TaxationController | 19 | 18 | 95% |
-| FixedAssetsController | 11 | 9 | 82% |
-| BillingController | 18 | 15 | 83% |
-| AuditController | 4 | 3 | 75% |
-| SystemController | 5 | 4 | 80% |
-| ClosingController | 6 | 4 | 67% |
+| TaxationController | 19 | 19 | **100%** |
+| FixedAssetsController | 11 | 11 | **100%** |
+| BillingController | 18 | 18 | **100%** |
+| AuditController | 4 | 4 | **100%** |
+| SystemController | 5 | 5 | **100%** |
+| ClosingController | 6 | 6 | **100%** |
 | HealthController | 1 | 0 | 0% |
-| **TOTAL** | **169** | **143** | **85%** |
+| **TOTAL** | **169** | **166** | **98%** |
+
+> The 3 unimplemented endpoints are server-to-server webhooks and infrastructure health check — not applicable to frontend.

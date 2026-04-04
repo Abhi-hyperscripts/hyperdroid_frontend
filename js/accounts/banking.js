@@ -77,8 +77,50 @@ async function loadInitialData() {
 
         updateBankAccountStats();
         renderBankAccountsTable();
+
+        // Load dashboard summary (supplementary - fail silently)
+        loadBankDashboard();
     } catch (err) {
         console.error('[Banking] loadInitialData error:', err);
+    }
+}
+
+async function loadBankDashboard() {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('bank/dashboard'), { _skipSpinner: true });
+        const dashboard = res?.data || res;
+        if (!dashboard) return;
+
+        const container = document.getElementById('bankDashboardStats');
+        if (!container) return;
+
+        const fmt = AccountsCommon.formatCurrency;
+        const totalBalance = dashboard.total_balance ?? dashboard.totalBalance;
+        const accountCount = dashboard.account_count ?? dashboard.accountCount ?? bankAccountsList.length;
+        const totalDeposits = dashboard.total_deposits ?? dashboard.totalDeposits;
+        const totalWithdrawals = dashboard.total_withdrawals ?? dashboard.totalWithdrawals;
+
+        let statsHtml = '';
+        if (totalBalance != null) {
+            statsHtml += `<div class="stat-card"><div class="stat-value">${fmt(totalBalance)}</div><div class="stat-label">Total Balance</div></div>`;
+        }
+        if (accountCount != null) {
+            statsHtml += `<div class="stat-card"><div class="stat-value">${accountCount}</div><div class="stat-label">Accounts</div></div>`;
+        }
+        if (totalDeposits != null) {
+            statsHtml += `<div class="stat-card"><div class="stat-value">${fmt(totalDeposits)}</div><div class="stat-label">Total Deposits</div></div>`;
+        }
+        if (totalWithdrawals != null) {
+            statsHtml += `<div class="stat-card"><div class="stat-value">${fmt(totalWithdrawals)}</div><div class="stat-label">Total Withdrawals</div></div>`;
+        }
+
+        if (statsHtml) {
+            container.innerHTML = statsHtml;
+            container.style.display = '';
+        }
+    } catch (err) {
+        // Silently ignore - dashboard data is supplementary
+        console.debug('[Banking] loadBankDashboard not available:', err.message);
     }
 }
 

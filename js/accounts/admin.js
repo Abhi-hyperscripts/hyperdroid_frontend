@@ -170,12 +170,16 @@ function renderAuditLogs() {
             : l.action === 'delete' ? 'status-rejected'
             : 'status-pending';
 
+        const trailLink = l.entity_id && l.entity_type
+            ? `<a href="#" class="btn-link" onclick="event.preventDefault(); viewEntityAudit('${AccountsCommon.escapeHtml(l.entity_type)}', '${AccountsCommon.escapeHtml(l.entity_id)}')" style="margin-left: 0.5rem; font-size: 0.8rem;">View Trail</a>`
+            : '';
+
         return `<tr>
             <td>${AccountsCommon.formatDate(l.timestamp || l.created_at, true)}</td>
             <td>${AccountsCommon.escapeHtml(l.entity_type || '-')}</td>
             <td><span class="badge ${actionBadge}">${AccountsCommon.escapeHtml(l.action || '-')}</span></td>
             <td>${AccountsCommon.escapeHtml(l.performed_by || l.user_name || '-')}</td>
-            <td><span title="${AccountsCommon.escapeHtml(JSON.stringify(l.details || ''))}">${AccountsCommon.escapeHtml(truncateStr(l.details_summary || JSON.stringify(l.details || '-'), 60))}</span></td>
+            <td><span title="${AccountsCommon.escapeHtml(JSON.stringify(l.details || ''))}">${AccountsCommon.escapeHtml(truncateStr(l.details_summary || JSON.stringify(l.details || '-'), 60))}</span>${trailLink}</td>
         </tr>`;
     }).join('');
 }
@@ -183,6 +187,50 @@ function renderAuditLogs() {
 function truncateStr(str, max) {
     if (!str || typeof str !== 'string') return '-';
     return str.length > max ? str.substring(0, max) + '...' : str;
+}
+
+async function viewEntityAudit(entityType, entityId) {
+    const body = document.getElementById('entityAuditBody');
+    if (!body) return;
+
+    body.innerHTML = `<div class="empty-message"><p>Loading audit trail...</p></div>`;
+    AccountsCommon.openModal('entityAuditModal');
+
+    try {
+        const url = AccountsCommon.buildUrl(`audit/logs/${encodeURIComponent(entityType)}/${encodeURIComponent(entityId)}`);
+        const res = await api.request(url, { _skipSpinner: true });
+        const logs = Array.isArray(res) ? res : (res?.data || res?.items || []);
+
+        if (!logs.length) {
+            body.innerHTML = `<div class="empty-message"><p>No audit trail found for this entity.</p></div>`;
+            return;
+        }
+
+        body.innerHTML = `
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                ${AccountsCommon.escapeHtml(entityType)} &bull; ID: ${AccountsCommon.escapeHtml(entityId)}
+            </p>
+            <div class="entity-audit-timeline">
+                ${logs.map(l => `
+                    <div class="audit-timeline-item" style="display: flex; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border-primary);">
+                        <div style="min-width: 140px; color: var(--text-secondary); font-size: 0.85rem;">
+                            ${AccountsCommon.formatDate(l.timestamp || l.created_at, true)}
+                        </div>
+                        <div style="flex: 1;">
+                            <span class="badge ${l.action === 'create' ? 'status-active' : l.action === 'delete' ? 'status-rejected' : 'status-pending'}">${AccountsCommon.escapeHtml(l.action || '-')}</span>
+                            <span style="margin-left: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">by ${AccountsCommon.escapeHtml(l.performed_by || l.user_name || '-')}</span>
+                            <div style="margin-top: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);">
+                                ${AccountsCommon.escapeHtml(l.details_summary || JSON.stringify(l.details || '-'))}
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>`;
+    } catch (err) {
+        console.error('[Admin] viewEntityAudit error:', err);
+        body.innerHTML = `<div class="empty-message"><p>Failed to load audit trail.</p></div>`;
+        Toast.error(err.message || 'Failed to load entity audit trail');
+    }
 }
 
 async function exportAuditLogs() {
@@ -361,6 +409,41 @@ async function runIntegrityCheck() {
     }
 }
 
+async function loadIntegrityCheckResults() {
+    const resultsContainer = document.getElementById('integrityResults');
+    if (!resultsContainer) return;
+
+    resultsContainer.innerHTML = `<div class="empty-message"><p>Loading previous results...</p></div>`;
+
+    try {
+        const url = AccountsCommon.buildUrl('system/integrity-check/results');
+        const res = await api.request(url, { _skipSpinner: true });
+        const results = Array.isArray(res) ? res : (res?.data || res?.items || []);
+
+        if (!results.length) {
+            resultsContainer.innerHTML = `<div class="empty-message"><p>No previous integrity check results found.</p></div>`;
+            return;
+        }
+
+        resultsContainer.innerHTML = `<div class="data-table-container"><table class="data-table">
+            <thead><tr><th>Run Date</th><th>Check</th><th>Status</th><th>Details</th></tr></thead>
+            <tbody>${results.map(r => {
+                const checks = r.checks || [r];
+                return checks.map(c => `<tr>
+                    <td>${AccountsCommon.formatDate(r.run_date || r.timestamp || r.created_at, true)}</td>
+                    <td>${AccountsCommon.escapeHtml(c.name || c.check || '-')}</td>
+                    <td><span class="badge ${c.passed ? 'status-active' : 'status-rejected'}">${c.passed ? 'PASS' : 'FAIL'}</span></td>
+                    <td>${AccountsCommon.escapeHtml(c.details || c.message || '-')}</td>
+                </tr>`).join('');
+            }).join('')}</tbody>
+        </table></div>`;
+    } catch (err) {
+        console.error('[Admin] loadIntegrityCheckResults error:', err);
+        Toast.error(err.message || 'Failed to load previous results');
+        resultsContainer.innerHTML = `<div class="empty-message"><p>Failed to load previous results.</p></div>`;
+    }
+}
+
 async function recomputeBalances() {
     const ok = await Confirm.show({ title: 'Recompute Balances', message: 'This will recompute all account balances from journal entries. This may take a while. Continue?', confirmText: 'Continue', type: 'warning' });
     if (!ok) return;
@@ -532,24 +615,99 @@ async function saveChecklist() {
 }
 
 async function viewChecklist(id) {
-    // For now, just open the checklist detail. Could expand to show items.
+    const body = document.getElementById('checklistDetailBody');
+    if (!body) return;
+
+    body.innerHTML = `<div class="empty-message"><p>Loading checklist...</p></div>`;
+    AccountsCommon.openModal('checklistDetailModal');
+
     try {
         const url = AccountsCommon.buildUrl(`closing/checklists/${id}`);
         const res = await api.request(url, { _skipSpinner: true });
         const checklist = res?.data || res;
         const items = checklist?.items || [];
 
+        // Update modal title
+        const titleEl = document.getElementById('checklistDetailTitle');
+        if (titleEl) titleEl.textContent = checklist.name || 'Checklist Detail';
+
         if (!items.length) {
-            Toast.error('No checklist items found');
+            body.innerHTML = `<div class="empty-message"><p>No checklist items found.</p></div>`;
             return;
         }
 
-        // Simple alert-style display. In future, render in a modal.
-        const summary = items.map(i => `${i.completed ? '[x]' : '[ ]'} ${i.name}`).join('\n');
-        alert('Checklist Items:\n\n' + summary);
+        const allCompleted = items.every(i => i.completed);
+
+        body.innerHTML = `
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                ${AccountsCommon.escapeHtml(checklist.description || '')}
+                ${checklist.status ? ' &bull; ' + AccountsCommon.statusBadge(checklist.status) : ''}
+                ${checklist.progress != null ? ' &bull; Progress: ' + checklist.progress + '%' : ''}
+            </p>
+            <div class="data-table-container"><table class="data-table">
+                <thead><tr><th style="width: 50px;"></th><th>Item</th><th>Status</th></tr></thead>
+                <tbody>${items.map(i => `<tr>
+                    <td style="text-align: center;">
+                        ${i.completed
+                            ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`
+                            : `<button class="btn-icon" onclick="completeChecklistItem('${id}', '${i.id}')" data-tooltip="Mark Complete" style="color: var(--text-secondary);">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                              </button>`
+                        }
+                    </td>
+                    <td>${AccountsCommon.escapeHtml(i.name || i.title || '-')}</td>
+                    <td>${i.completed
+                        ? `<span class="badge status-active">Completed</span>`
+                        : `<span class="badge status-pending">Pending</span>`
+                    }</td>
+                </tr>`).join('')}</tbody>
+            </table></div>
+            ${allCompleted && checklist.status !== 'completed' ? `
+                <div style="margin-top: 1rem; text-align: right;">
+                    <button class="btn btn-primary" onclick="completeChecklist('${id}')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        Mark Complete
+                    </button>
+                </div>
+            ` : ''}
+        `;
     } catch (err) {
         console.error('[Admin] viewChecklist error:', err);
+        body.innerHTML = `<div class="empty-message"><p>Failed to load checklist details.</p></div>`;
         Toast.error(err.message || 'Failed to load checklist details');
+    }
+}
+
+async function completeChecklistItem(checklistId, itemId) {
+    try {
+        const url = AccountsCommon.buildUrl(`closing/checklists/${checklistId}/items/${itemId}/complete`);
+        await api.request(url, { method: 'POST' });
+        Toast.success('Item marked as complete');
+        await viewChecklist(checklistId);
+    } catch (err) {
+        console.error('[Admin] completeChecklistItem error:', err);
+        Toast.error(err.message || 'Failed to complete checklist item');
+    }
+}
+
+async function completeChecklist(checklistId) {
+    const ok = await Confirm.show({
+        title: 'Complete Checklist',
+        message: 'Mark this entire checklist as complete? This indicates all closing tasks are done.',
+        confirmText: 'Mark Complete',
+        type: 'info'
+    });
+    if (!ok) return;
+
+    try {
+        const url = AccountsCommon.buildUrl(`closing/checklists/${checklistId}/complete`);
+        await api.request(url, { method: 'POST' });
+        Toast.success('Checklist marked as complete');
+        AccountsCommon.closeModal('checklistDetailModal');
+        await loadChecklists();
+    } catch (err) {
+        console.error('[Admin] completeChecklist error:', err);
+        Toast.error(err.message || 'Failed to complete checklist');
     }
 }
 

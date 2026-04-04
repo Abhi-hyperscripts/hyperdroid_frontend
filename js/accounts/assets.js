@@ -282,9 +282,10 @@ function renderAssets() {
         const catName = catMap[a.asset_category_id] || catMap[a.category_id] || a.category_name || '-';
         const status = a.status || 'active';
 
-        let actions = '-';
+        let actions = `<button class="btn-icon" onclick="viewAssetDetail('${a.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+        actions += `<button class="btn-icon" onclick="viewDepreciationSchedule('${a.id}')" data-tooltip="Schedule"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>`;
         if (accountsRoles.isAdmin()) {
-            actions = `<button class="btn-icon" onclick="editAsset('${a.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
+            actions += `<button class="btn-icon" onclick="editAsset('${a.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
             if (status === 'active') {
                 actions += `<button class="btn-icon danger" onclick="showDisposeModal('${a.id}')" data-tooltip="Dispose"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`;
             }
@@ -470,4 +471,145 @@ function renderDepreciationResults() {
         <td class="text-right">${AccountsCommon.formatCurrency(d.period_depreciation || d.depreciation_amount)}</td>
         <td class="text-right">${AccountsCommon.formatCurrency(d.book_value)}</td>
     </tr>`).join('');
+}
+
+// ============================================================================
+// VIEW ASSET DETAIL
+// ============================================================================
+
+async function viewAssetDetail(id) {
+    try {
+        const url = AccountsCommon.buildUrl(`assets/${id}`);
+        const asset = await api.request(url, { _skipSpinner: true });
+
+        const catMap = {};
+        assetCategories.forEach(c => { catMap[c.id] = c.name; });
+        const catName = catMap[asset.asset_category_id] || catMap[asset.category_id] || asset.category_name || '-';
+
+        document.getElementById('assetDetailTitle').textContent = `Asset: ${asset.asset_code || asset.code || asset.name}`;
+        document.getElementById('assetDetailBody').innerHTML = `
+            <div class="form-row two-col">
+                <div class="form-group">
+                    <label>Asset Code</label>
+                    <div class="detail-value"><code>${AccountsCommon.escapeHtml(asset.asset_code || asset.code || '-')}</code></div>
+                </div>
+                <div class="form-group">
+                    <label>Name</label>
+                    <div class="detail-value">${AccountsCommon.escapeHtml(asset.name || '-')}</div>
+                </div>
+            </div>
+            <div class="form-row two-col">
+                <div class="form-group">
+                    <label>Category</label>
+                    <div class="detail-value">${AccountsCommon.escapeHtml(catName)}</div>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <div class="detail-value">${AccountsCommon.statusBadge(asset.status || 'active')}</div>
+                </div>
+            </div>
+            <div class="form-row two-col">
+                <div class="form-group">
+                    <label>Purchase Date</label>
+                    <div class="detail-value">${AccountsCommon.formatDate(asset.purchase_date)}</div>
+                </div>
+                <div class="form-group">
+                    <label>Purchase Cost</label>
+                    <div class="detail-value">${AccountsCommon.formatCurrency(asset.purchase_cost || asset.cost)}</div>
+                </div>
+            </div>
+            <div class="form-row two-col">
+                <div class="form-group">
+                    <label>Salvage Value</label>
+                    <div class="detail-value">${AccountsCommon.formatCurrency(asset.salvage_value ?? asset.residual_value ?? 0)}</div>
+                </div>
+                <div class="form-group">
+                    <label>Book Value</label>
+                    <div class="detail-value">${AccountsCommon.formatCurrency(asset.book_value)}</div>
+                </div>
+            </div>
+            <div class="form-row two-col">
+                <div class="form-group">
+                    <label>Accumulated Depreciation</label>
+                    <div class="detail-value">${AccountsCommon.formatCurrency(asset.accumulated_depreciation ?? 0)}</div>
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <div class="detail-value">${AccountsCommon.escapeHtml(asset.location || '-')}</div>
+                </div>
+            </div>
+            <div class="form-row two-col">
+                <div class="form-group">
+                    <label>Department</label>
+                    <div class="detail-value">${AccountsCommon.escapeHtml(asset.department || '-')}</div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <div class="detail-value">${AccountsCommon.escapeHtml(asset.description || '-')}</div>
+                </div>
+            </div>
+        `;
+
+        AccountsCommon.openModal('assetDetailModal');
+    } catch (err) {
+        console.error('[Assets] viewAssetDetail error:', err);
+        Toast.error(err.message || 'Failed to load asset details');
+    }
+}
+
+// ============================================================================
+// VIEW DEPRECIATION SCHEDULE
+// ============================================================================
+
+async function viewDepreciationSchedule(id) {
+    try {
+        const url = AccountsCommon.buildUrl(`assets/${id}/depreciation`);
+        const res = await api.request(url, { _skipSpinner: true });
+        const entries = Array.isArray(res) ? res : (res?.data || res?.items || res?.schedule || []);
+
+        const asset = assets.find(a => a.id === id);
+        const assetName = asset ? (asset.asset_code || asset.code || asset.name) : 'Asset';
+
+        document.getElementById('depScheduleTitle').textContent = `Depreciation Schedule: ${assetName}`;
+
+        const tbody = document.getElementById('depScheduleBody');
+        if (!entries.length) {
+            tbody.innerHTML = `
+                <div class="empty-message" style="padding: 2rem; text-align: center;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <p>No depreciation schedule entries found</p>
+                </div>`;
+        } else {
+            tbody.innerHTML = `
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Period Date</th>
+                                <th>Depreciation Amount</th>
+                                <th>Accumulated</th>
+                                <th>Book Value After</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${entries.map(e => `<tr>
+                                <td>${AccountsCommon.formatDate(e.period_date || e.date)}</td>
+                                <td class="text-right">${AccountsCommon.formatCurrency(e.depreciation_amount || e.amount)}</td>
+                                <td class="text-right">${AccountsCommon.formatCurrency(e.accumulated_depreciation || e.accumulated)}</td>
+                                <td class="text-right">${AccountsCommon.formatCurrency(e.book_value_after || e.book_value)}</td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+        }
+
+        AccountsCommon.openModal('depScheduleModal');
+    } catch (err) {
+        console.error('[Assets] viewDepreciationSchedule error:', err);
+        Toast.error(err.message || 'Failed to load depreciation schedule');
+    }
 }

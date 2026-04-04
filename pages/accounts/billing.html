@@ -192,6 +192,15 @@
                             </svg>
                             <input type="text" id="subscriptionSearch" placeholder="Search customer...">
                         </div>
+                        <button class="btn btn-outline" onclick="generateInvoices()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                            Generate Invoices
+                        </button>
                         <button class="btn btn-primary" onclick="showCreateSubscriptionModal()" data-admin-only>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -372,6 +381,23 @@
     <!-- ================================================================== -->
     <!-- MODALS -->
     <!-- ================================================================== -->
+
+    <!-- Billing Detail Modal (shared for plan/subscription view) -->
+    <div id="billingDetailModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="billingDetailModalTitle">Details</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('billingDetailModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body" id="billingDetailBody">
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('billingDetailModal')">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Billing Plan Modal -->
     <div id="planModal" class="modal">

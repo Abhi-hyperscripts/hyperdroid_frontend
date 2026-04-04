@@ -381,6 +381,74 @@ async function cancelBill(id) {
 }
 
 // ============================================================================
+// BULK BILL IMPORT
+// ============================================================================
+
+function showBulkBillModal() {
+    document.getElementById('bulkBillData').value = '';
+    const fileInput = document.getElementById('bulkBillFile');
+    if (fileInput) fileInput.value = '';
+    AccountsCommon.openModal('bulkBillModal');
+}
+
+function handleBulkBillFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const content = e.target.result;
+        if (file.name.endsWith('.json')) {
+            document.getElementById('bulkBillData').value = content;
+        } else if (file.name.endsWith('.csv')) {
+            // Basic CSV to JSON conversion — assume header row
+            try {
+                const lines = content.split('\n').filter(l => l.trim());
+                if (lines.length < 2) { Toast.error('CSV must have a header row and at least one data row'); return; }
+                const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+                const rows = lines.slice(1).map(line => {
+                    const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+                    const obj = {};
+                    headers.forEach((h, i) => { obj[h] = vals[i] || ''; });
+                    return obj;
+                });
+                document.getElementById('bulkBillData').value = JSON.stringify(rows, null, 2);
+            } catch (csvErr) {
+                Toast.error('Failed to parse CSV file');
+            }
+        } else {
+            Toast.error('Unsupported file type. Use .json or .csv');
+        }
+    };
+    reader.readAsText(file);
+}
+
+async function submitBulkBills() {
+    const text = document.getElementById('bulkBillData').value.trim();
+    if (!text) { Toast.error('Please paste bill data or upload a file'); return; }
+    try {
+        const bills = JSON.parse(text);
+        if (!Array.isArray(bills)) { Toast.error('Data must be a JSON array'); return; }
+        if (!bills.length) { Toast.error('Array is empty'); return; }
+        const res = await api.request(AccountsCommon.buildUrl('vendor-bills/bulk'), {
+            method: 'POST',
+            body: JSON.stringify({ bills })
+        });
+        const created = res?.created || res?.success_count || bills.length;
+        const failed = res?.failed || res?.error_count || 0;
+        if (failed > 0) {
+            Toast.warning(`${created} bills created, ${failed} failed`);
+        } else {
+            Toast.success(`${created} bills created successfully`);
+        }
+        AccountsCommon.closeModal('bulkBillModal');
+        await loadVendorBills();
+    } catch (err) {
+        console.error('[Payables] submitBulkBills error:', err);
+        Toast.error(err.message || 'Failed to import bills');
+    }
+}
+
+// ============================================================================
 // 2. VENDOR PAYMENTS
 // ============================================================================
 

@@ -125,10 +125,12 @@ function renderPlans() {
 
     tbody.innerHTML = billingPlans.map(p => {
         const status = p.status || (p.is_active === false ? 'inactive' : 'active');
-        const actions = accountsRoles.isAdmin()
+        const viewBtn = `<button class="btn-icon" onclick="viewPlan('${p.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+        const adminBtns = accountsRoles.isAdmin()
             ? `<button class="btn-icon" onclick="editPlan('${p.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                <button class="btn-icon danger" onclick="deletePlan('${p.id}')" data-tooltip="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`
-            : '-';
+            : '';
+        const actions = viewBtn + adminBtns;
 
         return `<tr>
             <td>${AccountsCommon.escapeHtml(p.name)}</td>
@@ -139,6 +141,36 @@ function renderPlans() {
             <td class="actions-cell">${actions}</td>
         </tr>`;
     }).join('');
+}
+
+async function viewPlan(id) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl(`billing/plans/${id}`));
+        const p = res?.data || res;
+        if (!p) { Toast.error('Plan not found'); return; }
+
+        const esc = AccountsCommon.escapeHtml;
+        const fmt = AccountsCommon.formatCurrency;
+        const intervalLabels = { 'monthly': 'Monthly', 'quarterly': 'Quarterly', 'semi_annual': 'Semi-Annual', 'annual': 'Annual', 'one_time': 'One-Time' };
+        const status = p.status || (p.is_active === false ? 'inactive' : 'active');
+
+        document.getElementById('billingDetailModalTitle').textContent = 'Plan Details';
+        document.getElementById('billingDetailBody').innerHTML = `
+            <div class="detail-grid">
+                <div class="detail-row"><span class="detail-label">Name</span><span class="detail-value">${esc(p.name || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Code</span><span class="detail-value"><code>${esc(p.plan_code || p.code || '-')}</code></span></div>
+                <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value">${fmt(p.amount)}</span></div>
+                <div class="detail-row"><span class="detail-label">Interval</span><span class="detail-value">${esc(intervalLabels[p.billing_type || p.interval] || p.billing_type || p.interval || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${AccountsCommon.statusBadge(status)}</span></div>
+                <div class="detail-row"><span class="detail-label">Description</span><span class="detail-value">${esc(p.description || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Created</span><span class="detail-value">${AccountsCommon.formatDate(p.created_at)}</span></div>
+                <div class="detail-row"><span class="detail-label">Updated</span><span class="detail-value">${AccountsCommon.formatDate(p.updated_at)}</span></div>
+            </div>`;
+        AccountsCommon.openModal('billingDetailModal');
+    } catch (err) {
+        console.error('[Billing] viewPlan error:', err);
+        Toast.error('Failed to load plan details');
+    }
 }
 
 function showCreatePlanModal() {
@@ -258,9 +290,11 @@ function renderSubscriptions() {
         const planName = planMap[s.plan_id] || s.plan_name || '-';
         const status = s.status || 'active';
 
-        const actions = accountsRoles.isAdmin()
-            ? `${status === 'active' ? `<button class="btn-icon danger" onclick="cancelSubscription('${s.id}')" data-tooltip="Cancel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>` : ''}`
-            : '-';
+        const viewBtn = `<button class="btn-icon" onclick="viewSubscription('${s.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+        const cancelBtn = accountsRoles.isAdmin() && status === 'active'
+            ? `<button class="btn-icon danger" onclick="cancelSubscription('${s.id}')" data-tooltip="Cancel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>`
+            : '';
+        const actions = viewBtn + cancelBtn;
 
         return `<tr>
             <td>${AccountsCommon.escapeHtml(s.customer_name || s.customer_id || '-')}</td>
@@ -271,6 +305,54 @@ function renderSubscriptions() {
             <td class="actions-cell">${actions}</td>
         </tr>`;
     }).join('');
+}
+
+async function viewSubscription(id) {
+    try {
+        const res = await api.request(AccountsCommon.buildUrl(`billing/subscriptions/${id}`));
+        const s = res?.data || res;
+        if (!s) { Toast.error('Subscription not found'); return; }
+
+        const esc = AccountsCommon.escapeHtml;
+        const fmt = AccountsCommon.formatCurrency;
+        const planMap = {};
+        billingPlans.forEach(p => { planMap[p.id] = p.name; });
+        const planName = planMap[s.plan_id] || s.plan_name || '-';
+        const status = s.status || 'active';
+
+        document.getElementById('billingDetailModalTitle').textContent = 'Subscription Details';
+        document.getElementById('billingDetailBody').innerHTML = `
+            <div class="detail-grid">
+                <div class="detail-row"><span class="detail-label">Customer</span><span class="detail-value">${esc(s.customer_name || s.customer_id || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Plan</span><span class="detail-value">${esc(planName)}</span></div>
+                <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${AccountsCommon.statusBadge(status)}</span></div>
+                <div class="detail-row"><span class="detail-label">Start Date</span><span class="detail-value">${AccountsCommon.formatDate(s.start_date)}</span></div>
+                <div class="detail-row"><span class="detail-label">End Date</span><span class="detail-value">${AccountsCommon.formatDate(s.end_date)}</span></div>
+                <div class="detail-row"><span class="detail-label">Next Billing</span><span class="detail-value">${AccountsCommon.formatDate(s.next_billing_date)}</span></div>
+                <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value">${s.amount != null ? fmt(s.amount) : '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">Cancel Reason</span><span class="detail-value">${esc(s.cancel_reason || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Created</span><span class="detail-value">${AccountsCommon.formatDate(s.created_at)}</span></div>
+                <div class="detail-row"><span class="detail-label">Updated</span><span class="detail-value">${AccountsCommon.formatDate(s.updated_at)}</span></div>
+            </div>`;
+        AccountsCommon.openModal('billingDetailModal');
+    } catch (err) {
+        console.error('[Billing] viewSubscription error:', err);
+        Toast.error('Failed to load subscription details');
+    }
+}
+
+async function generateInvoices() {
+    const ok = await Confirm.show({ title: 'Generate Invoices', message: 'This will generate invoices for all active subscriptions due for billing. Continue?', confirmText: 'Generate', type: 'warning' });
+    if (!ok) return;
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('billing/generate-invoices'), { method: 'POST' });
+        const count = res?.count || res?.invoices_generated || res?.data?.count || 0;
+        Toast.success(`${count} invoice(s) generated successfully`);
+        await loadSubscriptions();
+    } catch (err) {
+        console.error('[Billing] generateInvoices error:', err);
+        Toast.error(err.message || 'Failed to generate invoices');
+    }
 }
 
 function showCreateSubscriptionModal() {
