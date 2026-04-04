@@ -386,10 +386,11 @@ async function loadExpenseClaims() {
 
 function updateClaimStats(res) {
     const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
-    el('totalClaims', res.total || res.totalCount || expenseClaims.length);
-    el('submittedClaims', res.submitted_count ?? expenseClaims.filter(c => c.status === 'submitted').length);
-    el('approvedClaims', res.approved_count ?? expenseClaims.filter(c => c.status === 'approved').length);
-    el('reimbursedClaims', res.reimbursed_count ?? expenseClaims.filter(c => c.status === 'reimbursed').length);
+    const stats = res?.stats || {};
+    el('totalClaims', stats.total_count ?? (res.total || res.totalCount || expenseClaims.length));
+    el('submittedClaims', stats.submitted_count ?? (res.submitted_count ?? expenseClaims.filter(c => c.status === 'submitted').length));
+    el('approvedClaims', stats.approved_count ?? (res.approved_count ?? expenseClaims.filter(c => c.status === 'approved').length));
+    el('reimbursedClaims', stats.reimbursed_count ?? (res.reimbursed_count ?? expenseClaims.filter(c => c.status === 'reimbursed').length));
 }
 
 function renderClaimsTable() {

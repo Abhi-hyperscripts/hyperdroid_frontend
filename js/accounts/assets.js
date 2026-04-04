@@ -237,19 +237,13 @@ async function loadAssets() {
         const total = res?.total || res?.totalCount || assets.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
 
-        // Update stats
-        const activeCount = assets.filter(a => a.status === 'active').length;
-        const disposedCount = assets.filter(a => a.status === 'disposed').length;
-        const bookValue = assets.reduce((sum, a) => sum + (a.book_value || 0), 0);
-
-        const totalEl = document.getElementById('totalAssets');
-        const activeEl = document.getElementById('activeAssets');
-        const disposedEl = document.getElementById('disposedAssets');
-        const bvEl = document.getElementById('totalBookValue');
-        if (totalEl) totalEl.textContent = total;
-        if (activeEl) activeEl.textContent = activeCount;
-        if (disposedEl) disposedEl.textContent = disposedCount;
-        if (bvEl) bvEl.textContent = AccountsCommon.formatCurrency(bookValue);
+        // Update stats — prefer backend stats, fallback to client-side
+        const stats = res?.stats || {};
+        const setText = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+        setText('totalAssets', stats.total_count ?? total);
+        setText('activeAssets', stats.active_count ?? assets.filter(a => a.status === 'active').length);
+        setText('disposedAssets', stats.disposed_count ?? assets.filter(a => a.status === 'disposed').length);
+        setText('totalBookValue', stats.total_book_value != null ? AccountsCommon.formatCurrency(stats.total_book_value) : AccountsCommon.formatCurrency(assets.reduce((sum, a) => sum + (a.book_value || 0), 0)));
 
         renderAssets();
         AccountsCommon.renderPagination('assetsPagination', assetPage, totalPages, (page) => {

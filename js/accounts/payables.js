@@ -129,13 +129,13 @@ async function loadVendorBills() {
         const total = res?.total || res?.totalCount || vendorBills.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
 
-        // Update stats
+        // Update stats — prefer backend stats, fallback to client-side
         const stats = res?.stats || {};
         const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
-        el('totalBills', stats.total_bills ?? total);
-        el('draftBills', vendorBills.filter(b => b.status === 'draft').length);
-        el('approvedBills', vendorBills.filter(b => b.status === 'approved').length);
-        el('totalOutstanding', AccountsCommon.formatCurrency(vendorBills.reduce((s, b) => s + (parseFloat(b.balance_due || b.balance) || 0), 0)));
+        el('totalBills', stats.total_count ?? stats.total_bills ?? total);
+        el('draftBills', stats.draft_count ?? vendorBills.filter(b => b.status === 'draft').length);
+        el('approvedBills', stats.approved_count ?? vendorBills.filter(b => b.status === 'approved').length);
+        el('totalOutstanding', stats.total_outstanding != null ? AccountsCommon.formatCurrency(stats.total_outstanding) : AccountsCommon.formatCurrency(vendorBills.reduce((s, b) => s + (parseFloat(b.balance_due || b.balance) || 0), 0)));
 
         renderBillsTable();
         AccountsCommon.renderPagination('billsPagination', currentBillPage, totalPages, (page) => {

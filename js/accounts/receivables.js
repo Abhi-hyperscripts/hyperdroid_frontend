@@ -187,14 +187,12 @@ async function loadCustomerInvoices() {
         const total = res?.total || items.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
 
-        // Stats — compute client-side from loaded items
-        const draftCount = items.filter(i => i.status === 'draft').length;
-        const approvedCount = items.filter(i => i.status === 'approved').length;
-        const totalReceivable = items.reduce((s, i) => s + parseFloat(i.balance_due || i.balance || 0), 0);
-        setText('totalInvoices', items.length);
-        setText('draftInvoices', draftCount);
-        setText('approvedInvoices', approvedCount);
-        setText('totalReceivable', AccountsCommon.formatCurrency(totalReceivable));
+        // Stats — prefer backend stats, fallback to client-side
+        const stats = res?.stats || {};
+        setText('totalInvoices', stats.total_count ?? total);
+        setText('draftInvoices', stats.draft_count ?? items.filter(i => i.status === 'draft').length);
+        setText('approvedInvoices', stats.approved_count ?? items.filter(i => i.status === 'approved').length);
+        setText('totalReceivable', stats.total_receivable != null ? AccountsCommon.formatCurrency(stats.total_receivable) : AccountsCommon.formatCurrency(items.reduce((s, i) => s + parseFloat(i.balance_due || i.balance || 0), 0)));
 
         const tbody = document.getElementById('customerInvoicesTable');
         if (!items.length) {
