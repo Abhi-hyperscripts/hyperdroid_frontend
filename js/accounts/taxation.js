@@ -481,7 +481,7 @@ function renderHsnSacCodes() {
         return `<tr>
             <td><code>${AccountsCommon.escapeHtml(h.code)}</code></td>
             <td>${AccountsCommon.escapeHtml(h.description || '-')}</td>
-            <td><span class="badge ${h.type === 'HSN' ? 'status-active' : 'status-pending'}">${AccountsCommon.escapeHtml(h.type || '-')}</span></td>
+            <td>${(h.code_type || h.type) ? `<span class="badge ${(h.code_type || h.type) === 'HSN' ? 'status-active' : 'status-pending'}">${AccountsCommon.escapeHtml(h.code_type || h.type)}</span>` : 'N/A'}</td>
             <td>${h.tax_rate != null ? h.tax_rate + '%' : '-'}</td>
             <td class="actions-cell">${actions}</td>
         </tr>`;

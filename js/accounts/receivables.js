@@ -74,16 +74,19 @@ async function loadInitialData() {
         const [custRes, acctRes, bankRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('customers'), { _skipSpinner: true }).catch(() => []),
             api.request(AccountsCommon.buildUrl('coa', { isActive: true }), { _skipSpinner: true }).catch(() => []),
-            api.request(AccountsCommon.buildUrl('coa', { isActive: true }), { _skipSpinner: true }).catch(() => [])
+            api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => [])
         ]);
         customers = Array.isArray(custRes) ? custRes : (custRes?.data || custRes?.items || []);
         accounts = Array.isArray(acctRes) ? acctRes : (acctRes?.data || acctRes?.items || []);
         bankAccounts = Array.isArray(bankRes) ? bankRes : (bankRes?.data || bankRes?.items || []);
+        // Build bank account name map
+        window._bankAccountMap = {};
+        bankAccounts.forEach(b => { window._bankAccountMap[b.id] = b.account_name || b.bank_name || b.name; });
 
         populateSelect('invoiceCustomerId', customers, 'id', 'name', 'Select customer...');
         populateSelect('paymentCustomerId', customers, 'id', 'name', 'Select customer...');
         populateSelect('cnCustomerId', customers, 'id', 'name', 'Select customer...');
-        populateSelect('paymentBankAccountId', bankAccounts, 'id', 'name', 'Select bank...');
+        populateSelect('paymentBankAccountId', bankAccounts.map(b => ({ ...b, name: b.account_name || b.name })), 'id', 'name', 'Select bank...');
 
         loadCustomerInvoices();
     } catch (err) {
@@ -184,12 +187,14 @@ async function loadCustomerInvoices() {
         const total = res?.total || items.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
 
-        // Stats
-        const stats = res?.stats || {};
-        setText('totalInvoices', stats.total_count ?? items.length);
-        setText('draftInvoices', stats.draft_count ?? '-');
-        setText('approvedInvoices', stats.approved_count ?? '-');
-        setText('totalReceivable', stats.total_receivable != null ? AccountsCommon.formatCurrency(stats.total_receivable) : '-');
+        // Stats — compute client-side from loaded items
+        const draftCount = items.filter(i => i.status === 'draft').length;
+        const approvedCount = items.filter(i => i.status === 'approved').length;
+        const totalReceivable = items.reduce((s, i) => s + parseFloat(i.balance_due || i.balance || 0), 0);
+        setText('totalInvoices', items.length);
+        setText('draftInvoices', draftCount);
+        setText('approvedInvoices', approvedCount);
+        setText('totalReceivable', AccountsCommon.formatCurrency(totalReceivable));
 
         const tbody = document.getElementById('customerInvoicesTable');
         if (!items.length) {
@@ -206,7 +211,7 @@ async function loadCustomerInvoices() {
                     <td>${AccountsCommon.formatCurrency(inv.tax_amount)}</td>
                     <td>${AccountsCommon.formatCurrency(inv.total_amount)}</td>
                     <td>${AccountsCommon.formatCurrency(inv.paid_amount)}</td>
-                    <td>${AccountsCommon.formatCurrency(inv.balance)}</td>
+                    <td>${AccountsCommon.formatCurrency(inv.balance_due || inv.balance)}</td>
                     <td>${AccountsCommon.statusBadge(inv.status)}</td>
                     <td>${invoiceActions(inv)}</td>
                 </tr>`;
@@ -476,14 +481,14 @@ async function loadCustomerPayments() {
         } else {
             tbody.innerHTML = items.map(p => {
                 const custName = p.customer_name || customers.find(c => c.id === p.customer_id)?.name || '-';
-                const bankName = p.bank_account_name || bankAccounts.find(b => b.id === p.bank_account_id)?.name || '-';
+                const bankName = p.bank_account_name || p.bank_name || window._bankAccountMap?.[p.bank_account_id] || bankAccounts.find(b => b.id === p.bank_account_id)?.account_name || (p.bank_account_id ? p.bank_account_id.substring(0, 8) + '...' : '-');
                 return `<tr>
                     <td>${AccountsCommon.escapeHtml(p.payment_number || '-')}</td>
                     <td>${AccountsCommon.escapeHtml(custName)}</td>
                     <td>${AccountsCommon.formatDate(p.payment_date)}</td>
                     <td>${AccountsCommon.formatCurrency(p.amount)}</td>
                     <td>${AccountsCommon.escapeHtml(bankName)}</td>
-                    <td>${AccountsCommon.escapeHtml(p.reference || '-')}</td>
+                    <td>${AccountsCommon.escapeHtml(p.reference_number || p.reference || '-')}</td>
                     <td><button class="btn-icon" data-tooltip="View" onclick="editInvoice('${p.invoice_id || p.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
                 </tr>`;
             }).join('');

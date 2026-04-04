@@ -435,7 +435,7 @@ const AccountsCommon = {
             inactive: 'status-inactive', closed: 'status-inactive'
         };
         const cls = classMap[s] || 'status-pending';
-        const label = this.escapeHtml(status.charAt(0).toUpperCase() + status.slice(1));
+        const label = this.escapeHtml(status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
         return `<span class="badge ${cls}">${label}</span>`;
     },
 

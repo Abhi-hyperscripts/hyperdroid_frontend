@@ -65,10 +65,11 @@ function onTabSwitch(tabId) {
 
 async function loadInitialData() {
     try {
-        const [vendorRes, accountRes, bankRes] = await Promise.all([
+        const [vendorRes, accountRes, bankRes, bankAcctRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('vendors'), { _skipSpinner: true }).catch(() => []),
             api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true }).catch(() => []),
-            api.request(AccountsCommon.buildUrl('coa', { accountTypeClassification: 'asset', search: 'bank' }), { _skipSpinner: true }).catch(() => [])
+            api.request(AccountsCommon.buildUrl('coa', { accountTypeClassification: 'asset', search: 'bank' }), { _skipSpinner: true }).catch(() => []),
+            api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => [])
         ]);
 
         vendors = Array.isArray(vendorRes) ? vendorRes : (vendorRes?.data || vendorRes?.items || []);
@@ -76,6 +77,10 @@ async function loadInitialData() {
         accounts = acctData;
         const bankData = Array.isArray(bankRes) ? bankRes : (bankRes?.data || bankRes?.items || []);
         bankAccounts = bankData;
+        const realBankAccounts = Array.isArray(bankAcctRes) ? bankAcctRes : (bankAcctRes?.data || bankAcctRes?.items || []);
+        // Build bank account name map for payment rendering
+        window._bankAccountMap = {};
+        realBankAccounts.forEach(b => { window._bankAccountMap[b.id] = b.account_name || b.bank_name || b.name; });
 
         await loadVendorBills();
     } catch (err) {
@@ -128,9 +133,9 @@ async function loadVendorBills() {
         const stats = res?.stats || {};
         const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
         el('totalBills', stats.total_bills ?? total);
-        el('draftBills', stats.draft_count ?? vendorBills.filter(b => b.status === 'draft').length);
-        el('approvedBills', stats.approved_count ?? vendorBills.filter(b => b.status === 'approved').length);
-        el('totalOutstanding', AccountsCommon.formatCurrency(stats.total_outstanding ?? vendorBills.reduce((s, b) => s + (parseFloat(b.balance) || 0), 0)));
+        el('draftBills', vendorBills.filter(b => b.status === 'draft').length);
+        el('approvedBills', vendorBills.filter(b => b.status === 'approved').length);
+        el('totalOutstanding', AccountsCommon.formatCurrency(vendorBills.reduce((s, b) => s + (parseFloat(b.balance_due || b.balance) || 0), 0)));
 
         renderBillsTable();
         AccountsCommon.renderPagination('billsPagination', currentBillPage, totalPages, (page) => {
@@ -171,8 +176,8 @@ function renderBillsTable() {
             <td>${esc(vendorMap[b.vendor_id] || b.vendor_name || '-')}</td>
             <td>${fmtD(b.bill_date)}</td><td>${fmtD(b.due_date)}</td>
             <td class="text-right">${fmt(b.subtotal)}</td><td class="text-right">${fmt(b.tax_amount || 0)}</td>
-            <td class="text-right">${fmt(b.total)}</td><td class="text-right">${fmt(b.paid_amount || 0)}</td>
-            <td class="text-right">${fmt(b.balance || b.total)}</td>
+            <td class="text-right">${fmt(b.total_amount || b.total)}</td><td class="text-right">${fmt(b.paid_amount || 0)}</td>
+            <td class="text-right">${fmt(b.balance_due || b.balance || b.total_amount || b.total)}</td>
             <td>${AccountsCommon.statusBadge(b.status)}</td>
             <td class="actions-cell">${actions || '<span class="text-secondary">-</span>'}</td>
         </tr>`;
@@ -488,7 +493,7 @@ function renderPaymentsTable(payments) {
         <td>${esc(vendorMap[p.vendor_id] || p.vendor_name || '-')}</td>
         <td>${fmtD(p.payment_date)}</td>
         <td class="text-right">${fmt(p.amount)}</td>
-        <td>${esc(acctMap[p.bank_account_id] || p.bank_account_name || '-')}</td>
+        <td>${esc(p.bank_account_name || p.bank_name || window._bankAccountMap?.[p.bank_account_id] || acctMap[p.bank_account_id] || (p.bank_account_id ? p.bank_account_id.substring(0, 8) + '...' : '-'))}</td>
         <td>${esc(p.reference_number || '-')}</td>
         <td class="actions-cell">${isAdmin ? `<button class="btn-icon danger" onclick="deletePayment('${p.id}')" data-tooltip="Void">${voidSvg}</button>` : '-'}</td>
     </tr>`).join('');

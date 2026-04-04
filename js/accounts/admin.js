@@ -166,8 +166,9 @@ function renderAuditLogs() {
     }
 
     tbody.innerHTML = auditLogs.map(l => {
-        const actionBadge = l.action === 'create' ? 'status-active'
-            : l.action === 'delete' ? 'status-rejected'
+        const actionLower = (l.action || '').toLowerCase();
+        const actionBadge = ['created', 'approved', 'submitted', 'reimbursed', 'posted', 'completed'].includes(actionLower) || actionLower === 'create' ? 'status-active'
+            : ['deleted', 'rejected', 'cancelled', 'reversed'].includes(actionLower) || actionLower === 'delete' ? 'status-rejected'
             : 'status-pending';
 
         const trailLink = l.entity_id && l.entity_type
@@ -178,7 +179,7 @@ function renderAuditLogs() {
             <td>${AccountsCommon.formatDate(l.timestamp || l.created_at, true)}</td>
             <td>${AccountsCommon.escapeHtml(l.entity_type || '-')}</td>
             <td><span class="badge ${actionBadge}">${AccountsCommon.escapeHtml(l.action || '-')}</span></td>
-            <td>${AccountsCommon.escapeHtml(l.performed_by || l.user_name || '-')}</td>
+            <td>${AccountsCommon.escapeHtml(l.performed_by_name || l.user_name || (l.performed_by === 'system' ? 'System' : l.performed_by ? l.performed_by.substring(0, 8) + '...' : '-'))}</td>
             <td><span title="${AccountsCommon.escapeHtml(JSON.stringify(l.details || ''))}">${AccountsCommon.escapeHtml(truncateStr(l.details_summary || JSON.stringify(l.details || '-'), 60))}</span>${trailLink}</td>
         </tr>`;
     }).join('');
@@ -217,8 +218,8 @@ async function viewEntityAudit(entityType, entityId) {
                             ${AccountsCommon.formatDate(l.timestamp || l.created_at, true)}
                         </div>
                         <div style="flex: 1;">
-                            <span class="badge ${l.action === 'create' ? 'status-active' : l.action === 'delete' ? 'status-rejected' : 'status-pending'}">${AccountsCommon.escapeHtml(l.action || '-')}</span>
-                            <span style="margin-left: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">by ${AccountsCommon.escapeHtml(l.performed_by || l.user_name || '-')}</span>
+                            <span class="badge ${['created','approved','submitted','reimbursed','posted','completed','create'].includes((l.action||'').toLowerCase()) ? 'status-active' : ['deleted','rejected','cancelled','reversed','delete'].includes((l.action||'').toLowerCase()) ? 'status-rejected' : 'status-pending'}">${AccountsCommon.escapeHtml(l.action || '-')}</span>
+                            <span style="margin-left: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">by ${AccountsCommon.escapeHtml(l.performed_by_name || l.user_name || (l.performed_by === 'system' ? 'System' : l.performed_by ? l.performed_by.substring(0, 8) + '...' : '-'))}</span>
                             <div style="margin-top: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);">
                                 ${AccountsCommon.escapeHtml(l.details_summary || JSON.stringify(l.details || '-'))}
                             </div>
@@ -553,7 +554,7 @@ function renderChecklists() {
     tbody.innerHTML = closingChecklists.map(c => {
         const fyName = fyMap[c.fiscal_year_id] || c.fiscal_year_name || '-';
         const status = c.status || 'pending';
-        const progress = c.progress != null ? c.progress + '%' : '-';
+        const progress = c.items?.length ? (c.items.filter(i => i.is_completed).length + '/' + c.items.length) : (c.status === 'completed' ? 'Done' : c.status === 'in_progress' ? 'In Progress' : 'Not Started');
 
         const actions = accountsRoles.isAdmin()
             ? `<button class="btn-icon" onclick="viewChecklist('${c.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
@@ -561,10 +562,10 @@ function renderChecklists() {
             : `<button class="btn-icon" onclick="viewChecklist('${c.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
 
         return `<tr>
-            <td>${AccountsCommon.escapeHtml(c.name)}</td>
-            <td>${AccountsCommon.escapeHtml(fyName)}</td>
+            <td>${AccountsCommon.escapeHtml((c.closing_type || '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || '-')}</td>
+            <td>${AccountsCommon.escapeHtml(c.period_name || fyMap[c.fiscal_period_id] || '-')}</td>
             <td>${AccountsCommon.statusBadge(status)}</td>
-            <td>${progress}</td>
+            <td>${c.items ? (c.items.filter(i => i.is_completed).length + '/' + c.items.length) : '-'}</td>
             <td class="actions-cell">${actions}</td>
         </tr>`;
     }).join('');

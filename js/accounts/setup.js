@@ -168,7 +168,7 @@ function renderAccountTypes() {
         <tr>
             <td>${AccountsCommon.escapeHtml(t.name)}</td>
             <td><span class="badge ${t.normal_balance === 'debit' ? 'status-active' : 'status-pending'}">${AccountsCommon.escapeHtml(t.normal_balance || '-')}</span></td>
-            <td>${AccountsCommon.escapeHtml(t.classification || '-')}</td>
+            <td>${AccountsCommon.escapeHtml(t.normal_balance || '-')}</td>
         </tr>
     `).join('');
 }
@@ -709,7 +709,7 @@ function renderOpeningBalances() {
     accountTypes.forEach(t => { typeMap[t.id] = t.name; });
 
     tbody.innerHTML = openingBalances.map(ob => {
-        const typeName = typeMap[ob.account_type_id] || ob.account_type_name || '-';
+        const typeName = ob.account_type_name || typeMap[ob.account_type_id] || '-';
         const isAdmin = accountsRoles.isAdmin();
         const debitVal = ob.debit_balance != null ? ob.debit_balance : '';
         const creditVal = ob.credit_balance != null ? ob.credit_balance : '';
@@ -790,7 +790,7 @@ async function loadFiscalYears() {
         fiscalYears = Array.isArray(res) ? res : (res?.data || res?.items || []);
 
         const activeYear = fiscalYears.find(fy => fy.status === 'active' || fy.is_active === true);
-        const closedCount = fiscalYears.filter(fy => fy.status === 'closed').length;
+        const closedCount = fiscalYears.filter(fy => fy.is_closed === true).length;
 
         const totalEl = document.getElementById('totalFiscalYears');
         const activeEl = document.getElementById('activeFiscalYear');
@@ -821,7 +821,7 @@ function renderFiscalYears() {
     }
 
     tbody.innerHTML = fiscalYears.map(fy => {
-        const status = fy.status || (fy.is_active ? 'active' : 'closed');
+        const status = fy.is_closed ? 'closed' : (fy.is_active ? 'active' : 'inactive');
         const canClose = accountsRoles.isAdmin() && status !== 'closed';
         const viewBtn = `<button class="btn-icon" onclick="viewFiscalYearDetail('${fy.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
         const closeBtn = canClose ? `<button class="btn btn-sm btn-outline" onclick="closeFiscalYear('${fy.id}')">Close Year</button>` : '';
@@ -895,8 +895,8 @@ async function viewFiscalYearDetail(id) {
     try {
         const url = AccountsCommon.buildUrl(`fiscal/years/${id}`);
         const fy = await api.request(url);
-        const status = fy.status || (fy.is_active ? 'active' : 'closed');
-        const isClosed = fy.is_closed || fy.status === 'closed';
+        const status = fy.is_closed ? 'closed' : (fy.is_active ? 'active' : 'inactive');
+        const isClosed = fy.is_closed === true;
 
         document.getElementById('fyDetailName').textContent = fy.name || '-';
         document.getElementById('fyDetailStartDate').textContent = AccountsCommon.formatDate(fy.start_date);
