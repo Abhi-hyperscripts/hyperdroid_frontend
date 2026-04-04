@@ -68,7 +68,7 @@ async function loadInitialData() {
     try {
         const [catRes, acctRes, bankRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('expenses/categories'), { _skipSpinner: true }).catch(() => []),
-            api.request(AccountsCommon.buildUrl('chart-of-accounts'), { _skipSpinner: true }).catch(() => []),
+            api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true }).catch(() => []),
             api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => [])
         ]);
         expenseCategories = Array.isArray(catRes) ? catRes : (catRes?.data || catRes?.items || []);

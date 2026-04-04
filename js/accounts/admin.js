@@ -247,7 +247,7 @@ async function exportAuditLogs() {
         if (userSearch) params.performedBy = userSearch;
 
         const url = AccountsCommon.buildUrl('audit/export', params);
-        const res = await api.request(url, { _skipSpinner: true, _rawResponse: true });
+        const res = await api.request(url, { method: 'POST', _skipSpinner: true, _rawResponse: true });
 
         // Handle blob download
         if (res instanceof Blob) {

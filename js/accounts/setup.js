@@ -472,7 +472,7 @@ async function deactivateAccount(id) {
     const ok = await Confirm.show({ title: 'Deactivate Account', message: 'Are you sure you want to deactivate this account?', confirmText: 'Deactivate', type: 'warning' });
     if (!ok) return;
     try {
-        await api.request(AccountsCommon.buildUrl(`coa/${id}/deactivate`), { method: 'PATCH' });
+        await api.request(AccountsCommon.buildUrl(`coa/${id}`), { method: 'DELETE' });
         Toast.success('Account deactivated');
         await loadAccounts();
     } catch (err) {
@@ -752,7 +752,7 @@ async function saveAllOpeningBalances() {
     }
 
     try {
-        await api.request(AccountsCommon.buildUrl('coa/balances'), {
+        await api.request(AccountsCommon.buildUrl('coa/opening-balances'), {
             method: 'POST',
             body: JSON.stringify({ fiscal_year_id: fiscalYearId, balances })
         });
@@ -769,7 +769,7 @@ async function saveOpeningBalance(accountId, debit, credit) {
     if (!fiscalYearId) { Toast.error('No fiscal year selected'); return; }
 
     try {
-        await api.request(AccountsCommon.buildUrl('coa/balances'), {
+        await api.request(AccountsCommon.buildUrl('coa/opening-balances'), {
             method: 'POST',
             body: JSON.stringify({ fiscal_year_id: fiscalYearId, balances: [{ account_id: accountId, debit_balance: debit, credit_balance: credit }] })
         });
@@ -882,7 +882,7 @@ async function closeFiscalYear(id) {
     const ok = await Confirm.danger('Are you sure you want to close this fiscal year? This action cannot be undone.', 'Close Fiscal Year');
     if (!ok) return;
     try {
-        await api.request(AccountsCommon.buildUrl(`fiscal/years/${id}/close`), { method: 'PATCH' });
+        await api.request(AccountsCommon.buildUrl(`fiscal/years/${id}/close`), { method: 'POST' });
         Toast.success('Fiscal year closed');
         await loadFiscalYears();
     } catch (err) {
@@ -974,7 +974,7 @@ async function lockPeriod(id) {
     const ok = await Confirm.show({ title: 'Lock Period', message: 'Lock this period? No more journal entries can be posted.', confirmText: 'Lock', type: 'warning' });
     if (!ok) return;
     try {
-        await api.request(AccountsCommon.buildUrl(`fiscal/periods/${id}/lock`), { method: 'PATCH' });
+        await api.request(AccountsCommon.buildUrl(`fiscal/periods/${id}/lock`), { method: 'POST' });
         Toast.success('Period locked');
         await loadFiscalPeriods();
     } catch (err) {
@@ -987,7 +987,7 @@ async function unlockPeriod(id) {
     const ok = await Confirm.show({ title: 'Unlock Period', message: 'Unlock this period? Journal entries will be allowed again.', confirmText: 'Unlock', type: 'warning' });
     if (!ok) return;
     try {
-        await api.request(AccountsCommon.buildUrl(`fiscal/periods/${id}/unlock`), { method: 'PATCH' });
+        await api.request(AccountsCommon.buildUrl(`fiscal/periods/${id}/unlock`), { method: 'POST' });
         Toast.success('Period unlocked');
         await loadFiscalPeriods();
     } catch (err) {
@@ -1134,7 +1134,7 @@ async function initializeTemplate(country) {
     if (!ok) return;
 
     try {
-        await api.request(AccountsCommon.buildUrl('coa/templates/initialize'), {
+        await api.request(AccountsCommon.buildUrl('coa/setup-template'), {
             method: 'POST',
             body: JSON.stringify({ country })
         });

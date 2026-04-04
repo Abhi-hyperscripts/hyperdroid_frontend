@@ -73,8 +73,8 @@ async function loadInitialData() {
     try {
         const [custRes, acctRes, bankRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('customers'), { _skipSpinner: true }).catch(() => []),
-            api.request(AccountsCommon.buildUrl('accounts', { is_active: true, pageSize: 500 }), { _skipSpinner: true }).catch(() => []),
-            api.request(AccountsCommon.buildUrl('accounts', { is_active: true, is_bank_account: true, pageSize: 200 }), { _skipSpinner: true }).catch(() => [])
+            api.request(AccountsCommon.buildUrl('coa', { isActive: true }), { _skipSpinner: true }).catch(() => []),
+            api.request(AccountsCommon.buildUrl('coa', { isActive: true }), { _skipSpinner: true }).catch(() => [])
         ]);
         customers = Array.isArray(custRes) ? custRes : (custRes?.data || custRes?.items || []);
         accounts = Array.isArray(acctRes) ? acctRes : (acctRes?.data || acctRes?.items || []);
