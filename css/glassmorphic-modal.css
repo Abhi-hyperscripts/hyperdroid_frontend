@@ -634,6 +634,11 @@
     box-sizing: border-box;
 }
 
+.modal-body {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
 /* =================================================================
    MODAL CONTENT — Glassmorphic Light theme
    ================================================================= */

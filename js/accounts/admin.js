@@ -1,0 +1,650 @@
+/**
+ * AccountsService — Administration Page
+ *
+ * Handles 6 sidebar tabs:
+ *   1. Audit Logs          4. Job Log
+ *   2. Pending Approvals   5. Closing Checklists
+ *   3. Integrity Check     6. Year-End Closing
+ */
+
+// ============================================================================
+// GLOBAL STATE
+// ============================================================================
+
+let auditLogs = [];
+let pendingApprovals = [];
+let jobLogs = [];
+let closingChecklists = [];
+let fiscalYears = [];
+
+let auditLogPage = 1;
+let jobLogPage = 1;
+const PAGE_SIZE = 50;
+
+// Dropdown instances
+let checklistFYDropdown = null;
+let yearEndFYDropdown = null;
+
+// ============================================================================
+// PAGE INIT
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', async function () {
+    if (!await AccountsCommon.initPage('admin', '../')) return;
+
+    const tabNames = {
+        'audit-logs': 'Audit Logs',
+        'pending-approvals': 'Pending Approvals',
+        'integrity-check': 'Integrity Check',
+        'job-log': 'Job Log',
+        'closing-checklists': 'Closing Checklists',
+        'year-end': 'Year-End Closing'
+    };
+
+    AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
+    AccountsCommon.setupTabs(tabNames, onTabSwitch);
+    accountsRoles.applyRBAC();
+
+    await loadInitialData();
+    AccountsCommon.initSearchableDropdownsWithRetry(initDropdowns);
+    setupSearchListeners();
+});
+
+// ============================================================================
+// TAB SWITCH HANDLER
+// ============================================================================
+
+function onTabSwitch(tabId) {
+    switch (tabId) {
+        case 'audit-logs':          loadAuditLogs(); break;
+        case 'pending-approvals':   loadPendingApprovals(); break;
+        case 'integrity-check':     break;
+        case 'job-log':             loadJobLogs(); break;
+        case 'closing-checklists':  loadChecklists(); break;
+        case 'year-end':            break;
+    }
+}
+
+// ============================================================================
+// INITIAL DATA LOAD
+// ============================================================================
+
+async function loadInitialData() {
+    try {
+        await Promise.all([
+            loadAuditLogs(),
+            loadFiscalYears()
+        ]);
+    } catch (err) {
+        console.error('[Admin] loadInitialData error:', err);
+    }
+}
+
+async function loadFiscalYears() {
+    try {
+        const url = AccountsCommon.buildUrl('fiscal/years');
+        const res = await api.request(url, { _skipSpinner: true });
+        fiscalYears = Array.isArray(res) ? res : (res?.data || res?.items || []);
+    } catch (err) {
+        console.error('[Admin] loadFiscalYears error:', err);
+    }
+}
+
+function initDropdowns() {
+    if (typeof SearchableDropdown === 'undefined') return;
+
+    const fyOptions = fiscalYears.map(fy => ({ value: fy.id, label: fy.name }));
+
+    checklistFYDropdown = new SearchableDropdown('checklistFYContainer', {
+        placeholder: 'Filter by fiscal year...',
+        options: [{ value: '', label: 'All Fiscal Years' }, ...fyOptions],
+        onChange: () => loadChecklists()
+    });
+
+    yearEndFYDropdown = new SearchableDropdown('yearEndFYContainer', {
+        placeholder: 'Select fiscal year...',
+        options: [{ value: '', label: 'Select...' }, ...fyOptions],
+        onChange: (val) => { if (val) loadYearEndPreflight(val); }
+    });
+}
+
+function setupSearchListeners() {
+    const debounce = (fn, ms = 300) => {
+        let timer;
+        return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
+    };
+
+    const auditSearch = document.getElementById('auditUserSearch');
+    if (auditSearch) auditSearch.addEventListener('input', debounce(() => { auditLogPage = 1; loadAuditLogs(); }));
+}
+
+// ============================================================================
+// 1. AUDIT LOGS
+// ============================================================================
+
+async function loadAuditLogs() {
+    try {
+        const entityFilter = document.getElementById('auditEntityFilter')?.value || '';
+        const from = document.getElementById('auditFrom')?.value || '';
+        const to = document.getElementById('auditTo')?.value || '';
+        const userSearch = document.getElementById('auditUserSearch')?.value || '';
+
+        const params = { limit: PAGE_SIZE, offset: (auditLogPage - 1) * PAGE_SIZE };
+        if (entityFilter) params.entityType = entityFilter;
+        if (from) params.fromDate = from;
+        if (to) params.toDate = to;
+        if (userSearch) params.performedBy = userSearch;
+
+        const url = AccountsCommon.buildUrl('audit/logs', params);
+        const res = await api.request(url, { _skipSpinner: true });
+        auditLogs = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        const total = res?.total || res?.totalCount || auditLogs.length;
+        const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+
+        renderAuditLogs();
+        AccountsCommon.renderPagination('auditLogsPagination', auditLogPage, totalPages, (page) => {
+            auditLogPage = page;
+            loadAuditLogs();
+        });
+    } catch (err) {
+        console.error('[Admin] loadAuditLogs error:', err);
+        Toast.error('Failed to load audit logs');
+    }
+}
+
+function renderAuditLogs() {
+    const tbody = document.getElementById('auditLogsTable');
+    if (!tbody) return;
+
+    if (!auditLogs.length) {
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="5"><div class="empty-message">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+            </svg><p>No audit logs found</p></div></td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = auditLogs.map(l => {
+        const actionBadge = l.action === 'create' ? 'status-active'
+            : l.action === 'delete' ? 'status-rejected'
+            : 'status-pending';
+
+        return `<tr>
+            <td>${AccountsCommon.formatDate(l.timestamp || l.created_at, true)}</td>
+            <td>${AccountsCommon.escapeHtml(l.entity_type || '-')}</td>
+            <td><span class="badge ${actionBadge}">${AccountsCommon.escapeHtml(l.action || '-')}</span></td>
+            <td>${AccountsCommon.escapeHtml(l.performed_by || l.user_name || '-')}</td>
+            <td><span title="${AccountsCommon.escapeHtml(JSON.stringify(l.details || ''))}">${AccountsCommon.escapeHtml(truncateStr(l.details_summary || JSON.stringify(l.details || '-'), 60))}</span></td>
+        </tr>`;
+    }).join('');
+}
+
+function truncateStr(str, max) {
+    if (!str || typeof str !== 'string') return '-';
+    return str.length > max ? str.substring(0, max) + '...' : str;
+}
+
+async function exportAuditLogs() {
+    try {
+        const entityFilter = document.getElementById('auditEntityFilter')?.value || '';
+        const from = document.getElementById('auditFrom')?.value || '';
+        const to = document.getElementById('auditTo')?.value || '';
+        const userSearch = document.getElementById('auditUserSearch')?.value || '';
+
+        const params = { format: 'csv' };
+        if (entityFilter) params.entityType = entityFilter;
+        if (from) params.fromDate = from;
+        if (to) params.toDate = to;
+        if (userSearch) params.performedBy = userSearch;
+
+        const url = AccountsCommon.buildUrl('audit/export', params);
+        const res = await api.request(url, { _skipSpinner: true, _rawResponse: true });
+
+        // Handle blob download
+        if (res instanceof Blob) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(res);
+            a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } else {
+            // If response is text/json, convert to CSV client-side
+            const data = Array.isArray(res) ? res : (res?.data || res?.items || auditLogs);
+            if (!data.length) {
+                Toast.error('No data to export');
+                return;
+            }
+            const headers = ['Timestamp', 'Entity', 'Action', 'User', 'Details'];
+            const csvRows = [headers.join(',')];
+            data.forEach(l => {
+                csvRows.push([
+                    l.timestamp || l.created_at || '',
+                    l.entity_type || '',
+                    l.action || '',
+                    l.performed_by || l.user_name || '',
+                    '"' + (l.details_summary || JSON.stringify(l.details || '')).replace(/"/g, '""') + '"'
+                ].join(','));
+            });
+            const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+        Toast.success('Audit logs exported');
+    } catch (err) {
+        console.error('[Admin] exportAuditLogs error:', err);
+        Toast.error(err.message || 'Failed to export audit logs');
+    }
+}
+
+// ============================================================================
+// 2. PENDING APPROVALS
+// ============================================================================
+
+async function loadPendingApprovals() {
+    const container = document.getElementById('pendingApprovalsContainer');
+    if (!container) return;
+
+    try {
+        const url = AccountsCommon.buildUrl('audit/approvals/pending');
+        const res = await api.request(url, { _skipSpinner: true });
+        pendingApprovals = Array.isArray(res) ? res : (res?.data || res?.items || []);
+
+        if (!pendingApprovals.length) {
+            container.innerHTML = `<div class="empty-message">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg><p>No pending approvals</p></div>`;
+            return;
+        }
+
+        container.innerHTML = pendingApprovals.map(a => `
+            <div class="glass-card" style="margin-bottom: 1rem;">
+                <div class="glass-card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h4 style="margin-bottom: 0.25rem;">${AccountsCommon.escapeHtml(a.title || a.description || 'Approval Request')}</h4>
+                        <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem;">
+                            ${AccountsCommon.escapeHtml(a.type || '-')} &bull;
+                            ${AccountsCommon.escapeHtml(a.requested_by || '-')} &bull;
+                            ${AccountsCommon.formatDate(a.created_at)}
+                            ${a.amount != null ? ' &bull; ' + AccountsCommon.formatCurrency(a.amount) : ''}
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        ${accountsRoles.isManager() ? `
+                            <button class="btn btn-primary" onclick="approveItem('${a.id}')" style="padding: 0.4rem 1rem;">Approve</button>
+                            <button class="btn btn-outline" onclick="rejectItem('${a.id}')" style="padding: 0.4rem 1rem; color: var(--color-error); border-color: var(--color-error);">Reject</button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('[Admin] loadPendingApprovals error:', err);
+        container.innerHTML = `<div class="empty-message"><p>Failed to load pending approvals</p></div>`;
+    }
+}
+
+async function approveItem(id) {
+    const ok = await Confirm.show({ title: 'Approve Item', message: 'Approve this item?', confirmText: 'Approve', type: 'info' });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`audit/approvals/${id}/approve`), { method: 'POST' });
+        Toast.success('Item approved');
+        await loadPendingApprovals();
+    } catch (err) {
+        console.error('[Admin] approveItem error:', err);
+        Toast.error(err.message || 'Failed to approve');
+    }
+}
+
+async function rejectItem(id) {
+    const ok = await Confirm.danger('Reject this item?', 'Reject Item');
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`audit/approvals/${id}/reject`), { method: 'POST' });
+        Toast.success('Item rejected');
+        await loadPendingApprovals();
+    } catch (err) {
+        console.error('[Admin] rejectItem error:', err);
+        Toast.error(err.message || 'Failed to reject');
+    }
+}
+
+// ============================================================================
+// 3. INTEGRITY CHECK
+// ============================================================================
+
+async function runIntegrityCheck() {
+    const resultsContainer = document.getElementById('integrityResults');
+    if (!resultsContainer) return;
+
+    resultsContainer.innerHTML = `<div class="empty-message"><p>Running integrity check...</p></div>`;
+
+    try {
+        const url = AccountsCommon.buildUrl('system/integrity-check');
+        const res = await api.request(url, { method: 'POST' });
+        const data = res?.data || res;
+        const checks = Array.isArray(data) ? data : (data?.checks || []);
+
+        if (!checks.length) {
+            resultsContainer.innerHTML = `<div class="glass-card"><div class="glass-card-body">
+                <h4 style="margin-bottom:1rem;">Integrity Check Results</h4>
+                <p style="color: var(--color-success);">All checks passed. No issues found.</p>
+            </div></div>`;
+            return;
+        }
+
+        resultsContainer.innerHTML = `<div class="data-table-container"><table class="data-table">
+            <thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead>
+            <tbody>${checks.map(c => `<tr>
+                <td>${AccountsCommon.escapeHtml(c.name || c.check)}</td>
+                <td><span class="badge ${c.passed ? 'status-active' : 'status-rejected'}">${c.passed ? 'PASS' : 'FAIL'}</span></td>
+                <td>${AccountsCommon.escapeHtml(c.details || c.message || '-')}</td>
+            </tr>`).join('')}</tbody>
+        </table></div>`;
+
+        const allPassed = checks.every(c => c.passed);
+        if (allPassed) {
+            Toast.success('All integrity checks passed');
+        } else {
+            Toast.error('Some integrity checks failed. Review results.');
+        }
+    } catch (err) {
+        console.error('[Admin] runIntegrityCheck error:', err);
+        Toast.error(err.message || 'Failed to run integrity check');
+        resultsContainer.innerHTML = `<div class="empty-message"><p>Integrity check failed. Please try again.</p></div>`;
+    }
+}
+
+async function recomputeBalances() {
+    const ok = await Confirm.show({ title: 'Recompute Balances', message: 'This will recompute all account balances from journal entries. This may take a while. Continue?', confirmText: 'Continue', type: 'warning' });
+    if (!ok) return;
+
+    try {
+        const url = AccountsCommon.buildUrl('system/recompute-balances');
+        await api.request(url, { method: 'POST' });
+        Toast.success('Balances recomputed successfully');
+    } catch (err) {
+        console.error('[Admin] recomputeBalances error:', err);
+        Toast.error(err.message || 'Failed to recompute balances');
+    }
+}
+
+// ============================================================================
+// 4. JOB LOG
+// ============================================================================
+
+async function loadJobLogs() {
+    try {
+        const jobType = document.getElementById('jobTypeFilter')?.value || '';
+        const params = { limit: PAGE_SIZE, offset: (jobLogPage - 1) * PAGE_SIZE };
+        if (jobType) params.jobType = jobType;
+
+        const url = AccountsCommon.buildUrl('system/job-log', params);
+        const res = await api.request(url, { _skipSpinner: true });
+        jobLogs = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        const total = res?.total || res?.totalCount || jobLogs.length;
+        const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+
+        renderJobLogs();
+        AccountsCommon.renderPagination('jobLogsPagination', jobLogPage, totalPages, (page) => {
+            jobLogPage = page;
+            loadJobLogs();
+        });
+    } catch (err) {
+        console.error('[Admin] loadJobLogs error:', err);
+        Toast.error('Failed to load job logs');
+    }
+}
+
+function renderJobLogs() {
+    const tbody = document.getElementById('jobLogsTable');
+    if (!tbody) return;
+
+    if (!jobLogs.length) {
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="5"><div class="empty-message">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg><p>No job logs found</p></div></td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = jobLogs.map(j => {
+        const statusBadge = j.status === 'completed' ? 'status-active'
+            : j.status === 'failed' ? 'status-rejected'
+            : j.status === 'running' ? 'status-pending'
+            : 'status-pending';
+
+        return `<tr>
+            <td>${AccountsCommon.formatDate(j.timestamp || j.created_at, true)}</td>
+            <td>${AccountsCommon.escapeHtml(j.job_type || '-')}</td>
+            <td><span class="badge ${statusBadge}">${AccountsCommon.escapeHtml(j.status || '-')}</span></td>
+            <td>${j.duration_ms != null ? (j.duration_ms / 1000).toFixed(1) + 's' : (j.duration || '-')}</td>
+            <td>${AccountsCommon.escapeHtml(truncateStr(j.details || j.message || '-', 60))}</td>
+        </tr>`;
+    }).join('');
+}
+
+// ============================================================================
+// 5. CLOSING CHECKLISTS
+// ============================================================================
+
+async function loadChecklists() {
+    try {
+        const fyFilter = checklistFYDropdown?.getValue?.() || '';
+        const params = {};
+        if (fyFilter) params.fiscalYearId = fyFilter;
+
+        const url = AccountsCommon.buildUrl('closing/checklists', params);
+        const res = await api.request(url, { _skipSpinner: true });
+        closingChecklists = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        renderChecklists();
+    } catch (err) {
+        console.error('[Admin] loadChecklists error:', err);
+        Toast.error('Failed to load closing checklists');
+    }
+}
+
+function renderChecklists() {
+    const tbody = document.getElementById('checklistsTable');
+    if (!tbody) return;
+
+    if (!closingChecklists.length) {
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="5"><div class="empty-message">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg><p>No closing checklists found</p></div></td></tr>`;
+        return;
+    }
+
+    const fyMap = {};
+    fiscalYears.forEach(fy => { fyMap[fy.id] = fy.name; });
+
+    tbody.innerHTML = closingChecklists.map(c => {
+        const fyName = fyMap[c.fiscal_year_id] || c.fiscal_year_name || '-';
+        const status = c.status || 'pending';
+        const progress = c.progress != null ? c.progress + '%' : '-';
+
+        const actions = accountsRoles.isAdmin()
+            ? `<button class="btn-icon" onclick="viewChecklist('${c.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+               <button class="btn-icon danger" onclick="deleteChecklist('${c.id}')" data-tooltip="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`
+            : `<button class="btn-icon" onclick="viewChecklist('${c.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+
+        return `<tr>
+            <td>${AccountsCommon.escapeHtml(c.name)}</td>
+            <td>${AccountsCommon.escapeHtml(fyName)}</td>
+            <td>${AccountsCommon.statusBadge(status)}</td>
+            <td>${progress}</td>
+            <td class="actions-cell">${actions}</td>
+        </tr>`;
+    }).join('');
+}
+
+function showCreateChecklistModal() {
+    document.getElementById('checklistModalTitle').textContent = 'Create Closing Checklist';
+    document.getElementById('checklistForm').reset();
+    document.getElementById('checklistId').value = '';
+    populateChecklistFYSelect();
+    AccountsCommon.openModal('checklistModal');
+}
+
+function populateChecklistFYSelect(selectedValue) {
+    const sel = document.getElementById('checklistFY');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Select...</option>' +
+        fiscalYears.map(fy => `<option value="${fy.id}" ${fy.id === selectedValue ? 'selected' : ''}>${AccountsCommon.escapeHtml(fy.name)}</option>`).join('');
+}
+
+async function saveChecklist() {
+    const id = document.getElementById('checklistId').value;
+    const name = document.getElementById('checklistName').value.trim();
+    const fiscal_year_id = document.getElementById('checklistFY').value;
+    const description = document.getElementById('checklistDescription').value.trim();
+
+    if (!name || !fiscal_year_id) {
+        Toast.error('Checklist name and Fiscal Year are required');
+        return;
+    }
+
+    const payload = { name, fiscal_year_id, description };
+
+    try {
+        if (id) {
+            await api.request(AccountsCommon.buildUrl(`closing/checklists/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
+            Toast.success('Checklist updated');
+        } else {
+            await api.request(AccountsCommon.buildUrl('closing/checklists'), { method: 'POST', body: JSON.stringify(payload) });
+            Toast.success('Checklist created');
+        }
+        AccountsCommon.closeModal('checklistModal');
+        await loadChecklists();
+    } catch (err) {
+        console.error('[Admin] saveChecklist error:', err);
+        Toast.error(err.message || 'Failed to save checklist');
+    }
+}
+
+async function viewChecklist(id) {
+    // For now, just open the checklist detail. Could expand to show items.
+    try {
+        const url = AccountsCommon.buildUrl(`closing/checklists/${id}`);
+        const res = await api.request(url, { _skipSpinner: true });
+        const checklist = res?.data || res;
+        const items = checklist?.items || [];
+
+        if (!items.length) {
+            Toast.error('No checklist items found');
+            return;
+        }
+
+        // Simple alert-style display. In future, render in a modal.
+        const summary = items.map(i => `${i.completed ? '[x]' : '[ ]'} ${i.name}`).join('\n');
+        alert('Checklist Items:\n\n' + summary);
+    } catch (err) {
+        console.error('[Admin] viewChecklist error:', err);
+        Toast.error(err.message || 'Failed to load checklist details');
+    }
+}
+
+async function deleteChecklist(id) {
+    const ok = await Confirm.danger('Are you sure you want to delete this closing checklist?', 'Delete Checklist');
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`closing/checklists/${id}`), { method: 'DELETE' });
+        Toast.success('Checklist deleted');
+        await loadChecklists();
+    } catch (err) {
+        console.error('[Admin] deleteChecklist error:', err);
+        Toast.error(err.message || 'Failed to delete checklist');
+    }
+}
+
+// ============================================================================
+// 6. YEAR-END CLOSING
+// ============================================================================
+
+async function loadYearEndPreflight(fiscalYearId) {
+    const area = document.getElementById('yearEndPreflightArea');
+    const actionsDiv = document.getElementById('yearEndActions');
+    if (!area) return;
+
+    area.innerHTML = `<div class="glass-card-body"><div class="empty-message"><p>Running pre-flight checks...</p></div></div>`;
+    if (actionsDiv) actionsDiv.style.display = 'none';
+
+    try {
+        const url = AccountsCommon.buildUrl(`closing/checklists/${fiscalYearId}`);
+        const res = await api.request(url);
+        const data = res?.data || res;
+        const checks = Array.isArray(data) ? data : (data?.checks || []);
+
+        if (!checks.length) {
+            area.innerHTML = `<div class="glass-card-body">
+                <h4 style="margin-bottom:1rem;">Pre-Flight Checks</h4>
+                <p style="color: var(--color-success);">All pre-flight checks passed. Ready for year-end closing.</p>
+            </div>`;
+            if (actionsDiv) actionsDiv.style.display = 'block';
+            return;
+        }
+
+        const allPassed = checks.every(c => c.passed);
+
+        area.innerHTML = `<div class="glass-card-body">
+            <h4 style="margin-bottom:1rem;">Pre-Flight Checks</h4>
+            <div class="data-table-container"><table class="data-table">
+                <thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead>
+                <tbody>${checks.map(c => `<tr>
+                    <td>${AccountsCommon.escapeHtml(c.name || c.check)}</td>
+                    <td><span class="badge ${c.passed ? 'status-active' : 'status-rejected'}">${c.passed ? 'PASS' : 'FAIL'}</span></td>
+                    <td>${AccountsCommon.escapeHtml(c.details || c.message || '-')}</td>
+                </tr>`).join('')}</tbody>
+            </table></div>
+        </div>`;
+
+        if (actionsDiv) actionsDiv.style.display = allPassed ? 'block' : 'none';
+    } catch (err) {
+        console.error('[Admin] loadYearEndPreflight error:', err);
+        area.innerHTML = `<div class="glass-card-body"><div class="empty-message"><p>Failed to run pre-flight checks</p></div></div>`;
+    }
+}
+
+async function closeFinancialYear() {
+    const fyId = yearEndFYDropdown?.getValue?.();
+    if (!fyId) {
+        Toast.error('Please select a fiscal year');
+        return;
+    }
+
+    const fyName = fiscalYears.find(fy => fy.id === fyId)?.name || fyId;
+
+    const ok1 = await Confirm.danger(`WARNING: You are about to close fiscal year "${fyName}". This action CANNOT be undone. All periods will be locked and balances will be carried forward.\n\nAre you absolutely sure?`, 'Close Fiscal Year');
+    if (!ok1) return;
+    const ok2 = await Confirm.danger(`FINAL CONFIRMATION: Close fiscal year "${fyName}" permanently?`, 'Final Confirmation');
+    if (!ok2) return;
+
+    try {
+        const url = AccountsCommon.buildUrl(`closing/year-end/${fyId}`);
+        await api.request(url, { method: 'POST' });
+        Toast.success(`Fiscal year "${fyName}" closed successfully`);
+
+        // Refresh data
+        await loadFiscalYears();
+        if (typeof initDropdowns === 'function') initDropdowns();
+
+        document.getElementById('yearEndPreflightArea').innerHTML = `<div class="glass-card-body"><div class="empty-message">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg><p>Fiscal year closed successfully</p></div></div>`;
+        document.getElementById('yearEndActions').style.display = 'none';
+    } catch (err) {
+        console.error('[Admin] closeFinancialYear error:', err);
+        Toast.error(err.message || 'Failed to close fiscal year');
+    }
+}

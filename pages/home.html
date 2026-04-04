@@ -333,6 +333,38 @@
                 </div>
             </div>
 
+            <!-- Accounts Card -->
+            <div class="bento-card accounts" onclick="navigateToModule('accounts')" id="accountsCard">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/>
+                                <path d="M8 10h8"/>
+                                <path d="M8 14h4"/>
+                            </svg>
+                        </div>
+                        <div class="app-status" id="accountsStatus">
+                            <span class="status-indicator"></span>
+                            <span>Checking...</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3>Accounts</h3>
+                        <p>Double-entry accounting with GL, AP, AR, banking, expenses, and financial reports</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="app-action">
+                            Launch
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <!-- KIP News Card (SUPERADMIN only) -->
             <div class="bento-card news" onclick="navigateToModule('news')" id="newsCard">
                 <div class="card-border"></div>
@@ -467,6 +499,7 @@
                 'pmsCard': 'PMS_USER',
                 'procurementCard': 'PROCUREMENT_USER',
                 'lmsCard': 'LMS_USER',
+                'accountsCard': 'ACCOUNTS_USER',
                 'newsCard': 'SUPERADMIN',
                 'adminCard': 'SUPERADMIN'
             };
@@ -481,7 +514,8 @@
                 'researchCard': 'Research',
                 'pmsCard': 'PMS',
                 'procurementCard': 'Procurement',
-                'lmsCard': 'LMS'
+                'lmsCard': 'LMS',
+                'accountsCard': 'Accounts'
             };
 
             // Get licensed services from cached organization info (populated at login from JWT)
@@ -494,7 +528,7 @@
             const cardToModule = {
                 'visionCard': 'vision', 'driveCard': 'drive', 'chatCard': 'chat',
                 'hrmsCard': 'hrms', 'crmCard': 'crm', 'researchCard': 'research',
-                'pmsCard': 'pms', 'procurementCard': 'procurement', 'lmsCard': 'lms', 'newsCard': 'news', 'adminCard': 'admin'
+                'pmsCard': 'pms', 'procurementCard': 'procurement', 'lmsCard': 'lms', 'accountsCard': 'accounts', 'newsCard': 'news', 'adminCard': 'admin'
             };
             const accessibleModules = [];
 
@@ -541,6 +575,7 @@
             checkServiceHealth('pms', CONFIG.endpoints.pms);
             checkServiceHealth('procurement', CONFIG.endpoints.procurement);
             checkServiceHealth('lms', CONFIG.endpoints.lms);
+            checkServiceHealth('accounts', CONFIG.endpoints.accounts);
         }
 
         async function checkServiceHealth(moduleName, endpoint) {
@@ -597,6 +632,9 @@
                     break;
                 case 'lms':
                     window.location.href = 'lms/dashboard.html';
+                    break;
+                case 'accounts':
+                    window.location.href = 'accounts/dashboard.html';
                     break;
                 case 'news':
                     window.location.href = 'news/admin.html';

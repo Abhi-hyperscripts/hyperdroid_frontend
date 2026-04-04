@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Accounts Payable - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Accounts Payable</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <!-- Hamburger Toggle Button -->
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Accounts Payable</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Vendor Bills</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar + Content Layout -->
+        <div class="organization-layout">
+            <!-- Collapsible Sidebar Navigation -->
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>Payables</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Bills Section -->
+                    <div class="nav-group" data-group="bills">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                Bills
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="vendor-bills" id="vendorBillsTab">
+                                <span class="nav-number">1</span><span class="nav-label">Vendor Bills</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="vendor-payments" id="vendorPaymentsTab">
+                                <span class="nav-number">2</span><span class="nav-label">Payments</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Section -->
+                    <div class="nav-group" data-group="analysis">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                                </svg>
+                                Analysis
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="ap-aging" id="apAgingTab">
+                                <span class="nav-number">3</span><span class="nav-label">AP Aging</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="vendor-statements" id="vendorStatementsTab">
+                                <span class="nav-number">4</span><span class="nav-label">Vendor Statements</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="organization-content">
+
+                <!-- ============================================================ -->
+                <!-- Tab 1: Vendor Bills -->
+                <!-- ============================================================ -->
+                <div class="tab-content active" id="vendor-bills">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalBills">0</div>
+                            <div class="stat-label">Total Bills</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="draftBills">0</div>
+                            <div class="stat-label">Draft</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="approvedBills">0</div>
+                            <div class="stat-label">Approved</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalOutstanding">0.00</div>
+                            <div class="stat-label">Total Outstanding</div>
+                        </div>
+                    </div>
+
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="billVendorFilterContainer"></div>
+                        <select id="billStatusFilter" class="form-control" style="width:auto; min-width:140px;" onchange="currentBillPage=1; loadVendorBills()">
+                            <option value="">All Statuses</option>
+                            <option value="draft">Draft</option>
+                            <option value="approved">Approved</option>
+                            <option value="paid">Paid</option>
+                            <option value="partially_paid">Partially Paid</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                        <input type="date" id="billFromDate" class="form-control" style="width:auto;" onchange="currentBillPage=1; loadVendorBills()" placeholder="From Date">
+                        <input type="date" id="billToDate" class="form-control" style="width:auto;" onchange="currentBillPage=1; loadVendorBills()" placeholder="To Date">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="billSearch" placeholder="Search bills...">
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateBillModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Create Bill
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Bill #</th>
+                                    <th>Vendor</th>
+                                    <th>Bill Date</th>
+                                    <th>Due Date</th>
+                                    <th>Subtotal</th>
+                                    <th>Tax</th>
+                                    <th>Total</th>
+                                    <th>Paid</th>
+                                    <th>Balance</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vendorBillsTable">
+                                <tr class="empty-state">
+                                    <td colspan="11">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                            </svg>
+                                            <p>No vendor bills found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="billsPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 2: Vendor Payments -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="vendor-payments">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="paymentVendorFilterContainer"></div>
+                        <button class="btn btn-primary" onclick="showRecordPaymentModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                            Record Payment
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Payment #</th>
+                                    <th>Vendor</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Bank Account</th>
+                                    <th>Reference</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vendorPaymentsTable">
+                                <tr class="empty-state">
+                                    <td colspan="7">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                            </svg>
+                                            <p>No payments recorded</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 3: AP Aging -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="ap-aging">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="apCurrent">0.00</div>
+                            <div class="stat-label">Current</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="ap30">0.00</div>
+                            <div class="stat-label">1-30 Days</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="ap60">0.00</div>
+                            <div class="stat-label">31-60 Days</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="ap90">0.00</div>
+                            <div class="stat-label">61-90 Days</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="ap90Plus">0.00</div>
+                            <div class="stat-label">90+ Days</div>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Vendor</th>
+                                    <th>Current</th>
+                                    <th>1-30 Days</th>
+                                    <th>31-60 Days</th>
+                                    <th>61-90 Days</th>
+                                    <th>90+ Days</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="apAgingTable">
+                                <tr class="empty-state">
+                                    <td colspan="7">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <line x1="18" y1="20" x2="18" y2="10"></line>
+                                                <line x1="12" y1="20" x2="12" y2="4"></line>
+                                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                                            </svg>
+                                            <p>No aging data available</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 4: Vendor Statements -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="vendor-statements">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="stmtVendorContainer"></div>
+                        <input type="date" id="stmtFromDate" class="form-control" style="width:auto;">
+                        <input type="date" id="stmtToDate" class="form-control" style="width:auto;">
+                        <button class="btn btn-primary" onclick="loadVendorStatement()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                            </svg>
+                            Generate
+                        </button>
+                    </div>
+
+                    <div id="vendorStatementContent">
+                        <div class="empty-message">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <p>Select a vendor and date range to generate statement</p>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODALS -->
+    <!-- ================================================================== -->
+
+    <!-- Vendor Bill Modal -->
+    <div id="vendorBillModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="billModalTitle">Create Vendor Bill</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('vendorBillModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="billForm">
+                        <input type="hidden" id="billId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="billVendor">Vendor *</label>
+                                <select id="billVendor" class="form-control" required>
+                                    <option value="">Select Vendor...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="billDate">Bill Date *</label>
+                                <input type="date" id="billDate" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="billDueDate">Due Date *</label>
+                                <input type="date" id="billDueDate" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="billPoReference">PO Reference</label>
+                                <input type="text" id="billPoReference" class="form-control" placeholder="e.g., PO-2026-001">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="billNotes">Notes</label>
+                                <textarea id="billNotes" class="form-control" rows="2" placeholder="Additional notes..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Line Items Section -->
+                        <div class="form-section">
+                            <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <h4>Line Items</h4>
+                                <button type="button" class="btn btn-outline btn-sm" onclick="addBillLine()">+ Add Line</button>
+                            </div>
+                            <table class="line-items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th>Account</th>
+                                        <th>Qty</th>
+                                        <th>Rate</th>
+                                        <th>Amount</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="billLinesBody"></tbody>
+                            </table>
+                            <div class="line-items-total">
+                                <span>Subtotal: </span><span id="billSubtotal">0.00</span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('vendorBillModal')">Cancel</button>
+                    <button class="btn btn-outline" onclick="saveBill(false)">Save Draft</button>
+                    <button class="btn btn-primary" onclick="saveBill(true)">Save &amp; Approve</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vendor Payment Modal -->
+    <div id="vendorPaymentModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Record Payment</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('vendorPaymentModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="paymentForm">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="paymentVendor">Vendor *</label>
+                                <select id="paymentVendor" class="form-control" required onchange="loadVendorOpenBills()">
+                                    <option value="">Select Vendor...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentDate">Payment Date *</label>
+                                <input type="date" id="paymentDate" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="paymentAmount">Amount *</label>
+                                <input type="number" id="paymentAmount" class="form-control" required step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentBankAccount">Bank Account *</label>
+                                <select id="paymentBankAccount" class="form-control" required>
+                                    <option value="">Select Account...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="paymentReference">Reference Number</label>
+                                <input type="text" id="paymentReference" class="form-control" placeholder="e.g., CHK-1234 or TXN-ID">
+                            </div>
+                        </div>
+
+                        <!-- Bill Allocation Section -->
+                        <div class="form-section">
+                            <div class="section-header" style="margin-bottom:12px;">
+                                <h4>Allocate to Bills</h4>
+                            </div>
+                            <table class="line-items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Bill #</th>
+                                        <th>Due Date</th>
+                                        <th>Balance</th>
+                                        <th>Allocate</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="paymentAllocBody">
+                                    <tr class="empty-state"><td colspan="4" style="text-align:center; padding:1rem; color:var(--text-secondary);">Select a vendor to see open bills</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('vendorPaymentModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveVendorPayment()">Record Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/payables.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+
+    <!-- Flatpickr for Date/Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</body>
+</html>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Financial Reports - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Reports</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <!-- Hamburger Toggle Button -->
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Financial Reports</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Trial Balance</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar + Content Layout -->
+        <div class="organization-layout">
+            <!-- Collapsible Sidebar Navigation -->
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>Reports</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Financial Statements Section -->
+                    <div class="nav-group" data-group="financial-statements">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                                </svg>
+                                Financial Statements
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="trial-balance" id="trialBalanceTab">
+                                <span class="nav-number">1</span><span class="nav-label">Trial Balance</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="profit-loss" id="profitLossTab">
+                                <span class="nav-number">2</span><span class="nav-label">Profit & Loss</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="balance-sheet" id="balanceSheetTab">
+                                <span class="nav-number">3</span><span class="nav-label">Balance Sheet</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="cash-flow" id="cashFlowTab">
+                                <span class="nav-number">4</span><span class="nav-label">Cash Flow</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Ledger Section -->
+                    <div class="nav-group" data-group="ledger">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                </svg>
+                                Ledger
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="account-ledger" id="accountLedgerTab">
+                                <span class="nav-number">5</span><span class="nav-label">Account Ledger</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Books Section -->
+                    <div class="nav-group" data-group="books">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                Books
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="day-book" id="dayBookTab">
+                                <span class="nav-number">6</span><span class="nav-label">Day Book</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="cash-book" id="cashBookTab">
+                                <span class="nav-number">7</span><span class="nav-label">Cash Book</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Aging Section -->
+                    <div class="nav-group" data-group="aging">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                Aging
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="ar-aging-report" id="arAgingTab">
+                                <span class="nav-number">8</span><span class="nav-label">AR Aging</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="ap-aging-report" id="apAgingTab">
+                                <span class="nav-number">9</span><span class="nav-label">AP Aging</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="organization-content">
+
+                <!-- ============================================================ -->
+                <!-- Tab 1: Trial Balance -->
+                <!-- ============================================================ -->
+                <div class="tab-content active" id="trial-balance">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="tbFiscalYearContainer"></div>
+                        <button class="btn btn-primary" onclick="loadTrialBalance()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                            Generate
+                        </button>
+                        <button class="btn btn-outline" onclick="exportReport('trial-balance', 'pdf')">Export PDF</button>
+                        <button class="btn btn-outline" onclick="exportReport('trial-balance', 'csv')">Export CSV</button>
+                        <button class="btn btn-outline" onclick="window.print()">Print</button>
+                    </div>
+                    <div class="report-container" id="trialBalanceContainer">
+                        <div class="report-header">
+                            <h2 id="trialBalanceTitle">Trial Balance</h2>
+                            <div class="report-period" id="trialBalancePeriod"></div>
+                        </div>
+                        <div id="trialBalanceContent">
+                            <div class="empty-message"><p>Click "Generate" to view the report</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 2: Profit & Loss -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="profit-loss">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="plFiscalYearContainer"></div>
+                        <button class="btn btn-primary" onclick="loadProfitLoss()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                            Generate
+                        </button>
+                        <button class="btn btn-outline" onclick="exportReport('profit-loss', 'pdf')">Export PDF</button>
+                        <button class="btn btn-outline" onclick="exportReport('profit-loss', 'csv')">Export CSV</button>
+                        <button class="btn btn-outline" onclick="window.print()">Print</button>
+                    </div>
+                    <div class="report-container" id="profitLossContainer">
+                        <div class="report-header">
+                            <h2 id="profitLossTitle">Profit & Loss Statement</h2>
+                            <div class="report-period" id="profitLossPeriod"></div>
+                        </div>
+                        <div id="profitLossContent">
+                            <div class="empty-message"><p>Click "Generate" to view the report</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 3: Balance Sheet -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="balance-sheet">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="bsFiscalYearContainer"></div>
+                        <button class="btn btn-primary" onclick="loadBalanceSheet()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                            Generate
+                        </button>
+                        <button class="btn btn-outline" onclick="exportReport('balance-sheet', 'pdf')">Export PDF</button>
+                        <button class="btn btn-outline" onclick="exportReport('balance-sheet', 'csv')">Export CSV</button>
+                        <button class="btn btn-outline" onclick="window.print()">Print</button>
+                    </div>
+                    <div class="report-container" id="balanceSheetContainer">
+                        <div class="report-header">
+                            <h2 id="balanceSheetTitle">Balance Sheet</h2>
+                            <div class="report-period" id="balanceSheetPeriod"></div>
+                        </div>
+                        <div id="balanceSheetContent">
+                            <div class="empty-message"><p>Click "Generate" to view the report</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 4: Cash Flow -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="cash-flow">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="cfFiscalYearContainer"></div>
+                        <button class="btn btn-primary" onclick="loadCashFlow()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                            Generate
+                        </button>
+                        <button class="btn btn-outline" onclick="exportReport('cash-flow', 'pdf')">Export PDF</button>
+                        <button class="btn btn-outline" onclick="exportReport('cash-flow', 'csv')">Export CSV</button>
+                        <button class="btn btn-outline" onclick="window.print()">Print</button>
+                    </div>
+                    <div class="report-container" id="cashFlowContainer">
+                        <div class="report-header">
+                            <h2 id="cashFlowTitle">Cash Flow Statement</h2>
+                            <div class="report-period" id="cashFlowPeriod"></div>
+                        </div>
+                        <div id="cashFlowContent">
+                            <div class="empty-message"><p>Click "Generate" to view the report</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 5: Account Ledger -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="account-ledger">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="ledgerAccountContainer"></div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="ledgerFromDate" style="font-size:0.8rem;margin-bottom:2px;">From</label>
+                            <input type="text" id="ledgerFromDate" class="form-control flatpickr-input" placeholder="From date">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="ledgerToDate" style="font-size:0.8rem;margin-bottom:2px;">To</label>
+                            <input type="text" id="ledgerToDate" class="form-control flatpickr-input" placeholder="To date">
+                        </div>
+                        <button class="btn btn-primary" onclick="loadAccountLedger()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                            Generate
+                        </button>
+                        <button class="btn btn-outline" onclick="exportReport('ledger', 'pdf')">Export PDF</button>
+                        <button class="btn btn-outline" onclick="exportReport('ledger', 'csv')">Export CSV</button>
+                        <button class="btn btn-outline" onclick="window.print()">Print</button>
+                    </div>
+                    <div class="report-container" id="ledgerContainer">
+                        <div class="report-header">
+                            <h2 id="ledgerTitle">Account Ledger</h2>
+                            <div class="report-period" id="ledgerPeriod"></div>
+                        </div>
+                        <div id="ledgerContent">
+                            <div class="empty-message"><p>Click "Generate" to view the report</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 6: Day Book -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="day-book">
+                    <div class="filters-bar">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="dayBookDate" style="font-size:0.8rem;margin-bottom:2px;">Date</label>
+                            <input type="text" id="dayBookDate" class="form-control flatpickr-input" placeholder="Select date">
+                        </div>
+                        <button class="btn btn-primary" onclick="loadDayBook()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                            Generate
+                        </button>
+                        <button class="btn btn-outline" onclick="exportReport('day-book', 'pdf')">Export PDF</button>
+                        <button class="btn btn-outline" onclick="exportReport('day-book', 'csv')">Export CSV</button>
+                        <button class="btn btn-outline" onclick="window.print()">Print</button>
+                    </div>
+                    <div class="report-container" id="dayBookContainer">
+                        <div class="report-header">
+                            <h2 id="dayBookTitle">Day Book</h2>
+                            <div class="report-period" id="dayBookPeriod"></div>
+                        </div>
+                        <div id="dayBookContent">
+                            <div class="empty-message"><p>Click "Generate" to view the report</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 7: Cash Book -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="cash-book">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="cashBookBankContainer"></div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="cashBookFromDate" style="font-size:0.8rem;margin-bottom:2px;">From</label>
+                            <input type="text" id="cashBookFromDate" class="form-control flatpickr-input" placeholder="From date">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="cashBookToDate" style="font-size:0.8rem;margin-bottom:2px;">To</label>
+                            <input type="text" id="cashBookToDate" class="form-control flatpickr-input" placeholder="To date">
+                        </div>
+                        <button class="btn btn-primary" onclick="loadCashBook()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                            Generate
+                        </button>
+                        <button class="btn btn-outline" onclick="exportReport('cash-book', 'pdf')">Export PDF</button>
+                        <button class="btn btn-outline" onclick="exportReport('cash-book', 'csv')">Export CSV</button>
+                        <button class="btn btn-outline" onclick="window.print()">Print</button>
+                    </div>
+                    <div class="report-container" id="cashBookContainer">
+                        <div class="report-header">
+                            <h2 id="cashBookTitle">Cash Book</h2>
+                            <div class="report-period" id="cashBookPeriod"></div>
+                        </div>
+                        <div id="cashBookContent">
+                            <div class="empty-message"><p>Click "Generate" to view the report</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 8: AR Aging -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="ar-aging-report">
+                    <div class="filters-bar">
+                        <button class="btn btn-primary" onclick="loadARAgingReport()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                            Generate
+                        </button>
+                        <button class="btn btn-outline" onclick="exportReport('ar-aging', 'pdf')">Export PDF</button>
+                        <button class="btn btn-outline" onclick="exportReport('ar-aging', 'csv')">Export CSV</button>
+                        <button class="btn btn-outline" onclick="window.print()">Print</button>
+                    </div>
+                    <div class="report-container" id="arAgingContainer">
+                        <div class="report-header">
+                            <h2 id="arAgingTitle">Accounts Receivable Aging</h2>
+                            <div class="report-period" id="arAgingPeriod"></div>
+                        </div>
+                        <div id="arAgingContent">
+                            <div class="empty-message"><p>Click "Generate" to view the report</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 9: AP Aging -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="ap-aging-report">
+                    <div class="filters-bar">
+                        <button class="btn btn-primary" onclick="loadAPAgingReport()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                            Generate
+                        </button>
+                        <button class="btn btn-outline" onclick="exportReport('ap-aging', 'pdf')">Export PDF</button>
+                        <button class="btn btn-outline" onclick="exportReport('ap-aging', 'csv')">Export CSV</button>
+                        <button class="btn btn-outline" onclick="window.print()">Print</button>
+                    </div>
+                    <div class="report-container" id="apAgingContainer">
+                        <div class="report-header">
+                            <h2 id="apAgingTitle">Accounts Payable Aging</h2>
+                            <div class="report-period" id="apAgingPeriod"></div>
+                        </div>
+                        <div id="apAgingContent">
+                            <div class="empty-message"><p>Click "Generate" to view the report</p></div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/reports.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+
+    <!-- Flatpickr for Date/Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</body>
+</html>

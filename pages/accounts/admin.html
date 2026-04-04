@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Administration - Accounts | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Administration</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Administration</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Audit Logs</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar + Content Layout -->
+        <div class="organization-layout">
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>Administration</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Audit Section -->
+                    <div class="nav-group" data-group="audit">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                                Audit
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="audit-logs" id="auditLogsTab">
+                                <span class="nav-number">1</span><span class="nav-label">Audit Logs</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="pending-approvals" id="pendingApprovalsTab">
+                                <span class="nav-number">2</span><span class="nav-label">Pending Approvals</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- System Section -->
+                    <div class="nav-group" data-group="system">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                                System
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="integrity-check" id="integrityCheckTab">
+                                <span class="nav-number">3</span><span class="nav-label">Integrity Check</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="job-log" id="jobLogTab">
+                                <span class="nav-number">4</span><span class="nav-label">Job Log</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Closing Section -->
+                    <div class="nav-group" data-group="closing">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                Closing
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="closing-checklists" id="closingChecklistsTab">
+                                <span class="nav-number">5</span><span class="nav-label">Closing Checklists</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="year-end" id="yearEndTab">
+                                <span class="nav-number">6</span><span class="nav-label">Year-End Closing</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="organization-content">
+
+                <!-- ============================================================ -->
+                <!-- Tab 1: Audit Logs -->
+                <!-- ============================================================ -->
+                <div class="tab-content active" id="audit-logs">
+                    <div class="filters-bar">
+                        <select id="auditEntityFilter" class="form-control" style="max-width: 180px;" onchange="loadAuditLogs()">
+                            <option value="">All Entities</option>
+                            <option value="account">Account</option>
+                            <option value="journal">Journal</option>
+                            <option value="invoice">Invoice</option>
+                            <option value="payment">Payment</option>
+                            <option value="expense">Expense</option>
+                            <option value="asset">Asset</option>
+                            <option value="tax">Tax</option>
+                        </select>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <input type="date" id="auditFrom" class="form-control" onchange="loadAuditLogs()">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <input type="date" id="auditTo" class="form-control" onchange="loadAuditLogs()">
+                        </div>
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="auditUserSearch" placeholder="Performed by...">
+                        </div>
+                        <button class="btn btn-outline" onclick="exportAuditLogs()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Export
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Entity</th>
+                                    <th>Action</th>
+                                    <th>User</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditLogsTable">
+                                <tr class="empty-state">
+                                    <td colspan="5">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                            </svg>
+                                            <p>No audit logs found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="auditLogsPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 2: Pending Approvals -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="pending-approvals">
+                    <div id="pendingApprovalsContainer">
+                        <div class="empty-message">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="8.5" cy="7" r="4"></circle>
+                                <polyline points="17 11 19 13 23 9"></polyline>
+                            </svg>
+                            <p>No pending approvals</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 3: Integrity Check -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="integrity-check">
+                    <div class="glass-card" style="margin-bottom: 1.5rem;">
+                        <div class="glass-card-body">
+                            <h4 style="margin-bottom: 0.5rem;">Data Integrity</h4>
+                            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                                Run integrity checks to verify that all account balances are consistent and journal entries are balanced.
+                            </p>
+                            <div class="filters-bar" style="padding: 0;">
+                                <button class="btn btn-primary" onclick="runIntegrityCheck()" data-admin-only>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                    Run Integrity Check
+                                </button>
+                                <button class="btn btn-outline" onclick="recomputeBalances()" data-admin-only>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="23 4 23 10 17 10"></polyline>
+                                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                    </svg>
+                                    Recompute Balances
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="integrityResults">
+                        <div class="empty-message">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            <p>Click "Run Integrity Check" to verify data consistency</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 4: Job Log -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="job-log">
+                    <div class="filters-bar">
+                        <select id="jobTypeFilter" class="form-control" style="max-width: 200px;" onchange="loadJobLogs()">
+                            <option value="">All Job Types</option>
+                            <option value="depreciation">Depreciation</option>
+                            <option value="closing">Period Closing</option>
+                            <option value="reconciliation">Reconciliation</option>
+                            <option value="report">Report Generation</option>
+                            <option value="integrity_check">Integrity Check</option>
+                        </select>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Job Type</th>
+                                    <th>Status</th>
+                                    <th>Duration</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobLogsTable">
+                                <tr class="empty-state">
+                                    <td colspan="5">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                                            </svg>
+                                            <p>No job logs found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="jobLogsPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 5: Closing Checklists -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="closing-checklists">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="checklistFYContainer"></div>
+                        <button class="btn btn-primary" onclick="showCreateChecklistModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Create Checklist
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Checklist</th>
+                                    <th>Fiscal Year</th>
+                                    <th>Status</th>
+                                    <th>Progress</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="checklistsTable">
+                                <tr class="empty-state">
+                                    <td colspan="5">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <polyline points="9 11 12 14 22 4"></polyline>
+                                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                                            </svg>
+                                            <p>No closing checklists found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 6: Year-End Closing -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="year-end">
+                    <div class="glass-card" style="margin-bottom: 1.5rem;">
+                        <div class="glass-card-body">
+                            <h4 style="margin-bottom: 0.5rem;">Year-End Closing</h4>
+                            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                                Close a fiscal year to prevent further modifications. This will lock all periods and carry forward balances.
+                                This action cannot be undone.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="yearEndFYContainer"></div>
+                    </div>
+
+                    <div id="yearEndPreflightArea" class="glass-card" style="margin-top: 1rem;">
+                        <div class="glass-card-body">
+                            <div class="empty-message">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                <p>Select a fiscal year to view pre-flight checks</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="yearEndActions" style="margin-top: 1rem; display: none;">
+                        <button class="btn btn-primary" onclick="closeFinancialYear()" data-admin-only style="background: var(--color-error); border-color: var(--color-error);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            Close Fiscal Year
+                        </button>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODALS -->
+    <!-- ================================================================== -->
+
+    <!-- Checklist Modal -->
+    <div id="checklistModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="checklistModalTitle">Create Closing Checklist</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('checklistModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="checklistForm">
+                        <input type="hidden" id="checklistId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="checklistName">Checklist Name *</label>
+                                <input type="text" id="checklistName" class="form-control" required placeholder="e.g., Q4 2026 Closing">
+                            </div>
+                            <div class="form-group">
+                                <label for="checklistFY">Fiscal Year *</label>
+                                <select id="checklistFY" class="form-control" required>
+                                    <option value="">Select...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="checklistDescription">Description</label>
+                                <textarea id="checklistDescription" class="form-control" rows="2" placeholder="Brief description"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('checklistModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveChecklist()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/admin.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+
+    <!-- Flatpickr for Date/Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</body>
+</html>

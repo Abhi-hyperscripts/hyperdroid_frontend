@@ -1,0 +1,1738 @@
+/**
+ * AccountsService Module Styles
+ * Shared styles for all AccountsService pages.
+ * Uses ONLY CSS variables from theme.css — no hardcoded colors.
+ */
+
+/* =============================================================
+   GLOBAL MONETARY/CURRENCY VALUE STYLING
+   ============================================================= */
+.monetary-value,
+.currency-display,
+[data-type="currency"] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+/* =============================================================
+   LAYOUT — Matches HRMS container pattern
+   ============================================================= */
+.accounts-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 76px 16px 0px;
+    overflow-x: hidden;
+}
+
+/* The loading-overlay in accounts HTML should be hidden by default */
+#loadingOverlay {
+    display: none !important;
+}
+
+/* Layout wrapper — matches hrms-payroll.css .organization-layout exactly */
+.organization-layout {
+    display: block;
+    position: relative;
+    min-height: calc(100vh - 200px);
+    transition: all 0.3s ease;
+}
+
+.organization-content {
+    width: 100%;
+    padding: 16px 20px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+/* Shift content + header when sidebar is open — exact HRMS pattern */
+.accounts-container.sidebar-open .organization-layout,
+.accounts-container.sidebar-open .hrms-header {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 1024px) {
+    .accounts-container.sidebar-open .organization-layout,
+    .accounts-container.sidebar-open .hrms-header {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+/* Header — matches HRMS exactly */
+.accounts-container .hrms-header {
+    padding: 0 20px;
+    transition: all 0.3s ease;
+}
+
+.accounts-container .hrms-header-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 16px !important;
+    flex-direction: row !important;
+}
+
+.accounts-container .hrms-header-row h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin: 0;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.accounts-container .active-tab-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.accounts-container .tab-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+}
+
+/* Fix: Loading overlay hidden by default, shown via JS */
+.accounts-container .loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-primary, rgba(0,0,0,0.5));
+    z-index: 9998;
+    align-items: center;
+    justify-content: center;
+}
+.accounts-container .loading-overlay.active {
+    display: flex;
+}
+.accounts-container .loading-overlay .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--hover-overlay-strong);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: accounts-spin 0.8s linear infinite;
+}
+@keyframes accounts-spin {
+    to { transform: rotate(360deg); }
+}
+
+.accounts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.accounts-header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.accounts-header p {
+    color: var(--text-secondary);
+    margin: 4px 0 0 0;
+    font-size: 0.8rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.accounts-layout {
+    display: flex;
+    gap: 0;
+    position: relative;
+}
+
+.accounts-content {
+    flex: 1;
+    min-width: 0;
+    padding: 0 0 0 16px;
+}
+
+/* =============================================================
+   FILTERS BAR — Search + dropdowns + action buttons
+   ============================================================= */
+.filters-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+    background: var(--glass-bg);
+    border: 1px solid var(--hover-overlay-strong);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.filters-bar .searchable-dropdown,
+.filters-bar .searchable-dropdown-wrapper {
+    width: auto !important;
+    min-width: 180px;
+    max-width: 280px;
+    flex-shrink: 0;
+}
+
+.search-box-modern {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+}
+
+.search-box-modern .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+
+.search-box-modern input {
+    width: 100%;
+    padding: 10px 12px 10px 36px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.search-box-modern input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb, 59,130,246), 0.1);
+}
+
+.filter-select, .form-select {
+    padding: 10px 32px 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    background-color: var(--bg-card);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 16px;
+    cursor: pointer;
+    appearance: none;
+    min-width: 150px;
+}
+
+.filter-select:focus, .form-select:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+}
+
+/* =============================================================
+   DATA TABLE — Glass container + styled table
+   ============================================================= */
+.data-table-container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 1px solid var(--hover-overlay-strong);
+    overflow: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    background: var(--hover-overlay);
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color-light, var(--hover-overlay-strong));
+    white-space: nowrap;
+}
+
+.data-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--hover-overlay);
+    font-size: 0.85rem;
+    vertical-align: middle;
+    color: var(--text-primary);
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.data-table tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tr:hover td {
+    background: var(--hover-overlay-subtle, rgba(255,255,255,0.02));
+}
+
+/* =============================================================
+   STATUS BADGES — Accounting-specific statuses
+   ============================================================= */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.status-badge.active, .status-badge.approved, .status-badge.posted, .status-badge.status-active, .status-badge.status-approved, .status-badge.status-posted {
+    background: var(--color-success-light, rgba(16,185,129,0.1));
+    color: var(--color-success);
+}
+
+.status-badge.paid, .status-badge.reimbursed, .status-badge.status-paid, .status-badge.status-reimbursed {
+    background: rgba(16,185,129,0.15);
+    color: #059669;
+}
+
+.status-badge.draft, .status-badge.inactive, .status-badge.status-draft, .status-badge.status-inactive {
+    background: var(--hover-overlay, rgba(148,163,184,0.1));
+    color: var(--text-secondary);
+}
+
+.status-badge.submitted, .status-badge.status-submitted {
+    background: var(--color-info-light, rgba(59,130,246,0.1));
+    color: var(--color-info, #3b82f6);
+}
+
+.status-badge.pending, .status-badge.partially_paid, .status-badge.partial, .status-badge.status-pending, .status-badge.status-partially_paid {
+    background: var(--color-warning-light, rgba(245,158,11,0.1));
+    color: var(--color-warning, #f59e0b);
+}
+
+.status-badge.rejected, .status-badge.cancelled, .status-badge.overdue, .status-badge.status-rejected, .status-badge.status-cancelled, .status-badge.status-overdue {
+    background: var(--color-danger-light, rgba(239,68,68,0.1));
+    color: var(--color-danger, #ef4444);
+}
+
+.status-badge.reversed, .status-badge.status-reversed {
+    background: rgba(249,115,22,0.1);
+    color: #f97316;
+}
+
+.status-badge.closed, .status-badge.status-closed {
+    background: rgba(107,114,128,0.15);
+    color: #6b7280;
+}
+
+/* =============================================================
+   ACTION BUTTONS — Edit/Delete icons in table rows
+   ============================================================= */
+.action-buttons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--glass-bg);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.btn-icon:hover {
+    background: var(--hover-overlay);
+    color: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+
+.btn-icon.delete:hover, .btn-icon.danger:hover {
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+}
+
+.btn-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* =============================================================
+   EMPTY STATE — For tables with no data
+   ============================================================= */
+.empty-state td {
+    padding: 48px 16px !important;
+    text-align: center;
+}
+
+.empty-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-muted, var(--text-secondary));
+}
+
+.empty-message svg {
+    opacity: 0.4;
+}
+
+.empty-message p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* =============================================================
+   FORM CONTROLS — Inputs, textareas, checkboxes
+   ============================================================= */
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    height: 40px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    background: var(--bg-card);
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+textarea.form-control {
+    height: auto;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb, 59,130,246), 0.1);
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.form-row.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-row.three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+}
+
+.form-section {
+    margin-bottom: 20px;
+}
+
+.form-section h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* =============================================================
+   BUTTONS — Primary, outline, sm variants
+   ============================================================= */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: var(--brand-primary);
+    color: var(--text-inverse, #fff);
+}
+
+.btn-primary:hover {
+    background: var(--brand-primary-hover, var(--brand-primary));
+    box-shadow: var(--shadow-md);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.btn-outline:hover {
+    background: var(--hover-overlay);
+    border-color: var(--text-secondary);
+}
+
+.btn-danger {
+    background: var(--color-danger);
+    color: #fff;
+}
+
+.btn-sm {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+}
+
+.btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* =============================================================
+   PAGINATION
+   ============================================================= */
+.pagination-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+}
+
+.pagination-container button {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pagination-container button:hover {
+    background: var(--hover-overlay);
+    border-color: var(--brand-primary);
+}
+
+.pagination-container button.active {
+    background: var(--brand-primary);
+    color: var(--text-inverse, #fff);
+    border-color: var(--brand-primary);
+}
+
+.pagination-container button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* =============================================================
+   BREADCRUMB
+   ============================================================= */
+.breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+}
+
+.breadcrumb-nav a {
+    color: var(--text-secondary);
+    text-decoration: none;
+}
+
+.breadcrumb-nav a:hover {
+    color: var(--text-primary);
+}
+
+.breadcrumb-nav span {
+    color: var(--text-muted, var(--text-secondary));
+}
+
+/* =============================================================
+   STATS ROW — Summary cards at top of pages
+   ============================================================= */
+.stats-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.bank-accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.bank-card {
+    padding: 16px 20px;
+}
+
+.bank-card .bank-name {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.bank-card .bank-balance {
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+    margin-top: 4px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dashboard-section {
+    padding: 20px;
+}
+
+.dashboard-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--text-primary);
+}
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.quick-action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--hover-overlay-strong);
+    background: var(--glass-bg);
+    cursor: pointer;
+    transition: all var(--transition-base, 0.2s ease);
+    text-decoration: none;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: center;
+}
+
+.quick-action-card:hover {
+    background: var(--hover-overlay);
+    transform: translateY(-2px);
+    border-color: var(--brand-primary);
+}
+
+.quick-action-card svg {
+    width: 24px;
+    height: 24px;
+    color: var(--brand-primary);
+}
+
+/* Dashboard mini table */
+.mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+.mini-table th {
+    text-align: left;
+    padding: 6px 8px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--hover-overlay-strong);
+}
+
+.mini-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--hover-overlay);
+    color: var(--text-primary);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Pending approvals badge */
+.approval-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(var(--brand-primary-rgb, 59,130,246), 0.1);
+    border: 1px solid rgba(var(--brand-primary-rgb, 59,130,246), 0.3);
+    border-radius: 10px;
+    font-size: 0.85rem;
+    color: var(--brand-primary);
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+.stat-card {
+    flex: 1;
+    background: var(--glass-bg);
+    border: 1px solid var(--hover-overlay-strong);
+    border-radius: var(--border-radius-lg);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-card .stat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.stat-card .stat-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-card .stat-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.stat-card .stat-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+}
+
+.stat-card .stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.stat-card .stat-sub {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* =============================================================
+   ACTIONS CELL — Inline action buttons
+   ============================================================= */
+.actions-cell {
+    white-space: nowrap;
+    text-align: right;
+}
+
+.actions-cell .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+}
+
+/* Custom tooltips handled by /js/tooltip.js (body-appended, no clipping) */
+
+/* =============================================================
+   SEARCHABLE DROPDOWN IN MODALS — Prevent overflow clipping
+   ============================================================= */
+
+/* When a searchable dropdown is open, allow all parent containers to overflow */
+.modal .modal-content:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+.modal .modal-body:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+.modal .form-group:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+.modal .form-section:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+.modal .form-row:has(.searchable-dropdown.open) {
+    overflow: visible !important;
+}
+
+/* Ensure wrapper itself doesn't clip */
+.modal .searchable-dropdown-wrapper {
+    overflow: visible;
+}
+
+/* High z-index for dropdown menu in modals */
+.modal .searchable-dropdown.open {
+    z-index: 10001;
+}
+
+.modal .searchable-dropdown-menu {
+    z-index: 10001 !important;
+}
+
+/* =============================================================
+   STATUS BADGES — Accounting-specific statuses
+   ============================================================= */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Draft — gray */
+.status-badge.status-draft {
+    background: var(--hover-overlay-strong);
+    color: var(--text-secondary);
+}
+
+/* Submitted — blue */
+.status-badge.status-submitted {
+    background: var(--color-info-light);
+    color: var(--color-info);
+}
+
+/* Approved — blue accent */
+.status-badge.status-approved {
+    background: var(--color-info-light);
+    color: var(--color-info-dark);
+}
+
+/* Posted — green */
+.status-badge.status-posted {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+/* Paid — dark green */
+.status-badge.status-paid {
+    background: var(--color-success-light);
+    color: var(--color-success-dark);
+}
+
+/* Partially Paid — amber/yellow */
+.status-badge.status-partially_paid,
+.status-badge.status-partial {
+    background: var(--color-warning-light);
+    color: var(--color-warning-text);
+}
+
+/* Cancelled — red */
+.status-badge.status-cancelled {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+}
+
+/* Reversed — orange */
+.status-badge.status-reversed {
+    background: var(--color-warning-light);
+    color: var(--color-orange, var(--color-warning-dark));
+}
+
+/* Rejected — red */
+.status-badge.status-rejected {
+    background: var(--color-danger-light);
+    color: var(--color-danger-dark);
+}
+
+/* Reimbursed — teal/cyan */
+.status-badge.status-reimbursed {
+    background: rgba(6, 182, 212, 0.12);
+    color: var(--color-cyan, #06b6d4);
+}
+
+/* Active — green */
+.status-badge.status-active {
+    background: var(--color-success-light);
+    color: var(--color-success);
+}
+
+/* Inactive — gray */
+.status-badge.status-inactive {
+    background: var(--hover-overlay-strong);
+    color: var(--text-secondary);
+}
+
+/* Closed — dark */
+.status-badge.status-closed {
+    background: var(--hover-overlay-strong);
+    color: var(--text-secondary);
+}
+
+/* Overdue — red bold */
+.status-badge.status-overdue {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+/* =============================================================
+   FILTERS BAR
+   ============================================================= */
+.filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--hover-overlay-strong);
+    border-radius: var(--border-radius-lg);
+}
+
+.filters-bar .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filters-bar label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.filters-bar input,
+.filters-bar select {
+    background: var(--bg-card, var(--bg-secondary));
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    padding: 6px 10px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+.filters-bar input:focus,
+.filters-bar select:focus {
+    border-color: var(--brand-primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--brand-primary-rgb), 0.15);
+}
+
+/* =============================================================
+   LINE ITEMS TABLE — Bill/Invoice line items
+   ============================================================= */
+.line-items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+}
+
+.line-items-table th {
+    background: var(--hover-overlay);
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-secondary);
+    text-align: left;
+    border-bottom: 1px solid var(--hover-overlay-strong);
+}
+
+.line-items-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--hover-overlay);
+    vertical-align: middle;
+}
+
+.line-items-table .line-account-container {
+    min-width: 220px;
+}
+
+.line-items-table .line-account-container .searchable-dropdown {
+    font-size: 0.8rem;
+}
+
+.line-items-table input,
+.line-items-table select {
+    width: 100%;
+    background: var(--bg-card, var(--bg-secondary));
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    transition: var(--transition-base);
+}
+
+.line-items-table input:focus,
+.line-items-table select:focus {
+    border-color: var(--brand-primary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--brand-primary-rgb), 0.15);
+}
+
+.line-items-table input[type="number"] {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.line-items-total {
+    text-align: right;
+    padding: 12px 16px;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.add-line-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1px dashed var(--border-color);
+    border-radius: var(--border-radius-sm);
+    background: transparent;
+    color: var(--brand-primary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-base);
+}
+
+.add-line-btn:hover {
+    background: var(--hover-overlay);
+    border-color: var(--brand-primary);
+}
+
+.remove-line-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-danger);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition-base);
+}
+
+.remove-line-btn:hover {
+    background: var(--color-danger-light);
+}
+
+/* =============================================================
+   ACCOUNT TREE VIEW — Chart of Accounts hierarchy
+   ============================================================= */
+.account-tree {
+    padding: 8px 0;
+}
+
+.tree-node {
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: var(--transition-base);
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.tree-node:hover {
+    background: var(--hover-overlay);
+}
+
+.tree-node.active {
+    background: var(--hover-overlay-strong);
+}
+
+.tree-node .tree-toggle {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+}
+
+.tree-node.expanded .tree-toggle {
+    transform: rotate(90deg);
+}
+
+.tree-node .tree-icon {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.tree-node .tree-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tree-node .tree-code {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-family: monospace;
+}
+
+.tree-balance {
+    margin-left: auto;
+    font-family: monospace;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.tree-balance.debit {
+    color: var(--color-danger);
+}
+
+.tree-balance.credit {
+    color: var(--color-success);
+}
+
+.tree-children {
+    padding-left: 24px;
+}
+
+.tree-children.collapsed {
+    display: none;
+}
+
+/* =============================================================
+   REPORT STYLES — Financial reports (P&L, Balance Sheet, etc.)
+   ============================================================= */
+.report-container {
+    background: var(--glass-bg);
+    border-radius: 16px;
+    border: 1px solid var(--hover-overlay-strong);
+    padding: 24px;
+}
+
+.report-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.report-header h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+}
+
+.report-header .report-period {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.report-header .report-company {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.report-section {
+    margin-bottom: 16px;
+}
+
+.report-section-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 8px 0;
+    border-bottom: 2px solid var(--brand-primary);
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.report-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--hover-overlay);
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    transition: var(--transition-base);
+}
+
+.report-row:hover {
+    background: var(--hover-overlay-subtle);
+}
+
+.report-row.indent-1 {
+    padding-left: 32px;
+}
+
+.report-row.indent-2 {
+    padding-left: 52px;
+}
+
+.report-total-row {
+    font-weight: 700;
+    border-top: 2px solid var(--text-primary);
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-primary);
+}
+
+.report-grand-total {
+    font-weight: 700;
+    border-top: 3px double var(--text-primary);
+    padding: 10px 12px;
+    font-size: 1rem;
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-primary);
+}
+
+.report-amount {
+    font-family: monospace;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.report-amount.negative {
+    color: var(--color-danger);
+}
+
+/* =============================================================
+   AGING TABLE — AR/AP Aging reports
+   ============================================================= */
+.aging-current {
+    color: var(--color-success);
+    font-weight: 500;
+}
+
+.aging-30 {
+    color: var(--color-info);
+    font-weight: 500;
+}
+
+.aging-60 {
+    color: var(--color-warning);
+    font-weight: 500;
+}
+
+.aging-90 {
+    color: #f97316;
+    font-weight: 500;
+}
+
+.aging-90plus {
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+/* =============================================================
+   GL FORM — General Ledger / Journal Entry form
+   ============================================================= */
+.gl-form {
+    background: var(--glass-bg);
+    border-radius: 16px;
+    border: 1px solid var(--hover-overlay-strong);
+    padding: 24px;
+}
+
+.gl-form .form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.gl-form .form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.gl-form .form-group label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.gl-totals {
+    display: flex;
+    gap: 24px;
+    justify-content: flex-end;
+    padding: 16px 0;
+    border-top: 1px solid var(--hover-overlay-strong);
+}
+
+.gl-totals .total-item {
+    text-align: right;
+}
+
+.gl-totals .total-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.gl-totals .total-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    font-family: monospace;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+}
+
+.gl-totals .total-value.balanced {
+    color: var(--color-success);
+}
+
+.gl-totals .total-value.unbalanced {
+    color: var(--color-danger);
+}
+
+.gl-totals .total-diff {
+    font-size: 0.8rem;
+    margin-top: 2px;
+}
+
+.gl-totals .total-diff.balanced {
+    color: var(--color-success);
+}
+
+.gl-totals .total-diff.unbalanced {
+    color: var(--color-danger);
+}
+
+/* =============================================================
+   RECONCILIATION WORKSPACE — Bank reconciliation
+   ============================================================= */
+.recon-workspace {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.recon-panel {
+    background: var(--glass-bg);
+    border-radius: 12px;
+    border: 1px solid var(--hover-overlay-strong);
+    padding: 16px;
+}
+
+.recon-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--hover-overlay);
+}
+
+.recon-panel-header h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.recon-panel-header .recon-summary {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.recon-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--hover-overlay);
+    font-size: 0.85rem;
+    transition: var(--transition-base);
+}
+
+.recon-item:hover {
+    background: var(--hover-overlay-subtle);
+}
+
+.recon-item.matched {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.recon-item.selected {
+    background: rgba(var(--brand-primary-rgb), 0.1);
+    border-left: 3px solid var(--brand-primary);
+}
+
+.recon-item .recon-checkbox {
+    flex-shrink: 0;
+}
+
+.recon-item .recon-date {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    width: 80px;
+    flex-shrink: 0;
+}
+
+.recon-item .recon-desc {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.recon-item .recon-amount {
+    font-family: monospace;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.recon-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 0;
+}
+
+/* =============================================================
+   EMPTY STATE
+   ============================================================= */
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
+    opacity: 0.4;
+}
+
+.empty-state p {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* =============================================================
+   TABLES — Standard data tables
+   ============================================================= */
+.accounts-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.accounts-table th {
+    background: var(--hover-overlay);
+    padding: 10px 14px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    text-align: left;
+    border-bottom: 1px solid var(--hover-overlay-strong);
+    white-space: nowrap;
+}
+
+.accounts-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--hover-overlay);
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.accounts-table tr:hover td {
+    background: var(--hover-overlay-subtle);
+}
+
+.accounts-table td.text-right,
+.accounts-table th.text-right {
+    text-align: right;
+}
+
+.accounts-table td.text-center,
+.accounts-table th.text-center {
+    text-align: center;
+}
+
+.accounts-table td.mono {
+    font-family: monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+/* =============================================================
+   PAGINATION
+   ============================================================= */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    padding: 16px 0;
+}
+
+.pagination-btn {
+    min-width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    background: var(--bg-card, var(--bg-secondary));
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition-base);
+}
+
+.pagination-btn:hover:not([disabled]):not(.active) {
+    background: var(--hover-overlay);
+    border-color: var(--brand-primary);
+}
+
+.pagination-btn.active {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: var(--text-inverse);
+    font-weight: 600;
+}
+
+.pagination-btn[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* =============================================================
+   PRINT STYLES
+   ============================================================= */
+@media print {
+    .navbar,
+    .sidebar-nav-panel,
+    .sidebar-toggle,
+    .sidebar-overlay,
+    .filters-bar,
+    .accounts-header,
+    .btn,
+    .header-actions,
+    .pagination,
+    .breadcrumb-nav {
+        display: none !important;
+    }
+
+    .accounts-container {
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .accounts-content {
+        padding: 0 !important;
+    }
+
+    .accounts-layout {
+        display: block !important;
+    }
+
+    .report-container {
+        border: none;
+        box-shadow: none;
+        background: #fff;
+        padding: 0;
+    }
+
+    .gl-form,
+    .recon-panel {
+        border: none;
+        box-shadow: none;
+        background: #fff;
+    }
+
+    .report-row:hover,
+    .accounts-table tr:hover td {
+        background: transparent !important;
+    }
+}
+
+/* =============================================================
+   RESPONSIVE — 1024px breakpoint
+   ============================================================= */
+@media (max-width: 1024px) {
+    .accounts-content {
+        padding: 0;
+    }
+
+    .recon-workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .gl-form .form-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .gl-totals {
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+}
+
+/* =============================================================
+   RESPONSIVE — 768px breakpoint
+   ============================================================= */
+@media (max-width: 768px) {
+    .accounts-container {
+        padding: 80px 12px 24px 12px;
+    }
+
+    .accounts-header {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .stats-row {
+        flex-direction: column;
+    }
+
+    .filters-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .form-row.two-col,
+    .form-row.three-col {
+        grid-template-columns: 1fr;
+    }
+
+    .data-table {
+        min-width: 600px;
+    }
+
+    .line-items-table {
+        font-size: 0.8rem;
+    }
+
+    .line-items-table th,
+    .line-items-table td {
+        padding: 4px 6px;
+    }
+
+    .report-container {
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .report-row {
+        padding: 6px 8px;
+        font-size: 0.8rem;
+    }
+
+    .recon-item {
+        padding: 6px 8px;
+        font-size: 0.8rem;
+    }
+
+    .recon-item .recon-date {
+        width: 65px;
+    }
+
+    .gl-form {
+        padding: 16px;
+        border-radius: 12px;
+    }
+}

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Billing - Accounts | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Billing</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Billing</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Billing Plans</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar + Content Layout -->
+        <div class="organization-layout">
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>Billing</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Plans Section -->
+                    <div class="nav-group" data-group="plans">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                                </svg>
+                                Plans
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="billing-plans" id="billingPlansTab">
+                                <span class="nav-number">1</span><span class="nav-label">Billing Plans</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="subscriptions" id="subscriptionsTab">
+                                <span class="nav-number">2</span><span class="nav-label">Subscriptions</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Usage Section -->
+                    <div class="nav-group" data-group="usage">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                </svg>
+                                Usage
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="usage-meters" id="usageMetersTab">
+                                <span class="nav-number">3</span><span class="nav-label">Usage Meters</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="tokens" id="tokensTab">
+                                <span class="nav-number">4</span><span class="nav-label">Tokens</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="organization-content">
+
+                <!-- ============================================================ -->
+                <!-- Tab 1: Billing Plans -->
+                <!-- ============================================================ -->
+                <div class="tab-content active" id="billing-plans">
+                    <div class="filters-bar">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="planSearch" placeholder="Search plans...">
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreatePlanModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Plan
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Code</th>
+                                    <th>Amount</th>
+                                    <th>Interval</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="plansTable">
+                                <tr class="empty-state">
+                                    <td colspan="6">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                                            </svg>
+                                            <p>No billing plans configured</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 2: Subscriptions -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="subscriptions">
+                    <div class="filters-bar">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="subscriptionSearch" placeholder="Search customer...">
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateSubscriptionModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Create Subscription
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Plan</th>
+                                    <th>Status</th>
+                                    <th>Start Date</th>
+                                    <th>Next Billing</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subscriptionsTable">
+                                <tr class="empty-state">
+                                    <td colspan="6">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="8.5" cy="7" r="4"></circle>
+                                                <polyline points="17 11 19 13 23 9"></polyline>
+                                            </svg>
+                                            <p>No subscriptions found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="subscriptionsPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 3: Usage Meters -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="usage-meters">
+                    <div class="filters-bar">
+                        <button class="btn btn-primary" onclick="showCreateMeterModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Meter
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Unit</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="metersTable">
+                                <tr class="empty-state">
+                                    <td colspan="4">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                            </svg>
+                                            <p>No usage meters configured</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Record Usage Form -->
+                    <div class="glass-card" style="margin-top: 1.5rem;">
+                        <div class="glass-card-body">
+                            <h4 style="margin-bottom: 1rem;">Record Usage</h4>
+                            <form id="recordUsageForm" onsubmit="event.preventDefault(); recordUsage();">
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="usageMeter">Meter *</label>
+                                        <select id="usageMeter" class="form-control" required>
+                                            <option value="">Select meter...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="usageCustomer">Customer *</label>
+                                        <input type="text" id="usageCustomer" class="form-control" required placeholder="Customer ID or name">
+                                    </div>
+                                </div>
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="usageQuantity">Quantity *</label>
+                                        <input type="number" id="usageQuantity" class="form-control" required placeholder="e.g., 100" step="0.01" min="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="usageDate">Date</label>
+                                        <input type="date" id="usageDate" class="form-control">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" data-admin-only>Record Usage</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 4: Tokens -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="tokens">
+                    <div class="glass-card" style="margin-bottom: 1.5rem;">
+                        <div class="glass-card-body">
+                            <h4 style="margin-bottom: 1rem;">Token Management</h4>
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label for="tokenCustomer">Customer *</label>
+                                    <input type="text" id="tokenCustomer" class="form-control" placeholder="Customer ID or name" onchange="loadTokenBalance()">
+                                </div>
+                                <div class="form-group">
+                                    <label>Current Balance</label>
+                                    <div class="stat-card" style="margin-top: 0;">
+                                        <div class="stat-value" id="tokenBalance">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card" style="margin-bottom: 1.5rem;">
+                        <div class="glass-card-body">
+                            <h4 style="margin-bottom: 1rem;">Purchase Tokens</h4>
+                            <form id="purchaseTokenForm" onsubmit="event.preventDefault(); purchaseTokens();">
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="purchaseAmount">Amount *</label>
+                                        <input type="number" id="purchaseAmount" class="form-control" required placeholder="e.g., 1000" min="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="purchaseNotes">Notes</label>
+                                        <input type="text" id="purchaseNotes" class="form-control" placeholder="Reason for purchase">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" data-admin-only>Purchase</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="glass-card">
+                        <div class="glass-card-body">
+                            <h4 style="margin-bottom: 1rem;">Deduct Tokens</h4>
+                            <form id="deductTokenForm" onsubmit="event.preventDefault(); deductTokens();">
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="deductAmount">Amount *</label>
+                                        <input type="number" id="deductAmount" class="form-control" required placeholder="e.g., 50" min="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="deductNotes">Notes</label>
+                                        <input type="text" id="deductNotes" class="form-control" placeholder="Reason for deduction">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" data-admin-only>Deduct</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODALS -->
+    <!-- ================================================================== -->
+
+    <!-- Billing Plan Modal -->
+    <div id="planModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="planModalTitle">Create Billing Plan</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('planModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="planForm">
+                        <input type="hidden" id="planId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="planName">Name *</label>
+                                <input type="text" id="planName" class="form-control" required placeholder="e.g., Pro Monthly">
+                            </div>
+                            <div class="form-group">
+                                <label for="planCode">Code *</label>
+                                <input type="text" id="planCode" class="form-control" required placeholder="e.g., PRO_MONTHLY">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="planAmount">Amount *</label>
+                                <input type="number" id="planAmount" class="form-control" required placeholder="e.g., 999" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="planInterval">Interval *</label>
+                                <select id="planInterval" class="form-control" required>
+                                    <option value="">Select...</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="quarterly">Quarterly</option>
+                                    <option value="semi_annual">Semi-Annual</option>
+                                    <option value="annual">Annual</option>
+                                    <option value="one_time">One-Time</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="planStatus">Status</label>
+                                <select id="planStatus" class="form-control">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="planDescription">Description</label>
+                                <input type="text" id="planDescription" class="form-control" placeholder="Brief description">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('planModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="savePlan()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscription Modal -->
+    <div id="subscriptionModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="subscriptionModalTitle">Create Subscription</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('subscriptionModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="subscriptionForm">
+                        <input type="hidden" id="subscriptionId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="subCustomer">Customer *</label>
+                                <input type="text" id="subCustomer" class="form-control" required placeholder="Customer name or ID">
+                            </div>
+                            <div class="form-group">
+                                <label for="subPlan">Plan *</label>
+                                <select id="subPlan" class="form-control" required>
+                                    <option value="">Select plan...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="subStartDate">Start Date *</label>
+                                <input type="date" id="subStartDate" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="subNotes">Notes</label>
+                                <input type="text" id="subNotes" class="form-control" placeholder="Optional notes">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('subscriptionModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveSubscription()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Meter Modal -->
+    <div id="meterModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="meterModalTitle">Create Usage Meter</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('meterModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="meterForm">
+                        <input type="hidden" id="meterId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="meterName">Name *</label>
+                                <input type="text" id="meterName" class="form-control" required placeholder="e.g., API Calls">
+                            </div>
+                            <div class="form-group">
+                                <label for="meterUnit">Unit *</label>
+                                <input type="text" id="meterUnit" class="form-control" required placeholder="e.g., calls, GB, minutes">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="meterStatus">Status</label>
+                                <select id="meterStatus" class="form-control">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="meterDescription">Description</label>
+                                <input type="text" id="meterDescription" class="form-control" placeholder="Brief description">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('meterModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveMeter()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/billing.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+
+    <!-- Flatpickr for Date/Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</body>
+</html>

@@ -19,7 +19,8 @@ const ENVIRONMENTS = {
         pms: 'https://localhost:5116',
         news: 'https://localhost:5120',
         procurement: 'https://localhost:5124',
-        lms: 'https://localhost:5126'
+        lms: 'https://localhost:5126',
+        accounts: 'https://localhost:5122'
     },
     production: {
         auth: 'https://auth.ragenaizer.com',
@@ -33,7 +34,8 @@ const ENVIRONMENTS = {
         pms: 'https://pms.ragenaizer.com',
         news: 'https://news.ragenaizer.com',
         procurement: 'https://procurement.ragenaizer.com',
-        lms: 'https://lms.ragenaizer.com'
+        lms: 'https://lms.ragenaizer.com',
+        accounts: 'https://accounts.hyperdroid.io'
     }
 };
 
@@ -116,6 +118,10 @@ const CONFIG = {
 
     get lmsApiBaseUrl() {
         return `${this.endpoints.lms}/api`;
+    },
+
+    get accountsApiBaseUrl() {
+        return `${this.endpoints.accounts}/api`;
     },
 
     // Legacy alias for backwards compatibility

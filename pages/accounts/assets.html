@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Fixed Assets - Accounts | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Fixed Assets</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Fixed Assets</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Asset Categories</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar + Content Layout -->
+        <div class="organization-layout">
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>Fixed Assets</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Setup Section -->
+                    <div class="nav-group" data-group="asset-setup">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33"></path>
+                                </svg>
+                                Setup
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="asset-categories" id="assetCategoriesTab">
+                                <span class="nav-number">1</span><span class="nav-label">Asset Categories</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Register Section -->
+                    <div class="nav-group" data-group="asset-register">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                                </svg>
+                                Register
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="asset-register" id="assetRegisterTab">
+                                <span class="nav-number">2</span><span class="nav-label">Asset Register</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="depreciation" id="depreciationTab">
+                                <span class="nav-number">3</span><span class="nav-label">Depreciation</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="organization-content">
+
+                <!-- ============================================================ -->
+                <!-- Tab 1: Asset Categories -->
+                <!-- ============================================================ -->
+                <div class="tab-content active" id="asset-categories">
+                    <div class="filters-bar">
+                        <button class="btn btn-primary" onclick="showCreateCategoryModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Category
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Method</th>
+                                    <th>Useful Life (yrs)</th>
+                                    <th>Rate (%)</th>
+                                    <th>GL Account</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assetCategoriesTable">
+                                <tr class="empty-state">
+                                    <td colspan="6">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                                            </svg>
+                                            <p>No asset categories configured</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 2: Asset Register -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="asset-register">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalAssets">0</div>
+                            <div class="stat-label">Total Assets</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="activeAssets">0</div>
+                            <div class="stat-label">Active</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="disposedAssets">0</div>
+                            <div class="stat-label">Disposed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalBookValue">-</div>
+                            <div class="stat-label">Book Value</div>
+                        </div>
+                    </div>
+
+                    <div class="filters-bar">
+                        <select id="assetStatusFilter" class="form-control" style="max-width: 160px;" onchange="loadAssets()">
+                            <option value="">All Statuses</option>
+                            <option value="active">Active</option>
+                            <option value="disposed">Disposed</option>
+                            <option value="written_off">Written Off</option>
+                        </select>
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="assetSearch" placeholder="Search assets...">
+                        </div>
+                        <button class="btn btn-primary" onclick="showRegisterAssetModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Register Asset
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Purchase Date</th>
+                                    <th>Cost</th>
+                                    <th>Book Value</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assetsTable">
+                                <tr class="empty-state">
+                                    <td colspan="8">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                                            </svg>
+                                            <p>No assets registered</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="assetsPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 3: Depreciation -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="depreciation">
+                    <div class="glass-card" style="margin-bottom: 1.5rem;">
+                        <div class="glass-card-body">
+                            <h4 style="margin-bottom: 0.5rem;">Run Depreciation</h4>
+                            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                                Calculate depreciation for a specific period. Select a date and optionally filter by category.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="filters-bar">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="depreciationDate" style="font-size:0.8rem;margin-bottom:2px;">Period End Date *</label>
+                            <input type="date" id="depreciationDate" class="form-control" required>
+                        </div>
+                        <select id="depreciationCategoryFilter" class="form-control" style="max-width: 200px;">
+                            <option value="">All Categories</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="runDepreciation()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            Run Depreciation
+                        </button>
+                    </div>
+
+                    <div id="depreciationResults" class="data-table-container" style="margin-top:1rem;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Asset</th>
+                                    <th>Category</th>
+                                    <th>Cost</th>
+                                    <th>Accumulated</th>
+                                    <th>Period Depreciation</th>
+                                    <th>Book Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="depreciationTable">
+                                <tr class="empty-state">
+                                    <td colspan="6">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                            </svg>
+                                            <p>Run depreciation to view results</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODALS -->
+    <!-- ================================================================== -->
+
+    <!-- Asset Category Modal -->
+    <div id="assetCategoryModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="categoryModalTitle">Create Asset Category</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('assetCategoryModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="categoryForm">
+                        <input type="hidden" id="categoryId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="categoryName">Name *</label>
+                                <input type="text" id="categoryName" class="form-control" required placeholder="e.g., Computers & IT">
+                            </div>
+                            <div class="form-group">
+                                <label for="categoryMethod">Depreciation Method *</label>
+                                <select id="categoryMethod" class="form-control" required>
+                                    <option value="">Select...</option>
+                                    <option value="straight_line">Straight Line</option>
+                                    <option value="written_down_value">Written Down Value</option>
+                                    <option value="units_of_production">Units of Production</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="categoryUsefulLife">Useful Life (years) *</label>
+                                <input type="number" id="categoryUsefulLife" class="form-control" required placeholder="e.g., 5" min="1" max="100">
+                            </div>
+                            <div class="form-group">
+                                <label for="categoryRate">Depreciation Rate (%)</label>
+                                <input type="number" id="categoryRate" class="form-control" placeholder="e.g., 15" step="0.01" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="categoryGlAccount">GL Account</label>
+                                <select id="categoryGlAccount" class="form-control">
+                                    <option value="">Select account...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="categoryDepAccount">Depreciation Expense Account</label>
+                                <select id="categoryDepAccount" class="form-control">
+                                    <option value="">Select account...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('assetCategoryModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveCategory()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Asset Modal -->
+    <div id="assetModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assetModalTitle">Register Asset</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('assetModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="assetForm">
+                        <input type="hidden" id="assetId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="assetCode">Asset Code *</label>
+                                <input type="text" id="assetCode" class="form-control" required placeholder="e.g., FA-001">
+                            </div>
+                            <div class="form-group">
+                                <label for="assetName">Name *</label>
+                                <input type="text" id="assetName" class="form-control" required placeholder="e.g., Dell Laptop">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="assetCategory">Category *</label>
+                                <select id="assetCategory" class="form-control" required>
+                                    <option value="">Select...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="assetPurchaseDate">Purchase Date *</label>
+                                <input type="date" id="assetPurchaseDate" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="assetCost">Cost *</label>
+                                <input type="number" id="assetCost" class="form-control" required placeholder="e.g., 50000" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="assetResidualValue">Residual Value</label>
+                                <input type="number" id="assetResidualValue" class="form-control" placeholder="e.g., 5000" step="0.01" min="0">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="assetDescription">Description</label>
+                                <textarea id="assetDescription" class="form-control" rows="2" placeholder="Asset description"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('assetModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveAsset()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dispose Asset Modal -->
+    <div id="disposeModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Dispose Asset</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('disposeModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="disposeForm">
+                        <input type="hidden" id="disposeAssetId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="disposeDate">Disposal Date *</label>
+                                <input type="date" id="disposeDate" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="disposeSaleAmount">Sale Amount</label>
+                                <input type="number" id="disposeSaleAmount" class="form-control" placeholder="e.g., 10000" step="0.01" min="0">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="disposeReason">Reason</label>
+                                <textarea id="disposeReason" class="form-control" rows="2" placeholder="Reason for disposal"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('disposeModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="confirmDispose()">Confirm Disposal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/assets.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+
+    <!-- Flatpickr for Date/Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</body>
+</html>

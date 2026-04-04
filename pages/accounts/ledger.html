@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>General Ledger - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">General Ledger</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <!-- Hamburger Toggle Button -->
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>General Ledger</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">GL Entries</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar + Content Layout -->
+        <div class="organization-layout">
+            <!-- Collapsible Sidebar Navigation -->
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>General Ledger</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- General Ledger Section -->
+                    <div class="nav-group" data-group="general-ledger">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                </svg>
+                                General Ledger
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="gl-entries" id="glEntriesTab">
+                                <span class="nav-number">1</span><span class="nav-label">GL Entries</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="create-gl" id="createGlTab">
+                                <span class="nav-number">2</span><span class="nav-label">Create Entry</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Journals Section -->
+                    <div class="nav-group" data-group="journals">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                Journals
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="journal-entries" id="journalEntriesTab">
+                                <span class="nav-number">3</span><span class="nav-label">Journal Entries</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="organization-content">
+
+                <!-- ============================================================ -->
+                <!-- Tab 1: GL Entries -->
+                <!-- ============================================================ -->
+                <div class="tab-content active" id="gl-entries">
+                    <div class="filters-bar">
+                        <input type="date" id="glFromDate" class="form-control" style="width:auto;" onchange="currentGlPage=1; loadGlEntries()" placeholder="From Date">
+                        <input type="date" id="glToDate" class="form-control" style="width:auto;" onchange="currentGlPage=1; loadGlEntries()" placeholder="To Date">
+                        <div class="searchable-dropdown-container" id="glAccountFilterContainer"></div>
+                        <div class="searchable-dropdown-container" id="glJournalFilterContainer"></div>
+                        <select id="glStatusFilter" class="form-control" style="width:auto; min-width:140px;" onchange="currentGlPage=1; loadGlEntries()">
+                            <option value="">All Statuses</option>
+                            <option value="draft">Draft</option>
+                            <option value="posted">Posted</option>
+                            <option value="reversed">Reversed</option>
+                        </select>
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="glSearch" placeholder="Search entries...">
+                        </div>
+                        <button class="btn btn-outline" onclick="currentGlPage=1; loadGlEntries()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Entry #</th>
+                                    <th>Date</th>
+                                    <th>Journal Type</th>
+                                    <th>Description</th>
+                                    <th>Total Debit</th>
+                                    <th>Total Credit</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="glEntriesTable">
+                                <tr class="empty-state">
+                                    <td colspan="8">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                            </svg>
+                                            <p>No GL entries found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="glPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 2: Create GL Entry -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="create-gl">
+                    <div class="gl-form">
+                        <form id="glForm">
+                            <div class="form-row two-col">
+                                <div class="form-group">
+                                    <label>Journal Type *</label>
+                                    <div id="glJournalTypeContainer"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="glEntryDate">Entry Date *</label>
+                                    <input type="date" id="glEntryDate" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="glDescription">Description *</label>
+                                    <input type="text" id="glDescription" class="form-control" required placeholder="Entry description...">
+                                </div>
+                            </div>
+
+                            <!-- Line Items Section -->
+                            <div class="form-section">
+                                <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                    <h4>Line Items</h4>
+                                    <button type="button" class="btn btn-outline btn-sm" onclick="addGlLine()">+ Add Line</button>
+                                </div>
+                                <table class="line-items-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Account</th>
+                                            <th>Description</th>
+                                            <th>Debit</th>
+                                            <th>Credit</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="glLinesBody"></tbody>
+                                </table>
+                                <div class="gl-totals">
+                                    <div class="gl-totals-row">
+                                        <span class="gl-totals-label">Total Debit:</span>
+                                        <span class="gl-totals-value" id="glTotalDebit">0.00</span>
+                                    </div>
+                                    <div class="gl-totals-row">
+                                        <span class="gl-totals-label">Total Credit:</span>
+                                        <span class="gl-totals-value" id="glTotalCredit">0.00</span>
+                                    </div>
+                                    <div class="gl-totals-row">
+                                        <span class="gl-totals-label">Difference:</span>
+                                        <span class="gl-totals-value balanced" id="glDifference">0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="form-actions" style="display:flex; gap:12px; justify-content:flex-end; margin-top:1.5rem;">
+                                <button type="button" class="btn btn-outline" onclick="resetGlForm()">Clear</button>
+                                <button type="button" class="btn btn-outline" onclick="saveGlEntry(false)">Save as Draft</button>
+                                <button type="button" class="btn btn-primary" onclick="saveGlEntry(true)">Save &amp; Post</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 3: Journal Entries -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="journal-entries">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="journalTypeFilterContainer"></div>
+                        <input type="date" id="journalFromDate" class="form-control" style="width:auto;" onchange="loadJournalEntries()" placeholder="From Date">
+                        <input type="date" id="journalToDate" class="form-control" style="width:auto;" onchange="loadJournalEntries()" placeholder="To Date">
+                        <input type="text" id="journalSearch" class="form-control" style="width:auto; min-width:180px;" placeholder="Search entries...">
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Entry #</th>
+                                    <th>Journal Type</th>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Total Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="journalEntriesTable">
+                                <tr class="empty-state">
+                                    <td colspan="6">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                            </svg>
+                                            <p>No journal entries found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODALS -->
+    <!-- ================================================================== -->
+
+    <!-- GL Detail Modal -->
+    <div id="glDetailModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="glDetailTitle">GL Entry Details</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('glDetailModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body" id="glDetailBody">
+                    <!-- Populated dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('glDetailModal')">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reverse GL Modal -->
+    <div id="reverseGlModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reverse GL Entry</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('reverseGlModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="reverseGlForm">
+                        <input type="hidden" id="reverseGlId">
+                        <div class="form-group">
+                            <label for="reversalDate">Reversal Date *</label>
+                            <input type="date" id="reversalDate" class="form-control" required>
+                        </div>
+                        <div class="form-group" style="margin-top:1rem;">
+                            <label for="reversalReason">Reason *</label>
+                            <textarea id="reversalReason" class="form-control" rows="3" required placeholder="Reason for reversal..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('reverseGlModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="confirmReverse()">Confirm Reverse</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/ledger.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+
+    <!-- Flatpickr for Date/Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</body>
+</html>

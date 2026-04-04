@@ -1,0 +1,97 @@
+/**
+ * Accounts Table Cards — Mobile responsive tables
+ * Replicates the exact table-cards.css pattern from HRMS
+ * Tables convert to cards on mobile (< 768px)
+ */
+
+/* Mobile: Convert data-tables to card layout */
+@media (max-width: 768px) {
+    .accounts-container .data-table-container {
+        background: none;
+        border: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        overflow: visible;
+    }
+
+    .accounts-container .data-table {
+        min-width: 0;
+    }
+
+    .accounts-container .data-table thead {
+        display: none;
+    }
+
+    .accounts-container .data-table tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .accounts-container .data-table tr {
+        display: flex;
+        flex-direction: column;
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--hover-overlay-strong);
+        border-radius: 12px;
+        padding: 16px;
+        gap: 8px;
+    }
+
+    .accounts-container .data-table tr:hover td {
+        background: none;
+    }
+
+    .accounts-container .data-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 0;
+        border-bottom: 1px solid var(--hover-overlay);
+        max-width: none;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+    }
+
+    .accounts-container .data-table td:last-child {
+        border-bottom: none;
+    }
+
+    .accounts-container .data-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-secondary);
+        flex-shrink: 0;
+        margin-right: 12px;
+    }
+
+    /* Actions cell full width */
+    .accounts-container .data-table td.actions-cell {
+        justify-content: flex-end;
+        border-bottom: none;
+        padding-top: 8px;
+    }
+
+    .accounts-container .data-table td.actions-cell::before {
+        display: none;
+    }
+
+    /* Empty state card */
+    .accounts-container .data-table tr.empty-state {
+        text-align: center;
+    }
+
+    .accounts-container .data-table tr.empty-state td {
+        justify-content: center;
+    }
+
+    .accounts-container .data-table tr.empty-state td::before {
+        display: none;
+    }
+}

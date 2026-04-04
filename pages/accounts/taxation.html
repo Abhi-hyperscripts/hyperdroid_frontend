@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Taxation - Accounts | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Taxation</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Taxation</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Tax Configs</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar + Content Layout -->
+        <div class="organization-layout">
+            <!-- Collapsible Sidebar Navigation -->
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>Taxation</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Configuration Section -->
+                    <div class="nav-group" data-group="configuration">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                </svg>
+                                Configuration
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="tax-config" id="taxConfigTab">
+                                <span class="nav-number">1</span><span class="nav-label">Tax Configs</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="tax-rates" id="taxRatesTab">
+                                <span class="nav-number">2</span><span class="nav-label">Tax Rates</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="hsn-sac" id="hsnSacTab">
+                                <span class="nav-number">3</span><span class="nav-label">HSN/SAC Codes</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Returns Section -->
+                    <div class="nav-group" data-group="returns">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                                Returns
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="gstr-1" id="gstr1Tab">
+                                <span class="nav-number">4</span><span class="nav-label">GSTR-1</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="gstr-3b" id="gstr3bTab">
+                                <span class="nav-number">5</span><span class="nav-label">GSTR-3B</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="tds-return" id="tdsReturnTab">
+                                <span class="nav-number">6</span><span class="nav-label">TDS Return</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tools Section -->
+                    <div class="nav-group" data-group="tools">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                                </svg>
+                                Tools
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="tax-calculator" id="taxCalculatorTab">
+                                <span class="nav-number">7</span><span class="nav-label">Tax Calculator</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="tax-ledger" id="taxLedgerTab">
+                                <span class="nav-number">8</span><span class="nav-label">Tax Ledger</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="organization-content">
+
+                <!-- ============================================================ -->
+                <!-- Tab 1: Tax Configs -->
+                <!-- ============================================================ -->
+                <div class="tab-content active" id="tax-config">
+                    <div class="filters-bar">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="taxConfigSearch" placeholder="Search tax configs...">
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateTaxConfigModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Tax Config
+                        </button>
+                        <button class="btn btn-outline" onclick="seedIndiaGST()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            </svg>
+                            Seed India GST
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Country</th>
+                                    <th>Tax Type</th>
+                                    <th>Rate</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="taxConfigsTable">
+                                <tr class="empty-state">
+                                    <td colspan="6">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4"></path>
+                                            </svg>
+                                            <p>No tax configs found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 2: Tax Rates -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="tax-rates">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="rateConfigFilterContainer"></div>
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="taxRateSearch" placeholder="Search tax rates...">
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateTaxRateModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Tax Rate
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Rate %</th>
+                                    <th>Account</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="taxRatesTable">
+                                <tr class="empty-state">
+                                    <td colspan="5">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <line x1="19" y1="5" x2="5" y2="19"></line>
+                                                <circle cx="6.5" cy="6.5" r="2.5"></circle>
+                                                <circle cx="17.5" cy="17.5" r="2.5"></circle>
+                                            </svg>
+                                            <p>No tax rates configured</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 3: HSN/SAC Codes -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="hsn-sac">
+                    <div class="filters-bar">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="hsnSacSearch" placeholder="Search HSN/SAC codes...">
+                        </div>
+                        <select id="hsnSacTypeFilter" class="form-control" style="max-width: 160px;" onchange="loadHsnSacCodes()">
+                            <option value="">All Types</option>
+                            <option value="HSN">HSN</option>
+                            <option value="SAC">SAC</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="showCreateHsnSacModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Code
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Description</th>
+                                    <th>Type</th>
+                                    <th>Tax Rate</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hsnSacTable">
+                                <tr class="empty-state">
+                                    <td colspan="5">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <polyline points="16 18 22 12 16 6"></polyline>
+                                                <polyline points="8 6 2 12 8 18"></polyline>
+                                            </svg>
+                                            <p>No HSN/SAC codes found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="hsnSacPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 4: GSTR-1 -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="gstr-1">
+                    <div class="filters-bar">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="gstr1From" style="font-size:0.8rem;margin-bottom:2px;">From</label>
+                            <input type="date" id="gstr1From" class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="gstr1To" style="font-size:0.8rem;margin-bottom:2px;">To</label>
+                            <input type="date" id="gstr1To" class="form-control">
+                        </div>
+                        <button class="btn btn-primary" onclick="generateGSTR1()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            Generate
+                        </button>
+                    </div>
+                    <div id="gstr1ReportArea" class="glass-card" style="margin-top:1rem;">
+                        <div class="glass-card-body">
+                            <div class="empty-message">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                <p>Select a date range and click Generate to view GSTR-1 report</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 5: GSTR-3B -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="gstr-3b">
+                    <div class="filters-bar">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="gstr3bFrom" style="font-size:0.8rem;margin-bottom:2px;">From</label>
+                            <input type="date" id="gstr3bFrom" class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="gstr3bTo" style="font-size:0.8rem;margin-bottom:2px;">To</label>
+                            <input type="date" id="gstr3bTo" class="form-control">
+                        </div>
+                        <button class="btn btn-primary" onclick="generateGSTR3B()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            Generate
+                        </button>
+                    </div>
+                    <div id="gstr3bReportArea" class="glass-card" style="margin-top:1rem;">
+                        <div class="glass-card-body">
+                            <div class="empty-message">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                <p>Select a date range and click Generate to view GSTR-3B report</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 6: TDS Return -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="tds-return">
+                    <div class="filters-bar">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="tdsFrom" style="font-size:0.8rem;margin-bottom:2px;">From</label>
+                            <input type="date" id="tdsFrom" class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="tdsTo" style="font-size:0.8rem;margin-bottom:2px;">To</label>
+                            <input type="date" id="tdsTo" class="form-control">
+                        </div>
+                        <button class="btn btn-primary" onclick="generateTDSReturn()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            Generate
+                        </button>
+                    </div>
+                    <div id="tdsReportArea" class="glass-card" style="margin-top:1rem;">
+                        <div class="glass-card-body">
+                            <div class="empty-message">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                <p>Select a date range and click Generate to view TDS Return report</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 7: Tax Calculator -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="tax-calculator">
+                    <div class="glass-card">
+                        <div class="glass-card-body">
+                            <h4 style="margin-bottom: 1rem;">Tax Calculator</h4>
+                            <form id="taxCalcForm" onsubmit="event.preventDefault(); calculateTax();">
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="calcAmount">Amount *</label>
+                                        <input type="number" id="calcAmount" class="form-control" required placeholder="Enter amount" step="0.01" min="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="calcTaxConfig">Tax Config *</label>
+                                        <select id="calcTaxConfig" class="form-control" required>
+                                            <option value="">Select tax config...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row two-col">
+                                    <div class="form-group">
+                                        <label for="calcSellerState">Seller State</label>
+                                        <input type="text" id="calcSellerState" class="form-control" placeholder="e.g., Maharashtra">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="calcBuyerState">Buyer State</label>
+                                        <input type="text" id="calcBuyerState" class="form-control" placeholder="e.g., Karnataka">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                                        <line x1="8" y1="6" x2="16" y2="6"></line>
+                                        <line x1="16" y1="14" x2="16" y2="18"></line>
+                                        <line x1="8" y1="10" x2="10" y2="10"></line>
+                                        <line x1="14" y1="10" x2="16" y2="10"></line>
+                                        <line x1="8" y1="14" x2="10" y2="14"></line>
+                                        <line x1="8" y1="18" x2="10" y2="18"></line>
+                                    </svg>
+                                    Calculate
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div id="taxCalcResult" class="glass-card" style="margin-top:1rem; display:none;">
+                        <div class="glass-card-body" id="taxCalcResultBody">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 8: Tax Ledger -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="tax-ledger">
+                    <div class="filters-bar">
+                        <select id="ledgerTxnTypeFilter" class="form-control" style="max-width: 180px;" onchange="loadTaxLedger()">
+                            <option value="">All Transactions</option>
+                            <option value="invoice">Invoice</option>
+                            <option value="payment">Payment</option>
+                            <option value="credit_note">Credit Note</option>
+                            <option value="debit_note">Debit Note</option>
+                        </select>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <input type="date" id="ledgerFrom" class="form-control" onchange="loadTaxLedger()">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <input type="date" id="ledgerTo" class="form-control" onchange="loadTaxLedger()">
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Reference</th>
+                                    <th>Transaction Type</th>
+                                    <th>Tax Config</th>
+                                    <th>Taxable Amount</th>
+                                    <th>Tax Amount</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="taxLedgerTable">
+                                <tr class="empty-state">
+                                    <td colspan="7">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                            </svg>
+                                            <p>No tax ledger entries found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="taxLedgerPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODALS -->
+    <!-- ================================================================== -->
+
+    <!-- Tax Config Modal -->
+    <div id="taxConfigModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taxConfigModalTitle">Create Tax Config</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('taxConfigModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taxConfigForm">
+                        <input type="hidden" id="taxConfigId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="taxConfigName">Name *</label>
+                                <input type="text" id="taxConfigName" class="form-control" required placeholder="e.g., GST 18%">
+                            </div>
+                            <div class="form-group">
+                                <label for="taxConfigCountry">Country *</label>
+                                <input type="text" id="taxConfigCountry" class="form-control" required placeholder="e.g., India">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="taxConfigType">Tax Type *</label>
+                                <select id="taxConfigType" class="form-control" required>
+                                    <option value="">Select...</option>
+                                    <option value="GST">GST</option>
+                                    <option value="VAT">VAT</option>
+                                    <option value="Sales Tax">Sales Tax</option>
+                                    <option value="TDS">TDS</option>
+                                    <option value="TCS">TCS</option>
+                                    <option value="Custom">Custom</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="taxConfigRate">Rate (%) *</label>
+                                <input type="number" id="taxConfigRate" class="form-control" required placeholder="e.g., 18" step="0.01" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="taxConfigStatus">Status</label>
+                                <select id="taxConfigStatus" class="form-control">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="taxConfigDescription">Description</label>
+                                <input type="text" id="taxConfigDescription" class="form-control" placeholder="Brief description">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('taxConfigModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveTaxConfig()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tax Rate Modal -->
+    <div id="taxRateModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taxRateModalTitle">Create Tax Rate</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('taxRateModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taxRateForm">
+                        <input type="hidden" id="taxRateId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="taxRateName">Name *</label>
+                                <input type="text" id="taxRateName" class="form-control" required placeholder="e.g., CGST 9%">
+                            </div>
+                            <div class="form-group">
+                                <label for="taxRatePercent">Rate (%) *</label>
+                                <input type="number" id="taxRatePercent" class="form-control" required placeholder="e.g., 9" step="0.01" min="0" max="100">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="taxRateConfig">Tax Config *</label>
+                                <select id="taxRateConfig" class="form-control" required>
+                                    <option value="">Select...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="taxRateAccount">Account</label>
+                                <select id="taxRateAccount" class="form-control">
+                                    <option value="">Select account...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="taxRateStatus">Status</label>
+                                <select id="taxRateStatus" class="form-control">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('taxRateModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveTaxRate()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HSN/SAC Modal -->
+    <div id="hsnSacModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="hsnSacModalTitle">Create HSN/SAC Code</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('hsnSacModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="hsnSacForm">
+                        <input type="hidden" id="hsnSacId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="hsnSacCode">Code *</label>
+                                <input type="text" id="hsnSacCode" class="form-control" required placeholder="e.g., 9983">
+                            </div>
+                            <div class="form-group">
+                                <label for="hsnSacType">Type *</label>
+                                <select id="hsnSacType" class="form-control" required>
+                                    <option value="">Select...</option>
+                                    <option value="HSN">HSN</option>
+                                    <option value="SAC">SAC</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="hsnSacDescription">Description *</label>
+                                <input type="text" id="hsnSacDescription" class="form-control" required placeholder="e.g., IT Software Services">
+                            </div>
+                            <div class="form-group">
+                                <label for="hsnSacTaxRate">Tax Rate (%)</label>
+                                <input type="number" id="hsnSacTaxRate" class="form-control" placeholder="e.g., 18" step="0.01" min="0" max="100">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('hsnSacModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveHsnSac()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/taxation.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+
+    <!-- Flatpickr for Date/Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</body>
+</html>

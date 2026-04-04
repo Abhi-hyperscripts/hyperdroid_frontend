@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Setup - Accounts | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Setup</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <!-- Hamburger Toggle Button -->
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <!-- Hamburger icon (shown when sidebar closed) -->
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <!-- Left arrow icon (shown when sidebar open) -->
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Accounts Setup</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Account Types</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Overlay (hidden by CSS) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar + Content Layout -->
+        <div class="organization-layout">
+            <!-- Collapsible Sidebar Navigation -->
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>Setup</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Chart of Accounts Section -->
+                    <div class="nav-group" data-group="chart-of-accounts">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                                </svg>
+                                Chart of Accounts
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="account-types" id="accountTypesTab">
+                                <span class="nav-number">1</span><span class="nav-label">Account Types</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="account-groups" id="accountGroupsTab">
+                                <span class="nav-number">2</span><span class="nav-label">Account Groups</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="accounts" id="accountsTab">
+                                <span class="nav-number">3</span><span class="nav-label">Accounts</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="account-tree" id="accountTreeTab">
+                                <span class="nav-number">4</span><span class="nav-label">Account Tree</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="opening-balances" id="openingBalancesTab">
+                                <span class="nav-number">5</span><span class="nav-label">Opening Balances</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Fiscal Section -->
+                    <div class="nav-group" data-group="fiscal">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                Fiscal
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="fiscal-years" id="fiscalYearsTab">
+                                <span class="nav-number">6</span><span class="nav-label">Fiscal Years</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="fiscal-periods" id="fiscalPeriodsTab">
+                                <span class="nav-number">7</span><span class="nav-label">Fiscal Periods</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Journals Section -->
+                    <div class="nav-group" data-group="journals">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                </svg>
+                                Journals
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="journal-types" id="journalTypesTab">
+                                <span class="nav-number">8</span><span class="nav-label">Journal Types</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Templates Section -->
+                    <div class="nav-group" data-group="templates">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                                </svg>
+                                Templates
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="templates" id="templatesTab">
+                                <span class="nav-number">9</span><span class="nav-label">COA Templates</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="organization-content">
+
+                <!-- ============================================================ -->
+                <!-- Tab 1: Account Types -->
+                <!-- ============================================================ -->
+                <div class="tab-content active" id="account-types">
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Normal Balance</th>
+                                    <th>Classification</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accountTypesTable">
+                                <tr class="empty-state">
+                                    <td colspan="3">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <line x1="18" y1="20" x2="18" y2="10"></line>
+                                                <line x1="12" y1="20" x2="12" y2="4"></line>
+                                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                                            </svg>
+                                            <p>No account types found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 2: Account Groups -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="account-groups">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="groupTypeFilterContainer"></div>
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="groupSearch" placeholder="Search groups...">
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateGroupModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Group
+                        </button>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalGroups">0</div>
+                            <div class="stat-label">Total Groups</div>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Account Type</th>
+                                    <th>Parent Group</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accountGroupsTable">
+                                <tr class="empty-state">
+                                    <td colspan="4">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                            </svg>
+                                            <p>No account groups configured</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 3: Accounts -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="accounts">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="accountTypeFilterContainer"></div>
+                        <div class="searchable-dropdown-container" id="accountGroupFilterContainer"></div>
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="accountSearch" placeholder="Search accounts...">
+                        </div>
+                        <label class="toggle-inactive-label">
+                            <input type="checkbox" id="showInactiveAccounts" onchange="loadAccounts()">
+                            <span>Show Inactive</span>
+                        </label>
+                        <button class="btn btn-primary" onclick="showCreateAccountModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Account
+                        </button>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalAccounts">0</div>
+                            <div class="stat-label">Total Accounts</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="activeAccounts">0</div>
+                            <div class="stat-label">Active</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="inactiveAccounts">0</div>
+                            <div class="stat-label">Inactive</div>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Group</th>
+                                    <th>Normal Balance</th>
+                                    <th>Balance</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accountsTable">
+                                <tr class="empty-state">
+                                    <td colspan="8">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                                            </svg>
+                                            <p>No accounts configured</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="accountsPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 4: Account Tree -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="account-tree">
+                    <div class="filters-bar">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="treeSearch" placeholder="Search tree...">
+                        </div>
+                        <button class="btn btn-outline" onclick="expandAllNodes()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <polyline points="9 21 3 21 3 15"></polyline>
+                                <line x1="21" y1="3" x2="14" y2="10"></line>
+                                <line x1="3" y1="21" x2="10" y2="14"></line>
+                            </svg>
+                            Expand All
+                        </button>
+                        <button class="btn btn-outline" onclick="collapseAllNodes()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="4 14 10 14 10 20"></polyline>
+                                <polyline points="20 10 14 10 14 4"></polyline>
+                                <line x1="14" y1="10" x2="21" y2="3"></line>
+                                <line x1="3" y1="21" x2="10" y2="14"></line>
+                            </svg>
+                            Collapse All
+                        </button>
+                    </div>
+
+                    <div id="accountTreeContainer" class="account-tree">
+                        <div class="empty-message">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="8" y2="12"></line>
+                                <line x1="16" y1="12" x2="19" y2="12"></line>
+                                <circle cx="12" cy="5" r="2"></circle>
+                                <circle cx="5" cy="12" r="2"></circle>
+                                <circle cx="19" cy="12" r="2"></circle>
+                                <circle cx="12" cy="19" r="2"></circle>
+                            </svg>
+                            <p>Loading account tree...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 5: Opening Balances -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="opening-balances">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="obFiscalYearContainer"></div>
+                        <button class="btn btn-primary" onclick="saveAllOpeningBalances()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                <polyline points="7 3 7 8 15 8"></polyline>
+                            </svg>
+                            Save All Balances
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Debit</th>
+                                    <th>Credit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="openingBalancesTable">
+                                <tr class="empty-state">
+                                    <td colspan="5">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                            </svg>
+                                            <p>Select a fiscal year to view opening balances</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 6: Fiscal Years -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="fiscal-years">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalFiscalYears">0</div>
+                            <div class="stat-label">Total Fiscal Years</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="activeFiscalYear">-</div>
+                            <div class="stat-label">Active Year</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="closedFiscalYears">0</div>
+                            <div class="stat-label">Closed</div>
+                        </div>
+                    </div>
+
+                    <div class="filters-bar">
+                        <button class="btn btn-primary" onclick="showCreateFiscalYearModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Create Fiscal Year
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fiscalYearsTable">
+                                <tr class="empty-state">
+                                    <td colspan="5">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                                            </svg>
+                                            <p>No fiscal years configured</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 7: Fiscal Periods -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="fiscal-periods">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="periodFiscalYearContainer"></div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fiscalPeriodsTable">
+                                <tr class="empty-state">
+                                    <td colspan="5">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                                            </svg>
+                                            <p>Select a fiscal year to view periods</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 8: Journal Types -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="journal-types">
+                    <div class="filters-bar">
+                        <button class="btn btn-primary" onclick="showCreateJournalTypeModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Journal Type
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>System</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="journalTypesTable">
+                                <tr class="empty-state">
+                                    <td colspan="5">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                            </svg>
+                                            <p>No journal types configured</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 9: COA Templates -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="templates">
+                    <div class="glass-card" style="margin-bottom: 1.5rem;">
+                        <div class="glass-card-body">
+                            <h4 style="margin-bottom: 0.5rem;">Chart of Accounts Templates</h4>
+                            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                                Initialize your Chart of Accounts from a pre-built template. This will create account types, groups, and accounts
+                                based on standard accounting practices. You can customize them after initialization.
+                            </p>
+                            <p style="color: var(--color-warning); font-size: 0.85rem;">
+                                <strong>Note:</strong> Templates should only be initialized once. Running again may create duplicates.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="filters-bar" style="gap: 1rem;">
+                        <button class="btn btn-primary" id="initTemplateBtn" onclick="initializeTemplate('india')" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            </svg>
+                            Initialize India Template
+                        </button>
+                        <button class="btn btn-outline" onclick="initializeTemplate('default')" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            </svg>
+                            Initialize Default Template
+                        </button>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODALS -->
+    <!-- ================================================================== -->
+
+    <!-- Account Group Modal -->
+    <div id="accountGroupModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="groupModalTitle">Create Account Group</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('accountGroupModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="groupForm">
+                        <input type="hidden" id="groupId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="groupName">Name *</label>
+                                <input type="text" id="groupName" class="form-control" required placeholder="e.g., Current Assets">
+                            </div>
+                            <div class="form-group">
+                                <label for="groupAccountType">Account Type *</label>
+                                <select id="groupAccountType" class="form-control" required>
+                                    <option value="">Select...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="groupParent">Parent Group</label>
+                                <select id="groupParent" class="form-control">
+                                    <option value="">None (Top Level)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="groupCode">Code</label>
+                                <input type="text" id="groupCode" class="form-control" placeholder="e.g., CA">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="groupDescription">Description</label>
+                                <textarea id="groupDescription" class="form-control" rows="2" placeholder="Brief description of this account group"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('accountGroupModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveAccountGroup()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Modal -->
+    <div id="accountModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="accountModalTitle">Create Account</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('accountModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="accountForm">
+                        <input type="hidden" id="accountId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="accountCode">Code *</label>
+                                <input type="text" id="accountCode" class="form-control" required placeholder="e.g., 1001">
+                            </div>
+                            <div class="form-group">
+                                <label for="accountName">Name *</label>
+                                <input type="text" id="accountName" class="form-control" required placeholder="e.g., Cash in Hand">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="accountType">Account Type *</label>
+                                <select id="accountType" class="form-control" required onchange="onAccountTypeChange()">
+                                    <option value="">Select...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="accountGroup">Account Group *</label>
+                                <select id="accountGroup" class="form-control" required>
+                                    <option value="">Select...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="accountParent">Parent Account</label>
+                                <select id="accountParent" class="form-control">
+                                    <option value="">None (Top Level)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="accountNormalBalance">Normal Balance *</label>
+                                <select id="accountNormalBalance" class="form-control" required>
+                                    <option value="">Select...</option>
+                                    <option value="debit">Debit</option>
+                                    <option value="credit">Credit</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="accountDescription">Description</label>
+                                <textarea id="accountDescription" class="form-control" rows="2" placeholder="Brief description of this account"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="toggle-inactive-label" style="margin: 0;">
+                                    <input type="checkbox" id="accountAllowDirectPosting" checked>
+                                    <span>Allow Direct Posting</span>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('accountModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveAccount()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fiscal Year Modal -->
+    <div id="fiscalYearModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fiscalYearModalTitle">Create Fiscal Year</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('fiscalYearModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="fiscalYearForm">
+                        <input type="hidden" id="fiscalYearId">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="fiscalYearName">Name *</label>
+                                <input type="text" id="fiscalYearName" class="form-control" required placeholder="e.g., FY 2026-27">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="fiscalYearStart">Start Date *</label>
+                                <input type="date" id="fiscalYearStart" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="fiscalYearEnd">End Date *</label>
+                                <input type="date" id="fiscalYearEnd" class="form-control" required>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('fiscalYearModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveFiscalYear()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Journal Type Modal -->
+    <div id="journalTypeModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="journalTypeModalTitle">Create Journal Type</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('journalTypeModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="journalTypeForm">
+                        <input type="hidden" id="journalTypeId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="journalTypeCode">Code *</label>
+                                <input type="text" id="journalTypeCode" class="form-control" required placeholder="e.g., GEN">
+                            </div>
+                            <div class="form-group">
+                                <label for="journalTypeName">Name *</label>
+                                <input type="text" id="journalTypeName" class="form-control" required placeholder="e.g., General Journal">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="journalTypeDescription">Description</label>
+                                <textarea id="journalTypeDescription" class="form-control" rows="2" placeholder="Brief description"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('journalTypeModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveJournalType()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/setup.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+
+    <!-- Flatpickr for Date/Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</body>
+</html>

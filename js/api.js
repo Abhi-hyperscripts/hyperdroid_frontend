@@ -128,6 +128,10 @@ class API {
         if (endpoint.startsWith('/lms/')) {
             return CONFIG.lmsApiBaseUrl;
         }
+        // Accounts endpoints go to Accounts service (independent microservice)
+        if (endpoint.startsWith('/accounts/')) {
+            return CONFIG.accountsApiBaseUrl;
+        }
         // Notification endpoints go to Notification service
         if (endpoint.startsWith('/notifications/')) {
             return CONFIG.notificationApiBaseUrl;

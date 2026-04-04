@@ -18,6 +18,7 @@ const Navigation = {
         pms: 'PMS_USER',
         lms: 'LMS_USER',
         procurement: 'PROCUREMENT_USER',
+        accounts: 'ACCOUNTS_USER',
         admin: 'SUPERADMIN'
     },
 
@@ -128,6 +129,17 @@ const Navigation = {
             </svg>`,
             href: 'procurement/dashboard.html',
             requiresRole: 'PROCUREMENT_USER'
+        },
+        {
+            id: 'accounts',
+            label: 'Accounts',
+            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/>
+                <path d="M8 10h8"/>
+                <path d="M8 14h4"/>
+            </svg>`,
+            href: 'accounts/dashboard.html',
+            requiresRole: 'ACCOUNTS_USER'
         },
         {
             id: 'news',

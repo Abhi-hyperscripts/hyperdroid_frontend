@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Accounts Receivable - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Accounts Receivable</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <!-- Hamburger Toggle Button -->
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Accounts Receivable</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Invoices</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar + Content Layout -->
+        <div class="organization-layout">
+            <!-- Collapsible Sidebar Navigation -->
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>Receivables</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Invoices Section -->
+                    <div class="nav-group" data-group="invoices">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                Invoices
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="customer-invoices" id="customerInvoicesTab">
+                                <span class="nav-number">1</span><span class="nav-label">Invoices</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="customer-payments" id="customerPaymentsTab">
+                                <span class="nav-number">2</span><span class="nav-label">Payments</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="credit-notes" id="creditNotesTab">
+                                <span class="nav-number">3</span><span class="nav-label">Credit Notes</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Section -->
+                    <div class="nav-group" data-group="analysis">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                    <polyline points="17 6 23 6 23 12"></polyline>
+                                </svg>
+                                Analysis
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="ar-aging" id="arAgingTab">
+                                <span class="nav-number">4</span><span class="nav-label">AR Aging</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="customer-statements" id="customerStatementsTab">
+                                <span class="nav-number">5</span><span class="nav-label">Customer Statements</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="organization-content">
+
+                <!-- ============================================================ -->
+                <!-- Tab 1: Customer Invoices -->
+                <!-- ============================================================ -->
+                <div class="tab-content active" id="customer-invoices">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalInvoices">0</div>
+                            <div class="stat-label">Total Invoices</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="draftInvoices">0</div>
+                            <div class="stat-label">Draft</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="approvedInvoices">0</div>
+                            <div class="stat-label">Approved</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalReceivable">-</div>
+                            <div class="stat-label">Total Receivable</div>
+                        </div>
+                    </div>
+
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="invoiceCustomerFilterContainer"></div>
+                        <select id="invoiceStatusFilter" class="form-control" style="max-width: 160px;">
+                            <option value="">All Statuses</option>
+                            <option value="draft">Draft</option>
+                            <option value="approved">Approved</option>
+                            <option value="sent">Sent</option>
+                            <option value="partial">Partial</option>
+                            <option value="paid">Paid</option>
+                            <option value="overdue">Overdue</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                        <input type="text" id="invoiceDateFrom" class="form-control" placeholder="From date" style="max-width: 140px;">
+                        <input type="text" id="invoiceDateTo" class="form-control" placeholder="To date" style="max-width: 140px;">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="invoiceSearch" placeholder="Search invoices...">
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateInvoiceModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Create Invoice
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Due Date</th>
+                                    <th>Subtotal</th>
+                                    <th>Tax</th>
+                                    <th>Total</th>
+                                    <th>Paid</th>
+                                    <th>Balance</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customerInvoicesTable">
+                                <tr class="empty-state">
+                                    <td colspan="11">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                            </svg>
+                                            <p>No invoices found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="invoicesPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 2: Customer Payments -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="customer-payments">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="paymentCustomerFilterContainer"></div>
+                        <input type="text" id="paymentDateFrom" class="form-control" placeholder="From date" style="max-width: 140px;">
+                        <input type="text" id="paymentDateTo" class="form-control" placeholder="To date" style="max-width: 140px;">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="paymentSearch" placeholder="Search payments...">
+                        </div>
+                        <button class="btn btn-primary" onclick="showRecordPaymentModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Record Payment
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Payment #</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Bank</th>
+                                    <th>Reference</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customerPaymentsTable">
+                                <tr class="empty-state">
+                                    <td colspan="7">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                                            </svg>
+                                            <p>No payments recorded</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="paymentsPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 3: Credit Notes -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="credit-notes">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="cnCustomerFilterContainer"></div>
+                        <input type="text" id="cnDateFrom" class="form-control" placeholder="From date" style="max-width: 140px;">
+                        <input type="text" id="cnDateTo" class="form-control" placeholder="To date" style="max-width: 140px;">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="cnSearch" placeholder="Search credit notes...">
+                        </div>
+                        <button class="btn btn-primary" onclick="showCreateCreditNoteModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Create Credit Note
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>CN #</th>
+                                    <th>Customer</th>
+                                    <th>Invoice</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Reason</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="creditNotesTable">
+                                <tr class="empty-state">
+                                    <td colspan="7">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                                <line x1="9" y1="15" x2="15" y2="15"></line>
+                                            </svg>
+                                            <p>No credit notes found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="creditNotesPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 4: AR Aging -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="ar-aging">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="agingCurrent">-</div>
+                            <div class="stat-label">Current</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="aging1to30">-</div>
+                            <div class="stat-label">1-30 Days</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="aging31to60">-</div>
+                            <div class="stat-label">31-60 Days</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="aging61to90">-</div>
+                            <div class="stat-label">61-90 Days</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="aging90plus">-</div>
+                            <div class="stat-label">90+ Days</div>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Current</th>
+                                    <th>1-30</th>
+                                    <th>31-60</th>
+                                    <th>61-90</th>
+                                    <th>90+</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="arAgingTable">
+                                <tr class="empty-state">
+                                    <td colspan="7">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                                <polyline points="17 6 23 6 23 12"></polyline>
+                                            </svg>
+                                            <p>No aging data available</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 5: Customer Statements -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="customer-statements">
+                    <div class="filters-bar">
+                        <div class="searchable-dropdown-container" id="statementCustomerFilterContainer"></div>
+                        <input type="text" id="statementDateFrom" class="form-control" placeholder="From date" style="max-width: 140px;">
+                        <input type="text" id="statementDateTo" class="form-control" placeholder="To date" style="max-width: 140px;">
+                        <button class="btn btn-primary" onclick="loadCustomerStatement()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                            </svg>
+                            Generate
+                        </button>
+                    </div>
+
+                    <div id="statementContent" class="statement-content">
+                        <div class="empty-message" style="padding: 3rem; text-align: center;">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                            <p>Select a customer and date range to generate a statement</p>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- MODALS -->
+    <!-- ================================================================== -->
+
+    <!-- Customer Invoice Modal -->
+    <div id="customerInvoiceModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="invoiceModalTitle">Create Invoice</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('customerInvoiceModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="invoiceForm">
+                        <input type="hidden" id="invoiceId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="invoiceCustomerId">Customer *</label>
+                                <select id="invoiceCustomerId" class="form-control" required>
+                                    <option value="">Select customer...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="invoiceDate">Invoice Date *</label>
+                                <input type="text" id="invoiceDate" class="form-control" required placeholder="Select date">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="invoiceDueDate">Due Date *</label>
+                                <input type="text" id="invoiceDueDate" class="form-control" required placeholder="Select date">
+                            </div>
+                            <div class="form-group">
+                                <label for="invoiceNotes">Notes</label>
+                                <input type="text" id="invoiceNotes" class="form-control" placeholder="Optional notes">
+                            </div>
+                        </div>
+
+                        <!-- Line Items -->
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label>Line Items</label>
+                            <div class="data-table-container" style="margin-top: 0.5rem;">
+                                <table class="data-table" id="invoiceLinesTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Description</th>
+                                            <th style="width:150px;">Account</th>
+                                            <th style="width:100px;">HSN/SAC</th>
+                                            <th style="width:80px;">Qty</th>
+                                            <th style="width:100px;">Rate</th>
+                                            <th style="width:100px;">Amount</th>
+                                            <th style="width:40px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="invoiceLines">
+                                        <!-- Populated by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="button" class="btn btn-outline" onclick="addInvoiceLine()" style="margin-top: 0.5rem;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Add Line
+                            </button>
+                        </div>
+
+                        <!-- Totals -->
+                        <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                            <div style="min-width: 250px;">
+                                <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; color: var(--text-secondary);">
+                                    <span>Subtotal:</span>
+                                    <span id="invoiceSubtotal">0.00</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; color: var(--text-secondary);">
+                                    <span>Tax:</span>
+                                    <span id="invoiceTax">0.00</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; font-weight: 600; border-top: 1px solid var(--border-primary); color: var(--text-primary);">
+                                    <span>Total:</span>
+                                    <span id="invoiceTotal">0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('customerInvoiceModal')">Cancel</button>
+                    <button class="btn btn-outline" onclick="saveInvoice(false)">Save Draft</button>
+                    <button class="btn btn-primary" onclick="saveInvoice(true)">Save &amp; Approve</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Payment Modal -->
+    <div id="customerPaymentModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalTitle">Record Payment</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('customerPaymentModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="paymentForm">
+                        <input type="hidden" id="paymentId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="paymentCustomerId">Customer *</label>
+                                <select id="paymentCustomerId" class="form-control" required onchange="loadCustomerInvoicesForPayment()">
+                                    <option value="">Select customer...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentDate">Payment Date *</label>
+                                <input type="text" id="paymentDate" class="form-control" required placeholder="Select date">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="paymentAmount">Amount *</label>
+                                <input type="number" id="paymentAmount" class="form-control" required step="0.01" min="0" placeholder="0.00">
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentBankAccountId">Bank Account *</label>
+                                <select id="paymentBankAccountId" class="form-control" required>
+                                    <option value="">Select bank...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="paymentReference">Reference</label>
+                                <input type="text" id="paymentReference" class="form-control" placeholder="Cheque/UTR/Transaction ref">
+                            </div>
+                        </div>
+
+                        <!-- Invoice Allocation -->
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label>Allocate to Invoices</label>
+                            <div class="data-table-container" style="margin-top: 0.5rem;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Invoice</th>
+                                            <th>Balance</th>
+                                            <th style="width: 150px;">Allocate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="paymentAllocations">
+                                        <tr class="empty-state">
+                                            <td colspan="3"><div class="empty-message"><p>Select a customer to see outstanding invoices</p></div></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('customerPaymentModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveCustomerPayment()">Save Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Credit Note Modal -->
+    <div id="creditNoteModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="creditNoteModalTitle">Create Credit Note</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('creditNoteModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="creditNoteForm">
+                        <input type="hidden" id="creditNoteId">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="cnCustomerId">Customer *</label>
+                                <select id="cnCustomerId" class="form-control" required onchange="loadCustomerInvoicesForCN()">
+                                    <option value="">Select customer...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="cnInvoiceId">Invoice *</label>
+                                <select id="cnInvoiceId" class="form-control" required>
+                                    <option value="">Select invoice...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="cnDate">Credit Date *</label>
+                                <input type="text" id="cnDate" class="form-control" required placeholder="Select date">
+                            </div>
+                            <div class="form-group">
+                                <label for="cnAmount">Amount *</label>
+                                <input type="number" id="cnAmount" class="form-control" required step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cnReason">Reason *</label>
+                                <textarea id="cnReason" class="form-control" rows="3" required placeholder="Reason for credit note"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('creditNoteModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveCreditNote()">Create Credit Note</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/receivables.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+
+    <!-- Flatpickr for Date/Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</body>
+</html>

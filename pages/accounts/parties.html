@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Vendors & Customers - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Vendors & Customers</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <!-- Hamburger Toggle Button -->
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <!-- Hamburger icon (shown when sidebar closed) -->
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <!-- Left arrow icon (shown when sidebar open) -->
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Vendors & Customers</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Vendor List</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Overlay (hidden by CSS) -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Sidebar + Content Layout -->
+        <div class="organization-layout">
+            <!-- Collapsible Sidebar Navigation -->
+            <aside class="sidebar-nav-panel" id="accountsSidebar">
+                <div class="sidebar-header">
+                    <h3>Parties</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <!-- Vendors Section -->
+                    <div class="nav-group" data-group="vendors">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="1" y="3" width="15" height="13"></rect>
+                                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                                </svg>
+                                Vendors
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="vendor-list" id="vendorListTab">
+                                <span class="nav-number">1</span><span class="nav-label">Vendor List</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Customers Section -->
+                    <div class="nav-group" data-group="customers">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Customers
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="customer-list" id="customerListTab">
+                                <span class="nav-number">2</span><span class="nav-label">Customer List</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="organization-content">
+
+                <!-- ============================================================ -->
+                <!-- Tab 1: Vendor List -->
+                <!-- ============================================================ -->
+                <div class="tab-content active" id="vendor-list">
+                    <div class="filters-bar">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="vendorSearch" placeholder="Search vendors...">
+                        </div>
+                        <label class="toggle-inactive-label">
+                            <input type="checkbox" id="showInactiveVendors" onchange="loadVendors()">
+                            <span>Show Inactive</span>
+                        </label>
+                        <button class="btn btn-primary" onclick="showCreateVendorModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Vendor
+                        </button>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalVendors">0</div>
+                            <div class="stat-label">Total Vendors</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="activeVendors">0</div>
+                            <div class="stat-label">Active</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="inactiveVendors">0</div>
+                            <div class="stat-label">Inactive</div>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>Email</th>
+                                    <th>GSTIN</th>
+                                    <th>Payment Terms</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vendorsTable">
+                                <tr class="empty-state">
+                                    <td colspan="8">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="1" y="3" width="15" height="13"></rect>
+                                                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                                                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                                                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                                            </svg>
+                                            <p>No vendors found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 2: Customer List -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="customer-list">
+                    <div class="filters-bar">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="customerSearch" placeholder="Search customers...">
+                        </div>
+                        <label class="toggle-inactive-label">
+                            <input type="checkbox" id="showInactiveCustomers" onchange="loadCustomers()">
+                            <span>Show Inactive</span>
+                        </label>
+                        <button class="btn btn-primary" onclick="showCreateCustomerModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Customer
+                        </button>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="totalCustomers">0</div>
+                            <div class="stat-label">Total Customers</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="activeCustomers">0</div>
+                            <div class="stat-label">Active</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="inactiveCustomers">0</div>
+                            <div class="stat-label">Inactive</div>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>Email</th>
+                                    <th>GSTIN</th>
+                                    <th>Credit Limit</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersTable">
+                                <tr class="empty-state">
+                                    <td colspan="8">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="9" cy="7" r="4"></circle>
+                                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                            </svg>
+                                            <p>No customers found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- Vendor Modal -->
+    <!-- ================================================================== -->
+    <div id="vendorModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="vendorModalTitle">Create Vendor</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('vendorModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="vendorForm">
+                        <input type="hidden" id="vendorId">
+                        <div class="form-row three-col" id="vendorCodeRow" style="display:none;">
+                            <div class="form-group" id="vendorCodeGroup">
+                                <label for="vendorCode">Vendor Code</label>
+                                <input type="text" id="vendorCode" class="form-control" readonly placeholder="Auto-generated">
+                            </div>
+                            <div class="form-group"></div>
+                            <div class="form-group"></div>
+                        </div>
+                        <div class="form-row three-col">
+                            <div class="form-group">
+                                <label for="vendorName">Name *</label>
+                                <input type="text" id="vendorName" class="form-control" required placeholder="Vendor name">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendorDisplayName">Display Name</label>
+                                <input type="text" id="vendorDisplayName" class="form-control" placeholder="Display name (optional)">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendorEmail">Email</label>
+                                <input type="email" id="vendorEmail" class="form-control" placeholder="vendor@example.com">
+                            </div>
+                        </div>
+                        <div class="form-row three-col">
+                            <div class="form-group">
+                                <label for="vendorPhone">Phone</label>
+                                <input type="text" id="vendorPhone" class="form-control" placeholder="Phone number">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendorTaxId">GSTIN / Tax ID</label>
+                                <input type="text" id="vendorTaxId" class="form-control" placeholder="Tax identification number">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendorPaymentTerms">Payment Terms (Days)</label>
+                                <input type="number" id="vendorPaymentTerms" class="form-control" value="30" min="0" placeholder="30">
+                            </div>
+                        </div>
+                        <div class="form-row three-col">
+                            <div class="form-group">
+                                <label for="vendorAddressLine1">Address Line 1</label>
+                                <input type="text" id="vendorAddressLine1" class="form-control" placeholder="Street address">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendorAddressLine2">Address Line 2</label>
+                                <input type="text" id="vendorAddressLine2" class="form-control" placeholder="Apt, suite, etc.">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendorCity">City</label>
+                                <input type="text" id="vendorCity" class="form-control" placeholder="City">
+                            </div>
+                        </div>
+                        <div class="form-row three-col">
+                            <div class="form-group">
+                                <label for="vendorState">State</label>
+                                <input type="text" id="vendorState" class="form-control" placeholder="State / Province">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendorStateCode">State Code</label>
+                                <input type="text" id="vendorStateCode" class="form-control" placeholder="e.g., 29">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendorCountry">Country</label>
+                                <input type="text" id="vendorCountry" class="form-control" placeholder="Country">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="vendorPostalCode">Postal Code</label>
+                                <input type="text" id="vendorPostalCode" class="form-control" placeholder="Postal / ZIP code">
+                            </div>
+                            <div class="form-group"></div>
+                        </div>
+                        <div class="form-row three-col">
+                            <div class="form-group">
+                                <label for="vendorBankName">Bank Name</label>
+                                <input type="text" id="vendorBankName" class="form-control" placeholder="Bank name">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendorBankAccount">Account Number</label>
+                                <input type="text" id="vendorBankAccount" class="form-control" placeholder="Account number">
+                            </div>
+                            <div class="form-group">
+                                <label for="vendorBankIfsc">Bank IFSC</label>
+                                <input type="text" id="vendorBankIfsc" class="form-control" placeholder="IFSC code">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="vendorBankSwift">Bank SWIFT</label>
+                                <input type="text" id="vendorBankSwift" class="form-control" placeholder="SWIFT code">
+                            </div>
+                            <div class="form-group"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="vendorNotes">Notes</label>
+                                <textarea id="vendorNotes" class="form-control" rows="2" placeholder="Additional notes"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('vendorModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveVendor()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- Customer Modal -->
+    <!-- ================================================================== -->
+    <div id="customerModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="customerModalTitle">Create Customer</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('customerModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="customerForm">
+                        <input type="hidden" id="customerId">
+                        <div class="form-row three-col" id="customerCodeRow" style="display:none;">
+                            <div class="form-group" id="customerCodeGroup">
+                                <label for="customerCode">Customer Code</label>
+                                <input type="text" id="customerCode" class="form-control" readonly placeholder="Auto-generated">
+                            </div>
+                            <div class="form-group"></div>
+                            <div class="form-group"></div>
+                        </div>
+                        <div class="form-row three-col">
+                            <div class="form-group">
+                                <label for="customerName">Name *</label>
+                                <input type="text" id="customerName" class="form-control" required placeholder="Customer name">
+                            </div>
+                            <div class="form-group">
+                                <label for="customerDisplayName">Display Name</label>
+                                <input type="text" id="customerDisplayName" class="form-control" placeholder="Display name (optional)">
+                            </div>
+                            <div class="form-group">
+                                <label for="customerEmail">Email</label>
+                                <input type="email" id="customerEmail" class="form-control" placeholder="customer@example.com">
+                            </div>
+                        </div>
+                        <div class="form-row three-col">
+                            <div class="form-group">
+                                <label for="customerPhone">Phone</label>
+                                <input type="text" id="customerPhone" class="form-control" placeholder="Phone number">
+                            </div>
+                            <div class="form-group">
+                                <label for="customerTaxId">GSTIN / Tax ID</label>
+                                <input type="text" id="customerTaxId" class="form-control" placeholder="Tax identification number">
+                            </div>
+                            <div class="form-group">
+                                <label for="customerPaymentTerms">Payment Terms (Days)</label>
+                                <input type="number" id="customerPaymentTerms" class="form-control" value="30" min="0" placeholder="30">
+                            </div>
+                        </div>
+                        <div class="form-row three-col">
+                            <div class="form-group">
+                                <label for="customerAddressLine1">Address Line 1</label>
+                                <input type="text" id="customerAddressLine1" class="form-control" placeholder="Street address">
+                            </div>
+                            <div class="form-group">
+                                <label for="customerAddressLine2">Address Line 2</label>
+                                <input type="text" id="customerAddressLine2" class="form-control" placeholder="Apt, suite, etc.">
+                            </div>
+                            <div class="form-group">
+                                <label for="customerCity">City</label>
+                                <input type="text" id="customerCity" class="form-control" placeholder="City">
+                            </div>
+                        </div>
+                        <div class="form-row three-col">
+                            <div class="form-group">
+                                <label for="customerState">State</label>
+                                <input type="text" id="customerState" class="form-control" placeholder="State / Province">
+                            </div>
+                            <div class="form-group">
+                                <label for="customerStateCode">State Code</label>
+                                <input type="text" id="customerStateCode" class="form-control" placeholder="e.g., 29">
+                            </div>
+                            <div class="form-group">
+                                <label for="customerCountry">Country</label>
+                                <input type="text" id="customerCountry" class="form-control" placeholder="Country">
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="customerPostalCode">Postal Code</label>
+                                <input type="text" id="customerPostalCode" class="form-control" placeholder="Postal / ZIP code">
+                            </div>
+                            <div class="form-group">
+                                <label for="customerCreditLimit">Credit Limit</label>
+                                <input type="number" id="customerCreditLimit" class="form-control" min="0" step="0.01" placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="customerNotes">Notes</label>
+                                <textarea id="customerNotes" class="form-control" rows="2" placeholder="Additional notes"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('customerModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveCustomer()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/parties.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+
+    <!-- Flatpickr for Date/Time Picker -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</body>
+</html>

@@ -1,0 +1,599 @@
+/* =============================================================
+   ACCOUNTS DASHBOARD STYLES
+   Follows the same design language as hrms-dashboard.css
+   All colors use theme variables for light/dark mode support
+   ============================================================= */
+
+/* =============================================================
+   AMBIENT BACKGROUND — Brand-themed radial gradients
+   ============================================================= */
+body.accounts-dashboard {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+body.accounts-dashboard::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(16, 185, 129, 0.05) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 45%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+[data-theme="dark"] body.accounts-dashboard::before {
+    background:
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(16, 185, 129, 0.12) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 45%);
+}
+
+/* =============================================================
+   CONTAINER & HEADER
+   ============================================================= */
+.acct-dash-container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1400px;
+    margin: auto;
+    padding: 16px 24px;
+    padding-top: 80px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.acct-dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.acct-dash-header h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.acct-dash-header p {
+    color: var(--text-secondary);
+    margin: 2px 0 0 0;
+    font-size: 0.8rem;
+}
+
+/* =============================================================
+   STATS CARDS — Glassmorphic tiles with gradient icons
+   ============================================================= */
+.acct-dash-container .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.acct-dash-container .stat-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 12px;
+    row-gap: 2px;
+    align-items: center;
+}
+
+.acct-dash-container .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-lg);
+}
+
+.acct-dash-container .stat-card-header {
+    grid-row: 1 / 3;
+    grid-column: 1;
+    display: flex;
+    align-items: center;
+    margin-bottom: 0;
+}
+
+.acct-dash-container .stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.acct-dash-container .stat-icon svg {
+    width: 20px;
+    height: 20px;
+    color: var(--text-inverse);
+}
+
+.acct-dash-container .stat-value {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.acct-dash-container .stat-value.negative {
+    color: var(--color-error);
+}
+
+.acct-dash-container .stat-label {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-top: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+}
+
+/* Stat icon color variants — gradient backgrounds like HRMS */
+.stat-icon.acct-accounts {
+    background: linear-gradient(135deg, var(--color-info, #3b82f6), var(--brand-primary));
+}
+.stat-icon.acct-assets {
+    background: linear-gradient(135deg, var(--color-success), #059669);
+}
+.stat-icon.acct-liabilities {
+    background: linear-gradient(135deg, var(--color-error, #ef4444), #dc2626);
+}
+.stat-icon.acct-revenue {
+    background: linear-gradient(135deg, #3b82f6, #06b6d4);
+}
+.stat-icon.acct-expenses {
+    background: linear-gradient(135deg, var(--color-warning), #f59e0b);
+}
+.stat-icon.acct-net-income {
+    background: linear-gradient(135deg, #8b5cf6, #a855f7);
+}
+
+/* =============================================================
+   BANK ACCOUNTS — Card grid
+   ============================================================= */
+.acct-dash-container .bank-accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.bank-account-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color-light);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.bank-account-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--brand-primary);
+    box-shadow: var(--shadow-md);
+}
+
+.bank-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.bank-card-header svg {
+    color: var(--brand-primary);
+    flex-shrink: 0;
+}
+
+.bank-card-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.bank-card-bank {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    padding-left: 30px;
+}
+
+.bank-card-balance {
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+    padding-left: 30px;
+}
+
+.bank-card-balance.negative {
+    color: var(--color-error);
+}
+
+/* =============================================================
+   RECENT GL ENTRIES — Glass card with data table
+   ============================================================= */
+.acct-gl-section {
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color-light);
+}
+
+.acct-gl-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.view-all-link {
+    font-size: 0.8rem;
+    color: var(--brand-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.view-all-link:hover {
+    text-decoration: underline;
+}
+
+.acct-gl-section .data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.acct-gl-section .data-table th {
+    background: var(--overlay-subtle);
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.acct-gl-section .data-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-color-lighter, var(--border-color-light));
+    font-size: 0.82rem;
+    color: var(--text-primary);
+}
+
+.acct-gl-section .data-table td.desc-cell {
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.acct-gl-section .data-table tr:last-child td {
+    border-bottom: none;
+}
+
+.acct-gl-section .data-table tr:hover td {
+    background: var(--overlay-subtle);
+}
+
+.acct-gl-section .data-table .text-right {
+    text-align: right;
+}
+
+.acct-gl-section .data-table .text-center {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 24px 16px;
+}
+
+/* =============================================================
+   QUICK ACTIONS — 3-column card grid (matches HRMS)
+   ============================================================= */
+.acct-dash-container .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-3, 12px);
+    margin-bottom: var(--space-4, 16px);
+}
+
+.acct-dash-container .action-card {
+    background: var(--bg-card, var(--glass-bg));
+    border: 1px solid var(--border-color-light);
+    border-radius: var(--border-radius-lg, 12px);
+    padding: var(--space-3, 12px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    position: relative;
+    box-shadow: var(--shadow-xs, none);
+}
+
+.acct-dash-container .action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--brand-primary);
+    background: var(--bg-card-hover, var(--overlay-subtle));
+}
+
+.acct-dash-container .action-card:active {
+    transform: translateY(0);
+}
+
+.acct-dash-container .action-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--border-radius-md, 10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.acct-dash-container .action-icon svg {
+    width: 22px;
+    height: 22px;
+    color: var(--text-inverse);
+    transition: transform 0.15s ease;
+}
+
+.acct-dash-container .action-card:hover .action-icon svg {
+    transform: scale(1.05);
+}
+
+.acct-dash-container .action-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.acct-dash-container .action-content h4 {
+    font-size: var(--font-size-sm, 0.875rem);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 2px 0;
+    line-height: 1.3;
+}
+
+.acct-dash-container .action-content p {
+    font-size: var(--font-size-xs, 0.75rem);
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.acct-dash-container .action-arrow {
+    margin-left: auto;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.acct-dash-container .action-card:hover .action-arrow {
+    transform: translateX(4px);
+    color: var(--text-secondary);
+    opacity: 1;
+}
+
+/* =============================================================
+   ACTION CARD VARIANTS — Theme-Aware Color System
+   ============================================================= */
+
+/* Setup - Brand Primary */
+#cardSetup .action-icon {
+    background: var(--gradient-primary, linear-gradient(135deg, var(--brand-primary), #4f46e5));
+}
+#cardSetup:hover { border-color: var(--brand-primary); }
+
+/* Bills - Warning/Amber */
+#cardBills .action-icon {
+    background: var(--gradient-warning, linear-gradient(135deg, #f59e0b, #d97706));
+}
+#cardBills:hover { border-color: var(--color-warning); }
+
+/* Invoices - Success/Green */
+#cardInvoices .action-icon {
+    background: var(--gradient-success, linear-gradient(135deg, #10b981, #059669));
+}
+#cardInvoices:hover { border-color: var(--color-success); }
+
+/* Ledger - Info/Blue */
+#cardLedger .action-icon {
+    background: var(--gradient-info, linear-gradient(135deg, #06b6d4, #0891b2));
+}
+#cardLedger:hover { border-color: var(--color-info, #06b6d4); }
+
+/* Banking - Purple */
+#cardBanking .action-icon {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+#cardBanking:hover { border-color: #8b5cf6; }
+
+/* Reports - Accent */
+#cardReports .action-icon {
+    background: var(--gradient-accent, linear-gradient(135deg, #ec4899, #db2777));
+}
+#cardReports:hover { border-color: var(--brand-accent, #ec4899); }
+
+/* Expenses - Orange */
+#cardExpenses .action-icon {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+}
+#cardExpenses:hover { border-color: #f97316; }
+
+/* Assets - Teal */
+#cardAssets .action-icon {
+    background: linear-gradient(135deg, #14b8a6, #0d9488);
+}
+#cardAssets:hover { border-color: #14b8a6; }
+
+/* Parties - Indigo */
+#cardParties .action-icon {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+#cardParties:hover { border-color: #6366f1; }
+
+/* Taxation - Red/Shield */
+#cardTaxation .action-icon {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+#cardTaxation:hover { border-color: #ef4444; }
+
+/* Billing - Cyan */
+#cardBilling .action-icon {
+    background: linear-gradient(135deg, #22d3ee, #06b6d4);
+}
+#cardBilling:hover { border-color: #22d3ee; }
+
+/* Admin - Slate/Gray */
+#cardAdmin .action-icon {
+    background: linear-gradient(135deg, #64748b, #475569);
+}
+#cardAdmin:hover { border-color: #64748b; }
+
+/* =============================================================
+   SECTION HEADERS
+   ============================================================= */
+.acct-dash-container .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.acct-dash-container .section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* =============================================================
+   REFRESH BUTTON
+   ============================================================= */
+.acct-dash-container .refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--overlay-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.acct-dash-container .refresh-btn:hover {
+    background: var(--hover-overlay-strong);
+}
+
+.acct-dash-container .refresh-btn.spinning svg {
+    animation: acctSpin 1s linear infinite;
+}
+
+@keyframes acctSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* =============================================================
+   EMPTY STATE
+   ============================================================= */
+.acct-dash-container .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* =============================================================
+   RESPONSIVE — TABLET
+   ============================================================= */
+@media (max-width: 1024px) {
+    .acct-dash-container {
+        padding: 20px 16px;
+        padding-top: 80px;
+    }
+
+    .acct-dash-container .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* =============================================================
+   RESPONSIVE — MOBILE
+   ============================================================= */
+@media (max-width: 768px) {
+    .acct-dash-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .acct-dash-container .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .acct-dash-container .stat-card {
+        padding: 14px 12px;
+    }
+
+    .acct-dash-container .stat-value {
+        font-size: 1.25rem;
+    }
+
+    .acct-dash-container .stat-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+    }
+
+    .acct-dash-container .stat-icon svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .acct-dash-container .quick-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .acct-dash-container .bank-accounts-grid {
+        grid-template-columns: 1fr;
+    }
+}
