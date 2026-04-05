@@ -116,6 +116,21 @@ body.dashboard .navbar {
     gap: 12px;
     width: 100%;
     max-width: 1100px;
+}
+
+/* Card ordering: Row 1: Admin, Vision, Chat, Drive | Row 2: Accounts, HRMS, CRM, PMS | Row 3: rest */
+.bento-card.admin       { order: 1; }
+.bento-card.vision      { order: 2; }
+.bento-card.chat        { order: 3; }
+.bento-card.drive       { order: 4; }
+.bento-card.accounts    { order: 5; }
+.bento-card.hrms        { order: 6; }
+.bento-card.crm         { order: 7; }
+.bento-card.pms         { order: 8; }
+.bento-card.research    { order: 9; }
+.bento-card.procurement { order: 10; }
+.bento-card.lms         { order: 11; }
+.bento-card.news        { order: 12; }
     margin-bottom: 32px;
 }
 
