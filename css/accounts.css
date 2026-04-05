@@ -26,8 +26,8 @@ body.dashboard::before {
     z-index: 0;
 }
 
-/* All content above the ::before gradient */
-body.dashboard > * {
+/* All content above the ::before gradient — exclude navbar so it stays fixed */
+body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):not(.toast-container):not(.flatpickr-calendar) {
     position: relative;
     z-index: 1;
 }
