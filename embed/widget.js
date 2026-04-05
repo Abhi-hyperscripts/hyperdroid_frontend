@@ -1,19 +1,29 @@
 /**
- * Ragenaizer Research Chat Widget v4
- * Embeddable Shadow DOM chat widget for external websites.
+ * Ragenaizer Chat Widget v4
+ * Embeddable Shadow DOM chat widget — supports two modes:
+ *
+ * 1. EMBED MODE (default) — Research chatbot on external websites
+ *    <script src="widget.js" data-key="YOUR_EMBED_KEY" data-api="https://research.ragenaizer.com"></script>
+ *
+ * 2. COPILOT MODE — AI assistant inside the HyperDroid app
+ *    <script src="widget.js" data-mode="copilot" data-api="https://localhost:5126"
+ *            data-title="LMS Assistant" data-theme="dark"></script>
+ *
+ * Copilot mode attributes:
+ *   data-mode="copilot"  — activates copilot behavior
+ *   data-api             — backend service URL (e.g., LMS, Accounts, HRMS)
+ *   data-title           — widget title (default: "Assistant")
+ *   data-theme           — "dark" or "light" (default: "dark")
+ *   data-logo            — custom logo URL (optional)
  *
  * Features:
  *   - marked.js for markdown rendering
- *   - ApexCharts for visualizations (bar, column, line, pie, donut)
- *   - Adaptive streaming reveal with cursor
+ *   - ApexCharts for 15+ chart types
+ *   - Adaptive streaming reveal with cursor (embed mode)
+ *   - JSON response with instant display (copilot mode)
  *   - Progress step indicators
  *   - Resizable chat window (size persisted in localStorage)
- *   - Theme (dark/light) fetched from backend — no data-theme attribute needed
- *
- * Usage:
- *   <script src="https://ragenaizer.com/embed/widget.js"
- *           data-key="YOUR_EMBED_KEY"
- *           data-api="https://research.ragenaizer.com"></script>
+ *   - Theme support (dark/light)
  */
 (function () {
     'use strict';
@@ -22,23 +32,61 @@
     window.__ragenaizer_widget_loaded = true;
 
     const scriptEl = document.currentScript;
+    const widgetMode = scriptEl?.getAttribute('data-mode') || 'embed'; // 'embed' or 'copilot'
+    const isCopilotMode = widgetMode === 'copilot';
+
     const embedKey = scriptEl?.getAttribute('data-key') || '';
     const shareToken = scriptEl?.getAttribute('data-share-token') || '';
 
-    if (!embedKey) { console.warn('[Ragenaizer] Missing data-key on embed script.'); return; }
+    if (!isCopilotMode && !embedKey) { console.warn('[Ragenaizer] Missing data-key on embed script.'); return; }
 
     const explicitApi = scriptEl?.getAttribute('data-api') || '';
     const scriptSrc = scriptEl?.src || '';
     const scriptOrigin = scriptSrc ? new URL(scriptSrc).origin : '';
-    const baseUrl = explicitApi || scriptOrigin;
+    // In copilot mode: use data-api, or auto-detect from CONFIG (set by config.js)
+    // data-service tells us which service to use from CONFIG (e.g., "lms", "accounts", "hrms")
+    const copilotService = scriptEl?.getAttribute('data-service') || '';
+    // CONFIG is a global const from config.js — access via typeof check to avoid ReferenceError
+    const appConfig = (typeof CONFIG !== 'undefined') ? CONFIG : null;
+    const baseUrl = explicitApi
+        || (isCopilotMode && copilotService && appConfig?.endpoints?.[copilotService])
+        || (isCopilotMode && appConfig?.endpoints?.lms)
+        || scriptOrigin;
     if (!baseUrl) { console.warn('[Ragenaizer] Set data-api attribute.'); return; }
 
-    const logoUrl = `${scriptOrigin}/assets/logo-icon-white.png`;
+    const logoUrl = scriptEl?.getAttribute('data-logo') || `${scriptOrigin}/assets/logo-icon-white.png`;
+
+    // Copilot mode settings
+    const copilotTitle = scriptEl?.getAttribute('data-title') || 'Assistant';
+    const copilotTheme = scriptEl?.getAttribute('data-theme') || 'light';
+
+    // Helper to get JWT token for copilot mode (reads from the host app's auth)
+    function getCopilotJwt() {
+        if (!isCopilotMode) return null;
+        try {
+            // Use the app's getAuthToken() if available, or read from localStorage directly
+            if (typeof getAuthToken === 'function') return getAuthToken();
+            // Fallback: read from known storage key (ragenaizer_authToken)
+            const prefix = window.CONFIG?.storagePrefix || 'ragenaizer_';
+            return localStorage.getItem(`${prefix}authToken`);
+        } catch {}
+        return null;
+    }
+
+    // Helper to detect current page context for copilot
+    function getCurrentPageContext() {
+        if (!isCopilotMode) return '';
+        const path = window.location.pathname;
+        // Extract meaningful context: "/pages/lms/courses.html" → "lms/courses"
+        const match = path.match(/\/pages\/(.+?)\.html/);
+        return match ? match[1] : path;
+    }
 
     // Session ID — use sessionStorage so each tab/window gets a fresh session.
     // localStorage was causing stale sessions that persisted forever, leaking
     // old conversation context into new visits.
-    const storageKey = `ragenaizer_session_${embedKey}`;
+    // In copilot mode, session is per-user (managed server-side), so we use a fixed key.
+    const storageKey = isCopilotMode ? 'copilot_session' : `ragenaizer_session_${embedKey}`;
     function generateSessionId() {
         return crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
             const r = Math.random() * 16 | 0;
@@ -54,7 +102,7 @@
     try { localStorage.removeItem(storageKey); } catch {}
 
     // Persisted window size
-    const sizeKey = `ragenaizer_size_${embedKey}`;
+    const sizeKey = isCopilotMode ? 'copilot_size' : `ragenaizer_size_${embedKey}`;
     let savedSize = null;
     try { savedSize = JSON.parse(localStorage.getItem(sizeKey)); } catch {}
     const defaultW = 420, defaultH = 600;
@@ -96,18 +144,47 @@
             try { if (typeof ApexCharts === 'undefined') await loadScript('https://cdn.jsdelivr.net/npm/apexcharts@4.3.0/dist/apexcharts.min.js'); } catch {}
         })();
 
-        // Fetch embed info (theme, name, colors)
+        // Copilot mode: check if tenant has an active AI API key before rendering
+        if (isCopilotMode) {
+            try {
+                const jwt = getCopilotJwt();
+                if (jwt) {
+                    const authBase = window.CONFIG?.authApiBaseUrl || window.appConfig?.endpoints?.auth || 'https://localhost:5098';
+                    const keysRes = await fetch(`${authBase}/api/tenant-api-keys`, {
+                        headers: { 'Authorization': `Bearer ${jwt}` }
+                    });
+                    if (keysRes.ok) {
+                        const data = await keysRes.json();
+                        const keysList = data.keys || data;
+                        const hasActiveAiKey = Array.isArray(keysList) && keysList.some(k =>
+                            (k.isActive || k.is_active) && ['anthropic', 'openai'].includes((k.provider || '').toLowerCase())
+                        );
+                        if (!hasActiveAiKey) {
+                            window.__ragenaizer_widget_loaded = false;
+                            return;
+                        }
+                    }
+                }
+            } catch { /* Auth unreachable — still show widget, will fail gracefully on use */ }
+        }
+
+        // Fetch embed info (theme, name, colors) — skip in copilot mode
         let info;
-        try {
-            const r = await fetch(`${baseUrl}/api/embed/info/${embedKey}`);
-            if (!r.ok) { window.__ragenaizer_widget_loaded = false; return; }
-            info = await r.json();
-        } catch { window.__ragenaizer_widget_loaded = false; return; }
+        if (isCopilotMode) {
+            // In copilot mode, use data attributes for theme/branding
+            info = { theme: copilotTheme, name: copilotTitle };
+        } else {
+            try {
+                const r = await fetch(`${baseUrl}/api/embed/info/${embedKey}`);
+                if (!r.ok) { window.__ragenaizer_widget_loaded = false; return; }
+                info = await r.json();
+            } catch { window.__ragenaizer_widget_loaded = false; return; }
+        }
 
         await libPromise;
 
         // ========================================
-        // THEME FROM BACKEND
+        // THEME FROM BACKEND (or data attributes in copilot mode)
         // ========================================
         const theme = info.theme || 'light';
         const isDark = theme !== 'light';
@@ -117,6 +194,7 @@
             text: '#eceef5', textSecondary: '#8b90a8', textMuted: '#555b75',
             border: 'rgba(255,255,255,0.06)', borderLight: '#333952',
             accent: '#00b8d9', accentDim: 'rgba(0,184,217,0.1)',
+            headerBg: null,
             userBg: '#00b8d9', userText: '#fff',
             aiBg: 'rgba(255,255,255,0.03)', aiBorder: 'rgba(255,255,255,0.06)',
             inputBg: 'rgba(255,255,255,0.04)', inputBorder: 'rgba(255,255,255,0.08)',
@@ -130,8 +208,9 @@
             bgSurface: '#f0f1f5', bgHover: '#e9ebf0',
             text: '#111827', textSecondary: '#6b7280', textMuted: '#9ca3af',
             border: 'rgba(0,0,0,0.06)', borderLight: '#d1d5db',
-            accent: '#0891b2', accentDim: 'rgba(8,145,178,0.08)',
-            userBg: '#0891b2', userText: '#fff',
+            accent: '#3b82f6', accentDim: 'rgba(59,130,246,0.08)',
+            headerBg: '#3b82f6',
+            userBg: '#3b82f6', userText: '#fff',
             aiBg: 'rgba(0,0,0,0.02)', aiBorder: 'rgba(0,0,0,0.05)',
             inputBg: '#ffffff', inputBorder: 'rgba(0,0,0,0.1)',
             scrollThumb: 'rgba(0,0,0,0.08)',
@@ -141,7 +220,7 @@
             chartLegend: '#6b7280', chartDataLabel: '#374151', chartStroke: '#ffffff'
         };
 
-        const projectName = info.name || info.project_name || 'Research Assistant';
+        const projectName = isCopilotMode ? copilotTitle : (info.name || info.project_name || 'Research Assistant');
 
         // ========================================
         // HOST + SHADOW DOM
@@ -150,7 +229,7 @@
         host.id = 'ragenaizer-chat-widget';
         host.style.cssText = 'all:initial; position:fixed; bottom:0; right:0; z-index:2147483647; font-family:"SF Pro Display",-apple-system,"Segoe UI",system-ui,sans-serif;';
         document.body.appendChild(host);
-        const shadow = host.attachShadow({ mode: 'closed' });
+        const shadow = host.attachShadow({ mode: isCopilotMode ? 'open' : 'closed' });
 
         // ========================================
         // STYLES — Clean Professional SaaS
@@ -200,27 +279,34 @@
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
             }
 
-            /* ---- RESIZE HANDLE ---- */
+            /* ---- RESIZE HANDLE (invisible but functional at top-left) ---- */
             .rz-resize {
                 position: absolute; top: 0; left: 0;
-                width: 24px; height: 24px;
+                width: 28px; height: 28px;
                 cursor: nw-resize; z-index: 20;
             }
-            .rz-resize::after {
-                content: ''; position: absolute; top: 6px; left: 6px;
-                width: 8px; height: 8px;
-                border-top: 2px solid ${C.textMuted}; border-left: 2px solid ${C.textMuted};
-                opacity: 0.4; transition: opacity 0.15s;
-            }
-            .rz-resize:hover::after { opacity: 0.8; }
 
             /* ---- HEADER ---- */
             .rz-header {
                 display: flex; align-items: center; gap: 10px;
                 padding: 14px 16px;
-                background: ${C.accent};
+                background: ${C.headerBg || C.accent};
                 flex-shrink: 0; position: relative;
             }
+            .rz-header-tooltip {
+                position: absolute; top: 100%; left: 10px;
+                background: #1e293b; color: #e2e8f0; font-size: 11px;
+                padding: 5px 10px; border-radius: 4px; white-space: nowrap;
+                pointer-events: none; opacity: 0; transition: opacity 0.2s;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 30;
+                margin-top: 6px;
+            }
+            .rz-header-tooltip::before {
+                content: ''; position: absolute; top: -4px; left: 8px;
+                width: 8px; height: 8px; background: #1e293b;
+                transform: rotate(45deg);
+            }
+            .rz-header:hover .rz-header-tooltip { opacity: 1; }
             .rz-header-logo { width: 22px; height: 22px; object-fit: contain; border-radius: 4px; flex-shrink: 0; }
             .rz-header-title {
                 font-size: 14px; font-weight: 600; color: #fff;
@@ -518,6 +604,7 @@
                 <div class="rz-window" id="rzWindow">
                     <div class="rz-resize" id="rzResize"></div>
                     <div class="rz-header">
+                        <div class="rz-header-tooltip">Drag top-left corner to resize</div>
                         <img class="rz-header-logo" src="${logoUrl}" alt="" onerror="this.style.display='none'">
                         <span class="rz-header-title" id="rzTitle">${esc(projectName)}</span>
                         <button class="rz-header-close" id="rzClose" aria-label="Close">
@@ -535,8 +622,8 @@
                                     <line x1="12" y1="17" x2="12.01" y2="17"/>
                                 </svg>
                             </div>
-                            <div class="rz-welcome-title">Agentic AI-powered research assistant.</div>
-                            <div class="rz-welcome-sub">Plans. Scans. Analyzes. Visualizes. All from a single question.</div>
+                            <div class="rz-welcome-title">${isCopilotMode ? 'Your AI-powered assistant.' : 'Agentic AI-powered research assistant.'}</div>
+                            <div class="rz-welcome-sub">${isCopilotMode ? 'Ask anything. I\'ll handle the details.' : 'Plans. Scans. Analyzes. Visualizes. All from a single question.'}</div>
                         </div>
                     </div>
                     <div class="rz-input-area">
@@ -574,9 +661,10 @@
         const resizeHandle = $('#rzResize');
 
         let isOpen = false, isProcessing = false, welcomeShown = true;
+        let insightsLoaded = false;
 
         // Streaming state
-        let sBubble = null, sText = '', dText = '', sBuf = '', sTimer = null, sDone = false, sMeta = null, sViz = null;
+        let sBubble = null, sText = '', dText = '', sBuf = '', sTimer = null, sDone = false, sMeta = null, sViz = null, sPendingConfirm = false;
         const REVEAL_MS = 25, SLOW = 2, MED = 8, FAST = 20;
 
         // ========================================
@@ -651,6 +739,10 @@
                 requestAnimationFrame(() => { windowWrap.classList.add('open'); });
                 if (isMobile()) toggleBtn.style.display = 'none';
                 inputEl.focus();
+                if (isCopilotMode && !insightsLoaded) {
+                    loadInsights();
+                    insightsLoaded = true;
+                }
             } else {
                 windowWrap.classList.remove('open');
                 if (isMobile()) toggleBtn.style.display = '';
@@ -690,6 +782,58 @@
         });
 
         // ========================================
+        // COPILOT INSIGHT CARDS
+        // ========================================
+        async function loadInsights() {
+            try {
+                const jwt = getCopilotJwt();
+                if (!jwt) return;
+                const res = await fetch(`${baseUrl}/api/copilot/insights`, {
+                    headers: { 'Authorization': `Bearer ${jwt}` }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.insights || data.insights.length === 0) return;
+
+                const container = document.createElement('div');
+                container.style.cssText = 'padding:8px 12px;display:flex;flex-direction:column;gap:6px;';
+
+                for (const insight of data.insights) {
+                    const card = document.createElement('div');
+                    const severityColors = { urgent: C.error, warning: '#f59e0b', info: C.accent };
+                    const borderColor = severityColors[insight.severity] || C.accent;
+                    card.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;border-left:3px solid ${borderColor};background:${C.aiBg};cursor:pointer;transition:background 0.15s;`;
+                    card.addEventListener('mouseenter', () => card.style.background = C.bgHover);
+                    card.addEventListener('mouseleave', () => card.style.background = C.aiBg);
+
+                    const textDiv = document.createElement('div');
+                    textDiv.style.cssText = `font-size:12.5px;color:${C.text};`;
+                    textDiv.textContent = insight.title;
+
+                    const actionBtn = document.createElement('span');
+                    actionBtn.style.cssText = `font-size:11px;color:${C.accent};font-weight:600;white-space:nowrap;margin-left:8px;`;
+                    actionBtn.textContent = insight.action_label;
+
+                    card.appendChild(textDiv);
+                    card.appendChild(actionBtn);
+
+                    card.addEventListener('click', () => {
+                        container.remove();
+                        inputEl.value = insight.action_message;
+                        sendMessage();
+                    });
+
+                    container.appendChild(card);
+                }
+
+                // Insert at top of messages area
+                messagesEl.insertBefore(container, messagesEl.firstChild);
+            } catch (e) {
+                console.debug('[Copilot] Insights fetch failed:', e);
+            }
+        }
+
+        // ========================================
         // SEND MESSAGE
         // ========================================
         sendBtn.addEventListener('click', sendMessage);
@@ -711,10 +855,24 @@
             const progressEl = showProgress('Thinking...');
 
             try {
-                const res = await fetch(`${baseUrl}/api/embed/chat/${embedKey}`, {
+                // Build request based on mode
+                let fetchUrl, fetchHeaders, fetchBody;
+                if (isCopilotMode) {
+                    const jwt = getCopilotJwt();
+                    if (!jwt) { removeEl(progressEl); appendError('Not logged in. Please refresh and log in first.'); setProcessing(false); return; }
+                    fetchUrl = `${baseUrl}/api/copilot/message`;
+                    fetchHeaders = { 'Content-Type': 'application/json', 'Accept': 'text/event-stream', 'Authorization': `Bearer ${jwt}` };
+                    fetchBody = JSON.stringify({ message: text, current_page: getCurrentPageContext() });
+                } else {
+                    fetchUrl = `${baseUrl}/api/embed/chat/${embedKey}`;
+                    fetchHeaders = { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' };
+                    fetchBody = JSON.stringify({ message: text, session_id: sessionId, share_token: shareToken || undefined });
+                }
+
+                const res = await fetch(fetchUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
-                    body: JSON.stringify({ message: text, session_id: sessionId, share_token: shareToken || undefined })
+                    headers: fetchHeaders,
+                    body: fetchBody
                 });
 
                 if (!res.ok) {
@@ -769,13 +927,35 @@
                     if (data.session_id) sessionId = data.session_id;
                     if (sBubble) {
                         if (data.response && data.response !== sText) { sText = data.response; sBuf = data.response.substring(dText.length); }
+                        const bubbleRef = sBubble; // capture before completeReveal nullifies it
                         sDone = true;
                         if (!sTimer) completeReveal();
+                        // Copilot: flag for confirmation buttons (added by completeReveal after final render)
+                        const needsConfirm = data.requires_confirmation || (isCopilotMode && (data.response || '').includes('Reply **yes** to proceed'));
+                        if (isCopilotMode && needsConfirm) sPendingConfirm = true;
                     } else {
                         const b = appendMessage('ai', data.response || 'No response.');
                         if (sViz?.length) renderCharts(b, sViz);
                         addCopyButtons(b);
                         showMeta(sMeta);
+                        // Copilot: render confirmation buttons when no chunks were sent
+                        const needsConfirmNoChunk = data.requires_confirmation || (isCopilotMode && (data.response || '').includes('Reply **yes** to proceed'));
+                        if (isCopilotMode && needsConfirmNoChunk && b) {
+                            const btnContainer = document.createElement('div');
+                            btnContainer.style.cssText = 'display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid ' + C.border + ';';
+                            const acceptBtn = document.createElement('button');
+                            acceptBtn.textContent = '\u2713 Confirm';
+                            acceptBtn.style.cssText = 'background:' + C.accent + ';color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:600;';
+                            acceptBtn.addEventListener('click', () => { btnContainer.remove(); inputEl.value = 'yes'; sendMessage(); });
+                            const cancelBtn = document.createElement('button');
+                            cancelBtn.textContent = '\u2717 Cancel';
+                            cancelBtn.style.cssText = 'background:' + C.error + ';color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:600;';
+                            cancelBtn.addEventListener('click', () => { btnContainer.remove(); inputEl.value = 'no'; sendMessage(); });
+                            btnContainer.appendChild(acceptBtn);
+                            btnContainer.appendChild(cancelBtn);
+                            b.appendChild(btnContainer);
+                            scrollBottom();
+                        }
                     }
                     break;
                 case 'error':
@@ -808,15 +988,32 @@
         function completeReveal() {
             if (sTimer) { clearInterval(sTimer); sTimer = null; }
             sDone = true;
+            const bubble = sBubble;
             if (sBubble) {
                 dText = sText; sBuf = '';
                 sBubble.innerHTML = renderContent(sText, false);
                 if (sViz?.length) renderCharts(sBubble, sViz);
                 addCopyButtons(sBubble);
+                // Add confirmation buttons after final render (so innerHTML doesn't destroy them)
+                if (sPendingConfirm && isCopilotMode) {
+                    const btnContainer = document.createElement('div');
+                    btnContainer.style.cssText = 'display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid ' + C.border + ';';
+                    const acceptBtn = document.createElement('button');
+                    acceptBtn.textContent = '\u2713 Confirm';
+                    acceptBtn.style.cssText = 'background:' + C.accent + ';color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:600;';
+                    acceptBtn.addEventListener('click', () => { btnContainer.remove(); inputEl.value = 'yes'; sendMessage(); });
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.textContent = '\u2717 Cancel';
+                    cancelBtn.style.cssText = 'background:' + C.error + ';color:#fff;border:none;padding:7px 18px;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:600;';
+                    cancelBtn.addEventListener('click', () => { btnContainer.remove(); inputEl.value = 'no'; sendMessage(); });
+                    btnContainer.appendChild(acceptBtn);
+                    btnContainer.appendChild(cancelBtn);
+                    sBubble.appendChild(btnContainer);
+                }
                 scrollBottom();
             }
             if (sMeta) showMeta(sMeta);
-            sBubble = null; sText = ''; dText = ''; sBuf = ''; sViz = null; sMeta = null;
+            sBubble = null; sText = ''; dText = ''; sBuf = ''; sViz = null; sMeta = null; sPendingConfirm = false;
         }
 
         // ========================================
