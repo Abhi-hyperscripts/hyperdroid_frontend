@@ -193,7 +193,7 @@ body.dashboard .navbar {
    CARD HOVER EFFECTS
    ============================================================= */
 .bento-card:hover {
-    transform: translateY(-3px) scale(1.01);
+    transform: scale(1.01);
 }
 
 .bento-card:hover .card-border {
