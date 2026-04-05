@@ -229,7 +229,7 @@
         host.id = 'ragenaizer-chat-widget';
         host.style.cssText = 'all:initial; position:fixed; bottom:0; right:0; z-index:2147483647; font-family:"SF Pro Display",-apple-system,"Segoe UI",system-ui,sans-serif;';
         document.body.appendChild(host);
-        const shadow = host.attachShadow({ mode: isCopilotMode ? 'open' : 'closed' });
+        const shadow = host.attachShadow({ mode: 'closed' });
 
         // ========================================
         // STYLES — Clean Professional SaaS
