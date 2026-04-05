@@ -131,8 +131,7 @@ body.dashboard .navbar {
 .bento-card.procurement { order: 10; }
 .bento-card.lms         { order: 11; }
 .bento-card.news        { order: 12; }
-    margin-bottom: 32px;
-}
+
 
 /* =============================================================
    BENTO CARD - Compact Horizontal Style
