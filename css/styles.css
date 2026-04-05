@@ -831,7 +831,7 @@ body:has(.auth-container)::after {
 .user-dropdown-header-content {
     position: relative;
     z-index: 1;
-    padding: 10px 12px 8px;
+    padding: 8px 12px 6px;
     background: transparent;
     border-radius: 11px;
     border: none;
@@ -893,7 +893,7 @@ body:has(.auth-container)::after {
 .user-dropdown-divider {
     height: 1px;
     background: var(--border-color-light);
-    margin: 8px 16px;
+    margin: 4px 16px;
     position: relative;
     z-index: 1;
 }
@@ -903,7 +903,7 @@ body:has(.auth-container)::after {
     z-index: 1;
     width: calc(100% - 24px);
     margin: 0 12px;
-    padding: 10px 12px;
+    padding: 5px 12px;
     background: transparent;
     border: none;
     border-radius: 8px;
@@ -7566,15 +7566,15 @@ label.toggle-switch,
 .nav-links-section {
     position: relative;
     z-index: 1;
-    padding: 4px 8px;
+    padding: 2px 8px;
 }
 
 .nav-dropdown-link {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     width: 100%;
-    padding: 10px 12px;
+    padding: 5px 12px;
     background: none;
     border: none;
     border-radius: 10px;
@@ -7639,7 +7639,7 @@ label.toggle-switch,
 /* Logout button styling */
 .logout-btn {
     color: var(--color-danger) !important;
-    margin-bottom: 8px;
+    margin-bottom: 2px;
 }
 
 .logout-btn:hover {
@@ -7654,7 +7654,7 @@ label.toggle-switch,
     text-align: center;
     font-size: 11px;
     color: var(--text-tertiary);
-    padding: 4px 0 8px;
+    padding: 2px 0 4px;
     letter-spacing: 0.5px;
 }
 
