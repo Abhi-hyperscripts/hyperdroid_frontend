@@ -42,7 +42,6 @@ body.dashboard::before {
    NAVBAR STYLING
    ============================================================= */
 body.dashboard .navbar {
-    position: relative;
     z-index: 100;
 }
 
@@ -51,7 +50,7 @@ body.dashboard .navbar {
    ============================================================= */
 .home-content {
     min-height: calc(100vh - 60px);
-    padding: 32px 24px;
+    padding: 92px 24px 32px;
     display: flex;
     flex-direction: column;
     align-items: center;
