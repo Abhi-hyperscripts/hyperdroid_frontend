@@ -35,7 +35,7 @@ const ENVIRONMENTS = {
         news: 'https://news.ragenaizer.com',
         procurement: 'https://procurement.ragenaizer.com',
         lms: 'https://lms.ragenaizer.com',
-        accounts: 'https://accounts.hyperdroid.io'
+        accounts: 'https://accounts.ragenaizer.com'
     }
 };
 
