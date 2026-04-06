@@ -2,6 +2,7 @@
 let currentProjectId = null;
 let selectedMeetingType = 'regular'; // For create meeting modal
 var tenantHasLlmKey = false; // Whether tenant has an active LLM API key (for AI Copilot)
+var tenantHasSttKey = false; // Whether tenant has an active STT API key (for transcription)
 
 // Check authentication
 if (!api.isAuthenticated()) {
@@ -732,6 +733,15 @@ function showCreateMeetingQuickModal() {
     document.getElementById('participantsSelectionGroup').style.display = 'none';
     document.getElementById('allowGuestsToggleGroup').classList.remove('hidden');
 
+    // Show/hide auto-transcription toggle based on tenant STT key
+    const autoTranscriptionToggle = document.getElementById('autoTranscriptionToggle');
+    if (tenantHasSttKey) {
+        autoTranscriptionToggle.classList.remove('hidden');
+    } else {
+        autoTranscriptionToggle.classList.add('hidden');
+        document.getElementById('autoTranscription').checked = false;
+    }
+
     // Reset AI Copilot toggle (hidden by default, only shown for hosted + LLM key)
     document.getElementById('aiCopilotToggleGroup').classList.add('hidden');
     document.getElementById('aiCopilot').checked = false;
@@ -1271,6 +1281,15 @@ async function showCreateMeetingModalForProject(projectId) {
 
     // Show allow guests toggle (modal opens with 'regular' type by default)
     document.getElementById('allowGuestsToggleGroup').classList.remove('hidden');
+
+    // Show/hide auto-transcription toggle based on tenant STT key
+    const autoTranscriptionToggle2 = document.getElementById('autoTranscriptionToggle');
+    if (tenantHasSttKey) {
+        autoTranscriptionToggle2.classList.remove('hidden');
+    } else {
+        autoTranscriptionToggle2.classList.add('hidden');
+        document.getElementById('autoTranscription').checked = false;
+    }
 
     // Reset AI Copilot toggle (hidden by default, only shown for hosted + LLM key)
     document.getElementById('aiCopilotToggleGroup').classList.add('hidden');
@@ -3766,10 +3785,17 @@ async function showMeetingSettingsModal(meetingId, type) {
         } else {
             document.getElementById('settingsAutoRecording').checked = meeting.auto_recording || false;
         }
+        // Show/hide transcription controls based on tenant STT key
+        const settingsTranscriptionGroup = document.getElementById('settingsAutoTranscriptionGroup');
+        if (tenantHasSttKey) {
+            settingsTranscriptionGroup.classList.remove('hidden');
+        } else {
+            settingsTranscriptionGroup.classList.add('hidden');
+        }
         document.getElementById('settingsAutoTranscription').checked = meeting.auto_transcription || false;
-        // Show/hide and populate transcription language dropdown
+        // Show/hide and populate transcription language dropdown (only if STT key active)
         const settingsLangGroup = document.getElementById('settingsTranscriptionLanguageGroup');
-        if (meeting.auto_transcription) {
+        if (meeting.auto_transcription && tenantHasSttKey) {
             settingsLangGroup.classList.remove('hidden');
         } else {
             settingsLangGroup.classList.add('hidden');
@@ -3777,9 +3803,9 @@ async function showMeetingSettingsModal(meetingId, type) {
         if (settingsTranscriptionLangSD) {
             settingsTranscriptionLangSD.setValue(meeting.transcription_language || 'en');
         }
-        // Show/hide and populate code switching toggle
+        // Show/hide and populate code switching toggle (only if STT key active)
         const settingsCsGroup = document.getElementById('settingsCodeSwitchingGroup');
-        if (meeting.auto_transcription) {
+        if (meeting.auto_transcription && tenantHasSttKey) {
             settingsCsGroup.classList.remove('hidden');
         } else {
             settingsCsGroup.classList.add('hidden');
@@ -5155,8 +5181,9 @@ if (document.querySelector('.dashboard')) {
         loadProjectFilterDropdown();
         loadDashboard(true);
         initDashboardSignalR();
-        // Check if tenant has active LLM API key (for AI Copilot visibility)
+        // Check if tenant has active API keys (for feature visibility)
         api.hasActiveLlmKey().then(has => { tenantHasLlmKey = has; });
+        api.hasActiveSttKey().then(has => { tenantHasSttKey = has; });
     });
 
     window.addEventListener('beforeunload', async () => {

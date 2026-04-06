@@ -582,6 +582,16 @@ class API {
         }
     }
 
+    async hasActiveSttKey() {
+        try {
+            const response = await this.request('/tenant-api-keys');
+            const keys = response.keys || response || [];
+            return keys.some(k => k.serviceType === 'stt' && k.isActive);
+        } catch (e) {
+            return false;
+        }
+    }
+
     // Projects
     async getProjects() {
         return this.request('/projects/list');
