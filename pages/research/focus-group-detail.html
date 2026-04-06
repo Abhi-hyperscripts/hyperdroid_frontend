@@ -68,6 +68,28 @@
         .fg-btn.fg-btn-danger { background: #ef4444; color: #fff; }
         .fg-btn.fg-btn-danger:hover { background: #dc2626; }
         .fg-billing { font-size: 12px; color: var(--text-primary); font-weight: 600; background: var(--bg-tertiary); padding: 4px 12px; border-radius: 6px; }
+        /* Print styles */
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            .navbar, .slide-panel, .slide-panel-overlay, .fg-btn, .fg-btn-danger, .fg-select,
+            .research-btn, .panel-close-btn, .fg-billing, .fg-toolbar-left select { display: none !important; }
+            .research-container { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
+            .research-header button { display: none !important; }
+            .fg-recording-body { display: block !important; }
+            .fg-recording { border: none !important; background: none !important; box-shadow: none !important; }
+            .fg-recording-header { cursor: default !important; }
+            .expand-arrow { display: none !important; }
+            .fg-table { font-size: 11px !important; }
+            .fg-table th { color: #666 !important; border-bottom: 1px solid #ccc !important; }
+            .fg-table td { color: #000 !important; }
+            .fg-table tr.fg-speaker-break td { border-top: 1px solid #ccc !important; }
+            .fg-table tr:hover td { background: none !important; }
+            .fg-speaker-badge { background: #f0f0f0 !important; color: #000 !important; }
+            .fg-status-badge { color: #000 !important; border: 1px solid #ccc !important; background: none !important; }
+            .fg-time { color: #444 !important; }
+            h1 { font-size: 18px !important; }
+            a { color: #000 !important; text-decoration: none !important; }
+        }
     </style>
 </head>
 <body class="dashboard research-page">
