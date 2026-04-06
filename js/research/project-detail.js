@@ -465,6 +465,8 @@ function handleFileProgressUpdate(data) {
             refreshProjectHeader();
             variablesLoaded = false;
             loadVariables();
+            loadFilesTable();
+            if (typeof initOpenEndCoding === 'function') initOpenEndCoding();
         } else if (status === 'failed') {
             Toast.error(`File processing failed: ${message}`);
         }
