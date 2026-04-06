@@ -81,8 +81,11 @@ function resolveStageLabel(raw) {
 // ============================================
 
 async function initOpenEndCoding() {
-    // If already initialized AND dropdowns exist, skip
-    if (oeInitialized && oeFileDropdown && document.querySelector('#oeFileSelectContainer .searchable-dropdown')) return;
+    // If already initialized AND dropdowns exist, just refresh the file list
+    if (oeInitialized && oeFileDropdown && document.querySelector('#oeFileSelectContainer .searchable-dropdown')) {
+        await reloadOeFiles();
+        return;
+    }
     oeInitialized = true;
 
     // Create file dropdown
@@ -124,6 +127,14 @@ async function initOpenEndCoding() {
     // Method filter removed — V5 uses single LLM classify for all responses
 
     // Load files
+    await reloadOeFiles();
+
+    await loadOeCodeframes();
+    await loadOeJobs();
+}
+
+/** Reload OE file dropdown — callable independently when files change */
+async function reloadOeFiles() {
     try {
         const filesData = await api.request(`/research/projects/${projectId}/files`, { _skipSpinner: true });
         oeFiles = (filesData || []).filter(f => f.status === 'ready');
@@ -132,13 +143,10 @@ async function initOpenEndCoding() {
             label: f.fileName || f.file_name,
             description: `${(f.rowCount || f.row_count || 0).toLocaleString()} rows`
         }));
-        oeFileDropdown.setOptions(fileOptions);
+        if (oeFileDropdown) oeFileDropdown.setOptions(fileOptions);
     } catch (e) {
         console.error('Failed to load files for OE coding:', e);
     }
-
-    await loadOeCodeframes();
-    await loadOeJobs();
 }
 
 // ============================================

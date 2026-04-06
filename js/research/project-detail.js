@@ -602,7 +602,7 @@ function startPollingFile(fileId) {
                     variablesLoaded = false;
                     loadVariables();
                     loadFilesTable();
-                    if (typeof initOpenEndCoding === 'function') initOpenEndCoding();
+                    if (typeof reloadOeFiles === 'function') reloadOeFiles();
                 } else if (file.status === 'failed') {
                     const errorMsg = file.errorMessage || file.error_message || 'Unknown error';
                     Toast.error(`File parsing failed: ${errorMsg}`);
