@@ -36,6 +36,150 @@ let dashboardState = {
 let _searchDebounceTimer = null;
 
 // ============================================
+// TRANSCRIPTION LANGUAGE OPTIONS (Gladia-supported)
+// ============================================
+
+const TRANSCRIPTION_LANGUAGES = [
+    { value: 'en', label: 'English' },
+    { value: 'af', label: 'Afrikaans' },
+    { value: 'am', label: 'Amharic' },
+    { value: 'ar', label: 'Arabic' },
+    { value: 'as', label: 'Assamese' },
+    { value: 'az', label: 'Azerbaijani' },
+    { value: 'ba', label: 'Bashkir' },
+    { value: 'be', label: 'Belarusian' },
+    { value: 'bg', label: 'Bulgarian' },
+    { value: 'bn', label: 'Bengali' },
+    { value: 'bo', label: 'Tibetan' },
+    { value: 'br', label: 'Breton' },
+    { value: 'bs', label: 'Bosnian' },
+    { value: 'ca', label: 'Catalan' },
+    { value: 'cs', label: 'Czech' },
+    { value: 'cy', label: 'Welsh' },
+    { value: 'da', label: 'Danish' },
+    { value: 'de', label: 'German' },
+    { value: 'el', label: 'Greek' },
+    { value: 'es', label: 'Spanish' },
+    { value: 'et', label: 'Estonian' },
+    { value: 'eu', label: 'Basque' },
+    { value: 'fa', label: 'Persian' },
+    { value: 'fi', label: 'Finnish' },
+    { value: 'fo', label: 'Faroese' },
+    { value: 'fr', label: 'French' },
+    { value: 'gl', label: 'Galician' },
+    { value: 'gu', label: 'Gujarati' },
+    { value: 'ha', label: 'Hausa' },
+    { value: 'haw', label: 'Hawaiian' },
+    { value: 'he', label: 'Hebrew' },
+    { value: 'hi', label: 'Hindi' },
+    { value: 'hr', label: 'Croatian' },
+    { value: 'ht', label: 'Haitian Creole' },
+    { value: 'hu', label: 'Hungarian' },
+    { value: 'hy', label: 'Armenian' },
+    { value: 'id', label: 'Indonesian' },
+    { value: 'is', label: 'Icelandic' },
+    { value: 'it', label: 'Italian' },
+    { value: 'ja', label: 'Japanese' },
+    { value: 'jw', label: 'Javanese' },
+    { value: 'ka', label: 'Georgian' },
+    { value: 'kk', label: 'Kazakh' },
+    { value: 'km', label: 'Khmer' },
+    { value: 'kn', label: 'Kannada' },
+    { value: 'ko', label: 'Korean' },
+    { value: 'la', label: 'Latin' },
+    { value: 'lb', label: 'Luxembourgish' },
+    { value: 'ln', label: 'Lingala' },
+    { value: 'lo', label: 'Lao' },
+    { value: 'lt', label: 'Lithuanian' },
+    { value: 'lv', label: 'Latvian' },
+    { value: 'mg', label: 'Malagasy' },
+    { value: 'mi', label: 'Maori' },
+    { value: 'mk', label: 'Macedonian' },
+    { value: 'ml', label: 'Malayalam' },
+    { value: 'mn', label: 'Mongolian' },
+    { value: 'mr', label: 'Marathi' },
+    { value: 'ms', label: 'Malay' },
+    { value: 'mt', label: 'Maltese' },
+    { value: 'my', label: 'Myanmar' },
+    { value: 'ne', label: 'Nepali' },
+    { value: 'nl', label: 'Dutch' },
+    { value: 'nn', label: 'Norwegian Nynorsk' },
+    { value: 'no', label: 'Norwegian' },
+    { value: 'oc', label: 'Occitan' },
+    { value: 'pa', label: 'Punjabi' },
+    { value: 'pl', label: 'Polish' },
+    { value: 'ps', label: 'Pashto' },
+    { value: 'pt', label: 'Portuguese' },
+    { value: 'ro', label: 'Romanian' },
+    { value: 'ru', label: 'Russian' },
+    { value: 'sa', label: 'Sanskrit' },
+    { value: 'sd', label: 'Sindhi' },
+    { value: 'si', label: 'Sinhala' },
+    { value: 'sk', label: 'Slovak' },
+    { value: 'sl', label: 'Slovenian' },
+    { value: 'sn', label: 'Shona' },
+    { value: 'so', label: 'Somali' },
+    { value: 'sq', label: 'Albanian' },
+    { value: 'sr', label: 'Serbian' },
+    { value: 'su', label: 'Sundanese' },
+    { value: 'sv', label: 'Swedish' },
+    { value: 'sw', label: 'Swahili' },
+    { value: 'ta', label: 'Tamil' },
+    { value: 'te', label: 'Telugu' },
+    { value: 'tg', label: 'Tajik' },
+    { value: 'th', label: 'Thai' },
+    { value: 'tk', label: 'Turkmen' },
+    { value: 'tl', label: 'Tagalog' },
+    { value: 'tr', label: 'Turkish' },
+    { value: 'tt', label: 'Tatar' },
+    { value: 'uk', label: 'Ukrainian' },
+    { value: 'ur', label: 'Urdu' },
+    { value: 'uz', label: 'Uzbek' },
+    { value: 'vi', label: 'Vietnamese' },
+    { value: 'wo', label: 'Wolof' },
+    { value: 'yi', label: 'Yiddish' },
+    { value: 'yo', label: 'Yoruba' },
+    { value: 'zh', label: 'Chinese' }
+];
+
+let createTranscriptionLangSD = null;
+let settingsTranscriptionLangSD = null;
+
+function initTranscriptionLanguageDropdowns() {
+    // Create modal dropdown
+    const createLangContainer = document.getElementById('transcriptionLanguageGroup');
+    if (createLangContainer) {
+        createTranscriptionLangSD = new SearchableDropdown(createLangContainer, {
+            options: TRANSCRIPTION_LANGUAGES,
+            placeholder: 'Select language...',
+            searchPlaceholder: 'Search languages...',
+            value: 'en',
+            id: 'transcriptionLanguageSD',
+            linkedSelect: document.getElementById('transcriptionLanguage'),
+            virtualScroll: true,
+            itemHeight: 40,
+            compact: true
+        });
+    }
+
+    // Settings modal dropdown
+    const settingsLangContainer = document.getElementById('settingsTranscriptionLanguageGroup');
+    if (settingsLangContainer) {
+        settingsTranscriptionLangSD = new SearchableDropdown(settingsLangContainer, {
+            options: TRANSCRIPTION_LANGUAGES,
+            placeholder: 'Select language...',
+            searchPlaceholder: 'Search languages...',
+            value: 'en',
+            id: 'settingsTranscriptionLanguageSD',
+            linkedSelect: document.getElementById('settingsTranscriptionLanguage'),
+            virtualScroll: true,
+            itemHeight: 40,
+            compact: true
+        });
+    }
+}
+
+// ============================================
 // LOAD DASHBOARD (single API call)
 // ============================================
 
@@ -1132,6 +1276,10 @@ async function showCreateMeetingModalForProject(projectId) {
     document.getElementById('allowGuests').disabled = false;
     document.getElementById('autoTranscription').disabled = false;
 
+    // Reset transcription language to English and hide dropdown
+    document.getElementById('transcriptionLanguageGroup').classList.add('hidden');
+    if (createTranscriptionLangSD) createTranscriptionLangSD.setValue('en');
+
     modal.classList.add('gm-animating');
     requestAnimationFrame(() => {
         requestAnimationFrame(() => modal.classList.add('active'));
@@ -1217,21 +1365,46 @@ function selectMeetingType(type) {
 // AI Copilot Toggle Auto-Enable Logic
 // ============================================
 
+// Create modal: Auto-transcription toggle — show/hide language dropdown
+document.getElementById('autoTranscription').addEventListener('change', function() {
+    const langGroup = document.getElementById('transcriptionLanguageGroup');
+    if (this.checked) {
+        langGroup.classList.remove('hidden');
+    } else {
+        langGroup.classList.add('hidden');
+    }
+});
+
 // Create modal: AI Copilot toggle
 document.getElementById('aiCopilot').addEventListener('change', function() {
     const allowGuests = document.getElementById('allowGuests');
     const autoTranscription = document.getElementById('autoTranscription');
     const meetingModeGroup = document.getElementById('meetingModeGroup');
+    const langGroup = document.getElementById('transcriptionLanguageGroup');
     if (this.checked) {
         allowGuests.checked = true;
         autoTranscription.checked = true;
         allowGuests.disabled = true;
         autoTranscription.disabled = true;
         meetingModeGroup.classList.remove('hidden');
+        langGroup.classList.remove('hidden');
     } else {
         allowGuests.disabled = false;
         autoTranscription.disabled = false;
         meetingModeGroup.classList.add('hidden');
+        if (!autoTranscription.checked) {
+            langGroup.classList.add('hidden');
+        }
+    }
+});
+
+// Settings modal: Auto-transcription toggle — show/hide language dropdown
+document.getElementById('settingsAutoTranscription').addEventListener('change', function() {
+    const langGroup = document.getElementById('settingsTranscriptionLanguageGroup');
+    if (this.checked) {
+        langGroup.classList.remove('hidden');
+    } else {
+        langGroup.classList.add('hidden');
     }
 });
 
@@ -1240,16 +1413,21 @@ document.getElementById('settingsAiCopilot').addEventListener('change', function
     const allowGuests = document.getElementById('settingsAllowGuests');
     const autoTranscription = document.getElementById('settingsAutoTranscription');
     const meetingModeGroup = document.getElementById('meetingModeSettingGroup');
+    const langGroup = document.getElementById('settingsTranscriptionLanguageGroup');
     if (this.checked) {
         allowGuests.checked = true;
         autoTranscription.checked = true;
         allowGuests.disabled = true;
         autoTranscription.disabled = true;
         meetingModeGroup.style.setProperty('display', 'block', 'important');
+        langGroup.classList.remove('hidden');
     } else {
         allowGuests.disabled = false;
         autoTranscription.disabled = false;
         meetingModeGroup.style.setProperty('display', 'none', 'important');
+        if (!autoTranscription.checked) {
+            langGroup.classList.add('hidden');
+        }
     }
 });
 
@@ -1426,6 +1604,7 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
     const allowGuests = document.getElementById('allowGuests').checked;
     const autoRecording = document.getElementById('autoRecording').checked;
     const autoTranscription = document.getElementById('autoTranscription').checked;
+    const transcriptionLanguage = createTranscriptionLangSD ? createTranscriptionLangSD.getValue() : 'en';
     const aiSupport = document.getElementById('aiCopilot').checked;
     const meetingMode = aiSupport ? document.getElementById('meetingMode').value : null;
     const hostUserId = (selectedMeetingType === 'hosted' || selectedMeetingType === 'participant-controlled')
@@ -1469,7 +1648,8 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
             hostUserId,
             autoTranscription,
             aiSupport,
-            meetingMode
+            meetingMode,
+            transcriptionLanguage
         );
 
         // Extract meeting from response (backend returns { success, message, meeting })
@@ -3569,6 +3749,16 @@ async function showMeetingSettingsModal(meetingId, type) {
             document.getElementById('settingsAutoRecording').checked = meeting.auto_recording || false;
         }
         document.getElementById('settingsAutoTranscription').checked = meeting.auto_transcription || false;
+        // Show/hide and populate transcription language dropdown
+        const settingsLangGroup = document.getElementById('settingsTranscriptionLanguageGroup');
+        if (meeting.auto_transcription) {
+            settingsLangGroup.classList.remove('hidden');
+        } else {
+            settingsLangGroup.classList.add('hidden');
+        }
+        if (settingsTranscriptionLangSD) {
+            settingsTranscriptionLangSD.setValue(meeting.transcription_language || 'en');
+        }
         document.getElementById('settingsAiCopilot').checked = meeting.ai_support || false;
         if (meeting.meeting_mode) {
             document.getElementById('settingsMeetingMode').value = meeting.meeting_mode;
@@ -4224,6 +4414,12 @@ async function saveMeetingSettings() {
 
         if (currentSettingsMeeting && currentSettingsMeeting.auto_transcription !== autoTranscription) {
             await api.toggleAutoTranscription(meetingId, autoTranscription);
+        }
+
+        // Save transcription language if changed
+        const settingsLang = settingsTranscriptionLangSD ? settingsTranscriptionLangSD.getValue() : 'en';
+        if (currentSettingsMeeting && (currentSettingsMeeting.transcription_language || 'en') !== settingsLang) {
+            await api.updateTranscriptionLanguage(meetingId, settingsLang);
         }
 
         // Save AI Copilot if changed — runs after guest/transcription toggles above
@@ -4923,6 +5119,7 @@ function escapeHtml(text) {
 if (document.querySelector('.dashboard')) {
     document.addEventListener('DOMContentLoaded', () => {
         initDashboardDropdowns();
+        initTranscriptionLanguageDropdowns();
         loadProjectFilterDropdown();
         loadDashboard(true);
         initDashboardSignalR();

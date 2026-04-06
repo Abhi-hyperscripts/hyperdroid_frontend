@@ -357,6 +357,10 @@
                                 <span class="toggle-switch-label">AI Copilot</span>
                             </label>
                         </div>
+                        <div class="form-group hidden" id="transcriptionLanguageGroup">
+                            <label class="form-label">Transcription Language</label>
+                            <select id="transcriptionLanguage" class="form-control"></select>
+                        </div>
                         <div class="form-group hidden" id="meetingModeGroup">
                             <label class="form-label">Meeting Mode</label>
                             <select id="meetingMode" class="form-control">
@@ -599,6 +603,13 @@
                             <span class="toggle-switch-label">Auto-transcription</span>
                         </label>
                         <small>Automatically transcribe audio when meeting starts</small>
+                    </div>
+
+                    <!-- Transcription Language -->
+                    <div class="form-group settings-row hidden" id="settingsTranscriptionLanguageGroup">
+                        <label class="form-label">Transcription Language</label>
+                        <select id="settingsTranscriptionLanguage" class="form-control"></select>
+                        <small>Language used for speech-to-text transcription</small>
                     </div>
 
                     <!-- AI Copilot Toggle -->

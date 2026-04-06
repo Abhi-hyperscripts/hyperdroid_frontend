@@ -649,7 +649,7 @@ class API {
         return this.request(`/meetings/dashboard${qs ? '?' + qs : ''}`);
     }
 
-    async createMeeting(projectId, meetingName, startTime, endTime, notes, allowGuests = false, meetingType = 'regular', autoRecording = true, hostUserId = null, autoTranscription = false, aiSupport = false, meetingMode = null) {
+    async createMeeting(projectId, meetingName, startTime, endTime, notes, allowGuests = false, meetingType = 'regular', autoRecording = true, hostUserId = null, autoTranscription = false, aiSupport = false, meetingMode = null, transcriptionLanguage = 'en') {
         return this.request('/meetings/create', {
             method: 'POST',
             body: JSON.stringify({
@@ -663,6 +663,7 @@ class API {
                 auto_recording: autoRecording,
                 host_user_id: hostUserId,
                 auto_transcription: autoTranscription,
+                transcription_language: transcriptionLanguage,
                 ai_support: aiSupport,
                 meeting_mode: meetingMode
             })
@@ -794,6 +795,16 @@ class API {
             body: JSON.stringify({
                 meeting_id: meetingId,
                 value: value
+            })
+        });
+    }
+
+    async updateTranscriptionLanguage(meetingId, language) {
+        return this.request(`/meetings/${meetingId}/transcription-language`, {
+            method: 'POST',
+            body: JSON.stringify({
+                meeting_id: meetingId,
+                language: language
             })
         });
     }
