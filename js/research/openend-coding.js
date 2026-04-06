@@ -90,8 +90,8 @@ async function initOpenEndCoding() {
 
     // Create file dropdown
     const fileContainer = document.getElementById('oeFileSelectContainer');
-    fileContainer.innerHTML = ''; // clear any stale content
     if (!fileContainer) return;
+    fileContainer.innerHTML = '';
 
     oeFileDropdown = new SearchableDropdown(fileContainer, {
         id: 'oeFileSelect',
@@ -103,26 +103,30 @@ async function initOpenEndCoding() {
 
     // Create variable dropdown (disabled until file selected)
     const varContainer = document.getElementById('oeVariableSelectContainer');
-    varContainer.innerHTML = '';
-    oeVariableDropdown = new SearchableDropdown(varContainer, {
-        id: 'oeVariableSelect',
-        options: [],
-        placeholder: 'Select variable...',
-        searchPlaceholder: 'Search variables...',
-        onChange: (value) => { oeOnVariableChange(value); }
-    });
-    oeVariableDropdown.setDisabled(true);
+    if (varContainer) {
+        varContainer.innerHTML = '';
+        oeVariableDropdown = new SearchableDropdown(varContainer, {
+            id: 'oeVariableSelect',
+            options: [],
+            placeholder: 'Select variable...',
+            searchPlaceholder: 'Search variables...',
+            onChange: (value) => { oeOnVariableChange(value); }
+        });
+        oeVariableDropdown.setDisabled(true);
+    }
 
     // Create codeframe dropdown
     const cfContainer = document.getElementById('oeCodeframeSelectContainer');
-    cfContainer.innerHTML = '';
-    oeCodeframeDropdown = new SearchableDropdown(cfContainer, {
-        id: 'oeCodeframeSelect',
-        options: [],
-        placeholder: 'Select codeframe...',
-        searchPlaceholder: 'Search codeframes...',
-        onChange: (value) => { onCodeframeChange(value); }
-    });
+    if (cfContainer) {
+        cfContainer.innerHTML = '';
+        oeCodeframeDropdown = new SearchableDropdown(cfContainer, {
+            id: 'oeCodeframeSelect',
+            options: [],
+            placeholder: 'Select codeframe...',
+            searchPlaceholder: 'Search codeframes...',
+            onChange: (value) => { onCodeframeChange(value); }
+        });
+    }
 
     // Method filter removed — V5 uses single LLM classify for all responses
 
