@@ -463,7 +463,8 @@ function handleFileProgressUpdate(data) {
             const timeSec = data.elapsed_ms ? (data.elapsed_ms / 1000).toFixed(1) : '?';
             Toast.success(`"${fileName}" is ready. ${data.rows_loaded?.toLocaleString() || ''} rows in ${timeSec}s`);
             refreshProjectHeader();
-            if (variablesLoaded) loadVariables();
+            variablesLoaded = false;
+            loadVariables();
         } else if (status === 'failed') {
             Toast.error(`File processing failed: ${message}`);
         }
@@ -596,7 +597,10 @@ function startPollingFile(fileId) {
                 if (file.status === 'ready') {
                     Toast.success(`File "${file.fileName || file.file_name}" is ready.`);
                     refreshProjectHeader();
-                    if (variablesLoaded) loadVariables();
+                    variablesLoaded = false;
+                    loadVariables();
+                    loadFilesTable();
+                    if (typeof initOpenEndCoding === 'function') initOpenEndCoding();
                 } else if (file.status === 'failed') {
                     const errorMsg = file.errorMessage || file.error_message || 'Unknown error';
                     Toast.error(`File parsing failed: ${errorMsg}`);

@@ -133,12 +133,12 @@
                         <input type="hidden" id="vendorId" value="">
                         <div class="row mb-3">
                             <div class="col-md-4">
-                                <label for="vendorName" class="form-label">Vendor Name <span class="text-danger">*</span></label>
+                                <label for="vendorName" class="form-label">Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="vendorName" name="vendor_name" required>
                             </div>
                             <div class="col-md-4">
-                                <label for="vendorCode" class="form-label">Vendor Code</label>
-                                <input type="text" class="form-control" id="vendorCode" name="vendor_code" placeholder="Auto-generated if empty">
+                                <label for="vendorIndustry" class="form-label">Industry</label>
+                                <input type="text" class="form-control" id="vendorIndustry" name="industry">
                             </div>
                             <div class="col-md-4">
                                 <label for="vendorContactPerson" class="form-label">Contact Person</label>
@@ -348,5 +348,6 @@
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/procurement/vendors.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
+    <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="procurement" data-title="Procurement Assistant"><\/script>')</script>
 </body>
 </html>

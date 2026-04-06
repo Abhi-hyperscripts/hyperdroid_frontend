@@ -269,19 +269,19 @@ function openEditVendorModal(id) {
     submitBtn.innerHTML = '<span class="btn-spinner" id="vendorSubmitSpinner" style="display:none;"></span> Update Vendor';
     document.getElementById('vendorId').value = id;
     document.getElementById('vendorName').value = vendor.vendor_name || '';
-    document.getElementById('vendorCode').value = vendor.vendor_code || '';
+    document.getElementById('vendorIndustry').value = vendor.industry || '';
+    document.getElementById('vendorContactPerson').value = vendor.contact_person || '';
     document.getElementById('vendorEmail').value = vendor.email || '';
     document.getElementById('vendorPhone').value = vendor.phone || '';
-    document.getElementById('vendorContactPerson').value = vendor.contact_person || '';
     document.getElementById('vendorWebsite').value = vendor.website || '';
     document.getElementById('vendorAddress').value = vendor.address || '';
     document.getElementById('vendorCity').value = vendor.city || '';
     document.getElementById('vendorState').value = vendor.state || '';
     document.getElementById('vendorCountry').value = vendor.country || '';
     document.getElementById('vendorPostalCode').value = vendor.postal_code || '';
+    document.getElementById('vendorPaymentTerms').value = vendor.payment_terms || '';
     document.getElementById('vendorGstNumber').value = vendor.gst_number || '';
     document.getElementById('vendorPanNumber').value = vendor.pan_number || '';
-    document.getElementById('vendorPaymentTerms').value = vendor.payment_terms || '';
     document.getElementById('vendorNotes').value = vendor.notes || '';
     document.getElementById('contactsSection').style.display = '';
     document.getElementById('catalogLinksSection').style.display = '';
@@ -398,19 +398,19 @@ async function handleVendorSubmit(event) {
 
     const formData = {
         vendor_name: document.getElementById('vendorName').value.trim(),
-        vendor_code: document.getElementById('vendorCode').value.trim(),
+        industry: document.getElementById('vendorIndustry')?.value.trim() || '',
+        contact_person: document.getElementById('vendorContactPerson').value.trim(),
         email: document.getElementById('vendorEmail').value.trim(),
         phone: document.getElementById('vendorPhone').value.trim(),
-        contact_person: document.getElementById('vendorContactPerson').value.trim(),
         website: document.getElementById('vendorWebsite').value.trim(),
         address: document.getElementById('vendorAddress').value.trim(),
         city: document.getElementById('vendorCity').value.trim(),
         state: document.getElementById('vendorState').value.trim(),
         country: document.getElementById('vendorCountry').value.trim(),
         postal_code: document.getElementById('vendorPostalCode').value.trim(),
+        payment_terms: document.getElementById('vendorPaymentTerms').value.trim(),
         gst_number: document.getElementById('vendorGstNumber').value.trim(),
         pan_number: document.getElementById('vendorPanNumber').value.trim(),
-        payment_terms: document.getElementById('vendorPaymentTerms').value.trim(),
         notes: document.getElementById('vendorNotes').value.trim()
     };
 

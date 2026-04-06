@@ -203,12 +203,18 @@ function openEditClientModal(id) {
     document.getElementById('clientId').value = id;
     document.getElementById('clientName').value = client.client_name || '';
     document.getElementById('clientIndustry').value = client.industry || '';
+    document.getElementById('clientContactPerson').value = client.contact_person || '';
+    document.getElementById('clientEmail').value = client.email || '';
+    document.getElementById('clientPhone').value = client.phone || '';
     document.getElementById('clientWebsite').value = client.website || '';
     document.getElementById('clientAddress').value = client.address || '';
     document.getElementById('clientCity').value = client.city || '';
     document.getElementById('clientState').value = client.state || '';
     document.getElementById('clientCountry').value = client.country || '';
     document.getElementById('clientPostalCode').value = client.postal_code || '';
+    document.getElementById('clientPaymentTerms').value = client.payment_terms || '';
+    document.getElementById('clientGstNumber').value = client.tax_id || '';
+    document.getElementById('clientPanNumber').value = client.pan_number || '';
     document.getElementById('clientNotes').value = client.notes || '';
     openModal('clientModal');
 }
@@ -231,12 +237,18 @@ async function handleClientSubmit(event) {
     const formData = {
         client_name: document.getElementById('clientName').value.trim(),
         industry: document.getElementById('clientIndustry').value.trim(),
+        contact_person: document.getElementById('clientContactPerson')?.value.trim() || '',
+        email: document.getElementById('clientEmail')?.value.trim() || '',
+        phone: document.getElementById('clientPhone')?.value.trim() || '',
         website: document.getElementById('clientWebsite').value.trim(),
+        tax_id: document.getElementById('clientGstNumber')?.value.trim() || '',
+        pan_number: document.getElementById('clientPanNumber')?.value.trim() || '',
         address: document.getElementById('clientAddress').value.trim(),
         city: document.getElementById('clientCity').value.trim(),
         state: document.getElementById('clientState').value.trim(),
         country: document.getElementById('clientCountry').value.trim(),
         postal_code: document.getElementById('clientPostalCode').value.trim(),
+        payment_terms: document.getElementById('clientPaymentTerms')?.value.trim() || '',
         notes: document.getElementById('clientNotes').value.trim()
     };
 

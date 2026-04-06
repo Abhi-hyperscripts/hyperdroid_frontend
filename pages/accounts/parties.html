@@ -28,6 +28,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -104,6 +105,9 @@
                             <button class="sidebar-btn active" data-tab="vendor-list" id="vendorListTab">
                                 <span class="nav-number">1</span><span class="nav-label">Vendor List</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="pending-vendors" id="pendingVendorsTab">
+                                <span class="nav-number" id="pendingVendorCount">0</span><span class="nav-label">Pending Vendors</span>
+                            </button>
                         </div>
                     </div>
 
@@ -124,6 +128,9 @@
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="customer-list" id="customerListTab">
                                 <span class="nav-number">2</span><span class="nav-label">Customer List</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="pending-customers" id="pendingCustomersTab">
+                                <span class="nav-number" id="pendingCustomerCount">0</span><span class="nav-label">Pending Customers</span>
                             </button>
                         </div>
                     </div>
@@ -279,26 +286,119 @@
                     </div>
                 </div>
 
+                <!-- ============================================================ -->
+                <!-- Tab 3: Pending Vendor Requests -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="pending-vendors">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="pvPendingCount">0</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="pvSlaWarning">0</div>
+                            <div class="stat-label">SLA Warning</div>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Requested By</th>
+                                    <th>From Service</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>City</th>
+                                    <th>SLA Deadline</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingVendorTableBody">
+                                <tr class="empty-state">
+                                    <td colspan="8">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <rect x="1" y="3" width="15" height="13"></rect>
+                                                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                                                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                                                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                                            </svg>
+                                            <p>No pending vendor requests</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 4: Pending Customer Requests -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="pending-customers">
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value" id="pcPendingCount">0</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="pcSlaWarning">0</div>
+                            <div class="stat-label">SLA Warning</div>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Requested By</th>
+                                    <th>From Service</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>City</th>
+                                    <th>SLA Deadline</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingCustomerTableBody">
+                                <tr class="empty-state">
+                                    <td colspan="8">
+                                        <div class="empty-message">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="9" cy="7" r="4"></circle>
+                                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                            </svg>
+                                            <p>No pending customer requests</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </main>
         </div>
     </div>
 
     <!-- ================================================================== -->
-    <!-- Party Detail Modal (shared for vendor/customer view) -->
+    <!-- Detail Slide Panel (replaces old party detail modal) -->
     <!-- ================================================================== -->
-    <div id="partyDetailModal" class="modal" style="display:none">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="partyDetailModalTitle">Details</h5>
-                    <button class="close-btn" onclick="AccountsCommon.closeModal('partyDetailModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-                </div>
-                <div class="modal-body" id="partyDetailBody">
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('partyDetailModal')">Close</button>
-                </div>
-            </div>
+    <div class="slide-panel-overlay" id="detailPanelOverlay" style="position:fixed;top:52px;left:0;right:0;bottom:0;z-index:1040;"></div>
+    <div class="slide-panel" id="detailPanel" style="--panel-width:480px;position:fixed;top:52px;right:0;z-index:1050;height:calc(100vh - 52px);">
+        <div class="panel-header">
+            <h3 class="panel-title" id="detailPanelTitle">Details</h3>
+            <button class="panel-close-btn" onclick="closeDetailPanel()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="panel-body" id="detailPanelBody">
+            <!-- Populated dynamically -->
         </div>
     </div>
 
@@ -526,6 +626,94 @@
         </div>
     </div>
 
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- Approve Request Modal (outside container for proper centering) -->
+    <!-- ================================================================== -->
+    <div id="approveRequestModal" class="modal" style="display:none">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Approve Request</h5>
+                    <button class="close-btn" onclick="closeApproveModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <p id="approveRequestName" style="font-weight:600;margin-bottom:16px;"></p>
+                    <input type="hidden" id="approveRequestId">
+                    <input type="hidden" id="approveRequestType">
+                    <div class="form-row three-col">
+                        <div class="form-group">
+                            <label for="arEmail">Email *</label>
+                            <input type="email" id="arEmail" class="form-control" placeholder="email@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="arPhone">Phone *</label>
+                            <input type="text" id="arPhone" class="form-control" placeholder="Phone number">
+                        </div>
+                        <div class="form-group">
+                            <label for="arTaxId">Tax ID (GST/PAN) *</label>
+                            <input type="text" id="arTaxId" class="form-control" placeholder="Tax identification number">
+                        </div>
+                    </div>
+                    <div class="form-row three-col">
+                        <div class="form-group">
+                            <label for="arAddress">Address *</label>
+                            <input type="text" id="arAddress" class="form-control" placeholder="Street address">
+                        </div>
+                        <div class="form-group">
+                            <label for="arCity">City *</label>
+                            <input type="text" id="arCity" class="form-control" placeholder="City">
+                        </div>
+                        <div class="form-group">
+                            <label for="arState">State *</label>
+                            <input type="text" id="arState" class="form-control" placeholder="State / Province">
+                        </div>
+                    </div>
+                    <div class="form-row three-col">
+                        <div class="form-group">
+                            <label for="arCountry">Country *</label>
+                            <input type="text" id="arCountry" class="form-control" placeholder="Country">
+                        </div>
+                        <div class="form-group">
+                            <label for="arPaymentTerms">Payment Terms (days)</label>
+                            <input type="number" id="arPaymentTerms" class="form-control" value="30" min="0">
+                        </div>
+                        <div class="form-group"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeApproveModal()">Cancel</button>
+                    <button class="btn btn-primary" id="confirmApproveBtn" onclick="confirmApprove()">Approve &amp; Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- Reject Request Modal -->
+    <!-- ================================================================== -->
+    <div id="rejectRequestModal" class="modal" style="display:none">
+        <div class="modal-dialog modal-dialog-centered modal-sm-custom">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reject Request</h5>
+                    <button class="close-btn" onclick="closeRejectModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <p id="rejectRequestName" style="font-weight:600;margin-bottom:16px;"></p>
+                    <input type="hidden" id="rejectRequestId">
+                    <div class="form-group">
+                        <label for="rejectReason">Reason for rejection *</label>
+                        <textarea id="rejectReason" class="form-control" rows="3" placeholder="Please provide a reason..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeRejectModal()">Cancel</button>
+                    <button class="btn btn-danger" onclick="confirmReject()">Reject</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>

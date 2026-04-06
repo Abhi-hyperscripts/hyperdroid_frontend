@@ -838,6 +838,46 @@ textarea.form-control {
 /* Custom tooltips handled by /js/tooltip.js (body-appended, no clipping) */
 
 /* =============================================================
+   SLIDE PANEL OVERRIDE — Ensure fixed positioning
+   ============================================================= */
+#detailPanelOverlay {
+    position: fixed !important;
+    top: 52px !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 1040 !important;
+}
+#detailPanel {
+    position: fixed !important;
+    top: 52px !important;
+    right: 0 !important;
+    z-index: 1050 !important;
+    height: calc(100vh - 52px) !important;
+}
+
+/* =============================================================
+   MODAL OVERRIDE — Bootstrap .modal conflicts with glassmorphic
+   ============================================================= */
+#approveRequestModal,
+#rejectRequestModal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+    background: var(--overlay-dark) !important;
+}
+#approveRequestModal.active,
+#rejectRequestModal.active {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+}
+
+/* =============================================================
    SEARCHABLE DROPDOWN IN MODALS — Prevent overflow clipping
    ============================================================= */
 
@@ -1912,4 +1952,33 @@ textarea.form-control {
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+/* ============================================================================
+   Detail Slide Panel - grid rows for key/value pairs
+   ============================================================================ */
+.panel-detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.panel-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+.panel-detail-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 400;
+    flex-shrink: 0;
+    min-width: 120px;
+}
+.panel-detail-value {
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 500;
+    text-align: right;
+    word-break: break-word;
 }

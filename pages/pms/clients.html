@@ -151,7 +151,7 @@
     <!-- New/Edit Client Modal -->
     <div class="modal" id="clientModal">
         <div class="modal-backdrop" onclick="closeClientModal()"></div>
-        <div class="modal-dialog">
+        <div class="modal-dialog" style="max-width:920px; width:95vw;">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="clientModalTitle">New Client</h5>
@@ -166,48 +166,74 @@
                     <form id="clientForm" onsubmit="handleClientSubmit(event)">
                         <input type="hidden" id="clientId" value="">
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="clientName" class="form-label">Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="clientName" name="name" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="clientIndustry" class="form-label">Industry</label>
                                 <input type="text" class="form-control" id="clientIndustry" name="industry">
                             </div>
+                            <div class="col-md-4">
+                                <label for="clientContactPerson" class="form-label">Contact Person</label>
+                                <input type="text" class="form-control" id="clientContactPerson" name="contact_person">
+                            </div>
                         </div>
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label for="clientEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="clientEmail" name="email" placeholder="accounts@company.com">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="clientPhone" class="form-label">Phone</label>
+                                <input type="text" class="form-control" id="clientPhone" name="phone" placeholder="+91-...">
+                            </div>
+                            <div class="col-md-4">
                                 <label for="clientWebsite" class="form-label">Website</label>
                                 <input type="url" class="form-control" id="clientWebsite" name="website" placeholder="https://...">
                             </div>
-                            <div class="col-md-6">
-                                <label for="clientCountry" class="form-label">Country</label>
-                                <input type="text" class="form-control" id="clientCountry" name="country">
-                            </div>
                         </div>
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label for="clientAddress" class="form-label">Address</label>
+                                <input type="text" class="form-control" id="clientAddress" name="address">
+                            </div>
+                            <div class="col-md-4">
                                 <label for="clientCity" class="form-label">City</label>
                                 <input type="text" class="form-control" id="clientCity" name="city">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="clientState" class="form-label">State</label>
                                 <input type="text" class="form-control" id="clientState" name="state">
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="clientAddress" class="form-label">Address</label>
-                                <input type="text" class="form-control" id="clientAddress" name="address">
+                            <div class="col-md-4">
+                                <label for="clientCountry" class="form-label">Country</label>
+                                <input type="text" class="form-control" id="clientCountry" name="country">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label for="clientPostalCode" class="form-label">Postal Code</label>
                                 <input type="text" class="form-control" id="clientPostalCode" name="postal_code">
                             </div>
+                            <div class="col-md-4">
+                                <label for="clientPaymentTerms" class="form-label">Payment Terms</label>
+                                <input type="text" class="form-control" id="clientPaymentTerms" name="payment_terms" placeholder="e.g. Net 30">
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="clientNotes" class="form-label">Notes</label>
-                            <textarea class="form-control" id="clientNotes" name="notes" rows="3"></textarea>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="clientGstNumber" class="form-label">GST / Tax Number</label>
+                                <input type="text" class="form-control" id="clientGstNumber" name="gst_number">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="clientPanNumber" class="form-label">PAN / Tax ID</label>
+                                <input type="text" class="form-control" id="clientPanNumber" name="pan_number">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="clientNotes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="clientNotes" name="notes" rows="2"></textarea>
+                            </div>
                         </div>
                     </form>
                 </div>
