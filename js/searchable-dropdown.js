@@ -453,9 +453,8 @@ const SearchableDropdown = (function() {
             // Update virtual scroll threshold
             this.virtualScroll = options.length > 50;
 
-            if (this.isOpen) {
-                this.optionsEl.innerHTML = this.renderOptions();
-            }
+            // Always re-render options (not just when open) so they're ready when dropdown opens
+            this.optionsEl.innerHTML = this.renderOptions();
         }
 
         setDisabled(disabled) {
