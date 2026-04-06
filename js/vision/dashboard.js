@@ -754,7 +754,9 @@ function showCreateMeetingQuickModal() {
             projectGroup.style.display = 'block';
             const opts = [{ value: '', label: 'Select a project...' }];
             dashboardState.projects.forEach(p => opts.push({ value: p.id, label: p.project_name }));
-            if (createMeetingProjectSD) createMeetingProjectSD.destroy();
+            // Don't call destroy() — it removes the container DOM element entirely.
+            // Just clear innerHTML; the new SearchableDropdown will re-render.
+            projectContainer.innerHTML = '';
             createMeetingProjectSD = new SearchableDropdown(projectContainer, {
                 id: 'createMeetingProjectSD',
                 options: opts,
@@ -3722,7 +3724,7 @@ async function showMeetingSettingsModal(meetingId, type) {
         const projectContainer = document.getElementById('settingsProjectDropdownContainer');
         if (projectContainer) {
             const opts = dashboardState.projects.map(p => ({ value: p.id, label: p.project_name }));
-            if (settingsProjectSD) settingsProjectSD.destroy();
+            projectContainer.innerHTML = '';
             settingsProjectSD = new SearchableDropdown(projectContainer, {
                 id: 'settingsProjectSD',
                 options: opts,
