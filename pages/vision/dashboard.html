@@ -361,6 +361,16 @@
                             <label class="form-label">Transcription Language</label>
                             <select id="transcriptionLanguage" class="form-control"></select>
                         </div>
+                        <div class="form-group hidden" id="codeSwitchingGroup">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="codeSwitching">
+                                <span class="toggle-switch-track">
+                                    <span class="toggle-switch-thumb"></span>
+                                </span>
+                                <span class="toggle-switch-label">Multi-language detection</span>
+                            </label>
+                            <small>Allow detecting multiple languages mid-sentence (e.g., Hindi + English mix)</small>
+                        </div>
                         <div class="form-group hidden" id="meetingModeGroup">
                             <label class="form-label">Meeting Mode</label>
                             <select id="meetingMode" class="form-control">
@@ -610,6 +620,18 @@
                         <label class="form-label">Transcription Language</label>
                         <select id="settingsTranscriptionLanguage" class="form-control"></select>
                         <small>Language used for speech-to-text transcription</small>
+                    </div>
+
+                    <!-- Code Switching Toggle -->
+                    <div class="form-group settings-row hidden" id="settingsCodeSwitchingGroup">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="settingsCodeSwitching">
+                            <span class="toggle-switch-track">
+                                <span class="toggle-switch-thumb"></span>
+                            </span>
+                            <span class="toggle-switch-label">Multi-language detection</span>
+                        </label>
+                        <small>Allow detecting multiple languages mid-sentence (e.g., Hindi + English mix)</small>
                     </div>
 
                     <!-- AI Copilot Toggle -->

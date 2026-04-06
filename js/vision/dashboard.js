@@ -1276,8 +1276,10 @@ async function showCreateMeetingModalForProject(projectId) {
     document.getElementById('allowGuests').disabled = false;
     document.getElementById('autoTranscription').disabled = false;
 
-    // Reset transcription language to English and hide dropdown
+    // Reset transcription language to English and hide dropdown + code switching
     document.getElementById('transcriptionLanguageGroup').classList.add('hidden');
+    document.getElementById('codeSwitchingGroup').classList.add('hidden');
+    document.getElementById('codeSwitching').checked = false;
     if (createTranscriptionLangSD) createTranscriptionLangSD.setValue('en');
 
     modal.classList.add('gm-animating');
@@ -1365,13 +1367,16 @@ function selectMeetingType(type) {
 // AI Copilot Toggle Auto-Enable Logic
 // ============================================
 
-// Create modal: Auto-transcription toggle — show/hide language dropdown
+// Create modal: Auto-transcription toggle — show/hide language dropdown + code switching
 document.getElementById('autoTranscription').addEventListener('change', function() {
     const langGroup = document.getElementById('transcriptionLanguageGroup');
+    const csGroup = document.getElementById('codeSwitchingGroup');
     if (this.checked) {
         langGroup.classList.remove('hidden');
+        csGroup.classList.remove('hidden');
     } else {
         langGroup.classList.add('hidden');
+        csGroup.classList.add('hidden');
     }
 });
 
@@ -1381,6 +1386,7 @@ document.getElementById('aiCopilot').addEventListener('change', function() {
     const autoTranscription = document.getElementById('autoTranscription');
     const meetingModeGroup = document.getElementById('meetingModeGroup');
     const langGroup = document.getElementById('transcriptionLanguageGroup');
+    const csGroup = document.getElementById('codeSwitchingGroup');
     if (this.checked) {
         allowGuests.checked = true;
         autoTranscription.checked = true;
@@ -1388,23 +1394,28 @@ document.getElementById('aiCopilot').addEventListener('change', function() {
         autoTranscription.disabled = true;
         meetingModeGroup.classList.remove('hidden');
         langGroup.classList.remove('hidden');
+        csGroup.classList.remove('hidden');
     } else {
         allowGuests.disabled = false;
         autoTranscription.disabled = false;
         meetingModeGroup.classList.add('hidden');
         if (!autoTranscription.checked) {
             langGroup.classList.add('hidden');
+            csGroup.classList.add('hidden');
         }
     }
 });
 
-// Settings modal: Auto-transcription toggle — show/hide language dropdown
+// Settings modal: Auto-transcription toggle — show/hide language dropdown + code switching
 document.getElementById('settingsAutoTranscription').addEventListener('change', function() {
     const langGroup = document.getElementById('settingsTranscriptionLanguageGroup');
+    const csGroup = document.getElementById('settingsCodeSwitchingGroup');
     if (this.checked) {
         langGroup.classList.remove('hidden');
+        csGroup.classList.remove('hidden');
     } else {
         langGroup.classList.add('hidden');
+        csGroup.classList.add('hidden');
     }
 });
 
@@ -1414,6 +1425,7 @@ document.getElementById('settingsAiCopilot').addEventListener('change', function
     const autoTranscription = document.getElementById('settingsAutoTranscription');
     const meetingModeGroup = document.getElementById('meetingModeSettingGroup');
     const langGroup = document.getElementById('settingsTranscriptionLanguageGroup');
+    const csGroup = document.getElementById('settingsCodeSwitchingGroup');
     if (this.checked) {
         allowGuests.checked = true;
         autoTranscription.checked = true;
@@ -1421,12 +1433,14 @@ document.getElementById('settingsAiCopilot').addEventListener('change', function
         autoTranscription.disabled = true;
         meetingModeGroup.style.setProperty('display', 'block', 'important');
         langGroup.classList.remove('hidden');
+        csGroup.classList.remove('hidden');
     } else {
         allowGuests.disabled = false;
         autoTranscription.disabled = false;
         meetingModeGroup.style.setProperty('display', 'none', 'important');
         if (!autoTranscription.checked) {
             langGroup.classList.add('hidden');
+            csGroup.classList.add('hidden');
         }
     }
 });
@@ -1605,6 +1619,7 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
     const autoRecording = document.getElementById('autoRecording').checked;
     const autoTranscription = document.getElementById('autoTranscription').checked;
     const transcriptionLanguage = createTranscriptionLangSD ? createTranscriptionLangSD.getValue() : 'en';
+    const codeSwitching = document.getElementById('codeSwitching').checked;
     const aiSupport = document.getElementById('aiCopilot').checked;
     const meetingMode = aiSupport ? document.getElementById('meetingMode').value : null;
     const hostUserId = (selectedMeetingType === 'hosted' || selectedMeetingType === 'participant-controlled')
@@ -1649,7 +1664,8 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
             autoTranscription,
             aiSupport,
             meetingMode,
-            transcriptionLanguage
+            transcriptionLanguage,
+            codeSwitching
         );
 
         // Extract meeting from response (backend returns { success, message, meeting })
@@ -3759,6 +3775,14 @@ async function showMeetingSettingsModal(meetingId, type) {
         if (settingsTranscriptionLangSD) {
             settingsTranscriptionLangSD.setValue(meeting.transcription_language || 'en');
         }
+        // Show/hide and populate code switching toggle
+        const settingsCsGroup = document.getElementById('settingsCodeSwitchingGroup');
+        if (meeting.auto_transcription) {
+            settingsCsGroup.classList.remove('hidden');
+        } else {
+            settingsCsGroup.classList.add('hidden');
+        }
+        document.getElementById('settingsCodeSwitching').checked = meeting.code_switching || false;
         document.getElementById('settingsAiCopilot').checked = meeting.ai_support || false;
         if (meeting.meeting_mode) {
             document.getElementById('settingsMeetingMode').value = meeting.meeting_mode;
@@ -4420,6 +4444,12 @@ async function saveMeetingSettings() {
         const settingsLang = settingsTranscriptionLangSD ? settingsTranscriptionLangSD.getValue() : 'en';
         if (currentSettingsMeeting && (currentSettingsMeeting.transcription_language || 'en') !== settingsLang) {
             await api.updateTranscriptionLanguage(meetingId, settingsLang);
+        }
+
+        // Save code switching if changed
+        const settingsCS = document.getElementById('settingsCodeSwitching').checked;
+        if (currentSettingsMeeting && (currentSettingsMeeting.code_switching || false) !== settingsCS) {
+            await api.updateCodeSwitching(meetingId, settingsCS);
         }
 
         // Save AI Copilot if changed — runs after guest/transcription toggles above
