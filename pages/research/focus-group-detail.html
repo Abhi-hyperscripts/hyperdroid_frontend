@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Focus Group - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/research.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <style>
+        .fg-recording { border: 1px solid var(--border-primary); border-radius: 12px; background: var(--bg-secondary); margin-bottom: 12px; overflow: hidden; }
+        .fg-recording-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; user-select: none; }
+        .fg-recording-header:hover { background: var(--bg-tertiary); }
+        .fg-recording-title { font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .fg-recording-meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 16px; align-items: center; }
+        .fg-recording-body { display: none; border-top: 1px solid var(--border-primary); }
+        .fg-recording.expanded .fg-recording-body { display: block; }
+        .fg-recording .expand-arrow { transition: transform 0.2s; font-size: 12px; color: var(--text-secondary); }
+        .fg-recording.expanded .expand-arrow { transform: rotate(90deg); }
+
+        .fg-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border-primary); }
+        .fg-toolbar-left { display: flex; align-items: center; gap: 12px; }
+
+        .fg-speakers-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 16px; border-bottom: 1px solid var(--border-primary); }
+        .fg-speaker-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 16px; font-size: 12px; background: var(--bg-tertiary); }
+        .fg-speaker-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        .fg-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .fg-table th { text-align: left; padding: 8px 16px; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; border-bottom: 1px solid var(--border-primary); }
+        .fg-table td { padding: 2px 16px; border-bottom: none; vertical-align: top; line-height: 1.3; }
+        .fg-table tr.fg-speaker-break td { padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.2) !important; }
+        [data-theme="light"] .fg-table tr.fg-speaker-break td { border-top: 1px solid rgba(0,0,0,0.2) !important; }
+        .fg-table tr:last-child td { border-bottom: none; }
+        .fg-table tr:hover td { background: var(--bg-tertiary); }
+        .fg-time { font-family: monospace; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+
+        .fg-status-badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+        .fg-status-done { background: rgba(16, 185, 129, 0.15); color: var(--color-success); }
+        .fg-status-processing { background: rgba(99, 102, 241, 0.15); color: var(--brand-primary); }
+        .fg-status-failed { background: rgba(239, 68, 68, 0.15); color: var(--color-error); }
+        .fg-status-pending { background: rgba(245, 158, 11, 0.15); color: var(--color-warning); }
+
+        .fg-progress-inline { display: flex; align-items: center; gap: 8px; }
+        .fg-progress-bar { height: 4px; width: 120px; background: var(--bg-tertiary); border-radius: 2px; overflow: hidden; }
+        .fg-progress-fill { height: 100%; background: var(--brand-primary); border-radius: 2px; transition: width 0.5s; }
+
+        .fg-empty { text-align: center; padding: 60px 20px; color: var(--text-secondary); }
+        .fg-empty svg { margin-bottom: 16px; opacity: 0.3; }
+
+        .fg-select { padding: 5px 10px; border: 1px solid var(--border-primary); border-radius: 6px; background: var(--bg-tertiary); color: var(--text-primary); font-size: 12px; }
+        /* Theme-aware buttons for focus group */
+        .fg-btn { padding: 5px 14px; border: none; border-radius: 6px; background: var(--brand-primary); color: var(--text-inverse); font-size: 12px; cursor: pointer; transition: all 0.15s; font-weight: 500; }
+        .fg-btn:hover { background: var(--brand-primary-hover); }
+        .fg-btn.fg-btn-danger { background: #ef4444; color: #fff; }
+        .fg-btn.fg-btn-danger:hover { background: #dc2626; }
+        .fg-billing { font-size: 12px; color: var(--text-primary); font-weight: 600; background: var(--bg-tertiary); padding: 4px 12px; border-radius: 6px; }
+    </style>
+</head>
+<body class="dashboard research-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html"><img src="../../assets/brand_logo.png" alt="Logo" class="navbar-logo"></a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="research-container">
+        <!-- Header -->
+        <div class="research-header">
+            <div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+                    <a href="dashboard.html" style="color: var(--text-secondary); text-decoration: none; font-size: 14px;">Research</a>
+                    <span style="color: var(--text-secondary); font-size: 14px;">/</span>
+                    <a href="focus-groups.html" style="color: var(--text-secondary); text-decoration: none; font-size: 14px;">Focus Groups</a>
+                    <span style="color: var(--text-secondary); font-size: 14px;">/</span>
+                    <h1 style="margin: 0;" id="projectTitle">Loading...</h1>
+                </div>
+                <p id="projectDescription"></p>
+            </div>
+            <button class="research-btn btn-primary" onclick="showModal('uploadModal')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Upload Audio
+            </button>
+        </div>
+
+        <!-- Recordings list -->
+        <div id="recordingsList"></div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="gm-overlay" onclick="if(event.target===this)closeModal('uploadModal')">
+        <div class="gm-modal" style="max-width: 540px;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title">Upload Audio Recording</div>
+                </div>
+                <button class="gm-close" onclick="closeModal('uploadModal')">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div class="research-form-group">
+                    <label for="recordingTitle">Title <span class="required">*</span></label>
+                    <input type="text" id="recordingTitle" placeholder="e.g., Session 1 — Customer Feedback">
+                </div>
+                <div class="research-form-group">
+                    <label>Audio File <span class="required">*</span></label>
+                    <div id="dropZone" style="border:2px dashed var(--border-primary); border-radius:8px; padding:24px; text-align:center; cursor:pointer; background:var(--bg-tertiary);">
+                        <p style="margin:0; color:var(--text-secondary); font-size:13px;" id="dropZoneText">Click or drag audio file (MP3, WAV, M4A, max 500MB)</p>
+                    </div>
+                    <input type="file" id="audioFileInput" accept=".mp3,.wav,.m4a,.flac,.ogg,.mp4,.webm" style="display:none" onchange="onFileSelected(event)">
+                </div>
+                <div style="display:flex; gap:12px;">
+                    <div class="research-form-group" style="flex:1;">
+                        <label>Source Language</label>
+                        <select id="sourceLanguage" class="fg-select" style="width:100%; padding:8px;">
+                            <option value="">Auto-detect</option>
+                            <option value="en">English</option><option value="hi">Hindi</option><option value="es">Spanish</option>
+                            <option value="fr">French</option><option value="de">German</option><option value="zh">Chinese</option>
+                            <option value="ja">Japanese</option><option value="ar">Arabic</option><option value="pt">Portuguese</option>
+                            <option value="ru">Russian</option><option value="ko">Korean</option><option value="it">Italian</option>
+                        </select>
+                    </div>
+                    <div class="research-form-group" style="flex:1;">
+                        <label>Translate To</label>
+                        <select id="targetLanguage" class="fg-select" style="width:100%; padding:8px;">
+                            <option value="">No translation</option>
+                            <option value="en">English</option><option value="hi">Hindi</option><option value="es">Spanish</option>
+                            <option value="fr">French</option><option value="de">German</option><option value="zh">Chinese</option>
+                            <option value="ja">Japanese</option><option value="ar">Arabic</option><option value="pt">Portuguese</option>
+                            <option value="ru">Russian</option><option value="ko">Korean</option><option value="it">Italian</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="gm-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+                <button type="button" class="gm-btn gm-btn-secondary" onclick="closeModal('uploadModal')">Cancel</button>
+                <button type="button" class="gm-btn gm-btn-primary" id="uploadBtn" onclick="submitUpload()">Upload & Transcribe</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSON Slide Panel (shared pattern from slide-panel.css) -->
+    <div class="slide-panel-overlay" id="jsonPanelOverlay" onclick="closeJsonPanel()"></div>
+    <div class="slide-panel" id="jsonSlidePanel" style="--panel-width: 600px;">
+        <div class="panel-drag-handle"><div class="drag-bar"></div></div>
+        <div class="panel-header">
+            <h3 class="panel-title">Transcription Result</h3>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <button class="research-btn btn-secondary" style="font-size:11px; padding:4px 10px;" onclick="copyJson()">Copy</button>
+                <button class="research-btn btn-secondary" style="font-size:11px; padding:4px 10px;" onclick="downloadJson()">Download</button>
+                <button class="panel-close-btn" onclick="closeJsonPanel()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
+        <div class="panel-body" id="jsonPanelBody">
+            <pre style="font-size:12px; line-height:1.5; white-space:pre-wrap; word-break:break-word; margin:0;" id="jsonContent"></pre>
+        </div>
+    </div>
+
+    <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/research/focus-group-detail.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof Navigation !== 'undefined') Navigation.init('research', '../');
+        });
+    </script>
+</body>
+</html>

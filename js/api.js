@@ -186,8 +186,9 @@ class API {
             actualEndpoint = endpoint.substring(4); // Remove '/lms' prefix, keep the rest
         }
         const url = `${baseUrl}${actualEndpoint}`;
+        const isFormData = options.body instanceof FormData;
         const headers = {
-            'Content-Type': 'application/json',
+            ...(!isFormData && { 'Content-Type': 'application/json' }),
             ...(this.token && { 'Authorization': `Bearer ${this.token}` })
         };
 
@@ -198,6 +199,8 @@ class API {
                 ...options.headers
             }
         };
+        // For FormData, ensure Content-Type is not set (browser sets multipart boundary)
+        if (isFormData) delete config.headers['Content-Type'];
         // Remove internal flags before fetch
         delete config._skipSpinner;
 
