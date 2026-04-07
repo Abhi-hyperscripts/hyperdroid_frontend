@@ -89,7 +89,7 @@ const NavbarComponent = {
                     </svg>
                 </span>
                 <div class="nav-dropdown-menu">
-                    <!-- Communication Submenu -->
+                    <!-- Communication -->
                     <div class="nav-submenu" data-nav="compare-communication">
                         <div class="nav-submenu-trigger">
                             Communication <span>Video & Chat</span>
@@ -102,8 +102,20 @@ const NavbarComponent = {
                             <a href="/pages/compare/ragenaizer-vs-google-workspace.html" class="nav-dropdown-item" data-nav="vs-google">vs Google Workspace</a>
                         </div>
                     </div>
-                    <div class="nav-dropdown-divider"></div>
-                    <!-- HRMS & Payroll Submenu -->
+                    <!-- Cloud Storage -->
+                    <div class="nav-submenu" data-nav="compare-drive">
+                        <div class="nav-submenu-trigger">
+                            Cloud Storage <span>File Sharing</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>
+                        <div class="nav-submenu-content">
+                            <a href="/pages/compare/ragenaizer-vs-dropbox.html" class="nav-dropdown-item" data-nav="vs-dropbox">vs Dropbox</a>
+                            <a href="/pages/compare/ragenaizer-vs-google-drive.html" class="nav-dropdown-item" data-nav="vs-gdrive">vs Google Drive</a>
+                            <a href="/pages/compare/ragenaizer-vs-onedrive.html" class="nav-dropdown-item" data-nav="vs-onedrive">vs OneDrive</a>
+                            <a href="/pages/compare/ragenaizer-vs-box.html" class="nav-dropdown-item" data-nav="vs-box">vs Box</a>
+                        </div>
+                    </div>
+                    <!-- HRMS & Payroll -->
                     <div class="nav-submenu" data-nav="compare-hrms">
                         <div class="nav-submenu-trigger">
                             HRMS & Payroll <span>HR Software</span>
@@ -117,6 +129,74 @@ const NavbarComponent = {
                             <a href="/pages/compare/ragenaizer-vs-bamboohr.html" class="nav-dropdown-item" data-nav="vs-bamboohr">vs BambooHR</a>
                         </div>
                     </div>
+                    <!-- CRM -->
+                    <div class="nav-submenu" data-nav="compare-crm">
+                        <div class="nav-submenu-trigger">
+                            CRM <span>Sales Pipeline</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>
+                        <div class="nav-submenu-content">
+                            <a href="/pages/compare/ragenaizer-vs-hubspot.html" class="nav-dropdown-item" data-nav="vs-hubspot">vs HubSpot</a>
+                            <a href="/pages/compare/ragenaizer-vs-salesforce.html" class="nav-dropdown-item" data-nav="vs-salesforce">vs Salesforce</a>
+                            <a href="/pages/compare/ragenaizer-vs-pipedrive.html" class="nav-dropdown-item" data-nav="vs-pipedrive">vs Pipedrive</a>
+                            <a href="/pages/compare/ragenaizer-vs-zoho-crm.html" class="nav-dropdown-item" data-nav="vs-zoho-crm">vs Zoho CRM</a>
+                        </div>
+                    </div>
+                    <!-- Project Management -->
+                    <div class="nav-submenu" data-nav="compare-pms">
+                        <div class="nav-submenu-trigger">
+                            Project Management <span>Tasks &amp; Issues</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>
+                        <div class="nav-submenu-content">
+                            <a href="/pages/compare/ragenaizer-vs-jira.html" class="nav-dropdown-item" data-nav="vs-jira">vs Jira <span>Issue tracker</span></a>
+                            <a href="/pages/compare/ragenaizer-vs-asana.html" class="nav-dropdown-item" data-nav="vs-asana">vs Asana</a>
+                            <a href="/pages/compare/ragenaizer-vs-monday.html" class="nav-dropdown-item" data-nav="vs-monday">vs Monday.com</a>
+                            <a href="/pages/compare/ragenaizer-vs-clickup.html" class="nav-dropdown-item" data-nav="vs-clickup">vs ClickUp</a>
+                            <a href="/pages/compare/ragenaizer-vs-trello.html" class="nav-dropdown-item" data-nav="vs-trello">vs Trello</a>
+                        </div>
+                    </div>
+                    <!-- Research & Analytics -->
+                    <div class="nav-submenu" data-nav="compare-research">
+                        <div class="nav-submenu-trigger">
+                            Research &amp; Analytics <span>Survey Data</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>
+                        <div class="nav-submenu-content">
+                            <a href="/pages/compare/ragenaizer-vs-qualtrics.html" class="nav-dropdown-item" data-nav="vs-qualtrics">vs Qualtrics</a>
+                            <a href="/pages/compare/ragenaizer-vs-surveymonkey.html" class="nav-dropdown-item" data-nav="vs-surveymonkey">vs SurveyMonkey</a>
+                            <a href="/pages/compare/ragenaizer-vs-spss.html" class="nav-dropdown-item" data-nav="vs-spss">vs IBM SPSS</a>
+                            <a href="/pages/compare/ragenaizer-vs-displayr.html" class="nav-dropdown-item" data-nav="vs-displayr">vs Displayr / Q</a>
+                        </div>
+                    </div>
+                    <!-- Accounting -->
+                    <div class="nav-submenu" data-nav="compare-accounts">
+                        <div class="nav-submenu-trigger">
+                            Accounting <span>Books &amp; Finance</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>
+                        <div class="nav-submenu-content">
+                            <a href="/pages/compare/ragenaizer-vs-quickbooks.html" class="nav-dropdown-item" data-nav="vs-quickbooks">vs QuickBooks</a>
+                            <a href="/pages/compare/ragenaizer-vs-xero.html" class="nav-dropdown-item" data-nav="vs-xero">vs Xero</a>
+                            <a href="/pages/compare/ragenaizer-vs-zoho-books.html" class="nav-dropdown-item" data-nav="vs-zoho-books">vs Zoho Books</a>
+                            <a href="/pages/compare/ragenaizer-vs-tally.html" class="nav-dropdown-item" data-nav="vs-tally">vs Tally <span>India</span></a>
+                        </div>
+                    </div>
+                    <!-- Learning (LMS) -->
+                    <div class="nav-submenu" data-nav="compare-lms">
+                        <div class="nav-submenu-trigger">
+                            Learning (LMS) <span>Training</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>
+                        <div class="nav-submenu-content">
+                            <a href="/pages/compare/ragenaizer-vs-moodle.html" class="nav-dropdown-item" data-nav="vs-moodle">vs Moodle</a>
+                            <a href="/pages/compare/ragenaizer-vs-talentlms.html" class="nav-dropdown-item" data-nav="vs-talentlms">vs TalentLMS</a>
+                            <a href="/pages/compare/ragenaizer-vs-docebo.html" class="nav-dropdown-item" data-nav="vs-docebo">vs Docebo</a>
+                            <a href="/pages/compare/ragenaizer-vs-cornerstone.html" class="nav-dropdown-item" data-nav="vs-cornerstone">vs Cornerstone</a>
+                        </div>
+                    </div>
+                    <div class="nav-dropdown-divider"></div>
+                    <a href="/pages/compare/" class="nav-dropdown-item" data-nav="compare-all"><strong>View All Comparisons →</strong></a>
                 </div>
             </div>
             <!-- Resources Dropdown -->
@@ -202,6 +282,7 @@ const NavbarComponent = {
             <a href="/pages/lms.html" class="nav-mobile-link" data-nav="lms">LMS <span>Training & Certificates</span></a>
             <a href="/pages/features/procurement.html" class="nav-mobile-link" data-nav="procurement">Procurement <span>AI Vendors</span></a>
             <div class="nav-mobile-divider"></div>
+            <a href="/pages/compare/" class="nav-mobile-link" data-nav="compare-all">Compare <span>vs every alternative</span></a>
             <a href="/pages/kip.html" class="nav-mobile-link" data-nav="kip">KIP <span>News Intelligence</span></a>
             <a href="/pages/pricing.html" class="nav-mobile-link" data-nav="pricing">Pricing</a>
             <div class="nav-mobile-divider"></div>
