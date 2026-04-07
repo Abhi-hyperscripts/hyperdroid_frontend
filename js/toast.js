@@ -1318,16 +1318,16 @@ const Prompt = (() => {
         const style = document.createElement('style');
         style.textContent = `
             .prompt-modal-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: var(--overlay-dark, rgba(0, 0, 0, 0.5));
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 10001;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                background: var(--overlay-dark, rgba(0, 0, 0, 0.5)) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                z-index: 2147483647 !important;
                 opacity: 0;
                 transition: opacity 0.2s ease;
             }
