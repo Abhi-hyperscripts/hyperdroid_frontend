@@ -620,7 +620,7 @@
                                 <img src="${scriptOrigin}/assets/logo-icon-blue.png" alt="">
                             </div>
                             <div class="rz-welcome-title">Hi, I am RaZoR</div>
-                            <div class="rz-welcome-sub">Your AI agent across every module — ask me anything, or tell me to do it.</div>
+                            <div class="rz-welcome-sub">Your agentic AI for Ragenaizer — ask me anything, or tell me to do it.</div>
                         </div>
                     </div>
                     <div class="rz-input-area">
@@ -789,7 +789,7 @@
                         <img src="${scriptOrigin}/assets/logo-icon-blue.png" alt="">
                     </div>
                     <div class="rz-welcome-title">Hi, I am RaZoR</div>
-                    <div class="rz-welcome-sub">Your AI agent across every module — ask me anything, or tell me to do it.</div>
+                    <div class="rz-welcome-sub">Your agentic AI for Ragenaizer — ask me anything, or tell me to do it.</div>
                 </div>`;
             welcomeShown = true;
             // Clear any streaming state
