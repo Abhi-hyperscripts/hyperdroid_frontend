@@ -623,7 +623,7 @@
                                 </svg>
                             </div>
                             <div class="rz-welcome-title">${isCopilotMode ? 'Hi, I am RaZoR' : 'Agentic AI-powered research assistant.'}</div>
-                            <div class="rz-welcome-sub">${isCopilotMode ? 'I can answer your questions or do things on your behalf.' : 'Plans. Scans. Analyzes. Visualizes. All from a single question.'}</div>
+                            <div class="rz-welcome-sub">${isCopilotMode ? 'Your AI agent across every module — ask me anything, or tell me to do it.' : 'Plans. Scans. Analyzes. Visualizes. All from a single question.'}</div>
                         </div>
                     </div>
                     <div class="rz-input-area">
@@ -796,7 +796,7 @@
                         </svg>
                     </div>
                     <div class="rz-welcome-title">${isCopilotMode ? 'Hi, I am RaZoR' : 'Agentic AI-powered research assistant.'}</div>
-                    <div class="rz-welcome-sub">${isCopilotMode ? 'I can answer your questions or do things on your behalf.' : 'Plans. Scans. Analyzes. Visualizes. All from a single question.'}</div>
+                    <div class="rz-welcome-sub">${isCopilotMode ? 'Your AI agent across every module — ask me anything, or tell me to do it.' : 'Plans. Scans. Analyzes. Visualizes. All from a single question.'}</div>
                 </div>`;
             welcomeShown = true;
             // Clear any streaming state
