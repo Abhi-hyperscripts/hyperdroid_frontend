@@ -527,6 +527,7 @@
                 background: ${C.accentDim}; display: flex; align-items: center; justify-content: center;
             }
             .rz-welcome-icon svg { width: 24px; height: 24px; stroke: ${C.accent}; fill: none; }
+            .rz-welcome-icon img { width: 32px; height: 32px; object-fit: contain; }
             .rz-welcome-title { font-size: 15px; font-weight: 600; color: ${C.text}; }
             .rz-welcome-sub { font-size: 13px; line-height: 1.5; color: ${C.textSecondary}; max-width: 280px; }
 
@@ -616,11 +617,7 @@
                     <div class="rz-messages" id="rzMessages">
                         <div class="rz-welcome">
                             <div class="rz-welcome-icon">
-                                <svg viewBox="0 0 24 24" stroke-width="1.5">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                                </svg>
+                                <img src="${scriptOrigin}/assets/logo-icon-blue.png" alt="">
                             </div>
                             <div class="rz-welcome-title">Hi, I am RaZoR</div>
                             <div class="rz-welcome-sub">Your AI agent across every module — ask me anything, or tell me to do it.</div>
@@ -789,11 +786,7 @@
             messagesEl.innerHTML = `
                 <div class="rz-welcome">
                     <div class="rz-welcome-icon">
-                        <svg viewBox="0 0 24 24" stroke-width="1.5">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                            <line x1="12" y1="17" x2="12.01" y2="17"/>
-                        </svg>
+                        <img src="${scriptOrigin}/assets/logo-icon-blue.png" alt="">
                     </div>
                     <div class="rz-welcome-title">Hi, I am RaZoR</div>
                     <div class="rz-welcome-sub">Your AI agent across every module — ask me anything, or tell me to do it.</div>
