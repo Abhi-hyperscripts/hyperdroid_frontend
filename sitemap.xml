@@ -492,25 +492,53 @@
     <priority>0.8</priority>
   </url>
 
-  <!-- ==================== USE CASE PAGES (SEO - Intent-Based) ==================== -->
+  <!-- ==================== USE CASE / SOLUTIONS PAGES (SEO - Intent-Based) ==================== -->
 
   <url>
     <loc>https://ragenaizer.com/pages/use-cases/remote-teams.html</loc>
-    <lastmod>2026-02-04</lastmod>
+    <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/use-cases/startups.html</loc>
-    <lastmod>2026-02-04</lastmod>
+    <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/use-cases/agencies.html</loc>
-    <lastmod>2026-02-04</lastmod>
+    <lastmod>2026-04-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/use-cases/consulting.html</loc>
+    <lastmod>2026-04-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/use-cases/education.html</loc>
+    <lastmod>2026-04-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/use-cases/market-research.html</loc>
+    <lastmod>2026-04-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/use-cases/manufacturing.html</loc>
+    <lastmod>2026-04-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

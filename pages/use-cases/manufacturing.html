@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Manufacturing &amp; Trading Software | GST, POs &amp; Multi-Location Payroll | Ragenaizer</title>
+    <meta name="description" content="The cloud operating system for manufacturing, trading and Indian SMBs. Purchase orders, vendor bills, GSTR/TDS compliance, multi-location payroll with geofenced attendance, fixed asset depreciation and audit-grade document storage — all in one platform.">
+
+    <meta name="keywords" content="manufacturing software india, trading software india, gst software smb, tally alternative, india smb erp, purchase order software, vendor bill management, multi location payroll india, geofenced attendance manufacturing, fixed asset depreciation software">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/use-cases/manufacturing.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/use-cases/manufacturing.html">
+    <meta property="og:title" content="The Cloud OS for Manufacturing &amp; Trading SMBs">
+    <meta property="og:description" content="POs, GST returns, multi-location payroll, fixed asset depreciation — all in one cloud platform. India-ready out of the box.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-manufacturing.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Manufacturing &amp; Trading Software - Ragenaizer">
+    <meta name="twitter:description" content="POs, vendor bills, GSTR/TDS, multi-location payroll. The cloud Tally replacement.">
+
+    <meta name="theme-color" content="#050810">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Ragenaizer for Manufacturing and Trading SMBs",
+        "description": "Cloud operating system for Indian manufacturing and trading businesses with GST, POs, payroll and asset management.",
+        "url": "https://ragenaizer.com/pages/use-cases/manufacturing.html"
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/landing.css?v=' + CACHE_VERSION + '">');</script>
+    <style>
+        .usecase-hero { padding: 120px 60px 80px; position: relative; overflow: hidden; }
+        .usecase-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 100% 60% at 30% -10%, rgba(16, 185, 129, 0.18), transparent), radial-gradient(ellipse 80% 50% at 80% 10%, rgba(245, 158, 11, 0.12), transparent); }
+        .usecase-hero-content { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; max-width: 1200px; margin: 0 auto; position: relative; }
+        .usecase-hero-text h1 { font-size: clamp(36px, 4vw, 52px); font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-bottom: 20px; }
+        .usecase-hero-text h1 .highlight { background: linear-gradient(135deg, #10b981, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .usecase-hero-text p { font-size: 18px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 32px; }
+        .usecase-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(16, 185, 129, 0.10); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 100px; font-size: 13px; font-weight: 600; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 20px; }
+        .hero-stats { display: flex; gap: 32px; margin-top: 32px; flex-wrap: wrap; }
+        .hero-stat { text-align: center; }
+        .hero-stat-value { font-size: 32px; font-weight: 800; color: var(--text-primary); }
+        .hero-stat-label { font-size: 13px; color: var(--text-tertiary); }
+        .usecase-hero-visual { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 24px; }
+        .hero-visual-mockup { background: var(--bg-tertiary); border-radius: 12px; padding: 24px; }
+        .po-mock { display: flex; flex-direction: column; gap: 12px; }
+        .po-mock-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 10px; font-size: 13px; }
+        .po-mock-row.active { border-color: #34d399; background: rgba(16, 185, 129, 0.08); }
+        .po-mock-num { font-weight: 700; color: var(--text-primary); }
+        .po-mock-status { font-size: 11px; padding: 3px 10px; border-radius: 100px; font-weight: 600; }
+        .po-mock-status.draft { background: rgba(255, 255, 255, 0.06); color: var(--text-tertiary); }
+        .po-mock-status.approved { background: rgba(59, 130, 246, 0.12); color: #60a5fa; }
+        .po-mock-status.received { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
+        .po-mock-status.billed { background: rgba(16, 185, 129, 0.12); color: #34d399; }
+
+        .pain-points { padding: 80px 60px; background: var(--bg-secondary); }
+        .pain-points-content { max-width: 1200px; margin: 0 auto; }
+        .section-header { text-align: center; margin-bottom: 60px; }
+        .section-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; }
+        .section-desc { font-size: 18px; color: var(--text-secondary); max-width: 700px; margin: 0 auto; }
+        .pain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .pain-card { background: var(--bg-primary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 28px; }
+        .pain-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+        .pain-icon svg { width: 24px; height: 24px; }
+        .pain-icon.red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .pain-icon.orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+        .pain-icon.yellow { background: rgba(234, 179, 8, 0.1); color: #eab308; }
+        .pain-card h4 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+        .pain-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px; }
+        .pain-stat { font-size: 24px; font-weight: 800; color: #ef4444; }
+        .pain-stat-label { font-size: 12px; color: var(--text-tertiary); }
+
+        .solutions { padding: 80px 60px; }
+        .solutions-content { max-width: 1200px; margin: 0 auto; }
+        .solutions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .solution-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 20px; padding: 32px; transition: all 0.3s ease; }
+        .solution-card:hover { border-color: var(--border-focus); transform: translateY(-4px); }
+        .solution-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .solution-icon svg { width: 28px; height: 28px; color: #fff; }
+        .icon-emerald { background: linear-gradient(135deg, #10b981, #34d399); }
+        .icon-amber { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .icon-blue { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+        .icon-cyan { background: linear-gradient(135deg, #06b6d4, #22d3ee); }
+        .solution-card h3 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
+        .solution-card p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+        .solution-card ul { list-style: none; padding: 0; margin: 0; }
+        .solution-card ul li { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: var(--text-tertiary); border-top: 1px solid var(--border-secondary); }
+        .solution-card ul li:first-child { border-top: none; }
+        .solution-card ul li svg { width: 16px; height: 16px; color: #10b981; flex-shrink: 0; }
+
+        .timeline-section { background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(245, 158, 11, 0.05)); padding: 80px 60px; }
+        .timeline-content { max-width: 1100px; margin: 0 auto; }
+        .timeline-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px; margin-top: 40px; }
+        .timeline-card { background: var(--bg-secondary); border: 1px solid var(--border-primary); border-radius: 16px; padding: 24px; text-align: center; position: relative; }
+        .timeline-card::after { content: '→'; position: absolute; right: -20px; top: 50%; transform: translateY(-50%); color: #34d399; font-size: 24px; font-weight: 800; }
+        .timeline-card:last-child::after { display: none; }
+        .timeline-num { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #f59e0b); color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+        .timeline-card h4 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+        .timeline-card p { font-size: 11px; color: var(--text-tertiary); line-height: 1.4; }
+
+        .stats-banner { background: var(--bg-secondary); padding: 60px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; max-width: 1000px; margin: 0 auto; text-align: center; }
+        .stat-value { font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #10b981, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-label { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
+
+        .usecase-cta { text-align: center; padding: 80px 60px; position: relative; }
+        .usecase-cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 50% at 50% 100%, rgba(16, 185, 129, 0.10), transparent); }
+        .cta-title { font-size: 36px; font-weight: 800; color: var(--text-primary); margin-bottom: 16px; position: relative; }
+        .cta-desc { font-size: 18px; color: var(--text-secondary); margin-bottom: 32px; position: relative; }
+        .cta-buttons { display: flex; gap: 16px; justify-content: center; position: relative; }
+
+        @media (max-width: 968px) {
+            .usecase-hero-content { grid-template-columns: 1fr; }
+            .pain-grid { grid-template-columns: 1fr; }
+            .solutions-grid { grid-template-columns: 1fr; }
+            .timeline-strip { grid-template-columns: 1fr; }
+            .timeline-card::after { display: none; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 640px) {
+            .usecase-hero { padding: 100px 20px 60px; }
+            .pain-points, .solutions, .timeline-section, .usecase-cta { padding: 60px 20px; }
+            .hero-stats { gap: 20px; }
+            .cta-buttons { flex-direction: column; }
+        }
+    </style>
+</head>
+<body class="landing-page">
+    <div id="navbar"></div>
+
+    <section class="usecase-hero">
+        <div class="usecase-hero-content">
+            <div class="usecase-hero-text">
+                <div class="usecase-badge">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                    For Manufacturing &amp; Trading
+                </div>
+                <h1>Run Operations, Books &amp; Compliance <span class="highlight">From One Cloud Platform.</span></h1>
+                <p>Manufacturing and trading SMBs — especially in India — still run on Tally on a Windows desktop, paper-based PO lifecycles, manual GST returns and standalone HRMS. Ragenaizer collapses all of it into one cloud platform with native GSTR-1, GSTR-3B, TDS, multi-location payroll, vendor management and fixed asset depreciation.</p>
+                <div class="cta-buttons">
+                    <a href="../register.html" class="btn-primary">Start Free Trial</a>
+                    <a href="../pricing.html" class="btn-secondary">See Pricing</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">India</div>
+                        <div class="hero-stat-label">GST/TDS Native</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">Multi-</div>
+                        <div class="hero-stat-label">Location Payroll</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="hero-stat-value">Cloud</div>
+                        <div class="hero-stat-label">Any Device</div>
+                    </div>
+                </div>
+            </div>
+            <div class="usecase-hero-visual">
+                <div class="hero-visual-mockup">
+                    <div class="po-mock">
+                        <div class="po-mock-row">
+                            <span class="po-mock-num">PO-0184</span>
+                            <span>Acme Steels</span>
+                            <span class="po-mock-status billed">Billed</span>
+                        </div>
+                        <div class="po-mock-row">
+                            <span class="po-mock-num">PO-0185</span>
+                            <span>Globex Polymers</span>
+                            <span class="po-mock-status received">Received</span>
+                        </div>
+                        <div class="po-mock-row active">
+                            <span class="po-mock-num">PO-0186</span>
+                            <span>Initech Hardware</span>
+                            <span class="po-mock-status approved">Approved</span>
+                        </div>
+                        <div class="po-mock-row">
+                            <span class="po-mock-num">PO-0187</span>
+                            <span>Hooli Components</span>
+                            <span class="po-mock-status draft">Draft</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="pain-points">
+        <div class="pain-points-content">
+            <div class="section-header">
+                <h2 class="section-title">Why SMBs Are Stuck on Desktop Tally</h2>
+                <p class="section-desc">Three problems every Indian manufacturing and trading SMB hits when they outgrow desktop accounting.</p>
+            </div>
+            <div class="pain-grid">
+                <div class="pain-card">
+                    <div class="pain-icon red">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg>
+                    </div>
+                    <h4>Tally Lives on a Windows Desktop</h4>
+                    <p>Mac users boot a VM. The accountant works from home? VPN into the office machine or buy "Tally on Cloud" from a reseller. Multi-user means a license tier upgrade. Updates require an annual TSS subscription.</p>
+                    <div class="pain-stat">1990s</div>
+                    <div class="pain-stat-label">delivery model</div>
+                </div>
+                <div class="pain-card">
+                    <div class="pain-icon orange">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                    <h4>POs &amp; Vendor Bills Live in Paper</h4>
+                    <p>Purchase order raised on a printed pad. Goods received against a printed challan. Vendor bill typed into Tally manually. GST input credit reconciled at month-end with a calculator and a prayer.</p>
+                    <div class="pain-stat">Manual</div>
+                    <div class="pain-stat-label">PO → bill → payment chain</div>
+                </div>
+                <div class="pain-card">
+                    <div class="pain-icon yellow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>
+                    </div>
+                    <h4>Three Tools for HR + Books + Compliance</h4>
+                    <p>Tally for accounting, separate HRMS for payroll, separate compliance tool for GSTR returns, separate Excel for fixed assets. Three vendors, three workflows, three places for things to go wrong at audit time.</p>
+                    <div class="pain-stat">3+</div>
+                    <div class="pain-stat-label">vendor contracts to manage</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="solutions">
+        <div class="solutions-content">
+            <div class="section-header">
+                <h2 class="section-title">The Whole Operations Stack, One Cloud Platform</h2>
+                <p class="section-desc">Books, compliance, payroll, vendor management and document storage — built for Indian SMBs.</p>
+            </div>
+            <div class="solutions-grid">
+                <div class="solution-card">
+                    <div class="solution-icon icon-emerald">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                    <h3>Accounts — POs, Bills, GST &amp; Books</h3>
+                    <p>Full PO lifecycle (draft → approved → received → billed). Vendor bills with AP aging. Native GSTR-1, GSTR-3B and TDS returns with one-click India setup. Multi-currency for export businesses. Fixed assets with depreciation runs.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Full PO → bill → payment chain</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> GSTR-1 / GSTR-3B / TDS reports</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Fixed asset depreciation built in</li>
+                    </ul>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon icon-amber">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    </div>
+                    <h3>HRMS — Multi-Location Payroll &amp; Geofenced Attendance</h3>
+                    <p>Payroll across multiple offices and warehouses. Geofenced clock-in for factory floor staff. NFC card attendance for kiosks. PF / ESI / PT / TDS automated through India compliance packs. Send payroll to finance with one click.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Multi-location payroll</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Geofenced + NFC attendance</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> PF / ESI / PT / TDS automated</li>
+                    </ul>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon icon-blue">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3z"/><path d="M5 7v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7"/></svg>
+                    </div>
+                    <h3>Procurement — Vendor Management &amp; RFQs</h3>
+                    <p>Vendor catalog with ratings and performance scores. Issue RFQs to multiple vendors, compare quotes side-by-side, split-award POs across suppliers. When a Procurement PO is received, the vendor bill auto-creates in Accounts.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Vendor catalog &amp; ratings</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> RFQs &amp; quote comparison</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Auto vendor bill creation</li>
+                    </ul>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon icon-cyan">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <h3>Drive — Audit-Grade Document Storage</h3>
+                    <p>Every challan, every GST invoice, every vendor agreement — stored with a full audit log of who accessed what and when. Revocable share links for sending sensitive documents to your auditor. S3 / Wasabi backend for data residency compliance.</p>
+                    <ul>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Full per-file audit log</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Revocable share links</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> S3 / Wasabi backend choice</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="timeline-section">
+        <div class="timeline-content">
+            <div class="section-header">
+                <h2 class="section-title">From PO to Books Closed, One Platform</h2>
+                <p class="section-desc">The complete operations workflow without paper, Excel or three separate vendors.</p>
+            </div>
+            <div class="timeline-strip">
+                <div class="timeline-card">
+                    <div class="timeline-num">1</div>
+                    <h4>Raise PO</h4>
+                    <p>Procurement issues PO to vendor</p>
+                </div>
+                <div class="timeline-card">
+                    <div class="timeline-num">2</div>
+                    <h4>Goods Received</h4>
+                    <p>Mark received → vendor bill auto-creates</p>
+                </div>
+                <div class="timeline-card">
+                    <div class="timeline-num">3</div>
+                    <h4>GST Filed</h4>
+                    <p>GSTR-1 + GSTR-3B generated for the period</p>
+                </div>
+                <div class="timeline-card">
+                    <div class="timeline-num">4</div>
+                    <h4>Payroll Run</h4>
+                    <p>Multi-location payroll → Send to Finance</p>
+                </div>
+                <div class="timeline-card">
+                    <div class="timeline-num">5</div>
+                    <h4>Period Close</h4>
+                    <p>Lock the period, year-end close</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats-banner">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-value">India</div>
+                <div class="stat-label">GST + TDS native</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">3→1</div>
+                <div class="stat-label">Vendor contracts collapsed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">Cloud</div>
+                <div class="stat-label">Any OS, any device</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">Audit</div>
+                <div class="stat-label">Trail on every change</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="usecase-cta">
+        <h2 class="cta-title">The Cloud Platform Built for Indian SMBs</h2>
+        <p class="cta-desc">Move off the Windows desktop and onto a cloud platform that already speaks GST, TDS and multi-location payroll.</p>
+        <div class="cta-buttons">
+            <a href="../register.html" class="btn-primary">Start Free Trial</a>
+            <a href="../pricing.html" class="btn-secondary">See Pricing</a>
+        </div>
+    </section>
+
+    <div id="footer"></div>
+    <script src="/js/navbar.js"></script>
+    <script src="/js/footer.js"></script>
+</body>
+</html>

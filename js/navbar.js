@@ -77,7 +77,11 @@ const NavbarComponent = {
                 <div class="nav-dropdown-menu">
                     <a href="/pages/use-cases/remote-teams.html" class="nav-dropdown-item" data-nav="remote-teams">Remote Teams <span>Async-first collaboration</span></a>
                     <a href="/pages/use-cases/startups.html" class="nav-dropdown-item" data-nav="startups">Startups <span>Scale without complexity</span></a>
-                    <a href="/pages/use-cases/agencies.html" class="nav-dropdown-item" data-nav="agencies">Agencies <span>Client collaboration</span></a>
+                    <a href="/pages/use-cases/agencies.html" class="nav-dropdown-item" data-nav="agencies">Agencies <span>Client work, end to end</span></a>
+                    <a href="/pages/use-cases/consulting.html" class="nav-dropdown-item" data-nav="consulting">Consulting <span>Projects, time &amp; billing</span></a>
+                    <a href="/pages/use-cases/education.html" class="nav-dropdown-item" data-nav="education">Education <span>Training &amp; certification</span></a>
+                    <a href="/pages/use-cases/market-research.html" class="nav-dropdown-item" data-nav="market-research">Market Research <span>AI insights in 10 minutes</span></a>
+                    <a href="/pages/use-cases/manufacturing.html" class="nav-dropdown-item" data-nav="manufacturing">Manufacturing <span>Operations, books &amp; GST</span></a>
                 </div>
             </div>
             <!-- Compare Dropdown -->
@@ -281,6 +285,15 @@ const NavbarComponent = {
             <a href="/pages/accounts.html" class="nav-mobile-link" data-nav="accounts">Accounts <span>Finance & Books</span></a>
             <a href="/pages/lms.html" class="nav-mobile-link" data-nav="lms">LMS <span>Training & Certificates</span></a>
             <a href="/pages/features/procurement.html" class="nav-mobile-link" data-nav="procurement">Procurement <span>AI Vendors</span></a>
+            <div class="nav-mobile-divider"></div>
+            <div class="nav-mobile-section">Solutions</div>
+            <a href="/pages/use-cases/remote-teams.html" class="nav-mobile-link" data-nav="remote-teams">Remote Teams <span>Async-first collaboration</span></a>
+            <a href="/pages/use-cases/startups.html" class="nav-mobile-link" data-nav="startups">Startups <span>Scale without complexity</span></a>
+            <a href="/pages/use-cases/agencies.html" class="nav-mobile-link" data-nav="agencies">Agencies <span>Client work, end to end</span></a>
+            <a href="/pages/use-cases/consulting.html" class="nav-mobile-link" data-nav="consulting">Consulting <span>Projects, time &amp; billing</span></a>
+            <a href="/pages/use-cases/education.html" class="nav-mobile-link" data-nav="education">Education <span>Training &amp; certification</span></a>
+            <a href="/pages/use-cases/market-research.html" class="nav-mobile-link" data-nav="market-research">Market Research <span>AI insights in 10 min</span></a>
+            <a href="/pages/use-cases/manufacturing.html" class="nav-mobile-link" data-nav="manufacturing">Manufacturing <span>Operations &amp; GST</span></a>
             <div class="nav-mobile-divider"></div>
             <a href="/pages/compare/" class="nav-mobile-link" data-nav="compare-all">Compare <span>vs every alternative</span></a>
             <a href="/pages/kip.html" class="nav-mobile-link" data-nav="kip">KIP <span>News Intelligence</span></a>
