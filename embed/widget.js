@@ -662,6 +662,15 @@
 
         let isOpen = false, isProcessing = false, welcomeShown = true;
         let insightsLoaded = false;
+        let historyLoaded = false;
+
+        // Eagerly restore conversation history in copilot mode so the chat
+        // window already has prior messages waiting when the user opens it.
+        if (isCopilotMode) {
+            historyLoaded = true;
+            // Fire-and-forget; runs after function declarations are hoisted.
+            queueMicrotask(() => { try { loadHistory(); } catch {} });
+        }
 
         // Streaming state
         let sBubble = null, sText = '', dText = '', sBuf = '', sTimer = null, sDone = false, sMeta = null, sViz = null, sPendingConfirm = false;
@@ -739,6 +748,10 @@
                 requestAnimationFrame(() => { windowWrap.classList.add('open'); });
                 if (isMobile()) toggleBtn.style.display = 'none';
                 inputEl.focus();
+                if (isCopilotMode && !historyLoaded) {
+                    loadHistory();
+                    historyLoaded = true;
+                }
                 if (isCopilotMode && !insightsLoaded) {
                     loadInsights();
                     insightsLoaded = true;
@@ -755,8 +768,20 @@
             if (isMobile()) toggleBtn.style.display = '';
             setTimeout(() => { if (!isOpen) windowWrap.style.display = 'none'; }, 350);
         });
-        newChatBtn.addEventListener('click', () => {
+        newChatBtn.addEventListener('click', async () => {
             if (isProcessing) return;
+            // In copilot mode, also clear the server-side session so context truly resets
+            if (isCopilotMode) {
+                try {
+                    const jwt = getCopilotJwt();
+                    if (jwt) {
+                        await fetch(`${baseUrl}/api/copilot/session`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${jwt}` }
+                        });
+                    }
+                } catch (e) { console.debug('[Copilot] Failed to clear server session:', e); }
+            }
             // Generate fresh session — discard all old context
             sessionId = generateSessionId();
             sessionStorage.setItem(storageKey, sessionId);
@@ -780,6 +805,42 @@
             inputEl.value = ''; inputEl.style.height = 'auto';
             inputEl.focus();
         });
+
+        // ========================================
+        // COPILOT HISTORY (restore conversation across page navigations)
+        // ========================================
+        async function loadHistory() {
+            if (!isCopilotMode) return;
+            try {
+                const jwt = getCopilotJwt();
+                if (!jwt) return;
+                const res = await fetch(`${baseUrl}/api/copilot/history?limit=50`, {
+                    headers: { 'Authorization': `Bearer ${jwt}` }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                const messages = data.messages || [];
+                if (!messages.length) return;
+
+                // Backend returns newest-first; render oldest-first
+                const ordered = [...messages].reverse();
+
+                // Clear welcome state and render saved messages
+                messagesEl.innerHTML = '';
+                welcomeShown = false;
+
+                for (const m of ordered) {
+                    if (m.role !== 'user' && m.role !== 'assistant') continue;
+                    const bubble = appendMessage(m.role === 'user' ? 'user' : 'ai', m.content || '');
+                    if (m.role === 'assistant') {
+                        addCopyButtons(bubble);
+                    }
+                }
+                if (data.session_id) sessionId = data.session_id;
+            } catch (e) {
+                console.debug('[Copilot] History fetch failed:', e);
+            }
+        }
 
         // ========================================
         // COPILOT INSIGHT CARDS
