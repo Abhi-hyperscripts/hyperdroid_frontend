@@ -622,8 +622,8 @@
                                     <line x1="12" y1="17" x2="12.01" y2="17"/>
                                 </svg>
                             </div>
-                            <div class="rz-welcome-title">${isCopilotMode ? 'Hi, I am RaZoR' : 'Agentic AI-powered research assistant.'}</div>
-                            <div class="rz-welcome-sub">${isCopilotMode ? 'Your AI agent across every module — ask me anything, or tell me to do it.' : 'Plans. Scans. Analyzes. Visualizes. All from a single question.'}</div>
+                            <div class="rz-welcome-title">Hi, I am RaZoR</div>
+                            <div class="rz-welcome-sub">Your AI agent across every module — ask me anything, or tell me to do it.</div>
                         </div>
                     </div>
                     <div class="rz-input-area">
@@ -795,8 +795,8 @@
                             <line x1="12" y1="17" x2="12.01" y2="17"/>
                         </svg>
                     </div>
-                    <div class="rz-welcome-title">${isCopilotMode ? 'Hi, I am RaZoR' : 'Agentic AI-powered research assistant.'}</div>
-                    <div class="rz-welcome-sub">${isCopilotMode ? 'Your AI agent across every module — ask me anything, or tell me to do it.' : 'Plans. Scans. Analyzes. Visualizes. All from a single question.'}</div>
+                    <div class="rz-welcome-title">Hi, I am RaZoR</div>
+                    <div class="rz-welcome-sub">Your AI agent across every module — ask me anything, or tell me to do it.</div>
                 </div>`;
             welcomeShown = true;
             // Clear any streaming state
