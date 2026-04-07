@@ -14,49 +14,63 @@
 
   <url>
     <loc>https://ragenaizer.com/pages/hrms.html</loc>
-    <lastmod>2026-02-04</lastmod>
+    <lastmod>2026-04-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/vision.html</loc>
-    <lastmod>2026-02-04</lastmod>
+    <lastmod>2026-04-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/drive.html</loc>
-    <lastmod>2026-02-04</lastmod>
+    <lastmod>2026-04-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/chat.html</loc>
-    <lastmod>2026-02-04</lastmod>
+    <lastmod>2026-04-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/research.html</loc>
-    <lastmod>2026-02-20</lastmod>
+    <lastmod>2026-04-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/crm.html</loc>
-    <lastmod>2026-02-20</lastmod>
+    <lastmod>2026-04-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://ragenaizer.com/pages/pms.html</loc>
-    <lastmod>2026-03-13</lastmod>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/accounts.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/lms.html</loc>
+    <lastmod>2026-04-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -94,6 +108,14 @@
   <!-- ==================== COMPARISON PAGES (SEO - Competitive Keywords) ==================== -->
 
   <url>
+    <loc>https://ragenaizer.com/pages/compare/</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Communication: Vision & Chat -->
+  <url>
     <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-zoom.html</loc>
     <lastmod>2026-02-04</lastmod>
     <changefreq>monthly</changefreq>
@@ -121,6 +143,36 @@
     <priority>0.8</priority>
   </url>
 
+  <!-- Cloud Storage: Drive -->
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-dropbox.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-google-drive.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-onedrive.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-box.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- HRMS & Payroll -->
   <url>
     <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-deel.html</loc>
     <lastmod>2026-02-04</lastmod>
@@ -152,6 +204,158 @@
   <url>
     <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-bamboohr.html</loc>
     <lastmod>2026-02-04</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- CRM -->
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-hubspot.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-salesforce.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-pipedrive.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-zoho-crm.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Project Management: PMS -->
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-jira.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-asana.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-monday.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-clickup.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-trello.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Research & Analytics -->
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-qualtrics.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-surveymonkey.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-spss.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-displayr.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Accounting: Accounts -->
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-quickbooks.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-xero.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-zoho-books.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-tally.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Learning: LMS -->
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-moodle.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-talentlms.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-docebo.html</loc>
+    <lastmod>2026-04-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://ragenaizer.com/pages/compare/ragenaizer-vs-cornerstone.html</loc>
+    <lastmod>2026-04-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
