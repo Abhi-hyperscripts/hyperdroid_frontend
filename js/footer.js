@@ -21,6 +21,8 @@ const FooterComponent = {
             <a href="/pages/research.html" class="footer-link">Research</a>
             <a href="/pages/crm.html" class="footer-link">CRM</a>
             <a href="/pages/pms.html" class="footer-link">PMS</a>
+            <a href="/pages/accounts.html" class="footer-link">Accounts</a>
+            <a href="/pages/lms.html" class="footer-link">LMS</a>
             <a href="/pages/login.html" class="footer-link">Sign In</a>
             <a href="/pages/terms.html" class="footer-link">Terms</a>
             <a href="/pages/privacy.html" class="footer-link">Privacy</a>

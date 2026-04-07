@@ -40,6 +40,8 @@ const NavbarComponent = {
                     <a href="/pages/research.html" class="nav-dropdown-item" data-nav="research">Research <span>AI Analytics</span></a>
                     <a href="/pages/crm.html" class="nav-dropdown-item" data-nav="crm">CRM <span>Sales Pipeline</span></a>
                     <a href="/pages/pms.html" class="nav-dropdown-item" data-nav="pms">PMS <span>Project & Time Tracking</span></a>
+                    <a href="/pages/accounts.html" class="nav-dropdown-item" data-nav="accounts">Accounts <span>Finance & Accounting</span></a>
+                    <a href="/pages/lms.html" class="nav-dropdown-item" data-nav="lms">LMS <span>Learning & Training</span></a>
                     <a href="/pages/features/procurement.html" class="nav-dropdown-item" data-nav="procurement">Procurement <span>AI Vendor Management</span></a>
                 </div>
             </div>
@@ -59,6 +61,8 @@ const NavbarComponent = {
                     <a href="/pages/research.html" class="nav-dropdown-item" data-nav="ai-research">AI Research <span>Agentic SPSS analytics</span></a>
                     <a href="/pages/crm.html" class="nav-dropdown-item" data-nav="sales-crm">Sales CRM <span>Pipeline & lead capture</span></a>
                     <a href="/pages/pms.html" class="nav-dropdown-item" data-nav="pms-tracking">Project Management <span>Time tracking & billing</span></a>
+                    <a href="/pages/accounts.html" class="nav-dropdown-item" data-nav="accounts-finance">Accounts <span>Books, invoices, GST returns</span></a>
+                    <a href="/pages/lms.html" class="nav-dropdown-item" data-nav="lms-training">Learning Management <span>Courses, certificates & compliance</span></a>
                     <a href="/pages/features/procurement.html" class="nav-dropdown-item" data-nav="procurement">Procurement <span>AI-powered vendor management</span></a>
                 </div>
             </div>
@@ -194,6 +198,8 @@ const NavbarComponent = {
             <a href="/pages/research.html" class="nav-mobile-link" data-nav="research">Research <span>AI Analytics</span></a>
             <a href="/pages/crm.html" class="nav-mobile-link" data-nav="crm">CRM <span>Sales Pipeline</span></a>
             <a href="/pages/pms.html" class="nav-mobile-link" data-nav="pms">PMS <span>Project & Time</span></a>
+            <a href="/pages/accounts.html" class="nav-mobile-link" data-nav="accounts">Accounts <span>Finance & Books</span></a>
+            <a href="/pages/lms.html" class="nav-mobile-link" data-nav="lms">LMS <span>Training & Certificates</span></a>
             <a href="/pages/features/procurement.html" class="nav-mobile-link" data-nav="procurement">Procurement <span>AI Vendors</span></a>
             <div class="nav-mobile-divider"></div>
             <a href="/pages/kip.html" class="nav-mobile-link" data-nav="kip">KIP <span>News Intelligence</span></a>

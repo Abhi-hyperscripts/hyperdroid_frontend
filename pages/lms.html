@@ -1,8 +1,425 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <!-- Cookie Consent & Analytics -->
+    <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
-    <script>window.location.href = 'lms/dashboard.html';</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>LMS - Learning Management System with Live Sessions, Certificates & Compliance Training | Ragenaizer</title>
+    <meta name="description" content="A modern Learning Management System for employee training, customer education and compliance. Build courses with lessons, quizzes, assignments, live sessions and learning paths. Auto-enroll new hires with training rules. Issue verifiable certificates. Track progress, compliance and team performance. Free to start.">
+
+    <!-- SEO Meta Tags -->
+    <meta name="keywords" content="learning management system, LMS software, employee training software, online course platform, corporate training LMS, compliance training software, auto enrollment training, learning paths, course builder, video lessons, quizzes and assignments, certificate of completion, verifiable certificates, live training sessions, virtual classroom, onboarding training, customer education platform, training reports, learner analytics, leaderboard, discussion forums, learning rules engine, talentlms alternative, lessonly alternative, docebo alternative, moodle alternative">
+    <meta name="author" content="Ragenaizer">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://ragenaizer.com/pages/lms.html">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ragenaizer">
+    <meta property="og:url" content="https://ragenaizer.com/pages/lms.html">
+    <meta property="og:title" content="LMS - Learning Management for Training, Compliance & Customer Education">
+    <meta property="og:description" content="Build courses, run live sessions, auto-enroll new hires, issue verifiable certificates and track every learner's progress. The LMS that lives inside your business platform.">
+    <meta property="og:image" content="https://ragenaizer.com/assets/og-lms.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ragenaizer">
+    <meta name="twitter:title" content="LMS - Training, Compliance & Certification in One Place">
+    <meta name="twitter:description" content="Courses, quizzes, assignments, live sessions, learning paths, certificates and compliance training. Free to start.">
+    <meta name="twitter:image" content="https://ragenaizer.com/assets/og-lms.png">
+
+    <!-- Additional SEO -->
+    <meta name="theme-color" content="#050810">
+
+    <!-- Schema: Breadcrumb -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ragenaizer.com/" },
+            { "@type": "ListItem", "position": 2, "name": "Products", "item": "https://ragenaizer.com/#products" },
+            { "@type": "ListItem", "position": 3, "name": "LMS", "item": "https://ragenaizer.com/pages/lms.html" }
+        ]
+    }
+    </script>
+
+    <!-- Schema.org JSON-LD -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Ragenaizer LMS",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web",
+        "description": "Learning Management System with course builder, video lessons, quizzes, assignments, live sessions, learning paths, verifiable certificates, training rules for auto-enrollment, compliance reporting and team analytics.",
+        "url": "https://ragenaizer.com/pages/lms.html",
+        "author": { "@type": "Organization", "name": "Ragenaizer" },
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": [
+            "Course Builder with Modules and Lessons",
+            "Video, Document and SCORM-Style Lessons",
+            "Quizzes with Multiple Question Types",
+            "Quiz Attempts, Auto-Grading and Pass Marks",
+            "Assignments with File Submissions and Manual Grading",
+            "Live Training Sessions Powered by Vision",
+            "Live Session Attendance Tracking",
+            "Learning Paths Across Multiple Courses",
+            "Verifiable Certificates with Public Verification Links",
+            "Custom Certificate Templates",
+            "Training Rules for Auto-Enrollment",
+            "Compliance Training and Reporting",
+            "Bulk Enrollment for Teams and Cohorts",
+            "Course Discussions with Threaded Replies",
+            "Mark Replies as Solutions",
+            "Course Reviews and Ratings",
+            "Lesson Progress and Course Completion Tracking",
+            "Course Analytics and Learner Reports",
+            "Team Performance Reports for Managers",
+            "Compliance Status Dashboard",
+            "Leaderboards",
+            "Course Categories and Catalog Search",
+            "Announcements and Notifications",
+            "Course Publish, Archive and Duplicate Workflow"
+        ],
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "1120"
+        }
+    }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Audiowide&family=Electrolize&family=Russo+One&display=swap" rel="stylesheet">
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <script>document.write('<link rel="stylesheet" href="../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../css/landing.css?v=' + CACHE_VERSION + '">');</script>
 </head>
-<body>Redirecting...</body>
+<body class="landing-page landing-lms">
+    <!-- Navigation -->
+    <div id="navbar"></div>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-bg">
+            <div class="hero-gradient"></div>
+            <div class="hero-grid"></div>
+        </div>
+
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-badge">Learning & Development</div>
+                <h1 class="hero-title">
+                    Train your people.<br>
+                    <span class="highlight">Prove they learned.</span>
+                </h1>
+                <p class="hero-description">
+                    A complete learning platform for employee training, customer education and compliance. Build courses with video lessons, quizzes and assignments. Run live sessions. Auto-enroll new hires. Issue verifiable certificates. Track every learner's progress without spreadsheets.
+                </p>
+                <div class="hero-actions">
+                    <a href="activate.html" class="btn-primary">Get Started Free</a>
+                    <a href="#features" class="btn-secondary">See What's Inside</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">Auto</div>
+                        <div class="stat-label">Enrollment</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">Live +</div>
+                        <div class="stat-label">Self-Paced</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">Verifiable</div>
+                        <div class="stat-label">Certificates</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <div class="hero-mockup">
+                    <div class="mockup-header">
+                        <span class="mockup-dot"></span>
+                        <span class="mockup-dot"></span>
+                        <span class="mockup-dot"></span>
+                    </div>
+                    <div class="mockup-content">
+                        <svg width="100%" height="200" viewBox="0 0 400 200" fill="none">
+                            <!-- Course progress card -->
+                            <rect x="10" y="10" width="380" height="60" rx="8" fill="rgba(168, 85, 247, 0.12)" stroke="rgba(168, 85, 247, 0.30)" stroke-width="1"/>
+                            <text x="22" y="30" fill="rgba(255, 255, 255, 0.8)" font-size="11" font-weight="bold">Information Security 101</text>
+                            <text x="22" y="46" fill="rgba(255, 255, 255, 0.55)" font-size="9">Module 4 of 6 — 67% complete</text>
+                            <rect x="22" y="55" width="356" height="6" rx="3" fill="rgba(255, 255, 255, 0.12)"/>
+                            <rect x="22" y="55" width="240" height="6" rx="3" fill="rgba(168, 85, 247, 0.85)"/>
+
+                            <!-- Lesson list -->
+                            <rect x="10" y="80" width="185" height="22" rx="4" fill="rgba(34, 197, 94, 0.18)"/>
+                            <circle cx="22" cy="91" r="4" fill="rgba(34, 197, 94, 0.85)"/>
+                            <text x="32" y="94" fill="rgba(255, 255, 255, 0.85)" font-size="9">Threat fundamentals</text>
+
+                            <rect x="10" y="106" width="185" height="22" rx="4" fill="rgba(34, 197, 94, 0.18)"/>
+                            <circle cx="22" cy="117" r="4" fill="rgba(34, 197, 94, 0.85)"/>
+                            <text x="32" y="120" fill="rgba(255, 255, 255, 0.85)" font-size="9">Phishing recognition</text>
+
+                            <rect x="10" y="132" width="185" height="22" rx="4" fill="rgba(168, 85, 247, 0.22)" stroke="rgba(168, 85, 247, 0.4)" stroke-width="1"/>
+                            <circle cx="22" cy="143" r="4" fill="rgba(168, 85, 247, 0.85)"/>
+                            <text x="32" y="146" fill="rgba(255, 255, 255, 0.92)" font-size="9">Quiz: Module 4</text>
+
+                            <rect x="10" y="158" width="185" height="22" rx="4" fill="rgba(255, 255, 255, 0.04)"/>
+                            <circle cx="22" cy="169" r="4" fill="rgba(255, 255, 255, 0.18)"/>
+                            <text x="32" y="172" fill="rgba(255, 255, 255, 0.45)" font-size="9">Live session: Q&amp;A</text>
+
+                            <!-- Right side: certificate preview -->
+                            <rect x="205" y="80" width="185" height="100" rx="6" fill="rgba(245, 158, 11, 0.10)" stroke="rgba(245, 158, 11, 0.35)" stroke-width="1"/>
+                            <text x="297" y="105" text-anchor="middle" fill="rgba(245, 158, 11, 0.85)" font-size="9" font-weight="bold">CERTIFICATE</text>
+                            <text x="297" y="124" text-anchor="middle" fill="rgba(255, 255, 255, 0.85)" font-size="11" font-weight="bold">Sarah Chen</text>
+                            <text x="297" y="139" text-anchor="middle" fill="rgba(255, 255, 255, 0.55)" font-size="8">has completed</text>
+                            <text x="297" y="154" text-anchor="middle" fill="rgba(255, 255, 255, 0.85)" font-size="9">InfoSec 101</text>
+                            <text x="297" y="170" text-anchor="middle" fill="rgba(245, 158, 11, 0.7)" font-size="7">Verified · #A4F2</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section" id="features">
+        <div class="section-header">
+            <div class="section-badge">Features</div>
+            <h2 class="section-title">Everything you need to train and certify</h2>
+            <p class="section-description">
+                A learning platform built for the way modern teams actually train people — onboarding, ongoing skill development, customer education and compliance, all in one place.
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card purple">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Course Builder With Modules & Lessons</h3>
+                <p class="feature-description">Structure courses the way you teach: modules, lessons, embedded video, documents and rich content. Publish, archive and duplicate courses with one click. Categories and a course catalog make discovery easy for learners.</p>
+            </div>
+
+            <div class="feature-card blue">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Quizzes With Auto-Grading</h3>
+                <p class="feature-description">Add quizzes to any lesson with multiple question types, set pass marks, and let the system auto-grade and track every attempt. Learners see their score immediately; you see the full attempt history per learner.</p>
+            </div>
+
+            <div class="feature-card pink">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Assignments With File Submissions</h3>
+                <p class="feature-description">Assign essays, projects and file uploads. Learners submit, instructors grade, and feedback flows back into the learner dashboard. Every submission is tracked, scored and exportable.</p>
+            </div>
+
+            <div class="feature-card cyan">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="23 7 16 12 23 17 23 7"/>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Live Training Sessions</h3>
+                <p class="feature-description">Schedule live virtual classroom sessions powered by the platform's video conferencing. Track who attended, who joined late, who didn't show. The session recording goes straight into the course for anyone who missed it.</p>
+            </div>
+
+            <div class="feature-card green">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Auto-Enroll New Hires</h3>
+                <p class="feature-description">Set training rules ("everyone in the engineering department must complete InfoSec 101 within 30 days of joining") and the system handles enrollment automatically. New hires get the right training the day they start. Compliance becomes a background job.</p>
+            </div>
+
+            <div class="feature-card amber">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="8" r="7"/>
+                        <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Verifiable Certificates</h3>
+                <p class="feature-description">Issue certificates of completion with custom templates and a public verification link. Anyone — recruiters, regulators, customers — can verify a certificate is real with one click. No more PDF forgeries.</p>
+            </div>
+
+            <div class="feature-card indigo">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                        <circle cx="6" cy="6" r="2" fill="currentColor"/>
+                        <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                        <circle cx="18" cy="18" r="2" fill="currentColor"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Learning Paths</h3>
+                <p class="feature-description">Chain courses into a structured learning path — onboarding, sales enablement, manager training, certification programs. Enroll learners in the whole path with one click and the system tracks progress across every course in the sequence.</p>
+            </div>
+
+            <div class="feature-card teal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Bulk Enrollment for Teams & Cohorts</h3>
+                <p class="feature-description">Enroll a whole department, a new hire batch or a customer cohort in seconds. Pick the people, pick the course, click enrol — everyone gets access at once and managers see the full roster.</p>
+            </div>
+
+            <div class="feature-card orange">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        <line x1="9" y1="10" x2="15" y2="10"/>
+                        <line x1="9" y1="14" x2="13" y2="14"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Course Discussions</h3>
+                <p class="feature-description">Built-in discussion forums on every course. Threaded replies, mark a reply as the solution, search the archive. Learners help learners and instructors don't have to answer the same question twice.</p>
+            </div>
+
+            <div class="feature-card slate">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3v18h18"/>
+                        <path d="M7 17l4-4 4 4 5-5"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Progress & Compliance Tracking</h3>
+                <p class="feature-description">See exactly where every learner is — completed lessons, quiz scores, course completion percentage, training compliance status. The compliance dashboard shows who's behind on mandatory training. Report exports for audits.</p>
+            </div>
+
+            <div class="feature-card rose">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Manager Reports & Team Analytics</h3>
+                <p class="feature-description">Managers get a team report showing every direct report's training status, course completions and certificates earned. Course-level analytics show which lessons learners struggle with so you can improve content where it matters.</p>
+            </div>
+
+            <div class="feature-card red">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Leaderboards & Reviews</h3>
+                <p class="feature-description">Drive engagement with leaderboards based on courses completed and certificates earned. Let learners review and rate courses so the best content rises to the top.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integration Section -->
+    <section class="features-section" id="platform">
+        <div class="section-header">
+            <div class="section-badge">One Platform</div>
+            <h2 class="section-title">Training that connects to everything else</h2>
+            <p class="section-description">
+                LMS isn't a standalone tool stuck in a silo. It plugs into the rest of your business so training flows naturally with hiring, meetings and storage.
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card purple">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Hires → Auto-Training</h3>
+                <p class="feature-description">When HR adds a new employee, training rules kick in automatically. Day-one mandatory training enrols itself. Compliance is on rails before a manager has to think about it.</p>
+            </div>
+
+            <div class="feature-card blue">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="23 7 16 12 23 17 23 7"/>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Live Sessions in Vision</h3>
+                <p class="feature-description">Run live virtual classroom sessions on the platform's own video conferencing. Recordings, transcripts and AI summaries are all there for learners who couldn't attend live.</p>
+            </div>
+
+            <div class="feature-card green">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Course Materials in Drive</h3>
+                <p class="feature-description">Videos, documents, slides and assignment submissions live in Drive — secure, versioned, audit-logged. Reuse the same files across courses without uploading twice.</p>
+            </div>
+
+            <div class="feature-card amber">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Course Discussions in Chat</h3>
+                <p class="feature-description">Threaded course discussions, course-wide announcements and instructor DMs all flow through the same messaging layer your team already uses. No second app to teach.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-container">
+            <h2 class="cta-title">Stop juggling training spreadsheets</h2>
+            <p class="cta-description">Run all your training, certification and compliance from one platform that already lives next to HR, video and chat. Free to start.</p>
+            <div class="cta-actions">
+                <a href="activate.html" class="btn-primary">Get Started Free</a>
+                <a href="pricing.html" class="btn-secondary">See Pricing</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <div id="footer"></div>
+
+    <!-- Global Components -->
+    <script src="/js/navbar.js"></script>
+    <script src="/js/footer.js"></script>
+</body>
 </html>

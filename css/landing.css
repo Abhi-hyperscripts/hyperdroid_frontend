@@ -2955,6 +2955,22 @@
     --hero-accent: #f59e0b;
 }
 
+/* Accounts - Emerald/Gold (finance + trust) */
+.landing-accounts {
+    --hero-color-1: rgba(16, 185, 129, 0.40);
+    --hero-color-2: rgba(245, 158, 11, 0.30);
+    --hero-color-3: rgba(59, 130, 246, 0.25);
+    --hero-accent: #10b981;
+}
+
+/* LMS - Purple/Pink (learning + growth) */
+.landing-lms {
+    --hero-color-1: rgba(168, 85, 247, 0.40);
+    --hero-color-2: rgba(236, 72, 153, 0.30);
+    --hero-color-3: rgba(245, 158, 11, 0.25);
+    --hero-accent: #a855f7;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════════════════════════════════════════════ */
