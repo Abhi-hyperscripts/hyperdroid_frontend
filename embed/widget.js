@@ -529,7 +529,20 @@
             .rz-welcome-icon svg { width: 24px; height: 24px; stroke: ${C.accent}; fill: none; }
             .rz-welcome-icon img { width: 32px; height: 32px; object-fit: contain; }
             .rz-welcome-title { font-size: 15px; font-weight: 600; color: ${C.text}; }
-            .rz-welcome-sub { font-size: 13px; line-height: 1.5; color: ${C.textSecondary}; max-width: 280px; }
+            .rz-welcome-sub { font-size: 13px; line-height: 1.5; color: ${C.textSecondary}; max-width: 320px; }
+            .rz-welcome-features {
+                display: flex; flex-direction: column; gap: 6px;
+                margin-top: 4px; max-width: 320px; text-align: left;
+            }
+            .rz-welcome-feature {
+                display: flex; align-items: flex-start; gap: 8px;
+                font-size: 12.5px; line-height: 1.45; color: ${C.text};
+            }
+            .rz-welcome-feature svg {
+                flex-shrink: 0; width: 14px; height: 14px;
+                stroke: ${C.accent}; fill: none; stroke-width: 2.5;
+                margin-top: 2px;
+            }
 
             .rz-error-msg { color: ${C.error}; font-size: 12px; padding: 8px 14px; text-align: center; }
             .rz-meta { font-size: 10px; color: ${C.textMuted}; text-align: right; padding: 4px 14px 0; }
@@ -620,7 +633,13 @@
                                 <img src="${scriptOrigin}/assets/logo-icon-blue.png" alt="">
                             </div>
                             <div class="rz-welcome-title">Hi, I am RaZoR</div>
-                            <div class="rz-welcome-sub">Your agentic AI for Ragenaizer — ask me anything, or tell me to do it.</div>
+                            <div class="rz-welcome-sub">Your agentic AI for Ragenaizer.</div>
+                            <div class="rz-welcome-features">
+                                <div class="rz-welcome-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>1000+ tools across PMS, HRMS, CRM, Accounts, LMS &amp; Procurement</span></div>
+                                <div class="rz-welcome-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>Reasons across your data, step by step</span></div>
+                                <div class="rz-welcome-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>Creates, updates and reports — without leaving this chat</span></div>
+                                <div class="rz-welcome-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>Always asks before doing anything risky</span></div>
+                            </div>
                         </div>
                     </div>
                     <div class="rz-input-area">
@@ -789,7 +808,13 @@
                         <img src="${scriptOrigin}/assets/logo-icon-blue.png" alt="">
                     </div>
                     <div class="rz-welcome-title">Hi, I am RaZoR</div>
-                    <div class="rz-welcome-sub">Your agentic AI for Ragenaizer — ask me anything, or tell me to do it.</div>
+                    <div class="rz-welcome-sub">Your agentic AI for Ragenaizer.</div>
+                    <div class="rz-welcome-features">
+                        <div class="rz-welcome-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>1000+ tools across PMS, HRMS, CRM, Accounts, LMS &amp; Procurement</span></div>
+                        <div class="rz-welcome-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>Reasons across your data, step by step</span></div>
+                        <div class="rz-welcome-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>Creates, updates and reports — without leaving this chat</span></div>
+                        <div class="rz-welcome-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>Always asks before doing anything risky</span></div>
+                    </div>
                 </div>`;
             welcomeShown = true;
             // Clear any streaming state
