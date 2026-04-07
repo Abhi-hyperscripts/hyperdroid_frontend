@@ -840,14 +840,12 @@
                 const messages = data.messages || [];
                 if (!messages.length) return;
 
-                // Backend returns newest-first; render oldest-first
-                const ordered = [...messages].reverse();
-
+                // Backend returns oldest-first (chronological); render in that order.
                 // Clear welcome state and render saved messages
                 messagesEl.innerHTML = '';
                 welcomeShown = false;
 
-                for (const m of ordered) {
+                for (const m of messages) {
                     if (m.role !== 'user' && m.role !== 'assistant') continue;
                     const bubble = appendMessage(m.role === 'user' ? 'user' : 'ai', m.content || '');
                     if (m.role === 'assistant') {
