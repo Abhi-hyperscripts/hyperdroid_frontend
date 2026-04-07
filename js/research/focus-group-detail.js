@@ -287,7 +287,10 @@ function startPolling(recordingId) {
     if (pollTimers[recordingId]) return;
     pollTimers[recordingId] = setInterval(async () => {
         try {
-            const recs = await api.request(`/research/focus-group/recordings?projectId=${projectId}`);
+            // _skipSpinner: this runs every 3s while a recording is uploading/transcribing.
+            // The page already shows inline status text + progress bar on the row, so the
+            // global ButtonSpinner overlay would just flicker on every tick.
+            const recs = await api.request(`/research/focus-group/recordings?projectId=${projectId}`, { _skipSpinner: true });
             const rec = recs.find(r => r.id === recordingId);
             if (!rec) { stopPolling(recordingId); return; }
 

@@ -619,7 +619,11 @@ function startJobPolling() {
     if (oeJobPollTimer) return; // already polling
     oeJobPollTimer = setInterval(async () => {
         try {
-            const jobs = await api.request(`/research/projects/${projectId}/openend-coding/jobs`) || [];
+            // _skipSpinner: poll every 5s while jobs are running. The job cards already
+            // show inline status/progress; the global ButtonSpinner overlay would just
+            // flicker on every tick. Matches the pattern used by SPSS upload status,
+            // questionnaire polling, secondary-dashboard polling, etc.
+            const jobs = await api.request(`/research/projects/${projectId}/openend-coding/jobs`, { _skipSpinner: true }) || [];
             const running = jobs.filter(j => j.status !== 'complete' && j.status !== 'failed' && j.status !== 'cancelled');
             if (running.length === 0) {
                 stopJobPolling();
