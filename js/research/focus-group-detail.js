@@ -19,12 +19,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadProject() {
     try {
         const project = await api.request(`/research/projects/${projectId}`);
-        document.getElementById('projectTitle').textContent = project.name || 'Untitled';
+        const titleEl = document.getElementById('projectTitle');
+        titleEl.textContent = project.name || 'Untitled';
+        titleEl.style.cursor = 'pointer';
+        titleEl.title = 'Click to rename';
+        titleEl.onclick = renameProject;
         document.getElementById('projectDescription').textContent = project.description || '';
         document.title = `${project.name} - Focus Group`;
     } catch (error) {
         Toast.error('Failed to load project');
         window.location.href = 'focus-groups.html';
+    }
+}
+
+async function renameProject() {
+    const titleEl = document.getElementById('projectTitle');
+    const current = titleEl.textContent;
+    const next = prompt('Rename project:', current);
+    if (next === null) return; // cancelled
+    const trimmed = next.trim();
+    if (!trimmed || trimmed === current) return;
+    try {
+        await api.request(`/research/projects/${projectId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ name: trimmed })
+        });
+        titleEl.textContent = trimmed;
+        document.title = `${trimmed} - Focus Group`;
+        Toast.success('Project renamed');
+    } catch (error) {
+        Toast.error('Failed to rename project');
     }
 }
 
@@ -80,6 +104,7 @@ function renderRecordings() {
                             : ''}
                     <span>${esc(r.fileName)}</span>
                     <span>${(r.createdAt || r.created_at) ? new Date(r.createdAt || r.created_at).toLocaleDateString() : ''}</span>
+                    <button class="fg-btn" onclick="event.stopPropagation(); renameRecording('${r.id}')">Rename</button>
                     <button class="fg-btn fg-btn-danger" onclick="event.stopPropagation(); deleteRecording('${r.id}')">Delete</button>
                 </div>
             </div>
@@ -361,6 +386,24 @@ async function deleteRecording(id) {
         await loadRecordings();
         Toast.success('Recording deleted');
     } catch (e) { Toast.error('Delete failed: ' + e.message); }
+}
+
+async function renameRecording(id) {
+    const rec = recordings.find(r => r.id === id);
+    if (!rec) return;
+    const next = prompt('Rename recording:', rec.title || '');
+    if (next === null) return;
+    const trimmed = next.trim();
+    if (!trimmed || trimmed === rec.title) return;
+    try {
+        await api.request(`/research/focus-group/recordings/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ title: trimmed })
+        });
+        rec.title = trimmed;
+        renderRecordings();
+        Toast.success('Recording renamed');
+    } catch (e) { Toast.error('Rename failed: ' + e.message); }
 }
 
 // ============================================
