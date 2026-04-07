@@ -377,7 +377,13 @@ async function handleCreateProject(e) {
 }
 
 async function deleteProject(projectId) {
-    if (!confirm('Delete this project and all its research data?')) return;
+    const ok = await Confirm.show({
+        title: 'Delete Project',
+        message: 'Delete this project and all its research data? This cannot be undone.',
+        type: 'danger',
+        confirmText: 'Delete'
+    });
+    if (!ok) return;
 
     try {
         await api.request(`/research/projects/${projectId}`, { method: 'DELETE' });
@@ -499,7 +505,13 @@ function triggerUploadJson(projectId) {
             showToast('File too large. Maximum 10MB.', 'error');
             return;
         }
-        if (!confirm(`Upload "${file.name}" and overwrite the current dashboard?\n\nThe current version will be saved to history.`)) return;
+        const okOverwrite = await Confirm.show({
+            title: 'Overwrite Dashboard',
+            message: `Upload "${file.name}" and overwrite the current dashboard? The current version will be saved to history.`,
+            type: 'warning',
+            confirmText: 'Overwrite'
+        });
+        if (!okOverwrite) return;
 
         try {
             const text = await file.text();

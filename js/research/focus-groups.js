@@ -105,7 +105,13 @@ function openProject(projectId) {
 }
 
 async function deleteProject(id, name) {
-    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    const ok = await Confirm.show({
+        title: 'Delete Project',
+        message: `Delete "${name}"? All recordings, transcriptions, and associated data will be permanently removed. This cannot be undone.`,
+        type: 'danger',
+        confirmText: 'Delete'
+    });
+    if (!ok) return;
     try {
         await api.request(`/research/projects/${id}`, { method: 'DELETE' });
         Toast.success('Project deleted');

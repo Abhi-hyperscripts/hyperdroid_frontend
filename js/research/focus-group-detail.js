@@ -35,7 +35,12 @@ async function loadProject() {
 async function renameProject() {
     const titleEl = document.getElementById('projectTitle');
     const current = titleEl.textContent;
-    const next = prompt('Rename project:', current);
+    const next = await Prompt.show({
+        title: 'Rename Project',
+        message: 'Enter a new name for this project.',
+        defaultValue: current,
+        confirmText: 'Rename'
+    });
     if (next === null) return; // cancelled
     const trimmed = next.trim();
     if (!trimmed || trimmed === current) return;
@@ -379,7 +384,13 @@ function downloadJson() {
 }
 
 async function deleteRecording(id) {
-    if (!confirm('Delete this recording?')) return;
+    const ok = await Confirm.show({
+        title: 'Delete Recording',
+        message: 'Delete this recording? The audio file and transcription will be permanently removed.',
+        type: 'danger',
+        confirmText: 'Delete'
+    });
+    if (!ok) return;
     try {
         await api.request(`/research/focus-group/recordings/${id}`, { method: 'DELETE' });
         stopPolling(id);
@@ -391,7 +402,12 @@ async function deleteRecording(id) {
 async function renameRecording(id) {
     const rec = recordings.find(r => r.id === id);
     if (!rec) return;
-    const next = prompt('Rename recording:', rec.title || '');
+    const next = await Prompt.show({
+        title: 'Rename Recording',
+        message: 'Enter a new title for this recording.',
+        defaultValue: rec.title || '',
+        confirmText: 'Rename'
+    });
     if (next === null) return;
     const trimmed = next.trim();
     if (!trimmed || trimmed === rec.title) return;

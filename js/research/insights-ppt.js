@@ -14,7 +14,7 @@
 function generateInsightsPPT(data, opts = {}) {
 
     if (typeof PptxGenJS === 'undefined') {
-        alert('PptxGenJS library not loaded. Cannot generate PPT.');
+        Toast.error('PptxGenJS library not loaded. Cannot generate PPT.');
         return;
     }
 
@@ -955,11 +955,11 @@ function generateInsightsPPT(data, opts = {}) {
             })
             .catch(err => {
                 console.error('[PPT] Generation failed:', err);
-                alert('Failed to generate PPT: ' + err.message);
+                Toast.error('Failed to generate PPT: ' + err.message);
             });
 
     } catch (err) {
         console.error('[PPT] Error building presentation:', err);
-        alert('Error generating PPT: ' + err.message);
+        Toast.error('Error generating PPT: ' + err.message);
     }
 }

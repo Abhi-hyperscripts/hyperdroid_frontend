@@ -841,7 +841,13 @@ async function rerunCoding(jobId) {
     const fileId = job.fileId || job.file_id;
     const version = job.version || 1;
 
-    if (!confirm(`Re-run coding for ${varName}? This will create version ${version + 1} while keeping v${version} results.`)) return;
+    const ok = await Confirm.show({
+        title: 'Re-run Coding',
+        message: `Re-run coding for ${varName}? This will create version ${version + 1} while keeping v${version} results.`,
+        type: 'warning',
+        confirmText: `Run v${version + 1}`
+    });
+    if (!ok) return;
 
     try {
         const body = {
