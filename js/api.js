@@ -93,7 +93,7 @@ class API {
             return CONFIG.authApiBaseUrl;
         }
         // Services, Users, Admin, and Tenants endpoints go to Authentication service (admin APIs)
-        if (endpoint.startsWith('/services') || endpoint.startsWith('/users') || endpoint.startsWith('/admin/') || endpoint.startsWith('/tenants') || endpoint.startsWith('/tenant-api-keys') || endpoint.startsWith('/tenant-settings')) {
+        if (endpoint.startsWith('/services') || endpoint.startsWith('/users') || endpoint.startsWith('/admin/') || endpoint.startsWith('/tenants') || endpoint.startsWith('/tenant-api-keys') || endpoint.startsWith('/tenant-settings') || endpoint.startsWith('/tenant-profile')) {
             return CONFIG.authApiBaseUrl;
         }
         // Drive endpoints go directly to Drive service (independent microservice)
@@ -573,6 +573,42 @@ class API {
         return this.request(`/tenant-api-keys/${encodeURIComponent(provider)}/${encodeURIComponent(serviceType)}`, {
             method: 'DELETE'
         });
+    }
+
+    // Tenant profile (company info, logo, signature, footer text)
+    async getTenantProfile() {
+        return this.request('/tenant-profile');
+    }
+
+    async updateTenantProfile(profile) {
+        return this.request('/tenant-profile', {
+            method: 'PUT',
+            body: JSON.stringify(profile)
+        });
+    }
+
+    // Direct multipart upload to Drive — used by tenant profile logo/signature.
+    async uploadDriveFileDirect(file, folderId = null) {
+        const baseUrl = this._getBaseUrl('/drive/upload');
+        const formData = new FormData();
+        formData.append('file', file);
+        if (folderId) formData.append('folderId', folderId);
+
+        const headers = {};
+        const token = (typeof getAuthToken === 'function') ? getAuthToken() : this.token;
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        // baseUrl from _getBaseUrl already includes /api
+        const res = await fetch(`${baseUrl}/drive/upload`, {
+            method: 'POST',
+            headers,
+            body: formData
+        });
+        if (!res.ok) {
+            const text = await res.text().catch(() => '');
+            throw new Error(`Upload failed: ${res.status} ${text}`);
+        }
+        return res.json();
     }
 
     // Tenant copilot toggle (per-service)

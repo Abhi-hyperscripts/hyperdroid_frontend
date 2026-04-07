@@ -1489,7 +1489,8 @@ function switchTab(tabName) {
         'roles': 'Roles',
         'license': 'License',
         'apikeys': 'API Keys',
-        'subtenants': 'Sub-Tenants'
+        'subtenants': 'Sub-Tenants',
+        'profile': 'Company Profile'
     };
 
     // Update sidebar buttons
@@ -1521,6 +1522,189 @@ function switchTab(tabName) {
     if (tabName === 'subtenants') {
         loadSubTenants();
     }
+
+    // Load tenant profile when switching to that tab
+    if (tabName === 'profile') {
+        loadTenantProfile();
+    }
+}
+
+// ==================== Tenant Profile ====================
+let _tenantProfileSnapshot = null;
+
+async function loadTenantProfile() {
+    try {
+        const data = await api.getTenantProfile();
+        const p = data.profile || {};
+        _tenantProfileSnapshot = p;
+        applyTenantProfileToForm(p);
+    } catch (e) {
+        console.error('Failed to load tenant profile:', e);
+        if (typeof showToast === 'function') showToast('Failed to load company profile', 'error');
+    }
+}
+
+function applyTenantProfileToForm(p) {
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+    set('profileCompanyName',         p.companyName ?? p.company_name);
+    set('profileLegalName',           p.legalName ?? p.legal_name);
+    set('profileTagline',             p.tagline);
+    set('profileAddressLine1',        p.addressLine1 ?? p.address_line1);
+    set('profileAddressLine2',        p.addressLine2 ?? p.address_line2);
+    set('profileCity',                p.city);
+    set('profileState',               p.state);
+    set('profilePostalCode',          p.postalCode ?? p.postal_code);
+    set('profileCountry',             p.country);
+    set('profilePhone',               p.phone);
+    set('profileEmail',               p.email);
+    set('profileWebsite',             p.website);
+    set('profileTaxId',               p.taxId ?? p.tax_id);
+    set('profileRegistrationNumber',  p.registrationNumber ?? p.registration_number);
+    set('profileBankDetails',         p.bankDetailsJson ?? p.bank_details_json);
+    set('profileFooterText',          p.footerText ?? p.footer_text);
+
+    const logoKey = p.logoDriveKey ?? p.logo_drive_key ?? '';
+    const sigKey  = p.signatureDriveKey ?? p.signature_drive_key ?? '';
+    document.getElementById('profileLogoDriveKey').value = logoKey;
+    document.getElementById('profileSignatureDriveKey').value = sigKey;
+    renderTenantAssetPreview('logo', logoKey);
+    renderTenantAssetPreview('signature', sigKey);
+}
+
+function resetTenantProfileForm() {
+    if (_tenantProfileSnapshot) applyTenantProfileToForm(_tenantProfileSnapshot);
+}
+
+function readTenantProfileForm() {
+    const get = (id) => (document.getElementById(id)?.value ?? '').trim() || null;
+    return {
+        companyName:         get('profileCompanyName'),
+        legalName:           get('profileLegalName'),
+        tagline:             get('profileTagline'),
+        addressLine1:        get('profileAddressLine1'),
+        addressLine2:        get('profileAddressLine2'),
+        city:                get('profileCity'),
+        state:               get('profileState'),
+        postalCode:          get('profilePostalCode'),
+        country:             get('profileCountry'),
+        phone:               get('profilePhone'),
+        email:               get('profileEmail'),
+        website:             get('profileWebsite'),
+        taxId:               get('profileTaxId'),
+        registrationNumber:  get('profileRegistrationNumber'),
+        bankDetailsJson:     get('profileBankDetails'),
+        footerText:          get('profileFooterText'),
+        logoDriveKey:        get('profileLogoDriveKey'),
+        signatureDriveKey:   get('profileSignatureDriveKey')
+    };
+}
+
+async function saveTenantProfile() {
+    const btn = document.getElementById('profileSaveBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    try {
+        const payload = readTenantProfileForm();
+        // Validate JSON if present
+        if (payload.bankDetailsJson) {
+            try { JSON.parse(payload.bankDetailsJson); }
+            catch (e) {
+                if (typeof showToast === 'function') showToast('Bank details must be valid JSON', 'error');
+                return;
+            }
+        }
+        const res = await api.updateTenantProfile(payload);
+        _tenantProfileSnapshot = res.profile || payload;
+        applyTenantProfileToForm(_tenantProfileSnapshot);
+        if (typeof showToast === 'function') showToast('Company profile saved', 'success');
+    } catch (e) {
+        console.error('Failed to save profile:', e);
+        if (typeof showToast === 'function') showToast('Failed to save company profile', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Save Changes'; }
+    }
+}
+
+// Cache the lazily-created "Tenant Branding" folder ID for the session.
+let _brandingFolderIdCache = null;
+
+async function ensureTenantBrandingFolder() {
+    if (_brandingFolderIdCache) return _brandingFolderIdCache;
+    const FOLDER_NAME = 'Tenant Branding';
+    try {
+        const list = await api.listFolders(null);
+        const folders = list.folders || list || [];
+        const found = folders.find(f => (f.name || f.folderName) === FOLDER_NAME);
+        if (found) {
+            _brandingFolderIdCache = found.id || found.folderId;
+            return _brandingFolderIdCache;
+        }
+    } catch (e) {
+        console.warn('listFolders failed, will try to create:', e);
+    }
+    // Not found — create
+    const created = await api.createFolder(FOLDER_NAME, 'Auto-created folder for tenant logo & signature uploads');
+    _brandingFolderIdCache = created.id || created.folderId || created.folder?.id;
+    if (!_brandingFolderIdCache) throw new Error('Failed to create branding folder');
+    return _brandingFolderIdCache;
+}
+
+async function uploadTenantProfileAsset(kind, inputEl) {
+    const file = inputEl.files && inputEl.files[0];
+    if (!file) return;
+    try {
+        if (typeof showToast === 'function') showToast(`Uploading ${kind}…`, 'info');
+        const folderId = await ensureTenantBrandingFolder();
+        const result = await api.uploadDriveFileDirect(file, folderId);
+        const driveKey = result.s3_key || result.s3Key || result.key || result.fileId || result.file_id;
+        if (!driveKey) throw new Error('Upload returned no key');
+        const targetId = kind === 'logo' ? 'profileLogoDriveKey' : 'profileSignatureDriveKey';
+        document.getElementById(targetId).value = driveKey;
+        renderTenantAssetPreview(kind, driveKey, file);
+        if (typeof showToast === 'function') showToast(`${kind === 'logo' ? 'Logo' : 'Signature'} uploaded — click Save Changes to persist`, 'success');
+    } catch (e) {
+        console.error('Asset upload failed:', e);
+        if (typeof showToast === 'function') showToast(`Upload failed: ${e.message}`, 'error');
+    } finally {
+        inputEl.value = '';
+    }
+}
+
+function clearTenantProfileAsset(kind) {
+    const targetId = kind === 'logo' ? 'profileLogoDriveKey' : 'profileSignatureDriveKey';
+    document.getElementById(targetId).value = '';
+    renderTenantAssetPreview(kind, '');
+}
+
+function renderTenantAssetPreview(kind, driveKey, fileObj) {
+    const previewId = kind === 'logo' ? 'profileLogoPreview' : 'profileSignaturePreview';
+    const clearBtnId = kind === 'logo' ? 'profileLogoClearBtn' : 'profileSignatureClearBtn';
+    const previewEl = document.getElementById(previewId);
+    const clearBtn = document.getElementById(clearBtnId);
+    if (!previewEl) return;
+
+    if (!driveKey && !fileObj) {
+        previewEl.innerHTML = `<span class="profile-asset-empty">No ${kind} uploaded</span>`;
+        if (clearBtn) clearBtn.style.display = 'none';
+        return;
+    }
+    if (clearBtn) clearBtn.style.display = '';
+
+    // If we have the file in hand (fresh upload), show it from a blob URL — instant preview.
+    if (fileObj) {
+        const url = URL.createObjectURL(fileObj);
+        previewEl.innerHTML = `<img src="${url}" alt="${kind}">`;
+        return;
+    }
+
+    // Otherwise fetch a presigned download URL from Drive (best-effort; degrades to label).
+    previewEl.innerHTML = `<span class="profile-asset-empty">${driveKey.split('/').pop()}</span>`;
+    (async () => {
+        try {
+            const dl = await api.getDownloadUrl(driveKey, 60);
+            const url = dl.url || dl.downloadUrl || dl.download_url;
+            if (url) previewEl.innerHTML = `<img src="${url}" alt="${kind}">`;
+        } catch { /* leave label */ }
+    })();
 }
 
 // ==================== Modal Helpers ====================
@@ -1825,18 +2009,35 @@ let isSaaSPlatformAdmin = false;
 // ==================== API Keys Management ====================
 
 // Per-tenant per-service copilot toggle state, loaded alongside API keys.
-let copilotSettings = { hasLlmApiKey: false, services: [] };
+// Fallback list mirrors the Auth controller's CopilotCapableServices so the
+// expandable panel still renders something useful while the Auth backend is
+// still deploying or transiently unreachable.
+const COPILOT_SERVICES_FALLBACK = [
+    { serviceName: 'PMS',         displayName: 'Project Management',              enabled: true },
+    { serviceName: 'HRMS',        displayName: 'HR Management',                   enabled: true },
+    { serviceName: 'CRM',         displayName: 'Customer Relations',              enabled: true },
+    { serviceName: 'Accounts',    displayName: 'Accounts & Finance',              enabled: true },
+    { serviceName: 'LMS',         displayName: 'Learning Management',             enabled: true },
+    { serviceName: 'Procurement', displayName: 'Procurement',                     enabled: true },
+    { serviceName: 'Drive',       displayName: 'File Storage (Drive)',            enabled: true },
+    { serviceName: 'Vision',      displayName: 'Meetings & Transcripts (Vision)', enabled: true },
+    { serviceName: 'Research',    displayName: 'Market Research',                 enabled: true }
+];
+let copilotSettings = { hasLlmApiKey: false, services: COPILOT_SERVICES_FALLBACK.slice() };
 
 async function loadCopilotSettings() {
     try {
         const data = await api.getCopilotSettings();
+        const services = data.services || [];
         copilotSettings = {
             hasLlmApiKey: data.hasLlmApiKey ?? data.has_llm_api_key ?? false,
-            services: data.services || []
+            // If Auth returns an empty services array (e.g., during a partial deploy), keep the
+            // fallback so the UI is never blank. Real toggle state still wins when present.
+            services: services.length > 0 ? services : COPILOT_SERVICES_FALLBACK.slice()
         };
     } catch (e) {
-        console.warn('Failed to load copilot settings:', e);
-        copilotSettings = { hasLlmApiKey: false, services: [] };
+        console.warn('Failed to load copilot settings (using fallback list):', e);
+        copilotSettings = { hasLlmApiKey: false, services: COPILOT_SERVICES_FALLBACK.slice() };
     }
 }
 

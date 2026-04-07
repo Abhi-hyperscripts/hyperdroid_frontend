@@ -152,6 +152,9 @@
                             <button class="sidebar-btn hidden-tab" data-tab="subtenants" id="subtenantsSidebarTab">
                                 <span class="nav-number">6</span><span class="nav-label">Sub-Tenants</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="profile" id="profileSidebarTab">
+                                <span class="nav-number">7</span><span class="nav-label">Company Profile</span>
+                            </button>
                         </div>
                     </div>
                 </nav>
@@ -480,6 +483,157 @@
                             <h3>Sub-Tenants Not Available</h3>
                             <p>Sub-tenants are only available in SaaS deployments. This is either an on-premise deployment or you are logged in as a sub-tenant administrator.</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Company Profile Tab -->
+                <div class="tab-content" id="profile">
+                    <div class="profile-page">
+                        <div class="profile-header-row">
+                            <div>
+                                <h2 class="profile-title">Company Profile</h2>
+                                <p class="profile-sub">This information is shown on every customer-facing document your services generate — invoices, purchase orders, proforma invoices, payslips, certificates. Updating it here updates it everywhere.</p>
+                            </div>
+                            <div class="profile-actions">
+                                <button class="btn btn-secondary" id="profileResetBtn" onclick="resetTenantProfileForm()">Reset</button>
+                                <button class="btn btn-primary" id="profileSaveBtn" onclick="saveTenantProfile()">Save Changes</button>
+                            </div>
+                        </div>
+
+                        <form id="tenantProfileForm" class="profile-form" autocomplete="off" onsubmit="event.preventDefault(); saveTenantProfile();">
+                            <!-- Logo + signature uploads -->
+                            <section class="profile-section">
+                                <h3>Branding</h3>
+                                <div class="profile-asset-grid">
+                                    <div class="profile-asset">
+                                        <div class="profile-asset-preview" id="profileLogoPreview">
+                                            <span class="profile-asset-empty">No logo uploaded</span>
+                                        </div>
+                                        <label class="profile-asset-label">Company Logo</label>
+                                        <input type="file" id="profileLogoFile" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none" onchange="uploadTenantProfileAsset('logo', this)">
+                                        <div class="profile-asset-buttons">
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('profileLogoFile').click()">Upload</button>
+                                            <button type="button" class="btn btn-sm btn-secondary" id="profileLogoClearBtn" onclick="clearTenantProfileAsset('logo')" style="display:none;">Remove</button>
+                                        </div>
+                                        <input type="hidden" id="profileLogoDriveKey">
+                                    </div>
+                                    <div class="profile-asset">
+                                        <div class="profile-asset-preview" id="profileSignaturePreview">
+                                            <span class="profile-asset-empty">No signature uploaded</span>
+                                        </div>
+                                        <label class="profile-asset-label">Authorized Signature</label>
+                                        <input type="file" id="profileSignatureFile" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none" onchange="uploadTenantProfileAsset('signature', this)">
+                                        <div class="profile-asset-buttons">
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('profileSignatureFile').click()">Upload</button>
+                                            <button type="button" class="btn btn-sm btn-secondary" id="profileSignatureClearBtn" onclick="clearTenantProfileAsset('signature')" style="display:none;">Remove</button>
+                                        </div>
+                                        <input type="hidden" id="profileSignatureDriveKey">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Company identity -->
+                            <section class="profile-section">
+                                <h3>Identity</h3>
+                                <div class="profile-grid">
+                                    <div class="form-field">
+                                        <label>Company Name</label>
+                                        <input type="text" id="profileCompanyName" placeholder="Acme Inc.">
+                                    </div>
+                                    <div class="form-field">
+                                        <label>Legal Name</label>
+                                        <input type="text" id="profileLegalName" placeholder="Acme Holdings Pvt. Ltd.">
+                                    </div>
+                                    <div class="form-field profile-field-wide">
+                                        <label>Tagline</label>
+                                        <input type="text" id="profileTagline" placeholder="Optional one-line tagline shown on documents">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Address -->
+                            <section class="profile-section">
+                                <h3>Registered Address</h3>
+                                <div class="profile-grid">
+                                    <div class="form-field profile-field-wide">
+                                        <label>Address Line 1</label>
+                                        <input type="text" id="profileAddressLine1">
+                                    </div>
+                                    <div class="form-field profile-field-wide">
+                                        <label>Address Line 2</label>
+                                        <input type="text" id="profileAddressLine2">
+                                    </div>
+                                    <div class="form-field">
+                                        <label>City</label>
+                                        <input type="text" id="profileCity">
+                                    </div>
+                                    <div class="form-field">
+                                        <label>State / Province</label>
+                                        <input type="text" id="profileState">
+                                    </div>
+                                    <div class="form-field">
+                                        <label>Postal Code</label>
+                                        <input type="text" id="profilePostalCode">
+                                    </div>
+                                    <div class="form-field">
+                                        <label>Country</label>
+                                        <input type="text" id="profileCountry">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Contact -->
+                            <section class="profile-section">
+                                <h3>Contact</h3>
+                                <div class="profile-grid">
+                                    <div class="form-field">
+                                        <label>Phone</label>
+                                        <input type="tel" id="profilePhone" placeholder="+1 555 0100">
+                                    </div>
+                                    <div class="form-field">
+                                        <label>Email</label>
+                                        <input type="email" id="profileEmail" placeholder="hello@acme.com">
+                                    </div>
+                                    <div class="form-field profile-field-wide">
+                                        <label>Website</label>
+                                        <input type="url" id="profileWebsite" placeholder="https://acme.com">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Tax & registration -->
+                            <section class="profile-section">
+                                <h3>Tax &amp; Registration</h3>
+                                <div class="profile-grid">
+                                    <div class="form-field">
+                                        <label>Tax ID</label>
+                                        <input type="text" id="profileTaxId" placeholder="GSTIN / VAT / EIN">
+                                    </div>
+                                    <div class="form-field">
+                                        <label>Registration Number</label>
+                                        <input type="text" id="profileRegistrationNumber" placeholder="CIN / Company No.">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Bank details -->
+                            <section class="profile-section">
+                                <h3>Bank Details (JSON)</h3>
+                                <div class="form-field">
+                                    <label>Used on invoices &amp; POs. Free-form JSON — keep it small and consistent.</label>
+                                    <textarea id="profileBankDetails" rows="6" placeholder='{ "account_name": "Acme Inc.", "account_number": "0000123456", "ifsc": "HDFC0001234", "bank": "HDFC Bank" }'></textarea>
+                                </div>
+                            </section>
+
+                            <!-- Footer text -->
+                            <section class="profile-section">
+                                <h3>Document Footer</h3>
+                                <div class="form-field">
+                                    <label>Shown at the bottom of every generated document.</label>
+                                    <textarea id="profileFooterText" rows="3" placeholder="Thank you for your business."></textarea>
+                                </div>
+                            </section>
+                        </form>
                     </div>
                 </div>
             </main>
