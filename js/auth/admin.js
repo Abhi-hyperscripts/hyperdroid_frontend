@@ -2210,7 +2210,7 @@ function renderApiKeysTable(keys) {
                         <div class="copilot-expand-panel">
                             <div class="copilot-expand-header">
                                 <div>
-                                    <div class="copilot-expand-title">RaZoR Copilot — per-service control</div>
+                                    <div class="copilot-expand-title">RaZer Copilot — per-service control</div>
                                     <div class="copilot-expand-sub">Enable or disable the AI assistant for individual backends. Disabled services will not load the chat widget for any user in this tenant.</div>
                                 </div>
                             </div>

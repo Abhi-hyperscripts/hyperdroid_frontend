@@ -641,7 +641,7 @@
                             <div class="rz-welcome-icon">
                                 <img src="${scriptOrigin}/assets/logo-icon-blue.png" alt="">
                             </div>
-                            <div class="rz-welcome-title">Hi, I am RaZoR</div>
+                            <div class="rz-welcome-title">Hi, I am RaZer</div>
                             <div class="rz-welcome-sub">Your agentic AI for Ragenaizer.</div>
                             <div class="rz-welcome-features">
                                 <div class="rz-welcome-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>1000+ tools across PMS, HRMS, CRM, Accounts, LMS &amp; Procurement</span></div>
@@ -816,7 +816,7 @@
                     <div class="rz-welcome-icon">
                         <img src="${scriptOrigin}/assets/logo-icon-blue.png" alt="">
                     </div>
-                    <div class="rz-welcome-title">Hi, I am RaZoR</div>
+                    <div class="rz-welcome-title">Hi, I am RaZer</div>
                     <div class="rz-welcome-sub">Your agentic AI for Ragenaizer.</div>
                     <div class="rz-welcome-features">
                         <div class="rz-welcome-feature"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>1000+ tools across PMS, HRMS, CRM, Accounts, LMS &amp; Procurement</span></div>
