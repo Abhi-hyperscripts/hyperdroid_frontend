@@ -144,26 +144,35 @@
             try { if (typeof ApexCharts === 'undefined') await loadScript('https://cdn.jsdelivr.net/npm/apexcharts@4.3.0/dist/apexcharts.min.js'); } catch {}
         })();
 
-        // Copilot mode: check if tenant has an active AI API key before rendering
+        // Copilot mode: check (1) tenant has an active LLM key AND (2) the per-service
+        // copilot toggle is ON for THIS service. The data-service attribute on the script
+        // tag (e.g., "pms", "hrms") drives which toggle we look at.
         if (isCopilotMode) {
             try {
                 const jwt = getCopilotJwt();
                 if (jwt) {
                     const authBase = window.CONFIG?.authApiBaseUrl || window.appConfig?.endpoints?.auth || 'https://localhost:5098';
-                    const keysRes = await fetch(`${authBase}/api/tenant-api-keys`, {
+                    // Single call returns both the LLM-key flag and the per-service toggle.
+                    // copilotService comes from data-service on the script tag (lowercase like "pms").
+                    const svcParam = encodeURIComponent((copilotService || '').toUpperCase());
+                    const stateRes = await fetch(`${authBase}/api/tenant-settings/copilot/${svcParam}`, {
                         headers: { 'Authorization': `Bearer ${jwt}` }
                     });
-                    if (keysRes.ok) {
-                        const data = await keysRes.json();
-                        const keysList = data.keys || data;
-                        const hasActiveAiKey = Array.isArray(keysList) && keysList.some(k =>
-                            (k.isActive || k.is_active) && ['anthropic', 'openai'].includes((k.provider || '').toLowerCase())
-                        );
-                        if (!hasActiveAiKey) {
+                    if (stateRes.ok) {
+                        const state = await stateRes.json();
+                        // available = has_llm_api_key && enabled
+                        const available = state.available === true || (state.has_llm_api_key === true && state.enabled === true);
+                        if (!available) {
                             window.__ragenaizer_widget_loaded = false;
                             return;
                         }
+                    } else if (stateRes.status === 404) {
+                        // Service isn't registered as copilot-capable on the backend → don't render.
+                        window.__ragenaizer_widget_loaded = false;
+                        return;
                     }
+                    // On other failures (network, 500), fall through and let the chat fail
+                    // gracefully on first use rather than silently hiding the widget.
                 }
             } catch { /* Auth unreachable — still show widget, will fail gracefully on use */ }
         }

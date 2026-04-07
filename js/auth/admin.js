@@ -1824,12 +1824,32 @@ let isSaaSPlatformAdmin = false;
 
 // ==================== API Keys Management ====================
 
+// Per-tenant per-service copilot toggle state, loaded alongside API keys.
+let copilotSettings = { hasLlmApiKey: false, services: [] };
+
+async function loadCopilotSettings() {
+    try {
+        const data = await api.getCopilotSettings();
+        copilotSettings = {
+            hasLlmApiKey: data.hasLlmApiKey ?? data.has_llm_api_key ?? false,
+            services: data.services || []
+        };
+    } catch (e) {
+        console.warn('Failed to load copilot settings:', e);
+        copilotSettings = { hasLlmApiKey: false, services: [] };
+    }
+}
+
 async function loadApiKeys() {
     const tbody = document.getElementById('apiKeysTableBody');
     if (!tbody) return;
 
     try {
-        const response = await api.getApiKeys();
+        // Load API keys and copilot toggle state in parallel
+        const [response] = await Promise.all([
+            api.getApiKeys(),
+            loadCopilotSettings()
+        ]);
         allApiKeys = response.keys || response || [];
         filterApiKeys();
     } catch (error) {
@@ -1888,7 +1908,9 @@ function renderApiKeysTable(keys) {
         return;
     }
 
-    tbody.innerHTML = keys.map(key => {
+    const llmProviders = new Set(['anthropic', 'openai']);
+
+    tbody.innerHTML = keys.map((key, idx) => {
         const provider = key.provider || '';
         const serviceType = key.serviceType || key.service_type || '';
         const displayHint = key.displayHint || key.display_hint || '****';
@@ -1899,7 +1921,18 @@ function renderApiKeysTable(keys) {
         const escapedProvider = provider.replace(/'/g, "\\'");
         const escapedServiceType = serviceType.replace(/'/g, "\\'");
 
-        return `
+        // Show the expandable copilot row only when this is an active LLM provider
+        const isLlmRow = isActive && llmProviders.has(provider.toLowerCase()) && (serviceType.toLowerCase() === 'llm');
+        const rowId = `apikey-row-${idx}`;
+        const expandToggleHtml = isLlmRow
+            ? `<button class="action-btn copilot-expand-btn" data-tooltip="Configure Copilot" data-row-id="${rowId}" onclick="toggleCopilotExpand('${rowId}')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </button>`
+            : '';
+
+        const mainRow = `
             <tr>
                 <td>
                     <div class="apikey-provider">
@@ -1922,6 +1955,7 @@ function renderApiKeysTable(keys) {
                 <td class="date-cell">${createdDate}</td>
                 <td>
                     <div class="action-buttons">
+                        ${expandToggleHtml}
                         <button class="action-btn" data-tooltip="${isActive ? 'Deactivate' : 'Activate'}" onclick="toggleApiKeyStatus('${escapedProvider}', '${escapedServiceType}', ${!isActive})">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 ${isActive
@@ -1945,7 +1979,80 @@ function renderApiKeysTable(keys) {
                 </td>
             </tr>
         `;
+
+        // Hidden expandable child row with per-service copilot toggles
+        let copilotRow = '';
+        if (isLlmRow) {
+            const services = copilotSettings.services || [];
+            const togglesHtml = services.map(s => {
+                const svcName = (s.serviceName || s.service_name || '').replace(/'/g, "\\'");
+                const display = s.displayName || s.display_name || svcName;
+                const enabled = s.enabled === true;
+                return `
+                    <div class="copilot-toggle-row">
+                        <div class="copilot-toggle-meta">
+                            <div class="copilot-toggle-name">${display}</div>
+                            <div class="copilot-toggle-sub">${svcName}</div>
+                        </div>
+                        <label class="copilot-switch">
+                            <input type="checkbox" ${enabled ? 'checked' : ''}
+                                onchange="toggleCopilotService('${svcName}', this.checked, this)">
+                            <span class="copilot-switch-slider"></span>
+                        </label>
+                    </div>
+                `;
+            }).join('');
+
+            copilotRow = `
+                <tr class="copilot-expand-row" id="${rowId}-expand" style="display:none;">
+                    <td colspan="6">
+                        <div class="copilot-expand-panel">
+                            <div class="copilot-expand-header">
+                                <div>
+                                    <div class="copilot-expand-title">RaZoR Copilot — per-service control</div>
+                                    <div class="copilot-expand-sub">Enable or disable the AI assistant for individual backends. Disabled services will not load the chat widget for any user in this tenant.</div>
+                                </div>
+                            </div>
+                            <div class="copilot-toggle-list">
+                                ${togglesHtml || '<div class="copilot-empty">No copilot-capable services available.</div>'}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        return mainRow + copilotRow;
     }).join('');
+}
+
+function toggleCopilotExpand(rowId) {
+    const row = document.getElementById(`${rowId}-expand`);
+    if (!row) return;
+    const isHidden = row.style.display === 'none' || !row.style.display;
+    row.style.display = isHidden ? 'table-row' : 'none';
+    // Rotate the chevron
+    const btn = document.querySelector(`button.copilot-expand-btn[data-row-id="${rowId}"] svg`);
+    if (btn) btn.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+async function toggleCopilotService(serviceName, enabled, inputEl) {
+    try {
+        await api.setCopilotServiceEnabled(serviceName, enabled);
+        // Update local state
+        const svc = copilotSettings.services.find(s => (s.serviceName || s.service_name) === serviceName);
+        if (svc) svc.enabled = enabled;
+        if (typeof showToast === 'function') {
+            showToast(`Copilot ${enabled ? 'enabled' : 'disabled'} for ${serviceName}`, 'success');
+        }
+    } catch (e) {
+        console.error('Failed to toggle copilot service:', e);
+        // Revert UI
+        if (inputEl) inputEl.checked = !enabled;
+        if (typeof showToast === 'function') {
+            showToast(`Failed to update copilot setting for ${serviceName}`, 'error');
+        }
+    }
 }
 
 function openAddApiKeyModal() {

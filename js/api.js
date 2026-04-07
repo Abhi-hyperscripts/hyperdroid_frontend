@@ -93,7 +93,7 @@ class API {
             return CONFIG.authApiBaseUrl;
         }
         // Services, Users, Admin, and Tenants endpoints go to Authentication service (admin APIs)
-        if (endpoint.startsWith('/services') || endpoint.startsWith('/users') || endpoint.startsWith('/admin/') || endpoint.startsWith('/tenants') || endpoint.startsWith('/tenant-api-keys')) {
+        if (endpoint.startsWith('/services') || endpoint.startsWith('/users') || endpoint.startsWith('/admin/') || endpoint.startsWith('/tenants') || endpoint.startsWith('/tenant-api-keys') || endpoint.startsWith('/tenant-settings')) {
             return CONFIG.authApiBaseUrl;
         }
         // Drive endpoints go directly to Drive service (independent microservice)
@@ -572,6 +572,22 @@ class API {
     async deleteApiKey(provider, serviceType) {
         return this.request(`/tenant-api-keys/${encodeURIComponent(provider)}/${encodeURIComponent(serviceType)}`, {
             method: 'DELETE'
+        });
+    }
+
+    // Tenant copilot toggle (per-service)
+    async getCopilotSettings() {
+        return this.request('/tenant-settings/copilot');
+    }
+
+    async getCopilotServiceState(serviceName) {
+        return this.request(`/tenant-settings/copilot/${encodeURIComponent(serviceName)}`);
+    }
+
+    async setCopilotServiceEnabled(serviceName, enabled) {
+        return this.request(`/tenant-settings/copilot/${encodeURIComponent(serviceName)}`, {
+            method: 'PUT',
+            body: JSON.stringify({ enabled })
         });
     }
 

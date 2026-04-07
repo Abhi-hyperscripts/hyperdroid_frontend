@@ -2538,6 +2538,74 @@
     gap: 20px;
 }
 
+/* Copilot expand row (per-service toggle panel) */
+.copilot-expand-btn svg { transition: transform 0.2s ease; }
+.copilot-expand-row td { padding: 0; background: rgba(59, 130, 246, 0.04); border-top: 0; }
+.copilot-expand-panel {
+    padding: 18px 24px 22px;
+    border-left: 3px solid var(--brand-primary, #3b82f6);
+    margin: 0 8px 4px;
+    background: var(--bg-secondary, rgba(255,255,255,0.02));
+    border-radius: 0 8px 8px 0;
+}
+.copilot-expand-header { margin-bottom: 14px; }
+.copilot-expand-title {
+    font-size: 13px; font-weight: 600; color: var(--text-primary, #eceef5);
+    margin-bottom: 4px;
+}
+.copilot-expand-sub {
+    font-size: 12px; color: var(--text-secondary, #8b90a8);
+    line-height: 1.5; max-width: 640px;
+}
+.copilot-toggle-list {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+}
+.copilot-toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: var(--bg-tertiary, rgba(255,255,255,0.03));
+    border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
+    border-radius: 8px;
+}
+.copilot-toggle-meta { display: flex; flex-direction: column; gap: 2px; }
+.copilot-toggle-name {
+    font-size: 13px; font-weight: 500; color: var(--text-primary, #eceef5);
+}
+.copilot-toggle-sub {
+    font-size: 11px; color: var(--text-secondary, #8b90a8);
+    text-transform: uppercase; letter-spacing: 0.4px;
+}
+.copilot-empty {
+    font-size: 12px; color: var(--text-secondary, #8b90a8);
+    padding: 8px;
+}
+
+/* Toggle switch */
+.copilot-switch {
+    position: relative; display: inline-block;
+    width: 36px; height: 20px; flex-shrink: 0;
+}
+.copilot-switch input { opacity: 0; width: 0; height: 0; }
+.copilot-switch-slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: var(--bg-quaternary, #4b5563);
+    border-radius: 20px;
+    transition: background 0.2s ease;
+}
+.copilot-switch-slider::before {
+    content: '';
+    position: absolute; height: 14px; width: 14px;
+    left: 3px; top: 3px;
+    background: #fff; border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+.copilot-switch input:checked + .copilot-switch-slider {
+    background: var(--brand-primary, #3b82f6);
+}
+.copilot-switch input:checked + .copilot-switch-slider::before {
+    transform: translateX(16px);
+}
+
 /* Provider cell */
 .apikey-provider {
     display: flex;
