@@ -143,6 +143,14 @@ async function loadLesson(id) {
 
 // ─── Render Content ─────────────────────────────────────────────────────────
 
+// LMS API returns lesson fields in camelCase (default ASP.NET Core JSON policy),
+// but historical frontend code was written assuming snake_case. Read both shapes
+// so the viewer works regardless of which form the backend hands back. Mirrors
+// the same dual-read pattern course-builder.js already uses.
+function lessonContentType()  { return currentLesson?.contentType  ?? currentLesson?.content_type  ?? 'text'; }
+function lessonContentUrl()   { return currentLesson?.contentUrl   ?? currentLesson?.content_url   ?? ''; }
+function lessonContentText()  { return currentLesson?.contentText  ?? currentLesson?.content_text  ?? ''; }
+
 function renderContent() {
     if (!currentLesson) return;
 
@@ -152,7 +160,7 @@ function renderContent() {
     document.getElementById('textContentWrapper').style.display = 'none';
     document.getElementById('lessonPlaceholder').style.display = 'none';
 
-    const type = currentLesson.content_type || 'text';
+    const type = lessonContentType();
 
     switch (type) {
         case 'video':
@@ -173,8 +181,9 @@ function initVideoPlayer() {
     const video = document.getElementById('lessonVideo');
     wrapper.style.display = 'block';
 
-    if (currentLesson.content_url) {
-        video.src = currentLesson.content_url;
+    const url = lessonContentUrl();
+    if (url) {
+        video.src = url;
         video.load();
     } else {
         wrapper.innerHTML = '<div class="lms-empty-state">No video URL provided.</div>';
@@ -186,8 +195,9 @@ function renderDocumentViewer() {
     const iframe = document.getElementById('lessonDocument');
     wrapper.style.display = 'block';
 
-    if (currentLesson.content_url) {
-        iframe.src = currentLesson.content_url;
+    const url = lessonContentUrl();
+    if (url) {
+        iframe.src = url;
     } else {
         wrapper.innerHTML = '<div class="lms-empty-state">No document URL provided.</div>';
     }
@@ -198,11 +208,13 @@ function renderTextContent() {
     const contentEl = document.getElementById('lessonTextContent');
     wrapper.style.display = 'block';
 
-    if (currentLesson.content_text) {
+    const text = lessonContentText();
+    const url = lessonContentUrl();
+    if (text) {
         // Render as HTML (assumes sanitized from backend)
-        contentEl.innerHTML = currentLesson.content_text;
-    } else if (currentLesson.content_url) {
-        contentEl.innerHTML = `<p>View content: <a href="${escapeHtml(currentLesson.content_url)}" target="_blank">${escapeHtml(currentLesson.content_url)}</a></p>`;
+        contentEl.innerHTML = text;
+    } else if (url) {
+        contentEl.innerHTML = `<p>View content: <a href="${escapeHtml(url)}" target="_blank">${escapeHtml(url)}</a></p>`;
     } else {
         contentEl.innerHTML = '<p>No content available for this lesson.</p>';
     }
