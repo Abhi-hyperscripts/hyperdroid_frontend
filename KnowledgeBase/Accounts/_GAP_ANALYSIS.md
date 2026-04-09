@@ -215,7 +215,7 @@ Class route: `api/accounts/system`. Class-level `[Authorize(Roles = "ACCOUNTS_AD
 |---|---|---|---|---|---|---|---|---|---|---|
 | 1 | POST | `/api/accounts/system/encrypt-existing-data` | `EncryptExistingData` | ADMIN+ | — | anon `{ message, details }` (details = list of table results) | TBD | TBD | N/A — one-time admin migration | pending |
 | 2 | POST | `/api/accounts/system/integrity-check` | `RunIntegrityCheck` | ADMIN+ | — | result of `BL.RunIntegrityChecks` (list of `{ check_type, status, details, ... }`) | TBD | TBD | §15.5.3 Fig 15.5.3 | pending |
-| 3 | GET  | `/api/accounts/system/gl-summary` | `GetGlSummary` | ADMIN+ | — | result of `BL.GetGlSummary` | TBD | TBD | TBD | pending |
+| 3 | GET  | `/api/accounts/system/gl-summary` | `GetGlSummary` | ADMIN+ | — | result of `BL.GetGlSummary` | `dashboard.js:42 loadGLSummary` | reads `by_type_and_status[]` with `entry_count, status, total_debit, total_credit` (verify BL shape in Phase 4) | §3.6 / dashboard tiles | pending |
 | 4 | POST | `/api/accounts/system/recompute-balances` | `RecomputeBalances` | SUPERADMIN | — | anon `{ message }` | TBD | TBD | N/A — recovery action | pending |
 | 5 | GET  | `/api/accounts/system/integrity-check/results` | `GetIntegrityCheckResults` | ADMIN+ | query `limit` | **STUB** anon `{ message, tenant_id, limit }` — not actually querying `integrity_check_results` table | TBD | TBD | gap — backend stub | gap |
 | 6 | GET  | `/api/accounts/system/job-log` | `GetJobLog` | ADMIN+ | query `jobType, limit` | **STUB** anon `{ message, tenant_id, limit }` — not actually returning rows | TBD | TBD | gap — backend stub (Fig 15.5.4 shows empty UI) | gap |
@@ -238,21 +238,21 @@ DTO field reference (`Models/ChartOfAccountsModels.cs`):
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | GET    | `/api/accounts/coa/types` | `GetAccountTypes` | USER+ | — | `List<AccountType>` | TBD | TBD | §4.3 Fig 4.4 | pending |
-| 2 | GET    | `/api/accounts/coa/groups` | `GetAccountGroups` | USER+ | query `accountTypeId?` | `List<AccountGroup>` | TBD | TBD | §4.3 (groups subsection) | pending |
-| 3 | POST   | `/api/accounts/coa/groups` | `CreateAccountGroup` | ADMIN+ | `CreateAccountGroupRequest` | `AccountGroup` (fresh-fetched) | TBD | TBD | §4.3 Fig 4.5–4.8 | pending |
-| 4 | PUT    | `/api/accounts/coa/groups/{id}` | `UpdateAccountGroup` | ADMIN+ | route `id` + `UpdateAccountGroupRequest` (id auto-set from route) | `AccountGroup` | TBD | TBD | §4.3 Fig 4.3c | pending |
-| 5 | DELETE | `/api/accounts/coa/groups/{id}` | `DeleteAccountGroup` | ADMIN+ | route `id` | 204 | TBD | TBD | §4.3 Fig 4.3d/g/h | pending |
-| 6 | GET    | `/api/accounts/coa` | `GetAccounts` | USER+ | query `accountTypeId?, accountGroupId?, isActive?, search?` | `List<Account>` | TBD | TBD | §4.4 Fig 4.19 | pending |
-| 7 | GET    | `/api/accounts/coa/tree` | `GetAccountTree` | USER+ | — | `List<Account>` (with `children`) | TBD | TBD | §4.4 Fig 4.17/4.20 | pending |
-| 8 | GET    | `/api/accounts/coa/{id}` | `GetAccountById` | USER+ | route `id` | `Account` or 404 | TBD | TBD | §4.4 Fig 4.19c | pending |
-| 9 | POST   | `/api/accounts/coa` | `CreateAccount` | ADMIN+ | `CreateAccountRequest` | `Account` (fresh-fetched) | TBD | TBD | §4.4 Fig 4.10–4.16 | pending |
-| 10 | PUT   | `/api/accounts/coa/{id}` | `UpdateAccount` | ADMIN+ | route `id` + `UpdateAccountRequest` (id auto-set) | `Account` | TBD | TBD | §4.4 Fig 4.19d | pending |
-| 11 | DELETE| `/api/accounts/coa/{id}` | `DeactivateAccount` | ADMIN+ | route `id` | 204 | TBD | TBD | §4.4 Fig 4.19e/f/g | pending |
-| 12 | POST  | `/api/accounts/coa/opening-balances` | `SetOpeningBalance` | ADMIN+ | `SetOpeningBalanceRequest` | anon `{ message }` | TBD | TBD | §4.5 Fig 4.21 | pending |
-| 13 | GET   | `/api/accounts/coa/balances` | `GetAccountBalances` | USER+ | query `fiscalYearId, periodId?` | `List<AccountPeriodBalance>` | TBD | TBD | TBD | pending |
-| 14 | POST  | `/api/accounts/coa/setup-template` | `SetupTemplate` | ADMIN+ | `SetupTemplateRequest` | anon `{ message, account_types, accounts }` | TBD | TBD | §4.2 Fig 4.1 | pending |
-| 15 | POST  | `/api/accounts/coa/import` | `ImportAccounts` | ADMIN+ | `ImportAccountsRequest` | **STUB** anon `{ message, rows_received }` — implementation deferred to S15 sprint | TBD | TBD | gap — backend stub | gap |
+| 1 | GET    | `/api/accounts/coa/types` | `GetAccountTypes` | USER+ | — | `List<AccountType>` | `setup.js:154 loadAccountTypes` | ok | §4.3 Fig 4.4 | pending |
+| 2 | GET    | `/api/accounts/coa/groups` | `GetAccountGroups` | USER+ | query `accountTypeId?` | `List<AccountGroup>` | `setup.js:191 loadAccountGroups` | ok | §4.3 (groups subsection) | pending |
+| 3 | POST   | `/api/accounts/coa/groups` | `CreateAccountGroup` | ADMIN+ | `CreateAccountGroupRequest` | `AccountGroup` (fresh-fetched) | `setup.js:277 saveAccountGroup` (no id) | ok — sends `name, account_type_id, code, parent_group_id, description` (no `display_order`) | §4.3 Fig 4.5–4.8 | pending |
+| 4 | PUT    | `/api/accounts/coa/groups/{id}` | `UpdateAccountGroup` | ADMIN+ | route `id` + `UpdateAccountGroupRequest` (id auto-set from route) | `AccountGroup` | `setup.js:277 saveAccountGroup` (id branch) | ⚠️ sends full create payload `{name, account_type_id, code, parent_group_id, description}` but UpdateAccountGroupRequest only accepts `name, description, display_order, is_active` — `account_type_id, code, parent_group_id` are silently dropped server-side. Functional but **edits to type/code/parent are no-ops** | §4.3 Fig 4.3c | gap |
+| 5 | DELETE | `/api/accounts/coa/groups/{id}` | `DeleteAccountGroup` | ADMIN+ | route `id` | 204 | `setup.js:308 deleteGroup` | ok | §4.3 Fig 4.3d/g/h | pending |
+| 6 | GET    | `/api/accounts/coa` | `GetAccounts` | USER+ | query `accountTypeId?, accountGroupId?, isActive?, search?` | `List<Account>` | `setup.js:342 loadAccounts` + `setup.js:779` (opening balances) | dead-params: sends `page, pageSize` which backend ignores (no pagination on backend) — frontend "pagination" is fake, just renders all rows; pageSize=500 in opening-balance fetch silently capped server-side to whatever the BL returns | §4.4 Fig 4.19 | gap |
+| 7 | GET    | `/api/accounts/coa/tree` | `GetAccountTree` | USER+ | — | `List<Account>` (with `children`) | `setup.js:649 loadAccountTree` | ok | §4.4 Fig 4.17/4.20 | pending |
+| 8 | GET    | `/api/accounts/coa/{id}` | `GetAccountById` | USER+ | route `id` | `Account` or 404 | `setup.js:535 viewAccountDetail` | ok — reads `account_code, account_name, account_type_id, account_group_id, parent_account_id, normal_balance, description, is_active, current_balance, allow_direct_posting` | §4.4 Fig 4.19c | pending |
+| 9 | POST   | `/api/accounts/coa` | `CreateAccount` | ADMIN+ | `CreateAccountRequest` | `Account` (fresh-fetched) | `setup.js:468 saveAccount` (no id) | ok — sends `account_code, account_name, account_type_id, account_group_id, parent_account_id, normal_balance, description, allow_direct_posting` (no `currency` — backend defaults to INR) | §4.4 Fig 4.10–4.16 | pending |
+| 10 | PUT   | `/api/accounts/coa/{id}` | `UpdateAccount` | ADMIN+ | route `id` + `UpdateAccountRequest` (id auto-set) | `Account` | `setup.js:468 saveAccount` (id branch) | ⚠️ sends full create payload but UpdateAccountRequest only accepts `id, account_name, description, account_group_id, is_active, allow_direct_posting`; `account_code, account_type_id, parent_account_id, normal_balance` are silently dropped — **edits to those four fields are no-ops** | §4.4 Fig 4.19d | gap |
+| 11 | DELETE| `/api/accounts/coa/{id}` | `DeactivateAccount` | ADMIN+ | route `id` | 204 | `setup.js:513 deactivateAccount` | ok | §4.4 Fig 4.19e/f/g | pending |
+| 12 | POST  | `/api/accounts/coa/opening-balances` | `SetOpeningBalance` | ADMIN+ | `SetOpeningBalanceRequest` | anon `{ message }` | `setup.js:944 saveAllOpeningBalances` (working) + `setup.js:968 saveOpeningBalance` (broken — wrong shape `{fiscal_year_id, balances:[...]}`, dead code) | working path ok | §4.5 Fig 4.21 | gap |
+| 13 | GET   | `/api/accounts/coa/balances` | `GetAccountBalances` | USER+ | query `fiscalYearId, periodId?` | `List<AccountPeriodBalance>` | `setup.js:778 loadOpeningBalances` | ok — reads `opening_debit, opening_credit` (matches model) | §4.5 (opening balances merge) | pending |
+| 14 | POST  | `/api/accounts/coa/setup-template` | `SetupTemplate` | ADMIN+ | `SetupTemplateRequest` | anon `{ message, account_types, accounts }` | `setup.js:1357 initializeTemplate` | **MISMATCH** — sends `{country: "india"}` but backend expects `country_code`. Backend silently defaults `country_code` to "IN" → only India ever initializes regardless of which button user clicks | §4.2 Fig 4.1 | gap |
+| 15 | POST  | `/api/accounts/coa/import` | `ImportAccounts` | ADMIN+ | `ImportAccountsRequest` | **STUB** anon `{ message, rows_received }` — implementation deferred to S15 sprint | `setup.js:573 importAccounts` | **DOUBLE BROKEN** — frontend sends multipart `FormData` with `file` field, backend expects JSON `{accounts: ImportAccountRow[]}`. Even ignoring backend stub, the request will 400 every time. | gap — backend stub + frontend wire-format mismatch | gap |
 
 ### 4. FiscalController
 
@@ -265,14 +265,15 @@ DTO field reference (`Models/FiscalModels.cs`):
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | GET  | `/api/accounts/fiscal/years` | `GetFiscalYears` | USER+ | — | `List<FiscalYear>` | TBD | TBD | §5.1 Fig 5.1 / §4 Fig 4.22 | pending |
-| 2 | GET  | `/api/accounts/fiscal/years/active` | `GetActiveFiscalYear` | USER+ | — | `FiscalYear` or 404 | TBD | TBD | TBD — internal lookup | pending |
-| 3 | GET  | `/api/accounts/fiscal/years/{id}` | `GetFiscalYearById` | USER+ | route `id` | `FiscalYear` or 404 | TBD | TBD | §4 Fig 4.22b | pending |
-| 4 | POST | `/api/accounts/fiscal/years` | `CreateFiscalYear` | ADMIN+ | `CreateFiscalYearRequest` | `FiscalYear` (fresh-fetched) | TBD | TBD | §5.1 Fig 5.2/5.3/5.4 | pending |
-| 5 | GET  | `/api/accounts/fiscal/periods` | `GetFiscalPeriods` | USER+ | query `fiscalYearId` (Empty → falls back to active) | `List<FiscalPeriod>` | TBD | TBD | §5.2 Fig 5.5 | pending |
-| 6 | POST | `/api/accounts/fiscal/periods/{id}/lock` | `LockPeriod` | ADMIN+ | route `id` | anon `{ message }` | TBD | TBD | §5.3 Fig 5.6/5.7 | pending |
-| 7 | POST | `/api/accounts/fiscal/periods/{id}/unlock` | `UnlockPeriod` | ADMIN+ | route `id` | anon `{ message }` | TBD | TBD | §5.4 Fig 5.8 | pending |
-| 8 | POST | `/api/accounts/fiscal/years/{id}/close` | `CloseFiscalYear` | ADMIN+ | route `id` | anon `{ message }` | TBD | TBD | §15.5.6 Fig 15.5.6 | pending |
+| 1 | GET  | `/api/accounts/fiscal/years` | `GetFiscalYears` | USER+ | — | `List<FiscalYear>` | `setup.js:982 loadFiscalYears` | ok — reads `name, start_date, end_date, is_active, is_closed`; also reads non-existent `fy.status === 'active'` (dead code, falls back to `is_active`) | §5.1 Fig 5.1 / §4 Fig 4.22 | pending |
+| 2 | GET  | `/api/accounts/fiscal/years/active` | `GetActiveFiscalYear` | USER+ | — | `FiscalYear` or 404 | `setup.js:116 loadActiveFiscalYear` | ok | TBD — internal lookup | pending |
+| 3 | GET  | `/api/accounts/fiscal/years/{id}` | `GetFiscalYearById` | USER+ | route `id` | `FiscalYear` or 404 | `setup.js:1106 viewFiscalYearDetail` | ok — reads `name, start_date, end_date, is_active, is_closed, created_at` | §4 Fig 4.22b | pending |
+| 4 | POST | `/api/accounts/fiscal/years` | `CreateFiscalYear` | ADMIN+ | `CreateFiscalYearRequest` | `FiscalYear` (fresh-fetched) | `setup.js:1059 saveFiscalYear` (no id) | ok — sends `name, start_date, end_date` | §5.1 Fig 5.2/5.3/5.4 | pending |
+| 4a | PUT | `/api/accounts/fiscal/years/{id}` | (NO BACKEND ENDPOINT) | — | — | — | `setup.js:1079 saveFiscalYear` (id branch) | **ORPHAN CALL** — frontend tries to PUT to update a fiscal year, but backend has no PUT endpoint. Edit modal will 405 Method Not Allowed. Either build the backend endpoint or remove the Edit code path. | gap | gap |
+| 5 | GET  | `/api/accounts/fiscal/periods` | `GetFiscalPeriods` | USER+ | query `fiscalYearId` (Empty → falls back to active) | `List<FiscalPeriod>` | `setup.js:1144 loadFiscalPeriods` | ok | §5.2 Fig 5.5 | pending |
+| 6 | POST | `/api/accounts/fiscal/periods/{id}/lock` | `LockPeriod` | ADMIN+ | route `id` | anon `{ message }` | `setup.js:1185 lockPeriod` | ok | §5.3 Fig 5.6/5.7 | pending |
+| 7 | POST | `/api/accounts/fiscal/periods/{id}/unlock` | `UnlockPeriod` | ADMIN+ | route `id` | anon `{ message }` | `setup.js:1205 unlockPeriod` | ok | §5.4 Fig 5.8 | pending |
+| 8 | POST | `/api/accounts/fiscal/years/{id}/close` | `CloseFiscalYear` | ADMIN+ | route `id` | anon `{ message }` | `setup.js:1093 closeFiscalYear` | ok | §15.5.6 Fig 15.5.6 | pending |
 
 ### 5. TaxationController
 
@@ -324,10 +325,10 @@ DTO field reference (`Models/AccountsReceivableModels.cs`):
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | GET  | `/api/accounts/customers` | `Get` | USER+ | query `search?, isActive?` | `List<Customer>` | TBD | TBD | §7 Fig 7.1 / §8 | pending |
-| 2 | GET  | `/api/accounts/customers/{id}` | `GetById` | USER+ | route `id` | `Customer` or 404 | TBD | TBD | TBD | pending |
-| 3 | POST | `/api/accounts/customers` | `Create` | USER+ (no override) | `CreateCustomerRequest` | `Customer` (fresh-fetched) | TBD | TBD | §7 Fig 7.5/7.6 | pending |
-| 4 | PUT  | `/api/accounts/customers/{id}` | `Update` | USER+ | route `id` + `UpdateCustomerRequest` | `Customer` | TBD | TBD | §7 Fig 7.6 | pending |
+| 1 | GET  | `/api/accounts/customers` | `Get` | USER+ | query `search?, isActive?` | `List<Customer>` | `parties.js:402 loadCustomers` | dead-param: sends `includeInactive=true` (backend ignores; filter is `isActive`); functional only because frontend does client-side `is_active !== false` filter on the full result set | §7 Fig 7.1 / §8 | gap |
+| 2 | GET  | `/api/accounts/customers/{id}` | `GetById` | USER+ | route `id` | `Customer` or 404 | `parties.js:302 viewCustomer` | ok — passed to `openDetailPanel` which reads top-level fields | TBD | pending |
+| 3 | POST | `/api/accounts/customers` | `Create` | USER+ (no override) | `CreateCustomerRequest` | `Customer` (fresh-fetched) | `parties.js:517 saveCustomer` (no id branch) | ok — sends `name, display_name, email, phone, billing_address_line1, billing_address_line2, city, state, state_code, country, postal_code, tax_id, payment_terms_days, credit_limit, notes` (matches CreateCustomerRequest) | §7 Fig 7.5/7.6 | pending |
+| 4 | PUT  | `/api/accounts/customers/{id}` | `Update` | USER+ | route `id` + `UpdateCustomerRequest` | `Customer` | `parties.js:517 saveCustomer` (id branch) + `parties.js:491 editCustomer` (form prefill) | **MISMATCH on PREFILL**: `editCustomer` reads `c.address_line1/c.address_line2` but Customer uses `billing_address_line1/2` → Edit modal shows empty address. Save body sends `billing_address_line1` correctly so write is ok. Read-only display bug. | §7 Fig 7.6 | gap |
 
 ### 7. VendorsController
 
@@ -342,10 +343,10 @@ DTO field reference (`Models/AccountsPayableModels.cs`):
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | GET  | `/api/accounts/vendors` | `GetVendors` | USER+ | query `search?, isActive?` | `List<Vendor>` | TBD | TBD | §7 Fig 7.1 | pending |
-| 2 | GET  | `/api/accounts/vendors/{id}` | `GetVendorById` | USER+ | route `id` | `Vendor` or 404 | TBD | TBD | TBD | pending |
-| 3 | POST | `/api/accounts/vendors` | `CreateVendor` | USER+ | `CreateVendorRequest` | `Vendor` (fresh-fetched) | TBD | TBD | §7 Fig 7.2/7.3/7.4 | pending |
-| 4 | PUT  | `/api/accounts/vendors/{id}` | `UpdateVendor` | USER+ | route `id` + `UpdateVendorRequest` | `Vendor` | TBD | TBD | TBD | pending |
+| 1 | GET  | `/api/accounts/vendors` | `GetVendors` | USER+ | query `search?, isActive?` | `List<Vendor>` | `parties.js:89 loadVendors` | dead-param `includeInactive=true` (same pattern as customers) — functional via client-side filter | §7 Fig 7.1 | gap |
+| 2 | GET  | `/api/accounts/vendors/{id}` | `GetVendorById` | USER+ | route `id` | `Vendor` or 404 | `parties.js:290 viewVendor` | ok | TBD | pending |
+| 3 | POST | `/api/accounts/vendors` | `CreateVendor` | USER+ | `CreateVendorRequest` | `Vendor` (fresh-fetched) | `parties.js:356 saveVendor` (no id branch) | ok — sends `name, display_name, email, phone, address_line1, address_line2, city, state, state_code, country, postal_code, tax_id, payment_terms_days, bank_name, bank_account_number, bank_ifsc, bank_swift, notes` (matches CreateVendorRequest, no `industry/website/contact_person/credit_limit`) | §7 Fig 7.2/7.3/7.4 | pending |
+| 4 | PUT  | `/api/accounts/vendors/{id}` | `UpdateVendor` | USER+ | route `id` + `UpdateVendorRequest` | `Vendor` | `parties.js:356 saveVendor` (id branch) + `editVendor` (prefill) | ok — Vendor uses `address_line1` natively so prefill works (asymmetric to Customer which broke) | TBD | pending |
 
 ### 8. ClientVendorRequestsController
 
@@ -358,12 +359,12 @@ DTO field reference (`Models/ClientVendorRequestModels.cs`):
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | POST | `/api/accounts/requests` | `Submit` | USER+ | `SubmitClientVendorRequest` | `ClientVendorRequest` | TBD | TBD | gap — likely no UI in Accounts module (CRM/Procurement submit) | gap |
-| 2 | GET  | `/api/accounts/requests` | `Get` | USER+ | query `type?, status?, limit, offset` | anon `{ items: List<ClientVendorRequest>, total }` | TBD | TBD | gap — no UI today (only `07J-1/2-pending-vendors/customers-empty.png` exist as orphan captures) | gap |
-| 3 | GET  | `/api/accounts/requests/{id}` | `GetById` | USER+ | route `id` | `ClientVendorRequest` or 404 | TBD | TBD | gap | gap |
-| 4 | GET  | `/api/accounts/requests/pending-count` | `GetPendingCount` | USER+ | — | dict `{ client: N, vendor: N }` (whatever `BL.GetPendingCountByType` returns) | TBD | TBD | TBD — would feed Parties page badge | pending |
-| 5 | GET  | `/api/accounts/requests/sla-report` | `GetSlaReport` | ADMIN/MANAGER+ | — | SLA report shape from `BL.GetSlaReportAsync` | TBD | TBD | gap — no UI | gap |
-| 6 | POST | `/api/accounts/requests/{id}/review` | `Review` | ADMIN+ | route `id` + `ReviewRequestAction` | review result from `BL.ReviewRequest` | TBD | TBD | gap — no UI | gap |
+| 1 | POST | `/api/accounts/requests` | `Submit` | USER+ | `SubmitClientVendorRequest` | `ClientVendorRequest` | none on Accounts side | n/a | N/A — submitted from CRM/Procurement | N/A |
+| 2 | GET  | `/api/accounts/requests` | `Get` | USER+ | query `type?, status?, limit, offset` | anon `{ items: List<ClientVendorRequest>, total }` | `parties.js:623 loadPendingRequests` (called per type) | reads `res.data \|\| res.items` — backend wraps in `items` not `data`, so `res?.data` is undefined and the `\|\| res?.items` fallback fires → ok via fallback (a touch fragile) | §7 / Pending Requests sub-tabs (no how-to-guide entry yet) | pending |
+| 3 | GET  | `/api/accounts/requests/{id}` | `GetById` | USER+ | route `id` | `ClientVendorRequest` or 404 | none — frontend uses cached items from list call instead | n/a | gap — minor: detail-on-demand never fetched server-side | gap |
+| 4 | GET  | `/api/accounts/requests/pending-count` | `GetPendingCount` | USER+ | — | dict `{ client: N, vendor: N }` (whatever `BL.GetPendingCountByType` returns) | `parties.js:566 loadPendingCounts` | reads `data.vendor \|\| data.vendors` and `data.client \|\| data.clients \|\| data.customer \|\| data.customers` — defensive over-coverage; verify BL returns one of these in Phase 4 | §7 sidebar badges | pending |
+| 5 | GET  | `/api/accounts/requests/sla-report` | `GetSlaReport` | ADMIN/MANAGER+ | — | SLA report shape from `BL.GetSlaReportAsync` | none | n/a | gap — no UI for SLA dashboard | gap |
+| 6 | POST | `/api/accounts/requests/{id}/review` | `Review` | ADMIN+ | route `id` + `ReviewRequestAction` | review result from `BL.ReviewRequest` | `parties.js:728 confirmApprove` + `parties.js:799 confirmReject` | ok — approve sends `{action:'approve', email, phone, tax_id, address_line1, city, state, country, payment_terms_days}`; reject sends `{action:'reject', rejection_reason}` (matches ReviewRequestAction; missing optional `name, code, bank_*` from approve flow) | §7 approve/reject row actions (no how-to entry yet) | pending |
 
 ### 9. CustomerInvoicesController
 
@@ -522,7 +523,7 @@ DTO field reference (`Models/BankModels.cs`):
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | GET    | `/api/accounts/bank/accounts` | `GetBankAccounts` | USER+ | query `includeInactive` | `List<BankAccount>` | TBD | TBD | §15.1 Fig 15.1.1/4/5 | pending |
+| 1 | GET    | `/api/accounts/bank/accounts` | `GetBankAccounts` | USER+ | query `includeInactive` | `List<BankAccount>` | `dashboard.js:78 loadBankingSummary` + others (Phase 2 cont.) | ok — reads `account_name, bank_name, current_balance` (camelCase fallbacks are dead code) | §15.1 Fig 15.1.1/4/5 / §3.6 | pending |
 | 2 | GET    | `/api/accounts/bank/accounts/{id}` | `GetBankAccountById` | USER+ | route `id` | `BankAccount` or 404 | TBD | TBD | §15.1 Fig 15.1.6 (view modal) | pending |
 | 3 | POST   | `/api/accounts/bank/accounts` | `CreateBankAccount` | ADMIN+ | `CreateBankAccountRequest` | `BankAccount` (fresh-fetched) | TBD | TBD | §15.1 Fig 15.1.2/3 | pending |
 | 4 | PUT    | `/api/accounts/bank/accounts/{id}` | `UpdateBankAccount` | ADMIN+ | route `id` + `UpdateBankAccountBody` | `BankAccount` | TBD | TBD | §15.1 Fig 15.1.7 (edit prefilled) + Fig 15.1.8/9/10/11 (deactivate/reactivate via `is_active`) | pending |
@@ -551,11 +552,12 @@ DTO field reference (`Models/JournalModels.cs`):
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | GET  | `/api/accounts/journals/types` | `GetJournalTypes` | USER+ | — | `List<JournalType>` | TBD | TBD | §4 Fig 4.18/4.24 | pending |
-| 2 | GET  | `/api/accounts/journals/types/{id}` | `GetJournalTypeById` | USER+ | route `id` | `JournalType` or 404 | TBD | TBD | TBD — internal lookup | pending |
-| 3 | POST | `/api/accounts/journals/types` | `CreateJournalType` | ADMIN+ | `CreateJournalTypeRequest` | `JournalType` (fresh-fetched) | TBD | TBD | §4 Fig 4.24a | pending |
-| 4 | PUT  | `/api/accounts/journals/types/{id}` | `UpdateJournalType` | ADMIN+ | route `id` + `UpdateJournalTypeRequest` | `JournalType` | TBD | TBD | TBD | pending |
-| 5 | GET  | `/api/accounts/journals/entries` | `GetJournalEntries` | USER+ | query `journalTypeId?, fromDate?, toDate?, search?, limit, offset` (mapped into `GlQueryRequest`) | anon `{ data: List<GlEntry>, total, limit, offset }` | TBD | TBD | §12.3 Fig 12.3a | pending |
+| 1 | GET  | `/api/accounts/journals/types` | `GetJournalTypes` | USER+ | — | `List<JournalType>` | `setup.js:1229 loadJournalTypes` + others | ok | §4 Fig 4.18/4.24 | pending |
+| 2 | GET  | `/api/accounts/journals/types/{id}` | `GetJournalTypeById` | USER+ | route `id` | `JournalType` or 404 | `setup.js:1334 viewJournalTypeDetail` | ok | TBD — internal lookup | pending |
+| 3 | POST | `/api/accounts/journals/types` | `CreateJournalType` | ADMIN+ | `CreateJournalTypeRequest` | `JournalType` (fresh-fetched) | `setup.js:1292 saveJournalType` (no id) | ok — sends `code, name, description` | §4 Fig 4.24a | pending |
+| 4 | PUT  | `/api/accounts/journals/types/{id}` | `UpdateJournalType` | ADMIN+ | route `id` + `UpdateJournalTypeRequest` | `JournalType` | `setup.js:1292 saveJournalType` (id branch) | ⚠️ sends `code` too but UpdateJournalTypeRequest only accepts `name, description, is_active` — `code` silently dropped | TBD | gap |
+| 4a | DELETE | `/api/accounts/journals/types/{id}` | (NO BACKEND ENDPOINT) | — | — | — | `setup.js:1321 deleteJournalType` | **ORPHAN CALL** — frontend's Delete row action will 405. Either build the backend DELETE or remove the button (it's hidden for system journal types but admin still sees it for custom ones) | gap | gap |
+| 5 | GET  | `/api/accounts/journals/entries` | `GetJournalEntries` | USER+ | query `journalTypeId?, fromDate?, toDate?, search?, limit, offset` (mapped into `GlQueryRequest`) | anon `{ data: List<GlEntry>, total, limit, offset }` | TBD (ledger.js) | TBD | §12.3 Fig 12.3a | pending |
 
 ### 16. GeneralLedgerController
 
@@ -571,7 +573,7 @@ DTO field reference (`Models/GeneralLedgerModels.cs`):
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | GET    | `/api/accounts/gl` | `QueryGlEntries` | USER+ | query (8 params, mapped to `GlQueryRequest`) | anon `{ data: List<GlEntry>, total, limit, offset }` | TBD | TBD | §12.1 / §12.1a Fig 12.1/12.1a | pending |
+| 1 | GET    | `/api/accounts/gl` | `QueryGlEntries` | USER+ | query (8 params, mapped to `GlQueryRequest`) | anon `{ data: List<GlEntry>, total, limit, offset }` | `dashboard.js:124 loadRecentEntries` + others | ok — reads `data[].entry_date, description, total_debit, total_credit` | §12.1 / §12.1a Fig 12.1/12.1a / §3.6 Recent GL Entries | pending |
 | 2 | GET    | `/api/accounts/gl/{id}` | `GetGlEntryById` | USER+ | route `id` | `GlEntry` (with lines) or 404 | TBD | TBD | §12.2 / §15.1.17a Fig 12.2 / 15.1.17a | pending |
 | 3 | POST   | `/api/accounts/gl` | `CreateGlEntry` | ADMIN/MANAGER+ | `CreateGlEntryRequest` | `GlEntry` | TBD | TBD | gap — manual JE form not in guide; do users actually create manual JEs from the UI? Verify Phase 2 | pending |
 | 4 | PUT    | `/api/accounts/gl/{id}` | `UpdateDraftGlEntry` | ADMIN/MANAGER+ | route `id` + `CreateGlEntryRequest` | `GlEntry` or 404 | TBD | TBD | gap — same as above | pending |
@@ -749,7 +751,7 @@ DTO field reference (`Models/AuditModels.cs`):
 |---|---|---|---|---|---|---|---|---|---|---|
 | 1 | GET  | `/api/accounts/audit/logs` | `GetAuditLogs` | ADMIN/AUDITOR+ | query (7 params, mapped to `AuditLogQuery`) | anon `{ data: List<AuditLog>, total, limit, offset }` | TBD | TBD | §15.5.1 Fig 15.5.1 / 15.5.1a / 15.5.1b | pending |
 | 2 | GET  | `/api/accounts/audit/logs/{entityType}/{entityId}` | `GetEntityAuditTrail` | ADMIN/AUDITOR+ | two route params + query `limit` | `List<AuditLog>` | TBD | TBD | TBD — drill-down trail used by entity-audit modal | pending |
-| 3 | GET  | `/api/accounts/audit/approvals/pending` | `GetPendingApprovals` | ADMIN/AUDITOR+ | — | anon `{ expense_claims: [...], total_pending }` (currently only surfaces pending **expense claims**, not all approval-gated items) | TBD | partial — only one entity type | §15.5.2 Fig 15.5.2 | gap |
+| 3 | GET  | `/api/accounts/audit/approvals/pending` | `GetPendingApprovals` | ADMIN/AUDITOR+ | — | anon `{ expense_claims: [...], total_pending }` (currently only surfaces pending **expense claims**, not all approval-gated items) | `dashboard.js:160 loadPendingApprovals` + admin.js (Phase 2 cont.) | **MISMATCH** — frontend reads `res.total ?? res.count` but backend returns `total_pending` → dashboard badge **always shows 0** | §15.5.2 Fig 15.5.2 / §3.6 dashboard badge | gap |
 | 4 | POST | `/api/accounts/audit/export` | `ExportAuditLogs` | ADMIN/AUDITOR+ | query `fromDate?, toDate?` | anon `{ export_format: "json", record_count, data }` (PDF/CSV deferred to "Phase 2") | TBD | TBD | gap — export claims JSON, no real CSV/PDF | gap |
 
 ### 23. CopilotController
@@ -771,7 +773,10 @@ DTO field reference (in-controller `CopilotMessageRequest`): `Message, CurrentPa
 
 > Frontend `api.*` calls that don't match any backend route. Filled during Phase 2.
 
-*pending*
+| # | Caller | Method | URL | Notes |
+|---|---|---|---|---|
+| 1 | `setup.js:1079 saveFiscalYear` (id branch) | PUT | `/api/accounts/fiscal/years/{id}` | `FiscalController` has POST/GET/lock/unlock/close but no PUT. Edit fiscal year row action will 405. |
+| 2 | `setup.js:1321 deleteJournalType` | DELETE | `/api/accounts/journals/types/{id}` | `JournalsController` has GET/POST/PUT but no DELETE. Delete row action will 405. |
 
 ---
 
