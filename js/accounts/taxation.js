@@ -88,7 +88,7 @@ function initDropdowns() {
     rateConfigFilterDropdown = new SearchableDropdown({
         container: document.getElementById('rateConfigFilterContainer'),
         placeholder: 'Filter by config...',
-        options: [{ value: '', label: 'All Configs' }, ...configOptions],
+        options: configOptions,
         onChange: () => loadTaxRates()
     });
 }
@@ -295,10 +295,19 @@ async function seedIndiaGST() {
 async function loadTaxRates() {
     try {
         const search = document.getElementById('taxRateSearch')?.value || '';
+        // Backend requires configId — use filter selection or auto-select first config
         const configFilter = rateConfigFilterDropdown?.getValue?.() || '';
-        const params = {};
+        const configId = configFilter || (taxConfigs.length > 0 ? taxConfigs[0].id : '');
+
+        if (!configId) {
+            // No configs exist yet — show prompt
+            const tbody = document.getElementById('taxRatesTable');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center">Create a Tax Config first to add rates</td></tr>';
+            return;
+        }
+
+        const params = { configId };
         if (search) params.search = search;
-        if (configFilter) params.configId = configFilter;
 
         const url = AccountsCommon.buildUrl('tax/rates', params);
         const res = await api.request(url, { _skipSpinner: true });
@@ -334,7 +343,7 @@ function renderTaxRates() {
         return `<tr>
             <td>${AccountsCommon.escapeHtml(r.name)}</td>
             <td>${r.rate != null ? r.rate + '%' : '-'}</td>
-            <td>${AccountsCommon.escapeHtml(r.account_name || '-')}</td>
+            <td>${AccountsCommon.escapeHtml(r.tax_account_name || '-')}</td>
             <td>${AccountsCommon.statusBadge(status)}</td>
             <td class="actions-cell">${actions}</td>
         </tr>`;
@@ -360,8 +369,8 @@ function editTaxRate(id) {
     document.getElementById('taxRateName').value = rate.name || '';
     document.getElementById('taxRatePercent').value = rate.rate ?? '';
     document.getElementById('taxRateStatus').value = rate.status || 'active';
-    populateTaxRateConfigSelect(rate.tax_config_id);
-    populateTaxRateAccountSelect(rate.account_id);
+    populateTaxRateConfigSelect(rate.tax_configuration_id);
+    populateTaxRateAccountSelect(rate.tax_account_id);
     AccountsCommon.openModal('taxRateModal');
 }
 
@@ -369,16 +378,16 @@ async function saveTaxRate() {
     const id = document.getElementById('taxRateId').value;
     const name = document.getElementById('taxRateName').value.trim();
     const rate = parseFloat(document.getElementById('taxRatePercent').value);
-    const tax_config_id = document.getElementById('taxRateConfig').value;
-    const account_id = document.getElementById('taxRateAccount').value || null;
+    const tax_configuration_id = document.getElementById('taxRateConfig').value;
+    const tax_account_id = document.getElementById('taxRateAccount').value || null;
     const status = document.getElementById('taxRateStatus').value;
 
-    if (!name || isNaN(rate) || !tax_config_id) {
+    if (!name || isNaN(rate) || !tax_configuration_id) {
         Toast.error('Name, Rate, and Tax Config are required');
         return;
     }
 
-    const payload = { name, rate, tax_config_id, account_id, status };
+    const payload = { name, rate, tax_configuration_id, tax_account_id, status };
 
     try {
         if (id) {
@@ -486,7 +495,7 @@ function renderHsnSacCodes() {
             <td><code>${AccountsCommon.escapeHtml(h.code)}</code></td>
             <td>${AccountsCommon.escapeHtml(h.description || '-')}</td>
             <td>${(h.code_type || h.type) ? `<span class="badge ${(h.code_type || h.type) === 'HSN' ? 'status-active' : 'status-pending'}">${AccountsCommon.escapeHtml(h.code_type || h.type)}</span>` : 'N/A'}</td>
-            <td>${h.tax_rate != null ? h.tax_rate + '%' : '-'}</td>
+            <td>${h.default_tax_rate != null ? h.default_tax_rate + '%' : '-'}</td>
             <td class="actions-cell">${actions}</td>
         </tr>`;
     }).join('');
@@ -506,9 +515,9 @@ function editHsnSac(id) {
     document.getElementById('hsnSacModalTitle').textContent = 'Edit HSN/SAC Code';
     document.getElementById('hsnSacId').value = h.id;
     document.getElementById('hsnSacCode').value = h.code || '';
-    document.getElementById('hsnSacType').value = h.type || '';
+    document.getElementById('hsnSacType').value = h.code_type || '';
     document.getElementById('hsnSacDescription').value = h.description || '';
-    document.getElementById('hsnSacTaxRate').value = h.tax_rate ?? '';
+    document.getElementById('hsnSacTaxRate').value = h.default_tax_rate ?? '';
     AccountsCommon.openModal('hsnSacModal');
 }
 
@@ -517,14 +526,14 @@ async function saveHsnSac() {
     const code = document.getElementById('hsnSacCode').value.trim();
     const type = document.getElementById('hsnSacType').value;
     const description = document.getElementById('hsnSacDescription').value.trim();
-    const tax_rate = document.getElementById('hsnSacTaxRate').value ? parseFloat(document.getElementById('hsnSacTaxRate').value) : null;
+    const default_tax_rate = document.getElementById('hsnSacTaxRate').value ? parseFloat(document.getElementById('hsnSacTaxRate').value) : null;
 
     if (!code || !type || !description) {
         Toast.error('Code, Type, and Description are required');
         return;
     }
 
-    const payload = { code, type, description, tax_rate };
+    const payload = { code, code_type: type, description, default_tax_rate };
 
     try {
         if (id) {
@@ -571,24 +580,30 @@ async function generateGSTR1() {
     try {
         const url = AccountsCommon.buildUrl('tax/reports/gstr1', { fromDate: from, toDate: to });
         const res = await api.request(url);
-        const data = res?.data || res;
+        // Response: { report, period, outward_supplies: [{party_name, party_tax_id, taxable_amount, tax_amount, transaction_date}], total_taxable, total_tax, invoice_count }
+        const rows = res?.outward_supplies || [];
 
-        if (!data || (Array.isArray(data) && !data.length)) {
+        if (!rows.length) {
             area.innerHTML = `<div class="glass-card-body"><div class="empty-message"><p>No GSTR-1 data found for the selected period</p></div></div>`;
             return;
         }
 
         area.innerHTML = `<div class="glass-card-body">
             <h4 style="margin-bottom:1rem;">GSTR-1 Report (${AccountsCommon.formatDate(from)} - ${AccountsCommon.formatDate(to)})</h4>
+            <div class="stats-row" style="margin-bottom:1rem;">
+                <div class="stat-card"><div class="stat-value">${res.invoice_count ?? rows.length}</div><div class="stat-label">Invoices</div></div>
+                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(res.total_taxable ?? 0)}</div><div class="stat-label">Total Taxable</div></div>
+                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(res.total_tax ?? 0)}</div><div class="stat-label">Total Tax</div></div>
+            </div>
             <div class="data-table-container"><table class="data-table">
-                <thead><tr><th>Invoice No</th><th>Date</th><th>Customer</th><th>Taxable Value</th><th>Tax Amount</th><th>Total</th></tr></thead>
-                <tbody>${(Array.isArray(data) ? data : [data]).map(r => `<tr>
-                    <td>${AccountsCommon.escapeHtml(r.invoice_number || '-')}</td>
-                    <td>${AccountsCommon.formatDate(r.date)}</td>
-                    <td>${AccountsCommon.escapeHtml(r.customer_name || '-')}</td>
-                    <td class="text-right">${AccountsCommon.formatCurrency(r.taxable_value)}</td>
+                <thead><tr><th>Party</th><th>Date</th><th>Party Tax ID</th><th>Taxable Amount</th><th>Tax Amount</th><th>Total</th></tr></thead>
+                <tbody>${rows.map(r => `<tr>
+                    <td>${AccountsCommon.escapeHtml(r.party_name || '-')}</td>
+                    <td>${AccountsCommon.formatDate(r.transaction_date)}</td>
+                    <td>${AccountsCommon.escapeHtml(r.party_tax_id || '-')}</td>
+                    <td class="text-right">${AccountsCommon.formatCurrency(r.taxable_amount)}</td>
                     <td class="text-right">${AccountsCommon.formatCurrency(r.tax_amount)}</td>
-                    <td class="text-right">${AccountsCommon.formatCurrency(r.total)}</td>
+                    <td class="text-right">${AccountsCommon.formatCurrency((r.taxable_amount || 0) + (r.tax_amount || 0))}</td>
                 </tr>`).join('')}</tbody>
             </table></div></div>`;
     } catch (err) {
@@ -614,9 +629,8 @@ async function generateGSTR3B() {
     try {
         const url = AccountsCommon.buildUrl('tax/reports/gstr3b', { fromDate: from, toDate: to });
         const res = await api.request(url);
-        const data = res?.data || res;
-
-        if (!data || (Array.isArray(data) && !data.length)) {
+        // Response: { report, period, outward_supplies: {taxable, tax, count}, inward_supplies: {taxable, tax, count}, net_tax_payable }
+        if (!res?.outward_supplies && !res?.inward_supplies) {
             area.innerHTML = `<div class="glass-card-body"><div class="empty-message"><p>No GSTR-3B data found for the selected period</p></div></div>`;
             return;
         }
@@ -624,9 +638,9 @@ async function generateGSTR3B() {
         area.innerHTML = `<div class="glass-card-body">
             <h4 style="margin-bottom:1rem;">GSTR-3B Summary (${AccountsCommon.formatDate(from)} - ${AccountsCommon.formatDate(to)})</h4>
             <div class="stats-row">
-                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(data.output_tax || 0)}</div><div class="stat-label">Output Tax</div></div>
-                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(data.input_tax || 0)}</div><div class="stat-label">Input Tax Credit</div></div>
-                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(data.net_payable || 0)}</div><div class="stat-label">Net Tax Payable</div></div>
+                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(res.outward_supplies?.tax || 0)}</div><div class="stat-label">Output Tax (${res.outward_supplies?.count ?? 0} txns)</div></div>
+                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(res.inward_supplies?.tax || 0)}</div><div class="stat-label">Input Tax Credit (${res.inward_supplies?.count ?? 0} txns)</div></div>
+                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(res.net_tax_payable || 0)}</div><div class="stat-label">Net Tax Payable</div></div>
             </div></div>`;
     } catch (err) {
         console.error('[Taxation] generateGSTR3B error:', err);
@@ -651,23 +665,28 @@ async function generateTDSReturn() {
     try {
         const url = AccountsCommon.buildUrl('tax/reports/tds', { fromDate: from, toDate: to });
         const res = await api.request(url);
-        const data = res?.data || res;
+        // Response: { report, period, deductions: [{party_name, party_tax_id, taxable_amount, tax_amount, transaction_date}], total_tds, deductee_count }
+        const rows = res?.deductions || [];
 
-        if (!data || (Array.isArray(data) && !data.length)) {
+        if (!rows.length) {
             area.innerHTML = `<div class="glass-card-body"><div class="empty-message"><p>No TDS data found for the selected period</p></div></div>`;
             return;
         }
 
         area.innerHTML = `<div class="glass-card-body">
             <h4 style="margin-bottom:1rem;">TDS Return (${AccountsCommon.formatDate(from)} - ${AccountsCommon.formatDate(to)})</h4>
+            <div class="stats-row" style="margin-bottom:1rem;">
+                <div class="stat-card"><div class="stat-value">${res.deductee_count ?? rows.length}</div><div class="stat-label">Deductees</div></div>
+                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(res.total_tds ?? 0)}</div><div class="stat-label">Total TDS</div></div>
+            </div>
             <div class="data-table-container"><table class="data-table">
-                <thead><tr><th>Deductee</th><th>Section</th><th>Amount Paid</th><th>TDS Deducted</th><th>Date</th></tr></thead>
-                <tbody>${(Array.isArray(data) ? data : [data]).map(r => `<tr>
-                    <td>${AccountsCommon.escapeHtml(r.deductee_name || '-')}</td>
-                    <td>${AccountsCommon.escapeHtml(r.section || '-')}</td>
-                    <td class="text-right">${AccountsCommon.formatCurrency(r.amount_paid)}</td>
-                    <td class="text-right">${AccountsCommon.formatCurrency(r.tds_deducted)}</td>
-                    <td>${AccountsCommon.formatDate(r.date)}</td>
+                <thead><tr><th>Deductee</th><th>PAN / Tax ID</th><th>Amount Paid</th><th>TDS Deducted</th><th>Date</th></tr></thead>
+                <tbody>${rows.map(r => `<tr>
+                    <td>${AccountsCommon.escapeHtml(r.party_name || '-')}</td>
+                    <td>${AccountsCommon.escapeHtml(r.party_tax_id || '-')}</td>
+                    <td class="text-right">${AccountsCommon.formatCurrency(r.taxable_amount)}</td>
+                    <td class="text-right">${AccountsCommon.formatCurrency(r.tax_amount)}</td>
+                    <td>${AccountsCommon.formatDate(r.transaction_date)}</td>
                 </tr>`).join('')}</tbody>
             </table></div></div>`;
     } catch (err) {
@@ -706,20 +725,23 @@ async function calculateTax() {
         const payload = { taxable_amount: amount, tax_configuration_id: taxConfigId, transaction_type: 'sales', seller_state_code: sellerState || null, buyer_state_code: buyerState || null };
         const url = AccountsCommon.buildUrl('tax/calculate');
         const res = await api.request(url, { method: 'POST', body: JSON.stringify(payload) });
+        // Response: { total_tax, taxable_amount, tax_configuration_id, tax_configuration_name, tax_lines: [{name, rate, amount, account_id, account_code}] }
         const data = res?.data || res;
 
         resultCard.style.display = 'block';
 
-        const breakdownRows = (data.breakdown || []).map(b =>
-            `<tr><td>${AccountsCommon.escapeHtml(b.name || b.component)}</td><td>${b.rate != null ? b.rate + '%' : '-'}</td><td class="text-right">${AccountsCommon.formatCurrency(b.amount)}</td></tr>`
+        const totalTax = data.total_tax ?? 0;
+        const taxableAmt = data.taxable_amount ?? amount;
+        const breakdownRows = (data.tax_lines || []).map(b =>
+            `<tr><td>${AccountsCommon.escapeHtml(b.name)}</td><td>${b.rate != null ? b.rate + '%' : '-'}</td><td class="text-right">${AccountsCommon.formatCurrency(b.amount)}</td></tr>`
         ).join('');
 
         resultBody.innerHTML = `
-            <h4 style="margin-bottom:1rem;">Tax Calculation Result</h4>
+            <h4 style="margin-bottom:1rem;">Tax Calculation Result${data.tax_configuration_name ? ` — ${AccountsCommon.escapeHtml(data.tax_configuration_name)}` : ''}</h4>
             <div class="stats-row">
-                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(data.taxable_amount || amount)}</div><div class="stat-label">Taxable Amount</div></div>
-                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(data.tax_amount || 0)}</div><div class="stat-label">Tax Amount</div></div>
-                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(data.total_amount || 0)}</div><div class="stat-label">Total</div></div>
+                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(taxableAmt)}</div><div class="stat-label">Taxable Amount</div></div>
+                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(totalTax)}</div><div class="stat-label">Tax Amount</div></div>
+                <div class="stat-card"><div class="stat-value">${AccountsCommon.formatCurrency(taxableAmt + totalTax)}</div><div class="stat-label">Total</div></div>
             </div>
             ${breakdownRows ? `<div class="data-table-container" style="margin-top:1rem;"><table class="data-table">
                 <thead><tr><th>Component</th><th>Rate</th><th>Amount</th></tr></thead>
