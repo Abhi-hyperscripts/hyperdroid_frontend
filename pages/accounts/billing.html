@@ -287,14 +287,14 @@
                             <form id="recordUsageForm" onsubmit="event.preventDefault(); recordUsage();">
                                 <div class="form-row two-col">
                                     <div class="form-group">
-                                        <label for="usageMeter">Meter *</label>
-                                        <select id="usageMeter" class="form-control" required>
-                                            <option value="">Select meter...</option>
-                                        </select>
+                                        <label>Meter *</label>
+                                        <div class="searchable-dropdown-container" id="usageMeterContainer"></div>
+                                        <input type="hidden" id="usageMeter" required>
                                     </div>
                                     <div class="form-group">
-                                        <label for="usageCustomer">Customer *</label>
-                                        <input type="text" id="usageCustomer" class="form-control" required placeholder="Customer ID or name">
+                                        <label>Customer *</label>
+                                        <div class="searchable-dropdown-container" id="usageCustomerContainer"></div>
+                                        <input type="hidden" id="usageCustomer" required>
                                     </div>
                                 </div>
                                 <div class="form-row two-col">
@@ -322,8 +322,9 @@
                             <h4 style="margin-bottom: 1rem;">Token Management</h4>
                             <div class="form-row two-col">
                                 <div class="form-group">
-                                    <label for="tokenCustomer">Customer *</label>
-                                    <input type="text" id="tokenCustomer" class="form-control" placeholder="Customer ID or name" onchange="loadTokenBalance()">
+                                    <label>Customer *</label>
+                                    <div class="searchable-dropdown-container" id="tokenCustomerContainer"></div>
+                                    <input type="hidden" id="tokenCustomer">
                                 </div>
                                 <div class="form-group">
                                     <label>Current Balance</label>
@@ -484,14 +485,14 @@
                         <input type="hidden" id="subscriptionId">
                         <div class="form-row two-col">
                             <div class="form-group">
-                                <label for="subCustomer">Customer *</label>
-                                <input type="text" id="subCustomer" class="form-control" required placeholder="Customer name or ID">
+                                <label>Customer *</label>
+                                <div class="searchable-dropdown-container" id="subCustomerContainer"></div>
+                                <input type="hidden" id="subCustomer">
                             </div>
                             <div class="form-group">
-                                <label for="subPlan">Plan *</label>
-                                <select id="subPlan" class="form-control" required>
-                                    <option value="">Select plan...</option>
-                                </select>
+                                <label>Plan *</label>
+                                <div class="searchable-dropdown-container" id="subPlanContainer"></div>
+                                <input type="hidden" id="subPlan" required>
                             </div>
                         </div>
                         <div class="form-row two-col">

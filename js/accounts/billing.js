@@ -15,6 +15,10 @@
 let billingPlans = [];
 let subscriptions = [];
 let usageMeters = [];
+let customers = [];  // populated at page init so the Customer dropdown in the
+                     // Create Subscription / Record Usage / Tokens tabs can work
+
+let subCustomerDD = null;  // SearchableDropdown instance for Customer picker
 
 let subscriptionPage = 1;
 const PAGE_SIZE = 50;
@@ -49,9 +53,36 @@ function onTabSwitch(tabId) {
     switch (tabId) {
         case 'billing-plans':   loadPlans(); break;
         case 'subscriptions':   loadSubscriptions(); break;
-        case 'usage-meters':    loadMeters(); break;
-        case 'tokens':          break;
+        case 'usage-meters':    loadMeters(); initBillingCustomerDropdown('usageCustomerContainer', 'usageCustomer'); break;
+        case 'tokens':          initBillingCustomerDropdown('tokenCustomerContainer', 'tokenCustomer', (v) => { if (typeof loadTokenBalance === 'function') loadTokenBalance(); }); break;
     }
+}
+
+/**
+ * Initializes a customer SearchableDropdown bound to a hidden input.
+ * Used by the Usage (Record Usage form) and Tokens (Token Management form) tabs
+ * so users can pick a real customer instead of typing a UUID.
+ */
+function initBillingCustomerDropdown(containerId, hiddenId, onPickExtra) {
+    const container = document.getElementById(containerId);
+    if (!container || typeof SearchableDropdown !== 'function') return;
+    // If already initialized, just refresh options (customers list may have changed)
+    const options = [
+        { value: '', label: 'Select customer…' },
+        ...customers.map(c => ({ value: c.id, label: `${c.customer_code ? c.customer_code + ' — ' : ''}${c.name || c.customer_name || c.display_name || '(unnamed)'}` }))
+    ];
+    container.innerHTML = '';
+    new SearchableDropdown(container, {
+        id: containerId + '-DD',
+        options,
+        placeholder: 'Select customer…',
+        compact: true,
+        onChange: (value) => {
+            const hidden = document.getElementById(hiddenId);
+            if (hidden) hidden.value = value || '';
+            if (typeof onPickExtra === 'function') onPickExtra(value);
+        }
+    });
 }
 
 // ============================================================================
@@ -60,10 +91,17 @@ function onTabSwitch(tabId) {
 
 async function loadInitialData() {
     try {
-        await Promise.all([
+        const [_p, _m, custRes] = await Promise.all([
             loadPlans(),
-            loadMeters()
+            loadMeters(),
+            api.request(AccountsCommon.buildUrl('customers', { pageSize: 500 }), { _skipSpinner: true }).catch(() => [])
         ]);
+        customers = Array.isArray(custRes) ? custRes : (custRes?.data || custRes?.items || []);
+        // Re-init any customer dropdowns that may have been rendered empty
+        // by an earlier tab-switch race (initial page load fires onTabSwitch
+        // before loadInitialData resolves).
+        if (document.getElementById('usageCustomerContainer')) initBillingCustomerDropdown('usageCustomerContainer', 'usageCustomer');
+        if (document.getElementById('tokenCustomerContainer')) initBillingCustomerDropdown('tokenCustomerContainer', 'tokenCustomer', () => { if (typeof loadTokenBalance === 'function') loadTokenBalance(); });
     } catch (err) {
         console.error('[Billing] loadInitialData error:', err);
     }
@@ -233,7 +271,22 @@ async function savePlan() {
 }
 
 async function deletePlan(id) {
-    const ok = await Confirm.danger('Are you sure you want to delete this billing plan?', 'Delete Billing Plan');
+    const p = billingPlans.find(x => x.id === id);
+    const fmt = AccountsCommon.formatCurrency;
+    const parts = [];
+    if (p?.name) parts.push(`"${p.name}"`);
+    if (p?.code) parts.push(`(${p.code})`);
+    if (p?.amount != null) parts.push(`at ${fmt(p.amount)}`);
+    const cycleWord = p?.billing_cycle ? ` ${p.billing_cycle}` : '';
+    const label = parts.length ? `${parts.join(' ')}${cycleWord}` : 'this billing plan';
+    const activeSubs = (subscriptions || []).filter(s => s.plan_id === id && (s.status === 'active' || s.status === 'paused')).length;
+    const warning = activeSubs > 0 ? ` This plan currently has ${activeSubs} active or paused subscription${activeSubs === 1 ? '' : 's'} — deleting it will either be blocked or will cancel those subscriptions depending on backend rules.` : '';
+    const ok = await Confirm.show({
+        title: 'Delete Billing Plan',
+        message: `Delete ${label}?${warning} This cannot be undone. Historical invoices and subscriptions that referenced this plan keep their link but the plan itself will no longer be usable for new subscriptions.`,
+        confirmText: 'Delete',
+        type: 'danger'
+    });
     if (!ok) return;
     try {
         await api.request(AccountsCommon.buildUrl(`billing/plans/${id}`), { method: 'DELETE' });
@@ -358,10 +411,33 @@ async function generateInvoices() {
     }
 }
 
+function initSubscriptionCustomerDropdown(selectedValue) {
+    const container = document.getElementById('subCustomerContainer');
+    if (!container || typeof SearchableDropdown !== 'function') return;
+    container.innerHTML = '';
+    const options = [
+        { value: '', label: 'Select customer…' },
+        ...customers.map(c => ({ value: c.id, label: `${c.customer_code ? c.customer_code + ' — ' : ''}${c.name || c.customer_name || c.display_name || '(unnamed)'}` }))
+    ];
+    subCustomerDD = new SearchableDropdown(container, {
+        id: 'subCustomerDD',
+        options,
+        value: selectedValue || null,
+        placeholder: 'Select customer…',
+        compact: true,
+        onChange: (value) => {
+            const hidden = document.getElementById('subCustomer');
+            if (hidden) hidden.value = value || '';
+        }
+    });
+}
+
 function showCreateSubscriptionModal() {
     document.getElementById('subscriptionModalTitle').textContent = 'Create Subscription';
     document.getElementById('subscriptionForm').reset();
     document.getElementById('subscriptionId').value = '';
+    document.getElementById('subStartDate').value = new Date().toISOString().split('T')[0];
+    initSubscriptionCustomerDropdown();
     populateSubPlanSelect();
     AccountsCommon.openModal('subscriptionModal');
 }
@@ -405,11 +481,27 @@ async function cancelSubscription(id) {
 }
 
 function populateSubPlanSelect(selectedValue) {
-    const sel = document.getElementById('subPlan');
-    if (!sel) return;
+    // subPlan is now a hidden input backed by a SearchableDropdown for consistency with
+    // the rest of the Accounts module (previously a raw native <select>).
+    const container = document.getElementById('subPlanContainer');
+    if (!container || typeof SearchableDropdown !== 'function') return;
     const activePlans = billingPlans.filter(p => p.status !== 'inactive' && p.is_active !== false);
-    sel.innerHTML = '<option value="">Select plan...</option>' +
-        activePlans.map(p => `<option value="${p.id}" ${p.id === selectedValue ? 'selected' : ''}>${AccountsCommon.escapeHtml(p.name)} (${AccountsCommon.formatCurrency(p.amount)})</option>`).join('');
+    const options = [
+        { value: '', label: 'Select plan…' },
+        ...activePlans.map(p => ({ value: p.id, label: `${p.name} — ${AccountsCommon.formatCurrency(p.amount)}${p.billing_cycle ? ' / ' + p.billing_cycle : ''}` }))
+    ];
+    container.innerHTML = '';
+    new SearchableDropdown(container, {
+        id: 'subPlanDD',
+        options,
+        value: selectedValue || null,
+        placeholder: 'Select plan…',
+        compact: true,
+        onChange: (value) => {
+            const hidden = document.getElementById('subPlan');
+            if (hidden) hidden.value = value || '';
+        }
+    });
 }
 
 // ============================================================================
@@ -523,11 +615,26 @@ async function deleteMeter(id) {
 }
 
 function populateUsageMeterSelect() {
-    const sel = document.getElementById('usageMeter');
-    if (!sel) return;
+    // usageMeter is now a hidden input backed by a SearchableDropdown for visual
+    // consistency with the other pickers on this page.
+    const container = document.getElementById('usageMeterContainer');
+    if (!container || typeof SearchableDropdown !== 'function') return;
     const activeMeters = usageMeters.filter(m => m.status !== 'inactive' && m.is_active !== false);
-    sel.innerHTML = '<option value="">Select meter...</option>' +
-        activeMeters.map(m => `<option value="${m.id}">${AccountsCommon.escapeHtml(m.name)} (${AccountsCommon.escapeHtml(m.unit)})</option>`).join('');
+    const options = [
+        { value: '', label: 'Select meter…' },
+        ...activeMeters.map(m => ({ value: m.id, label: `${m.name} (${m.unit})` }))
+    ];
+    container.innerHTML = '';
+    new SearchableDropdown(container, {
+        id: 'usageMeterDD',
+        options,
+        placeholder: 'Select meter…',
+        compact: true,
+        onChange: (value) => {
+            const hidden = document.getElementById('usageMeter');
+            if (hidden) hidden.value = value || '';
+        }
+    });
 }
 
 async function recordUsage() {

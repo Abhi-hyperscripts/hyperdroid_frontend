@@ -1325,14 +1325,15 @@ body::before {
       <li class="toc__group">
         <div class="toc__head" data-toggle>
           <span class="toc__num">15</span>
-          <span class="toc__title">Beyond the basics</span>
+          <span class="toc__title">Advanced modules</span>
           <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         <ul class="toc__sub">
           <li><a class="toc__link" href="#s-15-1">15.1 Banking</a></li>
-          <li><a class="toc__link" href="#s-15-2">15.2 Expenses</a></li>
+          <li><a class="toc__link" href="#s-15-2">15.2 Expense management</a></li>
           <li><a class="toc__link" href="#s-15-3">15.3 Fixed assets</a></li>
           <li><a class="toc__link" href="#s-15-4">15.4 Subscription billing</a></li>
+          <li><a class="toc__link" href="#s-15-5">15.5 Administration</a></li>
         </ul>
       </li>
 
@@ -1891,6 +1892,11 @@ body::before {
           <figure class="figure">
             <img loading="lazy" decoding="async" src="./images/03-5-recent-empty.png" alt="Recent GL entries table, empty">
             <div class="figure__caption"><strong>Figure 3.5 &mdash;</strong> The Recent GL Entries table on day one. By Section 10 you'll see your first row appear here.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/03J-1-dashboard-populated.png" alt="Dashboard populated">
+            <div class="figure__caption"><strong>Figure 3.6 &mdash;</strong> The same dashboard after working through every module in this guide. KPI tiles are no longer zero (Total Revenue, Total Receivable, Cash on Hand, Outstanding Bills all carry real numbers), the Recent GL Entries table shows the most recent postings from Banking, Receivables, Payables and Expenses, and the navigation cards highlight modules with new activity. This is what an investor sees when you hand them a working tenant.</div>
           </figure>
         </div>
       </section>
@@ -2634,6 +2640,49 @@ body::before {
             <img loading="lazy" decoding="async" src="./images/08-5-invoice-approved.png" alt="Invoice approved">
             <div class="figure__caption"><strong>Figure 10.3b &mdash;</strong> The same invoice after Approve. The action column now has Edit and Send buttons. The receivable balance has appeared on the right-hand stat tile.</div>
           </figure>
+
+          <p>
+            Click <em>Send</em> on the row to demonstrate the next state transition.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/10J-1-invoice-send-confirm.png" alt="Send invoice confirm">
+            <div class="figure__caption"><strong>Figure 10.3c &mdash;</strong> The Send confirm names the target invoice and customer in full: <em>"Mark INV-2026-00001 to Lumira Studios LLP for ₹1,00,000.00 as Sent? This records that the invoice has been delivered to the customer (typically by email). The status flips to Sent and the action column updates accordingly. This action does not post anything to the ledger."</em> Cancel to keep the row in Approved state for the rest of the walk-through.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-10-4">
+          <span class="subsection__num">10.4</span>
+          <h3 class="subsection__title">Tour the other Receivables tabs</h3>
+          <div class="prose">
+            <p>
+              The Receivables page has four more sidebar tabs beyond Invoices, all empty on day one but worth a look so you
+              know where to find things later: <em>Customer Payments</em> (record payments received against approved invoices),
+              <em>Credit Notes</em> (issue refunds or write-offs against an existing invoice), <em>AR Aging</em> (a buckets-by-days
+              report of who owes you what and how late they are), and <em>Customer Statements</em> (per-customer running statements
+              you can email).
+            </p>
+          </div>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/10J-2-customer-payments-empty.png" alt="Customer payments empty">
+            <div class="figure__caption"><strong>Figure 10.4a &mdash;</strong> Customer Payments tab. Empty until you record a payment. The Record Payment form requires Customer, Invoice (filtered to that customer's approved invoices), Amount, Bank Account, and Reference. On save it posts <strong>Dr Bank / Cr Accounts Receivable</strong> and clears the matching invoice's open balance.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/10J-3-credit-notes-empty.png" alt="Credit notes empty">
+            <div class="figure__caption"><strong>Figure 10.4b &mdash;</strong> Credit Notes tab. Used when you need to refund or write off part or all of an invoice. The flow mirrors invoice creation but in reverse: pick the customer, link the original invoice, enter line items, and on approval the system posts <strong>Dr Sales Returns / Cr Accounts Receivable</strong>.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/10J-4-ar-aging.png" alt="AR aging">
+            <div class="figure__caption"><strong>Figure 10.4c &mdash;</strong> AR Aging report. Shows every customer's outstanding balance in five buckets (Current, 1&ndash;30, 31&ndash;60, 61&ndash;90, 90+ days). The Lumira invoice is in the Current bucket because it was approved today. As time passes without payment, balances roll into older buckets &mdash; that's how you spot collection problems before they hurt cashflow.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/10J-5-customer-statements.png" alt="Customer statements">
+            <div class="figure__caption"><strong>Figure 10.4d &mdash;</strong> Customer Statements. Pick a customer and a date range to generate a per-customer statement listing every invoice, payment, and credit note in that window with running balance. Email it to the customer with one click on the toolbar.</div>
+          </figure>
         </div>
       </section>
 
@@ -2695,6 +2744,44 @@ body::before {
             <img loading="lazy" decoding="async" src="./images/09-3-bill-approved.png" alt="Bill approved">
             <div class="figure__caption"><strong>Figure 11.3 &mdash;</strong> The bill BILL-2026-00001 in Approved state. The action column now shows a <em>Pay</em> button &mdash; that's how you record a payment against the bill (covered in the Payments tab).</div>
           </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/11J-1-payables-bills-list.png" alt="Bills list">
+            <div class="figure__caption"><strong>Figure 11.3a &mdash;</strong> The Bills list with our row visible. The action column has View / Edit / Pay / Cancel for an Approved bill, and Edit / Approve / Cancel for a Draft. Both Cancel and Pay use target-named confirmation dialogs.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/11J-2-payables-view-bill.png" alt="Bill view modal">
+            <div class="figure__caption"><strong>Figure 11.3b &mdash;</strong> The View modal opens read-only with the full bill: vendor, dates, line items, totals, and the linked GL entry. Useful when you need to confirm a posted bill's details without risking accidental edits.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-11-4">
+          <span class="subsection__num">11.4</span>
+          <h3 class="subsection__title">Tour the other Payables tabs</h3>
+          <div class="prose">
+            <p>
+              As with Receivables, the rest of the Payables sidebar holds three more tabs you should know about:
+              <em>Vendor Payments</em> (record outgoing payments against approved bills), <em>AP Aging</em> (the mirror of
+              AR Aging &mdash; shows what you owe vendors and how late you are), and <em>Vendor Statements</em> (per-vendor
+              running statements you can hand back to a vendor for reconciliation).
+            </p>
+          </div>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/11J-3-payables-payments-empty.png" alt="Vendor payments empty">
+            <div class="figure__caption"><strong>Figure 11.4a &mdash;</strong> Vendor Payments tab. Empty until you pay a bill. The Record Payment form takes Vendor, Bill (filtered to that vendor's approved bills), Amount, Bank Account, Reference. On save it posts <strong>Dr Accounts Payable / Cr Bank</strong> and clears the matching bill's outstanding balance.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/11J-4-ap-aging.png" alt="AP aging">
+            <div class="figure__caption"><strong>Figure 11.4b &mdash;</strong> AP Aging report &mdash; the mirror of AR Aging, but for what you owe instead of what you're owed. The CloudKite bill sits in the Current bucket because it was just approved. As time passes, items roll into older buckets &mdash; if your AP aging stays clean (everything in Current), you're paying suppliers on time.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/11J-5-vendor-statements.png" alt="Vendor statements">
+            <div class="figure__caption"><strong>Figure 11.4c &mdash;</strong> Vendor Statements. Pick a vendor and a date range to generate a running statement of bills, payments, and credit notes. Use it to reconcile with the vendor's own records before signing off on monthly accounts.</div>
+          </figure>
         </div>
       </section>
 
@@ -2735,6 +2822,11 @@ body::before {
             <img loading="lazy" decoding="async" src="./images/10-1-ledger-baseline.png" alt="GL Entries listing">
             <div class="figure__caption"><strong>Figure 12.1 &mdash;</strong> The GL Entries page after our four transactions. Sortable filters across the top: date range, account, journal type, status, source, free-text search.</div>
           </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12J-1-gl-entries-populated.png" alt="GL entries populated">
+            <div class="figure__caption"><strong>Figure 12.1a &mdash;</strong> The same page after we've also worked through Banking and Expenses &mdash; deposits, withdrawals, transfers, the interest credit, the expense claim approval and the reimbursement. Every operational click in the other modules ends up as a row here, with the Source column showing where it came from (Bank Transaction, Bank Transfer, Expense Claim, Customer Invoice, Vendor Bill). Use the Source filter to slice by where entries originated.</div>
+          </figure>
         </div>
 
         <div class="subsection" id="s-12-2">
@@ -2760,6 +2852,29 @@ body::before {
               <p>Notice how the bill's GL entry has exactly two lines: debit Office Rent Expense, credit Accounts Payable. Same amount, opposite sides. That's the rule. When you eventually pay CloudKite, a <em>second</em> GL entry will be created &mdash; debit Accounts Payable, credit Bank &mdash; and the Accounts Payable balance returns to zero. Every transaction in your business decomposes into pairs of debits and credits like this.</p>
             </div>
           </div>
+        </div>
+
+        <div class="subsection" id="s-12-3">
+          <span class="subsection__num">12.3</span>
+          <h3 class="subsection__title">The Journal Entries tab and reversing an entry</h3>
+          <div class="prose">
+            <p>
+              The Ledger page has a second tab in the sidebar &mdash; <strong>Journal Entries</strong> &mdash; which gives you a more
+              audit-friendly view of the same data, sorted by journal type and with row actions for the operations a controller
+              actually performs at month end: View, Post (for any entries left in Draft), Lock (freeze a fiscal period's entries),
+              and Reverse (post a perfectly mirrored entry that nullifies a previous one without deleting it).
+            </p>
+          </div>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12J-3-journal-entries-tab.png" alt="Journal entries tab">
+            <div class="figure__caption"><strong>Figure 12.3a &mdash;</strong> Journal Entries tab. Same underlying data as GL Entries but the action column has the four month-end controls. The Journal Type filter at the top lets you see only Sales, only Purchases, only Bank, and so on.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12J-4-gl-reverse-confirm.png" alt="Reverse confirm">
+            <div class="figure__caption"><strong>Figure 12.3b &mdash;</strong> Clicking Reverse opens a target-named confirm: <em>"Reverse GL-2026-XXXXX (Bank Transaction, ₹3,000.00) by posting a mirror entry dated today? The original entry stays in the ledger; a new GL entry is created with debits and credits swapped, so net effect on every account returns to zero. This is the audit-safe way to undo a posted entry &mdash; you never delete history."</em> Cancel to keep the demo data.</div>
+          </figure>
         </div>
       </section>
 
@@ -2789,6 +2904,11 @@ body::before {
           <figure class="figure figure--wide">
             <img loading="lazy" decoding="async" src="./images/11-1-trial-balance.png" alt="Trial balance generated">
             <div class="figure__caption"><strong>Figure 13.1 &mdash;</strong> The Trial Balance for FY 2026-27. Six accounts, debits = credits = ₹1,62,000, with the green confirmation <em>"Trial Balance is balanced"</em> at the bottom.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13J-1-trial-balance-full.png" alt="Trial balance full">
+            <div class="figure__caption"><strong>Figure 13.1a &mdash;</strong> The Trial Balance regenerated after we've worked through Banking and Expenses too. More accounts now: HDFC Bank, ICICI Bank, Reimbursement Payable, Sales Revenue, Interest Income, Travel Expense, Office Rent Expense, Accounts Receivable, Accounts Payable. Debits and credits still match exactly. This is the single most reassuring number in accounting &mdash; if Trial Balance ever stops being balanced, your double entry has broken somewhere and you stop everything until you find it.</div>
           </figure>
         </div>
 
@@ -2930,86 +3050,932 @@ body::before {
         <div class="section__head">
           <span class="section__num">15</span>
           <span class="section__eyebrow">Section fifteen</span>
-          <h2 class="section__title">Beyond the <em>basics</em>.</h2>
-          <p class="section__sub">A quick tour of four advanced areas: Banking, Expenses, Fixed Assets, Subscription Billing. Each one is a full module on its own &mdash; here we just point at the door.</p>
+          <h2 class="section__title">The advanced <em>modules</em>.</h2>
+          <p class="section__sub">Five advanced modules that build on top of the foundation you've set up: Banking, Expense Management, Fixed Assets, Subscription Billing, and Administration. Each one is a full deep-dive &mdash; read the ones you need now and come back to the rest later.</p>
         </div>
         <hr class="section__rule">
 
+        <div class="callout callout--note">
+          <div class="callout__icon">&#9432;</div>
+          <div class="callout__body">
+            <span class="callout__label">One prerequisite before you start</span>
+            <h4 class="callout__title">Create dedicated GL accounts for each physical bank, fixed-asset class, and expense category</h4>
+            <p>
+              Every module in this section maps records into the General Ledger through a linked GL account. If that GL account doesn't exist yet,
+              the dropdown will be empty of sensible choices and you'll end up mapping HDFC to <em>Cash in Hand</em>, which conflates two very different things. Before you open any module below, jump back to
+              <a href="#s-4">Section 4 &mdash; Chart of Accounts</a> and create:
+            </p>
+            <ul style="margin:0.5rem 0 0 1.25rem; padding:0;">
+              <li><strong>One Current Asset account per physical bank account</strong> (e.g. 1010 HDFC Bank &mdash; Current A/C, 1020 ICICI Bank &mdash; Savings A/C). Use the 1010&ndash;1099 range by convention so they sort just below 1001 Cash in Hand.</li>
+              <li><strong>One Fixed Asset account per asset class</strong> (e.g. 1500 Computers &amp; IT Equipment, 1510 Furniture &amp; Fixtures) and one matching Accumulated Depreciation contra-asset (1590, 1591&hellip;).</li>
+              <li><strong>One Expense account per expense category</strong> you plan to use (e.g. 5020 Travel, 5030 Meals &amp; Entertainment, 5040 Office Supplies).</li>
+            </ul>
+            <p style="margin-top:0.5rem;">
+              Without these, you'll repeatedly hit half-empty dropdowns and end up polluting your Trial Balance. Two minutes of prep here saves hours of cleanup later.
+            </p>
+          </div>
+        </div>
+
+        <!-- ==================== 15.1 BANKING (deep dive) ==================== -->
         <div class="subsection" id="s-15-1">
           <span class="subsection__num">15.1</span>
           <h3 class="subsection__title">Banking</h3>
           <div class="prose">
             <p>
-              The Banking module manages your bank accounts as <em>real bank accounts</em> rather than just GL lines. You can create one record per
-              bank account (e.g. one for HDFC current, one for ICICI escrow), record inter-bank transfers, and run bank reconciliation &mdash; matching
-              what your bank statement says against what your General Ledger says. Each bank account is linked to a GL account on the assets side, and
-              the balance you see in the Banking module is the same balance you see in the GL.
+              The Banking module manages your bank accounts as <em>real bank accounts</em> &mdash; not just GL lines.
+              You create one record per physical bank account, record every deposit and withdrawal against it,
+              move money between your own accounts via inter-bank transfers, and at month-end you reconcile
+              the Ragenaizer balance against the actual bank statement.
+              Every action in this module posts a double-entry journal to the General Ledger automatically,
+              so the balance you see here is always the same balance you see on the Balance Sheet.
             </p>
           </div>
+
+          <div class="callout">
+            <div class="callout__icon">?</div>
+            <div class="callout__body">
+              <h4 class="callout__title">Bank account</h4>
+              <p>A record that mirrors a real bank account in the outside world. It has a name ("HDFC Current A/C"), an account number, an IFSC code, and &mdash; critically &mdash; a one-to-one link to a GL account on the asset side. The balance you see here is always the same balance you see on the Trial Balance for that GL account.</p>
+            </div>
+          </div>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">The four tabs</h4>
+          <p>The Banking module has four sub-pages in the left sidebar: <strong>Bank Accounts</strong> (the list of your physical banks), <strong>Transactions</strong> (the running ledger of every deposit and withdrawal for a selected account), <strong>Inter-Bank Transfer</strong> (a shortcut for moving money between your own accounts), and <strong>Reconciliation</strong> (month-end statement matching). We'll walk them in order.</p>
+
           <figure class="figure figure--wide">
-            <img loading="lazy" decoding="async" src="./images/12-1-banking-baseline.png" alt="Banking page">
-            <div class="figure__caption"><strong>Figure 15.1 &mdash;</strong> The Banking landing page. Three sidebar sections: Accounts (Bank Accounts), Transactions (Transactions, Inter-Bank Transfer), Reconciliation. On day one, no accounts &mdash; click <em>Add Bank Account</em> to start.</div>
+            <img loading="lazy" decoding="async" src="./images/12H-1-bank-accounts-empty.png" alt="Banking page empty state">
+            <div class="figure__caption"><strong>Figure 15.1.1 &mdash;</strong> Day one: zero bank accounts. Stats tiles at the top (Total Accounts, Total Balance, Active Accounts) are all zero. Click <em>+ Add Bank Account</em> to start.</div>
           </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 1 &mdash; Bank Accounts</h4>
+          <p>
+            Click <em>+ Add Bank Account</em>. The form has nine fields:
+            <strong>Account Name</strong> (a human-friendly label like "HDFC Current A/C"),
+            <strong>Bank Name</strong> (e.g. "HDFC Bank"),
+            <strong>Account Number</strong>,
+            <strong>Account Type</strong> (Bank / Cash / Petty Cash / Payment Gateway),
+            <strong>IFSC Code</strong>,
+            <strong>SWIFT Code</strong> (for international transfers),
+            <strong>Branch</strong>,
+            <strong>GL Account</strong> (the Current Asset account you created in the prep step above &mdash; e.g. 1010 HDFC Bank &mdash; Current A/C),
+            and <em>Set as default account</em> (for payment modals across the app to pre-select this one).
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-2-add-bank-modal-empty.png" alt="Add Bank Account modal empty">
+            <div class="figure__caption"><strong>Figure 15.1.2 &mdash;</strong> The empty Add Bank Account modal. All nine fields are visible in a two-column layout. Account Name and Bank Name are the only required fields &mdash; the rest are optional but you should fill them in anyway, because they show up on payment vouchers and bank reconciliations later.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-3-add-bank-modal-filled.png" alt="Add Bank Account modal filled">
+            <div class="figure__caption"><strong>Figure 15.1.3 &mdash;</strong> The same modal filled in for our first bank. Notice GL Account is set to <code>1010 &mdash; HDFC Bank &mdash; Current A/C</code>, which is the dedicated GL account we created in the prep step. <em>Set as default account</em> is ticked because this is the account we'll use for most payments.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-4-bank-accounts-after-save.png" alt="First bank account saved">
+            <div class="figure__caption"><strong>Figure 15.1.4 &mdash;</strong> After Save: one row in the table, Total Accounts=1, Active=1. The HDFC row shows a <em>Default</em> badge next to its name, and the three action buttons in the Actions column: <strong>View</strong> (eye), <strong>Edit</strong> (pencil), <strong>Deactivate</strong> (red circle-slash). We'll exercise all three in a moment.</div>
+          </figure>
+
+          <p>
+            Add a second account to see contrast. Click <em>+ Add Bank Account</em> again and fill in a different bank
+            (we used ICICI Bank &mdash; Savings A/C mapped to GL 1020). Leave <em>Set as default</em> unticked so HDFC stays the default.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-5-bank-accounts-two-rows.png" alt="Two bank accounts">
+            <div class="figure__caption"><strong>Figure 15.1.5 &mdash;</strong> Two bank accounts, HDFC marked Default. Stats tiles now show 2 total, 2 active. This is our steady state &mdash; we'll record transactions against both accounts below.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">View, Edit, Deactivate &mdash; the three row actions</h4>
+          <p>
+            Click the <strong>View</strong> (eye) button on the HDFC row. A read-only modal opens with every field you entered,
+            the Save button hidden, and Cancel replaced with Close. View is safe to click at any time &mdash; it never mutates anything.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-6-bank-account-view-modal.png" alt="Bank Account View modal">
+            <div class="figure__caption"><strong>Figure 15.1.6 &mdash;</strong> The View modal. All fields are disabled (grey), and only a <em>Close</em> button in the footer. Use this when you need to quickly reference an account's details without risk of accidentally editing.</div>
+          </figure>
+
+          <p>
+            Click <strong>Edit</strong> (pencil). The same modal opens but in edit mode &mdash; every field pre-filled and editable.
+            This is where you'd fix a typo in the IFSC, or add the SWIFT code you forgot the first time.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-7-bank-account-edit-prefilled.png" alt="Bank Account Edit modal">
+            <div class="figure__caption"><strong>Figure 15.1.7 &mdash;</strong> The Edit modal, pre-filled with the saved HDFC row. Change any field and click <em>Save Account</em> &mdash; the row in the table updates live.</div>
+          </figure>
+
+          <p>
+            Click <strong>Deactivate</strong> (red circle-slash) on the ICICI row. A confirmation dialog appears, and crucially
+            it names the target: <em>"Are you sure you want to deactivate ICICI Savings A/C at ICICI Bank?"</em>
+            This is deliberate: confirmation dialogs across this module always name what you're about to do. If you ever see
+            a generic "Are you sure?" prompt, it's a bug &mdash; report it.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-8-bank-account-deactivate-confirm.png" alt="Deactivate confirm dialog">
+            <div class="figure__caption"><strong>Figure 15.1.8 &mdash;</strong> The Deactivate confirmation. Note the full message: <em>"&hellip;It will be hidden from new transactions, transfers, and reconciliations, but its history (posted transactions, GL entries) stays intact. You can reactivate it later."</em> &mdash; exactly what you need to know before clicking the red button.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-9-bank-accounts-after-deactivate.png" alt="After deactivate">
+            <div class="figure__caption"><strong>Figure 15.1.9 &mdash;</strong> After confirming: ICICI is gone from the default list, stats drop to 1 active. To see it again, toggle <em>Show Inactive</em> on the top right.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-10-bank-accounts-show-inactive.png" alt="Show Inactive toggled">
+            <div class="figure__caption"><strong>Figure 15.1.10 &mdash;</strong> <em>Show Inactive</em> toggled ON: ICICI reappears with an Inactive badge and the Deactivate button is replaced by a Reactivate button. Click Reactivate to bring it back.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-11-bank-accounts-after-reactivate.png" alt="After reactivate">
+            <div class="figure__caption"><strong>Figure 15.1.11 &mdash;</strong> Back to both rows Active. Deactivate and reactivate are completely non-destructive &mdash; no data is ever lost. Use them liberally when you close an old bank account without losing the history.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 2 &mdash; Transactions</h4>
+          <p>
+            Click <strong>Transactions</strong> in the sidebar. This page is a bank passbook view, but unlike a real passbook
+            the numbers you see are the numbers in <em>your</em> ledger (asset perspective) &mdash; so a deposit is a <em>Debit</em>
+            (your asset goes up) and a withdrawal is a <em>Credit</em> (your asset goes down). If you're used to reading
+            bank statements the other way round, this takes 30 seconds to get used to, and it's consistent with every
+            other report in Ragenaizer. See the callout at the end of this subsection for the full explanation.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-12-transactions-empty.png" alt="Transactions empty">
+            <div class="figure__caption"><strong>Figure 15.1.12 &mdash;</strong> The Transactions tab on first load. You must pick a bank account from the filter dropdown before anything shows &mdash; this page is always scoped to a single bank.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-13-txn-bank-filter-open.png" alt="Bank filter dropdown">
+            <div class="figure__caption"><strong>Figure 15.1.13 &mdash;</strong> The bank filter dropdown open, showing our two accounts. Pick HDFC Current A/C.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-14-transactions-hdfc-empty.png" alt="HDFC empty">
+            <div class="figure__caption"><strong>Figure 15.1.14 &mdash;</strong> HDFC selected but no transactions yet. Click <em>+ Record Transaction</em> to add the first one.</div>
+          </figure>
+
+          <p>
+            Record a deposit of ₹25,000 from a customer. The Record Transaction modal has six fields:
+            <strong>Transaction Date</strong>, <strong>Transaction Type</strong> (four manual types: Deposit, Withdrawal, Interest, Charges &mdash; transfers and payment-gateway entries are created from their own dedicated forms so the dropdown stays clean),
+            <strong>Amount</strong>, <strong>Counter Account</strong> (the <em>other</em> side of the double-entry &mdash; for a customer payment this is Sales Revenue or Accounts Receivable depending on whether the invoice was approved first),
+            <strong>Description</strong>, and <strong>Reference Number</strong> (the cheque number, NEFT reference, etc.).
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-15-record-txn-modal-empty.png" alt="Record Transaction empty modal">
+            <div class="figure__caption"><strong>Figure 15.1.15 &mdash;</strong> Empty Record Transaction modal. Date defaults to today; everything else is blank.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-16-record-txn-deposit-filled.png" alt="Deposit filled">
+            <div class="figure__caption"><strong>Figure 15.1.16 &mdash;</strong> Deposit of ₹25,000 filled: Transaction Type=Deposit, Counter Account=4001 Sales Revenue, Reference NEFT-20260405-001. Click <em>Save Transaction</em>.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-17-deposit-after-save.png" alt="After deposit">
+            <div class="figure__caption"><strong>Figure 15.1.17 &mdash;</strong> After save, the row appears in the table. <strong>Debit</strong> column shows ₹25,000 (your bank asset went up), Credit is dash, Balance shows the running total ₹25,000. Behind the scenes, a journal entry has been posted to the GL: Dr 1010 HDFC ₹25,000 / Cr 4001 Sales Revenue ₹25,000. Flip to the General Ledger page in a new tab and you'll see it.</div>
+          </figure>
+
+          <p>
+            We're going to peek at the GL right now, because this is the moment the double-entry magic becomes visible.
+            Open <strong>Ledger &rarr; GL Entries</strong> in a new tab, find the row that just got posted, and click the eye icon.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12J-2-gl-entry-view-modal.png" alt="GL entry view modal">
+            <div class="figure__caption"><strong>Figure 15.1.17a &mdash;</strong> The GL Entry detail modal. Header shows the entry number, date, source ("Bank Transaction"), and the linked source document. The body shows the two postings side by side: <strong>Debit 1010 HDFC Bank ₹25,000.00</strong> and <strong>Credit 4001 Sales Revenue ₹25,000.00</strong>. Totals at the bottom: Total Debits ₹25,000.00, Total Credits ₹25,000.00, balanced. This is the proof that one click in the bank tab created two postings in the ledger &mdash; you didn't write a single line of debit/credit by hand.</div>
+          </figure>
+
+          <p>Now record a withdrawal &mdash; ₹3,000 for office rent &mdash; to show the opposite direction.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-18-record-txn-withdrawal-filled.png" alt="Withdrawal filled">
+            <div class="figure__caption"><strong>Figure 15.1.18 &mdash;</strong> Withdrawal of ₹3,000 filled: Counter Account is 5001 Office Rent Expense, Reference CHQ-445601.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-19-withdrawal-after-save.png" alt="After withdrawal">
+            <div class="figure__caption"><strong>Figure 15.1.19 &mdash;</strong> Two rows now. Newer transactions are at the top by default. The withdrawal shows ₹3,000 in <strong>Credit</strong>, Balance drops to ₹22,000. The running balance is computed client-side from the filtered list; if you narrow the filter, the running balance reflects only the visible subset &mdash; so don't confuse it with the absolute account balance when filters are applied.</div>
+          </figure>
+
+          <p>Exercise the search and delete actions to round out the tour.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-20-txn-search-rent.png" alt="Search rent">
+            <div class="figure__caption"><strong>Figure 15.1.20 &mdash;</strong> Searching for "rent" narrows the table to just the Office Rent row. Clear the search to bring back everything.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-21-txn-delete-confirm.png" alt="Delete confirm dialog">
+            <div class="figure__caption"><strong>Figure 15.1.21 &mdash;</strong> The Delete Bank Transaction confirm names the full target: <em>"the Withdrawal of ₹3,000.00 on 07 Apr 2026 'Office rent &mdash; April 2026, partial advance to landlord'"</em> &mdash; no ambiguity. <strong>Reconciled transactions cannot be deleted</strong> &mdash; you'll need to unreconcile first, which protects audit integrity. Click Cancel to keep the demo data; we need it for reconciliation later.</div>
+          </figure>
+
+          <p>
+            One more transaction type, because it shows that <em>both</em> sides of the entry can be inflows when the
+            money came from outside your operations: bank interest. Pick Interest from the Type dropdown, enter ₹150 with
+            counter account 4900 Interest Income, and save.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12J-5-txn-interest-filled.png" alt="Interest transaction filled">
+            <div class="figure__caption"><strong>Figure 15.1.21a &mdash;</strong> Record Transaction modal with Type=Interest, Amount ₹150, Counter Account 4900 Interest Income, Reference INT-Q1-2026, Description "Quarterly savings interest from HDFC". Notice that for both Deposit and Interest the counter account is an income/revenue account &mdash; the difference is semantic (operating revenue vs. non-operating income) and shows up correctly on the P&amp;L.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12J-6-txn-interest-after.png" alt="Interest transaction posted">
+            <div class="figure__caption"><strong>Figure 15.1.21b &mdash;</strong> Interest row appears at the top with ₹150 in Debit (your bank asset rose) and a fresh running balance. Cross-check on the P&amp;L: 4900 Interest Income now shows ₹150 under Other Income, separate from Sales Revenue. That's the entire reason the GL has account types in the first place.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 3 &mdash; Inter-Bank Transfer</h4>
+          <p>
+            When you move money from one of your own accounts to another, you could record two separate transactions
+            (a withdrawal on the source and a deposit on the destination) &mdash; but that's tedious and error-prone.
+            The Inter-Bank Transfer tab is a single-form shortcut that records both sides in one click, with one
+            shared reference, so the two legs always agree.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-22-transfer-empty.png" alt="Transfer form empty">
+            <div class="figure__caption"><strong>Figure 15.1.22 &mdash;</strong> The empty transfer form: From Account, To Account, Amount, Date, Description, Execute Transfer button, and a Recent Transfers table below.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-23-transfer-from-dropdown.png" alt="From Account dropdown">
+            <div class="figure__caption"><strong>Figure 15.1.23 &mdash;</strong> The From Account dropdown open. Only active bank accounts appear &mdash; the system prevents you from transferring out of a deactivated account.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-24-transfer-filled.png" alt="Transfer filled">
+            <div class="figure__caption"><strong>Figure 15.1.24 &mdash;</strong> Transfer of ₹5,000 HDFC &rarr; ICICI filled. The From and To dropdowns refuse to select the same account on both sides (you can't transfer to yourself).</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-25-transfer-after-execute.png" alt="Transfer executed">
+            <div class="figure__caption"><strong>Figure 15.1.25 &mdash;</strong> After <em>Execute Transfer</em>: the form clears and the transfer appears in the Recent Transfers table below. Behind the scenes, one journal entry has been posted (Dr 1020 ICICI ₹5,000 / Cr 1010 HDFC ₹5,000) and two bank transactions have been recorded (one <em>transfer_out</em> on HDFC, one <em>transfer_in</em> on ICICI) linked to the same GL entry.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 4 &mdash; Reconciliation</h4>
+          <p>
+            Reconciliation is what you do at the end of every month to prove that what the <em>bank</em> thinks is in
+            your account matches what <em>your books</em> think is in your account. You get a statement from the bank
+            (a PDF or CSV), you look at the closing balance on that statement, and you tell Ragenaizer: <em>"As of
+            this date, HDFC says I have ₹X. Here are all my transactions &mdash; tick off the ones that appear on the
+            statement."</em> If the final <em>Difference</em> is zero, you're reconciled. If not, either the bank is
+            wrong, or you missed a transaction, or you have a duplicate &mdash; and you need to find it.
+          </p>
+
+          <div class="callout">
+            <div class="callout__icon">?</div>
+            <div class="callout__body">
+              <h4 class="callout__title">Reconciliation</h4>
+              <p>The monthly sanity check between your ledger and the bank's ledger. Think of it as the accounting equivalent of "did my inbox arrive in the other person's outbox?" &mdash; you're proving that two independent records agree.</p>
+            </div>
+          </div>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-26-reconciliation-empty.png" alt="Reconciliation empty">
+            <div class="figure__caption"><strong>Figure 15.1.26 &mdash;</strong> The Reconciliation tab before starting. Pick a bank, enter the statement's closing balance, pick the statement's end date, click Start Reconciliation.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-27-reconciliation-setup.png" alt="Reconciliation setup">
+            <div class="figure__caption"><strong>Figure 15.1.27 &mdash;</strong> Setup filled: HDFC Current A/C, Statement Balance ₹17,000, Statement Date 30 Apr 2026. ₹17,000 is what we expect the HDFC balance to be after the ₹25,000 deposit, ₹3,000 withdrawal, and ₹5,000 transfer out (25 &minus; 3 &minus; 5 = 17). Click <em>Start Reconciliation</em>.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-28-reconciliation-workspace.png" alt="Reconciliation workspace">
+            <div class="figure__caption"><strong>Figure 15.1.28 &mdash;</strong> The workspace opens. Left: all unmatched HDFC transactions up to the statement date. Right: a Summary tile showing Statement Balance, Matched Amount (starts at zero), Unmatched Amount, and Difference. Tick the checkboxes on the transactions that appear on the bank statement.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-29-reconciliation-matched.png" alt="After matching">
+            <div class="figure__caption"><strong>Figure 15.1.29 &mdash;</strong> After ticking all three transactions and clicking <em>Match Selected</em>, the unmatched list is empty and the Summary tiles update. Now click <em>Complete Reconciliation</em>.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-30-reconciliation-complete-confirm.png" alt="Complete reconciliation confirm">
+            <div class="figure__caption"><strong>Figure 15.1.30 &mdash;</strong> The Complete Reconciliation confirm. Like every other confirm in this module, it names the target in full: <em>"Finalise the reconciliation for HDFC Current A/C at HDFC Bank as of 2026-04-30? Statement balance ₹17,000.00, 3 transactions matched. Once completed, this reconciliation is locked and cannot be reopened &mdash; any further changes require a new reconciliation."</em></div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-31-reconciliation-completed.png" alt="Reconciliation completed">
+            <div class="figure__caption"><strong>Figure 15.1.31 &mdash;</strong> Reconciliation completed and locked. The workspace closes and the form returns to the Start state &mdash; ready for next month.</div>
+          </figure>
+
+          <div class="callout callout--warn">
+            <div class="callout__icon">!</div>
+            <div class="callout__body">
+              <span class="callout__label">Debit &amp; Credit from the account holder's perspective</span>
+              <h4 class="callout__title">A deposit is a <em>Debit</em>, not a Credit</h4>
+              <p>
+                This catches everyone the first time. If you look at the bank's own passbook/statement, money coming IN
+                is shown as "Credit" and money going OUT is shown as "Debit" &mdash; because from the <em>bank's</em> point
+                of view, your account is a liability (they owe you the money), so a deposit increases their liability
+                to you (Credit) and a withdrawal decreases it (Debit).
+              </p>
+              <p style="margin-top:0.5rem;">
+                Ragenaizer shows transactions from <em>your</em> point of view. From your books, the bank account is an
+                <strong>asset</strong> &mdash; it's money you own. So a deposit <em>increases</em> your asset (Debit)
+                and a withdrawal <em>decreases</em> it (Credit). This is the same convention used everywhere else in the
+                Accounts module, on the Trial Balance, the Balance Sheet, the Chart of Accounts &mdash; it matches the
+                GL, not the bank statement. The two conventions are mirror images of each other; use the one that suits
+                your books (your side) because that's the one the rest of Ragenaizer uses.
+              </p>
+            </div>
+          </div>
         </div>
 
+        <!-- ==================== 15.2 EXPENSE MANAGEMENT (deep dive) ==================== -->
         <div class="subsection" id="s-15-2">
           <span class="subsection__num">15.2</span>
           <h3 class="subsection__title">Expense Management</h3>
           <div class="prose">
             <p>
-              The Expense Management module handles employee expense claims. You define <em>Categories</em> (Travel, Meals, Office Supplies&hellip;)
-              with default GL accounts, set <em>Policies</em> (e.g. "Meals capped at ₹500 per day"), and employees submit
-              <em>Claims</em> against those categories. Each approved claim becomes a vendor bill in the GL automatically &mdash; you don't have to type
-              it twice.
+              Every company has employees who spend money on the company's behalf &mdash; travel, meals, office supplies &mdash; and
+              need to be reimbursed. Expense Management is where you define <em>what counts as a valid expense</em> (Categories),
+              <em>how much is too much</em> (Policies), and <em>who is asking to be reimbursed for what</em> (Claims).
+              Once a claim is approved and reimbursed, Ragenaizer posts the journal entries automatically: the expense hits your P&amp;L,
+              the cash leaves your bank, and the employee's balance sheet goes back to zero.
             </p>
           </div>
+
+          <div class="callout">
+            <div class="callout__icon">?</div>
+            <div class="callout__body">
+              <h4 class="callout__title">Category, Policy, Claim &mdash; the three levels</h4>
+              <p>
+                <strong>Category</strong> answers "what kind of expense is this?" (Travel, Meals, Office Supplies). It's linked to a default GL expense account so you don't have to pick one every time.
+                <strong>Policy</strong> answers "what's the limit for this category?" (max ₹5,000 per trip, receipts required above ₹500). Policies are enforced at claim-submit time.
+                <strong>Claim</strong> answers "who is asking to be reimbursed, for how much, in which category?" It has a header (employee, date, description) plus line items (category, amount, date, receipt).
+              </p>
+            </div>
+          </div>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 1 &mdash; Categories</h4>
+          <p>
+            Click <strong>Categories</strong> in the sidebar. Empty state on day one. Click <em>+ Add Category</em>.
+            The modal has three fields: <strong>Name</strong> (e.g. "Travel"), <strong>Description</strong> (free text),
+            and <strong>Default GL Account</strong> (the expense GL account you created in the prep step above &mdash; e.g. 5020 Travel).
+            The Default GL Account is what gets debited when the claim is reimbursed; Accounts Payable is credited on approval and Cash/Bank is credited on reimbursement.
+          </p>
+
           <figure class="figure figure--wide">
-            <img loading="lazy" decoding="async" src="./images/13-1-expenses-baseline.png" alt="Expense management page">
-            <div class="figure__caption"><strong>Figure 15.2 &mdash;</strong> The Expense Management landing page on day one. Sidebar splits into Setup (Categories, Policies) and Claims (Expense Claims).</div>
+            <img loading="lazy" decoding="async" src="./images/13H-1-expenses-categories-empty.png" alt="Categories empty">
+            <div class="figure__caption"><strong>Figure 15.2.1 &mdash;</strong> Categories tab empty state. The empty-state CTA is "No expense categories found" &mdash; click Add Category to start.</div>
           </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13H-2-expenses-category-modal-empty.png" alt="Category modal empty">
+            <div class="figure__caption"><strong>Figure 15.2.2 &mdash;</strong> Empty Add Category modal. Three fields; Default GL Account is a searchable dropdown containing every account in your Chart of Accounts.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13H-3-expenses-category-modal-filled.png" alt="Category filled">
+            <div class="figure__caption"><strong>Figure 15.2.3 &mdash;</strong> Modal filled in for "Travel" mapped to 5001 Office Rent Expense (in a real tenant you'd have a dedicated 5020 Travel account &mdash; we're reusing 5001 for demo brevity). Click Save.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13H-4-expenses-category-saved.png" alt="Category saved">
+            <div class="figure__caption"><strong>Figure 15.2.4 &mdash;</strong> After save: one row showing Name, Description, the resolved <code>5001 &mdash; Office Rent Expense</code> GL account label, Active badge, and Edit/Delete row actions. Click Edit to modify, Delete (red) to remove &mdash; with a target-named confirmation dialog.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 2 &mdash; Policies</h4>
+          <p>
+            Click <strong>Policies</strong>. This is where you set the rules: <em>"Travel is capped at ₹5,000 per trip and
+            requires a receipt for anything above ₹500."</em> Policies are linked to a Category and are enforced when a claim
+            is submitted &mdash; the claim either stays within the limit or generates a warning.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13H-5-expenses-policies-empty.png" alt="Policies empty">
+            <div class="figure__caption"><strong>Figure 15.2.5 &mdash;</strong> Policies tab empty. Click + Add Policy.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13H-6-expenses-policy-modal-filled.png" alt="Policy modal filled">
+            <div class="figure__caption"><strong>Figure 15.2.6 &mdash;</strong> Policy modal filled: Name "Travel &mdash; up to ₹5,000 per trip", Max Amount ₹5,000, Requires Receipt Above ₹500, Category Travel, Active toggle on. Click Save.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13H-7-expenses-policy-saved.png" alt="Policy saved">
+            <div class="figure__caption"><strong>Figure 15.2.7 &mdash;</strong> Policy saved. Row shows Name, Max Amount, Receipt threshold, linked Category, Active badge, and Edit/Delete row actions (both with target-named confirms).</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 3 &mdash; Expense Claims</h4>
+          <p>
+            Click <strong>Expense Claims</strong>. This is the business end. A claim has a header (date, description) and one or more
+            line items (category, description, amount, date). You submit a claim; it enters the <em>Submitted</em> state.
+            A different user with approval rights (see the Segregation of Duties note below) approves or rejects it. When approved,
+            a journal entry is posted: Dr Expense / Cr Accounts Payable (to the employee). When reimbursed, another journal entry is posted: Dr Accounts Payable / Cr Cash/Bank.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13H-8-expense-claims-empty.png" alt="Expense claims empty">
+            <div class="figure__caption"><strong>Figure 15.2.8 &mdash;</strong> Expense Claims tab. Four stat tiles (Total, Submitted, Approved, Reimbursed), a status filter, a search box, and the Submit Claim button.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13H-9-expense-claim-modal-filled.png" alt="Expense claim filled">
+            <div class="figure__caption"><strong>Figure 15.2.9 &mdash;</strong> Submit Expense Claim modal. Header: Claim Date 09 Apr 2026, Description "Chennai client visit &mdash; April 3rd to 5th". One line item: Category Travel, Description "Flight MAA &mdash; BLR return + airport cab", Amount ₹4,500, Date 03 Apr 2026. Total at the bottom: ₹4,500. Click <em>+ Add Item</em> to add more lines if needed. Click Submit.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13H-10-expense-claim-submitted.png" alt="Claim submitted">
+            <div class="figure__caption"><strong>Figure 15.2.10 &mdash;</strong> After Submit: a success toast <em>"Expense claim submitted"</em>, stats tiles update (Total=1, Submitted=1), and a row appears in the table. Claim number is auto-generated (EXP-2026-00001). Status is <em>Submitted</em>. The row has three action buttons: View, Approve, Reject.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13H-11-expense-claim-approve-confirm.png" alt="Approve confirm">
+            <div class="figure__caption"><strong>Figure 15.2.11 &mdash;</strong> Clicking Approve opens a target-named confirm: <em>"Approve EXP-2026-00001 for 'Chennai client visit &mdash; April 3rd to 5th' from Abhishek Anand totalling ₹4,500.00? The claim will move to Approved status and become eligible for reimbursement. Nothing posts to the ledger until you reimburse it."</em></div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Feature, not a bug</span>
+              <h4 class="callout__title">You can't approve your own expense claim</h4>
+              <p>
+                If the user who submitted the claim tries to approve it, the backend returns a 409 with the message
+                <em>"Cannot approve your own expense claim (segregation of duties)"</em> and the claim stays in Submitted state.
+                This is deliberate: it's the oldest rule in the auditor's playbook, the same reason the person who writes cheques
+                is not the person who signs them. To approve a claim, a <em>different</em> user with approval rights needs to log in
+                and click Approve from their account. For this demo we created a second user
+                <code>manager.test@droidsdemo.com</code> with the <code>ACCOUNTS_ADMIN</code> role &mdash; you can do the same from
+                the Authentication service's User Management page (or from Admin &rarr; Users in your own deployment).
+                In production this is enforced automatically by your HR/role setup.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            We sign out, sign back in as <code>manager.test@droidsdemo.com</code>, navigate to
+            <strong>Accounts &rarr; Expenses &rarr; Expense Claims</strong>, and click <em>Approve</em> on the same row.
+            This time the SoD check passes and the backend posts the first half of the double entry:
+            <strong>Dr Travel Expense ₹4,500 / Cr Reimbursement Payable ₹4,500</strong>. (Reimbursement Payable is a system fixture
+            account that Ragenaizer auto-creates the first time it's needed &mdash; you don't have to set it up by hand.)
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13J-5-expense-claim-approved.png" alt="Claim approved by second user">
+            <div class="figure__caption"><strong>Figure 15.2.12 &mdash;</strong> Approved. The row's status badge flips to <em>Approved</em>, the Submitted tile drops to 0, the Approved tile rises to 1, and the action buttons change: Approve/Reject are gone and a new <strong>Reimburse</strong> button appears. The expense is now sitting in your P&amp;L and on your balance sheet as a liability to the employee.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13J-6-expense-reimburse-modal.png" alt="Reimburse modal">
+            <div class="figure__caption"><strong>Figure 15.2.13 &mdash;</strong> Clicking Reimburse opens the Reimburse Expense Claim modal: claim summary at the top (number, employee, amount), then a <strong>Bank Account</strong> searchable dropdown (we pick HDFC Bank &mdash; Current A/C, the default), <strong>Payment Date</strong>, <strong>Reference</strong> (cheque or UTR number), and <strong>Notes</strong>. Click Reimburse to post the second half of the double entry.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13J-7-expense-reimbursed.png" alt="Claim reimbursed">
+            <div class="figure__caption"><strong>Figure 15.2.14 &mdash;</strong> Reimbursed. Status badge is now <em>Reimbursed</em> (green), the Approved tile drops to 0 and the Reimbursed tile rises to 1, and the action column shows just <em>View</em> &mdash; the claim is closed. Behind the scenes Ragenaizer just posted <strong>Dr Reimbursement Payable ₹4,500 / Cr HDFC Bank ₹4,500</strong>, which clears the liability and reduces cash. Flip to <strong>Ledger &rarr; GL Entries</strong> to see both halves of both journal entries chained to this claim.</div>
+          </figure>
+
+          <div class="callout">
+            <div class="callout__icon">&#10003;</div>
+            <div class="callout__body">
+              <h4 class="callout__title">What just happened, in accounting terms</h4>
+              <p>
+                Two journal entries, four ledger postings, one expense claim. Submission posts nothing.
+                Approval posts <strong>Dr Travel Expense / Cr Reimbursement Payable</strong> &mdash; the expense lands on the P&amp;L
+                and a liability to the employee lands on the balance sheet. Reimbursement posts
+                <strong>Dr Reimbursement Payable / Cr Bank</strong> &mdash; the liability clears and cash leaves the bank.
+                Net effect: expense up, cash down, liability flat. That's exactly what should happen, and it happened
+                with two clicks by two different users.
+              </p>
+            </div>
+          </div>
         </div>
 
+        <!-- ==================== 15.3 FIXED ASSETS (deep dive) ==================== -->
         <div class="subsection" id="s-15-3">
           <span class="subsection__num">15.3</span>
           <h3 class="subsection__title">Fixed Assets</h3>
           <div class="prose">
             <p>
-              Fixed Assets are the long-lived things you buy &mdash; vehicles, computers, furniture, machinery. They get capitalised on the
-              Balance Sheet (not expensed immediately) and depreciated over their useful life. The Fixed Assets module manages all of this:
-              you create asset <em>Categories</em> (e.g. "Computers, 4-year SLM" &mdash; straight-line method, 4-year life), then add individual
-              assets to those categories. The system runs a depreciation job at month-end and posts the depreciation entries to the GL automatically.
+              Some things you buy are <em>consumed</em> quickly (rent, salaries, office supplies) &mdash; you expense them
+              immediately on the P&amp;L. Other things you buy &mdash; laptops, vehicles, furniture, machinery &mdash; you use
+              for years. These are <strong>Fixed Assets</strong>: you <em>capitalise</em> them on the Balance Sheet at
+              purchase time and then <em>depreciate</em> their cost slowly over their useful life, matching the expense
+              to the periods in which you benefit from them. The Fixed Assets module manages all of this: categories,
+              individual assets, monthly depreciation runs, and eventual disposal.
             </p>
           </div>
+
+          <div class="callout">
+            <div class="callout__icon">?</div>
+            <div class="callout__body">
+              <h4 class="callout__title">Depreciation</h4>
+              <p>
+                Spreading the cost of a long-lived asset over the periods you use it. If you buy a ₹1,50,000 MacBook with
+                a 3-year useful life and a ₹15,000 salvage value, you don't hit the P&amp;L with ₹1,50,000 in month one &mdash;
+                you hit it with (₹1,50,000 &minus; ₹15,000) / 36 = ₹3,750 every month for 36 months. That's straight-line
+                depreciation. At any point in time, the <em>book value</em> (purchase cost minus accumulated depreciation)
+                is what the asset is worth on your books.
+              </p>
+            </div>
+          </div>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 1 &mdash; Asset Categories</h4>
+          <p>
+            Click <strong>Asset Categories</strong>. A category is a rule for how a class of assets depreciates:
+            the <em>Name</em> (e.g. "Computers &amp; IT Equipment"), the <em>Depreciation Method</em> (Straight Line, Written
+            Down Value, or Units of Production), the <em>Useful Life</em> in years, and the <em>GL Account</em> +
+            <em>Depreciation Expense Account</em> the postings will hit. Create one category per asset class. Every individual
+            asset you later register will inherit these rules from its category.
+          </p>
+
           <figure class="figure figure--wide">
-            <img loading="lazy" decoding="async" src="./images/14-1-assets-baseline.png" alt="Fixed assets page">
-            <div class="figure__caption"><strong>Figure 15.3 &mdash;</strong> The Fixed Assets landing page. Sidebar: Setup (Asset Categories), Register (Asset Register, Depreciation).</div>
+            <img loading="lazy" decoding="async" src="./images/14H-1-assets-categories-empty.png" alt="Asset categories empty">
+            <div class="figure__caption"><strong>Figure 15.3.1 &mdash;</strong> Asset Categories tab empty. Click + Add Category.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14H-2-asset-category-modal-empty.png" alt="Category modal">
+            <div class="figure__caption"><strong>Figure 15.3.2 &mdash;</strong> Empty Create Asset Category modal. Note there are two GL account pickers: one for the Fixed Asset account (where the purchase cost sits) and one for the Depreciation Expense account (where the monthly depreciation hits).</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14H-3-asset-category-modal-filled.png" alt="Category filled">
+            <div class="figure__caption"><strong>Figure 15.3.3 &mdash;</strong> Filled: Computers &amp; IT Equipment, Straight Line method, 3-year useful life, 33.33% rate, both GL accounts picked. Click Save.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14H-4-asset-category-saved.png" alt="Category saved">
+            <div class="figure__caption"><strong>Figure 15.3.4 &mdash;</strong> Saved: success toast "Asset category created", one row in the table.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 2 &mdash; Asset Register</h4>
+          <p>
+            Click <strong>Asset Register</strong>. This is the list of your individual assets &mdash; one row per physical thing.
+            Click <em>+ Register Asset</em> to add a new one. The modal has: <strong>Asset Code</strong> (your internal tag like "FA-0001"),
+            <strong>Name</strong>, <strong>Category</strong>, <strong>Purchase Date</strong>, <strong>Cost</strong>, <strong>Residual Value</strong> (the estimated salvage at end of life), and <strong>Description</strong>.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14H-5-asset-register-empty.png" alt="Register empty">
+            <div class="figure__caption"><strong>Figure 15.3.5 &mdash;</strong> Asset Register empty. Stats tiles: Total=0, Active=0, Disposed=0, Book Value=₹0.00. Click Register Asset.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14H-6-asset-modal-filled.png" alt="Asset modal filled">
+            <div class="figure__caption"><strong>Figure 15.3.6 &mdash;</strong> Register Asset modal filled for our MacBook Pro 16" M3: code FA-0001, purchase date 01 Apr 2026, cost ₹1,50,000, residual ₹15,000, category Computers &amp; IT Equipment. Click Save.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14H-7-asset-saved.png" alt="Asset saved">
+            <div class="figure__caption"><strong>Figure 15.3.7 &mdash;</strong> Saved: stats update to Total=1, Active=1, Book Value=₹1,50,000 (no depreciation yet, so book value equals purchase cost). The row has four action buttons: <strong>View</strong> (eye), <strong>Schedule</strong> (calendar), <strong>Edit</strong> (pencil), <strong>Dispose</strong> (red trash).</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14H-11-asset-view-detail.png" alt="Asset view detail">
+            <div class="figure__caption"><strong>Figure 15.3.8 &mdash;</strong> The View detail modal shows every field including Location and Department (which are optional at create time) and the computed Book Value and Accumulated Depreciation. This is the one place to get a full picture of an asset at a glance.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14H-12-asset-depreciation-schedule.png" alt="Asset depreciation schedule">
+            <div class="figure__caption"><strong>Figure 15.3.9 &mdash;</strong> The Schedule button opens a per-asset depreciation schedule showing every month from purchase to end-of-life with the expected monthly depreciation and running book value. Empty on day one because no depreciation has been posted yet &mdash; we'll fix that in Tab 3.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14H-13-asset-edit-prefilled.png" alt="Asset edit prefilled">
+            <div class="figure__caption"><strong>Figure 15.3.10 &mdash;</strong> The Edit modal, pre-filled. Use this to fix a typo in the name, change the purchase date, or adjust the residual value if your estimates change. Changes flow through to the depreciation schedule automatically.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 3 &mdash; Depreciation</h4>
+          <p>
+            Click <strong>Depreciation</strong>. This is where you actually post the monthly depreciation to the GL.
+            You pick a <em>Period End Date</em> (typically the last day of the month you're closing), optionally filter by
+            Asset Category, and click <em>Run Depreciation</em>. The system walks every active asset, calculates its
+            depreciation since the last run up to the period end date, and posts a journal entry: <code>Dr Depreciation
+            Expense / Cr Accumulated Depreciation</code>. Assets whose purchase date is too recent to have accrued a full period
+            of depreciation are skipped.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14H-8-depreciation-tab.png" alt="Depreciation tab">
+            <div class="figure__caption"><strong>Figure 15.3.11 &mdash;</strong> Depreciation tab with no runs yet. Period End Date picker, Category filter, and Run Depreciation button.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14H-9-depreciation-run.png" alt="Depreciation confirm">
+            <div class="figure__caption"><strong>Figure 15.3.12 &mdash;</strong> Clicking Run Depreciation shows a target-named confirm: <em>"Run depreciation for all asset categories up to 30 Apr 2026? This scans N active assets, posts journal entries for each (Dr Depreciation Expense, Cr Accumulated Depreciation), and cannot be undone for this period &mdash; you can only reverse by creating correcting journal entries in the General Ledger."</em></div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14H-10-depreciation-result.png" alt="Depreciation result">
+            <div class="figure__caption"><strong>Figure 15.3.13 &mdash;</strong> After confirming: a success toast and a summary row. If no assets were eligible (e.g. you picked a period that's before any asset's purchase date + one full depreciation period), you'll see "Depreciation run for 0 asset(s)" &mdash; that's correct behaviour, not a bug. Pick a later period and try again.</div>
           </figure>
         </div>
 
+        <!-- ==================== 15.4 SUBSCRIPTION BILLING (deep dive) ==================== -->
         <div class="subsection" id="s-15-4">
           <span class="subsection__num">15.4</span>
           <h3 class="subsection__title">Subscription Billing</h3>
           <div class="prose">
             <p>
-              If you charge customers on a recurring basis (monthly SaaS subscriptions, annual maintenance contracts, etc.) the Billing
-              module is where you set that up. You define billing <em>Plans</em> (with type subscription/token/usage/one-time), enrol customers
-              into <em>Subscriptions</em>, set up <em>Usage Meters</em> for metered billing, and the system runs an automated billing
-              cycle that generates customer invoices for each subscription on the right cadence. The generated invoices appear in the
-              Receivables module exactly like the manual one we created in Section 10.
+              If you charge customers on a recurring basis &mdash; monthly SaaS subscriptions, annual maintenance contracts,
+              usage-based metered billing, pre-paid tokens &mdash; Subscription Billing is where you set that up. You define
+              reusable <em>Billing Plans</em>, enrol individual customers into <em>Subscriptions</em> against those plans,
+              track <em>Usage Meters</em> for metered pricing, and manage <em>Tokens</em> for pre-paid balances. At the end of
+              each billing cycle the system automatically generates Customer Invoices in the Receivables module &mdash; exactly
+              the same invoice records you already know how to work with from <a href="#s-10">Section 10 &mdash; Customer Invoices</a>.
             </p>
           </div>
+
+          <div class="callout">
+            <div class="callout__icon">?</div>
+            <div class="callout__body">
+              <h4 class="callout__title">Four billing models in one module</h4>
+              <p>
+                Ragenaizer supports four billing models side by side. <strong>Subscription</strong> is a flat recurring fee
+                (e.g. ₹999/month). <strong>Usage</strong> charges per unit consumed (e.g. ₹0.05 per API call, metered by a Usage Meter).
+                <strong>Token</strong> is pre-paid credit that gets deducted as the customer consumes. <strong>One-time</strong> is a
+                single charge with no recurrence. A single customer can have multiple active plans of different types.
+              </p>
+            </div>
+          </div>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 1 &mdash; Billing Plans</h4>
+          <p>
+            Click <strong>Billing Plans</strong>. A plan is a reusable template &mdash; you define it once and then enrol
+            multiple customers into it. The modal has: <strong>Name</strong> (e.g. "Pro Monthly"), <strong>Code</strong>
+            (a short identifier like PRO-MO-999), <strong>Billing Type</strong> (Subscription / Usage / Token / One-Time),
+            <strong>Amount</strong> (the recurring fee in INR), <strong>Billing Cycle</strong> (Monthly / Quarterly /
+            Semi-Annual / Annual / One-Time), <strong>Status</strong> (Active / Inactive), and <strong>Description</strong>.
+          </p>
+
           <figure class="figure figure--wide">
-            <img loading="lazy" decoding="async" src="./images/15-1-billing-baseline.png" alt="Billing page">
-            <div class="figure__caption"><strong>Figure 15.4 &mdash;</strong> The Billing landing page. Sidebar: Plans (Billing Plans, Subscriptions), Usage (Usage Meters, Tokens).</div>
+            <img loading="lazy" decoding="async" src="./images/15H-1-billing-plans-empty.png" alt="Plans empty">
+            <div class="figure__caption"><strong>Figure 15.4.1 &mdash;</strong> Billing Plans tab empty state. Click + Add Plan.</div>
           </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15H-2-billing-plan-modal-filled.png" alt="Plan modal filled">
+            <div class="figure__caption"><strong>Figure 15.4.2 &mdash;</strong> Create Billing Plan modal filled in for "Pro Monthly" &mdash; Subscription type, ₹999/month, Active. Click Save.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15H-3-billing-plan-saved.png" alt="Plan saved">
+            <div class="figure__caption"><strong>Figure 15.4.3 &mdash;</strong> Plan saved and listed. Row shows Name, Code, Amount, Billing Cycle (Monthly), Status badge, and View / Edit / Delete row actions.</div>
+          </figure>
+
+          <p>
+            Exercise all three row actions on the Pro Monthly plan to confirm they work end-to-end.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15J-1-billing-plan-view.png" alt="Plan view">
+            <div class="figure__caption"><strong>Figure 15.4.3a &mdash;</strong> The View modal opens read-only with every field of the plan shown for inspection &mdash; useful when you want to confirm a plan's details without risking accidental edits. Close to return to the list.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15J-2-billing-plan-edit.png" alt="Plan edit">
+            <div class="figure__caption"><strong>Figure 15.4.3b &mdash;</strong> The Edit modal opens with every field pre-filled. Adjust the price, change the cycle, flip the status &mdash; whatever you change is saved on Update. Existing subscriptions on the plan continue at their original price until you bump them; new subscriptions pick up the new price automatically.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15J-3-billing-plan-delete-confirm.png" alt="Plan delete confirm">
+            <div class="figure__caption"><strong>Figure 15.4.3c &mdash;</strong> The Delete confirm names the target plan in full and warns that <em>active subscriptions on this plan will block deletion</em>. Click Cancel to keep the demo data.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 2 &mdash; Subscriptions</h4>
+          <p>
+            Click <strong>Subscriptions</strong>. This is where you enrol individual customers into a plan. Each subscription
+            links a customer to a plan with a start date, optional end date, and quantity (for per-seat pricing). Subscriptions
+            can be Active, Paused (temporarily stop billing without losing the contract), or Cancelled (end the contract).
+            The Generate Invoices button in the toolbar runs the billing cycle immediately &mdash; normally this runs
+            automatically in the background on the 1st of each month.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15H-4-subscriptions-empty.png" alt="Subscriptions empty">
+            <div class="figure__caption"><strong>Figure 15.4.4 &mdash;</strong> Subscriptions tab on day one. Columns: Customer, Plan, Status, Start Date, Next Billing. Use <em>Create Subscription</em> to enrol a customer (you'll need at least one customer in the Parties module first) and <em>Generate Invoices</em> to manually trigger the billing run.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15J-4-subscription-customer-dropdown.png" alt="Subscription customer dropdown">
+            <div class="figure__caption"><strong>Figure 15.4.4a &mdash;</strong> Create Subscription modal with the Customer field expanded. The customer picker is a SearchableDropdown &mdash; type to filter, click to select &mdash; the same component used everywhere else in the module so the experience is consistent. Plan picker right below it is also a SearchableDropdown.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15J-4-subscription-filled.png" alt="Subscription filled">
+            <div class="figure__caption"><strong>Figure 15.4.4b &mdash;</strong> Modal filled: Customer Acme Corp, Plan Pro Monthly, Start Date 01 Apr 2026, Quantity 1. Click Create.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15J-5-subscription-saved.png" alt="Subscription saved">
+            <div class="figure__caption"><strong>Figure 15.4.4c &mdash;</strong> Saved. The row appears with Customer, Plan, Active status badge, Start Date, and the computed Next Billing date one cycle later. Click <em>Generate Invoices</em> in the toolbar to run the billing cycle now &mdash; that will create a Customer Invoice in the Receivables module which you'll see in <a href="#s-10">Section 10</a>.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 3 &mdash; Usage Meters</h4>
+          <p>
+            Click <strong>Usage Meters</strong>. A usage meter is a counter attached to a customer &mdash; think "API calls
+            this month" or "GB of storage". Every time the customer uses the service, your integration posts a usage event
+            to the meter. At billing time, the meter's total is multiplied by the plan's per-unit rate to produce the invoice line.
+            The <strong>Record Usage</strong> form at the bottom of the page is for manual entry (useful for testing or for
+            metered services you're billing by hand).
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15H-5-usage-meters-empty.png" alt="Usage meters empty">
+            <div class="figure__caption"><strong>Figure 15.4.5 &mdash;</strong> Usage Meters tab. Create a meter with <em>+ Add Meter</em>, then record usage events against it with the Record Usage form below.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15J-6-usage-meter-saved.png" alt="Usage meter saved">
+            <div class="figure__caption"><strong>Figure 15.4.5a &mdash;</strong> A meter created for "API Calls" with unit "calls" and rate ₹0.05 per unit. Status Active.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15J-9-meter-searchable-dropdown.png" alt="Record Usage searchable meter">
+            <div class="figure__caption"><strong>Figure 15.4.5b &mdash;</strong> The Record Usage form's Meter picker is a SearchableDropdown (it used to be a native select &mdash; we converted it for consistency). Type to filter, click to select.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15J-7-usage-recorded.png" alt="Usage recorded">
+            <div class="figure__caption"><strong>Figure 15.4.5c &mdash;</strong> 1,250 API calls recorded for Acme Corp on 09 Apr 2026. The event lands in the meter's history table immediately and contributes to the next billing run.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 4 &mdash; Tokens</h4>
+          <p>
+            Click <strong>Tokens</strong>. Tokens are pre-paid credit balances, useful when you want the customer to pay upfront
+            and have their consumption deducted as they go. The page has three sections: <em>Token Management</em> (view
+            current balance for a customer), <em>Purchase Tokens</em> (credit a customer's balance when they pay), and
+            <em>Deduct Tokens</em> (debit their balance when they consume).
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15H-6-tokens-empty.png" alt="Tokens empty">
+            <div class="figure__caption"><strong>Figure 15.4.6 &mdash;</strong> Tokens tab. Pick a customer (via SearchableDropdown) to see their current balance, then use Purchase or Deduct to adjust it. Every token movement is logged in the audit trail with a reason, so you can always trace what happened.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/15J-8-tokens-customer-picked.png" alt="Tokens customer picked">
+            <div class="figure__caption"><strong>Figure 15.4.6a &mdash;</strong> Acme Corp picked from the Token Management customer dropdown. Current balance shows zero (no tokens purchased yet). The Purchase Tokens form to the right takes Customer (same dropdown), Quantity, Amount, and Reference; the Deduct Tokens form mirrors it for consumption events.</div>
+          </figure>
+        </div>
+
+        <!-- ==================== 15.5 ADMINISTRATION (deep dive) ==================== -->
+        <div class="subsection" id="s-15-5">
+          <span class="subsection__num">15.5</span>
+          <h3 class="subsection__title">Administration</h3>
+          <div class="prose">
+            <p>
+              The Administration module is your control tower. It doesn't create any accounting data itself &mdash; instead, it gives you
+              six tools for watching over the data the other modules produce: <em>Audit Logs</em> (who did what, when), <em>Pending
+              Approvals</em> (items waiting for a reviewer), <em>Integrity Check</em> (a health check that proves your ledger is
+              internally consistent), <em>Job Log</em> (background job history), <em>Closing Checklists</em> (month-end close workflow),
+              and <em>Year-End Closing</em> (the annual rollover). Every serious accounting system has these; they're what
+              auditors ask for first.
+            </p>
+          </div>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 1 &mdash; Audit Logs</h4>
+          <p>
+            Click <strong>Audit Logs</strong>. This is the running history of every meaningful action in the tenant:
+            invoices approved, bank accounts created, tax configs updated, periods locked, users logging in &mdash; every
+            change leaves a row here with a timestamp, the user who did it, the entity type, the action, and the full
+            before/after payload. It is append-only: nothing can delete or modify an audit log entry, even by a
+            superadmin &mdash; that's the point. When an external auditor asks <em>"who approved this invoice?"</em>,
+            this page is where you find the answer.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/16I-1-admin-audit-logs.png" alt="Audit logs">
+            <div class="figure__caption"><strong>Figure 15.5.1 &mdash;</strong> Audit Logs tab showing the complete activity history of our demo tenant &mdash; every action from COA template initialisation through reconciliation completion is here, with timestamps, user ids, and the full JSON payload of what changed. Use the filters at the top (entity type, user, date range, action) to narrow down. Click <em>View Trail</em> on any row to see the full payload in a modal.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/16J-1-audit-log-filter-dropdown.png" alt="Audit log filter dropdown">
+            <div class="figure__caption"><strong>Figure 15.5.1a &mdash;</strong> The Entity Type filter dropdown open, showing every entity in the tenant: BankAccount, BankTransaction, Customer, ExpenseClaim, FixedAsset, GLEntry, Invoice, JournalEntry, Vendor, and so on. Pick one to scope the log.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/16J-2-audit-log-filtered-bank.png" alt="Audit log filtered to bank">
+            <div class="figure__caption"><strong>Figure 15.5.1b &mdash;</strong> The same page filtered to <code>BankTransaction</code> entities. Now you see only the bank-transaction lifecycle &mdash; create, update, delete &mdash; with each row's full payload one click away. This is exactly the kind of slice an external auditor will ask for first.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 2 &mdash; Pending Approvals</h4>
+          <p>
+            Click <strong>Pending Approvals</strong>. Some actions in Ragenaizer require a reviewer's sign-off before
+            they take effect &mdash; large payments, sensitive tax config changes, master data edits. When those actions are
+            initiated by a non-approver user, they land here instead of being applied immediately. An admin reviews the
+            list and either approves (the action executes) or rejects (the requester is notified with a reason).
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/16I-2-admin-pending-approvals.png" alt="Pending approvals">
+            <div class="figure__caption"><strong>Figure 15.5.2 &mdash;</strong> Pending Approvals tab showing zero items &mdash; nothing waiting. In a production tenant this is where you'd check every morning. Approve and Reject row actions both have target-named confirmation dialogs that spell out what will happen.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 3 &mdash; Integrity Check</h4>
+          <p>
+            Click <strong>Integrity Check</strong>. This runs three automated health checks on your ledger data and
+            tells you PASS/FAIL for each. <strong>GL Balance</strong> verifies that every posted journal entry has
+            balanced debit and credit totals (this is the fundamental accounting invariant: Dr = Cr). <strong>Account Balance Drift</strong>
+            verifies that every account's stored balance matches the sum of its posted journal entry lines &mdash; if these
+            drift apart, something has gone wrong (usually a failed background job). <strong>Period Balance Consistency</strong>
+            verifies that fiscal period opening and closing balances reconcile across periods. Click Run Check to execute;
+            in a healthy tenant you want three PASS rows and zero FAIL. If anything fails, the Details column tells you
+            what's wrong and you have a problem to investigate before the next close.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/16I-3-admin-integrity-check.png" alt="Integrity check">
+            <div class="figure__caption"><strong>Figure 15.5.3 &mdash;</strong> Integrity Check results after clicking Run Check. Three PASS rows with human-readable details: <em>Total Debit ₹2,45,000.00 &middot; Total Credit ₹2,45,000.00 &middot; Difference ₹0.00</em> for the GL balance check, <em>No drifted accounts &mdash; all stored balances reconcile with posted JEs</em> for drift, <em>All fiscal period balances consistent</em> for periods. Top-right toast: <em>"All integrity checks passed"</em>.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 4 &mdash; Job Log</h4>
+          <p>
+            Click <strong>Job Log</strong>. Ragenaizer runs background jobs for things like the monthly billing cycle,
+            the monthly depreciation run, the overnight integrity check, and the year-end rollover. The Job Log is where you
+            see what ran, when it ran, whether it succeeded, and how long it took. Failed jobs have a Retry button and a
+            View Details action that shows the stack trace and the full job payload.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/16I-4-admin-job-log.png" alt="Job log">
+            <div class="figure__caption"><strong>Figure 15.5.4 &mdash;</strong> Job Log tab with an All Job Types filter and a Timestamp/Job Type/Status/Duration/Details column layout. Empty on day one in a fresh tenant; fills up as background jobs run on schedule.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 5 &mdash; Closing Checklists</h4>
+          <p>
+            Click <strong>Closing Checklists</strong>. Month-end close is a process, not an event &mdash; there's a sequence of
+            things you do in order (post depreciation, reconcile banks, review AR aging, lock the period, etc.).
+            Closing Checklists is where you define that sequence as a reusable template and then track progress through it
+            each month. Check items off as you complete them, generate a signed report when you're done, and lock the period
+            to prevent further changes. You can use the same checklist for every month or customise it.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/16I-5-admin-closing-checklists.png" alt="Closing checklists">
+            <div class="figure__caption"><strong>Figure 15.5.5 &mdash;</strong> Closing Checklists tab. Filter by Fiscal Year and Create Checklist toolbar buttons, Checklist/Fiscal Year/Status/Progress/Actions columns. Empty in a fresh tenant &mdash; create your first checklist for the current month and use it to drive the close.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/16J-3-closing-checklist-modal.png" alt="Closing checklist modal">
+            <div class="figure__caption"><strong>Figure 15.5.5a &mdash;</strong> The Create Closing Checklist modal. Pick the Fiscal Year and Period (e.g. April 2026), give the checklist a name, and the system pre-populates the standard month-end task list (Reconcile Banks, Run Depreciation, Review AR/AP Aging, Lock Period, etc.) which you can edit before saving.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/16J-4-closing-checklist-saved.png" alt="Closing checklist saved">
+            <div class="figure__caption"><strong>Figure 15.5.5b &mdash;</strong> Saved checklist. Each task is a row with a checkbox; tick them off as you complete the work, and the Progress column on the parent list updates to "X of Y complete". When all tasks are checked the checklist Status flips to <em>Complete</em> and you can lock the period.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Tab 6 &mdash; Year-End Closing</h4>
+          <p>
+            Click <strong>Year-End Closing</strong>. Once a year you close the books for the entire fiscal year.
+            This locks every period, zeros out the revenue and expense accounts by posting their net balance to
+            Current Year Earnings (which rolls up into Retained Earnings for the next year), and creates the new fiscal
+            year ready for postings. You can't undo a year-end close &mdash; it's the accounting equivalent of pouring concrete.
+            Before running it, complete every month's closing checklist, run Integrity Check with all PASS, and
+            back up the database.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/16I-6-admin-year-end-closing.png" alt="Year-end closing">
+            <div class="figure__caption"><strong>Figure 15.5.6 &mdash;</strong> Year-End Closing tab. The big red warning at the top is not decorative: <em>"Close a fiscal year to prevent further modifications. This will lock all periods and carry forward balances. This action cannot be undone."</em> Pick the fiscal year, the pre-flight checks run automatically (same three as Integrity Check, rendered via the same helpers), and if all PASS the Run Closing button unlocks. Confirm to post the closing entries and roll into the next year.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/16J-5-year-end-preflight.png" alt="Year-end preflight">
+            <div class="figure__caption"><strong>Figure 15.5.6a &mdash;</strong> The pre-flight panel after picking a fiscal year. The same three integrity checks (GL Balance, Account Balance Drift, Period Balance Consistency) render as PASS/FAIL rows with human-readable details, using the shared <code>formatIntegrityDetails</code> helpers from §15.5.3. The Run Year-End Closing button is disabled until every check is PASS &mdash; Ragenaizer will not let you close a year on top of a broken ledger.</div>
+          </figure>
+
+          <div class="callout">
+            <div class="callout__icon">&#10003;</div>
+            <div class="callout__body">
+              <h4 class="callout__title">Where to go next</h4>
+              <p>
+                Your demo tenant now has the full picture: a working Chart of Accounts, two users (one for submission, one for approval &mdash;
+                <code>abhishekanand.ko@gmail.com</code> and <code>manager.test@droidsdemo.com</code>) so segregation-of-duties controls
+                actually exercise, two bank accounts with deposits / withdrawals / interest / a transfer / a completed reconciliation,
+                a real customer invoice and vendor bill end-to-end, an expense claim that has been submitted, approved by the second
+                user, and reimbursed (auto-creating the Reimbursement Payable system fixture), a fixed asset with a depreciation schedule,
+                a subscription billing plan with a real subscription and a usage meter, and a Trial Balance that balances to the rupee.
+                Trial Balance, P&amp;L, Balance Sheet, Cash Flow, AR/AP Aging and Customer/Vendor Statements all carry real numbers.
+                Audit Logs, Pending Approvals, Integrity Check, Closing Checklists and Year-End Closing all open without errors.
+              </p>
+              <p style="margin-top:0.5rem;">
+                That's a tenant you can hand to an investor with the guide as a script. From here the natural next step is the
+                <a href="../HRMS/Organization-Setup.html">HRMS Organization Setup</a> guide, which feeds the same Chart of Accounts
+                from the payroll side &mdash; salary postings, statutory deductions, loan disbursements, and reimbursements all flow
+                back into the GL you just built.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div class="callout callout--tip">
           <div class="callout__icon">&#10003;</div>
           <div class="callout__body">
-            <span class="callout__label">You're done with the foundation</span>
-            <h4 class="callout__title">Where to go next</h4>
-            <p>If you've followed every section of this guide you now have a working set of books with three accounts, an opening balance, one customer, one vendor, one approved invoice, one approved bill, and a clean Trial Balance. That's the entire core of an accounting system, working end-to-end. Each of the four modules in Section 15 builds on top of this foundation and has its own dedicated walkthrough &mdash; check the Knowledge Base sidebar for "Banking Setup", "Expense Claims", "Fixed Assets", and "Subscription Billing".</p>
+            <span class="callout__label">You're done with the platform</span>
+            <h4 class="callout__title">Where to go from here</h4>
+            <p>If you've followed every section you now have a working set of books, two dedicated bank GL accounts, two physical bank accounts with a full transaction history, a reconciled HDFC account, an Expense Category + Policy + submitted Claim, a Fixed Asset Category and registered asset, a Billing Plan, and a clean Integrity Check that proves the ledger's internal invariants all hold. This is the entire accounting system working end-to-end. Everything else &mdash; payroll, multi-currency, consolidation, branch accounting &mdash; builds on this same foundation. Check the Knowledge Base sidebar for dedicated guides on each module and return here any time for reference.</p>
           </div>
         </div>
       </section>

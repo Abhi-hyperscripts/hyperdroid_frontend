@@ -15,6 +15,12 @@ let customers = [];
 let accounts = [];
 let bankAccounts = [];
 
+// Module-scoped caches so row-action handlers can look up the full entity
+// by id without re-fetching. Populated by load*() functions after every API call.
+let customerInvoices = [];
+let customerPayments = [];
+let creditNotes = [];
+
 let invoicePage = 1;
 let paymentPage = 1;
 let cnPage = 1;
@@ -184,6 +190,7 @@ async function loadCustomerInvoices() {
     try {
         const res = await api.request(AccountsCommon.buildUrl('invoices', params));
         const items = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        customerInvoices = items;  // cache for row action handlers
         const total = res?.total || items.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
 
@@ -423,8 +430,26 @@ async function saveInvoice(approve) {
     }
 }
 
+function _invoiceLabel(id) {
+    const inv = customerInvoices.find(x => x.id === id);
+    if (!inv) return { label: 'this invoice', invNo: '', customerName: '' };
+    const fmt = AccountsCommon.formatCurrency;
+    const invNo = inv.invoice_number || '';
+    const customerName = inv.customer_name || customers?.find(c => c.id === inv.customer_id)?.name || 'the customer';
+    const amount = inv.total_amount != null ? fmt(inv.total_amount) : '';
+    const dateStr = inv.invoice_date ? new Date(inv.invoice_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    const label = `${invNo ? invNo + ' ' : ''}for ${customerName}${amount ? ' totalling ' + amount : ''}${dateStr ? ' dated ' + dateStr : ''}`;
+    return { label, invNo, customerName };
+}
+
 async function approveInvoice(id) {
-    const ok = await Confirm.show({ title: 'Approve Invoice', message: 'Approve this invoice?', confirmText: 'Approve', type: 'info' });
+    const { label } = _invoiceLabel(id);
+    const ok = await Confirm.show({
+        title: 'Approve Customer Invoice',
+        message: `Approve ${label}? The invoice will move from Draft to Approved, post a journal entry (Dr Accounts Receivable, Cr Sales Revenue + Cr Output GST), and become eligible for payment collection. This cannot be undone without reversing the journal entry.`,
+        confirmText: 'Approve',
+        type: 'info'
+    });
     if (!ok) return;
     try {
         await api.request(AccountsCommon.buildUrl(`invoices/${id}/approve`), { method: 'POST' });
@@ -434,7 +459,13 @@ async function approveInvoice(id) {
 }
 
 async function sendInvoice(id) {
-    const ok = await Confirm.show({ title: 'Send Invoice', message: 'Mark this invoice as sent?', confirmText: 'Send', type: 'info' });
+    const { label } = _invoiceLabel(id);
+    const ok = await Confirm.show({
+        title: 'Send Customer Invoice',
+        message: `Mark ${label} as sent to the customer? This updates the invoice status to Sent and records the send date in the audit trail. Use this after you've actually emailed or delivered the invoice.`,
+        confirmText: 'Mark as Sent',
+        type: 'info'
+    });
     if (!ok) return;
     try {
         await api.request(AccountsCommon.buildUrl(`invoices/${id}/send`), { method: 'POST' });
@@ -444,7 +475,13 @@ async function sendInvoice(id) {
 }
 
 async function deleteDraftInvoice(id) {
-    const ok = await Confirm.danger('Delete this draft invoice? This cannot be undone.', 'Delete Invoice');
+    const { label } = _invoiceLabel(id);
+    const ok = await Confirm.show({
+        title: 'Delete Draft Invoice',
+        message: `Delete ${label}? Only draft invoices can be deleted — once approved, an invoice can only be cancelled via a credit note. This cannot be undone.`,
+        confirmText: 'Delete',
+        type: 'danger'
+    });
     if (!ok) return;
     try {
         await api.request(AccountsCommon.buildUrl(`invoices/${id}`), { method: 'DELETE' });
@@ -472,6 +509,7 @@ async function loadCustomerPayments() {
     try {
         const res = await api.request(AccountsCommon.buildUrl('invoices/payments', params));
         const items = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        customerPayments = items;
         const total = res?.total || items.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
 
@@ -585,6 +623,7 @@ async function loadCreditNotes() {
     try {
         const res = await api.request(AccountsCommon.buildUrl('invoices/credit-notes', params));
         const items = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        creditNotes = items;
         const total = res?.total || items.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
 

@@ -673,7 +673,7 @@ function renderJournalEntriesTable(entries) {
     const tbody = document.getElementById('journalEntriesTable');
     if (!tbody) return;
     if (!entries.length) {
-        tbody.innerHTML = `<tr class="empty-state"><td colspan="6"><div class="empty-message">
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="7"><div class="empty-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><p>No journal entries found</p></div></td></tr>`;
         return;
     }
@@ -681,10 +681,25 @@ function renderJournalEntriesTable(entries) {
     const journalMap = {};
     journalTypes.forEach(j => { journalMap[j.id] = j.name || j.journal_type_name || j.type; });
     const esc = AccountsCommon.escapeHtml, fmt = AccountsCommon.formatCurrency, fmtD = AccountsCommon.formatDate;
+    const viewSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const postSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>';
+    const reverseSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
+    const lockSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+    const isAdmin = accountsRoles.isAdmin();
 
     tbody.innerHTML = entries.map(e => {
         const entryNum = (e.entry_number || e.gl_number || '-');
         const entryNumDisplay = entryNum.length > 16 ? entryNum.substring(0, 14) + '...' : entryNum;
+        let actions = `<button class="btn-icon" onclick="viewGlEntry('${e.id}')" data-tooltip="View">${viewSvg}</button>`;
+        if (isAdmin) {
+            if (e.status === 'draft') {
+                actions += `<button class="btn-icon" onclick="postGlEntry('${e.id}')" data-tooltip="Post">${postSvg}</button>`;
+            }
+            if (e.status === 'posted') {
+                actions += `<button class="btn-icon" onclick="lockGlEntry('${e.id}')" data-tooltip="Lock">${lockSvg}</button>`;
+                actions += `<button class="btn-icon danger" onclick="reverseGlEntry('${e.id}')" data-tooltip="Reverse">${reverseSvg}</button>`;
+            }
+        }
         return `<tr>
         <td data-tooltip="${esc(entryNum)}"><code>${esc(entryNumDisplay)}</code></td>
         <td>${esc(journalMap[e.journal_type_id] || e.journal_type || '-')}</td>
@@ -692,6 +707,7 @@ function renderJournalEntriesTable(entries) {
         <td>${esc(e.description || '-')}</td>
         <td class="text-right">${fmt(e.total_debit || e.total_amount || 0)}</td>
         <td>${AccountsCommon.statusBadge(e.status)}</td>
+        <td class="actions-cell">${actions}</td>
     </tr>`;
     }).join('');
 }

@@ -181,6 +181,10 @@
                             </svg>
                             Add Bank Account
                         </button>
+                        <label class="toggle-label" style="display:flex;align-items:center;gap:0.5rem;margin-left:auto;cursor:pointer;">
+                            <input type="checkbox" id="bankShowInactive" onchange="toggleBankShowInactive()">
+                            <span>Show Inactive</span>
+                        </label>
                     </div>
 
                     <div class="data-table-container">
@@ -523,8 +527,8 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('bankAccountModal')">Cancel</button>
-                    <button class="btn btn-primary" onclick="saveBankAccount()">Save Account</button>
+                    <button class="btn btn-outline" id="bankAccountCancelBtn" onclick="AccountsCommon.closeModal('bankAccountModal')">Cancel</button>
+                    <button class="btn btn-primary" id="bankAccountSaveBtn" onclick="saveBankAccount()">Save Account</button>
                 </div>
             </div>
         </div>
@@ -550,14 +554,15 @@
                                 <label for="txnType">Transaction Type *</label>
                                 <select id="txnType" class="form-control" required>
                                     <option value="">Select Type...</option>
-                                    <option value="deposit">Deposit</option>
-                                    <option value="withdrawal">Withdrawal</option>
-                                    <option value="transfer_in">Transfer In</option>
-                                    <option value="transfer_out">Transfer Out</option>
-                                    <option value="interest">Interest</option>
-                                    <option value="charges">Charges</option>
-                                    <option value="payment_gateway">Payment Gateway</option>
+                                    <option value="deposit">Deposit (money in)</option>
+                                    <option value="withdrawal">Withdrawal (money out)</option>
+                                    <option value="interest">Interest earned (money in)</option>
+                                    <option value="charges">Bank charges (money out)</option>
                                 </select>
+                                <!-- Transfer In/Out are created automatically by the Inter-Bank Transfer tab.
+                                     Payment Gateway transactions are created automatically by the Razorpay webhook.
+                                     Neither should be manually selectable here. -->
+
                             </div>
                         </div>
                         <div class="form-row two-col">

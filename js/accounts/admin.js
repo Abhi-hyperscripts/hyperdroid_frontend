@@ -338,8 +338,30 @@ async function loadPendingApprovals() {
     }
 }
 
+function _pendingApprovalLabel(id) {
+    const item = (typeof pendingApprovals !== 'undefined' ? pendingApprovals : []).find(x => x.id === id);
+    if (!item) return 'this pending item';
+    const fmt = AccountsCommon.formatCurrency;
+    const type = item.entity_type || item.type || 'item';
+    const title = item.title || item.description || item.entity_name || '';
+    const amount = item.amount != null ? fmt(item.amount) : '';
+    const requestedBy = item.requested_by_name || item.created_by_name || '';
+    const parts = [];
+    parts.push(`${type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ')}`);
+    if (title) parts.push(`"${title}"`);
+    if (amount) parts.push(`for ${amount}`);
+    if (requestedBy) parts.push(`requested by ${requestedBy}`);
+    return parts.join(' ');
+}
+
 async function approveItem(id) {
-    const ok = await Confirm.show({ title: 'Approve Item', message: 'Approve this item?', confirmText: 'Approve', type: 'info' });
+    const label = _pendingApprovalLabel(id);
+    const ok = await Confirm.show({
+        title: 'Approve Pending Item',
+        message: `Approve ${label}? The action will be executed on behalf of the requester and the approval will be logged in the audit trail with your user id.`,
+        confirmText: 'Approve',
+        type: 'info'
+    });
     if (!ok) return;
     try {
         await api.request(AccountsCommon.buildUrl(`audit/approvals/${id}/approve`), { method: 'POST' });
@@ -352,7 +374,13 @@ async function approveItem(id) {
 }
 
 async function rejectItem(id) {
-    const ok = await Confirm.danger('Reject this item?', 'Reject Item');
+    const label = _pendingApprovalLabel(id);
+    const ok = await Confirm.show({
+        title: 'Reject Pending Item',
+        message: `Reject ${label}? The request will be marked as rejected and the requester will be notified. The rejection is logged in the audit trail with your user id. This cannot be undone — if you change your mind, the requester will need to submit a new request.`,
+        confirmText: 'Reject',
+        type: 'danger'
+    });
     if (!ok) return;
     try {
         await api.request(AccountsCommon.buildUrl(`audit/approvals/${id}/reject`), { method: 'POST' });
@@ -367,6 +395,63 @@ async function rejectItem(id) {
 // ============================================================================
 // 3. INTEGRITY CHECK
 // ============================================================================
+
+// Map backend check_type identifiers to human-readable names and descriptions.
+// Backend emits: `gl_level_balance`, `account_balance_drift`, `period_balance_consistency`.
+const INTEGRITY_CHECK_LABELS = {
+    gl_level_balance: { name: 'GL Balance (Dr = Cr)', description: 'Every posted journal entry has balanced debit and credit totals.' },
+    account_balance_drift: { name: 'Account Balance Drift', description: 'Stored account balances match the sum of their posted journal entry lines.' },
+    period_balance_consistency: { name: 'Period Balance Consistency', description: 'Fiscal period opening and closing balances reconcile across periods.' }
+};
+
+// Render the details object into a short human-readable summary instead of
+// the literal string "[object Object]" that JavaScript's default toString emits.
+function formatIntegrityDetails(c) {
+    if (c == null) return '-';
+    if (typeof c.details === 'string') return c.details;
+    if (typeof c.message === 'string') return c.message;
+    const d = c.details;
+    if (d == null) return '-';
+    if (typeof d !== 'object') return String(d);
+
+    const fmt = AccountsCommon.formatCurrency;
+    // gl_balance: { total_debit, total_credit, difference }
+    if ('total_debit' in d && 'total_credit' in d) {
+        return `Total Debit ${fmt(d.total_debit)} · Total Credit ${fmt(d.total_credit)} · Difference ${fmt(d.difference ?? 0)}`;
+    }
+    // account_drift: { drifted_accounts, accounts: [...] }
+    if ('drifted_accounts' in d) {
+        const n = d.drifted_accounts;
+        if (n === 0) return 'No drifted accounts — all stored balances reconcile with posted JEs.';
+        const sample = Array.isArray(d.accounts) ? d.accounts.slice(0, 3).map(a => `${a.account_code || ''} ${a.account_name || ''}`.trim()).filter(Boolean) : [];
+        return `${n} account${n === 1 ? '' : 's'} drifted${sample.length ? ': ' + sample.join(', ') + (n > sample.length ? ', …' : '') : ''}`;
+    }
+    // period_balance: { inconsistent_period_balances }
+    if ('inconsistent_period_balances' in d) {
+        const n = d.inconsistent_period_balances;
+        return n === 0 ? 'All fiscal period balances consistent.' : `${n} period${n === 1 ? '' : 's'} with inconsistent opening/closing balances.`;
+    }
+    // Fallback: pretty-print the object fields as key: value pairs.
+    try {
+        const pairs = Object.entries(d).filter(([, v]) => v !== null && typeof v !== 'object' && !Array.isArray(v));
+        if (pairs.length) return pairs.map(([k, v]) => `${k}: ${v}`).join(' · ');
+        return JSON.stringify(d);
+    } catch {
+        return '-';
+    }
+}
+
+function integrityCheckLabel(c) {
+    const key = c.check_type || c.check || c.name;
+    return INTEGRITY_CHECK_LABELS[key]?.name || key || '-';
+}
+
+function integrityCheckPassed(c) {
+    // Backend uses status === 'passed'/'failed'; tolerate older `passed` boolean shape too.
+    if (typeof c.passed === 'boolean') return c.passed;
+    if (typeof c.status === 'string') return c.status === 'passed';
+    return false;
+}
 
 async function runIntegrityCheck() {
     const resultsContainer = document.getElementById('integrityResults');
@@ -388,17 +473,23 @@ async function runIntegrityCheck() {
             return;
         }
 
+        const overallHealthy = (data?.overall_status === 'healthy') || checks.every(integrityCheckPassed);
         resultsContainer.innerHTML = `<div class="data-table-container"><table class="data-table">
             <thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead>
-            <tbody>${checks.map(c => `<tr>
-                <td>${AccountsCommon.escapeHtml(c.name || c.check)}</td>
-                <td><span class="badge ${c.passed ? 'status-active' : 'status-rejected'}">${c.passed ? 'PASS' : 'FAIL'}</span></td>
-                <td>${AccountsCommon.escapeHtml(c.details || c.message || '-')}</td>
-            </tr>`).join('')}</tbody>
+            <tbody>${checks.map(c => {
+                const passed = integrityCheckPassed(c);
+                const label = integrityCheckLabel(c);
+                const description = INTEGRITY_CHECK_LABELS[c.check_type || c.check || c.name]?.description || '';
+                const details = formatIntegrityDetails(c);
+                return `<tr>
+                    <td><div style="font-weight:600;">${AccountsCommon.escapeHtml(label)}</div>${description ? `<div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px;">${AccountsCommon.escapeHtml(description)}</div>` : ''}</td>
+                    <td><span class="badge ${passed ? 'status-active' : 'status-rejected'}">${passed ? 'PASS' : 'FAIL'}</span></td>
+                    <td>${AccountsCommon.escapeHtml(details)}</td>
+                </tr>`;
+            }).join('')}</tbody>
         </table></div>`;
 
-        const allPassed = checks.every(c => c.passed);
-        if (allPassed) {
+        if (overallHealthy) {
             Toast.success('All integrity checks passed');
         } else {
             Toast.error('Some integrity checks failed. Review results.');
@@ -430,12 +521,17 @@ async function loadIntegrityCheckResults() {
             <thead><tr><th>Run Date</th><th>Check</th><th>Status</th><th>Details</th></tr></thead>
             <tbody>${results.map(r => {
                 const checks = r.checks || [r];
-                return checks.map(c => `<tr>
-                    <td>${AccountsCommon.formatDate(r.run_date || r.timestamp || r.created_at, true)}</td>
-                    <td>${AccountsCommon.escapeHtml(c.name || c.check || '-')}</td>
-                    <td><span class="badge ${c.passed ? 'status-active' : 'status-rejected'}">${c.passed ? 'PASS' : 'FAIL'}</span></td>
-                    <td>${AccountsCommon.escapeHtml(c.details || c.message || '-')}</td>
-                </tr>`).join('');
+                return checks.map(c => {
+                    const passed = integrityCheckPassed(c);
+                    const label = integrityCheckLabel(c);
+                    const details = formatIntegrityDetails(c);
+                    return `<tr>
+                        <td>${AccountsCommon.formatDate(r.run_date || r.timestamp || r.created_at, true)}</td>
+                        <td>${AccountsCommon.escapeHtml(label)}</td>
+                        <td><span class="badge ${passed ? 'status-active' : 'status-rejected'}">${passed ? 'PASS' : 'FAIL'}</span></td>
+                        <td>${AccountsCommon.escapeHtml(details)}</td>
+                    </tr>`;
+                }).join('');
             }).join('')}</tbody>
         </table></div>`;
     } catch (err) {
@@ -753,17 +849,25 @@ async function loadYearEndPreflight(fiscalYearId) {
             return;
         }
 
-        const allPassed = checks.every(c => c.passed);
+        // Reuse the same shape-tolerant helpers that the Integrity Check view uses
+        // (bug #45). Year-End preflight returns the same `IntegrityCheckResult`
+        // shape — `{ check_type, status, details }` — so `c.passed` is undefined.
+        const allPassed = checks.every(integrityCheckPassed);
 
         area.innerHTML = `<div class="glass-card-body">
             <h4 style="margin-bottom:1rem;">Pre-Flight Checks</h4>
             <div class="data-table-container"><table class="data-table">
                 <thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead>
-                <tbody>${checks.map(c => `<tr>
-                    <td>${AccountsCommon.escapeHtml(c.name || c.check)}</td>
-                    <td><span class="badge ${c.passed ? 'status-active' : 'status-rejected'}">${c.passed ? 'PASS' : 'FAIL'}</span></td>
-                    <td>${AccountsCommon.escapeHtml(c.details || c.message || '-')}</td>
-                </tr>`).join('')}</tbody>
+                <tbody>${checks.map(c => {
+                    const passed = integrityCheckPassed(c);
+                    const label = integrityCheckLabel(c);
+                    const details = formatIntegrityDetails(c);
+                    return `<tr>
+                        <td>${AccountsCommon.escapeHtml(label)}</td>
+                        <td><span class="badge ${passed ? 'status-active' : 'status-rejected'}">${passed ? 'PASS' : 'FAIL'}</span></td>
+                        <td>${AccountsCommon.escapeHtml(details)}</td>
+                    </tr>`;
+                }).join('')}</tbody>
             </table></div>
         </div>`;
 

@@ -164,12 +164,15 @@ function renderBillsTable() {
     const isAdmin = accountsRoles.isAdmin();
     const esc = AccountsCommon.escapeHtml, fmt = AccountsCommon.formatCurrency, fmtD = AccountsCommon.formatDate;
 
+    const viewSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
     tbody.innerHTML = vendorBills.map(b => {
-        let actions = '';
+        // Every bill, regardless of status, gets a View button. Status-specific
+        // actions are layered on top of that.
+        let actions = `<button class="btn-icon" onclick="viewBill('${b.id}')" data-tooltip="View">${viewSvg}</button>`;
         if (isAdmin && b.status === 'draft') {
-            actions = `<button class="btn-icon" onclick="editBill('${b.id}')" data-tooltip="Edit">${editSvg}</button><button class="btn-icon" onclick="approveBill('${b.id}')" data-tooltip="Approve">${checkSvg}</button><button class="btn-icon danger" onclick="cancelBill('${b.id}')" data-tooltip="Cancel">${cancelSvg}</button>`;
+            actions += `<button class="btn-icon" onclick="editBill('${b.id}')" data-tooltip="Edit">${editSvg}</button><button class="btn-icon" onclick="approveBill('${b.id}')" data-tooltip="Approve">${checkSvg}</button><button class="btn-icon danger" onclick="cancelBill('${b.id}')" data-tooltip="Cancel">${cancelSvg}</button>`;
         } else if (isAdmin && (b.status === 'approved' || b.status === 'partially_paid')) {
-            actions = `<button class="btn btn-sm btn-outline" onclick="showRecordPaymentModal('${b.id}')">Pay</button>`;
+            actions += `<button class="btn btn-sm btn-outline" onclick="showRecordPaymentModal('${b.id}')" data-tooltip="Record payment against this bill">Pay</button>`;
         }
         return `<tr>
             <td><code>${esc(b.bill_number || '-')}</code></td>
@@ -188,23 +191,44 @@ function renderBillsTable() {
 // ============================================================================
 
 function showCreateBillModal() {
-    document.getElementById('billModalTitle').textContent = 'Create Vendor Bill';
     document.getElementById('billForm').reset();
     document.getElementById('billId').value = '';
     document.getElementById('billDate').value = new Date().toISOString().split('T')[0];
     populateBillVendorSelect();
     clearBillLines();
     addBillLine();
+    setBillModalMode('create');
     AccountsCommon.openModal('vendorBillModal');
 }
 
-async function editBill(id) {
+function setBillModalMode(mode) {
+    // mode: 'create' | 'edit' | 'view'
+    const title = document.getElementById('billModalTitle');
+    const saveDraft = document.getElementById('billSaveDraftBtn');
+    const saveApprove = document.getElementById('billSaveApproveBtn');
+    const form = document.querySelector('#vendorBillModal form, #vendorBillModal .modal-body');
+    if (title) title.textContent = mode === 'create' ? 'Create Vendor Bill' : mode === 'edit' ? 'Edit Vendor Bill' : 'View Vendor Bill';
+    if (saveDraft) saveDraft.style.display = mode === 'view' ? 'none' : '';
+    if (saveApprove) saveApprove.style.display = mode === 'view' ? 'none' : '';
+    if (form) {
+        form.querySelectorAll('input, select, textarea, button.btn-icon').forEach(el => {
+            // Don't disable the Close/dismiss button
+            if (el.classList?.contains('close-btn') || el.type === 'button') return;
+            el.disabled = mode === 'view';
+            if ('readOnly' in el) el.readOnly = mode === 'view';
+        });
+        // Hide the Add Line button in view mode — no adding lines to a closed bill
+        const addLineBtn = document.querySelector('#vendorBillModal button[onclick*="addBillLine"]');
+        if (addLineBtn) addLineBtn.style.display = mode === 'view' ? 'none' : '';
+    }
+}
+
+async function loadBillIntoModal(id, mode) {
     try {
         const res = await api.request(AccountsCommon.buildUrl(`vendor-bills/${id}`));
         const bill = res?.data || res;
         if (!bill) { Toast.error('Bill not found'); return; }
 
-        document.getElementById('billModalTitle').textContent = 'Edit Vendor Bill';
         document.getElementById('billId').value = bill.id;
         document.getElementById('billDate').value = (bill.bill_date || '').substring(0, 10);
         document.getElementById('billDueDate').value = (bill.due_date || '').substring(0, 10);
@@ -220,12 +244,16 @@ async function editBill(id) {
             addBillLine();
         }
         calculateBillTotals();
+        setBillModalMode(mode);
         AccountsCommon.openModal('vendorBillModal');
     } catch (err) {
-        console.error('[Payables] editBill error:', err);
+        console.error('[Payables] loadBillIntoModal error:', err);
         Toast.error('Failed to load bill details');
     }
 }
+
+async function editBill(id) { return loadBillIntoModal(id, 'edit'); }
+async function viewBill(id) { return loadBillIntoModal(id, 'view'); }
 
 function populateBillVendorSelect(selectedId) {
     const sel = document.getElementById('billVendor');
@@ -364,7 +392,19 @@ async function saveBill(approve = false) {
 }
 
 async function approveBill(id) {
-    const ok = await Confirm.show({ title: 'Approve Bill', message: 'Approve this vendor bill?', confirmText: 'Approve', type: 'info' });
+    const b = vendorBills.find(x => x.id === id);
+    const fmt = AccountsCommon.formatCurrency;
+    const billNo = b?.bill_number || '';
+    const vendorName = b?.vendor_name || vendors.find(v => v.id === b?.vendor_id)?.name || 'the vendor';
+    const amount = b?.total_amount != null ? fmt(b.total_amount) : '';
+    const billDate = b?.bill_date ? new Date(b.bill_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    const label = b ? `${billNo ? billNo + ' ' : ''}from ${vendorName}${amount ? ' for ' + amount : ''}${billDate ? ' dated ' + billDate : ''}` : 'this vendor bill';
+    const ok = await Confirm.show({
+        title: 'Approve Vendor Bill',
+        message: `Approve ${label}? The bill will move from Draft to Approved, post a journal entry (Dr Expense + Dr Input GST, Cr Accounts Payable), and become eligible for payment. This cannot be undone without reversing the journal entry.`,
+        confirmText: 'Approve',
+        type: 'info'
+    });
     if (!ok) return;
     try {
         await api.request(AccountsCommon.buildUrl(`vendor-bills/${id}/approve`), { method: 'POST' });
@@ -377,7 +417,18 @@ async function approveBill(id) {
 }
 
 async function cancelBill(id) {
-    const ok = await Confirm.danger('Cancel this vendor bill? This cannot be undone.', 'Cancel Bill');
+    const b = vendorBills.find(x => x.id === id);
+    const fmt = AccountsCommon.formatCurrency;
+    const billNo = b?.bill_number || '';
+    const vendorName = b?.vendor_name || vendors.find(v => v.id === b?.vendor_id)?.name || 'the vendor';
+    const amount = b?.total_amount != null ? fmt(b.total_amount) : '';
+    const label = b ? `${billNo ? billNo + ' ' : ''}from ${vendorName}${amount ? ' for ' + amount : ''}` : 'this vendor bill';
+    const ok = await Confirm.show({
+        title: 'Cancel Vendor Bill',
+        message: `Cancel ${label}? The bill will be marked as cancelled and removed from Accounts Payable. If the bill was already approved, the associated journal entry will be reversed. This cannot be undone.`,
+        confirmText: 'Cancel Bill',
+        type: 'danger'
+    });
     if (!ok) return;
     try {
         await api.request(AccountsCommon.buildUrl(`vendor-bills/${id}/cancel`), { method: 'POST' });
@@ -487,7 +538,7 @@ function renderPaymentsTable(payments) {
     }
     const vendorMap = {}, acctMap = {};
     vendors.forEach(v => { vendorMap[v.id] = v.name || v.vendor_name; });
-    accounts.forEach(a => { acctMap[a.id] = a.name; });
+    accounts.forEach(a => { acctMap[a.id] = a.account_name || a.name; });
     const esc = AccountsCommon.escapeHtml, fmt = AccountsCommon.formatCurrency, fmtD = AccountsCommon.formatDate;
     const voidSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
     const isAdmin = accountsRoles.isAdmin();
@@ -538,7 +589,11 @@ function populatePaymentBankSelect(selectedId) {
     const sel = document.getElementById('paymentBankAccount');
     if (!sel) return;
     sel.innerHTML = '<option value="">Select Account...</option>' +
-        bankAccounts.map(a => `<option value="${a.id}" ${a.id === selectedId ? 'selected' : ''}>${AccountsCommon.escapeHtml(a.code ? a.code + ' - ' + a.name : a.name)}</option>`).join('');
+        bankAccounts.map(a => {
+            const name = a.account_name || a.name || '';
+            const bank = a.bank_name ? ` (${a.bank_name})` : '';
+            return `<option value="${a.id}" ${a.id === selectedId ? 'selected' : ''}>${AccountsCommon.escapeHtml(name + bank)}</option>`;
+        }).join('');
 }
 
 async function loadVendorOpenBills(preSelectBillId) {

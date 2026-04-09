@@ -424,7 +424,11 @@ async function populateTaxRateAccountSelect(selectedValue) {
         const res = await api.request(url, { _skipSpinner: true });
         const accounts = Array.isArray(res) ? res : (res?.data || res?.items || []);
         sel.innerHTML = '<option value="">Select account...</option>' +
-            accounts.map(a => `<option value="${a.id}" ${a.id === selectedValue ? 'selected' : ''}>${AccountsCommon.escapeHtml(a.code ? a.code + ' - ' + a.name : a.name)}</option>`).join('');
+            accounts.map(a => {
+                const c = a.account_code || a.code || '';
+                const n = a.account_name || a.name || '';
+                return `<option value="${a.id}" ${a.id === selectedValue ? 'selected' : ''}>${AccountsCommon.escapeHtml(c ? c + ' - ' + n : n)}</option>`;
+            }).join('');
     } catch (err) {
         console.error('[Taxation] populateTaxRateAccountSelect error:', err);
     }

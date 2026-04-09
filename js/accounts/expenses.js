@@ -141,19 +141,44 @@ function renderCategoriesTable() {
 
     tbody.innerHTML = filtered.map(c => {
         const acct = coaAccounts.find(a => a.id === c.default_account_id);
+        const acctCode = acct?.account_code || acct?.code || '';
+        const acctName = acct?.account_name || acct?.name || '';
+        const acctLabel = acct ? (acctCode ? `${acctCode} - ${acctName}` : acctName) : '-';
         const statusClass = c.is_active !== false ? 'status-active' : 'status-rejected';
         const statusText = c.is_active !== false ? 'Active' : 'Inactive';
+        const editSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+        const deleteSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
         const actions = accountsRoles.isAdmin()
-            ? `<button class="btn-icon" onclick="editCategory('${c.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`
+            ? `<button class="btn-icon" onclick="editCategory('${c.id}')" data-tooltip="Edit">${editSvg}</button><button class="btn-icon danger" onclick="deleteCategory('${c.id}')" data-tooltip="Delete">${deleteSvg}</button>`
             : '-';
         return `<tr>
             <td>${AccountsCommon.escapeHtml(c.name)}</td>
             <td>${AccountsCommon.escapeHtml(c.description || '-')}</td>
-            <td>${AccountsCommon.escapeHtml(acct?.name || c.default_account_id || '-')}</td>
+            <td>${AccountsCommon.escapeHtml(acctLabel)}</td>
             <td><span class="badge ${statusClass}">${statusText}</span></td>
             <td class="actions-cell">${actions}</td>
         </tr>`;
     }).join('');
+}
+
+async function deleteCategory(id) {
+    const c = expenseCategories.find(x => x.id === id);
+    const label = c ? `"${c.name}"` : 'this category';
+    const ok = await Confirm.show({
+        title: 'Delete Expense Category',
+        message: `Delete ${label}? Any expense claims already using this category will keep their historical reference, but new claims won't be able to select it. This cannot be undone — if you need to reactivate later, create a new category.`,
+        confirmText: 'Delete',
+        type: 'danger'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`expenses/categories/${id}`), { method: 'DELETE' });
+        Toast.success('Category deleted');
+        await loadExpenseCategories();
+    } catch (err) {
+        console.error('[Expenses] deleteCategory error:', err);
+        Toast.error(err.message || 'Failed to delete category');
+    }
 }
 
 // ============================================================================
@@ -183,7 +208,14 @@ function initCategoryDropdowns(accountValue) {
     const container = document.getElementById('categoryDefaultAccountContainer');
     if (!container || typeof SearchableDropdown !== 'function') return;
     container.innerHTML = '';
-    const options = coaAccounts.map(a => ({ value: a.id, label: `${a.code ? a.code + ' - ' : ''}${a.name}` }));
+    // Backend ships `account_code`/`account_name` — falling back to `code`/`name`
+    // (which don't exist on the payload) produced "undefined" labels in the
+    // dropdown. Same field-name-mismatch class as bug #30 in receivables/payables.
+    const options = coaAccounts.map(a => {
+        const code = a.account_code || a.code || '';
+        const name = a.account_name || a.name || '';
+        return { value: a.id, label: code ? `${code} - ${name}` : name };
+    });
     categoryAccountDropdown = new SearchableDropdown(container, {
         id: 'categoryDefaultAccountDD',
         options,
@@ -262,8 +294,10 @@ function renderPoliciesTable() {
         const cat = expenseCategories.find(c => c.id === p.expense_category_id);
         const statusClass = p.is_active !== false ? 'status-active' : 'status-rejected';
         const statusText = p.is_active !== false ? 'Active' : 'Inactive';
+        const editSvg2 = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+        const deleteSvg2 = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
         const actions = accountsRoles.isAdmin()
-            ? `<button class="btn-icon" onclick="editPolicy('${p.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`
+            ? `<button class="btn-icon" onclick="editPolicy('${p.id}')" data-tooltip="Edit">${editSvg2}</button><button class="btn-icon danger" onclick="deletePolicy('${p.id}')" data-tooltip="Delete">${deleteSvg2}</button>`
             : '-';
         return `<tr>
             <td>${AccountsCommon.escapeHtml(p.name)}</td>
@@ -274,6 +308,29 @@ function renderPoliciesTable() {
             <td class="actions-cell">${actions}</td>
         </tr>`;
     }).join('');
+}
+
+async function deletePolicy(id) {
+    const p = expensePolicies.find(x => x.id === id);
+    const fmt = AccountsCommon.formatCurrency;
+    const parts = [p?.name ? `"${p.name}"` : 'this policy'];
+    if (p?.max_amount) parts.push(`(max ${fmt(p.max_amount)})`);
+    const label = parts.join(' ');
+    const ok = await Confirm.show({
+        title: 'Delete Expense Policy',
+        message: `Delete ${label}? Any expense claims already validated against this policy will keep their historical link, but new claims in this category will no longer be constrained by it. This cannot be undone.`,
+        confirmText: 'Delete',
+        type: 'danger'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`expenses/policies/${id}`), { method: 'DELETE' });
+        Toast.success('Policy deleted');
+        await loadExpensePolicies();
+    } catch (err) {
+        console.error('[Expenses] deletePolicy error:', err);
+        Toast.error(err.message || 'Failed to delete policy');
+    }
 }
 
 // ============================================================================
@@ -570,7 +627,18 @@ async function viewClaim(id) {
 // ============================================================================
 
 async function approveClaim(id) {
-    const ok = await Confirm.show({ title: 'Confirm Approval', message: 'Approve this expense claim?', confirmText: 'Approve', type: 'info' });
+    const c = expenseClaims.find(x => x.id === id);
+    const fmt = AccountsCommon.formatCurrency;
+    const claimNo = c?.claim_number || c?.claim_no || '';
+    const empName = c?.employee_name || c?.employee_full_name || 'the claimant';
+    const amount = c?.total_amount != null ? fmt(c.total_amount) : (c?.amount != null ? fmt(c.amount) : '');
+    const desc = c?.description ? ` for "${c.description.length > 60 ? c.description.slice(0, 60) + '…' : c.description}"` : '';
+    const ok = await Confirm.show({
+        title: 'Approve Expense Claim',
+        message: `Approve ${claimNo || 'this expense claim'}${desc} from ${empName}${amount ? ` totalling ${amount}` : ''}? The claim will move to Approved status and become eligible for reimbursement. Nothing posts to the ledger until you reimburse it.`,
+        confirmText: 'Approve',
+        type: 'info'
+    });
     if (!ok) return;
     try {
         await api.request(AccountsCommon.buildUrl(`expenses/claims/${id}/approve`), { method: 'POST' });

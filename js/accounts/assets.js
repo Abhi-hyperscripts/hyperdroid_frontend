@@ -287,7 +287,7 @@ function renderAssets() {
 
         return `<tr>
             <td><code>${AccountsCommon.escapeHtml(a.asset_code || a.code || '-')}</code></td>
-            <td>${AccountsCommon.escapeHtml(a.name)}</td>
+            <td>${AccountsCommon.escapeHtml(a.asset_name || a.name || '-')}</td>
             <td>${AccountsCommon.escapeHtml(catName)}</td>
             <td>${AccountsCommon.formatDate(a.purchase_date)}</td>
             <td class="text-right">${AccountsCommon.formatCurrency(a.purchase_cost || a.cost)}</td>
@@ -421,19 +421,34 @@ async function runDepreciation() {
         return;
     }
 
-    const ok = await Confirm.show({ title: 'Run Depreciation', message: 'Run depreciation for the selected period? This will create journal entries.', confirmText: 'Continue', type: 'warning' });
+    // Build a target-named confirm with the period + category scope
+    const periodLabel = new Date(periodDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const categoryName = categoryId
+        ? (assetCategories.find(c => c.id === categoryId)?.name || 'the selected category')
+        : 'all asset categories';
+    const activeAssetCount = (assets || []).filter(a => a.is_active !== false && (!categoryId || a.asset_category_id === categoryId || a.category_id === categoryId)).length;
+    const ok = await Confirm.show({
+        title: 'Run Depreciation',
+        message: `Run depreciation for ${categoryName} up to ${periodLabel}? This scans ${activeAssetCount} active asset${activeAssetCount === 1 ? '' : 's'}, posts journal entries for each (Dr Depreciation Expense, Cr Accumulated Depreciation), and cannot be undone for this period — you can only reverse by creating correcting journal entries in the General Ledger.`,
+        confirmText: 'Run Depreciation',
+        type: 'warning'
+    });
     if (!ok) return;
 
     try {
         const payload = { period_date: periodDate };
+        if (categoryId) payload.category_id = categoryId;
 
         const url = AccountsCommon.buildUrl('assets/run-depreciation');
         const res = await api.request(url, { method: 'POST', body: JSON.stringify(payload) });
-        // Backend returns { message, assets_processed } — show summary instead of detailed results
+        // Backend returns { message, assets_processed } — always show a summary row so
+        // the user sees the outcome (including "0 assets processed" cases where the
+        // selected period is too early for any asset to depreciate).
         const processed = res?.assets_processed || 0;
-        depreciationResults = processed > 0 ? [{ summary: true, assets_processed: processed, message: res?.message }] : [];
+        const backendMessage = res?.message || `Depreciation run for ${processed} asset${processed === 1 ? '' : 's'}`;
+        depreciationResults = [{ summary: true, assets_processed: processed, message: backendMessage }];
 
-        Toast.success('Depreciation calculated successfully');
+        Toast.success(processed > 0 ? `Depreciation posted for ${processed} asset${processed === 1 ? '' : 's'}` : 'Depreciation run — no eligible assets in this period');
         renderDepreciationResults();
     } catch (err) {
         console.error('[Assets] runDepreciation error:', err);

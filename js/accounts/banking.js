@@ -143,9 +143,12 @@ function setupSearchListeners() {
 // 1. BANK ACCOUNTS
 // ============================================================================
 
+let bankShowInactive = false;
+
 async function loadBankAccounts() {
     try {
-        const res = await api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true });
+        const qs = bankShowInactive ? (AccountsCommon.buildUrl('bank/accounts').includes('?') ? '&' : '?') + 'includeInactive=true' : '';
+        const res = await api.request(AccountsCommon.buildUrl('bank/accounts') + qs, { _skipSpinner: true });
         bankAccountsList = Array.isArray(res) ? res : (res?.data || res?.items || []);
         updateBankAccountStats();
         renderBankAccountsTable();
@@ -153,6 +156,11 @@ async function loadBankAccounts() {
         console.error('[Banking] loadBankAccounts error:', err);
         Toast.error('Failed to load bank accounts');
     }
+}
+
+function toggleBankShowInactive() {
+    bankShowInactive = document.getElementById('bankShowInactive')?.checked || false;
+    loadBankAccounts();
 }
 
 function updateBankAccountStats() {
@@ -175,7 +183,9 @@ function renderBankAccountsTable() {
     const coaMap = {};
     coaAccounts.forEach(a => { coaMap[a.id] = (a.account_code || a.code) ? (a.account_code || a.code) + ' - ' + (a.account_name || a.name) : (a.account_name || a.name); });
     const esc = AccountsCommon.escapeHtml, fmt = AccountsCommon.formatCurrency;
+    const viewSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
     const editSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+    const deactivateSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>';
     const isAdmin = accountsRoles.isAdmin();
 
     tbody.innerHTML = bankAccountsList.map(a => {
@@ -183,9 +193,14 @@ function renderBankAccountsTable() {
             ? '<span class="status-badge active">Active</span>'
             : '<span class="status-badge inactive">Inactive</span>';
         const defaultBadge = a.is_default ? ' <span class="status-badge" style="background:var(--brand-primary);color:var(--text-inverse);font-size:0.7rem;">Default</span>' : '';
+        const viewBtn = `<button class="btn-icon" onclick="viewBankAccount('${a.id}')" data-tooltip="View">${viewSvg}</button>`;
         const actions = isAdmin
-            ? `<button class="btn-icon" onclick="editBankAccount('${a.id}')" data-tooltip="Edit">${editSvg}</button>`
-            : '<span class="text-secondary">-</span>';
+            ? viewBtn
+                + `<button class="btn-icon" onclick="editBankAccount('${a.id}')" data-tooltip="Edit">${editSvg}</button>`
+                + (a.is_active !== false
+                    ? `<button class="btn-icon danger" onclick="deactivateBankAccount('${a.id}')" data-tooltip="Deactivate">${deactivateSvg}</button>`
+                    : `<button class="btn-icon" onclick="reactivateBankAccount('${a.id}')" data-tooltip="Reactivate">${editSvg}</button>`)
+            : viewBtn;
         return `<tr>
             <td>${esc(a.account_name || a.name || '-')}${defaultBadge}</td>
             <td>${esc(a.bank_name || '-')}</td>
@@ -203,21 +218,36 @@ function renderBankAccountsTable() {
 // BANK ACCOUNT MODAL — CREATE / EDIT
 // ============================================================================
 
+function setBankAccountModalMode(mode) {
+    // mode: 'create' | 'edit' | 'view'
+    const title = document.getElementById('bankAccountModalTitle');
+    const saveBtn = document.getElementById('bankAccountSaveBtn');
+    const cancelBtn = document.getElementById('bankAccountCancelBtn');
+    const form = document.getElementById('bankAccountForm');
+    if (title) title.textContent = mode === 'create' ? 'Add Bank Account' : mode === 'edit' ? 'Edit Bank Account' : 'View Bank Account';
+    if (saveBtn) saveBtn.style.display = mode === 'view' ? 'none' : '';
+    if (cancelBtn) cancelBtn.textContent = mode === 'view' ? 'Close' : 'Cancel';
+    if (form) {
+        form.querySelectorAll('input, select, textarea').forEach(el => {
+            el.disabled = mode === 'view';
+            el.readOnly = mode === 'view';
+        });
+    }
+}
+
 function showCreateBankAccountModal() {
-    document.getElementById('bankAccountModalTitle').textContent = 'Add Bank Account';
     document.getElementById('bankAccountForm').reset();
     document.getElementById('bankAccountId').value = '';
+    setBankAccountModalMode('create');
     populateGLAccountSelect();
     AccountsCommon.openModal('bankAccountModal');
 }
 
-async function editBankAccount(id) {
+async function loadBankAccountIntoModal(id, mode) {
     try {
         const res = await api.request(AccountsCommon.buildUrl(`bank/accounts/${id}`));
         const acct = res?.data || res;
         if (!acct) { Toast.error('Account not found'); return; }
-
-        document.getElementById('bankAccountModalTitle').textContent = 'Edit Bank Account';
         document.getElementById('bankAccountId').value = acct.id;
         document.getElementById('accountName').value = acct.account_name || acct.name || '';
         document.getElementById('bankName').value = acct.bank_name || '';
@@ -228,10 +258,51 @@ async function editBankAccount(id) {
         document.getElementById('branchName').value = acct.branch || '';
         document.getElementById('isDefault').checked = !!acct.is_default;
         populateGLAccountSelect(acct.gl_account_id);
+        setBankAccountModalMode(mode);
         AccountsCommon.openModal('bankAccountModal');
     } catch (err) {
-        console.error('[Banking] editBankAccount error:', err);
+        console.error('[Banking] loadBankAccountIntoModal error:', err);
         Toast.error('Failed to load account details');
+    }
+}
+
+async function editBankAccount(id) { return loadBankAccountIntoModal(id, 'edit'); }
+async function viewBankAccount(id) { return loadBankAccountIntoModal(id, 'view'); }
+
+async function deactivateBankAccount(id) {
+    const a = bankAccountsList.find(x => x.id === id);
+    const label = a ? `"${a.account_name || a.name}"${a.bank_name ? ` at ${a.bank_name}` : ''}` : 'this bank account';
+    const ok = await Confirm.show({
+        title: 'Deactivate Bank Account',
+        message: `Are you sure you want to deactivate ${label}? It will be hidden from new transactions, transfers, and reconciliations, but its history (posted transactions, GL entries) stays intact. You can reactivate it later.`,
+        confirmText: 'Deactivate',
+        type: 'warning'
+    });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`bank/accounts/${id}`), {
+            method: 'PUT',
+            body: JSON.stringify({ is_active: false })
+        });
+        Toast.success(`Deactivated bank account ${label}`);
+        await loadBankAccounts();
+    } catch (err) {
+        console.error('[Banking] deactivateBankAccount error:', err);
+        Toast.error(err.message || 'Failed to deactivate bank account');
+    }
+}
+
+async function reactivateBankAccount(id) {
+    try {
+        await api.request(AccountsCommon.buildUrl(`bank/accounts/${id}`), {
+            method: 'PUT',
+            body: JSON.stringify({ is_active: true })
+        });
+        Toast.success('Bank account reactivated');
+        await loadBankAccounts();
+    } catch (err) {
+        console.error('[Banking] reactivateBankAccount error:', err);
+        Toast.error(err.message || 'Failed to reactivate bank account');
     }
 }
 
@@ -341,10 +412,33 @@ function renderBankTransactionsTable() {
     const isAdmin = accountsRoles.isAdmin();
     const delSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 
+    // Compute running balance client-side (oldest → newest) so users see
+    // their ledger evolve row-by-row. Assumes backend sends newest first.
+    // We work on a sorted copy so we don't mutate the cached list.
+    const sortedOldest = [...bankTransactions].sort((a, b) => {
+        const da = new Date(a.transaction_date || a.date).getTime();
+        const db = new Date(b.transaction_date || b.date).getTime();
+        if (da !== db) return da - db;
+        return (a.created_at || '').localeCompare(b.created_at || '');
+    });
+    const balanceByTxnId = {};
+    let runningBal = 0;
+    sortedOldest.forEach(t => {
+        const isInflow = t.transaction_type === 'deposit' || t.transaction_type === 'transfer_in' || t.transaction_type === 'interest';
+        runningBal += isInflow ? Number(t.amount || 0) : -Number(t.amount || 0);
+        balanceByTxnId[t.id] = runningBal;
+    });
+
     tbody.innerHTML = bankTransactions.map(t => {
-        const isDebit = t.transaction_type === 'withdrawal' || t.type === 'debit';
-        const debit = isDebit ? fmt(t.amount) : '-';
-        const credit = !isDebit ? fmt(t.amount) : '-';
+        // From the account HOLDER's perspective (our ledger, not the bank's
+        // passbook): a deposit INCREASES our bank asset so it's a Debit;
+        // a withdrawal DECREASES it so it's a Credit. This matches the GL
+        // perspective used everywhere else in the Accounts module.
+        const inflowTypes = ['deposit', 'transfer_in', 'interest'];
+        const isInflow = inflowTypes.includes(t.transaction_type);
+        const debit = isInflow ? fmt(t.amount) : '-';
+        const credit = !isInflow ? fmt(t.amount) : '-';
+        const runningBalance = balanceByTxnId[t.id];
         const reconBadge = t.is_reconciled
             ? '<span class="status-badge active" style="font-size:0.7rem;">Yes</span>'
             : '<span class="status-badge" style="font-size:0.7rem;">No</span>';
@@ -357,7 +451,7 @@ function renderBankTransactionsTable() {
             <td>${esc((t.transaction_type || t.type || '').charAt(0).toUpperCase() + (t.transaction_type || t.type || '').slice(1))}</td>
             <td class="text-right">${debit}</td>
             <td class="text-right">${credit}</td>
-            <td class="text-right">${fmt(t.running_balance ?? t.balance ?? '-')}</td>
+            <td class="text-right">${runningBalance != null ? fmt(runningBalance) : '-'}</td>
             <td>${reconBadge}</td>
             <td class="actions-cell">${actions}</td>
         </tr>`;
@@ -426,7 +520,19 @@ async function saveBankTransaction() {
 }
 
 async function deleteBankTransaction(id) {
-    const ok = await Confirm.danger('Delete this transaction?', 'Delete Transaction');
+    const t = bankTransactions.find(x => x.id === id);
+    const fmt = AccountsCommon.formatCurrency;
+    const dateStr = t?.transaction_date ? new Date(t.transaction_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    const typeStr = t?.transaction_type ? (t.transaction_type.charAt(0).toUpperCase() + t.transaction_type.slice(1)) : 'transaction';
+    const amountStr = t?.amount != null ? fmt(t.amount) : '';
+    const descStr = t?.description ? ` "${t.description.length > 60 ? t.description.slice(0, 60) + '…' : t.description}"` : '';
+    const label = t ? `the ${typeStr} of ${amountStr} on ${dateStr}${descStr}` : 'this transaction';
+    const ok = await Confirm.show({
+        title: 'Delete Bank Transaction',
+        message: `Are you sure you want to delete ${label}? This will permanently remove the transaction and reverse its effect on the bank account balance. This cannot be undone. Reconciled transactions cannot be deleted — unreconcile them first if needed.`,
+        confirmText: 'Delete',
+        type: 'danger'
+    });
     if (!ok) return;
     const bankId = txnBankFilterDropdown?.getValue?.() || '';
     try {
@@ -625,7 +731,20 @@ async function matchSelectedTransactions() {
 
 async function completeReconciliation() {
     if (!currentReconId) { Toast.error('No active reconciliation'); return; }
-    const ok = await Confirm.danger('Complete this reconciliation? This action cannot be undone.', 'Complete Reconciliation');
+    const fmt = AccountsCommon.formatCurrency;
+    const bankId = reconBankDropdown?.getValue?.() || '';
+    const bank = bankAccountsList.find(b => b.id === bankId);
+    const bankLabel = bank ? `${bank.account_name}${bank.bank_name ? ' at ' + bank.bank_name : ''}` : 'this bank account';
+    const stmtBal = parseFloat(document.getElementById('reconStatementBalance')?.value || 0);
+    const stmtDate = document.getElementById('reconStatementDate')?.value || '';
+    const matchedCount = reconTransactions.filter(t => t.is_matched).length;
+    const unmatchedCount = reconTransactions.length - matchedCount;
+    const ok = await Confirm.show({
+        title: 'Complete Bank Reconciliation',
+        message: `Finalise the reconciliation for ${bankLabel} as of ${stmtDate || 'the selected date'}? Statement balance ${fmt(stmtBal)}, ${matchedCount} transaction${matchedCount === 1 ? '' : 's'} matched${unmatchedCount > 0 ? `, ${unmatchedCount} still unmatched (these will remain in the next reconciliation)` : ''}. Once completed, this reconciliation is locked and cannot be reopened — any further changes require a new reconciliation.`,
+        confirmText: 'Complete Reconciliation',
+        type: 'warning'
+    });
     if (!ok) return;
 
     try {

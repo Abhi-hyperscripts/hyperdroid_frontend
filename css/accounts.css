@@ -1835,11 +1835,17 @@ textarea.form-control {
    Heights: search=34px, dropdown=38px, buttons=33px
    ================================================================ */
 
-/* Filter bar container */
-.glass-card-body,
+/* Filter bar container
+   NOTE: do NOT include `.glass-card-body` here — that class is used
+   by regular content cards (Inter-Bank Transfer form, expense
+   claim form, etc.) whose children are form-rows/headings/buttons
+   that must flow top-to-bottom, not wrap as flex children.
+   Filter-bar behaviour is opted into by adding `.is-filter-bar`
+   or by using one of the dedicated filter classes. */
 .accounts-filter-bar,
 .filter-bar,
-.filters-row {
+.filters-row,
+.glass-card-body.is-filter-bar {
     display: flex;
     align-items: center;
     gap: 12px;

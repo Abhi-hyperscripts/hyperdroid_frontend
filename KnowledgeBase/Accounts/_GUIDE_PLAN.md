@@ -3,7 +3,7 @@
 **Article:** `Frontend/KnowledgeBase/Accounts/Accounts-Setup-Guide.html`
 **Images dir:** `Frontend/KnowledgeBase/Accounts/images/`
 **Bug log:** `Frontend/KnowledgeBase/Accounts/_BUGS_FIXED_DURING_CAPTURE.md`
-**Last updated:** 2026-04-08 (Session B in progress)
+**Last updated:** 2026-04-09 (scope expanded — Sessions H & I promoted from "pointer sections" to full deep dives after gap review)
 
 > **Purpose of this file.** This is the durable plan for building the
 > Accounts Setup Guide end-to-end via Playwright. If a session is interrupted
@@ -125,7 +125,10 @@ replaced with real content + screenshots during Phase 4.
 | 12 | The General Ledger          | 12.1 what · 12.2 browse · 12.3 inspect · 12.4 manual JE · 12.5 reverse  | F               |
 | 13 | Reports                     | 13.1 TB · 13.2 BS · 13.3 P&L · 13.4 Cash Flow · 13.5 AR Aging · 13.6 AP Aging | G |
 | 14 | Closing the books           | 14.1 period close · 14.2 year-end close                                 | I               |
-| 15 | Beyond the basics           | 15.1 banking · 15.2 expenses · 15.3 fixed assets · 15.4 subscription billing | H |
+| 12 | Banking (deep)              | 12.1 accounts · 12.2 transactions · 12.3 transfer · 12.4 reconciliation       | H               |
+| 13 | Expense Management (deep)   | 13.1 categories · 13.2 policies · 13.3 claims lifecycle                       | H2              |
+| 14 | Fixed Assets (deep)         | 14.1 categories · 14.2 register · 14.3 depreciation · 14.4 disposal           | H3              |
+| 15 | Subscription Billing (deep) | 15.1 plans · 15.2 subscriptions · 15.3 usage meters · 15.4 tokens             | H4              |
 | 16 | Glossary                    | (all terms — already populated; verify hrefs after Phase 4)             | I               |
 
 ---
@@ -306,23 +309,162 @@ replaced with real content + screenshots during Phase 4.
 - **Concepts:** What each report tells you, why the TB must match before
   trusting the BS, how P&L flows into Equity at year-end.
 
-### Session H — Advanced overview (Banking, Expenses, Assets, Billing)  ⬜ NOT STARTED
-- **Pages:** `/pages/accounts/banking.html`, `expenses.html`, `assets.html`, `billing.html`
-- **Captures (one hero shot per page — these are "pointer" sections, not deep dives):**
-  - `15-1-banking-overview.png`
-  - `15-2-expenses-overview.png`
-  - `15-3-assets-overview.png`
-  - `15-4-billing-overview.png`
-- **Concepts:** one paragraph per area saying what it is and pointing to its
-  own dedicated future guide.
+### Session H — Banking deep dive  ⏳ IN PROGRESS (2026-04-09)
+> **Scope change 2026-04-09:** user reviewed the published guide and flagged
+> Banking (and the other advanced-overview sections) as under-documented. The
+> original "one hero shot" plan is **retired**. Banking now gets the same
+> exhaustive-interactions treatment as §4 Setup / §10 Receivables. Baseline
+> shot `12-1-banking-baseline.png` stays but is demoted from hero to "landing
+> screenshot" and is followed by the full walk-through below.
+- **Page:** `/pages/accounts/banking.html`
+- **Tab 1 — Bank Accounts**
+  1. Empty state → `12H-1-bank-accounts-empty.png`
+  2. + Add Bank Account modal empty → `12H-2-add-bank-modal-empty.png`
+  3. Modal filled (HDFC Current A/C, ₹50,000 opening, IFSC, SWIFT, branch,
+     GL account mapped to 1001 Cash in Hand, Is Default ON) →
+     `12H-3-add-bank-modal-filled.png`
+  4. After save (row in table, status badge) → `12H-4-bank-accounts-after-save.png`
+  5. Add a second account (ICICI Savings, not default) for contrast →
+     `12H-5-bank-accounts-two-rows.png`
+  6. View / row detail → `12H-6-bank-account-view.png`
+  7. Edit modal pre-filled → `12H-7-bank-account-edit-prefilled.png`, cancel
+  8. Delete confirm dialog (target named) → `12H-8-bank-account-delete-confirm.png`, cancel
+  9. Filter dropdown (if any: status / account type) → `12H-9-bank-filter.png`
+  10. Search box → `12H-10-bank-search.png`
+- **Tab 2 — Transactions**
+  11. Empty state → `12H-11-transactions-empty.png`
+  12. + Record Transaction modal empty → `12H-12-txn-modal-empty.png`
+  13. Type dropdown open (Deposit / Withdrawal / Transfer) → `12H-13-txn-type-dropdown.png`
+  14. Modal filled — Deposit ₹20,000 → counter account Sales Revenue →
+      `12H-14-txn-deposit-filled.png`, `12H-15-txn-deposit-after.png`
+  15. Modal filled — Withdrawal ₹5,000 → counter account Office Rent →
+      `12H-16-txn-withdrawal-filled.png`, `12H-17-txn-withdrawal-after.png`
+  16. Bank filter dropdown open → `12H-18-txn-bank-filter.png`
+  17. Date range picker open → `12H-19-txn-date-range.png`
+  18. Search a reference → `12H-20-txn-search.png`
+  19. Row delete confirm (cancel) → `12H-21-txn-delete-confirm.png`
+- **Tab 3 — Inter-Bank Transfer**
+  20. Empty form → `12H-22-transfer-empty.png`
+  21. From/To dropdowns open → `12H-23-transfer-from-dropdown.png`, `12H-24-transfer-to-dropdown.png`
+  22. Form filled (HDFC → ICICI, ₹10,000) → `12H-25-transfer-filled.png`
+  23. Execute confirm (if any) → `12H-26-transfer-confirm.png`
+  24. After execute — both accounts reflect the transfer →
+      `12H-27-transfer-after.png`
+  25. Recent Transfers table row → `12H-28-transfer-row.png`
+  26. GL impact of the transfer (cross-link to GL page) → `12H-29-transfer-gl-impact.png`
+- **Tab 4 — Reconciliation**
+  27. Empty workspace → `12H-30-reconcile-empty.png`
+  28. Bank filter + statement balance + statement date filled →
+      `12H-31-reconcile-setup.png`
+  29. Start Reconciliation → workspace opens with unmatched transactions →
+      `12H-32-reconcile-workspace.png`
+  30. Select a few rows + Match Selected → `12H-33-reconcile-matching.png`,
+      `12H-34-reconcile-matched.png`
+  31. Summary tiles (Statement / Matched / Unmatched / Difference) →
+      `12H-35-reconcile-summary.png`
+  32. Complete Reconciliation confirm → `12H-36-reconcile-complete-confirm.png`
+  33. Post-complete state (locked, green "Reconciled" badge) →
+      `12H-37-reconcile-done.png`
+- **Concepts to teach in prose:**
+  - What a bank account in the ledger represents vs the physical bank
+  - Why deposits/withdrawals/transfers each create a specific journal entry
+  - What reconciliation is, why you do it monthly, what "unmatched" means,
+    what Difference = 0 proves
+- **Bugs to expect:** transaction type dropdown wiring, transfer double-post,
+  reconciliation "Match" not persisting, period-lock interaction, empty-state
+  CTA mismatch with toolbar button.
 
-### Session I — Closing + Glossary verification  ⬜ NOT STARTED
-- **Page:** `/pages/accounts/setup.html` (Fiscal Periods tab) + admin.html
-- **Captures:**
-  - Period-close action with checks-passed dialog → `14-1-period-close.png`
-  - Year-end close walkthrough → `14-2-year-end-close.png`
-- **Glossary work:** verify every term card in §16 has a working anchor link
-  into the body sections after Phase 4 fills them in.
+### Session H2 — Expenses deep dive  ⬜ NOT STARTED
+- **Page:** `/pages/accounts/expenses.html`
+- **Setup → Categories**
+  - Empty → + New Category modal empty → filled (Travel, GL 5020) → saved row →
+    Edit prefilled → Delete confirm → `13H-1..13H-6`
+- **Setup → Policies**
+  - Empty → + New Policy (Travel, ₹5000/trip limit) → saved → row actions →
+    `13H-7..13H-11`
+- **Claims → Expense Claims**
+  - Submit Claim modal empty → filled (line items, receipt upload) → saved draft
+    → `13H-12..13H-16`
+  - Approve action + confirm → `13H-17..13H-18`
+  - Reject action + reason modal → `13H-19..13H-20`
+  - Reimburse action (posts to GL) → `13H-21..13H-22`
+- **Claims → Claim History** filters, export → `13H-23..13H-24`
+- **Concepts:** expense lifecycle, policy enforcement, receipt audit trail,
+  why reimbursement creates a cash-out journal entry.
+
+### Session H3 — Fixed Assets deep dive  ⬜ NOT STARTED
+- **Page:** `/pages/accounts/assets.html`
+- **Setup → Asset Categories**
+  - + New Category modal empty → filled (Laptops, SLM, 3-year life,
+    GL 1510 Fixed Assets, GL 1519 Accum Depreciation, ₹5000 salvage) →
+    saved → `14H-1..14H-4`
+- **Register → Asset Register**
+  - + New Asset modal empty → filled (MacBook Pro, ₹1,50,000, purchase date,
+    category Laptops) → saved → `14H-5..14H-8`
+  - View / Edit / Deactivate row actions → `14H-9..14H-12`
+- **Register → Depreciation**
+  - Depreciation schedule preview → `14H-13`
+  - Post Depreciation for period → confirm → GL impact → `14H-14..14H-16`
+- **Register → Disposal**
+  - Dispose modal (sell ₹80,000 on date X) → computes gain/loss →
+    posts JE → `14H-17..14H-19`
+- **Concepts:** why fixed assets are capitalised (not expensed), SLM vs DDB,
+  useful life, salvage, how depreciation shows up on the BS and P&L, disposal
+  accounting (write off NBV, recognise gain/loss).
+
+### Session H4 — Subscription Billing deep dive  ⬜ NOT STARTED
+- **Page:** `/pages/accounts/billing.html`
+- **Plans → Billing Plans**
+  - + New Plan modal empty → filled (Pro Monthly, Subscription, ₹999/month) →
+    saved → row actions (Edit / Duplicate / Delete) → `15H-1..15H-6`
+- **Plans → Subscriptions**
+  - + New Subscription modal empty → filled (Customer=Lumira, Plan=Pro Monthly,
+    start today, qty 5) → saved → `15H-7..15H-10`
+  - Row actions: View detail, Pause (confirm), Resume, Cancel (confirm) →
+    `15H-11..15H-16`
+- **Usage → Usage Meters**
+  - + New Meter modal (API Calls, per 1000, ₹5/unit, sum aggregation) →
+    saved → Record Usage action → `15H-17..15H-21`
+- **Usage → Tokens**
+  - Token balance view → Add tokens → Consume tokens → `15H-22..15H-25`
+- **Concepts:** Subscription vs usage-based vs token billing, proration,
+  why each generates a different invoice cadence, how the monthly billing
+  run turns subscriptions into draft invoices in §10.
+
+### Session I — Admin deep dive + Closing + Glossary  ⬜ NOT STARTED
+- **Page:** `/pages/accounts/admin.html`
+- **Tab 1 — Audit Logs** (already partially covered — fill gaps)
+  - Filter by entity type, by user, by action → `16I-1..16I-4`
+  - View Trail link → payload modal → `16I-5`
+  - Export button → format picker → file downloaded → `16I-6..16I-7`
+- **Tab 2 — Pending Approvals**
+  - Empty state → populated with one pending item → Approve confirm → row
+    removed → `16I-8..16I-11`
+  - Reject action with reason → `16I-12..16I-13`
+- **Tab 3 — Integrity Check**
+  - Run Check button → progress → report with pass/fail per check →
+    `16I-14..16I-16`
+- **Tab 4 — Job Log**
+  - Row list → View details → Retry failed job (if any) → `16I-17..16I-19`
+- **Tab 5 — Closing Checklists**
+  - Empty checklist → fill items → save → generate report → `16I-20..16I-23`
+- **Tab 6 — Year-End Closing**
+  - Run Closing modal (confirm FY to close) → progress → success summary →
+    new FY auto-created → `16I-24..16I-27`
+- **Period close** (back on setup.html Fiscal Periods tab)
+  - Period-close action with checks-passed dialog → `14I-1-period-close.png`
+- **Glossary work:** verify every term card in §17 has a working anchor link
+  into the body sections after the rewrite.
+
+### Session J — Gap fills on already-covered sections  ⬜ NOT STARTED
+Small targeted captures that existing sections are missing:
+- **Parties → Approval Requests tab** (never captured) — empty, populated,
+  Approve confirm, Reject with reason → `07J-1..07J-5`
+- **Reports** — date range picker open, column sort, drill-down from TB
+  balance → GL entries, Export dialog (PDF/CSV/Excel), P&L period comparison
+  toggle → `11J-1..11J-6`
+- **Dashboard** — click-through from Quick Action card (Banking card) to
+  destination page → `03J-1..03J-2`
 
 ---
 
@@ -375,8 +517,23 @@ that fails → log in `_BUGS_FIXED_DURING_CAPTURE.md` and fix before screenshott
 | _next_     | E       | Vendor Bills end-to-end                                                          | TBD |
 | _next_     | F       | GL + Manual JEs                                                                  | TBD |
 | _next_     | G       | All 6 reports                                                                    | TBD |
-| _next_     | H       | Advanced overview pages                                                          | TBD |
-| _next_     | I       | Closing + glossary anchor verification                                           | TBD |
+| 2026-04-09 | Plan    | Scope expansion: Sessions H/I promoted from pointer sections to deep dives; Session J added for gap fills | -          |
+| 2026-04-09 | H (1/4) | Banking Bank Accounts tab started: created prerequisite GL accounts 1010 HDFC + 1020 ICICI via Setup → Accounts; captured empty state, empty modal, filled modal, first saved row (HDFC). Found+fixed bug #33 (row actions missing View + Deactivate) and bug #34 (prerequisite GL accounts not taught). | 2 (#33 banking row actions, #34 prerequisite GL accounts) |
+| 2026-04-09 | H (2/4) | Bank Accounts tab COMPLETE: ICICI Savings created, two-row state, View modal, Edit pre-filled (with SWIFT re-saved), Deactivate confirm dialog, post-deactivate row, Show Inactive toggle, Reactivate round-trip. 11 captures total. Found+fixed bug #35 (swift_code dropped by INSERT) and bug #36 (Show Inactive toggle + includeInactive query param). | 2 (#35 swift_code INSERT, #36 includeInactive filter + Show Inactive toggle) |
+| 2026-04-09 | H (3/4) | Transactions tab COMPLETE: bank filter dropdown, deposit + withdrawal flows (₹25k / ₹3k), search, target-named delete confirm. 10 captures (`12H-12`–`12H-21`). Found+fixed #37 (debit/credit swapped + running balance missing) and #38 (generic delete confirm). | 2 |
+| 2026-04-09 | H (4/4) | Inter-Bank Transfer + Reconciliation tabs COMPLETE: ₹5,000 HDFC→ICICI transfer executed; reconciliation started, matched, and completed end-to-end. 10 captures (`12H-22`–`12H-31`). Found+fixed #39 (CRITICAL glass-card-body flex scrambling — user flagged as investor-unshowable) and #40 (generic reconciliation confirm + variable typo). | 2 |
+| 2026-04-09 | H2      | Expenses deep dive: category create (Travel), policy (₹5k cap), claim submit (EXP-2026-00001 ₹4,500). 12 captures (`13H-1`–`13H-12`). Found+fixed #41 (expense GL dropdown "undefined" + related fixes in taxation/payables/assets) and #43 (generic approve confirm). SoD 409 captured as feature. | 3 |
+| 2026-04-09 | H3      | Assets deep dive: category (Computers SLM 3yr 33.33%), register (FA-0001 MBP ₹1.5L), Run Depreciation. 10 captures (`14H-1`–`14H-10`). #44 logged (generic depreciation confirm). | 0 fixed, 1 logged |
+| 2026-04-09 | H4      | Billing deep dive: Plan create (PRO-MO-999 ₹999/month), Subscriptions/Usage/Tokens tabs toured. 6 captures (`15H-1`–`15H-6`). | 0 |
+| 2026-04-09 | I       | Admin deep dive: all 6 tabs toured (Audit Logs, Pending Approvals, Integrity Check [#45 logged — [object Object] render], Job Log, Closing Checklists, Year-End Closing). 6 captures (`16I-1`–`16I-6`). | 0 fixed, 1 logged |
+| 2026-04-09 | J       | Gap fills: Reports Trial Balance generated with toolbar visible (Export PDF / CSV / Print), Parties Approval tabs (both empty). 4 captures (`11J-1`,`11J-2`,`07J-1`,`07J-2`). | 0 |
+| _next_     | H (3/4) | Transactions tab (empty, Record Transaction modal, deposit+withdrawal flows, filters, search, delete confirm) | TBD |
+| _next_     | H (4/4) | Inter-Bank Transfer + Reconciliation tabs (full workflow each)                   | TBD |
+| _next_     | H2      | Expenses deep dive (categories, policies, claim lifecycle)                        | TBD |
+| _next_     | H3      | Fixed Assets deep dive (categories, register, depreciation, disposal)             | TBD |
+| _next_     | H4      | Subscription Billing deep dive (plans, subscriptions, usage, tokens)              | TBD |
+| _next_     | I       | Admin tabs 2-6 + closing + glossary anchor verification                           | TBD |
+| _next_     | J       | Gap fills: Parties Approval tab, Reports filters/export/drill, Dashboard click-through | TBD |
 | _next_     | Phase 4 | Write §4–§15 prose using captured screenshots                                    | -          |
 | _next_     | Phase 5 | Verification pass (themes, mobile, print, anchors)                               | -          |
 
