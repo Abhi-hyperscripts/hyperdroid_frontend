@@ -571,7 +571,22 @@
                             </div>
                             <div class="form-group">
                                 <label for="taxConfigCountry">Country *</label>
-                                <input type="text" id="taxConfigCountry" class="form-control" required placeholder="e.g., India">
+                                <select id="taxConfigCountry" class="form-control" required>
+                                    <option value="">Select...</option>
+                                    <option value="IN">India</option>
+                                    <option value="US">United States</option>
+                                    <option value="GB">United Kingdom</option>
+                                    <option value="AE">United Arab Emirates</option>
+                                    <option value="SA">Saudi Arabia</option>
+                                    <option value="SG">Singapore</option>
+                                    <option value="AU">Australia</option>
+                                    <option value="CA">Canada</option>
+                                    <option value="DE">Germany</option>
+                                    <option value="FR">France</option>
+                                    <option value="ZA">South Africa</option>
+                                    <option value="KE">Kenya</option>
+                                    <option value="NG">Nigeria</option>
+                                </select>
                             </div>
                         </div>
                         <div class="form-row two-col">
@@ -600,9 +615,12 @@
                                     <option value="inactive">Inactive</option>
                                 </select>
                             </div>
+                            <div class="form-group"></div>
+                        </div>
+                        <div class="form-row">
                             <div class="form-group">
                                 <label for="taxConfigDescription">Description</label>
-                                <input type="text" id="taxConfigDescription" class="form-control" placeholder="Brief description">
+                                <textarea id="taxConfigDescription" class="form-control" placeholder="Brief description of when this tax applies and any compliance notes"></textarea>
                             </div>
                         </div>
                     </form>

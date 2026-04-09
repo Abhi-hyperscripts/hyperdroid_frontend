@@ -152,7 +152,7 @@ function renderBillsTable() {
     const tbody = document.getElementById('vendorBillsTable');
     if (!tbody) return;
     if (!vendorBills.length) {
-        tbody.innerHTML = `<tr class="empty-state"><td colspan="11"><div class="empty-message">
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="8"><div class="empty-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>No vendor bills found</p></div></td></tr>`;
         return;
     }
@@ -175,8 +175,7 @@ function renderBillsTable() {
             <td><code>${esc(b.bill_number || '-')}</code></td>
             <td>${esc(vendorMap[b.vendor_id] || b.vendor_name || '-')}</td>
             <td>${fmtD(b.bill_date)}</td><td>${fmtD(b.due_date)}</td>
-            <td class="text-right">${fmt(b.subtotal)}</td><td class="text-right">${fmt(b.tax_amount || 0)}</td>
-            <td class="text-right">${fmt(b.total_amount || b.total)}</td><td class="text-right">${fmt(b.paid_amount || 0)}</td>
+            <td class="text-right">${fmt(b.total_amount || b.total)}</td>
             <td class="text-right">${fmt(b.balance_due || b.balance || b.total_amount || b.total)}</td>
             <td>${AccountsCommon.statusBadge(b.status)}</td>
             <td class="actions-cell">${actions || '<span class="text-secondary">-</span>'}</td>
@@ -261,7 +260,12 @@ function addBillLine(data) {
 
     const d = billLines[idx];
     const accountOpts = '<option value="">Select...</option>' +
-        accounts.map(a => `<option value="${a.id}" ${a.id === d.account_id ? 'selected' : ''}>${AccountsCommon.escapeHtml(a.code ? a.code + ' - ' + a.name : a.name)}</option>`).join('');
+        accounts.map(a => {
+            const code = a.account_code || a.code || '';
+            const name = a.account_name || a.name || '';
+            const label = code && name ? `${code} — ${name}` : (name || code);
+            return `<option value="${a.id}" ${a.id === d.account_id ? 'selected' : ''}>${AccountsCommon.escapeHtml(label)}</option>`;
+        }).join('');
 
     const amt = ((parseFloat(d.quantity) || 0) * (parseFloat(d.rate) || 0)).toFixed(2);
 

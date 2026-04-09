@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ragenaizer — Run your entire company without switching tools · Pitch Deck 2026</title>
+<meta name="description" content="You started a business. Not a software stack. Ragenaizer runs HR, payroll, accounts, GST, projects, meetings, and 6 more — from one app. Built in India for 20–200 person service businesses.">
+<link rel="canonical" href="https://ragenaizer.com/pitch-deck/ragenaizer-pitch-deck.html">
+
+<!-- Open Graph / Facebook / LinkedIn / WhatsApp -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ragenaizer">
+<meta property="og:url" content="https://ragenaizer.com/pitch-deck/ragenaizer-pitch-deck.html">
+<meta property="og:title" content="You started a business. Not a software stack.">
+<meta property="og:description" content="Ragenaizer runs HR, payroll, accounts, GST, projects, meetings, and 6 more — from one app. So you can get back to growing the business. Built in India.">
+<meta property="og:image" content="https://ragenaizer.com/pitch-deck/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Ragenaizer Pitch Deck 2026 — You started a business, not a software stack">
+<meta property="og:locale" content="en_IN">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@ragenaizer">
+<meta name="twitter:title" content="You started a business. Not a software stack.">
+<meta name="twitter:description" content="Ragenaizer runs HR, payroll, accounts, GST, projects, meetings, and 6 more — from one app.">
+<meta name="twitter:image" content="https://ragenaizer.com/pitch-deck/og-image.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Geist:wght@300..800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   RAGENAIZER PITCH DECK · Portrait A4 · Print-to-PDF
+   11 slides · investor narrative · ICP-led
+   Optimised for mobile PDF viewing.
+   ============================================================ */
+
+:root{
+  --bg-deep:#050810;
+  --bg-mid:#0a1628;
+  --bg-elev:#101e36;
+  --ink:#f5f1e8;
+  --ink-mute:rgba(245,241,232,.66);
+  --ink-soft:rgba(245,241,232,.42);
+  --ink-faint:rgba(245,241,232,.18);
+  --hair:rgba(245,241,232,.14);
+  --hair-strong:rgba(245,241,232,.28);
+  --accent:#f4a4c0;
+  --accent-2:#c4a3ff;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;caret-color:transparent;}
+.title em,.cover-title em{text-decoration:none;border:0;outline:0;}
+
+html,body{
+  background:#15171c;
+  color:var(--ink);
+  font-family:'Geist','Helvetica Neue',sans-serif;
+  font-feature-settings:"ss01","cv11";
+}
+
+body{
+  padding:36px 0 80px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:36px;
+}
+
+/* ---------- Slide frame (Portrait A4) ---------- */
+.slide{
+  width:210mm;
+  height:297mm;
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(120% 70% at 0% 0%, var(--bg-mid) 0%, transparent 55%),
+    radial-gradient(110% 70% at 100% 100%, #0c1830 0%, transparent 55%),
+    var(--bg-deep);
+  color:var(--ink);
+  page-break-after:always;
+  break-after:page;
+  box-shadow:0 40px 100px -30px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04);
+}
+.slide:last-child{page-break-after:auto;break-after:auto;}
+
+.slide::before{
+  content:'';
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:48px 48px;
+  pointer-events:none;
+}
+
+.slide::after{
+  content:'';
+  position:absolute;
+  width:1100px;height:1100px;
+  top:-380px;right:-380px;
+  background:radial-gradient(circle, color-mix(in srgb,var(--accent) 36%,transparent) 0%, transparent 60%);
+  pointer-events:none;
+  filter:blur(8px);
+}
+.slide.glow-bottom::after{
+  top:auto;bottom:-440px;right:auto;left:-360px;
+  background:radial-gradient(circle, color-mix(in srgb,var(--accent-2) 36%,transparent) 0%, transparent 60%);
+}
+
+/* per-slide accent palettes */
+.slide[data-accent="rose"]   { --accent:#f9a8d4; --accent-2:#c084fc; }
+.slide[data-accent="cyan"]   { --accent:#67e8f9; --accent-2:#60a5fa; }
+.slide[data-accent="amber"]  { --accent:#fcd34d; --accent-2:#fb923c; }
+.slide[data-accent="emerald"]{ --accent:#6ee7b7; --accent-2:#34d399; }
+.slide[data-accent="violet"] { --accent:#c4b5fd; --accent-2:#f0abfc; }
+.slide[data-accent="sky"]    { --accent:#7dd3fc; --accent-2:#a78bfa; }
+.slide[data-accent="gold"]   { --accent:#fde047; --accent-2:#fb923c; }
+.slide[data-accent="lime"]   { --accent:#bef264; --accent-2:#22d3ee; }
+
+/* ---------- Slide chrome ---------- */
+.frame{
+  position:relative;
+  z-index:2;
+  height:100%;
+  padding:22mm 18mm 16mm;
+  display:flex;
+  flex-direction:column;
+}
+
+/* Top brand bar (logo + page number) on every non-cover slide */
+.brand-bar{
+  position:absolute;
+  top:14mm;left:18mm;right:18mm;
+  display:flex;justify-content:space-between;align-items:center;
+  z-index:5;
+}
+.brand-bar .brand-mark{
+  width:120px;height:14px;
+  background:url("data:image/png;base64,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") no-repeat left center / contain;
+  opacity:.92;
+}
+.brand-bar .pg{
+  font-family:'Geist Mono',monospace;
+  font-size:8.5pt;
+  letter-spacing:.2em;
+  color:var(--ink-soft);
+}
+.brand-bar .pg .cur{color:var(--ink);font-weight:500;}
+
+.eyebrow{
+  font-family:'Geist Mono',monospace;
+  font-size:10.5pt;
+  font-weight:500;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--accent);
+  display:flex;align-items:center;gap:14px;
+  margin-top:8mm;
+}
+.eyebrow::before{
+  content:'';
+  width:28px;height:1px;
+  background:var(--accent);
+  flex-shrink:0;
+}
+
+.title{
+  font-family:'Fraunces',Georgia,serif;
+  font-optical-sizing:auto;
+  font-variation-settings:"opsz" 144,"SOFT" 30;
+  font-weight:340;
+  font-size:52pt;
+  line-height:.98;
+  letter-spacing:-.025em;
+  margin-top:12mm;
+  color:var(--ink);
+  max-width:14ch;
+}
+.title em{
+  font-style:italic;
+  font-variation-settings:"opsz" 144,"SOFT" 100,"WONK" 1;
+  font-weight:300;
+  color:var(--accent);
+}
+
+.title.small{font-size:38pt;max-width:20ch;}
+.title.tiny{font-size:30pt;max-width:24ch;}
+
+.lede{
+  font-size:13.5pt;
+  line-height:1.55;
+  color:var(--ink-mute);
+  max-width:50ch;
+  margin-top:9mm;
+  font-weight:350;
+  letter-spacing:-.005em;
+}
+
+.foot{
+  margin-top:auto;
+  display:flex;justify-content:space-between;align-items:flex-end;
+  font-family:'Geist Mono',monospace;
+  font-size:8pt;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  border-top:1px solid var(--hair);
+  padding-top:6mm;
+}
+.foot .brand{color:var(--ink);font-weight:500;}
+
+/* ============================================================
+   SLIDE 1 · COVER
+   ============================================================ */
+.cover{padding:0;}
+.cover .frame{
+  padding:24mm 18mm;
+  justify-content:space-between;
+}
+.cover-mark{
+  font-family:'Geist Mono',monospace;
+  font-size:9pt;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.cover-mark .dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--accent);
+  display:inline-block;
+  margin-right:10px;vertical-align:middle;
+  box-shadow:0 0 24px var(--accent);
+}
+.cover-logo{
+  margin-top:12mm;
+}
+.cover-logo .brand-mark{
+  width:84mm;height:14mm;
+  background:url("data:image/png;base64,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") no-repeat left center / contain;
+  display:block;
+}
+.cover-center{margin-top:auto;margin-bottom:auto;}
+.cover-eyebrow{
+  font-family:'Geist Mono',monospace;
+  font-size:10pt;
+  letter-spacing:.28em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:10mm;
+}
+.cover-title{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 144,"SOFT" 50;
+  font-weight:300;
+  font-size:74pt;
+  line-height:.92;
+  letter-spacing:-.035em;
+  color:var(--ink);
+  max-width:16ch;
+}
+.cover-title em{
+  font-style:italic;
+  font-variation-settings:"opsz" 144,"SOFT" 100,"WONK" 1;
+  color:var(--accent);
+}
+.cover-sub{
+  font-size:13pt;
+  color:var(--ink-mute);
+  max-width:46ch;
+  margin-top:10mm;
+  line-height:1.55;
+  font-weight:350;
+}
+.cover-strip{
+  display:flex;flex-wrap:wrap;gap:5mm 6mm;
+  font-family:'Geist Mono',monospace;
+  font-size:8.5pt;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  margin-top:12mm;
+  padding-top:6mm;
+  border-top:1px solid var(--hair);
+}
+.cover-strip span+span::before{
+  content:'·';margin-right:6mm;color:var(--ink-faint);
+}
+
+/* ============================================================
+   SLIDE 2 · PROBLEM
+   ============================================================ */
+.stat-block{
+  margin-top:8mm;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:6mm;
+}
+.stat-huge{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 144,"SOFT" 50;
+  font-weight:300;
+  font-size:140pt;
+  line-height:.85;
+  letter-spacing:-.06em;
+  color:var(--ink);
+  position:relative;
+  display:inline-block;
+}
+.stat-huge .strike{
+  position:absolute;
+  left:-4mm;right:-4mm;
+  top:50%;
+  height:5px;
+  background:var(--accent);
+  transform:rotate(-6deg);
+  transform-origin:center;
+  border-radius:4px;
+  box-shadow:0 0 30px color-mix(in srgb,var(--accent) 60%,transparent);
+}
+.stat-caption{
+  font-family:'Geist Mono',monospace;
+  font-size:10pt;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  line-height:1.7;
+}
+.stat-caption strong{color:var(--ink);font-weight:500;}
+.problem-list{
+  margin-top:auto;
+  margin-bottom:6mm;
+  display:flex;flex-direction:column;gap:4mm;
+}
+.problem-list li{
+  list-style:none;
+  font-size:12.5pt;
+  color:var(--ink-mute);
+  line-height:1.45;
+  padding-left:18mm;
+  position:relative;
+}
+.problem-list li::before{
+  content:'';
+  position:absolute;left:0;top:.7em;
+  width:12mm;height:1px;
+  background:var(--hair-strong);
+}
+.problem-list li strong{color:var(--ink);font-weight:500;}
+
+/* ============================================================
+   SLIDE 3 · THE STACK (12-product grid)
+   ============================================================ */
+.stack-grid{
+  margin-top:8mm;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:3.5mm;
+  flex:1;
+  align-content:start;
+}
+.stack-card{
+  border:1px solid var(--hair);
+  border-radius:9px;
+  padding:5mm 4.5mm;
+  background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0));
+  position:relative;
+  display:flex;flex-direction:column;
+  min-height:0;
+}
+.stack-card.addon{
+  border-color:color-mix(in srgb,var(--accent) 35%,transparent);
+  background:linear-gradient(180deg, color-mix(in srgb,var(--accent) 8%,transparent), rgba(255,255,255,0));
+}
+.stack-card .num{
+  font-family:'Geist Mono',monospace;
+  font-size:7pt;
+  color:var(--accent);
+  letter-spacing:.18em;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.stack-card .num .badge{
+  font-size:5.5pt;
+  padding:1px 5px;
+  border:1px solid var(--accent);
+  border-radius:100px;
+  letter-spacing:.14em;
+}
+.stack-card h3{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 96,"SOFT" 30;
+  font-weight:380;
+  font-size:15pt;
+  letter-spacing:-.018em;
+  color:var(--ink);
+  margin-top:2.5mm;
+  line-height:1;
+}
+.stack-card .tag{
+  font-family:'Geist Mono',monospace;
+  font-size:6pt;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--ink-soft);
+  margin-top:2mm;
+}
+.stack-card p{
+  font-size:8pt;
+  color:var(--ink-mute);
+  line-height:1.4;
+  margin-top:2.5mm;
+}
+
+/* ============================================================
+   COLUMN GRIDS (Comm, CRM/PMS/Acc, LMS/KIP/News, Add-ons)
+   ============================================================ */
+.col-3{
+  margin-top:10mm;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:6mm;
+  flex:1;
+  align-content:start;
+}
+.col-2{
+  margin-top:10mm;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8mm;
+  flex:1;
+  align-content:start;
+}
+.col-1{
+  margin-top:10mm;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:8mm;
+  flex:1;
+  align-content:start;
+}
+
+.prod{
+  display:flex;flex-direction:column;
+  padding:0;
+}
+.prod .num{
+  font-family:'Geist Mono',monospace;
+  font-size:8pt;
+  color:var(--accent);
+  letter-spacing:.18em;
+}
+.prod h3{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 96,"SOFT" 30;
+  font-weight:380;
+  font-size:22pt;
+  letter-spacing:-.018em;
+  color:var(--ink);
+  margin-top:3mm;
+  line-height:1;
+}
+.prod .tag{
+  font-family:'Geist Mono',monospace;
+  font-size:7.5pt;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--ink-soft);
+  margin-top:3mm;
+}
+.prod .roi{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 96,"SOFT" 50;
+  font-style:italic;
+  font-weight:340;
+  font-size:13pt;
+  line-height:1.25;
+  color:var(--accent);
+  margin-top:5mm;
+  letter-spacing:-.01em;
+}
+.prod ul{
+  list-style:none;
+  margin-top:5mm;
+  display:flex;flex-direction:column;gap:2.5mm;
+  font-size:9.5pt;
+  color:var(--ink-mute);
+  line-height:1.45;
+}
+.prod ul li{
+  padding-left:5mm;position:relative;
+}
+.prod ul li::before{
+  content:'';
+  position:absolute;left:0;top:.55em;
+  width:3mm;height:1px;
+  background:var(--accent);
+}
+.prod ul li strong{color:var(--ink);font-weight:500;}
+
+/* HRMS solo slide special blocks */
+.roi-row{
+  margin-top:10mm;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:5mm;
+}
+.roi-card{
+  padding:6mm 5mm;
+  border:1px solid var(--hair);
+  border-radius:10px;
+  background:rgba(255,255,255,.02);
+}
+.roi-card .v{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 144,"SOFT" 50;
+  font-weight:300;
+  font-size:36pt;
+  line-height:.85;
+  letter-spacing:-.03em;
+  color:var(--accent);
+}
+.roi-card .l{
+  font-family:'Geist Mono',monospace;
+  font-size:7.5pt;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  margin-top:4mm;
+  line-height:1.5;
+}
+.feat-grid{
+  margin-top:8mm;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5mm 8mm;
+}
+.feat-grid .col-eyebrow{
+  font-family:'Geist Mono',monospace;
+  font-size:8.5pt;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:3mm;
+}
+.country-row{
+  display:flex;gap:7mm;flex-wrap:wrap;
+  margin-top:6mm;
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 96,"SOFT" 30;
+  font-style:italic;
+  font-weight:340;
+  font-size:18pt;
+  color:var(--ink);
+}
+.country-row span+span::before{
+  content:'·';margin-right:7mm;color:var(--accent);font-style:normal;
+}
+.note{
+  margin-top:6mm;
+  padding:5mm 6mm;
+  border-left:2px solid var(--accent);
+  background:rgba(255,255,255,.025);
+  font-size:11pt;
+  color:var(--ink-mute);
+  line-height:1.5;
+  font-style:italic;
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 14,"SOFT" 50;
+  font-weight:330;
+}
+.note strong{
+  font-style:normal;font-family:'Geist',sans-serif;
+  color:var(--ink);font-weight:500;
+}
+
+/* Add-on price block for Research / Procurement slides */
+.addon-price{
+  margin-top:5mm;
+  border:1px solid color-mix(in srgb,var(--accent) 32%,transparent);
+  border-radius:11px;
+  background:linear-gradient(135deg, color-mix(in srgb,var(--accent) 14%,transparent), rgba(255,255,255,.02));
+  padding:4.5mm 6mm 5mm;
+  display:grid;
+  grid-template-columns:1fr 1px 1fr;
+  gap:6mm;
+  align-items:center;
+}
+.addon-price .divider{
+  background:var(--hair);
+  width:1px;height:60%;
+  align-self:center;
+}
+.addon-price .tier{
+  display:flex;flex-direction:column;
+}
+.addon-price .lbl{
+  font-family:'Geist Mono',monospace;
+  font-size:7pt;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--accent);
+}
+.addon-price .num{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 144,"SOFT" 50;
+  font-weight:300;
+  font-size:26pt;
+  line-height:.95;
+  letter-spacing:-.03em;
+  color:var(--ink);
+  margin-top:1.5mm;
+}
+.addon-price .num .cur{
+  font-size:12pt;color:var(--ink-mute);vertical-align:super;margin-right:2px;
+}
+.addon-price .num .unit{
+  font-family:'Geist',sans-serif;
+  font-size:9pt;color:var(--ink-mute);
+  font-weight:400;letter-spacing:0;
+  margin-left:4px;
+}
+.addon-price .seats{
+  font-family:'Geist Mono',monospace;
+  font-size:6.5pt;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  margin-top:1.5mm;
+}
+.addon-price .head{
+  grid-column:1 / -1;
+  display:flex;justify-content:space-between;align-items:baseline;gap:6mm;
+  margin-bottom:1mm;
+}
+.addon-price .head .title{
+  font-family:'Geist',sans-serif;
+  font-size:8.5pt;
+  color:var(--ink);
+  font-weight:500;
+  margin:0;
+  letter-spacing:0;
+  max-width:none;
+  line-height:1.4;
+}
+.addon-price .head .badge{
+  font-family:'Geist Mono',monospace;
+  font-size:6.5pt;
+  padding:2px 8px;
+  border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);
+  background:color-mix(in srgb,var(--accent) 14%,transparent);
+  color:var(--accent);
+  border-radius:100px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  white-space:nowrap;
+}
+
+/* ============================================================
+   RESEARCH SLIDE — rich feature pillars
+   ============================================================ */
+.pillars{
+  margin-top:6mm;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:3mm 5mm;
+  flex:1;
+  align-content:start;
+}
+.pillar{
+  padding:4mm 4.5mm;
+  border:1px solid var(--hair);
+  border-radius:9px;
+  background:rgba(255,255,255,.025);
+}
+.pillar h4{
+  font-family:'Geist Mono',monospace;
+  font-size:7.5pt;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:2mm;
+}
+.pillar p{
+  font-size:8.5pt;
+  color:var(--ink-mute);
+  line-height:1.45;
+}
+.pillar p strong{color:var(--ink);font-weight:500;}
+
+/* ============================================================
+   WHY slide
+   ============================================================ */
+.reasons{
+  margin-top:9mm;
+  display:flex;flex-direction:column;
+}
+.reason{
+  display:grid;
+  grid-template-columns:14mm 1fr;
+  gap:6mm;
+  padding:5mm 0;
+  border-top:1px solid var(--hair);
+  align-items:start;
+}
+.reason:last-of-type{border-bottom:1px solid var(--hair);}
+.reason .n{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 144,"SOFT" 50;
+  font-weight:300;
+  font-size:26pt;
+  line-height:.85;
+  color:var(--accent);
+  letter-spacing:-.02em;
+}
+.reason h4{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 96,"SOFT" 30;
+  font-weight:380;
+  font-size:16pt;
+  letter-spacing:-.015em;
+  color:var(--ink);
+  line-height:1.1;
+}
+.reason p{
+  font-size:10.5pt;
+  color:var(--ink-mute);
+  line-height:1.5;
+  margin-top:2mm;
+}
+.savings-callout{
+  margin-top:7mm;
+  padding:7mm 8mm;
+  border-radius:14px;
+  background:linear-gradient(135deg, color-mix(in srgb,var(--accent) 18%,transparent), color-mix(in srgb,var(--accent-2) 14%,transparent));
+  border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);
+  display:flex;align-items:center;gap:8mm;
+  justify-content:space-between;
+}
+.savings-callout .big{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 144,"SOFT" 50;
+  font-weight:300;
+  font-size:48pt;
+  line-height:.85;
+  color:var(--ink);
+  letter-spacing:-.04em;
+}
+.savings-callout .lbl{
+  font-family:'Geist Mono',monospace;
+  font-size:8.5pt;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  line-height:1.7;
+  text-align:right;
+}
+.savings-callout .lbl strong{color:var(--ink);font-weight:500;}
+
+/* ============================================================
+   PRICING slide
+   ============================================================ */
+.price-grid{
+  margin-top:8mm;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:5mm;
+}
+.price-card{
+  border:1px solid var(--hair);
+  border-radius:14px;
+  padding:7mm 7mm 8mm;
+  background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0));
+  position:relative;
+  display:flex;flex-direction:column;
+}
+.price-card.featured{
+  border-color:color-mix(in srgb,var(--accent) 50%,transparent);
+  background:linear-gradient(180deg, color-mix(in srgb,var(--accent) 12%,transparent), rgba(255,255,255,0));
+}
+.price-card .tag{
+  font-family:'Geist Mono',monospace;
+  font-size:7.5pt;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--accent);
+}
+.price-card h3{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 96,"SOFT" 30;
+  font-weight:360;
+  font-size:18pt;
+  letter-spacing:-.02em;
+  color:var(--ink);
+  margin-top:2mm;
+}
+.price-card .num{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 144,"SOFT" 50;
+  font-weight:300;
+  font-size:38pt;
+  line-height:.9;
+  letter-spacing:-.04em;
+  color:var(--ink);
+  margin-top:4mm;
+}
+.price-card .num .cur{font-size:14pt;color:var(--ink-mute);vertical-align:super;margin-right:3px;}
+.price-card .per{
+  font-family:'Geist Mono',monospace;
+  font-size:7.5pt;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  margin-top:1mm;
+}
+.price-card .seats{
+  margin-top:4mm;
+  font-size:10pt;
+  color:var(--ink);
+  border-top:1px solid var(--hair);
+  border-bottom:1px solid var(--hair);
+  padding:3mm 0;
+}
+.price-card .seats strong{color:var(--accent);font-weight:500;}
+.price-card ul{
+  list-style:none;
+  margin-top:3mm;
+  display:flex;flex-direction:column;gap:2mm;
+  font-size:9pt;
+  color:var(--ink-mute);
+  line-height:1.4;
+}
+.price-card ul li{padding-left:5mm;position:relative;}
+.price-card ul li::before{
+  content:'';position:absolute;left:0;top:.55em;
+  width:3mm;height:1px;background:var(--accent);
+}
+.addons{
+  margin-top:5mm;
+  border-top:1px solid var(--hair);
+  padding-top:5mm;
+  display:grid;grid-template-columns:1fr 1fr;gap:4mm;
+}
+.addon{
+  padding:4mm 5mm;
+  border:1px dashed var(--hair-strong);
+  border-radius:9px;
+}
+.addon .ah{
+  display:flex;justify-content:space-between;align-items:baseline;
+}
+.addon .name{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 96,"SOFT" 30;
+  font-weight:400;
+  font-size:13pt;
+  color:var(--ink);
+}
+.addon .tag{
+  font-family:'Geist Mono',monospace;
+  font-size:7pt;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--accent);
+}
+.addon .price-line{
+  font-size:9pt;
+  color:var(--ink-mute);
+  margin-top:2mm;
+  line-height:1.6;
+}
+.addon .price-line strong{color:var(--ink);font-weight:500;}
+.byok{
+  margin-top:5mm;
+  padding:4mm 5mm;
+  border-radius:9px;
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--hair);
+  font-size:9.5pt;
+  color:var(--ink-mute);
+  line-height:1.5;
+}
+.byok strong{color:var(--ink);font-weight:500;}
+.byok .badge{
+  display:inline-block;
+  padding:2px 8px;
+  background:color-mix(in srgb,var(--accent) 18%,transparent);
+  color:var(--accent);
+  border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);
+  border-radius:100px;
+  font-family:'Geist Mono',monospace;
+  font-size:7pt;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  margin-right:6px;
+  vertical-align:middle;
+  font-style:normal;
+}
+.cta{
+  margin-top:6mm;
+  padding:6mm 0 0;
+  border-top:1px solid var(--hair);
+  display:flex;justify-content:space-between;align-items:flex-end;
+  gap:8mm;
+}
+.cta .left{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 144,"SOFT" 80,"WONK" 1;
+  font-style:italic;
+  font-weight:300;
+  font-size:32pt;
+  line-height:.9;
+  color:var(--ink);
+  letter-spacing:-.02em;
+}
+.cta .left em{
+  color:var(--accent);
+}
+.cta .right{
+  text-align:right;
+  font-family:'Geist Mono',monospace;
+  font-size:9pt;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  line-height:1.9;
+}
+.cta .right strong{color:var(--ink);font-weight:500;}
+
+/* ============================================================
+   COMPARE TABLE (vs incumbents)
+   ============================================================ */
+.compare{
+  margin-top:6mm;
+  border:1px solid var(--hair);
+  border-radius:11px;
+  overflow:hidden;
+  background:rgba(255,255,255,.02);
+}
+.compare table{
+  width:100%;
+  border-collapse:collapse;
+  font-family:'Geist',sans-serif;
+}
+.compare th,.compare td{
+  padding:3.2mm 5mm;
+  text-align:left;
+  font-size:9.5pt;
+  border-bottom:1px solid var(--hair);
+  vertical-align:middle;
+}
+.compare tr:last-child th,.compare tr:last-child td{border-bottom:none;}
+.compare thead th{
+  font-family:'Geist Mono',monospace;
+  font-size:7.5pt;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  font-weight:500;
+  background:rgba(255,255,255,.025);
+}
+.compare thead th.us{color:var(--accent);}
+.compare tbody th{
+  font-family:'Geist Mono',monospace;
+  font-size:7.5pt;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  font-weight:500;
+  width:32%;
+}
+.compare td.us{
+  color:var(--ink);
+  font-weight:500;
+}
+.compare td.them{
+  color:var(--ink-mute);
+}
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+@page{
+  size:A4 portrait;
+  margin:0;
+}
+@media print{
+  html,body{background:#fff;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
+  body{padding:0;gap:0;}
+  *{caret-color:transparent !important;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
+  .slide{
+    box-shadow:none !important;
+    margin:0 !important;
+    width:210mm;height:297mm;
+    overflow:hidden !important;
+    -webkit-print-color-adjust:exact !important;
+    print-color-adjust:exact !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SLIDE 1 · COVER
+     ============================================================ -->
+<section class="slide cover" data-accent="rose">
+  <div class="frame">
+    <div class="cover-mark">
+      <div><span class="dot"></span>BY HYPERSCRIPTS · NOIDA, INDIA</div>
+      <div>PITCH DECK · 2026</div>
+    </div>
+
+    <div class="cover-logo">
+      <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    </div>
+
+    <div class="cover-center">
+      <div class="cover-eyebrow">The Business OS</div>
+      <h1 class="cover-title">Run your entire company <em>without switching tools.</em></h1>
+      <p class="cover-sub">One workspace for 20–200 person service businesses. Replaces Zoom, Slack, Drive, BambooHR, Salesforce, Jira and Tally — with a single login, a single bill, and one source of truth. Self‑hosted or cloud.</p>
+    </div>
+
+    <div class="cover-strip">
+      <span>Communicate</span><span>Operate</span><span>Control</span>
+      <span>One Login</span><span>One Contract</span><span>One Source of Truth</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 2 · THE PROBLEM
+     ============================================================ -->
+<section class="slide" data-accent="rose">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">02</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">01 — The Problem</div>
+    <h1 class="title">Your business runs on a dozen vendors that <em>don't talk</em> to each other.</h1>
+
+    <div class="stat-block">
+      <div>
+        <div class="stat-huge">$40<span class="strike"></span></div>
+      </div>
+      <div class="stat-caption">
+        <strong>Per user. Per month.</strong> Just to keep the lights on.<br>
+        Zoom Pro $13 &nbsp;+&nbsp; Slack Pro $7.25 &nbsp;+&nbsp; Google Drive $12 &nbsp;+&nbsp; BambooHR $8 — <em>before</em> CRM, accounting, training, projects or AI.
+      </div>
+    </div>
+
+    <ul class="problem-list">
+      <li><strong>Your team copies the same client into five tools every day</strong> — CRM, project board, timesheet, invoice, payroll. Same name, typed five times.</li>
+      <li><strong>HR closes payroll in a spreadsheet at 11pm on the 30th</strong> — because the "HR system" can't see attendance, leave, loans or transfers in one place.</li>
+      <li><strong>$30–$60 per user per month, before CRM, accounting, training or AI</strong> — and twelve invoices, twelve renewals, twelve security reviews to manage them.</li>
+    </ul>
+
+    <div class="foot">
+      <div class="brand">RAGENAIZER · 01 / THE PROBLEM</div>
+      <div>ragenaizer.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 3 · BUILT FOR (ICP)
+     ============================================================ -->
+<section class="slide glow-bottom" data-accent="cyan">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">03</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">02 — Built For</div>
+    <h1 class="title">For 20–200 person <em>service businesses</em> drowning in tool sprawl.</h1>
+    <p class="lede">Agencies, consultancies, IT services, and tech teams. Big enough to feel the pain of 12 disconnected vendors. Small enough to switch in a week — without a six‑month enterprise rollout. <strong style="color:var(--ink);font-weight:500;">5M+ companies globally in this segment.</strong></p>
+
+    <div class="col-3">
+      <div class="prod">
+        <div class="num">A · WHO</div>
+        <h3>Service Companies</h3>
+        <div class="tag">20 — 200 Employees</div>
+        <div class="roi">Where the pain is sharpest.</div>
+        <ul>
+          <li><strong>Marketing &amp; creative agencies</strong></li>
+          <li><strong>Consultancies &amp; advisory firms</strong></li>
+          <li><strong>IT services &amp; dev shops</strong></li>
+          <li><strong>Research &amp; analytics teams</strong></li>
+          <li><strong>Product &amp; tech startups</strong></li>
+        </ul>
+      </div>
+      <div class="prod">
+        <div class="num">B · WHAT THEY HIT</div>
+        <h3>The Sprawl Wall</h3>
+        <div class="tag">Daily Pain Points</div>
+        <div class="roi">Twelve tools. Zero handoffs.</div>
+        <ul>
+          <li><strong>8–12 SaaS contracts</strong> to manage</li>
+          <li><strong>Manual handoffs</strong> from sales → delivery → finance</li>
+          <li><strong>Spreadsheets</strong> filling every gap</li>
+          <li><strong>Payroll &amp; compliance</strong> done by hand</li>
+          <li><strong>No single source</strong> of truth</li>
+        </ul>
+      </div>
+      <div class="prod">
+        <div class="num">C · WHY US</div>
+        <h3>Why They Switch</h3>
+        <div class="tag">Decision Drivers</div>
+        <div class="roi">Cost, speed, control.</div>
+        <ul>
+          <li><strong>~60% lower</strong> total cost</li>
+          <li><strong>1‑day deployment</strong>, not 8 months</li>
+          <li><strong>Self‑hosted option</strong> for data sovereignty</li>
+          <li><strong>Start with one module</strong>, expand gradually</li>
+          <li><strong>No per‑seat AI markup</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="brand">RAGENAIZER · 02 / BUILT FOR</div>
+      <div>ragenaizer.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 4 · SOLUTION · Three Layers
+     ============================================================ -->
+<section class="slide" data-accent="violet">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">04</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">03 — The Solution</div>
+    <h1 class="title">One platform to <em>communicate, operate, and control.</em></h1>
+    <p class="lede">Not a suite of integrations bolted together. One codebase, one database, one login — organised into three layers your team already understands.</p>
+
+    <div class="col-3">
+      <div class="prod">
+        <div class="num">LAYER 01</div>
+        <h3>Communicate</h3>
+        <div class="tag">Vision · Chat · Drive</div>
+        <div class="roi">Meet, message, share — one workspace.</div>
+        <ul>
+          <li><strong>HD meetings</strong> with live captions &amp; recording</li>
+          <li><strong>Real‑time chat</strong> with unlimited history</li>
+          <li><strong>Secure storage</strong> with audit trail</li>
+          <li>Replaces <strong>Zoom + Slack + Drive</strong></li>
+        </ul>
+      </div>
+      <div class="prod">
+        <div class="num">LAYER 02</div>
+        <h3>Operate</h3>
+        <div class="tag">HRMS · CRM · PMS</div>
+        <div class="roi">One database. No integrations.</div>
+        <ul>
+          <li><strong>HRMS &amp; payroll</strong> — country‑agnostic, audit‑ready</li>
+          <li><strong>CRM</strong> — visual pipeline, real‑time alerts</li>
+          <li><strong>PMS</strong> — projects, timesheets, billing rates</li>
+          <li>Replaces <strong>BambooHR + Salesforce + Jira</strong></li>
+        </ul>
+      </div>
+      <div class="prod">
+        <div class="num">LAYER 03</div>
+        <h3>Control</h3>
+        <div class="tag">Accounts · Analytics</div>
+        <div class="roi">Books that close themselves.</div>
+        <ul>
+          <li><strong>Invoices, bills, POs,</strong> bank rec</li>
+          <li><strong>GST/VAT returns</strong> ready to file</li>
+          <li><strong>Cross‑module dashboards</strong> &amp; period close</li>
+          <li>Replaces <strong>Tally + spreadsheets</strong></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="brand">RAGENAIZER · 03 / SOLUTION</div>
+      <div>ragenaizer.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 5 · WALKTHROUGH · The Relay
+     ============================================================ -->
+<section class="slide glow-bottom" data-accent="emerald">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">05</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">04 — How It Flows</div>
+    <h1 class="title">Lead → Deal → Project → Payroll → <em>Invoice.</em></h1>
+    <p class="lede">Revenue is a relay race. Today, every handoff happens in a different tool — and something always falls between the cracks. Ragenaizer runs the whole baton in one system of record.</p>
+
+    <div class="reasons">
+      <div class="reason">
+        <div class="n">01</div>
+        <div>
+          <h4>CRM captures the lead</h4>
+          <p>Inbound from website, ads, or webhooks lands in the visual pipeline. Same contact record flows downstream — no re‑typing in three places.</p>
+        </div>
+      </div>
+      <div class="reason">
+        <div class="n">02</div>
+        <div>
+          <h4>Deal closes → Project spins up in PMS</h4>
+          <p>One click converts the won deal into a project with tasks, billing rates, and a dedicated meeting room. Account manager and delivery team see the same data.</p>
+        </div>
+      </div>
+      <div class="reason">
+        <div class="n">03</div>
+        <div>
+          <h4>Team logs hours → HRMS handles payroll</h4>
+          <p>Weekly timesheets feed payroll automatically. Attendance, leave, loans and statutory deductions all run on one engine — every payslip number is provable.</p>
+        </div>
+      </div>
+      <div class="reason">
+        <div class="n">04</div>
+        <div>
+          <h4>Accounts bills the client</h4>
+          <p>Billable hours and project milestones become invoices in one click. GST/VAT, bank reconciliation and period close — all on the same data, no exports.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:6mm;">
+      <strong>One contact. One project. One employee. One source of truth.</strong> <strong>Leadership finally sees the business in one place.</strong>
+    </div>
+
+    <div class="foot">
+      <div class="brand">RAGENAIZER · 04 / WALKTHROUGH</div>
+      <div>ragenaizer.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 6 · MODULE · HRMS + Payroll
+     ============================================================ -->
+<section class="slide" data-accent="rose">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">06</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">05 — Module · HRMS + Payroll  ·  Flow Step → Payroll</div>
+    <h1 class="title">HRMS that <em>doesn't break</em> at payroll.</h1>
+    <p class="lede">Every number on every payslip — click it, see the formula, see the inputs. One country‑agnostic engine across India, USA, UK and UAE.</p>
+
+    <div class="roi-row">
+      <div class="roi-card">
+        <div class="v">84%</div>
+        <div class="l">Less time on<br>payroll processing</div>
+      </div>
+      <div class="roi-card">
+        <div class="v">14 hrs</div>
+        <div class="l">Saved per week<br>per HR person</div>
+      </div>
+      <div class="roi-card">
+        <div class="v">0</div>
+        <div class="l">Per‑employee<br>fees, ever</div>
+      </div>
+      <div class="roi-card">
+        <div class="v">4</div>
+        <div class="l">Countries live<br>IN · US · UK · UAE</div>
+      </div>
+    </div>
+
+    <div class="reasons" style="margin-top:5mm;">
+      <div class="reason">
+        <div class="n">01</div>
+        <div>
+          <h4>Payroll with full transparency</h4>
+          <p>Click any number → see the formula and the inputs. Stress‑tested against retroactive revisions and mid‑month transfers.</p>
+        </div>
+      </div>
+      <div class="reason">
+        <div class="n">02</div>
+        <div>
+          <h4>Attendance · leave · loans · compliance — one engine</h4>
+          <p>Geofencing, biometric, approvals, auto‑EMI, mid‑month transfers — all on the same payroll engine.</p>
+        </div>
+      </div>
+      <div class="reason">
+        <div class="n">03</div>
+        <div>
+          <h4>Timesheets → payroll, automatic</h4>
+          <p>Hours logged in PMS feed payroll directly. No Excel at month end.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:5mm;">
+      <strong>Payroll closes itself — even on your worst month.</strong>
+    </div>
+
+    <div style="margin-top:4mm;text-align:center;font-family:'Geist Mono',monospace;font-size:7.5pt;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);opacity:.85;">Same database  ·  Same system of record</div>
+
+    <div class="foot">
+      <div class="brand">RAGENAIZER · 05 / MODULE · HRMS</div>
+      <div>ragenaizer.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 7 · MODULE · CRM + PMS
+     ============================================================ -->
+<section class="slide glow-bottom" data-accent="emerald">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">07</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">06 — Module · CRM + PMS  ·  Flow Step → Lead to Project</div>
+    <h1 class="title">From lead to delivery — <em>without re‑typing data.</em></h1>
+    <p class="lede">CRM and PMS share one database. The same contact, the same project, the same team — visible to sales and delivery at the same time. No CSV exports. No Zapier glue. No "let me check the other system."</p>
+
+    <div class="col-2">
+      <div class="prod">
+        <div class="num">A · CRM</div>
+        <h3>Sales Pipeline</h3>
+        <div class="tag">Capture · Qualify · Close</div>
+        <div class="roi">Close more deals. Lose fewer leads.</div>
+        <ul>
+          <li>Visual pipeline + real‑time alerts</li>
+          <li>Lead capture from website, ads &amp; webhooks</li>
+          <li>Full interaction history per contact</li>
+          <li>One contact shared with PMS &amp; Accounts</li>
+        </ul>
+      </div>
+      <div class="prod">
+        <div class="num">B · PMS</div>
+        <h3>Projects · Issues · Time</h3>
+        <div class="tag">Deliver · Track · Bill</div>
+        <div class="roi">Real‑time project profitability.</div>
+        <ul>
+          <li>One‑click deal → project, team auto‑created</li>
+          <li>Tasks + Jira‑class issue tracker</li>
+          <li>Timesheets → billing automatically</li>
+          <li>Per‑member billing rates on every project</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:7mm;">
+      <strong>Sales stops chasing updates. Delivery stops asking for data.</strong>
+    </div>
+
+    <div style="margin-top:6mm;text-align:center;font-family:'Geist Mono',monospace;font-size:7.5pt;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);opacity:.85;">Same database  ·  Same system of record</div>
+
+    <div class="foot">
+      <div class="brand">RAGENAIZER · 06 / MODULE · CRM + PMS</div>
+      <div>ragenaizer.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 8 · MODULE · Accounts + Drive + Vision
+     ============================================================ -->
+<section class="slide" data-accent="cyan">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">08</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">07 — Accounts · Drive · Vision  ·  Flow Step → Invoice &amp; Control</div>
+    <h1 class="title small">Finance, files, and conversation — <em>on the same data.</em></h1>
+    <p class="lede">The three surfaces leadership touches every day. They share the same contacts, the same projects, the same employees as the rest of the platform. No exports, no Tally sync, no siloed file shares.</p>
+
+    <div class="col-3">
+      <div class="prod">
+        <div class="num">01 · BILL</div>
+        <h3>Accounts</h3>
+        <div class="tag">Finance &amp; Books</div>
+        <div class="roi">Same data as the rest of the platform.</div>
+        <ul>
+          <li>Invoices, bills &amp; bank reconciliation</li>
+          <li>GST/VAT returns ready to file</li>
+          <li>No Tally sync, no CSV exports</li>
+        </ul>
+      </div>
+      <div class="prod">
+        <div class="num">02 · STORE</div>
+        <h3>Drive</h3>
+        <div class="tag">Secure Cloud Storage</div>
+        <div class="roi">Files linked to everything.</div>
+        <ul>
+          <li>Files attached to deals, employees, projects</li>
+          <li>Password‑protected share links with expiry</li>
+          <li>Full audit trail on every file</li>
+        </ul>
+      </div>
+      <div class="prod">
+        <div class="num">03 · MEET</div>
+        <h3>Vision</h3>
+        <div class="tag">Video · Chat · Captions</div>
+        <div class="roi">Context‑aware, not siloed.</div>
+        <ul>
+          <li>HD meetings with live captions</li>
+          <li>Recordings land in Drive automatically</li>
+          <li>Chat persists into the meeting room</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:7mm;">
+      <strong>Your finance team stops reconciling — and starts trusting.</strong>
+    </div>
+
+    <div style="margin-top:6mm;text-align:center;font-family:'Geist Mono',monospace;font-size:7.5pt;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);opacity:.85;">Same database  ·  Same system of record</div>
+
+    <div class="foot">
+      <div class="brand">RAGENAIZER · 07 / MODULE · ACCOUNTS · DRIVE · VISION</div>
+      <div>ragenaizer.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 9 · ADD-ONS · Research + Procurement
+     ============================================================ -->
+<section class="slide glow-bottom" data-accent="gold">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">09</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">08 — Premium Add‑ons</div>
+    <h1 class="title small">Two specialised engines — <em>for the teams that need them.</em></h1>
+    <p class="lede">Research and Procurement are sold separately. Each is a complete workspace — plugged into the same Ragenaizer login, the same database, the same audit trail.</p>
+
+    <div class="col-2">
+      <div class="prod">
+        <div class="num">A · INSIGHT</div>
+        <h3>Research</h3>
+        <div class="tag">AI Analytics Suite</div>
+        <div class="roi">For agencies, brand teams &amp; insight functions.</div>
+        <ul>
+          <li>SPSS‑grade stats — cross‑tabs, regression, TURF, K‑means</li>
+          <li>AI open‑end coding with full audit logs</li>
+          <li>10‑minute dashboards from any SPSS file</li>
+          <li>Focus groups with diarisation &amp; translation</li>
+          <li>Embeddable white‑label AI chat widget</li>
+        </ul>
+      </div>
+      <div class="prod">
+        <div class="num">B · SPEND</div>
+        <h3>Procurement</h3>
+        <div class="tag">RFQ to PO, with a Brain</div>
+        <div class="roi">Pick the right vendor, not just the cheapest.</div>
+        <ul>
+          <li>Smart catalogue with normalised SKUs</li>
+          <li>One‑click RFQs to dozens of vendors</li>
+          <li>Self‑serve vendor portal for quotes</li>
+          <li>AI quote comparison — price, quality, delivery</li>
+          <li>Spend analytics by vendor, category, period</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="addons" style="margin-top:5mm;">
+      <div class="addon">
+        <div class="ah">
+          <span class="name">Research</span>
+          <span class="tag">Add‑on</span>
+        </div>
+        <p class="price-line"><strong>₹20 L / year</strong> on Pro · <strong>₹35 L / year</strong> on Enterprise</p>
+      </div>
+      <div class="addon">
+        <div class="ah">
+          <span class="name">Procurement</span>
+          <span class="tag">Add‑on</span>
+        </div>
+        <p class="price-line"><strong>₹6 L / year</strong> on Pro · <strong>₹10 L / year</strong> on Enterprise</p>
+      </div>
+    </div>
+
+    <div style="margin-top:4mm;text-align:center;font-family:'Geist Mono',monospace;font-size:7.5pt;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);opacity:.85;">Same database  ·  Same system of record</div>
+
+    <div class="foot">
+      <div class="brand">RAGENAIZER · 08 / ADD‑ONS</div>
+      <div>ragenaizer.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 10 · DIFFERENTIATION · 3 things no one else does
+     ============================================================ -->
+<section class="slide" data-accent="rose">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">10</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">09 — Why We Win</div>
+    <h1 class="title small">Three things <em>no one else does</em> — and the table that proves it.</h1>
+
+    <div class="reasons" style="margin-top:5mm;">
+      <div class="reason" style="padding:3mm 0;">
+        <div class="n">01</div>
+        <div>
+          <h4>Payroll that shows its work</h4>
+          <p>Click any payslip number → see the formula. India, USA, UK, UAE on one code path.</p>
+        </div>
+      </div>
+      <div class="reason" style="padding:3mm 0;">
+        <div class="n">02</div>
+        <div>
+          <h4>One database. Zero integrations.</h4>
+          <p>CRM, HRMS, PMS, Accounts — same tables. No Zapier, no nightly syncs.</p>
+        </div>
+      </div>
+      <div class="reason" style="padding:3mm 0;">
+        <div class="n">03</div>
+        <div>
+          <h4>BYOK AI — no token markup, ever</h4>
+          <p>Bring your own OpenAI, Anthropic or Deepgram key. They bill you directly.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="compare" style="margin-top:5mm;">
+      <table>
+        <thead>
+          <tr>
+            <th>&nbsp;</th>
+            <th class="us">Ragenaizer</th>
+            <th>Zoho / Odoo</th>
+            <th>Notion + Slack stack</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>UX &amp; Speed</th>
+            <td class="us">Modern, fast, AI‑native</td>
+            <td class="them">Legacy, dated UI</td>
+            <td class="them">Modern but narrow</td>
+          </tr>
+          <tr>
+            <th>Architecture</th>
+            <td class="us">Single database, one codebase</td>
+            <td class="them">Fragmented modules from acquisitions</td>
+            <td class="them">5+ tools glued by integrations</td>
+          </tr>
+          <tr>
+            <th>Deployment</th>
+            <td class="us">Core modules live in 1 day</td>
+            <td class="them">3–9 month implementation</td>
+            <td class="them">Per‑tool setup &amp; SSO chaos</td>
+          </tr>
+          <tr>
+            <th>AI Pricing</th>
+            <td class="us">BYOK · zero markup</td>
+            <td class="them">Resold tokens with margin</td>
+            <td class="them">Per‑tool AI add‑ons stack up</td>
+          </tr>
+          <tr>
+            <th>Self‑Hosting</th>
+            <td class="us">Cloud or self‑hosted, your call</td>
+            <td class="them">Cloud only (most modules)</td>
+            <td class="them">Cloud only</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="foot">
+      <div class="brand">RAGENAIZER · 09 / DIFFERENTIATION</div>
+      <div>ragenaizer.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 7 · WHY NOW · The post-SaaS wave
+     ============================================================ -->
+<section class="slide glow-bottom" data-accent="gold">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">11</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">10 — Why Now</div>
+    <h1 class="title">The <em>post‑SaaS consolidation</em> wave.</h1>
+    <p class="lede">For fifteen years the market wanted "best in class" point tools. That era is ending. Three forces are pushing every service business toward consolidation — at the same time.</p>
+
+    <div class="pillars">
+      <div class="pillar">
+        <h4>01 · SaaS Sprawl Peaked</h4>
+        <p><strong>87 SaaS apps per mid‑market company.</strong> Procurement, IT, security and finance are all signaling the same thing: no more vendors.</p>
+      </div>
+      <div class="pillar">
+        <h4>02 · AI Fragments Further</h4>
+        <p><strong>Twelve tools = twelve AI bills.</strong> Every SaaS vendor is launching its own AI add‑on at +$20/user/month — stacked on top of the base price.</p>
+      </div>
+      <div class="pillar">
+        <h4>03 · Cost Pressure Mounting</h4>
+        <p><strong>SaaS is the first line item CFOs cut.</strong> Funding tightened, margins matter again, and "what can we consolidate?" is the loudest question in every boardroom.</p>
+      </div>
+      <div class="pillar">
+        <h4>04 · Data Sovereignty Rising</h4>
+        <p><strong>Self‑hosted is now a board‑level ask.</strong> GDPR, India DPDP and regional cloud mandates have pushed sovereignty from fringe to default for regulated buyers.</p>
+      </div>
+      <div class="pillar">
+        <h4>05 · Integration Fatigue</h4>
+        <p><strong>The glue layer is exhausted.</strong> Zapier, Make, MuleSoft — buyers are tired of paying twice: once for the tools, once for the integrations between them.</p>
+      </div>
+      <div class="pillar">
+        <h4>06 · The Window</h4>
+        <p><strong>Incumbents are too heavy. Newcomers are too narrow.</strong> Zoho/Odoo carry legacy weight; Notion/Linear stop at the team. The gap for an AI‑native Business OS is open right now.</p>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="brand">RAGENAIZER · 10 / WHY NOW</div>
+      <div>ragenaizer.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 8 · PRICING & VALUE
+     ============================================================ -->
+<section class="slide" data-accent="rose">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">12</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">11 — Pricing &amp; Value</div>
+    <h1 class="title small">Two plans. <em>~60% cheaper</em> than the stack you replace.</h1>
+
+    <div class="price-grid">
+      <div class="price-card">
+        <div class="tag">Pro · 20 Seats</div>
+        <h3>For growing teams</h3>
+        <div class="num"><span class="cur">₹</span>1,200</div>
+        <div class="per">Per user · Per month</div>
+        <div class="seats"><strong>20 seats</strong> · all modules included</div>
+        <ul>
+          <li>Communicate · Operate · Control</li>
+          <li>50 GB Drive per tenant</li>
+          <li>Cloud or self‑hosted deployment</li>
+          <li>Email support, 24‑hour SLA</li>
+          <li>BYOK AI — no token markup</li>
+        </ul>
+      </div>
+      <div class="price-card featured">
+        <div class="tag">Enterprise · 50 Seats</div>
+        <h3>For scaling orgs</h3>
+        <div class="num"><span class="cur">₹</span>1,000</div>
+        <div class="per">Per user · Per month</div>
+        <div class="seats"><strong>50 seats</strong> · all modules included</div>
+        <ul>
+          <li>Everything in Pro</li>
+          <li>Priority support &amp; onboarding</li>
+          <li>Custom statutory configuration</li>
+          <li>Dedicated success manager</li>
+          <li>Self‑hosted with air‑gap option</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="savings-callout">
+      <div class="big">~₹25 L</div>
+      <div class="lbl">
+        <strong>Annual savings</strong> for a 100‑person team<br>
+        vs ₹3,000–₹5,000/user on Zoom + Slack +<br>
+        Drive + BambooHR + Salesforce + Jira + Tally.
+      </div>
+    </div>
+
+    <div class="byok" style="margin-top:5mm;">
+      <span class="badge">Expansion</span><strong>Typical customer grows from ₹3 L → ₹8 L per year within 12 months</strong> as they expand from the HRMS+PMS wedge into CRM, Accounts, Drive and Vision. Net revenue retention is the headline metric — one contract, more modules, deeper usage.
+    </div>
+
+    <div class="foot">
+      <div class="brand">RAGENAIZER · 11 / PRICING</div>
+      <div>ragenaizer.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 9 · DEPLOYMENT & ADOPTION
+     ============================================================ -->
+<section class="slide" data-accent="sky">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">13</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">12 — Deployment &amp; Adoption</div>
+    <h1 class="title">Core modules <em>live in a day.</em> One module to start.</h1>
+    <p class="lede">Enterprise HRMS rollouts take 8–12 months, ₹4 crore+, and a dedicated IT team. We don't believe in any of that. Start with one module on Monday, expand at your pace.</p>
+
+    <div class="roi-row">
+      <div class="roi-card">
+        <div class="v">1 day</div>
+        <div class="l">Core modules live<br>(HRMS · PMS · Drive)</div>
+      </div>
+      <div class="roi-card">
+        <div class="v">0</div>
+        <div class="l">Dedicated IT<br>team needed</div>
+      </div>
+      <div class="roi-card">
+        <div class="v">2</div>
+        <div class="l">Deployment modes<br>cloud or self‑hosted</div>
+      </div>
+      <div class="roi-card">
+        <div class="v">∞</div>
+        <div class="l">Modules expand<br>at your pace</div>
+      </div>
+    </div>
+
+    <div class="reasons" style="margin-top:6mm;">
+      <div class="reason">
+        <div class="n">01</div>
+        <div>
+          <h4>Start with one module</h4>
+          <p>Most teams begin with HRMS or PMS — the sharpest pain point. No big‑bang migration. No "move everything in week one." Add the next layer when your team is ready.</p>
+        </div>
+      </div>
+      <div class="reason">
+        <div class="n">02</div>
+        <div>
+          <h4>Cloud or self‑hosted — your call</h4>
+          <p>Run on our managed cloud, or deploy to your own infrastructure for full data sovereignty. Air‑gapped if compliance demands it. Bring your own storage bucket. Same product, your choice of where it lives.</p>
+        </div>
+      </div>
+      <div class="reason">
+        <div class="n">03</div>
+        <div>
+          <h4>White‑glove onboarding</h4>
+          <p>Data migration, statutory config, training and the first payroll cycle — done with you, not handed over a wall. No professional services contract, no SOW games.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="brand">RAGENAIZER · 12 / DEPLOYMENT</div>
+      <div>ragenaizer.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 10 · TRACTION
+     ============================================================ -->
+<section class="slide" data-accent="violet">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">14</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">13 — Traction &amp; Go‑To‑Market</div>
+    <h1 class="title">Live product. <em>Design partners.</em> Founder‑led wedge.</h1>
+    <p class="lede"><strong style="color:var(--ink);font-weight:500;">8 design partners signed. 3 pilots starting this month.</strong> The platform is in production, the wedge is locked, and the GTM runs through the founder's existing service‑business network.</p>
+
+    <div class="roi-row">
+      <div class="roi-card">
+        <div class="v">8</div>
+        <div class="l">Design partners<br>signed</div>
+      </div>
+      <div class="roi-card">
+        <div class="v">3</div>
+        <div class="l">Pilots starting<br>this month</div>
+      </div>
+      <div class="roi-card">
+        <div class="v">7</div>
+        <div class="l">Production modules<br>live today</div>
+      </div>
+      <div class="roi-card">
+        <div class="v">250+</div>
+        <div class="l">Projects shipped<br>by the team</div>
+      </div>
+    </div>
+
+    <div class="reasons" style="margin-top:6mm;">
+      <div class="reason">
+        <div class="n">01</div>
+        <div>
+          <h4>Live product, not slideware</h4>
+          <p>Vision, HRMS (payroll across India/USA/UK/UAE), CRM, PMS, Drive, Accounts and AIEngine — all running in production. Live demo on request.</p>
+        </div>
+      </div>
+      <div class="reason">
+        <div class="n">02</div>
+        <div>
+          <h4>GTM: HRMS+PMS wedge, founder‑led</h4>
+          <p><strong style="color:var(--ink);font-weight:500;">8 design partners signed, 3 pilots starting this month.</strong> Direct sales into 20–200 person service businesses, founder‑led demos, entering through the sharpest pain — payroll chaos and project chaos. Expansion to CRM, Accounts and Vision after month three.</p>
+        </div>
+      </div>
+      <div class="reason">
+        <div class="n">03</div>
+        <div>
+          <h4>Why us · Why now</h4>
+          <p><strong style="color:var(--ink);font-weight:500;">After shipping 250+ systems over 8 years, we kept seeing the same problem:</strong> every service business rebuilding the same integrations, the same payroll spreadsheets, the same CRM‑to‑project handoffs. Ragenaizer is what we wished existed — built by the team that has shipped this pattern more times than anyone.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:6mm;">
+      <strong>Biggest risk:</strong> ripping out an incumbent stack is hard. <strong>Mitigation:</strong> module‑first adoption — start with HRMS or PMS only, prove the value in 30 days, expand from there. No big‑bang migration, ever.
+    </div>
+
+    <div class="foot">
+      <div class="brand">RAGENAIZER · 13 / TRACTION</div>
+      <div>ragenaizer.com</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 11 · THE VISION (close)
+     ============================================================ -->
+<section class="slide glow-bottom" data-accent="rose">
+  <div class="brand-bar">
+    <div class="brand-mark" role="img" aria-label="Ragenaizer"></div>
+    <div class="pg"><span class="cur">15</span> / 15</div>
+  </div>
+  <div class="frame">
+    <div class="eyebrow">14 — The Vision</div>
+    <h1 class="title">The <em>Business OS.</em> One system of record. Forever.</h1>
+    <p class="lede">SaaS gave every team its own tool. The next decade gives every company one. We're building the operating system that runs an entire service business — from the first lead to the final invoice — on one codebase, one database, one login.</p>
+
+    <div class="reasons">
+      <div class="reason">
+        <div class="n">→</div>
+        <div>
+          <h4>Today · The Wedge</h4>
+          <p><strong style="color:var(--ink);font-weight:500;">HRMS + PMS replacing payroll chaos and project chaos</strong> for 20–200 person service companies in India. Sharpest cost pain. Fastest payback. Lowest switching cost. This is where deals will close first.</p>
+        </div>
+      </div>
+      <div class="reason">
+        <div class="n">→</div>
+        <div>
+          <h4>Year 1 · Expansion</h4>
+          <p>Same customers add CRM, Accounts, Drive, Vision. One contract grows from one module to five. Net revenue retention becomes the headline metric.</p>
+        </div>
+      </div>
+      <div class="reason">
+        <div class="n">→</div>
+        <div>
+          <h4>Year 3 · The OS</h4>
+          <p>Country‑agnostic payroll engine takes us into UAE, UK, USA. Self‑hosted deployment unlocks regulated industries. The Business OS becomes the system of record for thousands of service companies — replacing fragmented SaaS, forever.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="byok" style="margin-top:6mm;">
+      <span class="badge">The Ask</span><strong>Raising ₹4 crore</strong> to onboard the first 50 paying customers, scale founder‑led GTM into a repeatable sales motion, and harden the HRMS+PMS wedge into a category‑defining Business OS for service companies.
+    </div>
+
+    <div class="cta">
+      <div class="left"><em>Let's build it together.</em></div>
+      <div class="right">
+        <strong>ragenaizer.com</strong><br>
+        sales@ragenaizer.com<br>
+        By HyperScripts · Noida, India<br>
+        8+ years · 250+ projects shipped
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Open Graph card</title>
+<!--
+  Reusable Open Graph card template for Ragenaizer Knowledge Base guides.
+
+  Renders at exactly 1200×630 (the canonical OG image size). To create the
+  PNG for a guide:
+
+  1. Open this file in a browser with query params:
+     ?title=Accounts&subtitle=From+zero+to+balanced+books&kicker=KNOWLEDGE+BASE&module=accounts
+  2. Screenshot the .card element at 1200×630 (Playwright works perfectly).
+  3. Save the PNG into the guide's folder, e.g.
+     Frontend/KnowledgeBase/Accounts/og-image.png
+  4. Reference it from the guide's <head> with <meta property="og:image">.
+
+  Query params:
+  - title    (string)  — main heading, displayed in the serif accent font
+  - subtitle (string)  — descriptive line under the title
+  - kicker   (string)  — small all-caps eyebrow above the title
+                         (defaults to "RAGENAIZER KNOWLEDGE BASE")
+  - module   (string)  — visual flavour key. Determines the accent colour
+                         and the small badge label in the bottom-left.
+                         Valid values: accounts, hrms, vision, drive, pms,
+                         crm, lms, research, procurement, default.
+                         Defaults to "default".
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!--
+  Two type pairings loaded so each module variant can pick the one that
+  matches its source design:
+    - Knowledge Base guides → Instrument Serif + Onest (editorial)
+    - Pitch deck            → Fraunces + Geist + Geist Mono (the deck's own pairing)
+-->
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Onest:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #0a0a0a;
+    --paper-2: #161616;
+    --ink: #fafafa;
+    --ink-2: #d4d4d4;
+    --ink-3: #a3a3a3;
+    --ink-4: #525252;
+    --line: #262626;
+
+    /* Per-module accents */
+    --accent: #b85c38;       /* default terracotta */
+    --accent-2: #f5e6dc;
+  }
+  [data-module="accounts"]    { --accent: #f59e0b; --accent-2: #fef3c7; }
+  [data-module="hrms"]        { --accent: #06b6d4; --accent-2: #cffafe; }
+  [data-module="vision"]      { --accent: #8b5cf6; --accent-2: #ede9fe; }
+  [data-module="drive"]       { --accent: #10b981; --accent-2: #d1fae5; }
+  [data-module="pms"]         { --accent: #f97316; --accent-2: #ffedd5; }
+  [data-module="crm"]         { --accent: #ec4899; --accent-2: #fce7f3; }
+  [data-module="lms"]         { --accent: #14b8a6; --accent-2: #ccfbf1; }
+  [data-module="research"]    { --accent: #6366f1; --accent-2: #e0e7ff; }
+  [data-module="procurement"] { --accent: #84cc16; --accent-2: #ecfccb; }
+
+  /* Pitch deck variant — exact tokens from ragenaizer-pitch-deck.html so the
+     OG card matches the source slides. Deep navy, warm cream ink, rose-pink
+     primary accent with violet secondary for the gradient flourishes. */
+  [data-module="pitch-deck"] {
+    --paper: #050810;
+    --paper-2: #0a1628;
+    --ink: #f5f1e8;
+    --ink-2: rgba(245, 241, 232, 0.84);
+    --ink-3: rgba(245, 241, 232, 0.66);
+    --ink-4: rgba(245, 241, 232, 0.42);
+    --line: rgba(245, 241, 232, 0.14);
+    --accent: #f4a4c0;
+    --accent-2: #c4a3ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #fff;
+    font-family: 'Onest', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Card container — exact OG dimensions */
+  .card {
+    width: 1200px;
+    height: 630px;
+    background: var(--paper);
+    color: var(--ink);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 72px 84px;
+  }
+
+  /* Decorative background — large outline section mark, oversized */
+  .card::before {
+    content: '§';
+    position: absolute;
+    top: -120px;
+    right: -80px;
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 720px;
+    line-height: 1;
+    color: var(--accent);
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  /* Subtle gradient line top */
+  .card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent) 30%, transparent 100%);
+  }
+
+  /* Pitch deck variant — replace the section-mark glyph with the same dual
+     radial-gradient flourish the actual deck uses on its cover slide. */
+  [data-module="pitch-deck"].card::before {
+    content: '';
+    top: -200px;
+    right: -200px;
+    width: 900px;
+    height: 900px;
+    font-size: 0;
+    background:
+      radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--accent) 36%, transparent) 0%, transparent 55%),
+      radial-gradient(circle at 70% 70%, color-mix(in srgb, var(--accent-2) 36%, transparent) 0%, transparent 55%);
+    opacity: 1;
+    border-radius: 50%;
+    filter: blur(20px);
+  }
+  [data-module="pitch-deck"].card::after {
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 50%, transparent 100%);
+  }
+
+  /* TOP — kicker eyebrow + brand mark */
+  .card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+  }
+  .kicker {
+    font-size: 16px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+  }
+  .brand__logo {
+    /* Ragenaizer wordmark. The brand_logo.png asset is black on transparent;
+       we invert it to get the canonical white-on-dark wordmark used in the
+       mobile navbar. Same approach navbar.js uses for consistency. */
+    height: 28px;
+    width: auto;
+    display: block;
+    filter: invert(1);
+  }
+
+  /* CENTRE — title + subtitle */
+  .card__centre {
+    position: relative;
+    z-index: 2;
+    max-width: 880px;
+  }
+  .title {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 128px;
+    line-height: 0.95;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .title em {
+    color: var(--accent);
+    font-style: italic;
+  }
+  .subtitle {
+    margin-top: 28px;
+    font-size: 26px;
+    line-height: 1.4;
+    color: var(--ink-3);
+    max-width: 780px;
+    font-weight: 400;
+  }
+
+  /* Pitch deck variant — uses Fraunces + Geist (the deck's own pairing) and
+     a tighter title size so longer marketing-style headlines fit in two lines
+     without crashing into the subtitle. */
+  [data-module="pitch-deck"] .title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 84px;
+    line-height: 1.0;
+    font-weight: 400;
+    letter-spacing: -0.025em;
+  }
+  [data-module="pitch-deck"] .title em {
+    font-style: italic;
+    background: linear-gradient(120deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  [data-module="pitch-deck"] .subtitle {
+    font-family: 'Geist', system-ui, -apple-system, sans-serif;
+    font-size: 22px;
+    line-height: 1.5;
+    margin-top: 26px;
+  }
+  [data-module="pitch-deck"] .kicker {
+    font-family: 'Geist Mono', ui-monospace, monospace;
+    font-size: 14px;
+    letter-spacing: 0.22em;
+    background: linear-gradient(120deg, var(--accent) 0%, var(--accent-2) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  [data-module="pitch-deck"] .badge {
+    font-family: 'Geist Mono', ui-monospace, monospace;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+  }
+  [data-module="pitch-deck"] .badge--accent {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  [data-module="pitch-deck"] .url {
+    font-family: 'Geist Mono', ui-monospace, monospace;
+  }
+
+  /* BOTTOM — small badge row + URL */
+  .card__bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+  }
+  .badge-row {
+    display: flex;
+    gap: 12px;
+  }
+  .badge {
+    padding: 8px 16px;
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink-2);
+  }
+  .badge--accent {
+    background: transparent;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .url {
+    font-size: 16px;
+    color: var(--ink-4);
+    font-variant-numeric: tabular-nums;
+  }
+</style>
+</head>
+<body>
+  <div class="card" id="card" data-module="default">
+    <div class="card__top">
+      <div class="kicker" id="kicker">RAGENAIZER KNOWLEDGE BASE</div>
+      <div class="brand">
+        <img class="brand__logo" src="/assets/brand_logo.png" alt="Ragenaizer">
+      </div>
+    </div>
+
+    <div class="card__centre">
+      <h1 class="title" id="title">How to set up <em>Accounts</em></h1>
+      <p class="subtitle" id="subtitle">A complete walkthrough &mdash; Chart of Accounts, Fiscal Year, Tax, Opening Balances, Customers, Vendors, Invoices, Bills, Reports.</p>
+    </div>
+
+    <div class="card__bottom">
+      <div class="badge-row">
+        <div class="badge badge--accent" id="badge-module">Accounts</div>
+        <div class="badge" id="badge-2">Setup Guide</div>
+        <div class="badge" id="badge-3">~25 min read</div>
+      </div>
+      <div class="url">ragenaizer.com/kb</div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  // Read query params and apply
+  var p = new URLSearchParams(location.search);
+
+  var title = p.get('title');
+  var subtitle = p.get('subtitle');
+  var kicker = p.get('kicker');
+  var module = p.get('module') || 'default';
+  var badge = p.get('badge');
+  var badge2 = p.get('badge2');
+  var badge3 = p.get('badge3');
+  var url = p.get('url');
+
+  if (title) {
+    // Allow <em>...</em> in the title for the accent word
+    document.getElementById('title').innerHTML = title;
+  }
+  if (subtitle) document.getElementById('subtitle').textContent = subtitle;
+  if (kicker) document.getElementById('kicker').textContent = kicker;
+  if (badge) document.getElementById('badge-module').textContent = badge;
+  if (badge2) document.getElementById('badge-2').textContent = badge2;
+  if (badge3) document.getElementById('badge-3').textContent = badge3;
+  if (url) document.querySelector('.url').textContent = url;
+
+  document.getElementById('card').setAttribute('data-module', module);
+})();
+</script>
+</body>
+</html>

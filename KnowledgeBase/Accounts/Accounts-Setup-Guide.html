@@ -1,0 +1,3281 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to set up Accounts — Ragenaizer Knowledge Base</title>
+<meta name="description" content="A complete, no-jargon walkthrough for setting up Ragenaizer Accounts from a clean install. Chart of Accounts, Fiscal Year, Tax, Opening Balances, Customers, Vendors, Invoices, Bills, and Reports — end to end in ~25 minutes.">
+<meta name="author" content="Ragenaizer">
+<link rel="canonical" href="https://ragenaizer.com/KnowledgeBase/Accounts/Accounts-Setup-Guide.html">
+
+<!-- Open Graph / Facebook / LinkedIn -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Ragenaizer Knowledge Base">
+<meta property="og:url" content="https://ragenaizer.com/KnowledgeBase/Accounts/Accounts-Setup-Guide.html">
+<meta property="og:title" content="How to set up Accounts — from zero to balanced books">
+<meta property="og:description" content="A complete walkthrough — Chart of Accounts, Fiscal Year, Tax, Opening Balances, Customers, Vendors, Invoices, Bills, Reports. Built for first-time implementers, ~25 minutes end to end.">
+<meta property="og:image" content="https://ragenaizer.com/KnowledgeBase/Accounts/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="How to set up Accounts — Ragenaizer Knowledge Base">
+<meta property="og:locale" content="en_US">
+<meta property="article:publisher" content="https://ragenaizer.com">
+<meta property="article:section" content="Knowledge Base">
+<meta property="article:tag" content="Accounting">
+<meta property="article:tag" content="Setup Guide">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@ragenaizer">
+<meta name="twitter:title" content="How to set up Accounts — from zero to balanced books">
+<meta name="twitter:description" content="A complete walkthrough — Chart of Accounts, Fiscal Year, Tax, Opening Balances, Customers, Vendors, Invoices, Bills, Reports. ~25 minutes end to end.">
+<meta name="twitter:image" content="https://ragenaizer.com/KnowledgeBase/Accounts/og-image.png">
+<meta name="twitter:image:alt" content="How to set up Accounts — Ragenaizer Knowledge Base">
+
+<!-- Favicon -->
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+<!-- Editorial type pairing: Instrument Serif (display) + Onest (body) + JetBrains Mono (code) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Onest:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   FOUNDATIONS
+   ============================================================ */
+
+:root {
+  /* Editorial palette — light (warm paper, near-black ink) */
+  --paper: #faf9f6;
+  --paper-2: #f3f1ea;
+  --ink: #0a0a0a;
+  --ink-2: #2d2a26;
+  --ink-3: #6b6660;
+  --ink-4: #a8a39d;
+  --line: #e7e3da;
+  --line-2: #d8d4cb;
+  --card: #ffffff;
+
+  /* Brand blue (matches existing theme.css --brand-primary) */
+  --blue: #3b82f6;
+  --blue-dark: #2563eb;
+  --blue-light: #dbeafe;
+
+  /* Editorial warm accent — terracotta. The thing that makes this article feel
+     like a magazine instead of a corporate handbook. */
+  --clay: #b85c38;
+  --clay-dark: #8f4426;
+  --clay-light: #f5e6dc;
+
+  /* Callout palette */
+  --tip-bg: #ecfdf5;        --tip-border: #10b981;  --tip-ink: #065f46;
+  --warn-bg: #fffbeb;       --warn-border: #f59e0b; --warn-ink: #78350f;
+  --term-bg: #eff6ff;       --term-border: var(--blue); --term-ink: #1e3a8a;
+  --try-bg: #fdf3ee;        --try-border: var(--clay);  --try-ink: var(--clay-dark);
+  --what-bg: #f5f3ff;       --what-border: #8b5cf6; --what-ink: #5b21b6;
+
+  /* Type */
+  --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --font-body: 'Onest', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  /* Layout */
+  --sidebar-w: 280px;
+  --content-w: 760px;
+  --margin-w: 96px;       /* left gutter for the giant section numbers */
+  --container-w: 1280px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-fast: 180ms;
+  --t-med: 320ms;
+
+  --shadow-1: 0 1px 2px rgba(10,10,10,.04), 0 1px 4px rgba(10,10,10,.04);
+  --shadow-2: 0 2px 8px rgba(10,10,10,.06), 0 8px 24px rgba(10,10,10,.06);
+  --shadow-3: 0 12px 40px rgba(10,10,10,.08), 0 4px 12px rgba(10,10,10,.05);
+}
+
+[data-theme="dark"] {
+  --paper: #0a0a0a;
+  --paper-2: #161616;
+  --ink: #ededed;
+  --ink-2: #d4d4d4;
+  --ink-3: #a3a3a3;
+  --ink-4: #525252;
+  --line: #262626;
+  --line-2: #404040;
+  --card: #161616;
+
+  --blue-light: #172554;
+  --clay-light: #2d1810;
+
+  --tip-bg: #052e1c;        --tip-ink: #6ee7b7;
+  --warn-bg: #2d1f04;       --warn-ink: #fcd34d;
+  --term-bg: #0f1d3a;       --term-ink: #93c5fd;
+  --try-bg: #2d1408;        --try-ink: #fdba74;
+  --what-bg: #1f1438;       --what-ink: #c4b5fd;
+
+  --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-2: 0 2px 8px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.4);
+  --shadow-3: 0 12px 40px rgba(0,0,0,.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0a0a0a; --paper-2: #161616; --ink: #ededed; --ink-2: #d4d4d4;
+    --ink-3: #a3a3a3; --ink-4: #525252; --line: #262626; --line-2: #404040;
+    --card: #161616;
+    --blue-light: #172554; --clay-light: #2d1810;
+    --tip-bg: #052e1c; --tip-ink: #6ee7b7;
+    --warn-bg: #2d1f04; --warn-ink: #fcd34d;
+    --term-bg: #0f1d3a; --term-ink: #93c5fd;
+    --try-bg: #2d1408; --try-ink: #fdba74;
+    --what-bg: #1f1438; --what-ink: #c4b5fd;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+*::selection { background: var(--clay); color: #fff; }
+
+html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+
+body {
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--ink);
+  background: var(--paper);
+  font-feature-settings: "ss01", "cv11", "calt";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle paper grain — adds warmth, doesn't distract */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: .35;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.04 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+[data-theme="dark"] body::before { opacity: .25; mix-blend-mode: screen; }
+
+/* ============================================================
+   PROGRESS BAR
+   ============================================================ */
+.progress {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 2px; z-index: 1000;
+  background: transparent;
+  pointer-events: none;
+}
+.progress__fill {
+  height: 100%;
+  width: 0;
+  background: var(--clay);
+  transition: width 80ms linear;
+}
+
+/* ============================================================
+   APP SHELL
+   ============================================================ */
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: 100vh;
+  position: relative;
+  z-index: 2;
+}
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+.sidebar {
+  position: sticky; top: 0;
+  height: 100vh;
+  border-right: 1px solid var(--line);
+  background: var(--paper);
+  overflow-y: auto;
+  padding: 28px 24px 80px;
+}
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 3px; }
+
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.brand__mark {
+  width: 28px; height: 28px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 6px;
+  display: grid; place-items: center;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1;
+}
+.brand__name {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.brand__sub {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.sidebar__eyebrow {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 18px 0 10px;
+}
+
+.toc { list-style: none; }
+.toc__group {
+  margin-bottom: 4px;
+}
+.toc__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-2);
+  user-select: none;
+  transition: background var(--t-fast);
+}
+.toc__head:hover { background: var(--paper-2); }
+.toc__num {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-style: italic;
+  color: var(--clay);
+  min-width: 22px;
+  flex-shrink: 0;
+}
+.toc__title {
+  flex: 1;
+  line-height: 1.35;
+}
+.toc__chev {
+  width: 12px; height: 12px;
+  flex-shrink: 0;
+  transition: transform var(--t-fast);
+  color: var(--ink-4);
+}
+.toc__group[data-open="true"] .toc__chev { transform: rotate(90deg); }
+
+.toc__sub {
+  list-style: none;
+  margin: 2px 0 8px 32px;
+  padding-left: 14px;
+  border-left: 1px solid var(--line);
+  display: none;
+}
+.toc__group[data-open="true"] .toc__sub { display: block; }
+
+.toc__link {
+  display: block;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--ink-3);
+  text-decoration: none;
+  line-height: 1.35;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+.toc__link:hover { color: var(--ink); background: var(--paper-2); }
+.toc__link.is-active {
+  color: var(--ink);
+  background: var(--clay-light);
+  font-weight: 500;
+}
+[data-theme="dark"] .toc__link.is-active { background: rgba(184,92,56,0.18); color: var(--clay); }
+
+/* ============================================================
+   MAIN
+   ============================================================ */
+.main {
+  position: relative;
+  min-width: 0;
+}
+
+.topbar {
+  position: sticky; top: 0;
+  background: rgba(250,249,246,0.85);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--line);
+  z-index: 50;
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+[data-theme="dark"] .topbar { background: rgba(10,10,10,0.85); }
+
+.crumbs {
+  font-size: 12px;
+  color: var(--ink-3);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.crumbs a {
+  color: var(--ink-3);
+  text-decoration: none;
+  transition: color var(--t-fast);
+}
+.crumbs a:hover { color: var(--ink); }
+.crumbs__sep {
+  font-family: var(--font-display);
+  color: var(--ink-4);
+  font-style: italic;
+}
+.crumbs__current {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.topbar__actions { display: flex; gap: 6px; }
+.iconbtn {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.iconbtn:hover {
+  background: var(--paper-2);
+  border-color: var(--line-2);
+  color: var(--ink);
+}
+.iconbtn svg { width: 16px; height: 16px; }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero {
+  padding: 96px 80px 80px var(--margin-w);
+  max-width: var(--container-w);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero__eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--clay);
+  padding-bottom: 32px;
+}
+.hero__eyebrow::before {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 1px;
+  background: var(--clay);
+}
+
+.hero__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(56px, 9vw, 128px);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  max-width: 14ch;
+  margin-bottom: 32px;
+}
+.hero__title em {
+  font-style: italic;
+  color: var(--clay);
+  font-weight: 400;
+}
+
+.hero__lede {
+  font-family: var(--font-body);
+  font-size: 21px;
+  line-height: 1.55;
+  font-weight: 400;
+  color: var(--ink-2);
+  max-width: 56ch;
+  margin-bottom: 56px;
+}
+
+.hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 28px 0;
+  max-width: 760px;
+}
+.meta {
+  flex: 1;
+  min-width: 160px;
+  padding-right: 32px;
+  border-right: 1px solid var(--line);
+}
+.meta:last-child { border-right: 0; padding-right: 0; }
+.meta + .meta { padding-left: 32px; }
+.meta__label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: block;
+  margin-bottom: 8px;
+}
+.meta__value {
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 1.05;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.meta__value em { color: var(--clay); font-style: italic; }
+.meta__hint {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+
+.hero__deco {
+  position: absolute;
+  top: 100px;
+  right: 60px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 220px;
+  line-height: 1;
+  color: var(--clay);
+  opacity: 0.07;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ============================================================
+   CONTENT WRAPPER
+   ============================================================ */
+.content {
+  max-width: var(--container-w);
+  padding: 0 80px 120px var(--margin-w);
+  position: relative;
+}
+
+/* ============================================================
+   SECTION
+   ============================================================ */
+.section {
+  position: relative;
+  padding-top: 96px;
+  padding-bottom: 16px;
+  scroll-margin-top: 72px;
+}
+.section__head {
+  position: relative;
+  margin-bottom: 56px;
+  max-width: var(--content-w);
+}
+.section__num {
+  position: absolute;
+  left: calc(-1 * var(--margin-w) + 12px);
+  top: -28px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 96px;
+  line-height: 1;
+  color: var(--clay);
+  opacity: 0.95;
+  pointer-events: none;
+  user-select: none;
+}
+.section__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 14px;
+  display: block;
+}
+.section__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(36px, 5vw, 56px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 20px;
+}
+.section__title em { font-style: italic; color: var(--clay); }
+.section__sub {
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--ink-3);
+  max-width: 56ch;
+}
+.section__rule {
+  border: 0;
+  height: 1px;
+  background: var(--line);
+  margin-bottom: 36px;
+}
+
+/* Sub-sections (1.1, 1.2, ...) */
+.subsection {
+  max-width: var(--content-w);
+  margin-bottom: 64px;
+  scroll-margin-top: 72px;
+}
+.subsection__num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--clay);
+  display: block;
+  margin-bottom: 6px;
+}
+.subsection__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(24px, 3vw, 32px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin-bottom: 24px;
+}
+
+/* ============================================================
+   PROSE
+   ============================================================ */
+.prose {
+  max-width: var(--content-w);
+}
+.prose p {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--ink-2);
+  margin-bottom: 20px;
+}
+.prose p:last-child { margin-bottom: 0; }
+.prose strong { color: var(--ink); font-weight: 600; }
+.prose em { font-style: italic; color: var(--ink); }
+.prose a {
+  color: var(--clay);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--clay-light);
+  transition: text-decoration-color var(--t-fast);
+}
+.prose a:hover { text-decoration-color: var(--clay); }
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--ink);
+}
+.prose ul, .prose ol {
+  margin: 0 0 24px 24px;
+  color: var(--ink-2);
+}
+.prose li {
+  margin-bottom: 8px;
+  line-height: 1.65;
+}
+.prose ul li::marker { color: var(--clay); }
+.prose blockquote {
+  border-left: 3px solid var(--clay);
+  padding-left: 24px;
+  margin: 28px 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 1.4;
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+/* Big intro paragraph (drop cap) */
+.lede {
+  font-size: 21px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin-bottom: 32px;
+}
+.lede::first-letter {
+  font-family: var(--font-display);
+  float: left;
+  font-size: 80px;
+  line-height: 0.85;
+  padding: 8px 12px 0 0;
+  color: var(--clay);
+  font-weight: 400;
+}
+
+/* ============================================================
+   CALLOUTS
+   ============================================================ */
+.callout {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: 4px;
+  border-left: 3px solid;
+  margin: 28px 0;
+  max-width: var(--content-w);
+}
+.callout__icon {
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-style: italic;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.callout__body { min-width: 0; }
+.callout__label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.callout__title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.25;
+  font-weight: 400;
+  margin-bottom: 8px;
+}
+.callout p {
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.callout p:last-child { margin-bottom: 0; }
+
+.callout--tip   { background: var(--tip-bg);  border-color: var(--tip-border); color: var(--tip-ink); }
+.callout--tip .callout__icon { background: var(--tip-border); color: #fff; }
+.callout--warn  { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-ink); }
+.callout--warn .callout__icon { background: var(--warn-border); color: #fff; }
+.callout--term  { background: var(--term-bg); border-color: var(--term-border); color: var(--term-ink); }
+.callout--term .callout__icon { background: var(--term-border); color: #fff; }
+.callout--try   { background: var(--try-bg);  border-color: var(--try-border); color: var(--try-ink); }
+.callout--try .callout__icon { background: var(--try-border); color: #fff; }
+.callout--what  { background: var(--what-bg); border-color: var(--what-border); color: var(--what-ink); }
+.callout--what .callout__icon { background: var(--what-border); color: #fff; }
+
+/* ============================================================
+   FIGURES & BEFORE/AFTER
+   ============================================================ */
+.figure {
+  margin: 36px 0;
+  max-width: var(--content-w);
+}
+.figure img {
+  width: 100%;
+  display: block;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-2);
+  background: var(--card);
+}
+.figure__caption {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-3);
+  margin-top: 14px;
+  padding-left: 14px;
+  border-left: 2px solid var(--clay);
+  font-style: italic;
+}
+.figure__caption strong { color: var(--ink-2); font-style: normal; }
+
+/* "Wide" figure — kept as a class hook but aligned with the prose column.
+   We used to break out of the column with negative margins, but at
+   intermediate viewports the figure ended up touching the sidebar.
+   Screenshots fit comfortably at content-w, so we just align with the
+   prose now. */
+.figure--wide {
+  max-width: var(--content-w);
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Before/After pair */
+.beforeafter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 36px 0;
+  max-width: calc(var(--content-w) + 120px);
+  position: relative;
+}
+.beforeafter__col {
+  position: relative;
+}
+.beforeafter__col img {
+  width: 100%;
+  display: block;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-2);
+  background: var(--card);
+}
+.beforeafter__ribbon {
+  position: absolute;
+  top: 12px; left: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 6px 12px;
+  border-radius: 3px;
+  z-index: 2;
+  font-family: var(--font-body);
+}
+.beforeafter__col--after .beforeafter__ribbon {
+  background: var(--clay);
+  color: #fff;
+}
+.beforeafter__caption {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  margin-top: 12px;
+  font-style: italic;
+}
+.beforeafter__caption strong { color: var(--ink-2); font-style: normal; }
+
+/* Optional middle arrow */
+.beforeafter__arrow {
+  position: absolute;
+  left: 50%; top: 38%;
+  transform: translate(-50%, -50%);
+  width: 44px; height: 44px;
+  background: var(--clay);
+  color: #fff;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  z-index: 3;
+  box-shadow: 0 4px 12px rgba(184,92,56,0.4);
+}
+.beforeafter__arrow svg { width: 18px; height: 18px; }
+
+@media (max-width: 900px) {
+  .beforeafter { grid-template-columns: 1fr; }
+  .beforeafter__arrow { display: none; }
+}
+
+/* ============================================================
+   QUICK ACTION GRID (used in section 3.4 — every dashboard button)
+   ============================================================ */
+.qa-list {
+  display: grid;
+  gap: 0;
+  margin: 32px 0;
+  border-top: 1px solid var(--line);
+}
+.qa-row {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 24px;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--line);
+  align-items: start;
+}
+.qa-row__num {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 32px;
+  line-height: 1;
+  color: var(--clay);
+  padding-top: 4px;
+}
+.qa-row__title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.qa-row__sub {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-bottom: 14px;
+  font-family: var(--font-mono);
+}
+.qa-row__sub code {
+  background: var(--paper-2);
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+.qa-row__body p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  margin-bottom: 10px;
+}
+.qa-row__shot {
+  margin-top: 14px;
+  max-width: 380px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+.qa-row__shot img { width: 100%; display: block; }
+.qa-row__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--clay);
+  text-decoration: none;
+  margin-top: 8px;
+  border-bottom: 1px solid var(--clay-light);
+  padding-bottom: 1px;
+  transition: border-color var(--t-fast);
+}
+.qa-row__link:hover { border-color: var(--clay); }
+
+/* ============================================================
+   CHECKLIST (visual setup roadmap)
+   ============================================================ */
+.checklist {
+  display: grid;
+  gap: 0;
+  margin: 36px 0;
+  max-width: var(--content-w);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+}
+.checkrow {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 20px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+}
+.checkrow:last-child { border-bottom: 0; }
+.checkrow__num {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  display: grid; place-items: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink);
+}
+.checkrow__title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.checkrow__sub {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.checkrow__time {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+
+/* ============================================================
+   GLOSSARY
+   ============================================================ */
+.glossary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 36px 0;
+  max-width: calc(var(--content-w) + 200px);
+}
+.term-card {
+  padding: 22px 22px 20px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  position: relative;
+  transition: all var(--t-fast);
+}
+.term-card:hover {
+  border-color: var(--clay);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-2);
+}
+.term-card__abbr {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--clay);
+  display: block;
+  margin-bottom: 4px;
+}
+.term-card__title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.term-card__body {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+/* ============================================================
+   THEME TOGGLE — moon/sun morph
+   ============================================================ */
+.theme-toggle .sun, .theme-toggle .moon {
+  position: absolute;
+  transition: all var(--t-med) var(--ease);
+}
+[data-theme="dark"] .theme-toggle .sun { opacity: 1; transform: rotate(0); }
+[data-theme="dark"] .theme-toggle .moon { opacity: 0; transform: rotate(-90deg); }
+[data-theme="light"] .theme-toggle .sun { opacity: 0; transform: rotate(90deg); }
+[data-theme="light"] .theme-toggle .moon { opacity: 1; transform: rotate(0); }
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.foot {
+  border-top: 1px solid var(--line);
+  margin-top: 80px;
+  padding: 48px 80px 60px var(--margin-w);
+  max-width: var(--container-w);
+}
+.foot__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+.foot__title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.foot__title em { color: var(--clay); font-style: italic; }
+.foot__meta {
+  font-size: 13px;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+}
+.foot__links {
+  display: flex;
+  gap: 28px;
+  margin-top: 24px;
+  font-size: 13px;
+}
+.foot__links a {
+  color: var(--ink-3);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+  transition: all var(--t-fast);
+}
+.foot__links a:hover {
+  color: var(--clay);
+  border-color: var(--clay-light);
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+.menu-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-body);
+}
+
+@media (max-width: 1024px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed;
+    top: 0; left: -300px;
+    z-index: 200;
+    transition: left var(--t-med) var(--ease);
+    box-shadow: var(--shadow-3);
+  }
+  .sidebar.is-open { left: 0; }
+  .menu-btn { display: inline-flex; align-items: center; gap: 8px; }
+  .hero { padding: 56px 40px 56px 40px; }
+  .hero__deco { display: none; }
+  .hero__title { font-size: clamp(44px, 11vw, 84px); }
+  .content { padding: 0 40px 80px 40px; }
+  .section { padding-top: 64px; }
+  .section__num {
+    position: static;
+    display: block;
+    font-size: 56px;
+    margin-bottom: 8px;
+  }
+  .foot { padding: 48px 40px 60px 40px; }
+  .figure--wide { margin-left: 0; margin-right: 0; }
+  .qa-row { grid-template-columns: 40px 1fr; gap: 16px; }
+  .qa-row__num { font-size: 24px; }
+}
+
+/* Backdrop for mobile sidebar */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-med);
+  z-index: 150;
+}
+.backdrop.is-open { opacity: 1; pointer-events: auto; }
+
+/* ============================================================
+   PRINT — clean PDF output, no sidebar, no fixed elements
+   ============================================================ */
+@media print {
+  body::before, .sidebar, .topbar, .progress, .menu-btn, .backdrop, .hero__deco { display: none !important; }
+  .app { display: block; }
+  .hero, .content, .foot { padding: 24px 0 !important; max-width: 100% !important; }
+  .section { page-break-inside: avoid; padding-top: 32px; }
+  .section__num { position: static; font-size: 48px; display: block; margin-bottom: 8px; }
+  .figure, .beforeafter, .callout { page-break-inside: avoid; }
+  body { font-size: 11pt; color: #000; background: #fff; }
+}
+</style>
+</head>
+<body>
+
+<!-- Scroll progress bar -->
+<div class="progress"><div class="progress__fill" id="progressFill"></div></div>
+
+<div class="app">
+
+  <!-- ============================================================
+       SIDEBAR / TABLE OF CONTENTS
+       ============================================================ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand__mark">R</div>
+      <div>
+        <div class="brand__name">Ragenaizer</div>
+        <span class="brand__sub">Knowledge Base</span>
+      </div>
+    </div>
+
+    <div class="sidebar__eyebrow">In this guide</div>
+
+    <ul class="toc" id="toc">
+      <li class="toc__group" data-open="true">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">01</span>
+          <span class="toc__title">Welcome</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-1-1">1.1 Who this guide is for</a></li>
+          <li><a class="toc__link" href="#s-1-2">1.2 What you'll have at the end</a></li>
+          <li><a class="toc__link" href="#s-1-3">1.3 Five-minute vocabulary primer</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">02</span>
+          <span class="toc__title">The 30,000-ft view</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-2-1">2.1 What is double-entry accounting?</a></li>
+          <li><a class="toc__link" href="#s-2-2">2.2 The setup roadmap</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">03</span>
+          <span class="toc__title">Logging in &amp; the dashboard</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-3-1">3.1 Logging in</a></li>
+          <li><a class="toc__link" href="#s-3-2">3.2 The Accounts dashboard</a></li>
+          <li><a class="toc__link" href="#s-3-3">3.3 KPI tiles — what each number means</a></li>
+          <li><a class="toc__link" href="#s-3-4">3.4 Quick Actions — every button explained</a></li>
+          <li><a class="toc__link" href="#s-3-5">3.5 Recent activity feed</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">04</span>
+          <span class="toc__title">Foundation: Chart of Accounts</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-4-1">4.1 Where to find Accounts Setup</a></li>
+          <li><a class="toc__link" href="#s-4-2">4.2 Tab 1 &mdash; Account Types</a></li>
+          <li><a class="toc__link" href="#s-4-3">4.3 Tab 2 &mdash; Account Groups</a></li>
+          <li><a class="toc__link" href="#s-4-4">4.4 Tab 3 &mdash; Accounts</a></li>
+          <li><a class="toc__link" href="#s-4-5">4.5 Tab 4 &mdash; Account Tree</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">05</span>
+          <span class="toc__title">Foundation: Fiscal Year</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-5-1">5.1 Tab 6 &mdash; Fiscal Years</a></li>
+          <li><a class="toc__link" href="#s-5-2">5.2 Tab 7 &mdash; Fiscal Periods</a></li>
+          <li><a class="toc__link" href="#s-5-3">5.3 Tab 8 &mdash; Journal Types</a></li>
+          <li><a class="toc__link" href="#s-5-4">5.4 Tab 9 &mdash; COA Templates</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">06</span>
+          <span class="toc__title">Foundation: Tax setup</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-6-1">6.1 Open the Taxation page</a></li>
+          <li><a class="toc__link" href="#s-6-2">6.2 Tax Config detail</a></li>
+          <li><a class="toc__link" href="#s-6-3">6.3 Tab 2 &mdash; Tax Rates</a></li>
+          <li><a class="toc__link" href="#s-6-4">6.4 Tab 3 &mdash; HSN/SAC Codes</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">07</span>
+          <span class="toc__title">Foundation: Opening balances</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-7-1">7.1 The Opening Balances tab</a></li>
+          <li><a class="toc__link" href="#s-7-2">7.2 Filling in a balanced set</a></li>
+          <li><a class="toc__link" href="#s-7-3">7.3 Saving and what happens behind the scenes</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">08</span>
+          <span class="toc__title">Master data: Customers</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-8-1">8.1 Open Vendors &amp; Customers</a></li>
+          <li><a class="toc__link" href="#s-8-2">8.2 Adding a customer end-to-end</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">09</span>
+          <span class="toc__title">Master data: Vendors</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-9-1">9.1 Adding a vendor</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">10</span>
+          <span class="toc__title">Sales: Customer Invoices</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-10-1">10.1 Open Accounts Receivable</a></li>
+          <li><a class="toc__link" href="#s-10-2">10.2 Creating an invoice</a></li>
+          <li><a class="toc__link" href="#s-10-3">10.3 Save Draft &rarr; Approve</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">11</span>
+          <span class="toc__title">Purchases: Vendor Bills</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-11-1">11.1 Open Vendor Bills</a></li>
+          <li><a class="toc__link" href="#s-11-2">11.2 Creating a bill</a></li>
+          <li><a class="toc__link" href="#s-11-3">11.3 Approve and watch the GL</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">12</span>
+          <span class="toc__title">The General Ledger</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-12-1">12.1 The GL Entries page</a></li>
+          <li><a class="toc__link" href="#s-12-2">12.2 The GL Entry Detail modal</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">13</span>
+          <span class="toc__title">Reports</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-13-1">13.1 Trial Balance &mdash; the sanity check</a></li>
+          <li><a class="toc__link" href="#s-13-2">13.2 Profit &amp; Loss</a></li>
+          <li><a class="toc__link" href="#s-13-3">13.3 Balance Sheet</a></li>
+          <li><a class="toc__link" href="#s-13-4">13.4 Cash Flow</a></li>
+          <li><a class="toc__link" href="#s-13-5">13.5 AR &amp; AP Aging</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">14</span>
+          <span class="toc__title">Audit logs &amp; closing</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-14-1">14.1 Audit Logs &mdash; "who did what"</a></li>
+          <li><a class="toc__link" href="#s-14-2">14.2 Other Administration tabs</a></li>
+          <li><a class="toc__link" href="#s-14-3">14.3 Closing a fiscal period &mdash; the recap</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">15</span>
+          <span class="toc__title">Beyond the basics</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-15-1">15.1 Banking</a></li>
+          <li><a class="toc__link" href="#s-15-2">15.2 Expenses</a></li>
+          <li><a class="toc__link" href="#s-15-3">15.3 Fixed assets</a></li>
+          <li><a class="toc__link" href="#s-15-4">15.4 Subscription billing</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">16</span>
+          <span class="toc__title">Glossary</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-16">Every term, defined</a></li>
+        </ul>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- ============================================================
+       MAIN
+       ============================================================ -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <button class="menu-btn" id="menuBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        Contents
+      </button>
+      <nav class="crumbs">
+        <a href="../">Knowledge Base</a>
+        <span class="crumbs__sep">/</span>
+        <a href="./">Accounts</a>
+        <span class="crumbs__sep">/</span>
+        <span class="crumbs__current">Setup Guide</span>
+      </nav>
+      <div class="topbar__actions">
+        <button class="iconbtn" id="printBtn" title="Print this guide">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        </button>
+        <button class="iconbtn theme-toggle" id="themeBtn" title="Toggle theme" style="position:relative">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         HERO
+         ============================================================ -->
+    <header class="hero">
+      <div class="hero__deco">§</div>
+      <span class="hero__eyebrow">A guide for the complete beginner</span>
+      <h1 class="hero__title">How to set up <em>Accounts</em>, from zero.</h1>
+      <p class="hero__lede">
+        You've just been handed the keys to a brand-new accounting system and you've never balanced a ledger in your life.
+        That's fine. By the end of this article you will have configured a working accounting setup &mdash; chart of accounts,
+        fiscal year, taxes, customers, vendors, your first invoice, your first bill, and a clean Trial Balance &mdash;
+        and you will understand <em>why</em> each piece exists.
+      </p>
+
+      <div class="hero__meta">
+        <div class="meta">
+          <span class="meta__label">Reading time</span>
+          <span class="meta__value">~25 <em>min</em></span>
+          <span class="meta__hint">+ ~30 min if you follow along</span>
+        </div>
+        <div class="meta">
+          <span class="meta__label">Sections</span>
+          <span class="meta__value">17</span>
+          <span class="meta__hint">end-to-end setup walkthrough</span>
+        </div>
+        <div class="meta">
+          <span class="meta__label">Audience</span>
+          <span class="meta__value">Junior <em>implementer</em></span>
+          <span class="meta__hint">no accounting background needed</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================================
+         CONTENT
+         ============================================================ -->
+    <article class="content">
+
+      <!-- ========== SECTION 1: WELCOME ========== -->
+      <section class="section" id="s-1">
+        <div class="section__head">
+          <span class="section__num">01</span>
+          <span class="section__eyebrow">Section one</span>
+          <h2 class="section__title">Welcome.</h2>
+          <p class="section__sub">Let's start by being honest about what this guide is and what it isn't.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="subsection" id="s-1-1">
+          <span class="subsection__num">1.1</span>
+          <h3 class="subsection__title">Who this guide is for</h3>
+          <div class="prose">
+            <p class="lede">
+              This guide is for the person a new customer just delegated their accounting setup to.
+              You probably don't have a finance background. You might be a junior software developer, an operations
+              coordinator, a founder's first hire, or simply the only person in the room who isn't afraid of forms with
+              twenty fields. That's enough.
+            </p>
+            <p>
+              We assume you can use a web browser, you can fill in a form, and you can ask for help when something
+              looks wrong. Everything else &mdash; <em>chart of accounts</em>, <em>general ledger</em>, <em>fiscal year</em>,
+              <em>trial balance</em> &mdash; we'll teach you as it comes up. There's a glossary at the end with every
+              term defined in plain language.
+            </p>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-1-2">
+          <span class="subsection__num">1.2</span>
+          <h3 class="subsection__title">What you'll have at the end</h3>
+          <div class="prose">
+            <p>By the time you finish this guide, you will have:</p>
+            <ul>
+              <li>A working <strong>Chart of Accounts</strong> (the master list of every category your business will record money against)</li>
+              <li>An active <strong>fiscal year</strong> with twelve monthly periods</li>
+              <li><strong>Tax configurations</strong> set up for GST</li>
+              <li>At least one <strong>customer</strong> and one <strong>vendor</strong> on file</li>
+              <li>Your first <strong>customer invoice</strong>, posted to the General Ledger</li>
+              <li>Your first <strong>vendor bill</strong>, posted to the General Ledger</li>
+              <li>One recorded <strong>customer payment</strong> applied to that invoice</li>
+              <li>A clean <strong>Trial Balance</strong> where every debit equals every credit &mdash; the universal sign of a healthy ledger</li>
+            </ul>
+            <p>
+              And, just as importantly, you'll understand what each of those things <em>is</em> and <em>why</em> it matters.
+              No magic. No "ask the accountant." Just plain mechanics.
+            </p>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-1-3">
+          <span class="subsection__num">1.3</span>
+          <h3 class="subsection__title">Five-minute vocabulary primer</h3>
+          <div class="prose">
+            <p>
+              Here are six words you'll see constantly. Skim them now &mdash; the rest of the guide will revisit each one
+              with examples. Don't try to memorise.
+            </p>
+          </div>
+          <div class="callout callout--term">
+            <div class="callout__icon">A</div>
+            <div class="callout__body">
+              <span class="callout__label">Term</span>
+              <h4 class="callout__title">Account</h4>
+              <p>A bucket. Every bit of money your business touches lands in some bucket: "Cash on Hand", "Bank — HDFC Current",
+              "Sales Revenue", "Office Rent". The complete list of buckets is the <strong>Chart of Accounts</strong>.</p>
+            </div>
+          </div>
+          <div class="callout callout--term">
+            <div class="callout__icon">B</div>
+            <div class="callout__body">
+              <span class="callout__label">Term</span>
+              <h4 class="callout__title">Debit &amp; Credit</h4>
+              <p>The two sides of every transaction. They are not "good" and "bad" &mdash; they are just left and right.
+              Every entry in the system has a debit side and a credit side, and they always equal each other.
+              That's the entire trick of double-entry accounting.</p>
+            </div>
+          </div>
+          <div class="callout callout--term">
+            <div class="callout__icon">C</div>
+            <div class="callout__body">
+              <span class="callout__label">Term</span>
+              <h4 class="callout__title">General Ledger (GL)</h4>
+              <p>The master diary. Every transaction gets a dated entry in the General Ledger with its debit and credit lines.
+              The balance of any account at any moment is just the sum of all its GL entries.</p>
+            </div>
+          </div>
+          <div class="callout callout--term">
+            <div class="callout__icon">D</div>
+            <div class="callout__body">
+              <span class="callout__label">Term</span>
+              <h4 class="callout__title">Fiscal Year</h4>
+              <p>A twelve-month accounting calendar. In India this usually runs <strong>1 April &rarr; 31 March</strong>.
+              In the US it usually matches the calendar year. Reports are organised by fiscal year, and at the end of each year
+              you "close the books" and start fresh.</p>
+            </div>
+          </div>
+          <div class="callout callout--term">
+            <div class="callout__icon">E</div>
+            <div class="callout__body">
+              <span class="callout__label">Term</span>
+              <h4 class="callout__title">Customer Invoice / Vendor Bill</h4>
+              <p>An <strong>invoice</strong> is a bill <em>you send to your customer</em> &mdash; "you owe us &#x20B9;10,000".
+              A <strong>vendor bill</strong> is a bill <em>you receive from your supplier</em> &mdash; "you owe us &#x20B9;5,000".
+              Both eventually become General Ledger entries that move money in and out of accounts.</p>
+            </div>
+          </div>
+          <div class="callout callout--term">
+            <div class="callout__icon">F</div>
+            <div class="callout__body">
+              <span class="callout__label">Term</span>
+              <h4 class="callout__title">Trial Balance</h4>
+              <p>A one-page summary that lists every account with its current balance, debits on one side and credits on the other.
+              If both sides total to the same number, your books are <em>in balance</em>. If they don't, something is broken.
+              You'll generate one of these in Section 13.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SECTION 2: 30,000 FT ========== -->
+      <section class="section" id="s-2">
+        <div class="section__head">
+          <span class="section__num">02</span>
+          <span class="section__eyebrow">Section two</span>
+          <h2 class="section__title">The <em>30,000-ft</em> view.</h2>
+          <p class="section__sub">Before we touch a single screen, here's the whole shape of what we're about to do.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="subsection" id="s-2-1">
+          <span class="subsection__num">2.1</span>
+          <h3 class="subsection__title">What is double-entry accounting?</h3>
+          <div class="prose">
+            <p>
+              Double-entry is a 600-year-old idea that every transaction has two sides. If money moves in, it had to come from
+              somewhere. If money moves out, it had to go somewhere. You record both sides, every time, and the totals always
+              match.
+            </p>
+            <p>
+              Imagine you sell a customer a &#x20B9;10,000 service. The customer hasn't paid yet, so two things just happened:
+            </p>
+            <ul>
+              <li><strong>Sales Revenue</strong> went up by &#x20B9;10,000 (you earned it)</li>
+              <li><strong>Accounts Receivable</strong> went up by &#x20B9;10,000 (the customer owes you)</li>
+            </ul>
+            <p>
+              Both are true at once. The system records both. Later, when the customer actually pays you, two more things happen:
+            </p>
+            <ul>
+              <li><strong>Bank Account</strong> goes up by &#x20B9;10,000</li>
+              <li><strong>Accounts Receivable</strong> goes down by &#x20B9;10,000 (they don't owe you anymore)</li>
+            </ul>
+            <p>
+              Net effect across both events: Sales Revenue is up &#x20B9;10,000, the bank balance is up &#x20B9;10,000, AR is back to zero.
+              Every account moved by the right amount, automatically. That's the magic of double-entry &mdash; you can't lose track of money
+              because the math doesn't let you.
+            </p>
+          </div>
+          <div class="callout callout--tip">
+            <div class="callout__icon">i</div>
+            <div class="callout__body">
+              <span class="callout__label">Tip</span>
+              <h4 class="callout__title">You don't have to do this math yourself</h4>
+              <p>Ragenaizer Accounts is built to <em>generate</em> the General Ledger entries automatically whenever you create
+              an invoice, post a payment, or close a period. You will rarely write a manual journal entry. Your job is to set up
+              the rules &mdash; this guide is about those setup steps.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-2-2">
+          <span class="subsection__num">2.2</span>
+          <h3 class="subsection__title">The setup roadmap</h3>
+          <div class="prose">
+            <p>Here's the full sequence we'll follow. Each step depends on the ones before it &mdash; you can't skip ahead.</p>
+          </div>
+          <div class="checklist">
+            <div class="checkrow">
+              <div class="checkrow__num">1</div>
+              <div>
+                <div class="checkrow__title">Chart of Accounts</div>
+                <div class="checkrow__sub">Load the India template &mdash; 79 ready-made accounts</div>
+              </div>
+              <div class="checkrow__time">~ 2 min</div>
+            </div>
+            <div class="checkrow">
+              <div class="checkrow__num">2</div>
+              <div>
+                <div class="checkrow__title">Fiscal Year</div>
+                <div class="checkrow__sub">Define when your accounting year starts and ends</div>
+              </div>
+              <div class="checkrow__time">~ 1 min</div>
+            </div>
+            <div class="checkrow">
+              <div class="checkrow__num">3</div>
+              <div>
+                <div class="checkrow__title">Tax setup</div>
+                <div class="checkrow__sub">Configure GST 5%, 12%, 18%, 28%</div>
+              </div>
+              <div class="checkrow__time">~ 2 min</div>
+            </div>
+            <div class="checkrow">
+              <div class="checkrow__num">4</div>
+              <div>
+                <div class="checkrow__title">Opening balances</div>
+                <div class="checkrow__sub">Carry forward balances from before today (if any)</div>
+              </div>
+              <div class="checkrow__time">~ 5 min</div>
+            </div>
+            <div class="checkrow">
+              <div class="checkrow__num">5</div>
+              <div>
+                <div class="checkrow__title">Customers &amp; Vendors</div>
+                <div class="checkrow__sub">Add your first parties to the system</div>
+              </div>
+              <div class="checkrow__time">~ 5 min each</div>
+            </div>
+            <div class="checkrow">
+              <div class="checkrow__num">6</div>
+              <div>
+                <div class="checkrow__title">First invoice &amp; first bill</div>
+                <div class="checkrow__sub">Create, approve, post &mdash; watch the GL entries appear</div>
+              </div>
+              <div class="checkrow__time">~ 10 min</div>
+            </div>
+            <div class="checkrow">
+              <div class="checkrow__num">7</div>
+              <div>
+                <div class="checkrow__title">First payment</div>
+                <div class="checkrow__sub">Apply a payment against the invoice you just posted</div>
+              </div>
+              <div class="checkrow__time">~ 3 min</div>
+            </div>
+            <div class="checkrow">
+              <div class="checkrow__num">8</div>
+              <div>
+                <div class="checkrow__title">A clean Trial Balance</div>
+                <div class="checkrow__sub">Verify everything balances. Celebrate.</div>
+              </div>
+              <div class="checkrow__time">~ 1 min</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SECTION 3: LOGIN + DASHBOARD ========== -->
+      <section class="section" id="s-3">
+        <div class="section__head">
+          <span class="section__num">03</span>
+          <span class="section__eyebrow">Section three</span>
+          <h2 class="section__title">Logging in &amp; the <em>dashboard</em>.</h2>
+          <p class="section__sub">Before you do anything, get familiar with where things live. This is your home base.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="subsection" id="s-3-1">
+          <span class="subsection__num">3.1</span>
+          <h3 class="subsection__title">Logging in</h3>
+          <div class="prose">
+            <p>
+              Open the Ragenaizer login page in a fresh browser tab and sign in with the credentials your administrator gave you.
+              If you don't have credentials yet, ask. We won't cover password setup here &mdash; that's a separate guide.
+            </p>
+          </div>
+          <figure class="figure">
+            <img src="./images/03-1-login.png" alt="Login screen">
+            <div class="figure__caption"><strong>Figure 3.1 &mdash;</strong> The Ragenaizer login screen. Enter the email and password you were given, then click <em>Sign in</em>.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-3-2">
+          <span class="subsection__num">3.2</span>
+          <h3 class="subsection__title">Where you land: the Accounts dashboard</h3>
+          <div class="prose">
+            <p>
+              After you log in, you'll see the home screen with one tile per Ragenaizer module. Click <strong>Accounts</strong>.
+              You'll land on the Accounts Dashboard &mdash; a single screen that summarises everything in your books and gives
+              you one-click shortcuts to the twelve main areas of the application.
+            </p>
+            <p>
+              On a clean install (like the one we're using for this guide) the dashboard is mostly empty. That's expected.
+              Every screenshot in this section is taken on day one with zero data. The "after" you'll see will be the same screen
+              once you've followed along.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/03-2-dashboard-empty.png" alt="Accounts dashboard, empty state">
+            <div class="figure__caption"><strong>Figure 3.2 &mdash;</strong> The Accounts dashboard on a fresh install. Six KPI tiles at the top, a Bank Accounts strip, a Recent GL Entries table, and a grid of Quick Action cards below. Everything is empty &mdash; that's about to change.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-3-3">
+          <span class="subsection__num">3.3</span>
+          <h3 class="subsection__title">The KPI tiles &mdash; what each number means</h3>
+          <div class="prose">
+            <p>
+              Across the top of the dashboard you'll see six tiles. Each one is a real-time count or sum derived from the General
+              Ledger. On a clean install they all read zero or a dash &mdash; here's what they will mean once you have data.
+            </p>
+            <ul>
+              <li><strong>Total GL Entries</strong> &mdash; how many journal entries (of any kind) live in the General Ledger.
+                  Includes drafts, posted, and reversed.</li>
+              <li><strong>Posted Entries</strong> &mdash; the subset that have been finalised. Posted entries actually move account balances.</li>
+              <li><strong>Draft Entries</strong> &mdash; entries someone has started but not yet posted. These do <em>not</em> affect any balance.</li>
+              <li><strong>Total Debit (Posted)</strong> &mdash; the sum of every debit line across all posted entries.</li>
+              <li><strong>Total Credit (Posted)</strong> &mdash; the sum of every credit line. <em>This must equal Total Debit, always.</em>
+                  If it doesn't, your books aren't balanced and you should investigate immediately.</li>
+              <li><strong>Net Balance</strong> &mdash; equals Total Debit minus Total Credit. Should always be zero on a healthy ledger.</li>
+            </ul>
+          </div>
+          <figure class="figure">
+            <img src="./images/03-3-kpi-tiles.png" alt="KPI tiles strip on the dashboard">
+            <div class="figure__caption"><strong>Figure 3.3 &mdash;</strong> The six KPI tiles at the top of the dashboard.</div>
+          </figure>
+          <div class="callout callout--what">
+            <div class="callout__icon">!</div>
+            <div class="callout__body">
+              <span class="callout__label">What this tells you</span>
+              <h4 class="callout__title">If Total Debit &ne; Total Credit, stop everything</h4>
+              <p>It means somewhere in your General Ledger an entry was posted with mismatched lines. The system is supposed to make
+              that impossible &mdash; if you ever see it happen, raise it with your administrator. Healthy books always have a Net Balance of <code>0</code>.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-3-4">
+          <span class="subsection__num">3.4</span>
+          <h3 class="subsection__title">Quick Actions &mdash; every button explained</h3>
+          <div class="prose">
+            <p>
+              Below the KPIs is a grid of twelve cards, one for each major area of the Accounts application. They're not just
+              navigation links &mdash; they're a mental map of the whole product. Here's what each one does, in the order you'll
+              encounter them in this guide.
+            </p>
+          </div>
+
+          <div class="qa-list">
+
+            <div class="qa-row">
+              <div class="qa-row__num">01</div>
+              <div class="qa-row__body">
+                <h4 class="qa-row__title">Accounts Setup</h4>
+                <div class="qa-row__sub">opens <code>setup.html</code></div>
+                <p>The configuration hub for everything foundational: account types, account groups, the Chart of Accounts, opening balances, fiscal years, periods, journal types, and country templates. You'll spend most of Sections 4&ndash;7 of this guide here.</p>
+                <a class="qa-row__link" href="#s-4">Walkthrough &rarr;</a>
+              </div>
+            </div>
+
+            <div class="qa-row">
+              <div class="qa-row__num">02</div>
+              <div class="qa-row__body">
+                <h4 class="qa-row__title">Vendors &amp; Customers</h4>
+                <div class="qa-row__sub">opens <code>parties.html</code></div>
+                <p>The unified directory of every party your business deals with &mdash; both the people who pay you (customers) and the people you pay (vendors). One screen, two tabs.</p>
+                <a class="qa-row__link" href="#s-8">Walkthrough &rarr;</a>
+              </div>
+            </div>
+
+            <div class="qa-row">
+              <div class="qa-row__num">03</div>
+              <div class="qa-row__body">
+                <h4 class="qa-row__title">Vendor Bills</h4>
+                <div class="qa-row__sub">opens <code>payables.html</code></div>
+                <p>Everything on the <em>money-going-out</em> side: bills you've received from suppliers, the payments you've made against them, and the AP aging report.</p>
+                <a class="qa-row__link" href="#s-11">Walkthrough &rarr;</a>
+              </div>
+            </div>
+
+            <div class="qa-row">
+              <div class="qa-row__num">04</div>
+              <div class="qa-row__body">
+                <h4 class="qa-row__title">Customer Invoices</h4>
+                <div class="qa-row__sub">opens <code>receivables.html</code></div>
+                <p>The <em>money-coming-in</em> side: invoices you've issued to customers, the payments you've received, credit notes, and the AR aging report.</p>
+                <a class="qa-row__link" href="#s-10">Walkthrough &rarr;</a>
+              </div>
+            </div>
+
+            <div class="qa-row">
+              <div class="qa-row__num">05</div>
+              <div class="qa-row__body">
+                <h4 class="qa-row__title">General Ledger</h4>
+                <div class="qa-row__sub">opens <code>ledger.html</code></div>
+                <p>The master diary &mdash; every journal entry the system has ever recorded, browsable, filterable, and reversible. After you post your first invoice you'll come here to see what the system did behind the scenes.</p>
+                <a class="qa-row__link" href="#s-12">Walkthrough &rarr;</a>
+              </div>
+            </div>
+
+            <div class="qa-row">
+              <div class="qa-row__num">06</div>
+              <div class="qa-row__body">
+                <h4 class="qa-row__title">Banking</h4>
+                <div class="qa-row__sub">opens <code>banking.html</code></div>
+                <p>Bank account master data, inter-account transfers, and bank reconciliation &mdash; the process of matching what your bank statement says against what your General Ledger says.</p>
+                <a class="qa-row__link" href="#s-15-1">Overview &rarr;</a>
+              </div>
+            </div>
+
+            <div class="qa-row">
+              <div class="qa-row__num">07</div>
+              <div class="qa-row__body">
+                <h4 class="qa-row__title">Financial Reports</h4>
+                <div class="qa-row__sub">opens <code>reports.html</code></div>
+                <p>Every report finance teams care about: Trial Balance, Profit &amp; Loss, Balance Sheet, Cash Flow, account ledgers, AR aging, AP aging. Everything is generated live from the General Ledger.</p>
+                <a class="qa-row__link" href="#s-13">Walkthrough &rarr;</a>
+              </div>
+            </div>
+
+            <div class="qa-row">
+              <div class="qa-row__num">08</div>
+              <div class="qa-row__body">
+                <h4 class="qa-row__title">Expense Management</h4>
+                <div class="qa-row__sub">opens <code>expenses.html</code></div>
+                <p>Employee expense claims &mdash; categories, policies, submission, approval, and reimbursement. Each approved claim becomes a vendor bill in the GL.</p>
+                <a class="qa-row__link" href="#s-15-2">Overview &rarr;</a>
+              </div>
+            </div>
+
+            <div class="qa-row">
+              <div class="qa-row__num">09</div>
+              <div class="qa-row__body">
+                <h4 class="qa-row__title">Fixed Assets</h4>
+                <div class="qa-row__sub">opens <code>assets.html</code></div>
+                <p>Long-lived things you bought &mdash; vehicles, computers, machinery. Tracks the original cost, the depreciation schedule, and disposal. The system posts depreciation entries to the GL automatically.</p>
+                <a class="qa-row__link" href="#s-15-3">Overview &rarr;</a>
+              </div>
+            </div>
+
+            <div class="qa-row">
+              <div class="qa-row__num">10</div>
+              <div class="qa-row__body">
+                <h4 class="qa-row__title">Taxation</h4>
+                <div class="qa-row__sub">opens <code>taxation.html</code></div>
+                <p>Tax codes, rates, HSN/SAC product classification, and the GSTR-1 / GSTR-3B reports for filing. We'll seed the standard India GST rates in Section 6.</p>
+                <a class="qa-row__link" href="#s-6">Walkthrough &rarr;</a>
+              </div>
+            </div>
+
+            <div class="qa-row">
+              <div class="qa-row__num">11</div>
+              <div class="qa-row__body">
+                <h4 class="qa-row__title">Billing</h4>
+                <div class="qa-row__sub">opens <code>billing.html</code></div>
+                <p>Subscription billing &mdash; recurring plans, customer subscriptions, usage meters, automated billing cycles. If you charge customers monthly, this is where you set it up.</p>
+                <a class="qa-row__link" href="#s-15-4">Overview &rarr;</a>
+              </div>
+            </div>
+
+            <div class="qa-row">
+              <div class="qa-row__num">12</div>
+              <div class="qa-row__body">
+                <h4 class="qa-row__title">Administration</h4>
+                <div class="qa-row__sub">opens <code>admin.html</code></div>
+                <p>The audit trail, setup checklists, year-end closing, and entity-level history. You'll mostly come here when something looks wrong and you need to find out who changed what.</p>
+                <a class="qa-row__link" href="#s-14">Walkthrough &rarr;</a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="subsection" id="s-3-5">
+          <span class="subsection__num">3.5</span>
+          <h3 class="subsection__title">Recent activity feed</h3>
+          <div class="prose">
+            <p>
+              In the middle of the dashboard there's a "Recent GL Entries" table. On a clean install it's empty &mdash; come back to it
+              after Section 10 and you'll see your first invoice posting appear in real time.
+            </p>
+          </div>
+          <figure class="figure">
+            <img src="./images/03-5-recent-empty.png" alt="Recent GL entries table, empty">
+            <div class="figure__caption"><strong>Figure 3.5 &mdash;</strong> The Recent GL Entries table on day one. By Section 10 you'll see your first row appear here.</div>
+          </figure>
+        </div>
+      </section>
+
+      <!-- ========== PLACEHOLDER SECTIONS 4-15 ========== -->
+      <!-- These will be filled in as we go through the capture sessions and write content. -->
+
+      <section class="section" id="s-4">
+        <div class="section__head">
+          <span class="section__num">04</span>
+          <span class="section__eyebrow">Section four &middot; Foundation</span>
+          <h2 class="section__title">Chart of <em>Accounts</em>.</h2>
+          <p class="section__sub">The complete list of every category your business will record money against. Build it once, then everything else &mdash; invoices, bills, reports &mdash; reads from it.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="callout callout--term">
+          <div class="callout__icon">i</div>
+          <div class="callout__body">
+            <span class="callout__label">Term you'll see everywhere</span>
+            <h4 class="callout__title">Chart of Accounts (CoA)</h4>
+            <p>The complete list of every "bucket" your business records transactions against. Cash, Sales Revenue, Office Rent, Salaries, Bank Loans, etc. Each bucket has a code (a number) and a name. Together they form a hierarchy: <strong>Account Type</strong> &rarr; <strong>Account Group</strong> &rarr; <strong>Account</strong>.</p>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-4-1">
+          <span class="subsection__num">4.1</span>
+          <h3 class="subsection__title">Where to find Accounts Setup</h3>
+          <div class="prose">
+            <p>
+              From the Accounts dashboard, click the <strong>Accounts Setup</strong> Quick Action card (or open <code>setup.html</code> directly).
+              You'll land on a page with a left sidebar of nine numbered tabs grouped under three headings:
+              <em>Chart of Accounts</em> (1&ndash;5), <em>Fiscal</em> (6&ndash;7), <em>Journals</em> (8) and <em>Templates</em> (9).
+              We'll work through them in numerical order &mdash; the order is meaningful, each step builds on the one before.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-1-setup-hub-empty.png" alt="Accounts Setup hub, empty state">
+            <div class="figure__caption"><strong>Figure 4.1 &mdash;</strong> The Accounts Setup hub, before any data is entered. Sidebar tabs 1&ndash;9 on the left, content area on the right.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-4-2">
+          <span class="subsection__num">4.2</span>
+          <h3 class="subsection__title">Tab 1 &mdash; Account Types</h3>
+          <div class="prose">
+            <p>
+              The first tab lists the five fundamental categories every accounting system uses. They are <strong>Assets</strong>,
+              <strong>Liabilities</strong>, <strong>Equity</strong>, <strong>Revenue</strong>, and <strong>Expenses</strong>.
+              They're seeded automatically the first time you open the page &mdash; you don't need to create them. Each row also tells you the
+              account type's normal balance side (debit or credit) and its display order in the Chart of Accounts.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-4-account-types.png" alt="Account types tab">
+            <div class="figure__caption"><strong>Figure 4.2 &mdash;</strong> The five Account Types, seeded by the system. You won't add or remove these &mdash; they're the bedrock of double-entry accounting.</div>
+          </figure>
+          <div class="callout callout--term">
+            <div class="callout__icon">i</div>
+            <div class="callout__body">
+              <span class="callout__label">Term</span>
+              <h4 class="callout__title">Normal Balance</h4>
+              <p>The side &mdash; debit or credit &mdash; on which an account naturally <em>increases</em>. Assets and Expenses increase on the debit side. Liabilities, Equity, and Revenue increase on the credit side. This is why bookkeeping students drill the rule "<em>DEAD CLER</em>" &mdash; <strong>D</strong>ebits go to <strong>E</strong>xpenses, <strong>A</strong>ssets, <strong>D</strong>raws; <strong>C</strong>redits go to <strong>L</strong>iabilities, <strong>E</strong>quity, <strong>R</strong>evenue.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-4-3">
+          <span class="subsection__num">4.3</span>
+          <h3 class="subsection__title">Tab 2 &mdash; Account Groups</h3>
+          <div class="prose">
+            <p>
+              Account Groups are sub-categories <em>within</em> an account type. For example, the Assets type has groups like
+              "Current Assets", "Fixed Assets", "Investments", and "Other Assets". You don't <em>have</em> to use groups, but they make
+              the Chart of Accounts much easier to read and they roll up nicely on reports.
+            </p>
+            <p>
+              Open the Account Groups tab. On a fresh install it's empty &mdash; click <strong>+ Add Group</strong> to create your first one.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-3-account-groups-empty.png" alt="Account Groups empty state">
+            <div class="figure__caption"><strong>Figure 4.3a &mdash;</strong> Account Groups tab, empty. The toolbar has a Type filter, a search box, and the Add Group button.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-4-group-modal-empty.png" alt="Create Account Group modal, empty">
+            <div class="figure__caption"><strong>Figure 4.3b &mdash;</strong> The Create Group modal. Five fields: Name (required), Account Type (required), Parent Group (for nesting), Code (optional, used for sorting), Description.</div>
+          </figure>
+          <div class="prose">
+            <p>
+              Fill it out for our first group: name <em>Current Assets</em>, type <em>Assets</em>, code <em>1000</em>, description as below.
+              The parent group stays empty &mdash; this is a top-level group.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-5-group-modal-current-assets-filled.png" alt="Current Assets group filled in">
+            <div class="figure__caption"><strong>Figure 4.3c &mdash;</strong> The same modal with the Current Assets group filled in. Click <em>Save</em>.</div>
+          </figure>
+          <div class="prose">
+            <p>
+              Repeat for the other three groups we need for this guide:
+              <em>Current Liabilities</em> (type Liabilities, code 2000),
+              <em>Operating Revenue</em> (type Income, code 4000), and
+              <em>Operating Expenses</em> (type Expenses, code 5000). After all four are saved, the table looks like this:
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-13-groups-after-four-saved.png" alt="Four account groups saved">
+            <div class="figure__caption"><strong>Figure 4.3d &mdash;</strong> The Account Groups table after creating our four foundational groups. Notice the new <em>CODE</em> column &mdash; codes are optional but make sorting predictable.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Filter, search, and row actions</h4>
+          <div class="prose">
+            <p>
+              The toolbar at the top of the table is fully wired up. The <strong>Filter by Type</strong> dropdown narrows the table
+              to just one account type (e.g. just Income groups). The <strong>Search</strong> box filters by name or code in real
+              time. Both update the <em>Total Groups</em> counter on the stat tile so you can see how many rows the filter is hiding.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-3b-groups-filtered-income.png" alt="Account groups filtered to Income">
+            <div class="figure__caption"><strong>Figure 4.3e &mdash;</strong> Filter by Type set to <em>Income</em>. The table narrows to one row, the counter ticks 4 &rarr; 1.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-3f-groups-search-current.png" alt="Search the account groups for &quot;current&quot;">
+            <div class="figure__caption"><strong>Figure 4.3f &mdash;</strong> Typing <em>Current</em> into the search box filters to two rows (Current Assets and Current Liabilities). Clear the search to see all four again.</div>
+          </figure>
+          <div class="prose">
+            <p>
+              The far-right <strong>Actions</strong> column has two buttons per row: <em>Edit</em> (pencil) and <em>Delete</em> (trash).
+              Clicking Edit opens the same modal you used to create the group, but pre-filled and with the title <em>Edit Account Group</em>.
+              You can change any field except the type assignment.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-3c-group-edit-prefilled.png" alt="Edit account group modal prefilled">
+            <div class="figure__caption"><strong>Figure 4.3g &mdash;</strong> Editing Current Assets &mdash; all five fields prefilled.</div>
+          </figure>
+          <div class="prose">
+            <p>
+              Clicking Delete shows a labelled confirm that names the group you're about to remove. The system will refuse to delete
+              a group that has accounts assigned to it (or sub-groups underneath it) &mdash; you'll get a clear error message telling
+              you exactly what's blocking the delete.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-3d-group-delete-confirm.png" alt="Delete account group confirm dialog">
+            <div class="figure__caption"><strong>Figure 4.3h &mdash;</strong> The Delete confirm dialog. Notice it names the specific group and code &mdash; no ambiguity.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-3g-group-delete-blocked-toast.png" alt="Cascade-blocked delete toast">
+            <div class="figure__caption"><strong>Figure 4.3i &mdash;</strong> What happens when you try to delete a group that has accounts under it. The error message is actionable: it tells you how many accounts are blocking the delete and what to do about it.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-3h-group-delete-success-toast.png" alt="Group deleted success toast">
+            <div class="figure__caption"><strong>Figure 4.3j &mdash;</strong> The same flow when the group is empty &mdash; a green success toast names what was just deleted, and the table refreshes immediately.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-4-4">
+          <span class="subsection__num">4.4</span>
+          <h3 class="subsection__title">Tab 3 &mdash; Accounts</h3>
+          <div class="prose">
+            <p>
+              Now the heart of the matter. Each <strong>Account</strong> is the actual ledger line that transactions get recorded against.
+              "Cash in Hand", "Sales Revenue", "Office Rent Expense" &mdash; these are accounts. Every account belongs to a Type (one of the five) and
+              optionally to a Group (the sub-categories you just made).
+            </p>
+            <p>
+              Open the Accounts tab. On a clean install the table is empty and the three stat tiles read zero. Click <strong>+ Add Account</strong>.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-9-accounts-empty.png" alt="Accounts tab, empty">
+            <div class="figure__caption"><strong>Figure 4.4a &mdash;</strong> The Accounts tab on day one. Filter by Type, Filter by Group, search box, Show Inactive toggle, Import button, Add Account button &mdash; we'll exercise every one.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-10-account-modal-empty.png" alt="Create Account modal, empty">
+            <div class="figure__caption"><strong>Figure 4.4b &mdash;</strong> The Create Account modal. Code, Name, Type, Group, Parent Account (for sub-accounts), Normal Balance, Description, Allow Direct Posting toggle.</div>
+          </figure>
+          <div class="prose">
+            <p>
+              Fill it out for our first account &mdash; Cash in Hand. Code <em>1001</em>, Name <em>Cash in Hand</em>, Type <em>Assets</em>, Group <em>Current Assets</em>,
+              Normal Balance auto-fills to <em>Debit</em> when you pick the type. Allow Direct Posting stays checked &mdash; we want to be able to post
+              journal entries directly to Cash.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-11-account-modal-cash-filled.png" alt="Cash in Hand account filled in">
+            <div class="figure__caption"><strong>Figure 4.4c &mdash;</strong> Cash in Hand fully filled in. Click <em>Save</em>.</div>
+          </figure>
+          <div class="prose">
+            <p>
+              Repeat for two more accounts that we'll need throughout the guide:
+              <em>4001 Sales Revenue</em> (type Income, group Operating Revenue) and
+              <em>5001 Office Rent Expense</em> (type Expenses, group Operating Expenses).
+              After all three are saved, the table fills in with the new CODE column visible and clean row actions on the right.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-19-accounts-tab-baseline.png" alt="Accounts table with three accounts">
+            <div class="figure__caption"><strong>Figure 4.4d &mdash;</strong> The Accounts table after creating our three foundational accounts. Each row has three action buttons: View (eye), Edit (pencil), Deactivate (red prohibit icon).</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">View, Edit, Deactivate &mdash; the three row actions</h4>
+          <div class="prose">
+            <p>
+              Click the eye icon on any row to open the read-only <strong>Account Detail</strong> modal. It shows every field including
+              the Normal Balance, the Description, and the Current Balance &mdash; nine fields in total laid out in a clean two-column grid.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-19c-account-view-modal.png" alt="Account detail view modal">
+            <div class="figure__caption"><strong>Figure 4.4e &mdash;</strong> The View modal for Cash in Hand. Read-only, no risk of accidental changes.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-19d-account-edit-modal.png" alt="Account edit modal">
+            <div class="figure__caption"><strong>Figure 4.4f &mdash;</strong> The Edit modal &mdash; the same form as Create, but with all seven fields prefilled. Title flips to <em>Edit Account</em>.</div>
+          </figure>
+          <div class="prose">
+            <p>
+              The third row button is <strong>Deactivate</strong> &mdash; the red prohibit icon. This is a <em>soft delete</em>:
+              the account is hidden from new transactions but its history is preserved forever, and you can re-enable it
+              later. The confirm dialog explains all of this in plain English so you don't have to guess.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-19e-account-deactivate-confirm.png" alt="Deactivate account confirm">
+            <div class="figure__caption"><strong>Figure 4.4g &mdash;</strong> The Deactivate confirm. Names the target account and code, explains what deactivate does, and tells you how to undo it.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-19f-account-deactivate-success-hidden.png" alt="Account deactivated, hidden from view">
+            <div class="figure__caption"><strong>Figure 4.4h &mdash;</strong> After clicking Deactivate, the row disappears from the table by default. Notice the stat tiles: Total stays at 3, but Active drops to 2 and Inactive ticks up to 1. The success toast names exactly which account was deactivated.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-19g-account-show-inactive-toggle.png" alt="Show inactive toggle on">
+            <div class="figure__caption"><strong>Figure 4.4i &mdash;</strong> Tick the <em>Show Inactive</em> toggle to bring deactivated accounts back into view. The deactivated row is shown with an <em>Inactive</em> status badge and only two action buttons (View + Edit) &mdash; no Deactivate, since it's already deactivated.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Search and filter</h4>
+          <div class="prose">
+            <p>
+              The toolbar above the Accounts table has two filter dropdowns (by Type and by Group) and a free-text search box.
+              Both filters work together &mdash; pick a type and the table narrows; type something into search and it narrows further.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-19a-accounts-filtered-income.png" alt="Accounts filtered to Income">
+            <div class="figure__caption"><strong>Figure 4.4j &mdash;</strong> Filter by Type set to <em>Income</em>. The table narrows to just Sales Revenue. All three stat tiles update in sync.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-19b-accounts-search-cash.png" alt="Search for Cash">
+            <div class="figure__caption"><strong>Figure 4.4k &mdash;</strong> Typing <em>Cash</em> into the search box filters to one row.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-4-5">
+          <span class="subsection__num">4.5</span>
+          <h3 class="subsection__title">Tab 4 &mdash; Account Tree</h3>
+          <div class="prose">
+            <p>
+              The Account Tree is the same data as the Accounts tab, but rendered as a collapsible hierarchy: <em>Type &rarr; Group &rarr; Account</em>.
+              For finance teams it's the most natural way to look at the Chart of Accounts &mdash; you can collapse the parts you don't care about
+              and expand the parts you do.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-20-account-tree-expanded.png" alt="Account tree fully expanded">
+            <div class="figure__caption"><strong>Figure 4.5a &mdash;</strong> The Account Tree, fully expanded. Click any chevron to collapse a branch. Use the toolbar buttons <em>Expand All</em> / <em>Collapse All</em> for the whole tree at once.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-20a-account-tree-collapsed.png" alt="Tree collapsed to types only">
+            <div class="figure__caption"><strong>Figure 4.5b &mdash;</strong> After clicking <em>Collapse All</em> &mdash; only the three top-level types remain. Click any chevron to drill back in.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-20b-account-tree-search-cash.png" alt="Tree search for cash">
+            <div class="figure__caption"><strong>Figure 4.5c &mdash;</strong> The search box at the top works on the tree too &mdash; typing <em>cash</em> filters down to the matching branch and keeps its parent context visible.</div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="s-5">
+        <div class="section__head">
+          <span class="section__num">05</span>
+          <span class="section__eyebrow">Section five &middot; Foundation</span>
+          <h2 class="section__title">Fiscal <em>Year</em>.</h2>
+          <p class="section__sub">Defining your accounting year &mdash; when it starts, when it ends, and how it splits into twelve monthly periods. Then doing the same for next year, and the year after that, forever.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="callout callout--term">
+          <div class="callout__icon">i</div>
+          <div class="callout__body">
+            <span class="callout__label">Term</span>
+            <h4 class="callout__title">Fiscal Year vs. Calendar Year</h4>
+            <p>A <strong>calendar year</strong> always runs January 1 &rarr; December 31. A <strong>fiscal year</strong> is whatever 12-month accounting period your business chooses. In India that's typically <em>1 April &rarr; 31 March</em> (because the income tax year follows the same calendar). In the US most companies use January &rarr; December. Pick whichever your accountant tells you to &mdash; once chosen, you stick with it.</p>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-5-1">
+          <span class="subsection__num">5.1</span>
+          <h3 class="subsection__title">Tab 6 &mdash; Fiscal Years</h3>
+          <div class="prose">
+            <p>
+              Open the Fiscal Years tab. The page shows three stat tiles (Total / Active Year / Closed) and a table.
+              On a clean install both the table and the tiles are empty &mdash; click <strong>+ Create Fiscal Year</strong>.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/05-1-fiscal-empty.png" alt="Fiscal Years empty state">
+            <div class="figure__caption"><strong>Figure 5.1a &mdash;</strong> Fiscal Years tab on day one.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-22a-fiscal-year-create-modal.png" alt="Create Fiscal Year modal empty">
+            <div class="figure__caption"><strong>Figure 5.1b &mdash;</strong> The Create Fiscal Year modal &mdash; just three fields: Name, Start Date, End Date.</div>
+          </figure>
+          <div class="prose">
+            <p>
+              Fill it in for our demo year:
+              Name <em>FY 2026-27</em>, Start Date <em>01 Apr 2026</em>, End Date <em>31 Mar 2027</em>.
+              Click <em>Save</em> &mdash; the system creates the fiscal year, marks it as the active year, and automatically generates
+              twelve monthly periods (Apr-2026 through Mar-2027). You'll see them in the next tab.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/05-3-fiscal-modal-filled.png" alt="Fiscal Year modal filled">
+            <div class="figure__caption"><strong>Figure 5.1c &mdash;</strong> Filled in for FY 2026-27.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-22-fiscal-years-baseline.png" alt="Fiscal Years after creation">
+            <div class="figure__caption"><strong>Figure 5.1d &mdash;</strong> The Fiscal Years tab after saving. The active year is highlighted in the middle stat tile. Each row has two action buttons: View (read-only details) and Close Year.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-22b-fiscal-year-view-modal.png" alt="Fiscal year detail view">
+            <div class="figure__caption"><strong>Figure 5.1e &mdash;</strong> The View modal shows every field including Created At, Active Yes/No, and Closed Yes/No.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-5-2">
+          <span class="subsection__num">5.2</span>
+          <h3 class="subsection__title">Tab 7 &mdash; Fiscal Periods</h3>
+          <div class="prose">
+            <p>
+              Click on Fiscal Periods (tab 7). You'll see twelve rows &mdash; one per month &mdash; auto-generated from the fiscal year you just created.
+              You don't create periods by hand; the system always splits a year into twelve calendar months.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-23-fiscal-periods-baseline.png" alt="Fiscal periods auto-generated">
+            <div class="figure__caption"><strong>Figure 5.2a &mdash;</strong> All twelve periods for FY 2026-27. Each starts as Open. The single action button is Lock.</div>
+          </figure>
+          <div class="callout callout--term">
+            <div class="callout__icon">i</div>
+            <div class="callout__body">
+              <span class="callout__label">Term</span>
+              <h4 class="callout__title">Locking a period</h4>
+              <p>Locking a period prevents new journal entries from being posted to that period. You typically lock a month at month-end, after the books for that month have been reviewed and signed off. Locked periods can be unlocked later if you find an error &mdash; but only by an admin, and the audit log records who did it and when.</p>
+            </div>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-23a-fiscal-period-lock-confirm.png" alt="Lock period confirm">
+            <div class="figure__caption"><strong>Figure 5.2b &mdash;</strong> The Lock Period confirm dialog. It names the specific period and explains exactly what locking means &mdash; existing entries are not affected, only new ones are blocked.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-5-3">
+          <span class="subsection__num">5.3</span>
+          <h3 class="subsection__title">Tab 8 &mdash; Journal Types</h3>
+          <div class="prose">
+            <p>
+              Every journal entry the system creates &mdash; whether you make it manually or it's auto-generated by an invoice &mdash; is tagged with a
+              <strong>Journal Type</strong>. The system seeds six standard system types automatically: Sales, Purchase, Cash, Bank, Adjustment, Payroll.
+              You can add your own custom types if you need to (e.g. one named "Year-End Closing" or "Inter-Company Transfer").
+              System types can't be edited or deleted; custom types can.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-24-journal-types-baseline.png" alt="Journal types tab">
+            <div class="figure__caption"><strong>Figure 5.3a &mdash;</strong> The Journal Types tab with six seeded system types and one custom type. Notice the action column &mdash; system types only have View; the custom type also has Edit and Delete.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/04-24a-journal-type-create-modal.png" alt="Create journal type modal">
+            <div class="figure__caption"><strong>Figure 5.3b &mdash;</strong> The Create Journal Type modal. Three fields: Code (a short uppercase identifier), Name, Description.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-5-4">
+          <span class="subsection__num">5.4</span>
+          <h3 class="subsection__title">Tab 9 &mdash; COA Templates (the shortcut)</h3>
+          <div class="prose">
+            <p>
+              The last tab gives you a shortcut: instead of building your Chart of Accounts by hand (like we just did manually
+              in Section 4), you can click <em>Initialize India Template</em> to seed 79 ready-made accounts in two clicks. We didn't
+              use it in this guide because we wanted you to see exactly how the building blocks fit together, but for a real production
+              setup the templates are usually the right choice.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-25-coa-templates-baseline.png" alt="COA Templates tab">
+            <div class="figure__caption"><strong>Figure 5.4 &mdash;</strong> The COA Templates tab. Two buttons, one warning. Run the template only once &mdash; running it twice creates duplicates.</div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="s-6">
+        <div class="section__head">
+          <span class="section__num">06</span>
+          <span class="section__eyebrow">Section six &middot; Foundation</span>
+          <h2 class="section__title">Tax setup &mdash; <em>GST</em>.</h2>
+          <p class="section__sub">Configuring the tax codes you'll apply to invoices and bills. We'll set up India's GST 18% &mdash; the rate that applies to most B2B services.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="callout callout--term">
+          <div class="callout__icon">i</div>
+          <div class="callout__body">
+            <span class="callout__label">Term</span>
+            <h4 class="callout__title">Tax Config vs Tax Rate</h4>
+            <p>A <strong>Tax Config</strong> is the abstract definition of a tax (e.g. "GST 18%") &mdash; the country, the type, the headline rate, the legal description. A <strong>Tax Rate</strong> is one of the component rates inside that config (e.g. "CGST 9%" and "SGST 9%" both belong to the GST 18% config). Most countries only need one rate per config; India splits it into CGST + SGST for intra-state and IGST for inter-state.</p>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-6-1">
+          <span class="subsection__num">6.1</span>
+          <h3 class="subsection__title">Open the Taxation page</h3>
+          <div class="prose">
+            <p>
+              From the Accounts dashboard click the <strong>Taxation</strong> Quick Action card. The Taxation page has eight tabs grouped into
+              three sections: <em>Configuration</em> (Tax Configs, Tax Rates, HSN/SAC), <em>Returns</em> (GSTR-1, GSTR-3B, TDS Return),
+              and <em>Tools</em> (Tax Calculator, Tax Ledger). For initial setup we only need the first three.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/06-1-tax-baseline.png" alt="Tax Configs tab">
+            <div class="figure__caption"><strong>Figure 6.1 &mdash;</strong> The Tax Configs tab with our GST 18% config already created. Notice the <em>Seed India GST</em> button on the right &mdash; that's the shortcut for production setup.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-6-2">
+          <span class="subsection__num">6.2</span>
+          <h3 class="subsection__title">Tax Config Detail (View modal)</h3>
+          <div class="prose">
+            <p>
+              Click the View (eye) icon on the GST 18% row. The Tax Config Details modal opens with every field laid out in a clean
+              two-column grid: name, country code, type, rate, status, dates, full description, and the underlying configuration JSON.
+              The JSON block holds anything country-specific (the CGST/SGST split, exemptions, etc.) that doesn't fit in a simple field.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/06-2-tax-config-detail.png" alt="Tax config detail modal">
+            <div class="figure__caption"><strong>Figure 6.2 &mdash;</strong> The Tax Config Details modal. Two-column grid for primary fields, full-width Description and Configuration JSON below.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-6-3">
+          <span class="subsection__num">6.3</span>
+          <h3 class="subsection__title">Tab 2 &mdash; Tax Rates</h3>
+          <div class="prose">
+            <p>
+              The Tax Rates tab is where you create the actual rate lines that get applied to invoices. Each rate links back to a Tax Config and
+              optionally to a tax-output GL account (so the system knows where to post the tax liability when an invoice is approved).
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/06-3-tax-rate-modal.png" alt="Create Tax Rate modal">
+            <div class="figure__caption"><strong>Figure 6.3 &mdash;</strong> The Create Tax Rate modal &mdash; Name, Rate %, Tax Config (parent), Account, Status. For India GST you'd typically create three rates for each config: CGST, SGST, IGST.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-6-4">
+          <span class="subsection__num">6.4</span>
+          <h3 class="subsection__title">Tab 3 &mdash; HSN/SAC Codes</h3>
+          <div class="prose">
+            <p>
+              In India, every invoice line has to include an <strong>HSN code</strong> (for goods) or <strong>SAC code</strong> (for services).
+              These are six-to-eight digit codes the GST council assigns to every type of product/service so the right tax rate gets applied automatically.
+              You don't need to create one for every product you sell &mdash; usually a handful covers your whole catalogue.
+            </p>
+            <p>
+              Click <em>+ Add Code</em> to create one. For our brand consulting demo we use <em>9983</em> &mdash; "Other professional, technical and business services" &mdash; with the
+              standard 18% rate.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/06-4-hsn-sac-create-modal.png" alt="Create HSN/SAC code modal">
+            <div class="figure__caption"><strong>Figure 6.4a &mdash;</strong> Creating SAC code 9983 for professional services at 18%.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/06-5-hsn-sac-saved.png" alt="HSN/SAC after save">
+            <div class="figure__caption"><strong>Figure 6.4b &mdash;</strong> The saved code in the table. Once you have at least one HSN/SAC code, the Customer Invoice line item will let you pick from this list.</div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="s-7">
+        <div class="section__head">
+          <span class="section__num">07</span>
+          <span class="section__eyebrow">Section seven &middot; Foundation</span>
+          <h2 class="section__title">Opening <em>balances</em>.</h2>
+          <p class="section__sub">If you're moving from another system &mdash; or just starting day one with cash already in the bank &mdash; the closing balances of every account go here.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="callout callout--term">
+          <div class="callout__icon">i</div>
+          <div class="callout__body">
+            <span class="callout__label">Term</span>
+            <h4 class="callout__title">Opening Balance</h4>
+            <p>The amount sitting in an account on the very first day of your fiscal year, before any transactions in this system have been entered. If you have ₹50,000 cash in hand on April 1, 2026, that's a debit opening balance of ₹50,000 on the Cash account. Opening balances must always be balanced &mdash; total debits across all accounts must equal total credits &mdash; otherwise your books start out broken.</p>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-7-1">
+          <span class="subsection__num">7.1</span>
+          <h3 class="subsection__title">The Opening Balances tab</h3>
+          <div class="prose">
+            <p>
+              Open <em>Setup &rarr; Opening Balances</em> (sidebar tab 5). The page is a simple grid: every active account becomes one row, with two
+              editable cells per row (Debit and Credit). You only fill in one side per account &mdash; an asset gets a debit, a liability or revenue
+              gets a credit. The Totals row at the bottom updates live as you type.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-21a-opening-balances-empty-form.png" alt="Opening balances form, empty">
+            <div class="figure__caption"><strong>Figure 7.1 &mdash;</strong> The Opening Balances form on day one. Three accounts, six empty cells, totals row reading ₹0.00 / ₹0.00 with the helpful prompt to enter values.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-7-2">
+          <span class="subsection__num">7.2</span>
+          <h3 class="subsection__title">Filling in a balanced set</h3>
+          <div class="prose">
+            <p>
+              For our demo we're starting with ₹50,000 in petty cash, contributed by the owner. The double entry is:
+            </p>
+            <ul>
+              <li><strong>Debit Cash in Hand ₹50,000</strong> &mdash; we have the cash</li>
+              <li><strong>Credit Sales Revenue ₹50,000</strong> &mdash; the offsetting income line (in a real scenario you'd credit Owner's Equity, but this demo skips that account for simplicity)</li>
+            </ul>
+            <p>
+              Type <em>50000</em> in the Debit cell of Cash in Hand and <em>50000</em> in the Credit cell of Sales Revenue. The Totals row
+              ticks up in real time, and the status text below the grid turns from grey neutral to green:
+              <em>"Balanced: debits and credits both equal ₹50,000.00. Ready to save."</em>
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-21b-opening-balances-balanced.png" alt="Opening balances balanced">
+            <div class="figure__caption"><strong>Figure 7.2 &mdash;</strong> The form with both sides filled in. Notice the live totals and the green status text. If the two sides don't match, the status flips red and tells you exactly which side is over and by how much.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-7-3">
+          <span class="subsection__num">7.3</span>
+          <h3 class="subsection__title">Saving and what happens behind the scenes</h3>
+          <div class="prose">
+            <p>
+              Click <strong>Save All Balances</strong>. The system POSTs each non-zero row as a separate API call. Behind the scenes,
+              for each opening balance it creates a real journal entry in the General Ledger:
+              the account you specified gets the debit/credit you entered, and the offset goes to a system account called
+              <em>Current Year Earnings</em> (code <strong>3300</strong>). If 3300 doesn't exist yet, the system auto-creates it
+              for you the first time you save &mdash; you don't need to know about it.
+            </p>
+            <p>
+              After save, the page reloads and the form is now pre-filled with the values you entered. You can come back and
+              change them later (until you start posting real transactions) by typing new values and clicking Save again.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/04-21c-opening-balances-saved-prefilled.png" alt="Opening balances saved and reloaded">
+            <div class="figure__caption"><strong>Figure 7.3 &mdash;</strong> After saving, the page reloads with the values prefilled. Notice the new <em>3300 Current Year Earnings</em> row that the system auto-created &mdash; that's where the contra entries land.</div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="s-8">
+        <div class="section__head">
+          <span class="section__num">08</span>
+          <span class="section__eyebrow">Section eight &middot; Master data</span>
+          <h2 class="section__title"><em>Customers</em>.</h2>
+          <p class="section__sub">The first party in your books &mdash; the people who pay you. Created once, then auto-suggested on every invoice.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="subsection" id="s-8-1">
+          <span class="subsection__num">8.1</span>
+          <h3 class="subsection__title">Open Vendors &amp; Customers</h3>
+          <div class="prose">
+            <p>
+              From the dashboard click the <strong>Vendors &amp; Customers</strong> Quick Action card. The page is shared between the two
+              types of party because most controls are identical &mdash; the sidebar has two sections, <em>Vendors</em> at the top and
+              <em>Customers</em> below. Click <strong>Customer List</strong>.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/07-1-vendors-customers-baseline.png" alt="Vendors & Customers landing page">
+            <div class="figure__caption"><strong>Figure 8.1 &mdash;</strong> The Vendors &amp; Customers page. Two-tier sidebar &mdash; Vendors above, Customers below &mdash; each with a List view and a Pending Approvals view.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-8-2">
+          <span class="subsection__num">8.2</span>
+          <h3 class="subsection__title">Adding a customer end-to-end</h3>
+          <div class="prose">
+            <p>
+              Click <strong>+ Add Customer</strong>. The Create Customer modal opens with seventeen fields covering everything an invoice
+              and a payment will need: name, contact info, GSTIN/tax ID, billing address, payment terms, credit limit, notes.
+              Most fields are optional &mdash; only Name is required &mdash; but the more you fill in now, the less work later.
+            </p>
+            <p>
+              For our demo we'll add <em>Lumira Studios LLP</em>, a brand consulting client billed Net 30 with a ₹5,00,000 credit limit.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/07-5-customer-create-modal-filled.png" alt="Customer modal filled in">
+            <div class="figure__caption"><strong>Figure 8.2a &mdash;</strong> The Create Customer modal fully filled in. Click <em>Save</em>.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/07-6-customer-saved.png" alt="Customer saved">
+            <div class="figure__caption"><strong>Figure 8.2b &mdash;</strong> After save, Lumira appears as <em>C-001</em> in the Customer List. The customer code is auto-generated. Total / Active / Inactive stat tiles update.</div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="s-9">
+        <div class="section__head">
+          <span class="section__num">09</span>
+          <span class="section__eyebrow">Section nine &middot; Master data</span>
+          <h2 class="section__title"><em>Vendors</em>.</h2>
+          <p class="section__sub">The other side of the directory &mdash; the people you pay. Same form, mirror semantics.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="subsection" id="s-9-1">
+          <span class="subsection__num">9.1</span>
+          <h3 class="subsection__title">Adding a vendor</h3>
+          <div class="prose">
+            <p>
+              Click <em>Vendor List</em> in the sidebar (still on the same page). The form is almost identical to the Customer one but adds
+              four bank-detail fields at the bottom: Bank Name, Account Number, IFSC, SWIFT. Vendors get bank fields because that's where you'll
+              be sending payments.
+            </p>
+            <p>
+              For our demo, the vendor is <em>CloudKite Hosting Pvt Ltd</em>, our cloud infrastructure provider, billed Net 15.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/07-2-vendor-create-modal-empty.png" alt="Vendor modal empty">
+            <div class="figure__caption"><strong>Figure 9.1a &mdash;</strong> The Create Vendor modal, empty. Twenty fields including the bank section at the bottom.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/07-3-vendor-create-modal-filled.png" alt="Vendor modal filled">
+            <div class="figure__caption"><strong>Figure 9.1b &mdash;</strong> Filled in for CloudKite.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/07-4-vendor-saved.png" alt="Vendor saved">
+            <div class="figure__caption"><strong>Figure 9.1c &mdash;</strong> After save &mdash; vendor appears as <em>V-001</em>. The Pending Vendors counter stays at 0 because admins are auto-approved; non-admin users go through a moderation queue.</div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="s-10">
+        <div class="section__head">
+          <span class="section__num">10</span>
+          <span class="section__eyebrow">Section ten &middot; Sales</span>
+          <h2 class="section__title">Customer <em>Invoices</em>.</h2>
+          <p class="section__sub">Your first real money-in transaction. We'll create a draft, approve it, post it, and watch the General Ledger update itself.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="callout callout--term">
+          <div class="callout__icon">i</div>
+          <div class="callout__body">
+            <span class="callout__label">Term</span>
+            <h4 class="callout__title">Draft vs Approved vs Sent vs Paid</h4>
+            <p>An invoice goes through four distinct states. <strong>Draft</strong>: it exists but doesn't affect any account balance. You can edit it freely. <strong>Approved</strong>: it's been finalised &mdash; the system has posted a journal entry to the GL (Dr AR / Cr Revenue). You can't edit it any more, but you can still send it. <strong>Sent</strong>: the customer has been notified (typically by email). <strong>Paid</strong>: the customer has paid &mdash; a payment record exists and the AR balance has been cleared.</p>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-10-1">
+          <span class="subsection__num">10.1</span>
+          <h3 class="subsection__title">Open Accounts Receivable</h3>
+          <div class="prose">
+            <p>
+              From the dashboard click <strong>Customer Invoices</strong> (or the URL <code>receivables.html</code>). The page has five sidebar tabs:
+              Invoices, Payments, Credit Notes, AR Aging, Customer Statements. Start on the default Invoices tab.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/08-1-receivables-baseline.png" alt="Receivables empty state">
+            <div class="figure__caption"><strong>Figure 10.1 &mdash;</strong> The Receivables landing page on day one. Four stat tiles (Total / Draft / Approved / Total Receivable), filter toolbar, and the empty invoice table.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-10-2">
+          <span class="subsection__num">10.2</span>
+          <h3 class="subsection__title">Creating an invoice</h3>
+          <div class="prose">
+            <p>
+              Click <strong>+ Create Invoice</strong>. The Create Invoice modal opens with the standard layout: customer at the top, dates next,
+              then a Line Items table where each row is one billable item. Pick the customer Lumira Studios LLP from the dropdown,
+              set Invoice Date to yesterday and Due Date to 30 days out, and add a description in the Notes field.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/08-2-invoice-create-modal-empty.png" alt="Invoice modal, empty">
+            <div class="figure__caption"><strong>Figure 10.2a &mdash;</strong> The Create Invoice modal, blank. The Line Items grid starts with one empty row &mdash; click <em>+ Add Line</em> for more.</div>
+          </figure>
+          <div class="prose">
+            <p>
+              Fill in the line item: Description <em>April 2026 — Brand consulting retainer</em>, Account <em>4001 — Sales Revenue</em>, HSN <em>9983</em>,
+              Qty <em>1</em>, Rate <em>100000</em>. The amount column auto-calculates and the Subtotal / Total summary at the bottom updates live.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/08-3-invoice-create-modal-filled.png" alt="Invoice modal filled">
+            <div class="figure__caption"><strong>Figure 10.2b &mdash;</strong> Filled in. Subtotal ₹1,00,000, no tax, total ₹1,00,000. Three save buttons at the bottom: <em>Cancel</em>, <em>Save Draft</em>, <em>Save &amp; Approve</em>.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-10-3">
+          <span class="subsection__num">10.3</span>
+          <h3 class="subsection__title">Save Draft &rarr; Approve</h3>
+          <div class="prose">
+            <p>
+              Click <em>Save Draft</em>. The modal closes, the table fills with one row, and the stat tiles tick: Total &rarr; 1, Draft &rarr; 1.
+              The status badge says <em>Draft</em> &mdash; nothing has hit the General Ledger yet.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/08-4-invoice-saved-draft.png" alt="Invoice saved as draft">
+            <div class="figure__caption"><strong>Figure 10.3a &mdash;</strong> The new invoice INV-2026-00001 in Draft status. The action column has Edit and Approve buttons.</div>
+          </figure>
+          <div class="prose">
+            <p>
+              Now click the green Approve check icon. The system runs the approval flow: validates the lines, picks (or auto-creates)
+              the Accounts Receivable account 1130, and posts a balanced GL entry &mdash; <strong>Dr 1130 ₹1,00,000 / Cr 4001 ₹1,00,000</strong>.
+              The status badge flips to <em>Approved</em>, the Approved counter ticks to 1, the Total Receivable stat ticks up to ₹1,00,000.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/08-5-invoice-approved.png" alt="Invoice approved">
+            <div class="figure__caption"><strong>Figure 10.3b &mdash;</strong> The same invoice after Approve. The action column now has Edit and Send buttons. The receivable balance has appeared on the right-hand stat tile.</div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="s-11">
+        <div class="section__head">
+          <span class="section__num">11</span>
+          <span class="section__eyebrow">Section eleven &middot; Purchases</span>
+          <h2 class="section__title">Vendor <em>Bills</em>.</h2>
+          <p class="section__sub">The mirror of Section 10 &mdash; bills you've received from suppliers. Same flow: create draft, approve, GL posts, balance shows.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="subsection" id="s-11-1">
+          <span class="subsection__num">11.1</span>
+          <h3 class="subsection__title">Open Vendor Bills</h3>
+          <div class="prose">
+            <p>
+              Open <code>payables.html</code> from the dashboard or sidebar. The layout mirrors Receivables exactly: four stat tiles, the
+              same filter toolbar, the same table layout. The terminology shifts from <em>customer/invoice</em> to <em>vendor/bill</em>, but
+              everything else is identical.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/09-1-payables-baseline.png" alt="Payables empty state">
+            <div class="figure__caption"><strong>Figure 11.1 &mdash;</strong> Vendor Bills landing page. Empty on day one.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-11-2">
+          <span class="subsection__num">11.2</span>
+          <h3 class="subsection__title">Creating a bill</h3>
+          <div class="prose">
+            <p>
+              Click <strong>+ Create Bill</strong>. Pick the vendor CloudKite, set the bill date and due date, fill in the line item:
+              <em>CloudKite hosting — April 2026</em>, Account <em>5001 — Office Rent Expense</em>, qty 1, rate ₹12,000.
+            </p>
+            <p>
+              (We're using Office Rent Expense as a placeholder for our hosting costs because we didn't create a dedicated Cloud Infrastructure
+              account in this guide. In a real Chart of Accounts you'd create one and put it under Operating Expenses.)
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/09-2-bill-create-modal-filled.png" alt="Vendor bill modal filled">
+            <div class="figure__caption"><strong>Figure 11.2 &mdash;</strong> The Create Vendor Bill modal fully filled in. Same three buttons as the invoice modal: Cancel, Save Draft, Save &amp; Approve.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-11-3">
+          <span class="subsection__num">11.3</span>
+          <h3 class="subsection__title">Approve and watch the GL</h3>
+          <div class="prose">
+            <p>
+              Save Draft, then click the Approve check icon on the row. The system posts the mirror of the invoice entry:
+              <strong>Dr 5001 Office Rent Expense ₹12,000 / Cr 2110 Accounts Payable ₹12,000</strong>. The Approved tile ticks to 1 and the
+              Total Outstanding stat now shows ₹12,000 &mdash; this is what you owe vendors.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/09-3-bill-approved.png" alt="Bill approved">
+            <div class="figure__caption"><strong>Figure 11.3 &mdash;</strong> The bill BILL-2026-00001 in Approved state. The action column now shows a <em>Pay</em> button &mdash; that's how you record a payment against the bill (covered in the Payments tab).</div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="s-12">
+        <div class="section__head">
+          <span class="section__num">12</span>
+          <span class="section__eyebrow">Section twelve</span>
+          <h2 class="section__title">The General <em>Ledger</em>.</h2>
+          <p class="section__sub">Where every entry the system creates lives. We'll inspect the entries that the opening balances, invoice, and bill from earlier sections produced.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="callout callout--term">
+          <div class="callout__icon">i</div>
+          <div class="callout__body">
+            <span class="callout__label">Term</span>
+            <h4 class="callout__title">General Ledger (GL)</h4>
+            <p>The master diary of your books. Every dated debit/credit transaction lives here as a "GL Entry" with its own unique number (GL-2026-00001 etc.). Each entry has at least two lines &mdash; one debit and one credit &mdash; and the totals always balance. Every other report in the system &mdash; Trial Balance, P&amp;L, Balance Sheet &mdash; is just a different way of slicing the GL.</p>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-12-1">
+          <span class="subsection__num">12.1</span>
+          <h3 class="subsection__title">The GL Entries page</h3>
+          <div class="prose">
+            <p>
+              From the dashboard click <strong>General Ledger</strong> (<code>ledger.html</code>). The page shows every GL entry the system has
+              ever recorded, sorted newest-first by default. After everything we did in sections 7&ndash;11, you should see four entries:
+            </p>
+            <ol>
+              <li><strong>GL-2026-00003</strong> &mdash; Opening balance for Cash in Hand (Dr 1001 ₹50,000 / Cr 3300 ₹50,000)</li>
+              <li><strong>GL-2026-00004</strong> &mdash; Opening balance for Sales Revenue (Dr 3300 ₹50,000 / Cr 4001 ₹50,000)</li>
+              <li><strong>GL-2026-00005</strong> &mdash; The Lumira invoice (Dr 1130 ₹1,00,000 / Cr 4001 ₹1,00,000)</li>
+              <li><strong>GL-2026-00006</strong> &mdash; The CloudKite bill (Dr 5001 ₹12,000 / Cr 2110 ₹12,000)</li>
+            </ol>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/10-1-ledger-baseline.png" alt="GL Entries listing">
+            <div class="figure__caption"><strong>Figure 12.1 &mdash;</strong> The GL Entries page after our four transactions. Sortable filters across the top: date range, account, journal type, status, source, free-text search.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-12-2">
+          <span class="subsection__num">12.2</span>
+          <h3 class="subsection__title">The GL Entry Detail modal</h3>
+          <div class="prose">
+            <p>
+              Click the View (eye) icon on the most recent row &mdash; the CloudKite bill GL entry. The detail modal opens with the
+              entry header (number, date, journal type, status, description, who posted it, when) and the line table below. Each line
+              shows Account, Description, Debit, and Credit. The Totals row at the bottom <em>always</em> balances &mdash; this is the
+              fundamental invariant of double-entry bookkeeping.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/10-2-gl-entry-detail.png" alt="GL entry detail modal">
+            <div class="figure__caption"><strong>Figure 12.2 &mdash;</strong> The GL Entry Detail for the CloudKite bill posting. Two lines, both ₹12,000, balanced.</div>
+          </figure>
+          <div class="callout callout--what">
+            <div class="callout__icon">!</div>
+            <div class="callout__body">
+              <span class="callout__label">What this proves</span>
+              <h4 class="callout__title">Every transaction you make tells the same story twice</h4>
+              <p>Notice how the bill's GL entry has exactly two lines: debit Office Rent Expense, credit Accounts Payable. Same amount, opposite sides. That's the rule. When you eventually pay CloudKite, a <em>second</em> GL entry will be created &mdash; debit Accounts Payable, credit Bank &mdash; and the Accounts Payable balance returns to zero. Every transaction in your business decomposes into pairs of debits and credits like this.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="s-13">
+        <div class="section__head">
+          <span class="section__num">13</span>
+          <span class="section__eyebrow">Section thirteen</span>
+          <h2 class="section__title"><em>Reports</em>.</h2>
+          <p class="section__sub">Trial Balance, Balance Sheet, P&amp;L, Cash Flow, AR &amp; AP Aging &mdash; all generated live from the GL we just inspected.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="subsection" id="s-13-1">
+          <span class="subsection__num">13.1</span>
+          <h3 class="subsection__title">Trial Balance &mdash; the sanity check</h3>
+          <div class="prose">
+            <p>
+              Open <code>reports.html</code>. The page has nine sidebar tabs grouped into three sections: <em>Financial Statements</em> (Trial Balance,
+              P&amp;L, Balance Sheet, Cash Flow), <em>Ledger</em> (Account Ledger), <em>Books</em> (Day Book, Cash Book), and <em>Aging</em>
+              (AR Aging, AP Aging). Start with Trial Balance.
+            </p>
+            <p>
+              The Trial Balance lists every account with a non-zero balance and shows whether the books are balanced. It's the fastest
+              way to check that your bookkeeping is healthy. Pick the fiscal year from the dropdown and click <em>Generate</em>.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/11-1-trial-balance.png" alt="Trial balance generated">
+            <div class="figure__caption"><strong>Figure 13.1 &mdash;</strong> The Trial Balance for FY 2026-27. Six accounts, debits = credits = ₹1,62,000, with the green confirmation <em>"Trial Balance is balanced"</em> at the bottom.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-13-2">
+          <span class="subsection__num">13.2</span>
+          <h3 class="subsection__title">Profit &amp; Loss</h3>
+          <div class="prose">
+            <p>
+              Click P&amp;L in the sidebar. The Profit &amp; Loss statement summarises your <em>income statement</em> &mdash; revenues earned during the
+              period minus expenses incurred during the period, equals net profit or loss. Pick the fiscal year and click Generate.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/11-2-profit-loss.png" alt="Profit and loss statement">
+            <div class="figure__caption"><strong>Figure 13.2 &mdash;</strong> The P&amp;L for FY 2026-27. Revenue ₹1,50,000 (the opening Sales balance + the Lumira invoice) minus Office Rent ₹12,000 = Net Profit ₹1,38,000.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-13-3">
+          <span class="subsection__num">13.3</span>
+          <h3 class="subsection__title">Balance Sheet</h3>
+          <div class="prose">
+            <p>
+              The Balance Sheet is a snapshot of <em>what you own</em> (assets), <em>what you owe</em> (liabilities), and <em>what's left over</em>
+              (equity) at a single point in time. It must always balance &mdash; <strong>Assets = Liabilities + Equity</strong>.
+              The Equity number is your accumulated profit (the same number that came out of the P&amp;L) plus any owner contributions.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/11-3-balance-sheet.png" alt="Balance sheet">
+            <div class="figure__caption"><strong>Figure 13.3 &mdash;</strong> Balance Sheet for FY 2026-27. Assets (₹1,50,000) = Liabilities (₹12,000) + Equity (₹1,38,000). The system tells you so explicitly at the bottom.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-13-4">
+          <span class="subsection__num">13.4</span>
+          <h3 class="subsection__title">Cash Flow</h3>
+          <div class="prose">
+            <p>
+              The Cash Flow statement tracks the actual movement of cash &mdash; how much came in and went out, broken down into Operating,
+              Investing, and Financing activities. Because we haven't recorded any payments yet (the invoice is approved but unpaid, the bill is
+              approved but unpaid), our cash flow shows zero on every line. After the customer pays and we settle the vendor bill, you'll see
+              real activity here.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/11-4-cash-flow.png" alt="Cash flow statement">
+            <div class="figure__caption"><strong>Figure 13.4 &mdash;</strong> The Cash Flow statement on day one of trading. Activities are listed but all amounts are ₹0 because no cash has actually moved yet.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-13-5">
+          <span class="subsection__num">13.5</span>
+          <h3 class="subsection__title">AR &amp; AP Aging &mdash; "who owes us, who do we owe"</h3>
+          <div class="prose">
+            <p>
+              The Aging reports tell you how old your unpaid invoices and bills are. Anything in the <em>Current</em> column is not yet overdue;
+              the <em>1-30</em>, <em>31-60</em>, <em>61-90</em>, and <em>90+</em> columns are progressively more concerning. A healthy business
+              has most of its receivables in the Current bucket and almost nothing past 90 days.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/11-5-ar-aging.png" alt="AR Aging report">
+            <div class="figure__caption"><strong>Figure 13.5a &mdash;</strong> Accounts Receivable Aging. Lumira's ₹1,00,000 sits in the Current column because we just invoiced them yesterday.</div>
+          </figure>
+          <figure class="figure figure--wide">
+            <img src="./images/11-6-ap-aging.png" alt="AP Aging report">
+            <div class="figure__caption"><strong>Figure 13.5b &mdash;</strong> Accounts Payable Aging. CloudKite's ₹12,000 sits in Current.</div>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section" id="s-14">
+        <div class="section__head">
+          <span class="section__num">14</span>
+          <span class="section__eyebrow">Section fourteen &middot; Administration</span>
+          <h2 class="section__title">Audit logs &amp; <em>closing</em>.</h2>
+          <p class="section__sub">The Administration page is where you go when something looks wrong. It also contains the year-end closing checklists you'll need every March.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="subsection" id="s-14-1">
+          <span class="subsection__num">14.1</span>
+          <h3 class="subsection__title">Audit Logs &mdash; "who did what, when"</h3>
+          <div class="prose">
+            <p>
+              From the dashboard click <strong>Administration</strong> (<code>admin.html</code>). The default tab is <em>Audit Logs</em>: a chronological
+              feed of every create / update / approve / delete action that's been performed in the Accounts module, by which user, with the
+              full payload of what changed. After running through this guide your audit log should have rows for every action you took &mdash;
+              creating customers and vendors, creating and approving invoices and bills, posting opening balances, etc.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/16-1-admin-baseline.png" alt="Audit logs">
+            <div class="figure__caption"><strong>Figure 14.1 &mdash;</strong> The Audit Logs feed after this session. Each row shows the timestamp, the entity type (vendor_bill, customer_invoice, customer, vendor), the action (created, approved), the user ID, and a JSON snippet of the changes. Use the filter toolbar at the top to narrow by entity type, date range, or user.</div>
+          </figure>
+          <div class="callout callout--tip">
+            <div class="callout__icon">&#10003;</div>
+            <div class="callout__body">
+              <span class="callout__label">Auditor's first stop</span>
+              <h4 class="callout__title">When an external auditor asks "who approved this?"</h4>
+              <p>The Audit Logs page is the answer. Filter by entity type (e.g. <em>customer_invoice</em>), pick the date range of the period under audit, and you have a complete trail of every approval, including the user ID of who clicked the button. Export to CSV for handover.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-14-2">
+          <span class="subsection__num">14.2</span>
+          <h3 class="subsection__title">Other Administration tabs &mdash; one-line tour</h3>
+          <div class="prose">
+            <ul>
+              <li><strong>Pending Approvals</strong> &mdash; vendor and customer creation requests from non-admin users that need a manager to sign off.</li>
+              <li><strong>Integrity Check</strong> &mdash; runs a battery of consistency checks against the GL: trial-balance balance, period-balance reconciliation, orphaned references. Run this monthly as a sanity gate.</li>
+              <li><strong>Job Log</strong> &mdash; the queue of background jobs the system runs (period rollover, scheduled invoice generation, depreciation runs). Useful when one of them silently fails and you need to find out why.</li>
+              <li><strong>Closing Checklists</strong> &mdash; templated month-end and year-end closing checklists. Tick items off as you complete them; they're saved against the period.</li>
+              <li><strong>Year-End Closing</strong> &mdash; the formal close-out: zero out all P&amp;L accounts, post the closing entry to Retained Earnings, mark the fiscal year as Closed, and create the next year's opening balances automatically.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-14-3">
+          <span class="subsection__num">14.3</span>
+          <h3 class="subsection__title">Closing a fiscal period &mdash; the recap</h3>
+          <div class="prose">
+            <p>
+              We covered period locking back in Section 5.2. The recap: at month-end, after you've reviewed the books and the Trial Balance is
+              clean, go to <em>Setup &rarr; Fiscal Periods</em> and click the Lock button on the row. Locking prevents new journal entries from being
+              posted to that month. If you need to amend something later, an admin can unlock the period &mdash; the audit log records both events.
+            </p>
+            <p>
+              Year-end is the same idea, one level up: lock all twelve periods, run year-end closing from the Administration tab, and the system
+              creates a new fiscal year for you with the closing balances rolled forward as opening balances.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="s-15">
+        <div class="section__head">
+          <span class="section__num">15</span>
+          <span class="section__eyebrow">Section fifteen</span>
+          <h2 class="section__title">Beyond the <em>basics</em>.</h2>
+          <p class="section__sub">A quick tour of four advanced areas: Banking, Expenses, Fixed Assets, Subscription Billing. Each one is a full module on its own &mdash; here we just point at the door.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="subsection" id="s-15-1">
+          <span class="subsection__num">15.1</span>
+          <h3 class="subsection__title">Banking</h3>
+          <div class="prose">
+            <p>
+              The Banking module manages your bank accounts as <em>real bank accounts</em> rather than just GL lines. You can create one record per
+              bank account (e.g. one for HDFC current, one for ICICI escrow), record inter-bank transfers, and run bank reconciliation &mdash; matching
+              what your bank statement says against what your General Ledger says. Each bank account is linked to a GL account on the assets side, and
+              the balance you see in the Banking module is the same balance you see in the GL.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/12-1-banking-baseline.png" alt="Banking page">
+            <div class="figure__caption"><strong>Figure 15.1 &mdash;</strong> The Banking landing page. Three sidebar sections: Accounts (Bank Accounts), Transactions (Transactions, Inter-Bank Transfer), Reconciliation. On day one, no accounts &mdash; click <em>Add Bank Account</em> to start.</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-15-2">
+          <span class="subsection__num">15.2</span>
+          <h3 class="subsection__title">Expense Management</h3>
+          <div class="prose">
+            <p>
+              The Expense Management module handles employee expense claims. You define <em>Categories</em> (Travel, Meals, Office Supplies&hellip;)
+              with default GL accounts, set <em>Policies</em> (e.g. "Meals capped at ₹500 per day"), and employees submit
+              <em>Claims</em> against those categories. Each approved claim becomes a vendor bill in the GL automatically &mdash; you don't have to type
+              it twice.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/13-1-expenses-baseline.png" alt="Expense management page">
+            <div class="figure__caption"><strong>Figure 15.2 &mdash;</strong> The Expense Management landing page on day one. Sidebar splits into Setup (Categories, Policies) and Claims (Expense Claims).</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-15-3">
+          <span class="subsection__num">15.3</span>
+          <h3 class="subsection__title">Fixed Assets</h3>
+          <div class="prose">
+            <p>
+              Fixed Assets are the long-lived things you buy &mdash; vehicles, computers, furniture, machinery. They get capitalised on the
+              Balance Sheet (not expensed immediately) and depreciated over their useful life. The Fixed Assets module manages all of this:
+              you create asset <em>Categories</em> (e.g. "Computers, 4-year SLM" &mdash; straight-line method, 4-year life), then add individual
+              assets to those categories. The system runs a depreciation job at month-end and posts the depreciation entries to the GL automatically.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/14-1-assets-baseline.png" alt="Fixed assets page">
+            <div class="figure__caption"><strong>Figure 15.3 &mdash;</strong> The Fixed Assets landing page. Sidebar: Setup (Asset Categories), Register (Asset Register, Depreciation).</div>
+          </figure>
+        </div>
+
+        <div class="subsection" id="s-15-4">
+          <span class="subsection__num">15.4</span>
+          <h3 class="subsection__title">Subscription Billing</h3>
+          <div class="prose">
+            <p>
+              If you charge customers on a recurring basis (monthly SaaS subscriptions, annual maintenance contracts, etc.) the Billing
+              module is where you set that up. You define billing <em>Plans</em> (with type subscription/token/usage/one-time), enrol customers
+              into <em>Subscriptions</em>, set up <em>Usage Meters</em> for metered billing, and the system runs an automated billing
+              cycle that generates customer invoices for each subscription on the right cadence. The generated invoices appear in the
+              Receivables module exactly like the manual one we created in Section 10.
+            </p>
+          </div>
+          <figure class="figure figure--wide">
+            <img src="./images/15-1-billing-baseline.png" alt="Billing page">
+            <div class="figure__caption"><strong>Figure 15.4 &mdash;</strong> The Billing landing page. Sidebar: Plans (Billing Plans, Subscriptions), Usage (Usage Meters, Tokens).</div>
+          </figure>
+        </div>
+
+        <div class="callout callout--tip">
+          <div class="callout__icon">&#10003;</div>
+          <div class="callout__body">
+            <span class="callout__label">You're done with the foundation</span>
+            <h4 class="callout__title">Where to go next</h4>
+            <p>If you've followed every section of this guide you now have a working set of books with three accounts, an opening balance, one customer, one vendor, one approved invoice, one approved bill, and a clean Trial Balance. That's the entire core of an accounting system, working end-to-end. Each of the four modules in Section 15 builds on top of this foundation and has its own dedicated walkthrough &mdash; check the Knowledge Base sidebar for "Banking Setup", "Expense Claims", "Fixed Assets", and "Subscription Billing".</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SECTION 16: GLOSSARY ========== -->
+      <section class="section" id="s-16">
+        <div class="section__head">
+          <span class="section__num">16</span>
+          <span class="section__eyebrow">Section sixteen</span>
+          <h2 class="section__title"><em>Glossary</em>.</h2>
+          <p class="section__sub">Every term used in this guide, defined in plain English. You can come back here at any time.</p>
+        </div>
+        <hr class="section__rule">
+        <div class="glossary">
+          <a class="term-card" href="#s-4">
+            <span class="term-card__abbr">CoA</span>
+            <h4 class="term-card__title">Chart of Accounts</h4>
+            <p class="term-card__body">The complete master list of every account &mdash; every "bucket" &mdash; that your business records transactions against. Organised by type (Asset, Liability, Equity, Revenue, Expense) and group.</p>
+          </a>
+          <a class="term-card" href="#s-12">
+            <span class="term-card__abbr">GL</span>
+            <h4 class="term-card__title">General Ledger</h4>
+            <p class="term-card__body">The master diary of every dated debit/credit entry. The balance of any account is the sum of its GL lines.</p>
+          </a>
+          <a class="term-card" href="#s-12-4">
+            <span class="term-card__abbr">JE</span>
+            <h4 class="term-card__title">Journal Entry</h4>
+            <p class="term-card__body">A single dated transaction made up of debit and credit lines that always balance. Can be created manually or auto-generated by an invoice/bill/payment.</p>
+          </a>
+          <a class="term-card" href="#s-5">
+            <span class="term-card__abbr">FY</span>
+            <h4 class="term-card__title">Fiscal Year</h4>
+            <p class="term-card__body">A 12-month accounting calendar. India typically uses 1 April &rarr; 31 March; the US typically uses 1 January &rarr; 31 December.</p>
+          </a>
+          <a class="term-card" href="#s-5-3">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Fiscal Period</h4>
+            <p class="term-card__body">A monthly division within a fiscal year. The system auto-creates 12 of them. Periods can be locked at month-end to prevent further posting.</p>
+          </a>
+          <a class="term-card" href="#s-1-3">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Debit &amp; Credit</h4>
+            <p class="term-card__body">The two sides of every transaction. Debits go on the left, credits on the right, and the totals always equal each other.</p>
+          </a>
+          <a class="term-card" href="#s-4-3">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Account Type</h4>
+            <p class="term-card__body">One of the five fundamental GL categories: Asset, Liability, Equity, Revenue, Expense. Determines whether the account "naturally increases" on the debit or credit side.</p>
+          </a>
+          <a class="term-card" href="#s-4-3">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Account Group</h4>
+            <p class="term-card__body">A logical sub-category within an account type (e.g. "Current Assets" inside the Assets type). Used to organise the Chart of Accounts hierarchically.</p>
+          </a>
+          <a class="term-card" href="#s-1-3">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Normal Balance</h4>
+            <p class="term-card__body">The side &mdash; debit or credit &mdash; on which an account naturally increases. Assets/Expenses increase on debit; Liabilities/Equity/Revenue increase on credit.</p>
+          </a>
+          <a class="term-card" href="#s-7">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Opening Balance</h4>
+            <p class="term-card__body">The starting balance of an account at the beginning of a fiscal year, carried forward from the previous year (or from your old accounting system).</p>
+          </a>
+          <a class="term-card" href="#s-8">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Customer</h4>
+            <p class="term-card__body">A buyer of your goods or services. Has a credit limit, payment terms, optional tax ID and bank details.</p>
+          </a>
+          <a class="term-card" href="#s-9">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Vendor</h4>
+            <p class="term-card__body">A supplier you buy from. Has payment terms and bank details so you can pay them.</p>
+          </a>
+          <a class="term-card" href="#s-10">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Customer Invoice</h4>
+            <p class="term-card__body">A bill you send to a customer. Status flow: Draft &rarr; Approved &rarr; Posted &rarr; Paid.</p>
+          </a>
+          <a class="term-card" href="#s-11">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Vendor Bill</h4>
+            <p class="term-card__body">A bill you've received from a supplier. Mirrors the invoice flow on the purchase side.</p>
+          </a>
+          <a class="term-card" href="#s-10-6">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Credit Note</h4>
+            <p class="term-card__body">A document you issue to a customer to reduce what they owe (return, refund, correction).</p>
+          </a>
+          <a class="term-card" href="#s-11-4">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Debit Note</h4>
+            <p class="term-card__body">A document you issue to a vendor to reduce what you owe them (return, allowance).</p>
+          </a>
+          <a class="term-card" href="#s-13-1">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Trial Balance</h4>
+            <p class="term-card__body">A one-page report listing every account with its current balance. Total debits must equal total credits &mdash; if they don't, something is broken.</p>
+          </a>
+          <a class="term-card" href="#s-13-2">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Balance Sheet</h4>
+            <p class="term-card__body">A snapshot of Assets, Liabilities, and Equity as of a date. Always satisfies Assets = Liabilities + Equity.</p>
+          </a>
+          <a class="term-card" href="#s-13-3">
+            <span class="term-card__abbr">P&amp;L</span>
+            <h4 class="term-card__title">Profit &amp; Loss Statement</h4>
+            <p class="term-card__body">Revenue minus Expenses for a period. Shows whether the business made or lost money.</p>
+          </a>
+          <a class="term-card" href="#s-13-5">
+            <span class="term-card__abbr">AR</span>
+            <h4 class="term-card__title">Accounts Receivable</h4>
+            <p class="term-card__body">Money your customers owe you. An asset on the balance sheet.</p>
+          </a>
+          <a class="term-card" href="#s-13-6">
+            <span class="term-card__abbr">AP</span>
+            <h4 class="term-card__title">Accounts Payable</h4>
+            <p class="term-card__body">Money you owe your vendors. A liability on the balance sheet.</p>
+          </a>
+          <a class="term-card" href="#s-6">
+            <span class="term-card__abbr">GST</span>
+            <h4 class="term-card__title">Goods &amp; Services Tax</h4>
+            <p class="term-card__body">India's value-added tax. Applied to most invoices and bills at standard rates of 5%, 12%, 18%, or 28%.</p>
+          </a>
+          <a class="term-card" href="#s-6-3">
+            <span class="term-card__abbr">HSN</span>
+            <h4 class="term-card__title">HSN Code</h4>
+            <p class="term-card__body">Harmonized System Nomenclature &mdash; an international product classification used in India to determine which GST rate applies to a good.</p>
+          </a>
+          <a class="term-card" href="#s-6-3">
+            <span class="term-card__abbr">SAC</span>
+            <h4 class="term-card__title">SAC Code</h4>
+            <p class="term-card__body">Service Accounting Code &mdash; the equivalent of HSN but for services rather than goods.</p>
+          </a>
+          <a class="term-card" href="#s-12-1">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Posting</h4>
+            <p class="term-card__body">The act of finalising a draft entry into the General Ledger. Once posted, an entry cannot be edited &mdash; only reversed.</p>
+          </a>
+          <a class="term-card" href="#s-12-5">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Reversal</h4>
+            <p class="term-card__body">Cancelling a posted entry by creating an equal-and-opposite entry. The original is preserved for audit; the net effect is zero.</p>
+          </a>
+          <a class="term-card" href="#s-14">
+            <span class="term-card__abbr"></span>
+            <h4 class="term-card__title">Closing the books</h4>
+            <p class="term-card__body">Locking all entries in a fiscal period at month-end so no further changes can be made. Done to ensure data integrity for reporting.</p>
+          </a>
+        </div>
+      </section>
+
+    </article>
+
+    <!-- ============================================================
+         FOOTER
+         ============================================================ -->
+    <footer class="foot">
+      <div class="foot__row">
+        <div>
+          <div class="foot__title">That's it. You can run a <em>business</em>.</div>
+          <div class="foot__meta">Last updated: April 2026 &middot; Ragenaizer Knowledge Base &middot; Accounts setup, end&#8209;to&#8209;end.</div>
+        </div>
+      </div>
+      <div class="foot__links">
+        <a href="../HRMS/Organization-Setup.html">HRMS &mdash; Organization Setup &rarr;</a>
+        <a href="../HRMS/Payroll-Management.html">HRMS &mdash; Payroll Management &rarr;</a>
+        <a href="../">All Knowledge Base articles &rarr;</a>
+      </div>
+    </footer>
+
+  </main>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+
+<script>
+// ============================================================
+// THEME TOGGLE
+// ============================================================
+(function () {
+  const KEY = 'ragenaizer-kb-theme';
+  const html = document.documentElement;
+  const stored = localStorage.getItem(KEY);
+  if (stored) html.setAttribute('data-theme', stored);
+
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem(KEY, next);
+  });
+})();
+
+// ============================================================
+// PRINT
+// ============================================================
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+// ============================================================
+// COLLAPSIBLE TOC GROUPS
+// ============================================================
+document.querySelectorAll('.toc__head[data-toggle]').forEach(head => {
+  head.addEventListener('click', () => {
+    const group = head.parentElement;
+    group.dataset.open = group.dataset.open === 'true' ? 'false' : 'true';
+  });
+});
+
+// ============================================================
+// MOBILE SIDEBAR
+// ============================================================
+const sidebar = document.getElementById('sidebar');
+const backdrop = document.getElementById('backdrop');
+document.getElementById('menuBtn').addEventListener('click', () => {
+  sidebar.classList.add('is-open');
+  backdrop.classList.add('is-open');
+});
+backdrop.addEventListener('click', () => {
+  sidebar.classList.remove('is-open');
+  backdrop.classList.remove('is-open');
+});
+sidebar.addEventListener('click', (e) => {
+  if (e.target.matches('.toc__link')) {
+    sidebar.classList.remove('is-open');
+    backdrop.classList.remove('is-open');
+  }
+});
+
+// ============================================================
+// SCROLL PROGRESS
+// ============================================================
+const progress = document.getElementById('progressFill');
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  progress.style.width = pct + '%';
+}, { passive: true });
+
+// ============================================================
+// ACTIVE TOC LINK VIA INTERSECTION OBSERVER
+// ============================================================
+const links = Array.from(document.querySelectorAll('.toc__link'));
+const targets = links
+  .map(a => document.querySelector(a.getAttribute('href')))
+  .filter(Boolean);
+
+const setActive = (id) => {
+  links.forEach(a => {
+    if (a.getAttribute('href') === '#' + id) {
+      a.classList.add('is-active');
+      // Auto-open the parent group
+      const group = a.closest('.toc__group');
+      if (group) group.dataset.open = 'true';
+    } else {
+      a.classList.remove('is-active');
+    }
+  });
+};
+
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) setActive(e.target.id);
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+targets.forEach(t => obs.observe(t));
+</script>
+</body>
+</html>

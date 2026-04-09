@@ -23,6 +23,14 @@ let openingBalances = [];
 
 let activeFiscalYear = null;
 
+// Display helper: turn a raw 'debit'/'credit' DB value into a properly
+// title-cased label so it sits next to other capitalised columns ("Cash in
+// Hand", "Assets", "Current Assets") without looking out of place.
+function formatNormalBalance(nb) {
+    if (!nb) return '—';
+    return nb.charAt(0).toUpperCase() + nb.slice(1).toLowerCase();
+}
+
 let currentPage = 1;
 const PAGE_SIZE = 50;
 
@@ -127,13 +135,16 @@ function setupSearchListeners() {
     };
 
     const groupSearch = document.getElementById('groupSearch');
-    if (groupSearch) groupSearch.addEventListener('input', debounce(() => loadAccountGroups()));
+    if (groupSearch) groupSearch.addEventListener('input', debounce(() => renderAccountGroups()));
 
     const accountSearch = document.getElementById('accountSearch');
     if (accountSearch) accountSearch.addEventListener('input', debounce(() => { currentPage = 1; loadAccounts(); }));
 
+    const showInactiveToggle = document.getElementById('showInactiveAccounts');
+    if (showInactiveToggle) showInactiveToggle.addEventListener('change', () => renderAccounts());
+
     const treeSearch = document.getElementById('treeSearch');
-    if (treeSearch) treeSearch.addEventListener('input', debounce(() => loadAccountTree()));
+    if (treeSearch) treeSearch.addEventListener('input', debounce(() => renderAccountTree()));
 }
 
 // ============================================================================
@@ -167,7 +178,7 @@ function renderAccountTypes() {
     tbody.innerHTML = accountTypes.map(t => `
         <tr>
             <td>${AccountsCommon.escapeHtml(t.name)}</td>
-            <td><span class="badge ${t.normal_balance === 'debit' ? 'status-active' : 'status-pending'}">${AccountsCommon.escapeHtml(t.normal_balance || '-')}</span></td>
+            <td><span class="badge ${t.normal_balance === 'debit' ? 'status-active' : 'status-pending'}">${formatNormalBalance(t.normal_balance)}</span></td>
             <td class="actions-cell">-</td>
         </tr>
     `).join('');
@@ -179,17 +190,13 @@ function renderAccountTypes() {
 
 async function loadAccountGroups() {
     try {
-        const search = document.getElementById('groupSearch')?.value || '';
         const typeFilter = groupTypeFilterDropdown?.getValue?.() || '';
         const params = {};
-        if (search) params.search = search;
         if (typeFilter) params.accountTypeId = typeFilter;
 
         const url = AccountsCommon.buildUrl('coa/groups', params);
         const res = await api.request(url, { _skipSpinner: true });
         accountGroups = Array.isArray(res) ? res : (res?.data || res?.items || []);
-
-        document.getElementById('totalGroups') && (document.getElementById('totalGroups').textContent = accountGroups.length);
         renderAccountGroups();
     } catch (err) {
         console.error('[Setup] loadAccountGroups error:', err);
@@ -201,11 +208,23 @@ function renderAccountGroups() {
     const tbody = document.getElementById('accountGroupsTable');
     if (!tbody) return;
 
-    if (!accountGroups.length) {
-        tbody.innerHTML = `<tr class="empty-state"><td colspan="4"><div class="empty-message">
+    const searchTerm = (document.getElementById('groupSearch')?.value || '').trim().toLowerCase();
+    const filtered = searchTerm
+        ? accountGroups.filter(g =>
+            (g.name || '').toLowerCase().includes(searchTerm) ||
+            (g.code || '').toLowerCase().includes(searchTerm))
+        : accountGroups;
+
+    document.getElementById('totalGroups') && (document.getElementById('totalGroups').textContent = filtered.length);
+
+    if (!filtered.length) {
+        const msg = searchTerm
+            ? `No account groups match "${AccountsCommon.escapeHtml(searchTerm)}"`
+            : 'No account groups configured';
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="5"><div class="empty-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-            </svg><p>No account groups configured</p></div></td></tr>`;
+            </svg><p>${msg}</p></div></td></tr>`;
         return;
     }
 
@@ -214,7 +233,7 @@ function renderAccountGroups() {
     const groupMap = {};
     accountGroups.forEach(g => { groupMap[g.id] = g.name; });
 
-    tbody.innerHTML = accountGroups.map(g => {
+    tbody.innerHTML = filtered.map(g => {
         const typeName = typeMap[g.account_type_id] || g.account_type_name || '-';
         const parentName = g.parent_group_id ? (groupMap[g.parent_group_id] || g.parent_group_name || '-') : '-';
         const actions = accountsRoles.isAdmin()
@@ -222,6 +241,7 @@ function renderAccountGroups() {
                <button class="btn-icon danger" onclick="deleteGroup('${g.id}')" data-tooltip="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`
             : '-';
         return `<tr>
+            <td><code>${AccountsCommon.escapeHtml(g.code || '—')}</code></td>
             <td>${AccountsCommon.escapeHtml(g.name)}</td>
             <td>${AccountsCommon.escapeHtml(typeName)}</td>
             <td>${AccountsCommon.escapeHtml(parentName)}</td>
@@ -286,11 +306,13 @@ async function saveAccountGroup() {
 }
 
 async function deleteGroup(id) {
-    const ok = await Confirm.danger('Are you sure you want to delete this account group?', 'Delete Account Group');
+    const g = accountGroups.find(x => x.id === id);
+    const label = g ? `"${g.name}"${g.code ? ` (${g.code})` : ''}` : 'this account group';
+    const ok = await Confirm.danger(`Are you sure you want to delete ${label}? This cannot be undone.`, 'Delete Account Group');
     if (!ok) return;
     try {
         await api.request(AccountsCommon.buildUrl(`coa/groups/${id}`), { method: 'DELETE' });
-        Toast.success('Account group deleted');
+        Toast.success(`Deleted account group ${label}`);
         await loadAccountGroups();
     } catch (err) {
         console.error('[Setup] deleteGroup error:', err);
@@ -322,13 +344,14 @@ async function loadAccounts() {
         const search = document.getElementById('accountSearch')?.value || '';
         const typeFilter = accountTypeFilterDropdown?.getValue?.() || '';
         const groupFilter = accountGroupFilterDropdown?.getValue?.() || '';
-        const showInactive = document.getElementById('showInactiveAccounts')?.checked || false;
 
+        // Always fetch active + inactive so the stat tiles can show the true
+        // counts. The "Show Inactive" toggle filters render-side via
+        // renderAccounts() so the stats stay accurate regardless.
         const params = { page: currentPage, pageSize: PAGE_SIZE };
         if (search) params.search = search;
         if (typeFilter) params.accountTypeId = typeFilter;
         if (groupFilter) params.accountGroupId = groupFilter;
-        if (showInactive) params.includeInactive = true;
 
         const url = AccountsCommon.buildUrl('coa', params);
         const res = await api.request(url, { _skipSpinner: true });
@@ -362,12 +385,18 @@ function renderAccounts() {
     const tbody = document.getElementById('accountsTable');
     if (!tbody) return;
 
-    if (!accounts.length) {
-        tbody.innerHTML = `<tr class="empty-state"><td colspan="8"><div class="empty-message">
+    const showInactive = document.getElementById('showInactiveAccounts')?.checked || false;
+    const visible = showInactive ? accounts : accounts.filter(a => a.is_active !== false);
+
+    if (!visible.length) {
+        const msg = !accounts.length
+            ? 'No accounts configured'
+            : 'No active accounts — toggle "Show Inactive" to see deactivated accounts';
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="7"><div class="empty-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                 <line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>
-            </svg><p>No accounts configured</p></div></td></tr>`;
+            </svg><p>${msg}</p></div></td></tr>`;
         return;
     }
 
@@ -376,7 +405,7 @@ function renderAccounts() {
     const groupMap = {};
     accountGroups.forEach(g => { groupMap[g.id] = g.name; });
 
-    tbody.innerHTML = accounts.map(a => {
+    tbody.innerHTML = visible.map(a => {
         const typeName = typeMap[a.account_type_id] || a.account_type_name || '-';
         const groupName = groupMap[a.account_group_id] || a.account_group_name || '-';
         const status = a.is_active === false ? 'inactive' : 'active';
@@ -393,7 +422,6 @@ function renderAccounts() {
             <td>${AccountsCommon.escapeHtml(a.account_name || a.name || '-')}</td>
             <td>${AccountsCommon.escapeHtml(typeName)}</td>
             <td>${AccountsCommon.escapeHtml(groupName)}</td>
-            <td><span class="badge ${a.normal_balance === 'debit' ? 'status-active' : 'status-pending'}">${AccountsCommon.escapeHtml(a.normal_balance || '-')}</span></td>
             <td class="text-right">${balance}</td>
             <td>${AccountsCommon.statusBadge(status)}</td>
             <td class="actions-cell">${actions}</td>
@@ -410,6 +438,13 @@ function showCreateAccountModal() {
     populateAccountGroupSelect();
     populateAccountParentSelect();
     AccountsCommon.openModal('accountModal');
+    // After the modal opens, the SearchableDropdown wrappers may still hold
+    // stale labels from the previous session. Force-resync them by dispatching
+    // a change on each wrapped <select>; the syncFromLinked listener installed
+    // by convertSelectToSearchable will then pull the post-reset value.
+    ['accountType', 'accountGroup', 'accountParent', 'accountNormalBalance'].forEach(id => {
+        document.getElementById(id)?.dispatchEvent(new Event('change', { bubbles: true }));
+    });
 }
 
 async function editAccount(id) {
@@ -446,10 +481,17 @@ async function saveAccount() {
         return;
     }
 
+    // NOTE: backend model fields are `account_code` and `account_name`, NOT `code`/`name`.
+    // Sending the wrong names causes a 400 because they're non-nullable on the server.
     const payload = {
-        code, name, account_type_id: accountTypeId, account_group_id: accountGroupId,
-        parent_account_id: parentAccountId, normal_balance: normalBalance,
-        description, allow_direct_posting: allowDirectPosting
+        account_code: code,
+        account_name: name,
+        account_type_id: accountTypeId,
+        account_group_id: accountGroupId,
+        parent_account_id: parentAccountId,
+        normal_balance: normalBalance,
+        description,
+        allow_direct_posting: allowDirectPosting
     };
 
     try {
@@ -469,11 +511,20 @@ async function saveAccount() {
 }
 
 async function deactivateAccount(id) {
-    const ok = await Confirm.show({ title: 'Deactivate Account', message: 'Are you sure you want to deactivate this account?', confirmText: 'Deactivate', type: 'warning' });
+    const a = accounts.find(x => x.id === id);
+    const code = a?.account_code || a?.code;
+    const name = a?.account_name || a?.name;
+    const label = a ? `"${name}"${code ? ` (${code})` : ''}` : 'this account';
+    const ok = await Confirm.show({
+        title: 'Deactivate Account',
+        message: `Are you sure you want to deactivate ${label}? It will be hidden from new transactions but its history will be preserved. You can re-enable it later via the "Show Inactive" toggle.`,
+        confirmText: 'Deactivate',
+        type: 'warning'
+    });
     if (!ok) return;
     try {
         await api.request(AccountsCommon.buildUrl(`coa/${id}`), { method: 'DELETE' });
-        Toast.success('Account deactivated');
+        Toast.success(`Deactivated account ${label}`);
         await loadAccounts();
     } catch (err) {
         console.error('[Setup] deactivateAccount error:', err);
@@ -500,7 +551,7 @@ async function viewAccountDetail(id) {
         document.getElementById('acctDetailType').textContent = typeMap[a.account_type_id] || a.account_type_name || '-';
         document.getElementById('acctDetailGroup').textContent = groupMap[a.account_group_id] || a.account_group_name || '-';
         document.getElementById('acctDetailParent').textContent = parentName;
-        document.getElementById('acctDetailNormalBalance').innerHTML = `<span class="badge ${a.normal_balance === 'debit' ? 'status-active' : 'status-pending'}">${AccountsCommon.escapeHtml(a.normal_balance || '-')}</span>`;
+        document.getElementById('acctDetailNormalBalance').innerHTML = `<span class="badge ${a.normal_balance === 'debit' ? 'status-active' : 'status-pending'}">${formatNormalBalance(a.normal_balance)}</span>`;
         document.getElementById('acctDetailDescription').textContent = a.description || '-';
         document.getElementById('acctDetailIsActive').innerHTML = a.is_active !== false ? '<span class="badge status-active">Active</span>' : '<span class="badge status-rejected">Inactive</span>';
         document.getElementById('acctDetailBalance').textContent = (a.current_balance ?? a.balance) != null ? AccountsCommon.formatCurrency(a.current_balance ?? a.balance) : '-';
@@ -549,11 +600,21 @@ async function importAccounts() {
 function onAccountTypeChange() {
     const typeId = document.getElementById('accountType').value;
     populateAccountGroupSelect(null, typeId);
-    // Auto-set normal balance based on type
+    // Auto-set normal balance based on type. The user can still override this
+    // afterwards (the backend honors the override for contra accounts like
+    // Accumulated Depreciation, which is an Asset with a Credit normal balance).
     const type = accountTypes.find(t => t.id === typeId);
     if (type && type.normal_balance) {
-        document.getElementById('accountNormalBalance').value = type.normal_balance;
+        const nbSel = document.getElementById('accountNormalBalance');
+        nbSel.value = type.normal_balance;
+        // CRITICAL: dispatch change so the SearchableDropdown wrapper around
+        // accountNormalBalance updates its visible label. Without this, the
+        // underlying <select> has the right value but the visible text stays
+        // at "Select…" — fooling the user into thinking the field is empty.
+        nbSel.dispatchEvent(new Event('change', { bubbles: true }));
     }
+    // Also re-sync the accountGroup wrapper after we replaced its options.
+    document.getElementById('accountGroup')?.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 function populateAccountTypeSelect(selectedValue) {
@@ -583,34 +644,58 @@ function populateAccountParentSelect(selectedValue, excludeId) {
 // 4. ACCOUNT TREE
 // ============================================================================
 
+let cachedAccountTree = [];
+
 async function loadAccountTree() {
     const container = document.getElementById('accountTreeContainer');
     if (!container) return;
 
     try {
-        const search = document.getElementById('treeSearch')?.value || '';
-        const params = {};
-        if (search) params.search = search;
-
-        const url = AccountsCommon.buildUrl('coa/tree', params);
+        const url = AccountsCommon.buildUrl('coa/tree', {});
         const res = await api.request(url, { _skipSpinner: true });
-        const treeData = Array.isArray(res) ? res : (res?.data || res?.items || []);
-
-        if (!treeData.length) {
-            container.innerHTML = `<div class="empty-message">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="19" r="2"></circle>
-                </svg><p>No accounts to display in tree</p></div>`;
-            return;
-        }
-
-        container.innerHTML = '';
-        renderTree(treeData, container, 0);
+        cachedAccountTree = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        renderAccountTree();
     } catch (err) {
         console.error('[Setup] loadAccountTree error:', err);
         container.innerHTML = `<div class="empty-message"><p>Failed to load account tree</p></div>`;
     }
+}
+
+function filterTree(nodes, term) {
+    const out = [];
+    for (const node of nodes) {
+        const code = (node.account_code || node.code || '').toLowerCase();
+        const name = (node.account_name || node.name || '').toLowerCase();
+        const selfMatch = code.includes(term) || name.includes(term);
+        const filteredChildren = node.children ? filterTree(node.children, term) : [];
+        if (selfMatch || filteredChildren.length > 0) {
+            out.push({ ...node, children: filteredChildren });
+        }
+    }
+    return out;
+}
+
+function renderAccountTree() {
+    const container = document.getElementById('accountTreeContainer');
+    if (!container) return;
+
+    const term = (document.getElementById('treeSearch')?.value || '').trim().toLowerCase();
+    const tree = term ? filterTree(cachedAccountTree, term) : cachedAccountTree;
+
+    if (!tree.length) {
+        const msg = term
+            ? `No accounts match "${AccountsCommon.escapeHtml(term)}"`
+            : 'No accounts to display in tree';
+        container.innerHTML = `<div class="empty-message">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="19" r="2"></circle>
+            </svg><p>${msg}</p></div>`;
+        return;
+    }
+
+    container.innerHTML = '';
+    renderTree(tree, container, 0);
 }
 
 function renderTree(nodes, container, level) {
@@ -686,9 +771,42 @@ async function loadOpeningBalances() {
     }
 
     try {
-        const url = AccountsCommon.buildUrl('coa/balances', { fiscalYearId });
-        const res = await api.request(url, { _skipSpinner: true });
-        openingBalances = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        // Fetch existing balances AND all active accounts in parallel, then merge.
+        // The page is useless if it only shows accounts that already have balances —
+        // first-time setup needs every active account as an input row.
+        const [balancesRes, accountsRes] = await Promise.all([
+            api.request(AccountsCommon.buildUrl('coa/balances', { fiscalYearId }), { _skipSpinner: true }),
+            api.request(AccountsCommon.buildUrl('coa', { pageSize: 500 }), { _skipSpinner: true })
+        ]);
+
+        const existingBalances = Array.isArray(balancesRes) ? balancesRes : (balancesRes?.data || balancesRes?.items || []);
+        const allAccounts = Array.isArray(accountsRes) ? accountsRes : (accountsRes?.data || accountsRes?.items || []);
+
+        // Build a map of account_id → { debit_balance, credit_balance } from the existing
+        // balances. The API returns rows from account_period_balances which use the column
+        // names opening_debit / opening_credit, so try those first and fall back to the
+        // shorter aliases for forward-compat.
+        const balanceMap = {};
+        existingBalances.forEach(b => {
+            balanceMap[b.account_id || b.id] = {
+                debit_balance: b.opening_debit ?? b.debit_balance ?? null,
+                credit_balance: b.opening_credit ?? b.credit_balance ?? null
+            };
+        });
+
+        // Merge — every active account becomes a row, with pre-filled balances if any exist.
+        openingBalances = allAccounts
+            .filter(a => a.is_active !== false)
+            .map(a => ({
+                account_id: a.id,
+                account_code: a.account_code || a.code,
+                account_name: a.account_name || a.name,
+                account_type_id: a.account_type_id,
+                account_type_name: a.account_type_name,
+                debit_balance: balanceMap[a.id]?.debit_balance ?? null,
+                credit_balance: balanceMap[a.id]?.credit_balance ?? null
+            }));
+
         renderOpeningBalances();
     } catch (err) {
         console.error('[Setup] loadOpeningBalances error:', err);
@@ -701,31 +819,71 @@ function renderOpeningBalances() {
     if (!tbody) return;
 
     if (!openingBalances.length) {
-        tbody.innerHTML = `<tr class="empty-state"><td colspan="5"><div class="empty-message"><p>No accounts with opening balances</p></div></td></tr>`;
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="5"><div class="empty-message"><p>No active accounts found. Create accounts in the Accounts tab first.</p></div></td></tr>`;
         return;
     }
 
     const typeMap = {};
     accountTypes.forEach(t => { typeMap[t.id] = t.name; });
 
-    tbody.innerHTML = openingBalances.map(ob => {
+    const rows = openingBalances.map(ob => {
         const typeName = ob.account_type_name || typeMap[ob.account_type_id] || '-';
         const isAdmin = accountsRoles.isAdmin();
-        const debitVal = ob.debit_balance != null ? ob.debit_balance : '';
-        const creditVal = ob.credit_balance != null ? ob.credit_balance : '';
+        const debitVal = ob.debit_balance != null && ob.debit_balance !== 0 ? ob.debit_balance : '';
+        const creditVal = ob.credit_balance != null && ob.credit_balance !== 0 ? ob.credit_balance : '';
 
         return `<tr>
             <td><code>${AccountsCommon.escapeHtml(ob.account_code || ob.code || '-')}</code></td>
             <td>${AccountsCommon.escapeHtml(ob.account_name || ob.name || '-')}</td>
             <td>${AccountsCommon.escapeHtml(typeName)}</td>
             <td>${isAdmin
-                ? `<input type="number" class="form-control form-control-sm ob-debit" data-account-id="${ob.account_id || ob.id}" value="${debitVal}" step="0.01" min="0" style="width:120px">`
+                ? `<input type="number" class="form-control form-control-sm ob-debit" data-account-id="${ob.account_id || ob.id}" value="${debitVal}" step="0.01" min="0" placeholder="0.00" style="width:140px;text-align:right" oninput="updateOpeningBalanceTotals()">`
                 : (debitVal !== '' ? AccountsCommon.formatCurrency(debitVal) : '-')}</td>
             <td>${isAdmin
-                ? `<input type="number" class="form-control form-control-sm ob-credit" data-account-id="${ob.account_id || ob.id}" value="${creditVal}" step="0.01" min="0" style="width:120px">`
+                ? `<input type="number" class="form-control form-control-sm ob-credit" data-account-id="${ob.account_id || ob.id}" value="${creditVal}" step="0.01" min="0" placeholder="0.00" style="width:140px;text-align:right" oninput="updateOpeningBalanceTotals()">`
                 : (creditVal !== '' ? AccountsCommon.formatCurrency(creditVal) : '-')}</td>
         </tr>`;
     }).join('');
+
+    // Totals row — live-updates as the user types so they can see when debits = credits.
+    const totalsRow = `<tr class="ob-totals-row" style="border-top:2px solid var(--border-primary);font-weight:600">
+        <td colspan="3" style="text-align:right;padding-top:14px">Totals</td>
+        <td style="text-align:right;padding-top:14px"><span id="obTotalDebit">₹0.00</span></td>
+        <td style="text-align:right;padding-top:14px"><span id="obTotalCredit">₹0.00</span></td>
+    </tr>
+    <tr class="ob-balance-row">
+        <td colspan="5" style="text-align:right;padding:8px 12px 14px"><span id="obBalanceStatus" style="font-size:0.875rem;color:var(--text-secondary)">Enter opening balances above. Total debits must equal total credits.</span></td>
+    </tr>`;
+
+    tbody.innerHTML = rows + totalsRow;
+    updateOpeningBalanceTotals();
+}
+
+function updateOpeningBalanceTotals() {
+    let totalDebit = 0;
+    let totalCredit = 0;
+    document.querySelectorAll('.ob-debit').forEach(i => { totalDebit += parseFloat(i.value) || 0; });
+    document.querySelectorAll('.ob-credit').forEach(i => { totalCredit += parseFloat(i.value) || 0; });
+
+    const debitEl = document.getElementById('obTotalDebit');
+    const creditEl = document.getElementById('obTotalCredit');
+    const statusEl = document.getElementById('obBalanceStatus');
+    if (debitEl) debitEl.textContent = AccountsCommon.formatCurrency(totalDebit);
+    if (creditEl) creditEl.textContent = AccountsCommon.formatCurrency(totalCredit);
+
+    if (statusEl) {
+        if (totalDebit === 0 && totalCredit === 0) {
+            statusEl.textContent = 'Enter opening balances above. Total debits must equal total credits.';
+            statusEl.style.color = 'var(--text-secondary)';
+        } else if (Math.abs(totalDebit - totalCredit) < 0.01) {
+            statusEl.textContent = `Balanced: debits and credits both equal ${AccountsCommon.formatCurrency(totalDebit)}. Ready to save.`;
+            statusEl.style.color = 'var(--color-success)';
+        } else {
+            const diff = totalDebit - totalCredit;
+            statusEl.textContent = `Unbalanced: ${diff > 0 ? 'debits exceed credits' : 'credits exceed debits'} by ${AccountsCommon.formatCurrency(Math.abs(diff))}.`;
+            statusEl.style.color = 'var(--color-error)';
+        }
+    }
 }
 
 async function saveAllOpeningBalances() {
@@ -735,28 +893,66 @@ async function saveAllOpeningBalances() {
         return;
     }
 
-    const balances = [];
+    // Collect non-zero rows. Each row becomes ONE backend POST because the
+    // SetOpeningBalanceRequest endpoint takes a single account at a time.
+    const entries = [];
     document.querySelectorAll('.ob-debit').forEach(input => {
         const accountId = input.dataset.accountId;
         const debit = parseFloat(input.value) || 0;
         const creditInput = document.querySelector(`.ob-credit[data-account-id="${accountId}"]`);
         const credit = creditInput ? (parseFloat(creditInput.value) || 0) : 0;
-        if (debit > 0 || credit > 0) {
-            balances.push({ account_id: accountId, debit_balance: debit, credit_balance: credit });
+        if (debit > 0 && credit > 0) {
+            // Defensive — same row can't be both debit and credit. The render
+            // doesn't prevent it, so guard here.
+            entries.push({ accountId, error: 'Cannot have both debit and credit on the same row' });
+        } else if (debit > 0) {
+            entries.push({ accountId, amount: debit, balance_type: 'debit' });
+        } else if (credit > 0) {
+            entries.push({ accountId, amount: credit, balance_type: 'credit' });
         }
     });
 
-    if (!balances.length) {
-        Toast.error('No balances to save');
+    const errors = entries.filter(e => e.error);
+    if (errors.length) {
+        Toast.error(errors[0].error);
+        return;
+    }
+    if (!entries.length) {
+        Toast.error('No balances to save — enter a debit or credit on at least one row');
         return;
     }
 
+    // Validate balanced (debits === credits) before sending anything.
+    let totalDebit = 0, totalCredit = 0;
+    entries.forEach(e => {
+        if (e.balance_type === 'debit') totalDebit += e.amount;
+        else if (e.balance_type === 'credit') totalCredit += e.amount;
+    });
+    if (Math.abs(totalDebit - totalCredit) >= 0.01) {
+        Toast.error(`Unbalanced: debits ${AccountsCommon.formatCurrency(totalDebit)} ≠ credits ${AccountsCommon.formatCurrency(totalCredit)}. Adjust the amounts before saving.`);
+        return;
+    }
+
+    // Find the fiscal year start date — backend requires as_of_date.
+    const fyList = (window.fiscalYears || []).length ? window.fiscalYears : (typeof fiscalYears !== 'undefined' ? fiscalYears : []);
+    const fy = fyList.find(f => f.id === fiscalYearId);
+    const asOfDate = fy?.start_date || fy?.startDate || new Date().toISOString().slice(0, 10);
+
     try {
-        await api.request(AccountsCommon.buildUrl('coa/opening-balances'), {
-            method: 'POST',
-            body: JSON.stringify({ fiscal_year_id: fiscalYearId, balances })
-        });
-        Toast.success('Opening balances saved');
+        let saved = 0;
+        for (const e of entries) {
+            await api.request(AccountsCommon.buildUrl('coa/opening-balances'), {
+                method: 'POST',
+                body: JSON.stringify({
+                    account_id: e.accountId,
+                    amount: e.amount,
+                    balance_type: e.balance_type,
+                    as_of_date: typeof asOfDate === 'string' ? asOfDate.slice(0, 10) : new Date(asOfDate).toISOString().slice(0, 10)
+                })
+            });
+            saved++;
+        }
+        Toast.success(`Saved ${saved} opening balance${saved === 1 ? '' : 's'} (debits ${AccountsCommon.formatCurrency(totalDebit)}, credits ${AccountsCommon.formatCurrency(totalCredit)})`);
         await loadOpeningBalances();
     } catch (err) {
         console.error('[Setup] saveAllOpeningBalances error:', err);
@@ -800,6 +996,22 @@ async function loadFiscalYears() {
         if (closedEl) closedEl.textContent = closedCount;
 
         renderFiscalYears();
+
+        // Bug fix: also refresh the fiscal-year SearchableDropdowns on the
+        // Opening Balances and Fiscal Periods tabs so they reflect newly
+        // created/closed years without a full page reload.
+        const fyOptions = [{ value: '', label: 'Select Fiscal Year' }, ...fiscalYears.map(fy => ({ value: fy.id, label: fy.name }))];
+        if (obFiscalYearDropdown && typeof obFiscalYearDropdown.setOptions === 'function') {
+            obFiscalYearDropdown.setOptions(fyOptions, true);
+        }
+        if (periodFiscalYearDropdown && typeof periodFiscalYearDropdown.setOptions === 'function') {
+            periodFiscalYearDropdown.setOptions(fyOptions, true);
+            // If nothing is selected yet but we now have an active year, auto-select it
+            if (!periodFiscalYearDropdown.getValue?.() && activeYear) {
+                periodFiscalYearDropdown.setValue?.(activeYear.id);
+                if (typeof loadFiscalPeriods === 'function') loadFiscalPeriods();
+            }
+        }
     } catch (err) {
         console.error('[Setup] loadFiscalYears error:', err);
         Toast.error('Failed to load fiscal years');
@@ -971,11 +1183,18 @@ function renderFiscalPeriods() {
 }
 
 async function lockPeriod(id) {
-    const ok = await Confirm.show({ title: 'Lock Period', message: 'Lock this period? No more journal entries can be posted.', confirmText: 'Lock', type: 'warning' });
+    const p = (window.fiscalPeriods || []).find(x => x.id === id) || fiscalPeriods?.find?.(x => x.id === id);
+    const label = p ? `"${p.name}"` : 'this period';
+    const ok = await Confirm.show({
+        title: 'Lock Period',
+        message: `Lock ${label}? No more journal entries can be posted to this period until you unlock it. Existing entries are not affected.`,
+        confirmText: 'Lock',
+        type: 'warning'
+    });
     if (!ok) return;
     try {
         await api.request(AccountsCommon.buildUrl(`fiscal/periods/${id}/lock`), { method: 'POST' });
-        Toast.success('Period locked');
+        Toast.success(`Locked period ${label}`);
         await loadFiscalPeriods();
     } catch (err) {
         console.error('[Setup] lockPeriod error:', err);
@@ -984,11 +1203,18 @@ async function lockPeriod(id) {
 }
 
 async function unlockPeriod(id) {
-    const ok = await Confirm.show({ title: 'Unlock Period', message: 'Unlock this period? Journal entries will be allowed again.', confirmText: 'Unlock', type: 'warning' });
+    const p = (window.fiscalPeriods || []).find(x => x.id === id) || fiscalPeriods?.find?.(x => x.id === id);
+    const label = p ? `"${p.name}"` : 'this period';
+    const ok = await Confirm.show({
+        title: 'Unlock Period',
+        message: `Unlock ${label}? Journal entries will be allowed in this period again.`,
+        confirmText: 'Unlock',
+        type: 'warning'
+    });
     if (!ok) return;
     try {
         await api.request(AccountsCommon.buildUrl(`fiscal/periods/${id}/unlock`), { method: 'POST' });
-        Toast.success('Period unlocked');
+        Toast.success(`Unlocked period ${label}`);
         await loadFiscalPeriods();
     } catch (err) {
         console.error('[Setup] unlockPeriod error:', err);

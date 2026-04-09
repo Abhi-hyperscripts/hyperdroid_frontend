@@ -549,6 +549,63 @@ function convertSelectToSearchable(selectId, options = {}) {
         }
     });
 
+    // Observe external mutations of the linked native <select>. When other code
+    // does `select.value = "foo"; select.dispatchEvent(new Event("change"))`,
+    // the wrapper's visible label, internal selectedValue, and data-value attr
+    // would otherwise stay stale. The value-comparison guard prevents recursion
+    // when the wrapper itself triggers the change event from setValue().
+    const syncFromLinked = () => {
+        if (String(select.value) !== String(dropdown.getValue() ?? '')) {
+            dropdown.setValue(select.value, false);
+        }
+    };
+    select.addEventListener('change', syncFromLinked);
+
+    // form.reset() does NOT fire 'change' on selects, so we also need to listen
+    // on the parent form's 'reset' event. Without this, reopening a modal after
+    // a previous fill-and-cancel leaves stale labels in every wrapped dropdown
+    // (the underlying select gets reset to the first option, but the wrapper's
+    // visible text and data-value attribute stay frozen at the previous values).
+    const parentForm = select.closest('form');
+    if (parentForm) {
+        parentForm.addEventListener('reset', () => {
+            // 'reset' fires before the form actually resets the controls; wait
+            // one tick so we read the post-reset value of the linked select.
+            setTimeout(syncFromLinked, 0);
+        });
+    }
+
+    // Watch for external code rewriting the linked <select>.innerHTML — for
+    // example, dependent dropdowns where the available options change when a
+    // parent field is picked (Account Group filtered by Account Type, City
+    // filtered by Country, etc.). Without this MutationObserver, the wrapper
+    // would still hold the option list snapshot from conversion time and
+    // wouldn't recognise newly-added options.
+    if (typeof MutationObserver !== 'undefined') {
+        const optionsObserver = new MutationObserver(() => {
+            const newOpts = Array.from(select.options).map(opt => ({
+                value: opt.value,
+                label: opt.textContent.trim(),
+                description: opt.dataset.description || ''
+            }));
+            // Skip if options haven't actually changed (avoids resetting the
+            // user's selection on every spurious mutation).
+            const oldKey = (dropdown.options || []).map(o => o.value + '|' + o.label).join('||');
+            const newKey = newOpts.map(o => o.value + '|' + o.label).join('||');
+            if (oldKey === newKey) return;
+            dropdown.setOptions(newOpts, true);
+            // After re-loading options, re-sync to the current native value
+            // in case the rewrite also changed the selected value.
+            syncFromLinked();
+        });
+        optionsObserver.observe(select, { childList: true, subtree: true, characterData: true });
+    }
+
+    // Expose the dropdown instance on the linked <select> for callers that
+    // want to manipulate it directly (rare; the observer above handles most
+    // cases without anyone needing to know about the wrapper).
+    select._searchableDropdown = dropdown;
+
     return dropdown;
 }
 

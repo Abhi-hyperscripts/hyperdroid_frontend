@@ -196,7 +196,7 @@ async function loadCustomerInvoices() {
 
         const tbody = document.getElementById('customerInvoicesTable');
         if (!items.length) {
-            tbody.innerHTML = '<tr class="empty-state"><td colspan="11"><div class="empty-message"><p>No invoices found</p></div></td></tr>';
+            tbody.innerHTML = '<tr class="empty-state"><td colspan="8"><div class="empty-message"><p>No invoices found</p></div></td></tr>';
         } else {
             tbody.innerHTML = items.map(inv => {
                 const custName = inv.customer_name || customers.find(c => c.id === inv.customer_id)?.name || '-';
@@ -205,13 +205,10 @@ async function loadCustomerInvoices() {
                     <td>${AccountsCommon.escapeHtml(custName)}</td>
                     <td>${AccountsCommon.formatDate(inv.invoice_date)}</td>
                     <td>${AccountsCommon.formatDate(inv.due_date)}</td>
-                    <td>${AccountsCommon.formatCurrency(inv.subtotal)}</td>
-                    <td>${AccountsCommon.formatCurrency(inv.tax_amount)}</td>
-                    <td>${AccountsCommon.formatCurrency(inv.total_amount)}</td>
-                    <td>${AccountsCommon.formatCurrency(inv.paid_amount)}</td>
-                    <td>${AccountsCommon.formatCurrency(inv.balance_due || inv.balance)}</td>
+                    <td class="text-right">${AccountsCommon.formatCurrency(inv.total_amount)}</td>
+                    <td class="text-right">${AccountsCommon.formatCurrency(inv.balance_due || inv.balance)}</td>
                     <td>${AccountsCommon.statusBadge(inv.status)}</td>
-                    <td>${invoiceActions(inv)}</td>
+                    <td class="actions-cell">${invoiceActions(inv)}</td>
                 </tr>`;
             }).join('');
         }
@@ -346,7 +343,12 @@ function addInvoiceLine(data = {}) {
     if (data.unit_price !== undefined && data.rate === undefined) data.rate = data.unit_price;
     const tbody = document.getElementById('invoiceLines');
     const row = document.createElement('tr');
-    const acctOptions = accounts.map(a => `<option value="${a.id}" ${a.id === data.account_id ? 'selected' : ''}>${AccountsCommon.escapeHtml(a.name || a.code)}</option>`).join('');
+    const acctOptions = accounts.map(a => {
+        const code = a.account_code || a.code || '';
+        const name = a.account_name || a.name || '';
+        const label = code && name ? `${code} — ${name}` : (name || code);
+        return `<option value="${a.id}" ${a.id === data.account_id ? 'selected' : ''}>${AccountsCommon.escapeHtml(label)}</option>`;
+    }).join('');
 
     row.innerHTML = `
         <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(data.description || '')}" placeholder="Description"></td>

@@ -193,8 +193,8 @@ async function viewTaxConfig(id) {
                 <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${AccountsCommon.statusBadge(status)}</span></div>
                 <div class="detail-row"><span class="detail-label">Effective From</span><span class="detail-value">${AccountsCommon.formatDate(c.effective_from)}</span></div>
                 <div class="detail-row"><span class="detail-label">Effective To</span><span class="detail-value">${AccountsCommon.formatDate(c.effective_to)}</span></div>
-                <div class="detail-row"><span class="detail-label">Description</span><span class="detail-value">${esc(c.description || c.configuration?.description || '-')}</span></div>
-                <div class="detail-row" style="flex-direction:column;gap:0.5rem;"><span class="detail-label">Configuration (JSON)</span>${configDisplay}</div>
+                <div class="detail-row full-width"><span class="detail-label">Description</span><span class="detail-value">${esc(c.description || c.configuration?.description || '-')}</span></div>
+                <div class="detail-row full-width"><span class="detail-label">Configuration (JSON)</span><span class="detail-value">${configDisplay}</span></div>
                 <div class="detail-row"><span class="detail-label">Created</span><span class="detail-value">${AccountsCommon.formatDate(c.created_at)}</span></div>
                 <div class="detail-row"><span class="detail-label">Updated</span><span class="detail-value">${AccountsCommon.formatDate(c.updated_at)}</span></div>
             </div>`;

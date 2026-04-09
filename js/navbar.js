@@ -259,6 +259,22 @@ const NavbarComponent = {
                     <a href="/pages/calculators/professional-tax-calculator.html" class="nav-dropdown-item" data-nav="professional-tax">Professional Tax <span>State-wise PT</span></a>
                 </div>
             </div>
+            <!-- Knowledge Base Dropdown -->
+            <div class="nav-dropdown" data-nav="knowledge-base">
+                <span class="nav-dropdown-trigger">
+                    Knowledge Base
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </span>
+                <div class="nav-dropdown-menu">
+                    <div class="nav-dropdown-label">Setup Guides</div>
+                    <a href="/KnowledgeBase/Accounts/Accounts-Setup-Guide.html" class="nav-dropdown-item" data-nav="kb-accounts">Accounts <span>Books, invoices, GST &mdash; from zero</span></a>
+                    <div class="nav-dropdown-divider"></div>
+                    <div class="nav-dropdown-label">For Investors</div>
+                    <a href="/pitch-deck/ragenaizer-pitch-deck.html" class="nav-dropdown-item" data-nav="kb-pitch-deck">Pitch Deck 2026 <span>The investor narrative &mdash; 11 slides</span></a>
+                </div>
+            </div>
             <a href="/pages/kip.html" class="nav-link" data-nav="kip">KIP</a>
             <a href="/pages/pricing.html" class="nav-link" data-nav="pricing">Pricing</a>
         </div>
@@ -302,6 +318,10 @@ const NavbarComponent = {
             <div class="nav-mobile-section">Resources</div>
             <a href="/pages/insights/" class="nav-mobile-link" data-nav="all-insights">Insights & Reports</a>
             <a href="/pages/blog/" class="nav-mobile-link" data-nav="blog">Blog</a>
+            <div class="nav-mobile-divider"></div>
+            <div class="nav-mobile-section">Knowledge Base</div>
+            <a href="/KnowledgeBase/Accounts/Accounts-Setup-Guide.html" class="nav-mobile-link" data-nav="kb-accounts">Accounts <span>Books, invoices, GST &mdash; from zero</span></a>
+            <a href="/pitch-deck/ragenaizer-pitch-deck.html" class="nav-mobile-link" data-nav="kb-pitch-deck">Pitch Deck 2026 <span>The investor narrative</span></a>
             <div class="nav-mobile-divider"></div>
             <div class="nav-mobile-cta">
                 <a href="/pages/login.html" class="btn-secondary" data-nav="signin">Sign In</a>

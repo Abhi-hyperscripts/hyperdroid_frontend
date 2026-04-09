@@ -131,7 +131,7 @@ function renderVendorsTable() {
     }
 
     if (!filtered.length) {
-        tbody.innerHTML = `<tr class="empty-state"><td colspan="8"><div class="empty-message">
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="7"><div class="empty-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                 <rect x="1" y="3" width="15" height="13"></rect>
                 <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
@@ -153,7 +153,6 @@ function renderVendorsTable() {
             <td>${AccountsCommon.escapeHtml(v.vendor_code || v.code || '-')}</td>
             <td>${AccountsCommon.escapeHtml(v.name)}</td>
             <td>${AccountsCommon.escapeHtml(v.phone || '-')}</td>
-            <td>${AccountsCommon.escapeHtml(v.email || '-')}</td>
             <td>${AccountsCommon.escapeHtml(v.tax_id || '-')}</td>
             <td>${v.payment_terms_days != null ? v.payment_terms_days + ' days' : '-'}</td>
             <td><span class="badge ${statusClass}">${statusText}</span></td>
@@ -445,7 +444,7 @@ function renderCustomersTable() {
     }
 
     if (!filtered.length) {
-        tbody.innerHTML = `<tr class="empty-state"><td colspan="8"><div class="empty-message">
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="7"><div class="empty-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>
@@ -468,7 +467,6 @@ function renderCustomersTable() {
             <td>${AccountsCommon.escapeHtml(c.customer_code || c.code || '-')}</td>
             <td>${AccountsCommon.escapeHtml(c.name)}</td>
             <td>${AccountsCommon.escapeHtml(c.phone || '-')}</td>
-            <td>${AccountsCommon.escapeHtml(c.email || '-')}</td>
             <td>${AccountsCommon.escapeHtml(c.tax_id || '-')}</td>
             <td>${creditDisplay}</td>
             <td><span class="badge ${statusClass}">${statusText}</span></td>
@@ -528,8 +526,8 @@ async function saveCustomer() {
         display_name: document.getElementById('customerDisplayName').value.trim() || null,
         email: document.getElementById('customerEmail').value.trim() || null,
         phone: document.getElementById('customerPhone').value.trim() || null,
-        address_line1: document.getElementById('customerAddressLine1').value.trim() || null,
-        address_line2: document.getElementById('customerAddressLine2').value.trim() || null,
+        billing_address_line1: document.getElementById('customerAddressLine1').value.trim() || null,
+        billing_address_line2: document.getElementById('customerAddressLine2').value.trim() || null,
         city: document.getElementById('customerCity').value.trim() || null,
         state: document.getElementById('customerState').value.trim() || null,
         state_code: document.getElementById('customerStateCode').value.trim() || null,
