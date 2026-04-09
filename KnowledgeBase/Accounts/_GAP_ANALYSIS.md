@@ -132,7 +132,7 @@ next" closing callout is updated to mention any new modules.
 
 | Phase | Status | Notes |
 |---|---|---|
-| 1. Backend inventory | in-progress | 7 / 24 controllers walked (Health, System, COA, Fiscal, Customers, Vendors, ClientVendorRequests) — Taxation skipped, will return |
+| 1. Backend inventory | in-progress | 13 / 24 controllers walked. Done: Health, System, COA, Fiscal, Customers, Vendors, ClientVendorRequests, Bank, Journals, GL, Closing, Audit, Copilot. Remaining: Taxation, AR (CustomerInvoices), AP (VendorBills), Proforma, PO, DebitNotes, Expense, FixedAssets, Billing, Reports |
 | 2. Frontend inventory | pending | depends on Phase 1 |
 | 3. Guide coverage | pending | depends on Phase 2 |
 | 4. Fix gaps | pending | gated on Phase 3 + user approval |
@@ -158,16 +158,16 @@ endpoint table. Update the checkbox here as each table is filled in.
 - [ ] 11. `ProformaInvoicesController` (9) — quotes/proforma
 - [ ] 12. `PurchaseOrdersController` (10) — POs
 - [ ] 13. `DebitNotesController` (4) — vendor debit notes
-- [ ] 14. `BankController` (15) — accounts, transactions, transfers, reconciliation
-- [ ] 15. `JournalsController` (5) — manual journal entries
-- [ ] 16. `GeneralLedgerController` (9) — GL listing, detail, reverse, lock
+- [x] 14. `BankController` (15) — accounts, transactions, transfers, reconciliation
+- [x] 15. `JournalsController` (5) — manual journal entries
+- [x] 16. `GeneralLedgerController` (9) — GL listing, detail, reverse, lock
 - [ ] 17. `ExpenseController` (12) — categories, policies, claims, reimbursement
 - [ ] 18. `FixedAssetsController` (11) — categories, register, depreciation, disposal
 - [ ] 19. `BillingController` (18) — plans, subscriptions, usage, tokens
 - [ ] 20. `ReportsController` (10) — Trial Balance, P&L, BS, CF, aging, statements
-- [ ] 21. `ClosingController` (6) — closing checklists, year-end
-- [ ] 22. `AuditController` (4) — audit log
-- [ ] 23. `CopilotController` (4) — AI copilot bridge (probably N/A for end-user UI)
+- [x] 21. `ClosingController` (6) — closing checklists, year-end
+- [x] 22. `AuditController` (4) — audit log
+- [x] 23. `CopilotController` (4) — AI copilot bridge (probably N/A for end-user UI)
 - [ ] 24. `BaseController` — abstract, no endpoints
 
 ---
@@ -345,13 +345,84 @@ DTO field reference (`Models/ClientVendorRequestModels.cs`):
 *pending*
 
 ### 14. BankController
-*pending*
+
+Class route: `api/accounts/bank`. Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`. Razorpay/Stripe webhooks are `[AllowAnonymous]` and rely on signature verification.
+
+DTO field reference (`Models/BankModels.cs`):
+- **BankAccount** → `id, tenant_id, account_name, account_type, bank_name, account_number, ifsc_code, swift_code, branch, gl_account_id, current_balance, is_default, is_active, created_by, created_at, updated_at, gl_account_code, gl_account_name`
+- **BankTransaction** → `id, tenant_id, bank_account_id, transaction_date, transaction_type, amount, reference_number, description, party_name, gl_entry_id, is_reconciled, reconciliation_id, source_type, source_id, created_by, created_at`
+- **BankReconciliation** → `id, tenant_id, bank_account_id, statement_date, statement_balance, book_balance, difference, status, completed_by, completed_at, created_by, created_at`
+- **BankTransfer** → `id, transfer_date, from_account_id, from_account_name, to_account_id, to_account_name, amount, description, status`
+- **BankDashboardSummary** → `total_bank_balance, total_cash_balance, accounts: List<BankAccount>`
+- **CreateBankAccountRequest** → `account_name, account_type, bank_name, account_number, ifsc_code, swift_code, branch, gl_account_id, is_default`
+- **UpdateBankAccountBody** (nested in controller) → `account_name, bank_name, account_number, account_type, ifsc_code, swift_code, branch, gl_account_id, is_default, is_active`
+- **RecordBankTransactionRequest** → `transaction_date, transaction_type, amount, reference_number, description, party_name, counter_account_id`
+- **InterBankTransferRequest** → `from_bank_account_id, to_bank_account_id, amount, transfer_date, reference_number, description`
+- **StartReconciliationRequest** → `bank_account_id, statement_date, statement_balance`
+- **MatchTransactionsRequest** → `transaction_ids: Guid[]`
+
+> ⚠️ **Likely binding gap (Phase 2 priority):** `RecordBankTransactionRequest.transaction_type` declares `AllowedValues = { "debit", "credit" }`, but the frontend's recent fix reduced the dropdown to 4 manual types: **Deposit / Withdrawal / Interest / Charges**. Need to check whether the BL maps those four to debit/credit or whether the frontend translates them — if neither does, every manual transaction is currently breaking schema validation. Verify in Phase 2 against `BusinessLayer_Bank.cs`.
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET    | `/api/accounts/bank/accounts` | `GetBankAccounts` | USER+ | query `includeInactive` | `List<BankAccount>` | TBD | TBD | §15.1 Fig 15.1.1/4/5 | pending |
+| 2 | GET    | `/api/accounts/bank/accounts/{id}` | `GetBankAccountById` | USER+ | route `id` | `BankAccount` or 404 | TBD | TBD | §15.1 Fig 15.1.6 (view modal) | pending |
+| 3 | POST   | `/api/accounts/bank/accounts` | `CreateBankAccount` | ADMIN+ | `CreateBankAccountRequest` | `BankAccount` (fresh-fetched) | TBD | TBD | §15.1 Fig 15.1.2/3 | pending |
+| 4 | PUT    | `/api/accounts/bank/accounts/{id}` | `UpdateBankAccount` | ADMIN+ | route `id` + `UpdateBankAccountBody` | `BankAccount` | TBD | TBD | §15.1 Fig 15.1.7 (edit prefilled) + Fig 15.1.8/9/10/11 (deactivate/reactivate via `is_active`) | pending |
+| 5 | GET    | `/api/accounts/bank/accounts/{id}/transactions` | `GetTransactions` | USER+ | route `id` + query `fromDate?, toDate?, search?, limit, offset` | `List<BankTransaction>` | TBD | TBD | §15.1 Fig 15.1.12–17 | pending |
+| 6 | POST   | `/api/accounts/bank/accounts/{id}/transactions` | `RecordTransaction` | ADMIN/MANAGER+ | route `id` + `RecordBankTransactionRequest` | 201 + result of `BL.RecordManualTransaction` | TBD | **likely mismatch — see warning** | §15.1 Fig 15.1.16–19, 15.1.21a/b | gap |
+| 7 | DELETE | `/api/accounts/bank/accounts/{bankAccountId}/transactions/{transactionId}` | `DeleteTransaction` | ADMIN+ | two route params | anon `{ message }` | TBD | TBD | §15.1 Fig 15.1.21 | pending |
+| 8 | GET    | `/api/accounts/bank/transfer` | `GetRecentTransfers` | USER+ | query `limit` | `List<BankTransfer>` | TBD | TBD | §15.1 Fig 15.1.25 (recent transfers table) | pending |
+| 9 | POST   | `/api/accounts/bank/transfer` | `InterBankTransfer` | ADMIN/MANAGER+ | `InterBankTransferRequest` | anon `{ message }` | TBD | TBD | §15.1 Fig 15.1.22–25 | pending |
+| 10 | POST  | `/api/accounts/bank/reconciliations` | `StartReconciliation` | ADMIN/MANAGER+ | `StartReconciliationRequest` | 201 + reconciliation result | TBD | TBD | §15.1 Fig 15.1.26/27/28 | pending |
+| 11 | PUT   | `/api/accounts/bank/reconciliations/{id}` | `MatchTransactions` | ADMIN/MANAGER+ | route `id` + `MatchTransactionsRequest` | anon `{ message }` | TBD | TBD | §15.1 Fig 15.1.29 | pending |
+| 12 | POST  | `/api/accounts/bank/reconciliations/{id}/complete` | `CompleteReconciliation` | ADMIN/MANAGER+ | route `id` | anon `{ message }` | TBD | TBD | §15.1 Fig 15.1.30/31 | pending |
+| 13 | GET   | `/api/accounts/bank/dashboard` | `GetDashboard` | USER+ | — | `BankDashboardSummary` | TBD | TBD | §15.1 stats tiles + Dashboard §3.6 | pending |
+| 14 | POST  | `/api/accounts/bank/webhooks/razorpay` | `RazorpayWebhook` | Anonymous + signature | raw JSON Razorpay webhook | anon `{ status, payment_id, amount, event_type }` | N/A — external | n/a | N/A — payment gateway webhook | N/A |
+| 15 | POST  | `/api/accounts/bank/webhooks/stripe` | `StripeWebhook` | Anonymous + signature | raw JSON Stripe webhook | anon `{ status }` | N/A — external | n/a | N/A — payment gateway webhook (also a backend stub: signature verification not yet wired) | gap |
 
 ### 15. JournalsController
-*pending*
+
+Class route: `api/accounts/journals`. Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`.
+
+DTO field reference (`Models/JournalModels.cs`):
+- **JournalType** → `id, tenant_id, code, name, description, is_system, is_active, created_at`
+- **CreateJournalTypeRequest** → `code, name, description`
+- **UpdateJournalTypeRequest** → `id, name, description, is_active`
+
+> Note: `entries` listing endpoint actually delegates to `BL.QueryGlEntries` (same path as the GL Entries listing in `GeneralLedgerController`). The Frontend Ledger page surfaces this on the Journal Entries tab — see §12.3.
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET  | `/api/accounts/journals/types` | `GetJournalTypes` | USER+ | — | `List<JournalType>` | TBD | TBD | §4 Fig 4.18/4.24 | pending |
+| 2 | GET  | `/api/accounts/journals/types/{id}` | `GetJournalTypeById` | USER+ | route `id` | `JournalType` or 404 | TBD | TBD | TBD — internal lookup | pending |
+| 3 | POST | `/api/accounts/journals/types` | `CreateJournalType` | ADMIN+ | `CreateJournalTypeRequest` | `JournalType` (fresh-fetched) | TBD | TBD | §4 Fig 4.24a | pending |
+| 4 | PUT  | `/api/accounts/journals/types/{id}` | `UpdateJournalType` | ADMIN+ | route `id` + `UpdateJournalTypeRequest` | `JournalType` | TBD | TBD | TBD | pending |
+| 5 | GET  | `/api/accounts/journals/entries` | `GetJournalEntries` | USER+ | query `journalTypeId?, fromDate?, toDate?, search?, limit, offset` (mapped into `GlQueryRequest`) | anon `{ data: List<GlEntry>, total, limit, offset }` | TBD | TBD | §12.3 Fig 12.3a | pending |
 
 ### 16. GeneralLedgerController
-*pending*
+
+Class route: `api/accounts/gl`. Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`.
+
+DTO field reference (`Models/GeneralLedgerModels.cs`):
+- **GlEntry** → `id, tenant_id, entry_number, idempotency_key, entry_date, fiscal_year_id, fiscal_period_id, journal_type_id, description, reference_type, reference_id, total_debit, total_credit, status, is_auto_generated, is_reversed, reversal_of, reversed_by, locked_by, locked_at, posted_by, posted_at, created_by, created_at, updated_at, lines, journal_type_name, posted_by_name`
+- **GlEntryLine** → `id, gl_entry_id, tenant_id, account_id, description, debit_amount, credit_amount, cost_center, created_at, account_code, account_name`
+- **CreateGlEntryRequest** → `idempotency_key, entry_date, journal_type_id, description, reference_type, reference_id, lines: CreateGlEntryLineRequest[]`
+- **CreateGlEntryLineRequest** → `account_id, description, debit_amount, credit_amount, cost_center`
+- **ReverseGlEntryRequest** → `reversal_date, reason`
+- **GlQueryRequest** → `from_date, to_date, account_id, journal_type_id, status, reference_type, search, limit, offset`
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET    | `/api/accounts/gl` | `QueryGlEntries` | USER+ | query (8 params, mapped to `GlQueryRequest`) | anon `{ data: List<GlEntry>, total, limit, offset }` | TBD | TBD | §12.1 / §12.1a Fig 12.1/12.1a | pending |
+| 2 | GET    | `/api/accounts/gl/{id}` | `GetGlEntryById` | USER+ | route `id` | `GlEntry` (with lines) or 404 | TBD | TBD | §12.2 / §15.1.17a Fig 12.2 / 15.1.17a | pending |
+| 3 | POST   | `/api/accounts/gl` | `CreateGlEntry` | ADMIN/MANAGER+ | `CreateGlEntryRequest` | `GlEntry` | TBD | TBD | gap — manual JE form not in guide; do users actually create manual JEs from the UI? Verify Phase 2 | pending |
+| 4 | PUT    | `/api/accounts/gl/{id}` | `UpdateDraftGlEntry` | ADMIN/MANAGER+ | route `id` + `CreateGlEntryRequest` | `GlEntry` or 404 | TBD | TBD | gap — same as above | pending |
+| 5 | DELETE | `/api/accounts/gl/{id}` | `DeleteDraftGlEntry` | ADMIN+ | route `id` | 204 | TBD | TBD | TBD | pending |
+| 6 | POST   | `/api/accounts/gl/{id}/lock` | `LockDraftEntry` | ADMIN/MANAGER+ | route `id` | anon `{ message }` | TBD | TBD | §12.3 (Lock action button) | pending |
+| 7 | POST   | `/api/accounts/gl/{id}/unlock` | `UnlockDraftEntry` | ADMIN/MANAGER+ | route `id` | anon `{ message }` | TBD | TBD | TBD | pending |
+| 8 | POST   | `/api/accounts/gl/{id}/post` | `PostGlEntry` | ADMIN+ | route `id` | `GlEntry` | TBD | TBD | §12.3 (Post action button) | pending |
+| 9 | POST   | `/api/accounts/gl/{id}/reverse` | `ReverseGlEntry` | ADMIN+ | route `id` + `ReverseGlEntryRequest` | reversal `GlEntry` | TBD | TBD | §12.3 Fig 12.3b | pending |
 
 ### 17. ExpenseController
 *pending*
@@ -366,13 +437,53 @@ DTO field reference (`Models/ClientVendorRequestModels.cs`):
 *pending*
 
 ### 21. ClosingController
-*pending*
+
+Class route: `api/accounts/closing`. Class-level `[Authorize(Roles = "ACCOUNTS_ADMIN, SUPERADMIN")]`.
+
+DTO field reference (`Models/ClosingModels.cs`):
+- **ClosingChecklist** → `id, tenant_id, fiscal_period_id, closing_type, status, started_by, started_at, completed_by, completed_at, created_at, period_name, items`
+- **ClosingChecklistItem** → `id, closing_checklist_id, tenant_id, step_number, category, description, is_completed, is_auto_check, completed_by, completed_at, notes, created_at`
+- **StartClosingRequest** → `fiscal_period_id, closing_type ('month_end'|'quarter_end'|'year_end')`
+- **CompleteItemRequest** → `notes`
+
+> Note: `year-end/{fiscalYearId}` is a thin wrapper around `BL.CloseFiscalYear` — same logic as `FiscalController.CloseFiscalYear` (row 8) reached via a different route. **Functional duplicate** — flag for Phase 4 dedup.
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET  | `/api/accounts/closing/checklists` | `GetChecklists` | ADMIN+ | query `fiscalYearId?` | `List<ClosingChecklist>` | TBD | TBD | §15.5.5 Fig 15.5.5 | pending |
+| 2 | POST | `/api/accounts/closing/checklists` | `StartChecklist` | ADMIN+ | `StartClosingRequest` | 201 + checklist | TBD | TBD | §15.5.5 Fig 15.5.5a | pending |
+| 3 | GET  | `/api/accounts/closing/checklists/{id}` | `GetChecklistById` | ADMIN+ | route `id` | `ClosingChecklist` (with items) | TBD | TBD | §15.5.5 Fig 15.5.5b | pending |
+| 4 | POST | `/api/accounts/closing/checklists/{id}/items/{itemId}/complete` | `CompleteItem` | ADMIN+ | two route params + `CompleteItemRequest?` | anon `{ message }` | TBD | TBD | §15.5.5 Fig 15.5.5b | pending |
+| 5 | POST | `/api/accounts/closing/checklists/{id}/complete` | `CompleteClosing` | ADMIN+ | route `id` | result of `BL.CompleteClosing` | TBD | TBD | TBD | pending |
+| 6 | POST | `/api/accounts/closing/year-end/{fiscalYearId}` | `YearEndClosing` | ADMIN+ | route `fiscalYearId` | anon `{ message, fiscal_year_id }` | TBD | TBD | §15.5.6 Fig 15.5.6/15.5.6a — duplicates `FiscalController.CloseFiscalYear` | pending |
 
 ### 22. AuditController
-*pending*
+
+Class route: `api/accounts/audit`. Class-level `[Authorize(Roles = "ACCOUNTS_ADMIN, ACCOUNTS_AUDITOR, SUPERADMIN")]`.
+
+DTO field reference (`Models/AuditModels.cs`):
+- **AuditLog** → `id, tenant_id, entity_type, entity_id, action, performed_by, details, ip_address, created_at, performed_by_name`
+- **AuditLogQuery** → `entity_type, entity_id, performed_by, from_date, to_date, limit, offset`
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET  | `/api/accounts/audit/logs` | `GetAuditLogs` | ADMIN/AUDITOR+ | query (7 params, mapped to `AuditLogQuery`) | anon `{ data: List<AuditLog>, total, limit, offset }` | TBD | TBD | §15.5.1 Fig 15.5.1 / 15.5.1a / 15.5.1b | pending |
+| 2 | GET  | `/api/accounts/audit/logs/{entityType}/{entityId}` | `GetEntityAuditTrail` | ADMIN/AUDITOR+ | two route params + query `limit` | `List<AuditLog>` | TBD | TBD | TBD — drill-down trail used by entity-audit modal | pending |
+| 3 | GET  | `/api/accounts/audit/approvals/pending` | `GetPendingApprovals` | ADMIN/AUDITOR+ | — | anon `{ expense_claims: [...], total_pending }` (currently only surfaces pending **expense claims**, not all approval-gated items) | TBD | partial — only one entity type | §15.5.2 Fig 15.5.2 | gap |
+| 4 | POST | `/api/accounts/audit/export` | `ExportAuditLogs` | ADMIN/AUDITOR+ | query `fromDate?, toDate?` | anon `{ export_format: "json", record_count, data }` (PDF/CSV deferred to "Phase 2") | TBD | TBD | gap — export claims JSON, no real CSV/PDF | gap |
 
 ### 23. CopilotController
-*pending*
+
+Class route: `api/copilot` (note: NOT under `/api/accounts/...` — sits at the root). Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`. Bridges to AIEngine via gRPC.
+
+DTO field reference (in-controller `CopilotMessageRequest`): `Message, CurrentPage`.
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | POST   | `/api/copilot/message` | `SendMessage` | USER+ | `CopilotMessageRequest` (Message, CurrentPage) | **SSE stream** with events `progress`, `chunk`, `response`, `error`, `done`; final `response` payload includes `session_id, response, tool_calls_json, input_tokens, output_tokens, requires_confirmation, pending_tool_name, pending_preview` | `js/copilot/*` (cross-service shared component, not in `js/accounts/`) | n/a | N/A — copilot bridge | N/A |
+| 2 | GET    | `/api/copilot/session` | `GetSession` | USER+ | — | anon `{ session_id, message_count, setup_completed, created_at }` | shared copilot UI | n/a | N/A — copilot bridge | N/A |
+| 3 | GET    | `/api/copilot/history` | `GetHistory` | USER+ | query `limit` | anon `{ session_id, messages: [{id, role, content, tool_calls, created_at}] }` | shared copilot UI | n/a | N/A — copilot bridge | N/A |
+| 4 | DELETE | `/api/copilot/session` | `ClearSession` | USER+ | — | anon `{ message }` | shared copilot UI | n/a | N/A — copilot bridge | N/A |
 
 ---
 
