@@ -132,7 +132,7 @@ next" closing callout is updated to mention any new modules.
 
 | Phase | Status | Notes |
 |---|---|---|
-| 1. Backend inventory | in-progress | 13 / 24 controllers walked. Done: Health, System, COA, Fiscal, Customers, Vendors, ClientVendorRequests, Bank, Journals, GL, Closing, Audit, Copilot. Remaining: Taxation, AR (CustomerInvoices), AP (VendorBills), Proforma, PO, DebitNotes, Expense, FixedAssets, Billing, Reports |
+| 1. Backend inventory | in-progress | 21 / 24 controllers walked. Done: Health, System, COA, Fiscal, Customers, Vendors, ClientVendorRequests, AR Invoices, AP Bills, Proforma, PO, DebitNotes, Bank, Journals, GL, Expense, FixedAssets, Reports, Closing, Audit, Copilot. Remaining: Taxation, Billing |
 | 2. Frontend inventory | pending | depends on Phase 1 |
 | 3. Guide coverage | pending | depends on Phase 2 |
 | 4. Fix gaps | pending | gated on Phase 3 + user approval |
@@ -153,18 +153,18 @@ endpoint table. Update the checkbox here as each table is filled in.
 - [x] 6. `CustomersController` (4) — customer master
 - [x] 7. `VendorsController` (4) — vendor master
 - [x] 8. `ClientVendorRequestsController` (6) — pending creates from CRM/Procurement
-- [ ] 9. `CustomerInvoicesController` (13) — AR invoices
-- [ ] 10. `VendorBillsController` (11) — AP bills
-- [ ] 11. `ProformaInvoicesController` (9) — quotes/proforma
-- [ ] 12. `PurchaseOrdersController` (10) — POs
-- [ ] 13. `DebitNotesController` (4) — vendor debit notes
+- [x] 9. `CustomerInvoicesController` (13) — AR invoices
+- [x] 10. `VendorBillsController` (11) — AP bills
+- [x] 11. `ProformaInvoicesController` (9) — quotes/proforma
+- [x] 12. `PurchaseOrdersController` (10) — POs
+- [x] 13. `DebitNotesController` (4) — vendor debit notes
 - [x] 14. `BankController` (15) — accounts, transactions, transfers, reconciliation
 - [x] 15. `JournalsController` (5) — manual journal entries
 - [x] 16. `GeneralLedgerController` (9) — GL listing, detail, reverse, lock
-- [ ] 17. `ExpenseController` (12) — categories, policies, claims, reimbursement
-- [ ] 18. `FixedAssetsController` (11) — categories, register, depreciation, disposal
+- [x] 17. `ExpenseController` (12) — categories, policies, claims, reimbursement
+- [x] 18. `FixedAssetsController` (11) — categories, register, depreciation, disposal
 - [ ] 19. `BillingController` (18) — plans, subscriptions, usage, tokens
-- [ ] 20. `ReportsController` (10) — Trial Balance, P&L, BS, CF, aging, statements
+- [x] 20. `ReportsController` (10) — Trial Balance, P&L, BS, CF, aging, statements
 - [x] 21. `ClosingController` (6) — closing checklists, year-end
 - [x] 22. `AuditController` (4) — audit log
 - [x] 23. `CopilotController` (4) — AI copilot bridge (probably N/A for end-user UI)
@@ -330,19 +330,140 @@ DTO field reference (`Models/ClientVendorRequestModels.cs`):
 | 6 | POST | `/api/accounts/requests/{id}/review` | `Review` | ADMIN+ | route `id` + `ReviewRequestAction` | review result from `BL.ReviewRequest` | TBD | TBD | gap — no UI | gap |
 
 ### 9. CustomerInvoicesController
-*pending*
+
+Class route: `api/accounts/invoices`. Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`.
+
+DTO field reference (`Models/AccountsReceivableModels.cs`):
+- **CustomerInvoice** → `id, tenant_id, invoice_number, customer_id, invoice_date, due_date, source_type, source_id, subtotal, tax_amount, discount_amount, total_amount, paid_amount, balance_due, currency, status, gl_entry_id, tax_details, payment_link, notes, is_active, created_by, created_at, updated_at, customer_name, lines` + computed display strings `currency_display, total_amount_formatted, balance_due_formatted, paid_amount_formatted`
+- **CustomerInvoiceLine** → `id, customer_invoice_id, tenant_id, account_id, description, quantity, unit_price, amount, tax_config_id, tax_amount, created_at, account_code, account_name`
+- **CustomerPayment** → `id, tenant_id, payment_number, customer_id, payment_date, amount, payment_method, bank_account_id, reference_number, gl_entry_id, notes, is_active, created_by, created_at, customer_name`
+- **ARAgingRow** → `customer_id, customer_name, customer_code, current_amount, days_30, days_60, days_90, days_120_plus, total`
+- **CreditNote** → `id, tenant_id, credit_note_number, customer_id, customer_invoice_id, credit_date, amount, reason, status, gl_entry_id, created_by, created_at, customer_name, invoice_number`
+- **CreateCustomerInvoiceRequest** → `customer_id, invoice_date, due_date, source_type, source_id, notes, tax_configuration_id, lines: CreateCustomerInvoiceLineRequest[]`
+- **CreateCustomerInvoiceLineRequest** → `account_id, description, quantity, unit_price`
+- **RecordCustomerPaymentRequest** → `customer_id, payment_date, amount, payment_method, bank_account_id, reference_number, notes, allocations: CustomerPaymentAllocationRequest[]`
+- **CustomerPaymentAllocationRequest** → `customer_invoice_id, allocated_amount`
+- **CreateCreditNoteRequest** → `customer_id, customer_invoice_id, credit_date, amount, reason`
+
+> **Notable:** invoice line request takes only `account_id, description, quantity, unit_price` — line-level tax (`tax_config_id`) is **not exposed in the create request** even though the model carries it. Header-level `tax_configuration_id` is the only way the frontend can attach tax. Flag for Phase 2 if the UI tries to send line-level tax. Also no `update`, `cancel`, or `mark-paid` endpoints — Cancel and "void after approve" flows are missing on the backend.
+
+> Per-invoice line items: there is **no PUT/PATCH endpoint to edit a draft invoice's line items** — to change anything you must Delete + recreate. Frontend "Edit invoice" row action would have to follow that pattern. Verify in Phase 2.
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET    | `/api/accounts/invoices` | `Get` | USER+ | query `customerId?, status?, fromDate?, toDate?, limit, offset` | anon `{ data: List<CustomerInvoice>, total, stats: { total/draft/approved/sent/paid/overdue/cancelled _count, total_receivable } }` | TBD | TBD | §10.1 Fig 10.1 / §3.6 | pending |
+| 2 | GET    | `/api/accounts/invoices/{id}` | `GetById` | USER+ | route `id` | `CustomerInvoice` (with lines) or 404 | TBD | TBD | TBD — view modal | pending |
+| 3 | POST   | `/api/accounts/invoices` | `Create` | ADMIN/MANAGER+ | `CreateCustomerInvoiceRequest` | 201 + `CustomerInvoice` | TBD | TBD | §10.2 Fig 10.2a/10.2b / §10.3 | pending |
+| 4 | DELETE | `/api/accounts/invoices/{id}` | `Delete` | ADMIN+ | route `id` | 204 | TBD | TBD | §10.3 — only drafts | pending |
+| 5 | POST   | `/api/accounts/invoices/{id}/approve` | `Approve` | ADMIN/MANAGER+ | route `id` | result of `BL.ApproveCustomerInvoice` | TBD | TBD | §10.3 Fig 10.3a/b | pending |
+| 6 | POST   | `/api/accounts/invoices/{id}/send` | `Send` | ADMIN/MANAGER+ | route `id` | anon `{ message }` | TBD | TBD | §10.3c Fig 10.3c | pending |
+| 7 | POST   | `/api/accounts/invoices/payments` | `RecordPayment` | ADMIN/MANAGER+ | `RecordCustomerPaymentRequest` | 201 + payment from BL | TBD | TBD | §10.4a Fig 10.4a | pending |
+| 8 | GET    | `/api/accounts/invoices/payments` | `GetPayments` | USER+ | query `customerId?, limit, offset` | `List<CustomerPayment>` | TBD | TBD | §10.4a | pending |
+| 9 | GET    | `/api/accounts/invoices/aging` | `GetARAging` | USER+ | — | `List<ARAgingRow>` | TBD | TBD | §10.4c Fig 10.4c — also exposed at `/reports/ar-aging` (functional duplicate) | pending |
+| 10 | GET   | `/api/accounts/invoices/customers/{customerId}/statement` | `GetCustomerStatement` | USER+ | route `customerId` + query `fromDate?, toDate?` | anon `{ customer_name, customer_code, invoices: [...projected...], payments: [...projected...], credit_notes: [...projected...], total_invoiced, total_received, total_outstanding, total_credits }` — **all decimals raw, not display-formatted** | TBD | TBD | §10.4d Fig 10.4d | pending |
+| 11 | POST  | `/api/accounts/invoices/credit-notes` | `CreateCreditNote` | ADMIN/MANAGER+ | `CreateCreditNoteRequest` | 201 + credit note from BL | TBD | TBD | §10.4b Fig 10.4b | pending |
+| 12 | GET   | `/api/accounts/invoices/credit-notes` | `GetCreditNotes` | USER+ | query `customerId?, limit, offset` | `List<CreditNote>` | TBD | TBD | §10.4b | pending |
+| 13 | POST  | `/api/accounts/invoices/bulk` | `BulkCreateInvoices` | USER+ (no override) | `List<CreateCustomerInvoiceRequest>` | anon `{ total, created, results: [{ success, invoice_id?, invoice_number?, error?, customer_id? }] }` | TBD | TBD | TBD — used by subscription billing run? | pending |
 
 ### 10. VendorBillsController
-*pending*
+
+Class route: `api/accounts/vendor-bills`. Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`.
+
+DTO field reference (`Models/AccountsPayableModels.cs`):
+- **VendorBill** → `id, tenant_id, bill_number, vendor_id, bill_date, due_date, po_reference, grn_reference, subtotal, tax_amount, tds_amount, total_amount, paid_amount, balance_due, currency, status, gl_entry_id, tax_details, notes, is_active, created_by, created_at, updated_at, vendor_name, lines`
+- **VendorBillLine** → `id, vendor_bill_id, tenant_id, account_id, description, quantity, unit_price, amount, tax_config_id, tax_amount, created_at, account_code, account_name`
+- **VendorPayment** → `id, tenant_id, payment_number, vendor_id, payment_date, amount, payment_method, bank_account_id, reference_number, tds_amount, gl_entry_id, notes, is_active, created_by, created_at, vendor_name, allocations`
+- **VendorPaymentAllocation** → `id, tenant_id, vendor_payment_id, vendor_bill_id, allocated_amount, created_at, bill_number`
+- **CreateVendorBillRequest** → `vendor_id, bill_date, due_date, po_reference, grn_reference, notes, tax_configuration_id, lines: CreateVendorBillLineRequest[]`
+- **CreateVendorBillLineRequest** → `account_id, description, quantity, unit_price`
+- **RecordVendorPaymentRequest** → `vendor_id, payment_date, amount, payment_method, bank_account_id, reference_number, notes, allocations: PaymentAllocationRequest[]`
+- **PaymentAllocationRequest** → `vendor_bill_id, allocated_amount`
+
+> Notable difference vs `CustomerInvoicesController`: VendorBills **does** have a PUT endpoint (`UpdateVendorBill`) that accepts the same shape as create — but only for drafts (409 if not). Customer invoices don't. **Asymmetry to flag in Phase 4** — either give invoices an Update endpoint too, or document why.
+
+> Also: VendorBills exposes `tds_amount` on the model (Indian tax-deducted-at-source) but the create request **doesn't** — you can't supply it from the UI. Either compute server-side or expose it. Phase 4 candidate.
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET    | `/api/accounts/vendor-bills` | `GetVendorBills` | USER+ | query `vendorId?, status?, fromDate?, toDate?, search?, limit, offset` | anon `{ data: List<VendorBill>, total, stats: { total/draft/approved/paid/cancelled _count, total_outstanding } }` | TBD | TBD | §11.1 Fig 11.1 / §11.3a Fig 11.3a | pending |
+| 2 | GET    | `/api/accounts/vendor-bills/{id}` | `GetVendorBillById` | USER+ | route `id` | `VendorBill` (with lines) or 404 | TBD | TBD | §11.3b Fig 11.3b | pending |
+| 3 | POST   | `/api/accounts/vendor-bills` | `CreateVendorBill` | ADMIN/MANAGER+ | `CreateVendorBillRequest` | 201 + `VendorBill` | TBD | TBD | §11.2 Fig 11.2 / §11.3 | pending |
+| 4 | PUT    | `/api/accounts/vendor-bills/{id}` | `UpdateVendorBill` | ADMIN/MANAGER+ | route `id` + `CreateVendorBillRequest`; rejects 409 if not draft | `VendorBill` or 404 | TBD | TBD | TBD — edit modal for drafts | pending |
+| 5 | POST   | `/api/accounts/vendor-bills/{id}/cancel` | `CancelVendorBill` | ADMIN+ | route `id` | anon `{ message, id }` | TBD | TBD | §11.3a (cancel row action) | pending |
+| 6 | GET    | `/api/accounts/vendor-bills/vendors/{vendorId}/statement` | `GetVendorStatement` | USER+ | route `vendorId` + query `fromDate?, toDate?` | anon `{ vendor_name, vendor_code, bills: [...projected...], payments: [...projected...], total_billed, total_paid, total_outstanding }` | TBD | TBD | §11.4c Fig 11.4c | pending |
+| 7 | POST   | `/api/accounts/vendor-bills/{id}/approve` | `ApproveVendorBill` | ADMIN/MANAGER+ | route `id` | `VendorBill` after approval | TBD | TBD | §11.3 Fig 11.3 | pending |
+| 8 | POST   | `/api/accounts/vendor-bills/payments` | `RecordPayment` | ADMIN/MANAGER+ | `RecordVendorPaymentRequest` | 201 + `VendorPayment` | TBD | TBD | §11.4a Fig 11.4a | pending |
+| 9 | GET    | `/api/accounts/vendor-bills/payments` | `GetPayments` | USER+ | query `vendorId?, limit, offset` | `List<VendorPayment>` | TBD | TBD | §11.4a | pending |
+| 10 | GET   | `/api/accounts/vendor-bills/aging` | `GetAPAging` | USER+ | — | AP aging shape from BL | TBD | TBD | §11.4b Fig 11.4b — also exposed at `/reports/ap-aging` (functional duplicate) | pending |
+| 11 | POST  | `/api/accounts/vendor-bills/bulk` | `BulkCreateBills` | USER+ (no override) | `List<CreateVendorBillRequest>` | anon `{ total, created, results: [...] }` | TBD | TBD | TBD | pending |
 
 ### 11. ProformaInvoicesController
-*pending*
+
+Class route: `api/accounts/proforma-invoices`. Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`.
+
+DTO field reference (`Models/ProformaInvoiceModels.cs`):
+- **ProformaInvoice** → `id, tenant_id, proforma_number, customer_id, proforma_date, valid_until, subtotal, tax_amount, discount_amount, total_amount, currency, status, converted_invoice_id, notes, is_active, created_by, created_at, updated_at, customer_name, converted_invoice_number, lines`
+- **ProformaInvoiceLine** → `id, proforma_invoice_id, tenant_id, account_id, description, quantity, unit_price, amount, tax_config_id, tax_amount, created_at, account_code, account_name`
+- **CreateProformaInvoiceRequest** → `customer_id, proforma_date, valid_until, notes, tax_configuration_id, lines: CreateProformaInvoiceLineRequest[]`
+- **CreateProformaInvoiceLineRequest** → `account_id, description, quantity, unit_price`
+- **UpdateProformaInvoiceRequest** → `customer_id, proforma_date, valid_until, notes, tax_configuration_id, lines` (all nullable, lines replace all)
+
+> **Likely missing-UI candidate.** No `pages/accounts/proforma-invoices.html` exists today. The whole controller (9 endpoints, full CRUD + accept/reject/convert lifecycle) is **probably an orphan**. Phase 4 should either build a Proforma page under Accounts or wire it into the existing Receivables page as a tab. Verify in Phase 2.
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET    | `/api/accounts/proforma-invoices` | `Get` | USER+ | query `customerId?, status?, fromDate?, toDate?, limit, offset` | anon `{ data: List<ProformaInvoice>, total, stats: { total/draft/sent/accepted/rejected/invoiced/expired _count, total_value } }` | TBD | TBD | gap — no UI | gap |
+| 2 | GET    | `/api/accounts/proforma-invoices/{id}` | `GetById` | USER+ | route `id` | `ProformaInvoice` (with lines) or 404 | TBD | TBD | gap | gap |
+| 3 | POST   | `/api/accounts/proforma-invoices` | `Create` | ADMIN/MANAGER+ | `CreateProformaInvoiceRequest` | 201 + `ProformaInvoice` | TBD | TBD | gap | gap |
+| 4 | PUT    | `/api/accounts/proforma-invoices/{id}` | `Update` | ADMIN/MANAGER+ | route `id` + `UpdateProformaInvoiceRequest` | `ProformaInvoice` | TBD | TBD | gap | gap |
+| 5 | DELETE | `/api/accounts/proforma-invoices/{id}` | `Delete` | ADMIN+ | route `id` | 204 | TBD | TBD | gap | gap |
+| 6 | POST   | `/api/accounts/proforma-invoices/{id}/send` | `Send` | ADMIN/MANAGER+ | route `id` | `ProformaInvoice` | TBD | TBD | gap | gap |
+| 7 | POST   | `/api/accounts/proforma-invoices/{id}/accept` | `Accept` | ADMIN/MANAGER+ | route `id` | `ProformaInvoice` | TBD | TBD | gap | gap |
+| 8 | POST   | `/api/accounts/proforma-invoices/{id}/reject` | `Reject` | ADMIN/MANAGER+ | route `id` | `ProformaInvoice` | TBD | TBD | gap | gap |
+| 9 | POST   | `/api/accounts/proforma-invoices/{id}/convert-to-invoice` | `ConvertToInvoice` | ADMIN/MANAGER+ | route `id` | 201 + `CustomerInvoice` | TBD | TBD | gap | gap |
 
 ### 12. PurchaseOrdersController
-*pending*
+
+Class route: `api/accounts/purchase-orders`. Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`.
+
+DTO field reference (`Models/PurchaseOrderModels.cs`):
+- **PurchaseOrder** → `id, tenant_id, po_number, vendor_id, po_date, expected_date, subtotal, tax_amount, total_amount, currency, status, approved_by, approved_at, gl_entry_id, procurement_po_id, notes, is_active, created_by, created_at, updated_at, vendor_name, lines`
+- **PurchaseOrderLine** → `id, purchase_order_id, tenant_id, account_id, description, quantity, unit_price, amount, tax_config_id, tax_amount, created_at, account_code, account_name`
+- **CreatePurchaseOrderRequest** → `vendor_id, po_date, expected_date, currency, notes, procurement_po_id, lines: CreatePurchaseOrderLineRequest[]`
+- **CreatePurchaseOrderLineRequest** → `account_id, description, quantity, unit_price`
+- **UpdatePurchaseOrderRequest** → `id, vendor_id, po_date, expected_date, currency, notes, lines` (all nullable, lines replace all)
+
+> **Likely missing-UI candidate.** No `pages/accounts/purchase-orders.html` exists today. The whole controller (10 endpoints, full lifecycle from draft → approved → sent → received → billed → cancelled, plus convert-to-bill) is **probably an orphan** in Accounts. The model has a `procurement_po_id` field, suggesting these POs may be created via the Procurement service's UI rather than Accounts'. Verify in Phase 2 — and decide whether to build Accounts-side UI for them or treat them as Procurement-only.
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET    | `/api/accounts/purchase-orders` | `GetPurchaseOrders` | USER+ | query `vendorId?, status?, fromDate?, toDate?, search?, limit, offset` | anon `{ data: List<PurchaseOrder>, total, stats: { total/draft/approved/sent/received/billed/cancelled _count, total_value } }` | TBD | TBD | gap — no UI in Accounts | gap |
+| 2 | GET    | `/api/accounts/purchase-orders/{id}` | `GetPurchaseOrderById` | USER+ | route `id` | `PurchaseOrder` (with lines) or 404 | TBD | TBD | gap | gap |
+| 3 | POST   | `/api/accounts/purchase-orders` | `CreatePurchaseOrder` | ADMIN/MANAGER+ | `CreatePurchaseOrderRequest` | 201 + `PurchaseOrder` | TBD | TBD | gap | gap |
+| 4 | PUT    | `/api/accounts/purchase-orders/{id}` | `UpdatePurchaseOrder` | ADMIN/MANAGER+ | route `id` + `UpdatePurchaseOrderRequest` | `PurchaseOrder` or 404 | TBD | TBD | gap | gap |
+| 5 | DELETE | `/api/accounts/purchase-orders/{id}` | `DeletePurchaseOrder` | ADMIN+ | route `id` | anon `{ message, id }` | TBD | TBD | gap | gap |
+| 6 | POST   | `/api/accounts/purchase-orders/{id}/approve` | `ApprovePurchaseOrder` | ADMIN/MANAGER+ | route `id` | `PurchaseOrder` after approval | TBD | TBD | gap | gap |
+| 7 | POST   | `/api/accounts/purchase-orders/{id}/send` | `SendPurchaseOrder` | ADMIN/MANAGER+ | route `id` | anon `{ message, id }` | TBD | TBD | gap | gap |
+| 8 | POST   | `/api/accounts/purchase-orders/{id}/receive` | `ReceivePurchaseOrder` | ADMIN/MANAGER+ | route `id` | `PurchaseOrder` | TBD | TBD | gap | gap |
+| 9 | POST   | `/api/accounts/purchase-orders/{id}/convert-to-bill` | `ConvertToBill` | ADMIN/MANAGER+ | route `id` | anon `{ message, purchase_order_id, bill: VendorBill }` | TBD | TBD | gap | gap |
+| 10 | POST  | `/api/accounts/purchase-orders/{id}/cancel` | `CancelPurchaseOrder` | ADMIN+ | route `id` | anon `{ message, id }` | TBD | TBD | gap | gap |
 
 ### 13. DebitNotesController
-*pending*
+
+Class route: `api/accounts/debit-notes`. Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`.
+
+DTO field reference (`Models/AccountsPayableModels.cs`):
+- **DebitNote** → `id, tenant_id, debit_note_number, vendor_id, vendor_bill_id, debit_date, amount, reason, status, gl_entry_id, created_by, created_at, vendor_name, bill_number`
+- **CreateDebitNoteRequest** → `vendor_id, vendor_bill_id, debit_date, amount, reason`
+
+> **Likely missing-UI candidate.** Symmetric to credit notes (which exist on the Receivables page) but no Payables tab for debit notes today. Phase 4 should add a Debit Notes tab to the Payables page using the existing CreditNotes tab as a template — same shape, mirrored direction.
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET  | `/api/accounts/debit-notes` | `Get` | USER+ | query `vendorId?, limit, offset` | `List<DebitNote>` | TBD | TBD | gap | gap |
+| 2 | GET  | `/api/accounts/debit-notes/{id}` | `GetById` | USER+ | route `id` | `DebitNote` or 404 | TBD | TBD | gap | gap |
+| 3 | POST | `/api/accounts/debit-notes` | `Create` | ADMIN/MANAGER+ | `CreateDebitNoteRequest` | 201 + `DebitNote` | TBD | TBD | gap | gap |
+| 4 | POST | `/api/accounts/debit-notes/{id}/approve` | `Approve` | ADMIN/MANAGER+ | route `id` | result of `BL.ApproveDebitNote` | TBD | TBD | gap | gap |
 
 ### 14. BankController
 
@@ -425,16 +546,98 @@ DTO field reference (`Models/GeneralLedgerModels.cs`):
 | 9 | POST   | `/api/accounts/gl/{id}/reverse` | `ReverseGlEntry` | ADMIN+ | route `id` + `ReverseGlEntryRequest` | reversal `GlEntry` | TBD | TBD | §12.3 Fig 12.3b | pending |
 
 ### 17. ExpenseController
-*pending*
+
+Class route: `api/accounts/expenses`. Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`.
+
+DTO field reference (`Models/ExpenseModels.cs`):
+- **ExpenseCategory** → `id, tenant_id, name, description, default_account_id, is_active, created_at, default_account_code`
+- **ExpensePolicyModel** → `id, tenant_id, expense_category_id, name, max_amount, requires_receipt_above, auto_approve_below, description, is_active, category_name`
+- **ExpenseClaim** → `id, tenant_id, claim_number, employee_id, claim_date, total_amount, status, description, project_id, gl_entry_id, approved_by, approved_at, rejection_reason, reimbursed_at, created_at, updated_at, items, employee_name`
+- **ExpenseClaimItem** → `id, expense_claim_id, tenant_id, expense_category_id, expense_date, amount, description, receipt_file_id, created_at, category_name`
+- **CreateExpenseCategoryRequest** → `name, description, default_account_id`
+- **CreateExpensePolicyRequest** → `expense_category_id, name, max_amount, requires_receipt_above, auto_approve_below, description`
+- **SubmitExpenseClaimRequest** → `claim_date, description, project_id, items: ExpenseClaimItemRequest[]`
+- **ExpenseClaimItemRequest** → `expense_category_id, expense_date, amount, description`
+- **RejectClaimBody** (in-controller) → `reason`
+- **ReimburseClaimBody** (in-controller) → `bank_account_id`
+
+> Notable: there are **no `DELETE policies/{id}` or `DELETE categories/{id}` endpoints** — but the recent expenses.js fix adds `deleteCategory` and `deletePolicy` row actions with target-named confirms. **Backend gap to flag:** the frontend can call delete row actions only if there's a corresponding endpoint. Verify in Phase 2 what those JS functions actually call.
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET  | `/api/accounts/expenses/policies` | `GetPolicies` | USER+ | — | `List<ExpensePolicyModel>` | TBD | TBD | §15.2 Fig 15.2.5 | pending |
+| 2 | POST | `/api/accounts/expenses/policies` | `CreatePolicy` | ADMIN+ | `CreateExpensePolicyRequest` | 201 + anon `{ id }` | TBD | TBD | §15.2 Fig 15.2.6/7 | pending |
+| 3 | PUT  | `/api/accounts/expenses/policies/{id}` | `UpdatePolicy` | ADMIN+ | route `id` + `CreateExpensePolicyRequest` | anon `{ message }` | TBD | TBD | §15.2 (edit policy) | pending |
+| 4 | GET  | `/api/accounts/expenses/categories` | `GetCategories` | USER+ | — | `List<ExpenseCategory>` | TBD | TBD | §15.2 Fig 15.2.1 | pending |
+| 5 | POST | `/api/accounts/expenses/categories` | `CreateCategory` | ADMIN+ | `CreateExpenseCategoryRequest` | 201 + anon `{ id }` | TBD | TBD | §15.2 Fig 15.2.2/3/4 | pending |
+| 6 | PUT  | `/api/accounts/expenses/categories/{id}` | `UpdateCategory` | ADMIN+ | route `id` + `CreateExpenseCategoryRequest` | anon `{ message }` | TBD | TBD | §15.2 (edit category) | pending |
+| 7 | GET  | `/api/accounts/expenses/claims` | `GetClaims` | USER+ | query `employeeId?, status?, limit, offset` | anon `{ data: List<ExpenseClaim>, total, stats: { total/draft/submitted/approved/rejected/reimbursed _count } }` | TBD | TBD | §15.2 Fig 15.2.8 | pending |
+| 8 | GET  | `/api/accounts/expenses/claims/{id}` | `GetClaimById` | USER+ | route `id` | `ExpenseClaim` (with items) or 404 | TBD | TBD | TBD — view modal | pending |
+| 9 | POST | `/api/accounts/expenses/claims` | `SubmitClaim` | USER+ (no MANAGER) | `SubmitExpenseClaimRequest` | 201 + `ExpenseClaim` | TBD | TBD | §15.2 Fig 15.2.9/10 | pending |
+| 10 | POST | `/api/accounts/expenses/claims/{id}/approve` | `ApproveClaim` | ADMIN/MANAGER+ | route `id` | `ExpenseClaim` after approval | TBD | TBD | §15.2 Fig 15.2.11/12 | pending |
+| 11 | POST | `/api/accounts/expenses/claims/{id}/reject` | `RejectClaim` | ADMIN/MANAGER+ | route `id` + optional `RejectClaimBody { reason }` | anon `{ message }` | TBD | TBD | TBD — reject confirm | pending |
+| 12 | POST | `/api/accounts/expenses/claims/{id}/reimburse` | `ReimburseClaim` | ADMIN+ | route `id` + optional `ReimburseClaimBody { bank_account_id }` | result of `BL.ReimburseExpenseClaim` | TBD | TBD | §15.2 Fig 15.2.13/14 | pending |
+
+> ⚠️ **Phase 4 backend gap:** No DELETE endpoints for `categories/{id}` or `policies/{id}`. The frontend's recently-added `deleteCategory`/`deletePolicy` row actions with target-named confirms will fail unless they're using a different endpoint. Verify in Phase 2.
 
 ### 18. FixedAssetsController
-*pending*
+
+Class route: `api/accounts/assets`. Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`.
+
+DTO field reference (`Models/FixedAssetModels.cs`):
+- **AssetCategory** → `id, tenant_id, name, depreciation_method, useful_life_years, depreciation_rate, asset_account_id, depreciation_account_id, accumulated_dep_account_id, is_active, created_at`
+- **FixedAsset** → `id, tenant_id, asset_code, name, description, asset_category_id, purchase_date, purchase_cost, salvage_value, book_value, accumulated_depreciation, status, disposal_date, disposal_amount, disposal_gl_entry_id, location, department, is_active, created_by, created_at, updated_at, category_name, depreciation_schedule`
+- **AssetDepreciationEntry** → `id, tenant_id, fixed_asset_id, period_date, depreciation_amount, accumulated_amount, book_value_after, gl_entry_id, is_posted, created_at`
+- **CreateAssetCategoryRequest** → `name, depreciation_method, useful_life_years, depreciation_rate, asset_account_id, depreciation_account_id, accumulated_dep_account_id`
+- **RegisterAssetRequest** → `asset_code, name, description, asset_category_id, purchase_date, purchase_cost, salvage_value, location, department`
+- **UpdateAssetBody** (in-controller) → `name, description, location, department`
+- **DisposeAssetRequest** → `disposal_amount, disposal_date, bank_account_id`
+- **RunDepreciationRequest** → `period_date`
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET    | `/api/accounts/assets/categories` | `GetCategories` | USER+ | — | `List<AssetCategory>` | TBD | TBD | §15.3 Fig 15.3.1 | pending |
+| 2 | POST   | `/api/accounts/assets/categories` | `CreateCategory` | ADMIN+ | `CreateAssetCategoryRequest` | 201 + anon `{ id }` | TBD | TBD | §15.3 Fig 15.3.2/3/4 | pending |
+| 3 | PUT    | `/api/accounts/assets/categories/{id}` | `UpdateCategory` | ADMIN+ | route `id` + `CreateAssetCategoryRequest` | anon `{ message }` | TBD | TBD | TBD | pending |
+| 4 | DELETE | `/api/accounts/assets/categories/{id}` | `DeleteCategory` | ADMIN+ | route `id` | anon `{ message }` | TBD | TBD | TBD | pending |
+| 5 | GET    | `/api/accounts/assets` | `GetAssets` | USER+ | query `status?` | anon `{ data: List<FixedAsset>, total, stats: { total/active/disposed _count, total_book_value } }` | TBD | TBD | §15.3 Fig 15.3.5/7 | pending |
+| 6 | GET    | `/api/accounts/assets/{id}` | `GetAssetById` | USER+ | route `id` | `FixedAsset` (with schedule) or 404 | TBD | TBD | §15.3 Fig 15.3.8 | pending |
+| 7 | POST   | `/api/accounts/assets` | `RegisterAsset` | ADMIN+ | `RegisterAssetRequest` | `FixedAsset` (fresh-fetched) | TBD | TBD | §15.3 Fig 15.3.6/7 | pending |
+| 8 | PUT    | `/api/accounts/assets/{id}` | `UpdateAsset` | ADMIN+ | route `id` + `UpdateAssetBody`; rejects 409 if not active | `FixedAsset` | TBD | TBD | §15.3 Fig 15.3.10 | pending |
+| 9 | GET    | `/api/accounts/assets/{id}/depreciation` | `GetDepreciationSchedule` | USER+ | route `id` | depreciation schedule from BL | TBD | TBD | §15.3 Fig 15.3.9 | pending |
+| 10 | POST  | `/api/accounts/assets/run-depreciation` | `RunDepreciation` | ADMIN+ | `RunDepreciationRequest` | anon `{ message, assets_processed }` | TBD | TBD | §15.3 Fig 15.3.11/12/13 | pending |
+| 11 | POST  | `/api/accounts/assets/{id}/dispose` | `DisposeAsset` | ADMIN+ | route `id` + `DisposeAssetRequest` | `FixedAsset` after disposal | TBD | TBD | gap — disposal flow not in guide | pending |
 
 ### 19. BillingController
 *pending*
 
 ### 20. ReportsController
-*pending*
+
+Class route: `api/accounts/reports`. Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`.
+
+DTO field reference (`Models/ReportModels.cs`):
+- **ProfitLossReport** → `fiscal_year_id, sections: ProfitLossSection[], total_revenue, total_expenses, net_profit`
+- **ProfitLossSection** → `account_type, accounts: ReportAccountRow[], section_total`
+- **BalanceSheetReport** → `fiscal_year_id, as_of_date, sections, total_assets, total_liabilities, total_equity, current_year_pl, is_balanced`
+- **BalanceSheetSection** → `account_type, accounts, section_total`
+- **ReportAccountRow** → `account_code, account_name, balance`
+- **LedgerReport** → `account_code, account_name, normal_balance, opening_balance, closing_balance, entries: LedgerEntry[]`
+- **LedgerEntry** → `entry_date, entry_number, description, reference_type, debit_amount, credit_amount, running_balance`
+- **DayBookEntry** → `entry_number, description, journal_type, reference_type, total_debit, total_credit, posted_by`
+- Trial Balance / Cash Flow / AR Aging / AP Aging / Cash Book DTOs not in this file — defined inline by the BL methods.
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET  | `/api/accounts/reports/trial-balance` | `GetTrialBalance` | USER+ | query `fiscalYearId?` | trial balance shape from `BL.GetReportTrialBalance` | TBD | TBD | §13.1 / §13.1a Fig 13.1 / 13.1a | pending |
+| 2 | GET  | `/api/accounts/reports/profit-loss` | `GetProfitLoss` | USER+ | query `fiscalYearId?` | `ProfitLossReport` | TBD | TBD | §13.2 Fig 13.2 (orig) | pending |
+| 3 | GET  | `/api/accounts/reports/balance-sheet` | `GetBalanceSheet` | USER+ | query `fiscalYearId?` | `BalanceSheetReport` | TBD | TBD | §13.3 | pending |
+| 4 | GET  | `/api/accounts/reports/cash-flow` | `GetCashFlow` | USER+ | query `fiscalYearId?` | cash flow shape from BL | TBD | TBD | §13.4 | pending |
+| 5 | GET  | `/api/accounts/reports/ledger` | `GetAccountLedger` | USER+ | query `accountId, fromDate, toDate` (all required) | `LedgerReport` | TBD | TBD | TBD — Account Ledger tab | pending |
+| 6 | GET  | `/api/accounts/reports/day-book` | `GetDayBook` | USER+ | query `date` | `List<DayBookEntry>` | TBD | TBD | TBD — Day Book tab | pending |
+| 7 | GET  | `/api/accounts/reports/cash-book` | `GetCashBook` | USER+ | query `bankAccountId?, fromDate, toDate` | cash book shape from BL | TBD | TBD | TBD — Cash Book tab | pending |
+| 8 | GET  | `/api/accounts/reports/ar-aging` | `GetARAging` | USER+ | — | AR aging shape from BL | TBD | TBD | §10.4c / §13.5 Fig 10.4c / 11-5 | pending |
+| 9 | GET  | `/api/accounts/reports/ap-aging` | `GetAPAging` | USER+ | — | AP aging shape from BL | TBD | TBD | §11.4b Fig 11.4b / 11-6 | pending |
+| 10 | POST | `/api/accounts/reports/export/{reportType}` | `ExportReport` | USER+ | route `reportType` + query `format ('pdf'\|'csv'), fiscalYearId?` | `File` (currently **only `trial-balance` to PDF** is wired; everything else returns 400) | TBD | TBD | gap — only Trial Balance exports today | gap |
 
 ### 21. ClosingController
 
