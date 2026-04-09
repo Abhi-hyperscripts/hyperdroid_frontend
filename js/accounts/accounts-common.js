@@ -634,3 +634,48 @@ const AccountsCommon = {
         return window.confirm(message);
     }
 };
+
+// ============================================================================
+// Phase 4 Tier 1 hot-fix — buttons inside <form> elements default to type="submit"
+// per the HTML spec. Every action button in the accounts modals (Save Draft,
+// Save & Approve, Record Payment, Cancel, etc) was missing an explicit type
+// attribute. Clicking them triggered form submission, which navigated the page
+// and aborted the in-flight async API request — so EVERY save action that
+// looked like it worked via direct JS call would actually fail when the user
+// clicked the button. Patch globally on DOMContentLoaded so we don't have to
+// touch ~165 buttons across 13 HTML files.
+// ============================================================================
+function _patchAccountsFormButtons(root = document) {
+    const buttons = root.querySelectorAll('form button:not([type])');
+    buttons.forEach(btn => { btn.type = 'button'; });
+}
+
+// Initial patch when the DOM is parsed
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => _patchAccountsFormButtons());
+} else {
+    _patchAccountsFormButtons();
+}
+
+// Also patch any buttons added later by dynamically rendered modals/templates.
+// MutationObserver is cheap because we only re-scan added subtrees.
+if (typeof MutationObserver !== 'undefined') {
+    const _btnObserver = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+            for (const node of m.addedNodes) {
+                if (node.nodeType === 1) {
+                    if (node.tagName === 'BUTTON' && !node.hasAttribute('type') && node.closest('form')) {
+                        node.type = 'button';
+                    } else if (node.querySelectorAll) {
+                        _patchAccountsFormButtons(node);
+                    }
+                }
+            }
+        }
+    });
+    if (document.body) {
+        _btnObserver.observe(document.body, { childList: true, subtree: true });
+    } else {
+        document.addEventListener('DOMContentLoaded', () => _btnObserver.observe(document.body, { childList: true, subtree: true }));
+    }
+}

@@ -65,22 +65,27 @@ function onTabSwitch(tabId) {
 
 async function loadInitialData() {
     try {
-        const [vendorRes, accountRes, bankRes, bankAcctRes] = await Promise.all([
+        // Phase 4 Tier 1 hot-fix — was loading 4 things in parallel, two of which were
+        // confusingly named: a `coa?search=bank` call (returned GL accounts whose names
+        // contained "bank", e.g. "Bank Accounts" parent, "Bank Charges" expense) was being
+        // assigned to `bankAccounts`, and the REAL `/bank/accounts` was only used for a
+        // name map. The Vendor Payment modal's bank picker then rendered GL accounts
+        // instead of actual bank accounts → user couldn't select a valid bank → the
+        // payment validation always failed silently. Dropped the broken coa preload and
+        // assigned the real bank accounts to `bankAccounts`.
+        const [vendorRes, accountRes, bankAcctRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('vendors'), { _skipSpinner: true }).catch(() => []),
             api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true }).catch(() => []),
-            api.request(AccountsCommon.buildUrl('coa', { accountTypeClassification: 'asset', search: 'bank' }), { _skipSpinner: true }).catch(() => []),
             api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => [])
         ]);
 
         vendors = Array.isArray(vendorRes) ? vendorRes : (vendorRes?.data || vendorRes?.items || []);
         const acctData = Array.isArray(accountRes) ? accountRes : (accountRes?.data || accountRes?.items || []);
         accounts = acctData;
-        const bankData = Array.isArray(bankRes) ? bankRes : (bankRes?.data || bankRes?.items || []);
-        bankAccounts = bankData;
-        const realBankAccounts = Array.isArray(bankAcctRes) ? bankAcctRes : (bankAcctRes?.data || bankAcctRes?.items || []);
-        // Build bank account name map for payment rendering
+        bankAccounts = Array.isArray(bankAcctRes) ? bankAcctRes : (bankAcctRes?.data || bankAcctRes?.items || []);
+        // Build bank account name map for payment list rendering
         window._bankAccountMap = {};
-        realBankAccounts.forEach(b => { window._bankAccountMap[b.id] = b.account_name || b.bank_name || b.name; });
+        bankAccounts.forEach(b => { window._bankAccountMap[b.id] = b.account_name || b.bank_name || b.name; });
 
         await loadVendorBills();
     } catch (err) {
