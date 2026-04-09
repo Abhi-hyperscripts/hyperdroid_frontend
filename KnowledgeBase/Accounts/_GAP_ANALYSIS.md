@@ -135,7 +135,7 @@ next" closing callout is updated to mention any new modules.
 | 1. Backend inventory | ✓ done | All 23 controllers walked. 204 endpoints captured. |
 | 2. Frontend inventory | ✓ done | All 14 JS modules walked, 218 `api.*` calls joined. 10 orphan calls + ~28 binding/payload bugs flagged. |
 | 3. Guide coverage | pending | many rows already have `Guide ref` filled inline during Phase 1. Remaining work: walk `gap` rows + verify the figures the guide claims actually correspond to working flows (e.g. Year-End preflight is fictional — Fig 15.5.6a is documenting a non-functional UI). |
-| 4. Fix gaps | pending | gated on Phase 3 + user approval |
+| 4. Fix gaps | in-progress | **Tier 1 complete (5/5):** payment allocations (AR+AP), Save&Approve (AR+AP), Year-End preflight, dashboard pending approvals badge. Each verified end-to-end via Playwright with two-step proof. SW bumped 874→880. |
 | 5. Guide refresh | pending | gated on Phase 4 |
 
 ---
@@ -897,4 +897,29 @@ The guide describes things that the UI cannot actually do:
 > Anything we deliberately marked `N/A` or deferred. One line each, with the reason. So a future
 > session doesn't relitigate.
 
-*(empty)*
+- **PMS/CRM/Procurement consolidation** — in scope but deferred to **Phase 4b** after the in-Accounts gaps are clean. Reason: it changes gRPC contracts in 4 services and shouldn't be tangled with the Tier-1-to-6 frontend/backend bug fixes.
+
+---
+
+## Phase 4 fix log
+
+> Append-only log of every fix applied during Phase 4. Each entry includes the proof that the fix
+> works (the second-order state change observed via Playwright). If a session crashes, the next
+> session starts with the highest-numbered task that is still `pending` or `in_progress`.
+
+### Tier 1 — Critical accounting integrity (5/5 ✓)
+
+| # | Fix | Files | SW | Two-step proof |
+|---|---|---|---|---|
+| 1a | Customer payment allocation field names | `js/accounts/receivables.js:573 saveCustomerPayment` (`reference→reference_number`, alloc shape `{customer_invoice_id, allocated_amount}`) + `loadCustomerInvoicesForPayment` (camelCase `customerId`, drop dead status filter, read `balance_due`) | 875 | INV-2026-00001 went **balance_due 10000→6000, status approved→partially_paid, paid_amount 0→4000** after recording payment via Playwright UI. Receivables list visually shows ₹6,000 balance + "Partially Paid" badge + Total Receivable tile dropped 10000→6000. Screenshot: `images/_FIX_T1_payment_allocations_proof.png` |
+| 1b | Vendor payment allocation field names | `js/accounts/payables.js:635 saveVendorPayment` (alloc shape `{vendor_bill_id, allocated_amount}`) + `loadVendorOpenBills` (read `balance_due`, client-side status filter) | 876 | BILL-2026-00002 went **balance_due 8000→5000, status approved→partially_paid, paid_amount 0→3000** after manual API call with new shape. Payables list visually shows "Partially Paid" + ₹13,000 Total Outstanding (was ₹18,000). Screenshot: `images/_FIX_T1_vendor_payment_proof.png` |
+| 2a | Save & Approve invoices | `js/accounts/receivables.js saveInvoice` — drop `status` from payload, chain `POST /approve` when `approve===true` | 877 | Spy captured 2 calls: `POST /invoices` (no `status` field), then `POST /invoices/{id}/approve`. INV-2026-00002 lands as `status="approved"` with `gl_entry_id=650ee852...` (real GL entry posted). `approved_count: 0→1`. |
+| 2b | Save & Approve vendor bills | `js/accounts/payables.js saveBill` — same pattern | 877 | Spy captured `POST /vendor-bills` (no `status`), `POST /vendor-bills/{id}/approve`. BILL-2026-00003 status=approved, `gl_entry_id=a5f73ef9...`. |
+| 3 | Year-End preflight uses real integrity check | `js/accounts/admin.js:829 loadYearEndPreflight` — was hitting `closing/checklists/{fyId}` (404→fictional fallback), now hits `POST system/integrity-check` and renders the 3 real PASS/FAIL rows; closing button gates on `allPassed` | 878 | Spy captured `POST /system/integrity-check`. Rendered table shows 3 real rows: GL Balance PASS (₹34,500=₹34,500), Account Balance Drift PASS, Period Balance Consistency PASS. |
+| 4 | Dashboard pending approvals badge | `js/accounts/dashboard.js:155 loadPendingApprovals` (`res.total_pending`); `pages/accounts/dashboard.html` (added badge slot to Admin nav card); `js/accounts/admin.js:296 loadPendingApprovals` (read `res.expense_claims` envelope, normalize to renderer shape) | 879→880 | Submitted EXP-2026-00001 ₹1,500 → dashboard badge shows **"1"**, desc reads **"1 item awaiting your approval"** (was always "0" / "No pending approvals"). Admin Pending Approvals tab also renders the row with title/type/date/amount and Approve/Reject buttons (backend endpoints orphan until Tier 3). |
+
+### Bonus fix — discovered during fresh-DB seeding
+
+| # | Fix | File | Reason |
+|---|---|---|---|
+| B1 | COA template `ON CONFLICT` clause | `AccountsService/DatabaseLayers/DatabaseLayer_ChartOfAccounts.cs:330` — added `WHERE is_active = true` predicate to match the partial unique index `uq_accounts_tenant_code_active` | Original tenant was set up before the partial index existed; fresh DB exposed that the SQL planner couldn't infer the index without the WHERE clause → 42P10 error → COA template setup completely broken on any new tenant. |

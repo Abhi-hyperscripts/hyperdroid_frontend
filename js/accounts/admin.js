@@ -300,7 +300,23 @@ async function loadPendingApprovals() {
     try {
         const url = AccountsCommon.buildUrl('audit/approvals/pending');
         const res = await api.request(url, { _skipSpinner: true });
-        pendingApprovals = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        // Backend returns { expense_claims: [...], total_pending } per
+        // AuditController.GetPendingApprovals. Was reading res.data || res.items which
+        // are undefined → page always showed "No pending approvals" even with pending claims.
+        // Phase 4 Tier 1 fix: normalize the expense_claims envelope into a uniform shape
+        // the renderer can use. (Tier 3 will extend the backend to also surface pending
+        // bills, invoices, etc — same envelope, more keys; the merger here is forward-compat.)
+        const expenseClaims = Array.isArray(res?.expense_claims) ? res.expense_claims : [];
+        pendingApprovals = expenseClaims.map(c => ({
+            id: c.id,
+            entity_type: 'expense_claim',
+            type: 'Expense Claim',
+            title: c.claim_number || 'Expense Claim',
+            description: c.description || c.claim_number || 'Expense Claim',
+            requested_by: c.employee_name || c.employee_id || '-',
+            amount: c.total_amount,
+            created_at: c.claim_date || c.created_at
+        }));
 
         if (!pendingApprovals.length) {
             container.innerHTML = `<div class="empty-message">
@@ -835,23 +851,27 @@ async function loadYearEndPreflight(fiscalYearId) {
     if (actionsDiv) actionsDiv.style.display = 'none';
 
     try {
-        const url = AccountsCommon.buildUrl(`closing/checklists/${fiscalYearId}`);
-        const res = await api.request(url);
-        const data = res?.data || res;
-        const checks = Array.isArray(data) ? data : (data?.checks || []);
+        // Phase 4 Tier 1 fix — was previously calling closing/checklists/{fiscalYearId}
+        // which is GetChecklistById(checklistId) on the backend. Passing a fiscal year UUID
+        // returned 404, the catch fell back to "All passed", and the destructive Run Closing
+        // button always became enabled with NO real preflight gating. Now calls the actual
+        // integrity-check endpoint that runs the same 3 checks the Integrity Check tab uses.
+        const res = await api.request(AccountsCommon.buildUrl('system/integrity-check'), { method: 'POST' });
+        const checks = Array.isArray(res) ? res : (res?.data || res?.checks || []);
 
         if (!checks.length) {
+            // No checks at all is a misconfigured/empty tenant — be conservative and
+            // disable closing rather than the old "all passed" optimism.
             area.innerHTML = `<div class="glass-card-body">
                 <h4 style="margin-bottom:1rem;">Pre-Flight Checks</h4>
-                <p style="color: var(--color-success);">All pre-flight checks passed. Ready for year-end closing.</p>
+                <p style="color: var(--color-warning);">No integrity checks returned. Run the Integrity Check tab manually before closing.</p>
             </div>`;
-            if (actionsDiv) actionsDiv.style.display = 'block';
+            if (actionsDiv) actionsDiv.style.display = 'none';
             return;
         }
 
-        // Reuse the same shape-tolerant helpers that the Integrity Check view uses
-        // (bug #45). Year-End preflight returns the same `IntegrityCheckResult`
-        // shape — `{ check_type, status, details }` — so `c.passed` is undefined.
+        // Reuse the same shape-tolerant helpers that the Integrity Check view uses.
+        // BL.RunIntegrityChecks returns rows of shape { check_type, status, details, ... }.
         const allPassed = checks.every(integrityCheckPassed);
 
         area.innerHTML = `<div class="glass-card-body">
@@ -875,6 +895,7 @@ async function loadYearEndPreflight(fiscalYearId) {
     } catch (err) {
         console.error('[Admin] loadYearEndPreflight error:', err);
         area.innerHTML = `<div class="glass-card-body"><div class="empty-message"><p>Failed to run pre-flight checks</p></div></div>`;
+        if (actionsDiv) actionsDiv.style.display = 'none';
     }
 }
 

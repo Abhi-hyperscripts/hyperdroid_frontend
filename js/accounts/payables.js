@@ -369,19 +369,29 @@ async function saveBill(approve = false) {
         return;
     }
 
+    // Backend CreateVendorBillRequest has NO `status` field — passing status:'approved'
+    // here was silently dropped, so "Save & Approve" only ever saved a draft. Fixed in
+    // Phase 4 Tier 1: send a clean payload without `status`, then chain a POST /approve
+    // when approve===true.
     const payload = {
         vendor_id: vendorId, bill_date: billDate, due_date: dueDate,
-        po_reference: poReference, notes, lines,
-        status: approve ? 'approved' : 'draft'
+        po_reference: poReference, notes, lines
     };
 
     try {
+        let savedBill;
         if (id) {
-            await api.request(AccountsCommon.buildUrl(`vendor-bills/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
-            Toast.success('Bill updated');
+            savedBill = await api.request(AccountsCommon.buildUrl(`vendor-bills/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
         } else {
-            await api.request(AccountsCommon.buildUrl('vendor-bills'), { method: 'POST', body: JSON.stringify(payload) });
-            Toast.success(approve ? 'Bill created and approved' : 'Bill saved as draft');
+            savedBill = await api.request(AccountsCommon.buildUrl('vendor-bills'), { method: 'POST', body: JSON.stringify(payload) });
+        }
+
+        if (approve && savedBill?.id) {
+            // Chain the approve call so "Save & Approve" actually posts the GL entry
+            await api.request(AccountsCommon.buildUrl(`vendor-bills/${savedBill.id}/approve`), { method: 'POST' });
+            Toast.success('Bill created and approved');
+        } else {
+            Toast.success(id ? 'Bill updated' : 'Bill saved as draft');
         }
         AccountsCommon.closeModal('vendorBillModal');
         await loadVendorBills();
@@ -607,9 +617,17 @@ async function loadVendorOpenBills(preSelectBillId) {
     }
 
     try {
-        const url = AccountsCommon.buildUrl('vendor-bills', { vendorId, status: 'approved' });
+        // Backend VendorBill model uses `balance_due` (NOT `balance` or `total`).
+        // Old code's `b.balance || b.total` fallback resolved to undefined → 0 → filtered out everything.
+        // Also: backend status filter is exact-match — fetch all approved+sent+partially_paid and pick > 0 client-side.
+        const url = AccountsCommon.buildUrl('vendor-bills', { vendorId, limit: 200 });
         const res = await api.request(url, { _skipSpinner: true });
-        const openBills = (Array.isArray(res) ? res : (res?.data || res?.items || [])).filter(b => parseFloat(b.balance || b.total) > 0);
+        const allBills = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        const openBills = allBills.filter(b => {
+            const bal = parseFloat(b.balance_due) || 0;
+            const st = (b.status || '').toLowerCase();
+            return bal > 0 && (st === 'approved' || st === 'sent' || st === 'partial' || st === 'partially_paid' || st === 'overdue');
+        });
 
         if (!openBills.length) {
             allocBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1rem; color:var(--text-secondary);">No open bills for this vendor</td></tr>';
@@ -617,7 +635,7 @@ async function loadVendorOpenBills(preSelectBillId) {
         }
 
         allocBody.innerHTML = openBills.map(b => {
-            const balance = parseFloat(b.balance || b.total) || 0;
+            const balance = parseFloat(b.balance_due) || 0;
             const preAlloc = (preSelectBillId === b.id) ? balance.toFixed(2) : '';
             return `<tr>
                 <td><code>${AccountsCommon.escapeHtml(b.bill_number || '-')}</code></td>
@@ -644,12 +662,14 @@ async function saveVendorPayment() {
         return;
     }
 
-    // Collect allocations
+    // Backend PaymentAllocationRequest expects { vendor_bill_id, allocated_amount }
+    // — NOT { bill_id, amount }. Sending the wrong shape silently dropped allocations
+    // server-side and left vendor bill balance_due unchanged. Fixed in Phase 4 Tier 1.
     const allocations = [];
     document.querySelectorAll('.alloc-amount').forEach(input => {
         const allocAmt = parseFloat(input.value) || 0;
         if (allocAmt > 0) {
-            allocations.push({ bill_id: input.dataset.billId, amount: allocAmt });
+            allocations.push({ vendor_bill_id: input.dataset.billId, allocated_amount: allocAmt });
         }
     });
 

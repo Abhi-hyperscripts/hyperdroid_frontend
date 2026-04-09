@@ -159,13 +159,19 @@ async function loadPendingApprovals() {
     try {
         const url = AccountsCommon.buildUrl('audit/approvals/pending');
         const res = await api.request(url, { _skipSpinner: true });
-        const count = res?.total ?? res?.count ?? (Array.isArray(res) ? res.length : 0);
+        // Backend returns { expense_claims: [...], total_pending }. Was reading res.total
+        // (doesn't exist) → badge always showed 0. Fixed in Phase 4 Tier 1.
+        const count = res?.total_pending
+            ?? (Array.isArray(res?.expense_claims) ? res.expense_claims.length : 0);
 
-        if (badge) badge.textContent = count;
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+        }
         if (desc) {
             desc.textContent = count > 0
                 ? `${count} item${count !== 1 ? 's' : ''} awaiting your approval`
-                : 'No pending approvals';
+                : 'Audit logs, approvals & year-end closing';
         }
     } catch (err) {
         console.error('[Accounts:Dashboard] loadPendingApprovals error:', err);

@@ -397,6 +397,9 @@ async function saveInvoice(approve) {
 
     const lines = [];
     document.querySelectorAll('#invoiceLines tr').forEach(row => {
+        // Note: backend CreateCustomerInvoiceLineRequest accepts only
+        // {account_id, description, quantity, unit_price}. The `hsn_sac` field is silently
+        // dropped server-side; collected here so the future backend extension can use it.
         lines.push({
             description: row.querySelector('.line-desc')?.value || '',
             account_id: row.querySelector('.line-account')?.value || null,
@@ -406,23 +409,36 @@ async function saveInvoice(approve) {
         });
     });
 
+    // Backend CreateCustomerInvoiceRequest has NO `status` field — passing
+    // status:'approved' here was silently dropped, so "Save & Approve" only ever
+    // saved a draft. Fixed in Phase 4 Tier 1: send a clean payload without `status`,
+    // then chain a POST /approve when approve===true.
     const payload = {
         customer_id: document.getElementById('invoiceCustomerId').value,
         invoice_date: document.getElementById('invoiceDate').value,
         due_date: document.getElementById('invoiceDueDate').value,
         notes: document.getElementById('invoiceNotes').value,
-        lines,
-        status: approve ? 'approved' : 'draft'
+        lines
     };
 
     const id = document.getElementById('invoiceId').value;
     try {
+        let savedInvoice;
         if (id) {
-            await api.request(AccountsCommon.buildUrl(`invoices/${id}`), { method: 'PUT', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
+            // PUT /invoices/{id} doesn't exist on backend yet — Tier 3 will add it.
+            // Until then, Edit Invoice clicks here will 405; row is still flagged as gap.
+            savedInvoice = await api.request(AccountsCommon.buildUrl(`invoices/${id}`), { method: 'PUT', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
         } else {
-            await api.request(AccountsCommon.buildUrl('invoices'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
+            savedInvoice = await api.request(AccountsCommon.buildUrl('invoices'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
         }
-        Toast.success(id ? 'Invoice updated' : 'Invoice created');
+
+        if (approve && savedInvoice?.id) {
+            // Chain the approve call so "Save & Approve" actually approves
+            await api.request(AccountsCommon.buildUrl(`invoices/${savedInvoice.id}/approve`), { method: 'POST' });
+            Toast.success('Invoice created and approved');
+        } else {
+            Toast.success(id ? 'Invoice updated' : 'Invoice saved as draft');
+        }
         AccountsCommon.closeModal('customerInvoiceModal');
         loadCustomerInvoices();
     } catch (err) {
@@ -554,17 +570,28 @@ async function loadCustomerInvoicesForPayment() {
         return;
     }
     try {
-        const res = await api.request(AccountsCommon.buildUrl('invoices', { customer_id: custId, status: 'approved,sent,partial', pageSize: 100 }));
-        const items = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        // Backend expects camelCase `customerId` (not `customer_id`) and exact-string `status`
+        // (so we can't pass a comma-separated list — fetch all and filter client-side).
+        // Also reads `balance_due` (not `balance`) per CustomerInvoice model.
+        const res = await api.request(AccountsCommon.buildUrl('invoices', { customerId: custId, limit: 200 }));
+        const allItems = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        const items = allItems.filter(inv => {
+            const bal = parseFloat(inv.balance_due) || 0;
+            const st = (inv.status || '').toLowerCase();
+            return bal > 0 && (st === 'approved' || st === 'sent' || st === 'partial' || st === 'overdue');
+        });
         if (!items.length) {
             tbody.innerHTML = '<tr class="empty-state"><td colspan="3"><div class="empty-message"><p>No outstanding invoices</p></div></td></tr>';
             return;
         }
-        tbody.innerHTML = items.map(inv => `<tr>
-            <td>${AccountsCommon.escapeHtml(inv.invoice_number || '-')}<input type="hidden" class="alloc-invoice-id" value="${inv.id}"></td>
-            <td>${AccountsCommon.formatCurrency(inv.balance)}</td>
-            <td><input type="number" class="form-control alloc-amount" step="0.01" min="0" max="${inv.balance || 0}" placeholder="0.00"></td>
-        </tr>`).join('');
+        tbody.innerHTML = items.map(inv => {
+            const bal = parseFloat(inv.balance_due) || 0;
+            return `<tr>
+                <td>${AccountsCommon.escapeHtml(inv.invoice_number || '-')}<input type="hidden" class="alloc-invoice-id" value="${inv.id}"></td>
+                <td>${AccountsCommon.formatCurrency(bal)}</td>
+                <td><input type="number" class="form-control alloc-amount" step="0.01" min="0" max="${bal}" placeholder="0.00"></td>
+            </tr>`;
+        }).join('');
     } catch (err) {
         tbody.innerHTML = '<tr class="empty-state"><td colspan="3"><div class="empty-message"><p>Failed to load invoices</p></div></td></tr>';
     }
@@ -574,19 +601,24 @@ async function saveCustomerPayment() {
     const form = document.getElementById('paymentForm');
     if (!form.reportValidity()) return;
 
+    // Backend CustomerPaymentAllocationRequest expects { customer_invoice_id, allocated_amount }
+    // — NOT { invoice_id, amount }. Sending the wrong shape silently dropped allocations
+    // server-side and left invoice balance_due unchanged. Fixed in Phase 4 Tier 1.
     const allocations = [];
     document.querySelectorAll('#paymentAllocations tr:not(.empty-state)').forEach(row => {
         const invoiceId = row.querySelector('.alloc-invoice-id')?.value;
         const amount = parseFloat(row.querySelector('.alloc-amount')?.value) || 0;
-        if (invoiceId && amount > 0) allocations.push({ invoice_id: invoiceId, amount });
+        if (invoiceId && amount > 0) allocations.push({ customer_invoice_id: invoiceId, allocated_amount: amount });
     });
 
+    // Backend RecordCustomerPaymentRequest expects `reference_number`, not `reference`.
+    // Fixed in Phase 4 Tier 1 — was being silently dropped before.
     const payload = {
         customer_id: document.getElementById('paymentCustomerId').value,
         payment_date: document.getElementById('paymentDate').value,
         amount: parseFloat(document.getElementById('paymentAmount').value) || 0,
         bank_account_id: document.getElementById('paymentBankAccountId').value,
-        reference: document.getElementById('paymentReference').value,
+        reference_number: document.getElementById('paymentReference').value,
         payment_method: document.getElementById('paymentMethod')?.value || 'bank_transfer',
         allocations
     };
