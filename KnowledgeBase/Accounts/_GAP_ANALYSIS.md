@@ -132,8 +132,8 @@ next" closing callout is updated to mention any new modules.
 
 | Phase | Status | Notes |
 |---|---|---|
-| 1. Backend inventory | in-progress | 21 / 24 controllers walked. Done: Health, System, COA, Fiscal, Customers, Vendors, ClientVendorRequests, AR Invoices, AP Bills, Proforma, PO, DebitNotes, Bank, Journals, GL, Expense, FixedAssets, Reports, Closing, Audit, Copilot. Remaining: Taxation, Billing |
-| 2. Frontend inventory | pending | depends on Phase 1 |
+| 1. Backend inventory | ✓ done | All 23 controllers walked (24th is `BaseController`, no endpoints). 204 endpoints captured. |
+| 2. Frontend inventory | pending | start by walking `js/accounts/*.js` and joining `api.*` calls back to the table rows |
 | 3. Guide coverage | pending | depends on Phase 2 |
 | 4. Fix gaps | pending | gated on Phase 3 + user approval |
 | 5. Guide refresh | pending | gated on Phase 4 |
@@ -149,7 +149,7 @@ endpoint table. Update the checkbox here as each table is filled in.
 - [x] 2. `SystemController` (6) — tenant settings, init, integrity
 - [x] 3. `ChartOfAccountsController` (15) — accounts, groups, types
 - [x] 4. `FiscalController` (8) — fiscal years, periods
-- [ ] 5. `TaxationController` (19) — tax configs, rates, HSN/SAC, returns
+- [x] 5. `TaxationController` (19) — tax configs, rates, HSN/SAC, returns
 - [x] 6. `CustomersController` (4) — customer master
 - [x] 7. `VendorsController` (4) — vendor master
 - [x] 8. `ClientVendorRequestsController` (6) — pending creates from CRM/Procurement
@@ -163,7 +163,7 @@ endpoint table. Update the checkbox here as each table is filled in.
 - [x] 16. `GeneralLedgerController` (9) — GL listing, detail, reverse, lock
 - [x] 17. `ExpenseController` (12) — categories, policies, claims, reimbursement
 - [x] 18. `FixedAssetsController` (11) — categories, register, depreciation, disposal
-- [ ] 19. `BillingController` (18) — plans, subscriptions, usage, tokens
+- [x] 19. `BillingController` (18) — plans, subscriptions, usage, tokens
 - [x] 20. `ReportsController` (10) — Trial Balance, P&L, BS, CF, aging, statements
 - [x] 21. `ClosingController` (6) — closing checklists, year-end
 - [x] 22. `AuditController` (4) — audit log
@@ -275,7 +275,43 @@ DTO field reference (`Models/FiscalModels.cs`):
 | 8 | POST | `/api/accounts/fiscal/years/{id}/close` | `CloseFiscalYear` | ADMIN+ | route `id` | anon `{ message }` | TBD | TBD | §15.5.6 Fig 15.5.6 | pending |
 
 ### 5. TaxationController
-*pending*
+
+Class route: `api/accounts/tax`. Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`. GST/TDS report endpoints are gated by `IsAccountsAdmin()` runtime check.
+
+DTO field reference (`Models/TaxationModels.cs`):
+- **TaxConfiguration** → `id, tenant_id, country_code, tax_type, name, configuration (JSON), is_active, effective_from, effective_to, created_by, created_at, updated_at, rates`
+- **TaxRate** → `id, tenant_id, tax_configuration_id, name, rate, tax_account_id, is_active, created_at, tax_account_code, tax_account_name`
+- **HsnSacCode** → `id, tenant_id, code, description, default_tax_rate, code_type ('HSN'|'SAC'), is_active, created_at`
+- **TaxLedgerEntry** → `id, tenant_id, tax_configuration_id, gl_entry_id, transaction_type, party_name, party_tax_id, taxable_amount, tax_amount, tax_details, transaction_date, created_at`
+- **TaxCalculationRequest** → `transaction_type ('sales'|'purchase'), seller_state_code, buyer_state_code, taxable_amount, tax_configuration_id`
+- **TaxCalculationResult** → `total_tax, taxable_amount, tax_configuration_id, tax_configuration_name, tax_lines: TaxLineResult[]`
+- **TaxLineResult** → `name, rate, amount, account_id, account_code`
+- **CreateTaxConfigurationRequest** → `country_code, tax_type, name, configuration (object), effective_from, effective_to`
+- **UpdateTaxConfigurationRequest** → `id, name, configuration, is_active, effective_to`
+- **CreateTaxRateRequest** → `tax_configuration_id, name, rate, tax_account_id`
+- **CreateHsnSacCodeRequest** → `code, description, default_tax_rate, code_type`
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET    | `/api/accounts/tax/configurations` | `GetTaxConfigurations` | USER+ | query `countryCode?, taxType?` | `List<TaxConfiguration>` | TBD | TBD | §6.1 Fig 6.1 | pending |
+| 2 | GET    | `/api/accounts/tax/configurations/{id}` | `GetTaxConfigurationById` | USER+ | route `id` | `TaxConfiguration` (with rates) or 404 | TBD | TBD | §6.2 Fig 6.2 | pending |
+| 3 | POST   | `/api/accounts/tax/configurations` | `CreateTaxConfiguration` | ADMIN+ | `CreateTaxConfigurationRequest` | 201 + `TaxConfiguration` | TBD | TBD | §6.3 Fig 6.3 | pending |
+| 4 | PUT    | `/api/accounts/tax/configurations/{id}` | `UpdateTaxConfiguration` | ADMIN+ | route `id` + `UpdateTaxConfigurationRequest` | `TaxConfiguration` or 404 | TBD | TBD | §6 Fig 6.4 | pending |
+| 5 | DELETE | `/api/accounts/tax/configurations/{id}` | `DeleteTaxConfiguration` | ADMIN+ | route `id` | anon `{ message }` | TBD | TBD | TBD | pending |
+| 6 | GET    | `/api/accounts/tax/rates` | `GetTaxRates` | USER+ | query `configId` (required) | `List<TaxRate>` | TBD | TBD | §6.3 Fig 6.3 | pending |
+| 7 | POST   | `/api/accounts/tax/rates` | `CreateTaxRate` | ADMIN+ | `CreateTaxRateRequest` | 201 + anon `{ id }` | TBD | TBD | §6.3 | pending |
+| 8 | PUT    | `/api/accounts/tax/rates/{id}` | `UpdateTaxRate` | ADMIN+ | route `id` + `CreateTaxRateRequest` | anon `{ message }` | TBD | TBD | TBD | pending |
+| 9 | DELETE | `/api/accounts/tax/rates/{id}` | `DeleteTaxRate` | ADMIN+ | route `id` | anon `{ message }` | TBD | TBD | TBD | pending |
+| 10 | GET   | `/api/accounts/tax/hsn-sac` | `GetHsnSacCodes` | USER+ | query `search?, codeType?` | `List<HsnSacCode>` | TBD | TBD | §6.5 Fig 6.5 | pending |
+| 11 | POST  | `/api/accounts/tax/hsn-sac` | `CreateHsnSacCode` | ADMIN+ | `CreateHsnSacCodeRequest` | 201 + anon `{ id }` | TBD | TBD | §6.4 Fig 6.4 | pending |
+| 12 | PUT   | `/api/accounts/tax/hsn-sac/{id}` | `UpdateHsnSacCode` | ADMIN+ | route `id` + `CreateHsnSacCodeRequest` | anon `{ message }` | TBD | TBD | TBD | pending |
+| 13 | DELETE| `/api/accounts/tax/hsn-sac/{id}` | `DeleteHsnSacCode` | ADMIN+ | route `id` | anon `{ message }` | TBD | TBD | TBD | pending |
+| 14 | POST  | `/api/accounts/tax/calculate` | `CalculateTax` | USER+ | `TaxCalculationRequest` | `TaxCalculationResult` | TBD | TBD | TBD — internal lookup used by invoice creation? | pending |
+| 15 | GET   | `/api/accounts/tax/ledger` | `GetTaxLedger` | USER+ | query `transactionType?, fromDate?, toDate?, limit, offset` | `List<TaxLedgerEntry>` | TBD | TBD | gap — no UI for tax ledger today | gap |
+| 16 | POST  | `/api/accounts/tax/seed-india` | `SeedIndiaConfig` | ADMIN+ | — | anon `{ message, configurations }` | TBD | TBD | §6 (one-time seed action) | pending |
+| 17 | GET   | `/api/accounts/tax/reports/gstr1` | `GetGSTR1` | ADMIN+ | query `fromDate, toDate` (required) | anon `{ report, period, outward_supplies: [...projected...], total_taxable, total_tax, invoice_count }` | TBD | TBD | gap — no UI for GST returns | gap |
+| 18 | GET   | `/api/accounts/tax/reports/gstr3b` | `GetGSTR3B` | ADMIN+ | query `fromDate, toDate` (required) | anon `{ report, period, outward_supplies, inward_supplies, net_tax_payable }` | TBD | TBD | gap — no UI | gap |
+| 19 | GET   | `/api/accounts/tax/reports/tds` | `GetTDSReturn` | ADMIN+ | query `fromDate, toDate` (required) | anon `{ report, period, deductions: [...projected...], total_tds, deductee_count }` | TBD | TBD | gap — no UI | gap |
 
 ### 6. CustomersController
 
@@ -609,7 +645,48 @@ DTO field reference (`Models/FixedAssetModels.cs`):
 | 11 | POST  | `/api/accounts/assets/{id}/dispose` | `DisposeAsset` | ADMIN+ | route `id` + `DisposeAssetRequest` | `FixedAsset` after disposal | TBD | TBD | gap — disposal flow not in guide | pending |
 
 ### 19. BillingController
-*pending*
+
+Class route: `api/accounts/billing`. Class-level `[Authorize(Roles = "ACCOUNTS_USER, ADMIN, MANAGER, AUDITOR, SUPERADMIN")]`. `generate-invoices` runtime-gated by `IsAccountsAdmin()`.
+
+DTO field reference (`Models/BillingModels.cs`):
+- **BillingPlan** → `id, tenant_id, plan_code, name, description, billing_type, amount, currency, billing_cycle, trial_days, features (JSON), is_active, created_by, created_at, updated_at`
+- **Subscription** → `id, tenant_id, customer_id, billing_plan_id, status, start_date, end_date, current_period_start, current_period_end, next_billing_date, trial_end_date, cancelled_at, cancellation_reason, metadata, created_by, created_at, updated_at, customer_name, plan_name`
+- **UsageMeter** → `id, tenant_id, meter_code, name, unit, rate_per_unit, is_active, created_at`
+- **TokenBalance** → `id, tenant_id, customer_id, balance, updated_at, customer_name`
+- **TokenTransaction** → `id, tenant_id, customer_id, transaction_type, amount, balance_after, reason, reference_id, created_at`
+- **CreateBillingPlanRequest** → `plan_code, name, description, billing_type, amount, billing_cycle, trial_days, features (object)`
+- **UpdateBillingPlanRequest** → `id, name, description, amount, is_active`
+- **CreateSubscriptionRequest** → `customer_id, billing_plan_id, start_date`
+- **CancelSubscriptionRequest** → `reason`
+- **CreateUsageMeterRequest** → `meter_code, name, unit, rate_per_unit`
+- **RecordUsageRequest** → `customer_id, meter_code (string, not GUID!), quantity, metadata`
+- **PurchaseTokensRequest** → `customer_id, amount`
+- **DeductTokensRequest** → `customer_id, amount, reason`
+
+> ⚠️ **`UpdateBillingPlanRequest` has only 5 fields** vs `CreateBillingPlanRequest`'s 9 — you can't change `billing_cycle`, `trial_days`, `billing_type`, or `features` after creation. The frontend Edit modal (Fig 15.4.3b) shows all fields though, which means either the frontend silently ignores those values or the backend silently ignores them. Field-binding gap to verify in Phase 2.
+
+> **`RecordUsageRequest.meter_code` is a string** (`"API_CALLS"`) not a GUID. The frontend's recently-converted SearchableDropdown (Fig 15.4.5b) needs to confirm it's posting `meter_code` not `meter_id`. Field-binding check in Phase 2.
+
+| # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | GET    | `/api/accounts/billing/plans` | `GetPlans` | USER+ | — | `List<BillingPlan>` | TBD | TBD | §15.4.1 Fig 15.4.1 | pending |
+| 2 | GET    | `/api/accounts/billing/plans/{id}` | `GetPlanById` | USER+ | route `id` | `BillingPlan` or 404 | TBD | TBD | §15.4.3a Fig 15.4.3a | pending |
+| 3 | POST   | `/api/accounts/billing/plans` | `CreatePlan` | ADMIN+ | `CreateBillingPlanRequest` | `BillingPlan` (fresh-fetched) | TBD | TBD | §15.4.2/3 Fig 15.4.2/3 | pending |
+| 4 | PUT    | `/api/accounts/billing/plans/{id}` | `UpdatePlan` | ADMIN+ | route `id` + `UpdateBillingPlanRequest` (only 4 nullable fields) | `BillingPlan` or 404 | TBD | **likely mismatch — see warning** | §15.4.3b Fig 15.4.3b | gap |
+| 5 | DELETE | `/api/accounts/billing/plans/{id}` | `DeletePlan` | ADMIN+ | route `id` | anon `{ message }` | TBD | TBD | §15.4.3c Fig 15.4.3c | pending |
+| 6 | GET    | `/api/accounts/billing/subscriptions` | `GetSubscriptions` | USER+ | query `customerId?` | `List<Subscription>` | TBD | TBD | §15.4.4 Fig 15.4.4 / 15.4.4c | pending |
+| 7 | GET    | `/api/accounts/billing/subscriptions/{id}` | `GetSubscriptionById` | USER+ | route `id` | `Subscription` or 404 | TBD | TBD | TBD | pending |
+| 8 | POST   | `/api/accounts/billing/subscriptions` | `CreateSubscription` | ADMIN+ | `CreateSubscriptionRequest` | 201 + subscription | TBD | TBD | §15.4.4a/b/c Fig 15.4.4a/b/c | pending |
+| 9 | POST   | `/api/accounts/billing/subscriptions/{id}/cancel` | `CancelSubscription` | ADMIN+ | route `id` + `CancelSubscriptionRequest` | anon `{ message }` | TBD | TBD | TBD — cancel flow not in guide | pending |
+| 10 | POST  | `/api/accounts/billing/generate-invoices` | `GenerateInvoices` | ADMIN+ | — | anon `{ message, invoices_generated }` | TBD | TBD | §15.4.4c (Generate Invoices toolbar action) | pending |
+| 11 | GET   | `/api/accounts/billing/usage-meters` | `GetUsageMeters` | USER+ | — | `List<UsageMeter>` | TBD | TBD | §15.4.5 Fig 15.4.5 | pending |
+| 12 | POST  | `/api/accounts/billing/usage-meters` | `CreateUsageMeter` | ADMIN+ | `CreateUsageMeterRequest` | 201 + anon `{ id }` | TBD | TBD | §15.4.5a Fig 15.4.5a | pending |
+| 13 | PUT   | `/api/accounts/billing/usage-meters/{id}` | `UpdateUsageMeter` | ADMIN+ | route `id` + `CreateUsageMeterRequest` | anon `{ message }` | TBD | TBD | TBD | pending |
+| 14 | DELETE| `/api/accounts/billing/usage-meters/{id}` | `DeleteUsageMeter` | ADMIN+ | route `id` | anon `{ message }` | TBD | TBD | TBD | pending |
+| 15 | POST  | `/api/accounts/billing/usage` | `RecordUsage` | ADMIN+ | `RecordUsageRequest` (note `meter_code` is string!) | anon `{ message }` | TBD | **verify meter_code vs meter_id** | §15.4.5b/c Fig 15.4.5b/c | gap |
+| 16 | GET   | `/api/accounts/billing/tokens/{customerId}` | `GetTokenBalance` | USER+ | route `customerId` | `TokenBalance` or `{ balance: 0 }` | TBD | TBD | §15.4.6/6a Fig 15.4.6 / 15.4.6a | pending |
+| 17 | POST  | `/api/accounts/billing/tokens/purchase` | `PurchaseTokens` | ADMIN+ | `PurchaseTokensRequest` | `TokenBalance` after purchase | TBD | TBD | §15.4.6 (Purchase Tokens form) | pending |
+| 18 | POST  | `/api/accounts/billing/tokens/deduct` | `DeductTokens` | ADMIN+ | `DeductTokensRequest` | anon `{ remaining_balance }` | TBD | TBD | §15.4.6 (Deduct Tokens form) | pending |
 
 ### 20. ReportsController
 
