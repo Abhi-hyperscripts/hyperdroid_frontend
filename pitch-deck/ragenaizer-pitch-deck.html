@@ -979,6 +979,39 @@ body{
 }
 
 /* ============================================================
+   MOBILE / NARROW VIEWPORT (screen only — print is unaffected)
+   ============================================================
+   The slides are designed at A4 portrait (210mm × 297mm ≈ 794 × 1123 px)
+   for perfect print → PDF output. On a 390px-wide phone the slides
+   would otherwise overflow horizontally and the deck looks broken.
+
+   We use CSS `zoom` (universally supported as of Firefox 126 in 2024)
+   which scales the entire element AND its layout box, so text stays
+   crisp, layouts don't reflow, and there's no horizontal overflow.
+   The fluid factor is computed from 100vw so the deck looks right
+   at any phone width from 320px upward. */
+@media screen and (max-width: 820px) {
+  html, body { overflow-x: hidden; }
+  body {
+    padding: 12px 0;
+    gap: 12px;
+    align-items: center;
+  }
+  .slide {
+    /* (100vw - 24px) / 794px → fluid fit with 12px breathing room each side.
+       Note: divisor MUST be 794px (a length), not 794 (a number) — that's
+       what makes the calc result a unitless number, which is what zoom
+       requires. Using 794 alone produces a length value and zoom rejects
+       it (silently falls back to 1). */
+    zoom: calc((100vw - 24px) / 794px);
+    /* Re-add the card affordance for the screen view (the desktop and
+       print views still get the original look from the base rule). */
+    border-radius: 12px;
+    box-shadow: 0 12px 36px -8px rgba(0,0,0,.6);
+  }
+}
+
+/* ============================================================
    PRINT
    ============================================================ */
 @page{
