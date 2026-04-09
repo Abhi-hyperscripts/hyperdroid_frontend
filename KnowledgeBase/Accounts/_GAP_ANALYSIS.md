@@ -132,9 +132,9 @@ next" closing callout is updated to mention any new modules.
 
 | Phase | Status | Notes |
 |---|---|---|
-| 1. Backend inventory | ✓ done | All 23 controllers walked (24th is `BaseController`, no endpoints). 204 endpoints captured. |
-| 2. Frontend inventory | pending | start by walking `js/accounts/*.js` and joining `api.*` calls back to the table rows |
-| 3. Guide coverage | pending | depends on Phase 2 |
+| 1. Backend inventory | ✓ done | All 23 controllers walked. 204 endpoints captured. |
+| 2. Frontend inventory | ✓ done | All 14 JS modules walked, 218 `api.*` calls joined. 10 orphan calls + ~28 binding/payload bugs flagged. |
+| 3. Guide coverage | pending | many rows already have `Guide ref` filled inline during Phase 1. Remaining work: walk `gap` rows + verify the figures the guide claims actually correspond to working flows (e.g. Year-End preflight is fictional — Fig 15.5.6a is documenting a non-functional UI). |
 | 4. Fix gaps | pending | gated on Phase 3 + user approval |
 | 5. Guide refresh | pending | gated on Phase 4 |
 
@@ -213,12 +213,12 @@ Class route: `api/accounts/system`. Class-level `[Authorize(Roles = "ACCOUNTS_AD
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | POST | `/api/accounts/system/encrypt-existing-data` | `EncryptExistingData` | ADMIN+ | — | anon `{ message, details }` (details = list of table results) | TBD | TBD | N/A — one-time admin migration | pending |
-| 2 | POST | `/api/accounts/system/integrity-check` | `RunIntegrityCheck` | ADMIN+ | — | result of `BL.RunIntegrityChecks` (list of `{ check_type, status, details, ... }`) | TBD | TBD | §15.5.3 Fig 15.5.3 | pending |
+| 1 | POST | `/api/accounts/system/encrypt-existing-data` | `EncryptExistingData` | ADMIN+ | — | anon `{ message, details }` (details = list of table results) | none in `js/accounts/` | n/a | N/A — one-time admin migration | N/A |
+| 2 | POST | `/api/accounts/system/integrity-check` | `RunIntegrityCheck` | ADMIN+ | — | result of `BL.RunIntegrityChecks` | `admin.js:463 runIntegrityCheck` | ok | §15.5.3 Fig 15.5.3 | pending |
 | 3 | GET  | `/api/accounts/system/gl-summary` | `GetGlSummary` | ADMIN+ | — | result of `BL.GetGlSummary` | `dashboard.js:42 loadGLSummary` | reads `by_type_and_status[]` with `entry_count, status, total_debit, total_credit` (verify BL shape in Phase 4) | §3.6 / dashboard tiles | pending |
-| 4 | POST | `/api/accounts/system/recompute-balances` | `RecomputeBalances` | SUPERADMIN | — | anon `{ message }` | TBD | TBD | N/A — recovery action | pending |
-| 5 | GET  | `/api/accounts/system/integrity-check/results` | `GetIntegrityCheckResults` | ADMIN+ | query `limit` | **STUB** anon `{ message, tenant_id, limit }` — not actually querying `integrity_check_results` table | TBD | TBD | gap — backend stub | gap |
-| 6 | GET  | `/api/accounts/system/job-log` | `GetJobLog` | ADMIN+ | query `jobType, limit` | **STUB** anon `{ message, tenant_id, limit }` — not actually returning rows | TBD | TBD | gap — backend stub (Fig 15.5.4 shows empty UI) | gap |
+| 4 | POST | `/api/accounts/system/recompute-balances` | `RecomputeBalances` | SUPERADMIN | — | anon `{ message }` | `admin.js:549 recomputeBalances` | ok | N/A — recovery action | pending |
+| 5 | GET  | `/api/accounts/system/integrity-check/results` | `GetIntegrityCheckResults` | ADMIN+ | query `limit` | **STUB** anon `{ message, tenant_id, limit }` | `admin.js:511 loadIntegrityCheckResults` | calling a backend stub — shows nothing useful no matter what | gap — backend stub | gap |
+| 6 | GET  | `/api/accounts/system/job-log` | `GetJobLog` | ADMIN+ | query `jobType, limit` | **STUB** anon `{ message, tenant_id, limit }` | `admin.js:568 loadJobLog` | calling a backend stub — Fig 15.5.4 shows empty UI for that exact reason | gap — backend stub | gap |
 
 ### 3. ChartOfAccountsController
 
@@ -638,17 +638,17 @@ DTO field reference (`Models/FixedAssetModels.cs`):
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | GET    | `/api/accounts/assets/categories` | `GetCategories` | USER+ | — | `List<AssetCategory>` | TBD | TBD | §15.3 Fig 15.3.1 | pending |
-| 2 | POST   | `/api/accounts/assets/categories` | `CreateCategory` | ADMIN+ | `CreateAssetCategoryRequest` | 201 + anon `{ id }` | TBD | TBD | §15.3 Fig 15.3.2/3/4 | pending |
-| 3 | PUT    | `/api/accounts/assets/categories/{id}` | `UpdateCategory` | ADMIN+ | route `id` + `CreateAssetCategoryRequest` | anon `{ message }` | TBD | TBD | TBD | pending |
-| 4 | DELETE | `/api/accounts/assets/categories/{id}` | `DeleteCategory` | ADMIN+ | route `id` | anon `{ message }` | TBD | TBD | TBD | pending |
-| 5 | GET    | `/api/accounts/assets` | `GetAssets` | USER+ | query `status?` | anon `{ data: List<FixedAsset>, total, stats: { total/active/disposed _count, total_book_value } }` | TBD | TBD | §15.3 Fig 15.3.5/7 | pending |
-| 6 | GET    | `/api/accounts/assets/{id}` | `GetAssetById` | USER+ | route `id` | `FixedAsset` (with schedule) or 404 | TBD | TBD | §15.3 Fig 15.3.8 | pending |
-| 7 | POST   | `/api/accounts/assets` | `RegisterAsset` | ADMIN+ | `RegisterAssetRequest` | `FixedAsset` (fresh-fetched) | TBD | TBD | §15.3 Fig 15.3.6/7 | pending |
-| 8 | PUT    | `/api/accounts/assets/{id}` | `UpdateAsset` | ADMIN+ | route `id` + `UpdateAssetBody`; rejects 409 if not active | `FixedAsset` | TBD | TBD | §15.3 Fig 15.3.10 | pending |
-| 9 | GET    | `/api/accounts/assets/{id}/depreciation` | `GetDepreciationSchedule` | USER+ | route `id` | depreciation schedule from BL | TBD | TBD | §15.3 Fig 15.3.9 | pending |
-| 10 | POST  | `/api/accounts/assets/run-depreciation` | `RunDepreciation` | ADMIN+ | `RunDepreciationRequest` | anon `{ message, assets_processed }` | TBD | TBD | §15.3 Fig 15.3.11/12/13 | pending |
-| 11 | POST  | `/api/accounts/assets/{id}/dispose` | `DisposeAsset` | ADMIN+ | route `id` + `DisposeAssetRequest` | `FixedAsset` after disposal | TBD | TBD | gap — disposal flow not in guide | pending |
+| 1 | GET    | `/api/accounts/assets/categories` | `GetCategories` | USER+ | — | `List<AssetCategory>` | `assets.js:82 loadAssetCategories` | ok | §15.3 Fig 15.3.1 | pending |
+| 2 | POST   | `/api/accounts/assets/categories` | `CreateCategory` | ADMIN+ | `CreateAssetCategoryRequest` | 201 + anon `{ id }` | `assets.js:171 saveAssetCategory` (no id) | ok — sends `name, depreciation_method, useful_life_years, depreciation_rate, asset_account_id, depreciation_account_id, accumulated_dep_account_id` (matches model) | §15.3 Fig 15.3.2/3/4 | pending |
+| 3 | PUT    | `/api/accounts/assets/categories/{id}` | `UpdateCategory` | ADMIN+ | route `id` + `CreateAssetCategoryRequest` | anon `{ message }` | `assets.js:168 saveAssetCategory` (id branch) | ok | TBD | pending |
+| 4 | DELETE | `/api/accounts/assets/categories/{id}` | `DeleteCategory` | ADMIN+ | route `id` | anon `{ message }` | `assets.js:186 deleteAssetCategory` | ok | TBD | pending |
+| 5 | GET    | `/api/accounts/assets` | `GetAssets` | USER+ | query `status?` | anon `{ data, total, stats }` | `assets.js:234 loadAssets` | ok — defensive `purchase_cost \|\| cost` etc are dead fallbacks | §15.3 Fig 15.3.5/7 | pending |
+| 6 | GET    | `/api/accounts/assets/{id}` | `GetAssetById` | USER+ | route `id` | `FixedAsset` (with schedule) or 404 | `assets.js:491 viewAssetDetail` | ok — reads `asset_code, name, asset_category_id, purchase_date, purchase_cost, salvage_value, book_value, accumulated_depreciation, location, department, description, status` | §15.3 Fig 15.3.8 | pending |
+| 7 | POST   | `/api/accounts/assets` | `RegisterAsset` | ADMIN+ | `RegisterAssetRequest` | `FixedAsset` (fresh-fetched) | `assets.js:348 saveAsset` (no id) | ok — sends `asset_code, name, asset_category_id, purchase_date, purchase_cost, salvage_value, description` (no `location, department` — both optional) | §15.3 Fig 15.3.6/7 | pending |
+| 8 | PUT    | `/api/accounts/assets/{id}` | `UpdateAsset` | ADMIN+ | route `id` + `UpdateAssetBody`; rejects 409 if not active | `FixedAsset` | `assets.js:345 saveAsset` (id branch) | ok — sends `{name, description}` (subset of UpdateAssetBody which also accepts `location, department` — UI doesn't expose those for editing) | §15.3 Fig 15.3.10 | pending |
+| 9 | GET    | `/api/accounts/assets/{id}/depreciation` | `GetDepreciationSchedule` | USER+ | route `id` | depreciation schedule from BL | `assets.js:575 viewDepreciationSchedule` | ok via defensive `res?.schedule` fallback | §15.3 Fig 15.3.9 | pending |
+| 10 | POST  | `/api/accounts/assets/run-depreciation` | `RunDepreciation` | ADMIN+ | `RunDepreciationRequest` | anon `{ message, assets_processed }` | `assets.js:443 runDepreciation` | ⚠️ frontend allows a category filter on the Run Depreciation form and sends `{period_date, category_id?}`, but `RunDepreciationRequest` only has `period_date`. **Category filter is silently ignored — depreciation always runs for ALL active assets**, regardless of dropdown selection. | §15.3 Fig 15.3.11/12/13 | gap |
+| 11 | POST  | `/api/accounts/assets/{id}/dispose` | `DisposeAsset` | ADMIN+ | route `id` + `DisposeAssetRequest` | `FixedAsset` after disposal | `assets.js:391 confirmDispose` | ⚠️ sends `{disposal_date, disposal_amount}` but **omits `bank_account_id`** — backend accepts it, BL probably runs but disposal proceeds aren't linked to a bank deposit (the disposal cash never lands in a specific bank account in the GL entry). Verify BL behavior. | gap — disposal flow not in guide | gap |
 
 ### 19. BillingController
 
@@ -675,24 +675,24 @@ DTO field reference (`Models/BillingModels.cs`):
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | GET    | `/api/accounts/billing/plans` | `GetPlans` | USER+ | — | `List<BillingPlan>` | TBD | TBD | §15.4.1 Fig 15.4.1 | pending |
-| 2 | GET    | `/api/accounts/billing/plans/{id}` | `GetPlanById` | USER+ | route `id` | `BillingPlan` or 404 | TBD | TBD | §15.4.3a Fig 15.4.3a | pending |
-| 3 | POST   | `/api/accounts/billing/plans` | `CreatePlan` | ADMIN+ | `CreateBillingPlanRequest` | `BillingPlan` (fresh-fetched) | TBD | TBD | §15.4.2/3 Fig 15.4.2/3 | pending |
-| 4 | PUT    | `/api/accounts/billing/plans/{id}` | `UpdatePlan` | ADMIN+ | route `id` + `UpdateBillingPlanRequest` (only 4 nullable fields) | `BillingPlan` or 404 | TBD | **likely mismatch — see warning** | §15.4.3b Fig 15.4.3b | gap |
-| 5 | DELETE | `/api/accounts/billing/plans/{id}` | `DeletePlan` | ADMIN+ | route `id` | anon `{ message }` | TBD | TBD | §15.4.3c Fig 15.4.3c | pending |
-| 6 | GET    | `/api/accounts/billing/subscriptions` | `GetSubscriptions` | USER+ | query `customerId?` | `List<Subscription>` | TBD | TBD | §15.4.4 Fig 15.4.4 / 15.4.4c | pending |
-| 7 | GET    | `/api/accounts/billing/subscriptions/{id}` | `GetSubscriptionById` | USER+ | route `id` | `Subscription` or 404 | TBD | TBD | TBD | pending |
-| 8 | POST   | `/api/accounts/billing/subscriptions` | `CreateSubscription` | ADMIN+ | `CreateSubscriptionRequest` | 201 + subscription | TBD | TBD | §15.4.4a/b/c Fig 15.4.4a/b/c | pending |
-| 9 | POST   | `/api/accounts/billing/subscriptions/{id}/cancel` | `CancelSubscription` | ADMIN+ | route `id` + `CancelSubscriptionRequest` | anon `{ message }` | TBD | TBD | TBD — cancel flow not in guide | pending |
-| 10 | POST  | `/api/accounts/billing/generate-invoices` | `GenerateInvoices` | ADMIN+ | — | anon `{ message, invoices_generated }` | TBD | TBD | §15.4.4c (Generate Invoices toolbar action) | pending |
-| 11 | GET   | `/api/accounts/billing/usage-meters` | `GetUsageMeters` | USER+ | — | `List<UsageMeter>` | TBD | TBD | §15.4.5 Fig 15.4.5 | pending |
-| 12 | POST  | `/api/accounts/billing/usage-meters` | `CreateUsageMeter` | ADMIN+ | `CreateUsageMeterRequest` | 201 + anon `{ id }` | TBD | TBD | §15.4.5a Fig 15.4.5a | pending |
-| 13 | PUT   | `/api/accounts/billing/usage-meters/{id}` | `UpdateUsageMeter` | ADMIN+ | route `id` + `CreateUsageMeterRequest` | anon `{ message }` | TBD | TBD | TBD | pending |
-| 14 | DELETE| `/api/accounts/billing/usage-meters/{id}` | `DeleteUsageMeter` | ADMIN+ | route `id` | anon `{ message }` | TBD | TBD | TBD | pending |
-| 15 | POST  | `/api/accounts/billing/usage` | `RecordUsage` | ADMIN+ | `RecordUsageRequest` (note `meter_code` is string!) | anon `{ message }` | TBD | **verify meter_code vs meter_id** | §15.4.5b/c Fig 15.4.5b/c | gap |
-| 16 | GET   | `/api/accounts/billing/tokens/{customerId}` | `GetTokenBalance` | USER+ | route `customerId` | `TokenBalance` or `{ balance: 0 }` | TBD | TBD | §15.4.6/6a Fig 15.4.6 / 15.4.6a | pending |
-| 17 | POST  | `/api/accounts/billing/tokens/purchase` | `PurchaseTokens` | ADMIN+ | `PurchaseTokensRequest` | `TokenBalance` after purchase | TBD | TBD | §15.4.6 (Purchase Tokens form) | pending |
-| 18 | POST  | `/api/accounts/billing/tokens/deduct` | `DeductTokens` | ADMIN+ | `DeductTokensRequest` | anon `{ remaining_balance }` | TBD | TBD | §15.4.6 (Deduct Tokens form) | pending |
+| 1 | GET    | `/api/accounts/billing/plans` | `GetPlans` | USER+ | — | `List<BillingPlan>` | `billing.js:133 loadPlans` | ok | §15.4.1 Fig 15.4.1 | pending |
+| 2 | GET    | `/api/accounts/billing/plans/{id}` | `GetPlanById` | USER+ | route `id` | `BillingPlan` or 404 | `billing.js:186 viewPlan` | ok | §15.4.3a Fig 15.4.3a | pending |
+| 3 | POST   | `/api/accounts/billing/plans` | `CreatePlan` | ADMIN+ | `CreateBillingPlanRequest` | `BillingPlan` (fresh-fetched) | `billing.js:262 savePlan` (no id) | ok — sends `name, plan_code, amount, billing_type, billing_cycle, description` (no `trial_days, features` — both optional) | §15.4.2/3 Fig 15.4.2/3 | pending |
+| 4 | PUT    | `/api/accounts/billing/plans/{id}` | `UpdatePlan` | ADMIN+ | route `id` + `UpdateBillingPlanRequest` (only 4 nullable fields) | `BillingPlan` or 404 | `billing.js:259 savePlan` (id branch) | ok — frontend constructs an `updatePayload` with exactly the 4 backend-allowed fields `{name, description, amount, is_active}` and sends a separate shape from createPayload (Phase 1 warning resolved) | §15.4.3b Fig 15.4.3b | pending |
+| 5 | DELETE | `/api/accounts/billing/plans/{id}` | `DeletePlan` | ADMIN+ | route `id` | anon `{ message }` | `billing.js:292 deletePlan` | ok | §15.4.3c Fig 15.4.3c | pending |
+| 6 | GET    | `/api/accounts/billing/subscriptions` | `GetSubscriptions` | USER+ | query `customerId?` | `List<Subscription>` | `billing.js:311 loadSubscriptions` | ⚠️ sends dead `page, pageSize, search` params backend ignores; render reads `s.plan_id` but model has `billing_plan_id` → **plan column relies on `s.plan_name` fallback only**, no client-side cross-reference works | §15.4.4 Fig 15.4.4 / 15.4.4c | gap |
+| 7 | GET    | `/api/accounts/billing/subscriptions/{id}` | `GetSubscriptionById` | USER+ | route `id` | `Subscription` or 404 | `billing.js:368 viewSubscription` | **MISMATCH (3)** — reads `s.plan_id` (model has `billing_plan_id`); reads `s.amount` (model has no `amount` — plan price is on the plan, not subscription); reads `s.cancel_reason` (model has `cancellation_reason`). View detail modal shows '-' for plan, amount, and cancel reason. | TBD | gap |
+| 8 | POST   | `/api/accounts/billing/subscriptions` | `CreateSubscription` | ADMIN+ | `CreateSubscriptionRequest` | 201 + subscription | `billing.js:460 saveSubscription` | ok — sends `{customer_id, billing_plan_id, start_date}`; **note: guide §15.4.4b text mentions "Quantity 1" but neither the request DTO nor the Subscription model has a `quantity` field — guide claim is fictional** | §15.4.4a/b/c Fig 15.4.4a/b/c | gap |
+| 9 | POST   | `/api/accounts/billing/subscriptions/{id}/cancel` | `CancelSubscription` | ADMIN+ | route `id` + `CancelSubscriptionRequest` | anon `{ message }` | `billing.js:474 cancelSubscription` | ok — sends `{reason: 'Cancelled by admin'}` (hardcoded — UI doesn't actually prompt for a reason despite the model accepting one) | TBD — cancel flow not in guide | pending |
+| 10 | POST  | `/api/accounts/billing/generate-invoices` | `GenerateInvoices` | ADMIN+ | — | anon `{ message, invoices_generated }` | `billing.js:404 generateInvoices` | ok | §15.4.4c (Generate Invoices toolbar action) | pending |
+| 11 | GET   | `/api/accounts/billing/usage-meters` | `GetUsageMeters` | USER+ | — | `List<UsageMeter>` | `billing.js:513 loadMeters` | ok send; **render does not display `rate_per_unit` anywhere** — the Usage Meters table only shows Name / Unit / Status / Actions | §15.4.5 Fig 15.4.5 | gap |
+| 12 | POST  | `/api/accounts/billing/usage-meters` | `CreateUsageMeter` | ADMIN+ | `CreateUsageMeterRequest` | 201 + anon `{ id }` | `billing.js:593 saveMeter` (no id) | ⚠️ **`rate_per_unit` is hardcoded to `1`** in the payload — the Create Meter modal has no rate input. Every meter ever created has rate=1 regardless of intent. The guide §15.4.5a claims "API Calls at ₹0.05 per unit" — that price is **fictional**; the actual record has rate=1. **GAP — missing UI input + lying guide.** | §15.4.5a Fig 15.4.5a | gap |
+| 13 | PUT   | `/api/accounts/billing/usage-meters/{id}` | `UpdateUsageMeter` | ADMIN+ | route `id` + `CreateUsageMeterRequest` | anon `{ message }` | `billing.js:590 saveMeter` (id branch) | same — rate hardcoded to 1 | TBD | gap |
+| 14 | DELETE| `/api/accounts/billing/usage-meters/{id}` | `DeleteUsageMeter` | ADMIN+ | route `id` | anon `{ message }` | `billing.js:608 deleteMeter` | ok | TBD | pending |
+| 15 | POST  | `/api/accounts/billing/usage` | `RecordUsage` | ADMIN+ | `RecordUsageRequest` (note `meter_code` is string!) | anon `{ message }` | `billing.js:652 recordUsage` | ok — correctly looks up `meter_code` from the meter object via `usageMeters.find(...).meter_code` and sends that as the string identifier (Phase 1 warning resolved) | §15.4.5b/c Fig 15.4.5b/c | pending |
+| 16 | GET   | `/api/accounts/billing/tokens/{customerId}` | `GetTokenBalance` | USER+ | route `customerId` | `TokenBalance` or `{ balance: 0 }` | `billing.js:677 loadTokenBalance` | ok — reads `res.balance` | §15.4.6/6a Fig 15.4.6 / 15.4.6a | pending |
+| 17 | POST  | `/api/accounts/billing/tokens/purchase` | `PurchaseTokens` | ADMIN+ | `PurchaseTokensRequest` | `TokenBalance` after purchase | `billing.js:702 purchaseTokens` | ok — sends `{customer_id, amount}` | §15.4.6 (Purchase Tokens form) | pending |
+| 18 | POST  | `/api/accounts/billing/tokens/deduct` | `DeductTokens` | ADMIN+ | `DeductTokensRequest` | anon `{ remaining_balance }` | `billing.js:730 deductTokens` | ok — sends `{customer_id, amount, reason}` | §15.4.6 (Deduct Tokens form) | pending |
 
 ### 20. ReportsController
 
@@ -711,16 +711,16 @@ DTO field reference (`Models/ReportModels.cs`):
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | GET  | `/api/accounts/reports/trial-balance` | `GetTrialBalance` | USER+ | query `fiscalYearId?` | trial balance shape from `BL.GetReportTrialBalance` | TBD | TBD | §13.1 / §13.1a Fig 13.1 / 13.1a | pending |
-| 2 | GET  | `/api/accounts/reports/profit-loss` | `GetProfitLoss` | USER+ | query `fiscalYearId?` | `ProfitLossReport` | TBD | TBD | §13.2 Fig 13.2 (orig) | pending |
-| 3 | GET  | `/api/accounts/reports/balance-sheet` | `GetBalanceSheet` | USER+ | query `fiscalYearId?` | `BalanceSheetReport` | TBD | TBD | §13.3 | pending |
-| 4 | GET  | `/api/accounts/reports/cash-flow` | `GetCashFlow` | USER+ | query `fiscalYearId?` | cash flow shape from BL | TBD | TBD | §13.4 | pending |
-| 5 | GET  | `/api/accounts/reports/ledger` | `GetAccountLedger` | USER+ | query `accountId, fromDate, toDate` (all required) | `LedgerReport` | TBD | TBD | TBD — Account Ledger tab | pending |
-| 6 | GET  | `/api/accounts/reports/day-book` | `GetDayBook` | USER+ | query `date` | `List<DayBookEntry>` | TBD | TBD | TBD — Day Book tab | pending |
-| 7 | GET  | `/api/accounts/reports/cash-book` | `GetCashBook` | USER+ | query `bankAccountId?, fromDate, toDate` | cash book shape from BL | TBD | TBD | TBD — Cash Book tab | pending |
-| 8 | GET  | `/api/accounts/reports/ar-aging` | `GetARAging` | USER+ | — | AR aging shape from BL | TBD | TBD | §10.4c / §13.5 Fig 10.4c / 11-5 | pending |
-| 9 | GET  | `/api/accounts/reports/ap-aging` | `GetAPAging` | USER+ | — | AP aging shape from BL | TBD | TBD | §11.4b Fig 11.4b / 11-6 | pending |
-| 10 | POST | `/api/accounts/reports/export/{reportType}` | `ExportReport` | USER+ | route `reportType` + query `format ('pdf'\|'csv'), fiscalYearId?` | `File` (currently **only `trial-balance` to PDF** is wired; everything else returns 400) | TBD | TBD | gap — only Trial Balance exports today | gap |
+| 1 | GET  | `/api/accounts/reports/trial-balance` | `GetTrialBalance` | USER+ | query `fiscalYearId?` | trial balance shape from `BL.GetReportTrialBalance` | `reports.js:174 loadTrialBalance` | ok send; render reads defensively (`data.rows \|\| items \|\| accounts`) | §13.1 / §13.1a Fig 13.1 / 13.1a | pending |
+| 2 | GET  | `/api/accounts/reports/profit-loss` | `GetProfitLoss` | USER+ | query `fiscalYearId?` | `ProfitLossReport` | `reports.js:190 loadProfitLoss` | ok send; verify render reads `sections, total_revenue, total_expenses, net_profit` in Phase 4 | §13.2 Fig 13.2 | pending |
+| 3 | GET  | `/api/accounts/reports/balance-sheet` | `GetBalanceSheet` | USER+ | query `fiscalYearId?` | `BalanceSheetReport` | `reports.js:206 loadBalanceSheet` | ok | §13.3 | pending |
+| 4 | GET  | `/api/accounts/reports/cash-flow` | `GetCashFlow` | USER+ | query `fiscalYearId?` | cash flow shape from BL | `reports.js:222 loadCashFlow` | ok | §13.4 | pending |
+| 5 | GET  | `/api/accounts/reports/ledger` | `GetAccountLedger` | USER+ | query `accountId, fromDate, toDate` (all required) | `LedgerReport` | `reports.js:241 loadAccountLedger` | ok | TBD — Account Ledger tab | pending |
+| 6 | GET  | `/api/accounts/reports/day-book` | `GetDayBook` | USER+ | query `date` | `List<DayBookEntry>` | `reports.js:258 loadDayBook` | ok | TBD — Day Book tab | pending |
+| 7 | GET  | `/api/accounts/reports/cash-book` | `GetCashBook` | USER+ | query `bankAccountId?, fromDate, toDate` | cash book shape from BL | `reports.js:276 loadCashBook` | ok | TBD — Cash Book tab | pending |
+| 8 | GET  | `/api/accounts/reports/ar-aging` | `GetARAging` | USER+ | — | AR aging shape from BL | `reports.js:290 loadARAgingReport` | ok | §10.4c / §13.5 | pending |
+| 9 | GET  | `/api/accounts/reports/ap-aging` | `GetAPAging` | USER+ | — | AP aging shape from BL | `reports.js:302 loadAPAgingReport` | ok | §11.4b | pending |
+| 10 | POST | `/api/accounts/reports/export/{reportType}` | `ExportReport` | USER+ | route `reportType` + query `format ('pdf'\|'csv'), fiscalYearId?` | `File` (only `trial-balance` to PDF wired) | `reports.js:319 exportReport` | sends `?format=` correctly with POST + blob response; **but backend only handles `trial-balance` reportType** — every other Export button (P&L, BS, CF, etc.) returns 400 | gap — backend implementation gap | gap |
 
 ### 21. ClosingController
 
@@ -736,12 +736,14 @@ DTO field reference (`Models/ClosingModels.cs`):
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | GET  | `/api/accounts/closing/checklists` | `GetChecklists` | ADMIN+ | query `fiscalYearId?` | `List<ClosingChecklist>` | TBD | TBD | §15.5.5 Fig 15.5.5 | pending |
-| 2 | POST | `/api/accounts/closing/checklists` | `StartChecklist` | ADMIN+ | `StartClosingRequest` | 201 + checklist | TBD | TBD | §15.5.5 Fig 15.5.5a | pending |
-| 3 | GET  | `/api/accounts/closing/checklists/{id}` | `GetChecklistById` | ADMIN+ | route `id` | `ClosingChecklist` (with items) | TBD | TBD | §15.5.5 Fig 15.5.5b | pending |
-| 4 | POST | `/api/accounts/closing/checklists/{id}/items/{itemId}/complete` | `CompleteItem` | ADMIN+ | two route params + `CompleteItemRequest?` | anon `{ message }` | TBD | TBD | §15.5.5 Fig 15.5.5b | pending |
-| 5 | POST | `/api/accounts/closing/checklists/{id}/complete` | `CompleteClosing` | ADMIN+ | route `id` | result of `BL.CompleteClosing` | TBD | TBD | TBD | pending |
-| 6 | POST | `/api/accounts/closing/year-end/{fiscalYearId}` | `YearEndClosing` | ADMIN+ | route `fiscalYearId` | anon `{ message, fiscal_year_id }` | TBD | TBD | §15.5.6 Fig 15.5.6/15.5.6a — duplicates `FiscalController.CloseFiscalYear` | pending |
+| 1 | GET  | `/api/accounts/closing/checklists` | `GetChecklists` | ADMIN+ | query `fiscalYearId?` | `List<ClosingChecklist>` | `admin.js:624 loadChecklists` | ok | §15.5.5 Fig 15.5.5 | pending |
+| 2 | POST | `/api/accounts/closing/checklists` | `StartChecklist` | ADMIN+ | `StartClosingRequest` | 201 + checklist | `admin.js:704 saveChecklist` (no id) | TBD — verify payload field names | §15.5.5 Fig 15.5.5a | pending |
+| 2a | PUT | `/api/accounts/closing/checklists/{id}` | (NO BACKEND ENDPOINT) | — | — | — | `admin.js:701 saveChecklist` (id branch) | **ORPHAN CALL** — backend has no PUT for closing checklists. Edit Checklist row action will 405. | gap | gap |
+| 3 | GET  | `/api/accounts/closing/checklists/{id}` | `GetChecklistById` | ADMIN+ | route `id` | `ClosingChecklist` (with items) | `admin.js:723 viewChecklist` + **`admin.js:838 loadYearEndPreflight`** | ⚠️ **CRITICAL: `loadYearEndPreflight` calls this endpoint with a `fiscalYearId` thinking it returns preflight checks**, but the route lookup is by checklist id. Result: 404 → catch shows fallback "All pre-flight checks passed. Ready for year-end closing." → **the destructive Year-End Closing button always becomes enabled with NO real preflight gating**. The figure 15.5.6a in the guide is fictional. | §15.5.5 Fig 15.5.5b / §15.5.6a (fictional) | gap |
+| 4 | POST | `/api/accounts/closing/checklists/{id}/items/{itemId}/complete` | `CompleteItem` | ADMIN+ | two route params + `CompleteItemRequest?` | anon `{ message }` | `admin.js:781 completeChecklistItem` | ok | §15.5.5 Fig 15.5.5b | pending |
+| 5 | POST | `/api/accounts/closing/checklists/{id}/complete` | `CompleteClosing` | ADMIN+ | route `id` | result of `BL.CompleteClosing` | `admin.js:801 completeChecklist` | ok | TBD | pending |
+| 5a | DELETE | `/api/accounts/closing/checklists/{id}` | (NO BACKEND ENDPOINT) | — | — | — | `admin.js:816 deleteChecklist` | **ORPHAN CALL** — backend has no DELETE for checklists. Delete row action will 405. | gap | gap |
+| 6 | POST | `/api/accounts/closing/year-end/{fiscalYearId}` | `YearEndClosing` | ADMIN+ | route `fiscalYearId` | anon `{ message, fiscal_year_id }` | `admin.js:896 closeFinancialYear` | ok | §15.5.6 Fig 15.5.6/15.5.6a — duplicates `FiscalController.CloseFiscalYear` | pending |
 
 ### 22. AuditController
 
@@ -753,10 +755,12 @@ DTO field reference (`Models/AuditModels.cs`):
 
 | # | Verb | Route | Method | Roles | Request fields | Response fields | Frontend caller | Field binding | Guide ref | Status |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | GET  | `/api/accounts/audit/logs` | `GetAuditLogs` | ADMIN/AUDITOR+ | query (7 params, mapped to `AuditLogQuery`) | anon `{ data: List<AuditLog>, total, limit, offset }` | TBD | TBD | §15.5.1 Fig 15.5.1 / 15.5.1a / 15.5.1b | pending |
-| 2 | GET  | `/api/accounts/audit/logs/{entityType}/{entityId}` | `GetEntityAuditTrail` | ADMIN/AUDITOR+ | two route params + query `limit` | `List<AuditLog>` | TBD | TBD | TBD — drill-down trail used by entity-audit modal | pending |
-| 3 | GET  | `/api/accounts/audit/approvals/pending` | `GetPendingApprovals` | ADMIN/AUDITOR+ | — | anon `{ expense_claims: [...], total_pending }` (currently only surfaces pending **expense claims**, not all approval-gated items) | `dashboard.js:160 loadPendingApprovals` + admin.js (Phase 2 cont.) | **MISMATCH** — frontend reads `res.total ?? res.count` but backend returns `total_pending` → dashboard badge **always shows 0** | §15.5.2 Fig 15.5.2 / §3.6 dashboard badge | gap |
-| 4 | POST | `/api/accounts/audit/export` | `ExportAuditLogs` | ADMIN/AUDITOR+ | query `fromDate?, toDate?` | anon `{ export_format: "json", record_count, data }` (PDF/CSV deferred to "Phase 2") | TBD | TBD | gap — export claims JSON, no real CSV/PDF | gap |
+| 1 | GET  | `/api/accounts/audit/logs` | `GetAuditLogs` | ADMIN/AUDITOR+ | query (7 params, mapped to `AuditLogQuery`) | anon `{ data: List<AuditLog>, total, limit, offset }` | `admin.js:138 loadAuditLogs` | ok | §15.5.1 Fig 15.5.1 / 15.5.1a / 15.5.1b | pending |
+| 2 | GET  | `/api/accounts/audit/logs/{entityType}/{entityId}` | `GetEntityAuditTrail` | ADMIN/AUDITOR+ | two route params + query `limit` | `List<AuditLog>` | `admin.js:201` (entity audit drill-down modal) | ok | TBD — entity-audit modal | pending |
+| 3 | GET  | `/api/accounts/audit/approvals/pending` | `GetPendingApprovals` | ADMIN/AUDITOR+ | — | anon `{ expense_claims: [...], total_pending }` | `dashboard.js:160` + `admin.js:301 loadPendingApprovals` | **MISMATCH** — frontend reads `res.total ?? res.count` but backend returns `total_pending` → dashboard badge always shows 0; admin.js Pending Approvals tab also reads same wrong key | §15.5.2 Fig 15.5.2 / §3.6 dashboard badge | gap |
+| 3a | POST | `/api/accounts/audit/approvals/{id}/approve` | (NO BACKEND ENDPOINT) | — | — | — | `admin.js:367 approveApproval` | **ORPHAN CALL** — Pending Approvals row "Approve" action will 405. Backend has only the GET pending list, no per-item approve endpoint. | gap | gap |
+| 3b | POST | `/api/accounts/audit/approvals/{id}/reject` | (NO BACKEND ENDPOINT) | — | — | — | `admin.js:386 rejectApproval` | **ORPHAN CALL** — Reject action will 405. | gap | gap |
+| 4 | POST | `/api/accounts/audit/export` | `ExportAuditLogs` | ADMIN/AUDITOR+ | query `fromDate?, toDate?` | anon `{ export_format: "json", record_count, data }` (PDF/CSV deferred) | `admin.js:250 exportAuditLogs` | ok send (likely the JSON download is consumed as a file blob — verify in Phase 4) | gap — backend export is JSON only, no real CSV/PDF | gap |
 
 ### 23. CopilotController
 
@@ -785,15 +789,106 @@ DTO field reference (in-controller `CopilotMessageRequest`): `Message, CurrentPa
 | 4 | `payables.js:679 deletePayment` | DELETE | `/api/accounts/vendor-bills/payments/{id}` | `VendorBillsController` has POST/GET on `/payments` but no DELETE. Void Payment row action will 405. |
 | 5 | `expenses.js:175 deleteCategory` | DELETE | `/api/accounts/expenses/categories/{id}` | `ExpenseController` has GET/POST/PUT but no DELETE. Delete Category row action will 405. |
 | 6 | `expenses.js:327 deletePolicy` | DELETE | `/api/accounts/expenses/policies/{id}` | Same — no DELETE. Delete Policy row action will 405. |
+| 7 | `admin.js:367 approveApproval` | POST | `/api/accounts/audit/approvals/{id}/approve` | `AuditController` only has GET pending list, no per-item approve. Pending Approvals → Approve will 405. |
+| 8 | `admin.js:386 rejectApproval` | POST | `/api/accounts/audit/approvals/{id}/reject` | Same — no per-item reject. Reject button will 405. |
+| 9 | `admin.js:701 saveChecklist` (id branch) | PUT | `/api/accounts/closing/checklists/{id}` | `ClosingController` has GET/POST/items/complete/checklist/complete but no PUT. Edit Checklist row action will 405. |
+| 10 | `admin.js:816 deleteChecklist` | DELETE | `/api/accounts/closing/checklists/{id}` | Same — no DELETE. Delete row action will 405. |
 
 ---
 
 ## Gap summary
 
-> Auto-built at the end of Phase 3. Counts of `gap` rows by controller and by category
-> (mismatch / missing-UI / missing-guide). Don't fill by hand — generate from the tables above.
+> Built at the end of Phase 2. Phase 3 (guide coverage) will append to this.
 
-*pending*
+### Critical bugs (show-stoppers for the investor demo)
+
+These are real bugs that produce silently-wrong data — money flows that don't actually happen.
+
+1. **Customer payment allocations are silently dropped.** `receivables.js:595 saveCustomerPayment` sends `allocations: [{invoice_id, amount}]` but backend `CustomerPaymentAllocationRequest` expects `{customer_invoice_id, allocated_amount}`. Payments record successfully but **invoice `balance_due` never decreases**. Same bug affects vendor payments (`payables.js:664 saveVendorPayment` → `{bill_id, amount}` should be `{vendor_bill_id, allocated_amount}`).
+2. **Customer payment `reference` field**: frontend sends `reference`, backend wants `reference_number`. Reference number always blank on payment records. (vendor payments have it correct.)
+3. **Year-End Closing preflight is fictional.** `admin.js:838 loadYearEndPreflight` calls `closing/checklists/{fiscalYearId}` but that route is `GetChecklistById(checklistId)`. 404 → catch shows "All pre-flight checks passed" → **Run Closing button always becomes enabled with NO real gating** for a destructive irreversible action. Fig 15.5.6a in the guide documents a non-functional UI.
+4. **Save & Approve buttons (invoices + bills) don't approve.** Both pass `status: 'approved'` in the create payload but neither create-request DTO has a `status` field. Always saves as draft. User must hit Approve row action separately. Misleading button labels.
+5. **Tax Rate create / update completely broken.** Sends `tax_config_id` + `account_id` but backend expects `tax_configuration_id` + `tax_account_id`. Both critical IDs silently dropped → 400 every save (`tax_configuration_id` is required and would be `Guid.Empty`).
+6. **HSN/SAC create / update sends wrong field names.** Sends `type` and `tax_rate`; backend expects `code_type` and `default_tax_rate`. All rows save as HSN with no rate regardless of UI choice. Edit modal Type and Tax Rate fields also always blank.
+7. **Tax Calculator output mostly broken.** Reads `data.breakdown` (backend has `tax_lines`), `data.tax_amount` (backend has `total_tax`), `data.total_amount` (doesn't exist). Stat cards mostly ₹0, breakdown table empty.
+8. **GSTR-1 / GSTR-3B / TDS reports all broken.** All three read `data` directly instead of unwrapping `data.outward_supplies` / `data.inward_supplies` / `data.deductions`. All three project wrong row field names. GSTR-3B stat cards always ₹0; GSTR-1 / TDS render empty tables.
+9. **Customer Invoice Edit button is an orphan.** `PUT /api/accounts/invoices/{id}` doesn't exist on the backend — clicking Edit on an existing invoice → 405. The whole "Save & Approve" / "edit then approve" UX is broken end-to-end.
+10. **Dashboard "Pending Approvals" badge always shows 0.** Frontend reads `res.total ?? res.count`; backend returns `total_pending`. Badge never increments even when claims are pending.
+11. **Customer Edit modal address field always blank.** `parties.js:491 editCustomer` reads `c.address_line1/2`; Customer model uses `billing_address_line1/2`. Save sends correct field, so create works, but edit can't display existing address. (Vendors are correct because Vendor model uses `address_line1`.)
+12. **Usage meter rate is hardcoded to 1.** `billing.js:586 saveMeter` sends `rate_per_unit: 1` and the Create Meter modal has no rate input. Every meter ever created has rate=1, regardless of business intent. The guide §15.4.5a claims "API Calls at ₹0.05 per unit" — that's fictional; the saved record always has rate=1.
+
+### Orphan frontend calls (10)
+
+Each of these 10 row actions or buttons currently 405s in production. See "Orphan frontend calls" table above.
+
+| # | UI button | Caller | Missing endpoint |
+|---|---|---|---|
+| 1 | Edit Fiscal Year | `setup.js:1079` | PUT `/fiscal/years/{id}` |
+| 2 | Delete Journal Type | `setup.js:1321` | DELETE `/journals/types/{id}` |
+| 3 | Edit Invoice | `receivables.js:421` | PUT `/invoices/{id}` |
+| 4 | Void Vendor Payment | `payables.js:679` | DELETE `/vendor-bills/payments/{id}` |
+| 5 | Delete Expense Category | `expenses.js:175` | DELETE `/expenses/categories/{id}` |
+| 6 | Delete Expense Policy | `expenses.js:327` | DELETE `/expenses/policies/{id}` |
+| 7 | Approve Pending (Admin) | `admin.js:367` | POST `/audit/approvals/{id}/approve` |
+| 8 | Reject Pending (Admin) | `admin.js:386` | POST `/audit/approvals/{id}/reject` |
+| 9 | Edit Closing Checklist | `admin.js:701` | PUT `/closing/checklists/{id}` |
+| 10 | Delete Closing Checklist | `admin.js:816` | DELETE `/closing/checklists/{id}` |
+
+### Backend stubs / partial implementations (8)
+
+Backend advertises functionality it doesn't deliver. Frontend calls them and renders empty.
+
+| # | Endpoint | Stub kind |
+|---|---|---|
+| 1 | `system/integrity-check/results` | returns placeholder, doesn't query the table |
+| 2 | `system/job-log` | returns placeholder, doesn't return rows |
+| 3 | `coa/import` | accepts payload, no-op (deferred S15) — also frontend wire-format mismatch (multipart vs JSON) |
+| 4 | `reports/export/{reportType}` | only `trial-balance` to PDF wired; other report types 400 |
+| 5 | `audit/export` | hardcoded `export_format: 'json'`, no real CSV/PDF |
+| 6 | `audit/approvals/pending` | only surfaces expense_claims, not all approval-gated entities |
+| 7 | `bank/webhooks/stripe` | signature verification stubbed |
+| 8 | `closing/checklists/{id}` (read by year-end preflight) | the endpoint itself works; it's the **frontend's misuse** that makes preflight fictional |
+
+### Silent-drop fields (frontend sends, backend ignores)
+
+Most are non-fatal but they all mislead users — the form looks like it captured data, but the data went nowhere.
+
+| # | Where | Frontend sends | Backend accepts |
+|---|---|---|---|
+| 1 | `coa/groups` PUT | `account_type_id, code, parent_group_id` | only `name, description, display_order, is_active` |
+| 2 | `coa/{id}` PUT | `account_code, account_type_id, parent_account_id, normal_balance` | only `name, description, account_group_id, is_active, allow_direct_posting` |
+| 3 | `journals/types` PUT | `code` | only `name, description, is_active` |
+| 4 | `expenses/policies` POST/PUT | `is_active` | not in `CreateExpensePolicyRequest` — the active toggle has no effect |
+| 5 | `invoices` POST | per-line `hsn_sac` | `CreateCustomerInvoiceLineRequest` has no HSN field |
+| 6 | `invoices` POST | top-level `status` | no `status` in `CreateCustomerInvoiceRequest` |
+| 7 | `vendor-bills` POST | top-level `status` | same |
+| 8 | `assets/run-depreciation` | `category_id` | `RunDepreciationRequest` only has `period_date` — category filter ignored |
+| 9 | `assets/{id}/dispose` | (missing) `bank_account_id` | required for the GL posting to land in a bank |
+| 10 | All the snake_case query param bugs (`customer_id`, `date_from`, `pageSize`, `page`) — backend uses camelCase `customerId, fromDate, limit, offset` — filters silently dropped on payments, credit-notes, statements, vendor-payments lists |
+
+### Documentation lies (Phase 5 priority)
+
+The guide describes things that the UI cannot actually do:
+
+1. **§15.4.4b "Quantity 1"** — neither `CreateSubscriptionRequest` nor `Subscription` has a quantity field. Subscriptions are 1× plan, full stop.
+2. **§15.4.5a "rate ₹0.05 per unit"** — UI hardcodes rate to 1 and doesn't expose a rate input. Every meter has rate=1.
+3. **§15.5.6a "Year-End preflight panel"** — fictional. The panel always shows "All pre-flight checks passed" because the underlying request 404s.
+4. **§15.5.4 "Job Log"** — backend stub, the populated screenshot (if it ever existed) was fake.
+5. **§15.2.13 "Reimburse modal Bank Account dropdown"** — works, but the figure should also note that disposal proceeds for fixed assets bypass the bank entirely (no `bank_account_id` sent).
+
+### Counts
+
+| Category | Count |
+|---|---|
+| Total endpoints walked | 204 |
+| Endpoints with frontend caller | ~165 |
+| Endpoints flagged `gap` | 51 |
+| Endpoints flagged `N/A` | 11 (webhooks, copilot bridge, encryption migration, etc.) |
+| Orphan frontend calls | 10 |
+| Critical accounting bugs | 12 |
+| Backend stubs | 8 |
+| Silent-drop field mismatches | 10+ |
+| Documentation lies | 5 |
 
 ---
 
