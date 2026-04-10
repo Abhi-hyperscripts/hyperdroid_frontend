@@ -3,6 +3,7 @@
  * Shared styles for all AccountsService pages.
  * Uses ONLY CSS variables from theme.css — no hardcoded colors.
  */
+@import url('tooltip.css');
 
 /* =============================================================
    GLASSMORPHIC PAGE BACKGROUND — subtle gradient for glass effect
@@ -293,11 +294,12 @@ body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):n
 .data-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: auto;
 }
 
 .data-table th {
     background: var(--hover-overlay);
-    padding: 12px 16px;
+    padding: 10px 14px;
     text-align: left;
     font-size: 0.75rem;
     font-weight: 600;
@@ -309,7 +311,7 @@ body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):n
 }
 
 .data-table td {
-    padding: 14px 16px;
+    padding: 10px 14px;
     border-bottom: 1px solid var(--hover-overlay);
     font-size: 0.85rem;
     vertical-align: middle;
@@ -557,8 +559,9 @@ textarea.form-control {
 }
 
 .btn-outline:hover {
-    background: var(--hover-overlay);
-    border-color: var(--text-secondary);
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: var(--text-inverse, #fff);
 }
 
 .btn-danger {
@@ -836,16 +839,29 @@ textarea.form-control {
 /* =============================================================
    ACTIONS CELL — Inline action buttons
    ============================================================= */
+/* Actions column — header and cells right-aligned, buttons same size */
+.data-table th:last-child,
 .actions-cell {
-    white-space: nowrap;
     text-align: right;
+    white-space: nowrap;
+    width: 1%; /* shrink-to-fit: takes minimum width needed */
 }
 
 .actions-cell .btn-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 30px;
+    height: 30px;
     margin-left: 4px;
+    vertical-align: middle;
+}
+
+/* Ensure text buttons in actions cells have spacing from icon buttons */
+.actions-cell .btn,
+.actions-cell button:not(.btn-icon) {
+    margin-left: 6px;
+    vertical-align: middle;
 }
 
 /* Custom tooltips handled by /js/tooltip.js (body-appended, no clipping) */
