@@ -30,7 +30,7 @@ body.dashboard::before {
    Also exclude .modal/.modal-overlay so glassmorphic-modal.css's position:fixed
    is not overridden — otherwise modals would render in document flow at the
    bottom of the page instead of centering on the viewport. */
-body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):not(.toast-container):not(.flatpickr-calendar):not(.modal):not(.modal-overlay) {
+body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):not(.toast-container):not(.flatpickr-calendar):not(.modal):not(.modal-overlay):not(.slide-panel):not(.slide-panel-overlay) {
     position: relative;
     z-index: 1;
 }

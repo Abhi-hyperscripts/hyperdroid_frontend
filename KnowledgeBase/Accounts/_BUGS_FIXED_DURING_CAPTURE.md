@@ -1471,3 +1471,44 @@ At end of this fix-pass session:
 - Additional field-name-mismatch fixes landed in `taxation.js` (Tax Rate account dropdown), `payables.js` (bill-payment bank dropdown + acctMap), and `assets.js` (asset register Name column). These were part of the original #41 fix that failed mid-session due to unread-file errors; all patched and verified on this pass.
 - SW version: 858 → 862 (4 more bumps for the 4 fixes).
 - Zero logged-but-unfixed bugs remain. The guide is now ready for Phase 4 (prose rewrite) without any ship-blockers pending.
+
+---
+
+## Tier 3 click-test session — backend integrity bugs in newly-built endpoints (Apr 10, 2026)
+
+> Click-through verification of the 10 new backend endpoints built to close the orphan-call list.
+> Found before clicking, by reading the BL/DB-layer source first. Each row backs the corresponding entry in `_GAP_ANALYSIS.md` "Tier 3 — Orphan-call backend endpoints" section.
+
+### Bug #62 — `DELETE /vendor-bills/payments/{id}` was a soft-delete only; allocations and GL never reversed (CRITICAL accounting integrity)
+
+- **Symptom:** Voiding a vendor payment via the row action would have made it disappear from the Payments list, but the linked bill would remain stuck in `partially_paid`/`paid` with phantom `paid_amount`. The Cr Bank / Dr AP GL entry would also stay posted, leaving the General Ledger out of sync with reality. Bank account balance would also stay decremented, so the Banking dashboard would understate cash forever.
+- **Root cause:** `BusinessLayer_VendorBills.DeleteVendorPayment` (line 530) was a one-line wrapper around `DatabaseLayer.DeleteVendorPayment`, whose entire body was:
+  ```sql
+  UPDATE vendor_payments SET is_active = false WHERE id = @id AND tenant_id = @tid AND is_active = true
+  ```
+  No allocations touched, no bill recompute, no GL reversal, no bank balance restore. This is the classic "the soft-delete looks fine in the UI but the books are now wrong" trap.
+- **Fix:** Replaced the BL method with a full transactional reversal mirroring `CancelVendorBill`'s GL pattern. In one transaction:
+  1. Read all `vendor_payment_allocations` rows for this payment
+  2. For each: `paid_amount -= alloc`, `balance_due += alloc`, recompute `status` (back to `'approved'` if `paid_amount=0`, else `'partially_paid'`)
+  3. Look up the payment's GL entry and post a reversing entry (Cr→Dr, Dr→Cr) using the same `CreateGlEntry` + `PostGlEntryStatus` + `MarkReversed` pattern that `CancelVendorBill` uses
+  4. Update each affected account balance and period balance
+  5. `UpdateBankAccountBalance(+amount)` to undo the original `-amount`
+  6. `DELETE FROM vendor_payment_allocations WHERE vendor_payment_id=...` (allocations are no longer real; the parent payment row stays soft-deleted for audit)
+  7. `UPDATE vendor_payments SET is_active = false`
+  8. Audit-log the void with `allocations_reversed` count
+- **File:** `AccountsService/BusinessLayers/BusinessLayer_VendorBills.cs:530-650`
+- **Caught by:** Pre-click static analysis of the BL/DB-layer source. The user's standing rule "real Playwright clicks find bugs that API spies miss" applies in reverse here too: reading the source before clicking surfaced the integrity hole faster than any number of clicks would have. Click-test happens AFTER this fix lands, against the now-correct backend, to prove that voiding `PAY-2026-00001 (₹3,000 → BILL-2026-00002)` restores the bill to `Approved / ₹8,000` and the bank balance to its pre-payment value.
+- **Build & restart:** `dotnet build` succeeded clean (only pre-existing warnings); killed PIDs 84121/84108, restarted via background `dotnet run --launch-profile AccountsService --no-build`; health-check `https://localhost:5122/health` returned 200.
+- **SW bump:** none (frontend unchanged).
+- **Click-test proof (2026-04-10):**
+  - Baseline: BILL-2026-00002 = `partially_paid`, paid=3000, balance=5000; HDFC Current bank balance = −3500; PAY-2026-00001 visible in payments list; GL-2026-00004 (the original payment entry) `is_reversed=false`; trial balance = ₹23,500 = ₹23,500.
+  - Action: clicked the row's Void button on PAY-2026-00001, confirmed via "Delete" button in the danger dialog (UX nit logged below).
+  - Post-state:
+    - BILL-2026-00002 → `approved`, paid=`0`, balance=`8000` ✓
+    - HDFC Current bank balance → `−500` (Δ +3000) ✓
+    - PAY-2026-00001 gone from payments list (soft-deleted) ✓
+    - GL-2026-00008 created: `Reversal: Void payment PAY-2026-00001`, Dr 3000 / Cr 3000, status=`posted`, ref_type=`reversal` ✓
+    - Original GL-2026-00004 now `is_reversed=true` ✓
+    - Trial balance held at `₹23,500 = ₹23,500` (books still balanced) ✓
+  - All four prediction checks pass. The accounting integrity hole is closed.
+- **UX nit (logged, not yet fixed):** The Void Payment confirm dialog uses the generic `Confirm.danger` helper which renders a "Delete" button instead of "Void". Consistent with pattern flagged in bugs #38, #43, #44 — the Confirm helper should accept a custom destructive verb. Not blocking; will batch with the other generic-confirm cleanups in a later sweep.

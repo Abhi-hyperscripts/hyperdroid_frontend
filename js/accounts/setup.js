@@ -578,23 +578,92 @@ async function importAccounts() {
     }
 
     const file = fileInput.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
+        // Parse CSV client-side → send as JSON (backend expects ImportAccountsRequest)
+        const text = await file.text();
+        const rows = parseCSV(text);
+        if (!rows.length) { Toast.error('CSV file is empty or has no data rows'); return; }
+
         const url = AccountsCommon.buildUrl('coa/import');
-        await api.request(url, {
+        const res = await api.request(url, {
             method: 'POST',
-            body: formData,
-            _skipContentType: true
+            body: JSON.stringify({ accounts: rows })
         });
-        Toast.success('Accounts imported successfully');
+
+        // Show results summary
+        const { created = 0, skipped = 0, failed = 0, total = 0 } = res || {};
+        const msg = `Import complete: ${created} created, ${skipped} skipped, ${failed} failed (${total} total rows)`;
+        if (failed > 0) Toast.error(msg);
+        else Toast.success(msg);
+
+        // Show detailed results if any failures
+        if (failed > 0 && res?.results) {
+            const failures = res.results.filter(r => r.status === 'failed');
+            console.warn('[Setup] Import failures:', failures);
+        }
+
         AccountsCommon.closeModal('importAccountsModal');
         await loadAccounts();
+        await loadAccountTree();
     } catch (err) {
         console.error('[Setup] importAccounts error:', err);
         Toast.error(err.message || 'Failed to import accounts');
     }
+}
+
+function parseCSV(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) return [];
+
+    // Parse header
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
+
+    // Map header names to ImportAccountRow field names
+    const fieldMap = {
+        'account_code': 'account_code', 'code': 'account_code',
+        'account_name': 'account_name', 'name': 'account_name',
+        'account_type': 'account_type', 'type': 'account_type',
+        'account_group': 'account_group', 'group': 'account_group',
+        'parent_code': 'parent_code', 'parent': 'parent_code',
+        'description': 'description', 'desc': 'description',
+        'opening_balance': 'opening_balance', 'balance': 'opening_balance',
+        'balance_type': 'balance_type'
+    };
+
+    return lines.slice(1).map(line => {
+        const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+        const row = {};
+        headers.forEach((h, i) => {
+            const field = fieldMap[h];
+            if (field && values[i] !== undefined && values[i] !== '') {
+                row[field] = field === 'opening_balance' ? parseFloat(values[i]) || null : values[i];
+            }
+        });
+        return row;
+    }).filter(r => r.account_code && r.account_name && r.account_type);
+}
+
+function downloadSampleCSV() {
+    const sample = `account_code,account_name,account_type,account_group,parent_code,description,opening_balance,balance_type
+6100,Petty Cash,Asset,Current Assets,,Petty cash account,5000,debit
+6200,Savings Account,Asset,Bank Accounts,,Company savings,100000,debit
+6300,Prepaid Insurance,Asset,Current Assets,,Annual insurance premium,,
+7100,Vendor Advances,Liability,Current Liabilities,,Advance from vendors,,
+7200,Rent Deposit Received,Liability,Current Liabilities,,Security deposit,,
+8100,Retained Profit,Equity,,,Prior year retained profit,200000,credit
+9100,Subscription Revenue,Revenue,,,Monthly SaaS revenue,,
+9200,Training Revenue,Revenue,,,Workshop and training fees,,
+9300,Office Supplies,Expense,Administrative Expenses,,Stationery and supplies,,
+9400,Business Travel,Expense,Administrative Expenses,,Domestic and international travel,,
+9500,Software Licenses,Expense,Administrative Expenses,,Annual license renewals,,`;
+
+    const blob = new Blob([sample], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'chart_of_accounts_sample.csv';
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 function onAccountTypeChange() {
@@ -960,20 +1029,8 @@ async function saveAllOpeningBalances() {
     }
 }
 
-async function saveOpeningBalance(accountId, debit, credit) {
-    const fiscalYearId = obFiscalYearDropdown?.getValue?.();
-    if (!fiscalYearId) { Toast.error('No fiscal year selected'); return; }
-
-    try {
-        await api.request(AccountsCommon.buildUrl('coa/opening-balances'), {
-            method: 'POST',
-            body: JSON.stringify({ fiscal_year_id: fiscalYearId, balances: [{ account_id: accountId, debit_balance: debit, credit_balance: credit }] })
-        });
-        Toast.success('Balance saved');
-    } catch (err) {
-        Toast.error(err.message || 'Failed to save balance');
-    }
-}
+// saveOpeningBalance (single-account variant) removed — was dead code with wrong payload shape.
+// Use saveAllOpeningBalances() instead, which sends the correct SetOpeningBalanceRequest shape.
 
 // ============================================================================
 // 6. FISCAL YEARS
@@ -1036,8 +1093,9 @@ function renderFiscalYears() {
         const status = fy.is_closed ? 'closed' : (fy.is_active ? 'active' : 'inactive');
         const canClose = accountsRoles.isAdmin() && status !== 'closed';
         const viewBtn = `<button class="btn-icon" onclick="viewFiscalYearDetail('${fy.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+        const editBtn = (accountsRoles.isAdmin() && !fy.is_closed) ? `<button class="btn-icon" onclick="editFiscalYear('${fy.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>` : '';
         const closeBtn = canClose ? `<button class="btn btn-sm btn-outline" onclick="closeFiscalYear('${fy.id}')">Close Year</button>` : '';
-        const actions = viewBtn + closeBtn || viewBtn;
+        const actions = viewBtn + editBtn + closeBtn;
 
         return `<tr>
             <td>${AccountsCommon.escapeHtml(fy.name)}</td>
@@ -1047,6 +1105,18 @@ function renderFiscalYears() {
             <td class="actions-cell">${actions}</td>
         </tr>`;
     }).join('');
+}
+
+function editFiscalYear(id) {
+    const fy = fiscalYears.find(f => f.id === id);
+    if (!fy) return;
+    document.getElementById('fiscalYearModalTitle').textContent = 'Edit Fiscal Year';
+    document.getElementById('fiscalYearId').value = fy.id;
+    document.getElementById('fiscalYearName').value = fy.name;
+    document.getElementById('fiscalYearStart').value = fy.start_date?.split('T')[0] || '';
+    const endEl = document.getElementById('fiscalYearEnd');
+    if (endEl) endEl.value = fy.end_date?.split('T')[0] || '';
+    AccountsCommon.openModal('fiscalYearModal');
 }
 
 function showCreateFiscalYearModal() {
@@ -1362,7 +1432,7 @@ async function initializeTemplate(country) {
     try {
         await api.request(AccountsCommon.buildUrl('coa/setup-template'), {
             method: 'POST',
-            body: JSON.stringify({ country })
+            body: JSON.stringify({ country_code: country === 'india' ? 'IN' : country?.toUpperCase() || 'IN' })
         });
         Toast.success(`${label} template initialized successfully`);
 

@@ -22,6 +22,11 @@ const PAGE_SIZE = 50;
 let billVendorFilterDropdown = null;
 let paymentVendorFilterDropdown = null;
 let stmtVendorDropdown = null;
+let dnVendorFilterDropdown = null;
+let dnVendorDropdown = null;
+let dnBillDropdown = null;
+let debitNotes = [];
+let dnPage = 1;
 
 // ============================================================================
 // PAGE INIT
@@ -33,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const tabNames = {
         'vendor-bills': 'Vendor Bills',
         'vendor-payments': 'Payments',
+        'debit-notes': 'Debit Notes',
         'ap-aging': 'AP Aging',
         'vendor-statements': 'Vendor Statements'
     };
@@ -54,6 +60,7 @@ function onTabSwitch(tabId) {
     switch (tabId) {
         case 'vendor-bills':      loadVendorBills(); break;
         case 'vendor-payments':   loadVendorPayments(); break;
+        case 'debit-notes':       loadDebitNotes(); break;
         case 'ap-aging':          loadAPAging(); break;
         case 'vendor-statements': break; // user-triggered
     }
@@ -893,5 +900,163 @@ function initDropdowns() {
             placeholder: 'Select Vendor',
             compact: true
         });
+    }
+
+    // Debit Notes vendor filter
+    const dnFilterContainer = document.getElementById('dnVendorFilterContainer');
+    if (dnFilterContainer) {
+        dnVendorFilterDropdown = new SearchableDropdown(dnFilterContainer, {
+            id: 'dnVendorFilter',
+            options: vendorOpts,
+            placeholder: 'Filter by Vendor',
+            compact: true,
+            onChange: () => { dnPage = 1; loadDebitNotes(); }
+        });
+    }
+}
+
+// ============================================================================
+// 5. DEBIT NOTES
+// ============================================================================
+
+async function loadDebitNotes() {
+    try {
+        const vendorId = dnVendorFilterDropdown?.getValue?.();
+        const params = { limit: PAGE_SIZE, offset: (dnPage - 1) * PAGE_SIZE };
+        if (vendorId) params.vendorId = vendorId;
+
+        const res = await api.request(AccountsCommon.buildUrl('debit-notes', params), { _skipSpinner: true });
+        debitNotes = Array.isArray(res) ? res : (res?.data || res?.items || []);
+
+        const tbody = document.getElementById('debitNotesTable');
+        if (!tbody) return;
+
+        if (!debitNotes.length) {
+            tbody.innerHTML = '<tr class="empty-state"><td colspan="7"><div class="empty-message"><p>No debit notes found</p></div></td></tr>';
+            return;
+        }
+
+        const esc = AccountsCommon.escapeHtml;
+        const vendorMap = {};
+        vendors.forEach(v => vendorMap[v.id] = v.name || v.vendor_name);
+
+        tbody.innerHTML = debitNotes.map(dn => {
+            const statusBadge = dn.status === 'approved' ? 'status-active'
+                : dn.status === 'draft' ? 'status-pending' : 'status-pending';
+            const actions = dn.status === 'draft'
+                ? `<button class="btn btn-outline" style="padding:0.2rem 0.6rem;font-size:0.8rem;" onclick="approveDebitNote('${dn.id}')">Approve</button>`
+                : '';
+            return `<tr>
+                <td><code>${esc(dn.debit_note_number || '-')}</code></td>
+                <td>${esc(vendorMap[dn.vendor_id] || dn.vendor_name || '-')}</td>
+                <td>${esc(dn.bill_number || '-')}</td>
+                <td>${AccountsCommon.formatDate(dn.debit_date)}</td>
+                <td>${AccountsCommon.formatCurrency(dn.amount)}</td>
+                <td><span class="badge ${statusBadge}">${esc(dn.status || 'draft')}</span></td>
+                <td>
+                    <button class="btn btn-outline" style="padding:0.2rem 0.6rem;font-size:0.8rem;" onclick="viewDebitNote('${dn.id}')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                    ${actions}
+                </td>
+            </tr>`;
+        }).join('');
+    } catch (err) {
+        console.error('[Payables] loadDebitNotes error:', err);
+        Toast.error('Failed to load debit notes');
+    }
+}
+
+function showCreateDebitNoteModal() {
+    document.getElementById('dnModalTitle').textContent = 'Create Debit Note';
+    document.getElementById('dnId').value = '';
+    document.getElementById('dnDate').value = '';
+    document.getElementById('dnAmount').value = '';
+    document.getElementById('dnReason').value = '';
+
+    // Vendor dropdown in modal
+    const vendorContainer = document.getElementById('dnVendorContainer');
+    if (vendorContainer) {
+        vendorContainer.innerHTML = '';
+        dnVendorDropdown = new SearchableDropdown(vendorContainer, {
+            id: 'dnVendor',
+            options: [{ value: '', label: 'Select Vendor' }, ...vendors.map(v => ({ value: v.id, label: v.name || v.vendor_name }))],
+            placeholder: 'Select Vendor',
+            onChange: (val) => loadBillsForDebitNote(val)
+        });
+    }
+
+    // Bill dropdown (populated on vendor change)
+    const billContainer = document.getElementById('dnBillContainer');
+    if (billContainer) {
+        billContainer.innerHTML = '';
+        dnBillDropdown = new SearchableDropdown(billContainer, {
+            id: 'dnBill',
+            options: [{ value: '', label: 'Select Bill (optional)' }],
+            placeholder: 'Select Bill'
+        });
+    }
+
+    AccountsCommon.openModal('debitNoteModal');
+}
+
+async function loadBillsForDebitNote(vendorId) {
+    if (!vendorId || !dnBillDropdown) return;
+    try {
+        const res = await api.request(AccountsCommon.buildUrl('vendor-bills', { vendorId, limit: 200 }), { _skipSpinner: true });
+        const bills = (res?.data || []).filter(b => b.status !== 'cancelled' && b.status !== 'draft');
+        dnBillDropdown.setOptions([
+            { value: '', label: 'Select Bill (optional)' },
+            ...bills.map(b => ({ value: b.id, label: `${b.bill_number} — ${AccountsCommon.formatCurrency(b.total_amount)}` }))
+        ]);
+    } catch (err) { console.error('[Payables] loadBillsForDN error:', err); }
+}
+
+async function saveDebitNote() {
+    const vendorId = dnVendorDropdown?.getValue?.();
+    const billId = dnBillDropdown?.getValue?.() || null;
+    const debitDate = document.getElementById('dnDate').value;
+    const amount = parseFloat(document.getElementById('dnAmount').value);
+    const reason = document.getElementById('dnReason').value.trim();
+
+    if (!vendorId || !debitDate || isNaN(amount) || amount <= 0) {
+        Toast.error('Vendor, Date, and Amount are required');
+        return;
+    }
+
+    const payload = { vendor_id: vendorId, debit_date: debitDate, amount, reason: reason || null };
+    if (billId) payload.vendor_bill_id = billId;
+
+    try {
+        await api.request(AccountsCommon.buildUrl('debit-notes'), { method: 'POST', body: JSON.stringify(payload) });
+        Toast.success('Debit note created');
+        AccountsCommon.closeModal('debitNoteModal');
+        await loadDebitNotes();
+    } catch (err) {
+        console.error('[Payables] saveDebitNote error:', err);
+        Toast.error(err.message || 'Failed to create debit note');
+    }
+}
+
+async function approveDebitNote(id) {
+    const ok = await Confirm.show({ title: 'Approve Debit Note', message: 'Approve this debit note? This will post a GL entry.', confirmText: 'Approve', type: 'info' });
+    if (!ok) return;
+    try {
+        await api.request(AccountsCommon.buildUrl(`debit-notes/${id}/approve`), { method: 'POST' });
+        Toast.success('Debit note approved');
+        await loadDebitNotes();
+    } catch (err) {
+        console.error('[Payables] approveDebitNote error:', err);
+        Toast.error(err.message || 'Failed to approve debit note');
+    }
+}
+
+async function viewDebitNote(id) {
+    try {
+        const dn = await api.request(AccountsCommon.buildUrl(`debit-notes/${id}`));
+        const vendorName = vendors.find(v => v.id === dn.vendor_id)?.name || dn.vendor_name || '-';
+        Toast.info(`${dn.debit_note_number} — ${vendorName} — ${AccountsCommon.formatCurrency(dn.amount)} — ${dn.status}`);
+    } catch (err) {
+        Toast.error('Failed to load debit note');
     }
 }

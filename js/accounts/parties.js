@@ -90,7 +90,7 @@ async function loadVendors() {
     try {
         const showInactive = document.getElementById('showInactiveVendors')?.checked || false;
         const params = {};
-        if (showInactive) params.includeInactive = true;
+        if (!showInactive) params.isActive = true;
 
         const url = AccountsCommon.buildUrl('vendors', params);
         const res = await api.request(url, { _skipSpinner: true });
@@ -403,7 +403,10 @@ async function loadCustomers() {
     try {
         const showInactive = document.getElementById('showInactiveCustomers')?.checked || false;
         const params = {};
-        if (showInactive) params.includeInactive = true;
+        // Backend param is 'isActive' (not 'includeInactive'). When showing
+        // inactive, omit the filter so backend returns all. Otherwise filter
+        // to active only.
+        if (!showInactive) params.isActive = true;
 
         const url = AccountsCommon.buildUrl('customers', params);
         const res = await api.request(url, { _skipSpinner: true });
@@ -500,8 +503,8 @@ function editCustomer(id) {
     document.getElementById('customerDisplayName').value = c.display_name || '';
     document.getElementById('customerEmail').value = c.email || '';
     document.getElementById('customerPhone').value = c.phone || '';
-    document.getElementById('customerAddressLine1').value = c.address_line1 || '';
-    document.getElementById('customerAddressLine2').value = c.address_line2 || '';
+    document.getElementById('customerAddressLine1').value = c.billing_address_line1 || c.address_line1 || '';
+    document.getElementById('customerAddressLine2').value = c.billing_address_line2 || c.address_line2 || '';
     document.getElementById('customerCity').value = c.city || '';
     document.getElementById('customerState').value = c.state || '';
     document.getElementById('customerStateCode').value = c.state_code || '';

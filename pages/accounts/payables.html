@@ -106,6 +106,9 @@
                             <button class="sidebar-btn" data-tab="vendor-payments" id="vendorPaymentsTab">
                                 <span class="nav-number">2</span><span class="nav-label">Payments</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="debit-notes" id="debitNotesTab">
+                                <span class="nav-number">3</span><span class="nav-label">Debit Notes</span>
+                            </button>
                         </div>
                     </div>
 
@@ -124,10 +127,10 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="ap-aging" id="apAgingTab">
-                                <span class="nav-number">3</span><span class="nav-label">AP Aging</span>
+                                <span class="nav-number">4</span><span class="nav-label">AP Aging</span>
                             </button>
                             <button class="sidebar-btn" data-tab="vendor-statements" id="vendorStatementsTab">
-                                <span class="nav-number">4</span><span class="nav-label">Vendor Statements</span>
+                                <span class="nav-number">5</span><span class="nav-label">Vendor Statements</span>
                             </button>
                         </div>
                     </div>
@@ -272,7 +275,80 @@
                 </div>
 
                 <!-- ============================================================ -->
-                <!-- Tab 3: AP Aging -->
+                <!-- Tab 3: Debit Notes -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="debit-notes">
+                    <div class="filter-toolbar" style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; margin-bottom:1rem;">
+                        <div id="dnVendorFilterContainer"></div>
+                        <button class="btn btn-primary" onclick="showCreateDebitNoteModal()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Create Debit Note
+                        </button>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Debit Note #</th>
+                                <th>Vendor</th>
+                                <th>Bill</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="debitNotesTable">
+                            <tr class="empty-state"><td colspan="7"><div class="empty-message"><p>No debit notes</p></div></td></tr>
+                        </tbody>
+                    </table>
+                    <div id="debitNotesPagination"></div>
+                </div>
+
+                <!-- Debit Note Create Modal -->
+                <div class="modal" id="debitNoteModal">
+                    <div class="modal-content" style="max-width:500px;">
+                        <div class="modal-header">
+                            <h5 id="dnModalTitle">Create Debit Note</h5>
+                            <button type="button" class="close-btn" onclick="AccountsCommon.closeModal('debitNoteModal')">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="dnId">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Vendor *</label>
+                                    <div id="dnVendorContainer"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Bill (optional)</label>
+                                    <div id="dnBillContainer"></div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Debit Date *</label>
+                                    <input type="date" id="dnDate" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Amount *</label>
+                                    <input type="number" id="dnAmount" class="form-control" step="0.01" min="0.01" placeholder="0.00" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Reason</label>
+                                <textarea id="dnReason" class="form-control" rows="2" placeholder="Reason for debit note"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline" onclick="AccountsCommon.closeModal('debitNoteModal')">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="saveDebitNote()">Save</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 4: AP Aging -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="ap-aging">
                     <div class="stats-row">

@@ -181,10 +181,10 @@ async function loadCustomerInvoices() {
     const dateTo = document.getElementById('invoiceDateTo')?.value;
     const search = document.getElementById('invoiceSearch')?.value?.trim();
 
-    if (customerId) params.customer_id = customerId;
+    if (customerId) params.customerId = customerId;
     if (status) params.status = status;
-    if (dateFrom) params.date_from = dateFrom;
-    if (dateTo) params.date_to = dateTo;
+    if (dateFrom) params.fromDate = dateFrom;
+    if (dateTo) params.toDate = dateTo;
     if (search) params.search = search;
 
     try {
@@ -517,9 +517,9 @@ async function loadCustomerPayments() {
     const dateTo = document.getElementById('paymentDateTo')?.value;
     const search = document.getElementById('paymentSearch')?.value?.trim();
 
-    if (customerId) params.customer_id = customerId;
-    if (dateFrom) params.date_from = dateFrom;
-    if (dateTo) params.date_to = dateTo;
+    if (customerId) params.customerId = customerId;
+    if (dateFrom) params.fromDate = dateFrom;
+    if (dateTo) params.toDate = dateTo;
     if (search) params.search = search;
 
     try {
@@ -646,10 +646,10 @@ async function loadCreditNotes() {
     const search = document.getElementById('cnSearch')?.value?.trim();
     const statusFilter = document.getElementById('creditNoteStatusFilter')?.value;
 
-    if (customerId) params.customer_id = customerId;
+    if (customerId) params.customerId = customerId;
     if (statusFilter) params.status = statusFilter;
-    if (dateFrom) params.date_from = dateFrom;
-    if (dateTo) params.date_to = dateTo;
+    if (dateFrom) params.fromDate = dateFrom;
+    if (dateTo) params.toDate = dateTo;
     if (search) params.search = search;
 
     try {
@@ -697,7 +697,7 @@ async function loadCustomerInvoicesForCN() {
     sel.innerHTML = '<option value="">Select invoice...</option>';
     if (!custId) return;
     try {
-        const res = await api.request(AccountsCommon.buildUrl('invoices', { customer_id: custId, pageSize: 200 }));
+        const res = await api.request(AccountsCommon.buildUrl('invoices', { customerId: custId, limit: 200 }));
         const items = Array.isArray(res) ? res : (res?.data || res?.items || []);
         items.forEach(inv => {
             sel.innerHTML += `<option value="${inv.id}">${AccountsCommon.escapeHtml(inv.invoice_number || inv.id)} - ${AccountsCommon.formatCurrency(inv.total_amount)}</option>`;
@@ -789,8 +789,8 @@ async function loadCustomerStatement() {
     const dateFrom = document.getElementById('statementDateFrom')?.value;
     const dateTo = document.getElementById('statementDateTo')?.value;
     const params = {};
-    if (dateFrom) params.date_from = dateFrom;
-    if (dateTo) params.date_to = dateTo;
+    if (dateFrom) params.fromDate = dateFrom;
+    if (dateTo) params.toDate = dateTo;
 
     const container = document.getElementById('statementContent');
     try {

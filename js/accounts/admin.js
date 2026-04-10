@@ -598,6 +598,8 @@ async function loadJobLogs() {
     }
 }
 
+let jobLogPanel = null;
+
 function renderJobLogs() {
     const tbody = document.getElementById('jobLogsTable');
     if (!tbody) return;
@@ -611,20 +613,92 @@ function renderJobLogs() {
         return;
     }
 
-    tbody.innerHTML = jobLogs.map(j => {
-        const statusBadge = j.status === 'completed' ? 'status-active'
-            : j.status === 'failed' ? 'status-rejected'
-            : j.status === 'running' ? 'status-pending'
-            : 'status-pending';
+    const actionBadge = (action) => {
+        const map = {
+            'recorded': 'status-active', 'approved': 'status-active', 'created': 'status-active',
+            'deleted': 'status-rejected', 'voided': 'status-rejected', 'cancelled': 'status-rejected',
+            'rejected': 'status-rejected',
+            'updated': 'status-pending', 'submitted': 'status-pending'
+        };
+        return map[action] || 'status-pending';
+    };
 
-        return `<tr>
+    const formatType = (type) => (type || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+    tbody.innerHTML = jobLogs.map((j, i) => `<tr>
             <td>${AccountsCommon.formatDate(j.timestamp || j.created_at, true)}</td>
-            <td>${AccountsCommon.escapeHtml(j.job_type || '-')}</td>
-            <td><span class="badge ${statusBadge}">${AccountsCommon.escapeHtml(j.status || '-')}</span></td>
-            <td>${j.duration_ms != null ? (j.duration_ms / 1000).toFixed(1) + 's' : (j.duration || '-')}</td>
-            <td>${AccountsCommon.escapeHtml(truncateStr(j.details || j.message || '-', 60))}</td>
-        </tr>`;
-    }).join('');
+            <td>${AccountsCommon.escapeHtml(formatType(j.entity_type || j.job_type || '-'))}</td>
+            <td><span class="badge ${actionBadge(j.action || j.status)}">${AccountsCommon.escapeHtml(j.action || j.status || '-')}</span></td>
+            <td>${AccountsCommon.escapeHtml(j.performed_by_name || j.performed_by?.substring(0, 8) || '-')}</td>
+            <td>
+                <button class="btn btn-outline" style="padding:0.2rem 0.6rem;font-size:0.8rem;" onclick="viewJobLogDetail(${i})">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    View
+                </button>
+            </td>
+        </tr>`).join('');
+}
+
+function viewJobLogDetail(index) {
+    const j = jobLogs[index];
+    if (!j) return;
+
+    if (!jobLogPanel) {
+        jobLogPanel = new SlidePanel({ id: 'jobLogDetailPanel', title: 'Activity Detail', width: '440px' });
+    }
+
+    const formatType = (t) => (t || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+    // Parse details JSON into key-value pairs
+    let detailItems = [];
+    try {
+        const raw = typeof j.details === 'string' ? JSON.parse(j.details) : j.details;
+        if (raw && typeof raw === 'object') {
+            detailItems = Object.entries(raw).map(([key, val]) => ({
+                label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+                value: val != null ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : '-'
+            }));
+        }
+    } catch { /* ignore parse errors */ }
+
+    const actionBadge = (a) => {
+        if (['recorded', 'approved', 'created'].includes(a)) return 'status-active';
+        if (['deleted', 'voided', 'cancelled', 'rejected'].includes(a)) return 'status-rejected';
+        return 'status-pending';
+    };
+
+    let body = SlidePanel.createHeaderCard({
+        avatar: { initials: formatType(j.entity_type)?.[0] || 'J' },
+        title: formatType(j.entity_type),
+        subtitle: AccountsCommon.formatDate(j.created_at || j.timestamp, true),
+        badges: [{ text: j.action || j.status || '-', class: actionBadge(j.action || j.status) }]
+    });
+
+    // Show entity_display_name (resolved by backend) or fall back to truncated ID
+    const entityDisplay = j.entity_display_name
+        ? `<strong>${AccountsCommon.escapeHtml(j.entity_display_name)}</strong>`
+        : (j.entity_id ? `<code style="font-size:0.75rem">${j.entity_id}</code>` : '-');
+
+    body += SlidePanel.createInfoSection({
+        title: 'Overview', icon: 'info', iconColor: 'blue',
+        items: [
+            { label: 'Action', value: formatType(j.action || j.status) },
+            { label: 'Entity Type', value: formatType(j.entity_type || j.job_type) },
+            { label: 'Reference', value: entityDisplay },
+            { label: 'Performed By', value: j.performed_by_name || j.performed_by || '-' },
+            { label: 'Timestamp', value: AccountsCommon.formatDate(j.created_at || j.timestamp, true) }
+        ]
+    });
+
+    if (detailItems.length > 0) {
+        body += SlidePanel.createInfoSection({
+            title: 'Details', icon: 'file', iconColor: 'green',
+            items: detailItems
+        });
+    }
+
+    jobLogPanel.setTitle(`${formatType(j.entity_type)} — ${formatType(j.action || j.status)}`);
+    jobLogPanel.open({ body });
 }
 
 // ============================================================================
