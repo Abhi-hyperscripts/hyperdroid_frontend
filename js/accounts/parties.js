@@ -601,10 +601,10 @@ function formatSlaDeadline(deadline) {
         } else {
             text = `OVERDUE ${Math.round(overHours / 24)} days ago`;
         }
-        color = 'var(--color-error)';
+        color = 'var(--color-danger)';
     } else if (diffHours < 8) {
         text = `in ${Math.round(diffHours)} hours`;
-        color = 'var(--color-error)';
+        color = 'var(--color-danger)';
     } else if (diffHours < 24) {
         text = `in ${Math.round(diffHours)} hours`;
         color = 'var(--color-warning)';
@@ -673,7 +673,7 @@ async function loadPendingRequests(type) {
         const esc = AccountsCommon.escapeHtml;
         tbody.innerHTML = items.map(r => {
             const approveBtn = `<button class="btn-icon" onclick="approveRequest('${r.id}', '${type}')" data-tooltip="Approve" style="color:var(--color-success);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></button>`;
-            const rejectBtn = `<button class="btn-icon" onclick="rejectRequest('${r.id}', '${type}')" data-tooltip="Reject" style="color:var(--color-error);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+            const rejectBtn = `<button class="btn-icon" onclick="rejectRequest('${r.id}', '${type}')" data-tooltip="Reject" style="color:var(--color-danger);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
             return `<tr>
                 <td>${esc(r.party_name || r.name || '-')}</td>
                 <td>${esc(r.requested_by_name || r.requested_by || '-')}</td>

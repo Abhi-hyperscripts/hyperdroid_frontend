@@ -246,6 +246,8 @@ async function loadBillIntoModal(id, mode) {
         document.getElementById('billDueDate').value = (bill.due_date || '').substring(0, 10);
         document.getElementById('billPoReference').value = bill.po_reference || '';
         document.getElementById('billNotes').value = bill.notes || '';
+        document.getElementById('billTdsAmount').value = bill.tds_amount || '';
+        document.getElementById('billTdsSection').value = '';
         populateBillVendorSelect(bill.vendor_id);
 
         clearBillLines();
@@ -385,9 +387,13 @@ async function saveBill(approve = false) {
     // here was silently dropped, so "Save & Approve" only ever saved a draft. Fixed in
     // Phase 4 Tier 1: send a clean payload without `status`, then chain a POST /approve
     // when approve===true.
+    const tdsAmount = parseFloat(document.getElementById('billTdsAmount')?.value) || 0;
+    const tdsSection = document.getElementById('billTdsSection')?.value?.trim() || null;
+
     const payload = {
         vendor_id: vendorId, bill_date: billDate, due_date: dueDate,
-        po_reference: poReference, notes, lines
+        po_reference: poReference, notes, lines,
+        tds_amount: tdsAmount, tds_section: tdsSection
     };
 
     try {
@@ -767,7 +773,7 @@ function renderAPAgingTable(data) {
         return;
     }
     const fmt = (v) => AccountsCommon.formatCurrency(v || 0);
-    const warn = (v) => (parseFloat(v) || 0) > 0 ? ' style="color:var(--color-error)"' : '';
+    const warn = (v) => (parseFloat(v) || 0) > 0 ? ' style="color:var(--color-danger)"' : '';
 
     tbody.innerHTML = data.map(row => {
         const t = [row.current, row.days_1_30, row.days_31_60, row.days_61_90, row.days_90_plus].reduce((s, v) => s + (parseFloat(v) || 0), 0);

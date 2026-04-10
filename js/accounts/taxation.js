@@ -60,9 +60,9 @@ function onTabSwitch(tabId) {
         case 'tax-config':      loadTaxConfigs(); break;
         case 'tax-rates':       loadTaxRates(); break;
         case 'hsn-sac':         loadHsnSacCodes(); break;
-        case 'gstr-1':          break;
-        case 'gstr-3b':         break;
-        case 'tds-return':      break;
+        case 'gstr-1':          setDefaultDatesAndGenerate('gstr1From', 'gstr1To', generateGSTR1); break;
+        case 'gstr-3b':         setDefaultDatesAndGenerate('gstr3bFrom', 'gstr3bTo', generateGSTR3B); break;
+        case 'tds-return':      setDefaultDatesAndGenerate('tdsFrom', 'tdsTo', generateTDSReturn); break;
         case 'tax-calculator':  populateCalcConfigSelect(); break;
         case 'tax-ledger':      loadTaxLedger(); break;
     }
@@ -562,6 +562,29 @@ async function deleteHsnSac(id) {
         console.error('[Taxation] deleteHsnSac error:', err);
         Toast.error(err.message || 'Failed to delete HSN/SAC code');
     }
+}
+
+// ============================================================================
+// HELPER: Set default fiscal year dates and auto-generate
+// ============================================================================
+
+function setDefaultDatesAndGenerate(fromId, toId, generateFn) {
+    const fromEl = document.getElementById(fromId);
+    const toEl = document.getElementById(toId);
+    if (!fromEl || !toEl) return;
+
+    // Only set defaults if fields are empty
+    if (!fromEl.value && !toEl.value) {
+        const now = new Date();
+        const fyStart = now.getMonth() >= 3
+            ? new Date(now.getFullYear(), 3, 1)   // Apr 1 of current year
+            : new Date(now.getFullYear() - 1, 3, 1); // Apr 1 of previous year
+        const pad = (n) => String(n).padStart(2, '0');
+        fromEl.value = `${fyStart.getFullYear()}-${pad(fyStart.getMonth() + 1)}-${pad(fyStart.getDate())}`;
+        toEl.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    }
+
+    generateFn();
 }
 
 // ============================================================================

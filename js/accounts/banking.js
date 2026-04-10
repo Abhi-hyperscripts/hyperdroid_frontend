@@ -670,7 +670,7 @@ function renderReconTransactions() {
             <td><input type="checkbox" class="recon-check" data-txn-id="${t.id}" data-amount="${amt}" onchange="updateReconSummary()"></td>
             <td>${fmtD(t.transaction_date || t.date)}</td>
             <td>${esc(t.description || '-')}</td>
-            <td class="text-right" style="${amt < 0 ? 'color:var(--color-error)' : ''}">${fmt(Math.abs(amt))}</td>
+            <td class="text-right" style="${amt < 0 ? 'color:var(--color-danger)' : ''}">${fmt(Math.abs(amt))}</td>
         </tr>`;
     }).join('');
 }
@@ -702,7 +702,7 @@ function updateReconSummary() {
     el('reconSummaryDifference', AccountsCommon.formatCurrency(Math.abs(diff)));
 
     const diffEl = document.getElementById('reconSummaryDifference');
-    if (diffEl) diffEl.style.color = Math.abs(diff) < 0.01 ? 'var(--color-success)' : 'var(--color-error)';
+    if (diffEl) diffEl.style.color = Math.abs(diff) < 0.01 ? 'var(--color-success)' : 'var(--color-danger)';
 }
 
 async function matchSelectedTransactions() {

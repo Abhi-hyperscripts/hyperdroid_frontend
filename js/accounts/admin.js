@@ -342,7 +342,7 @@ async function loadPendingApprovals() {
                     <div style="display: flex; gap: 0.5rem;">
                         ${accountsRoles.isManager() ? `
                             <button class="btn btn-primary" onclick="approveItem('${a.id}')" style="padding: 0.4rem 1rem;">Approve</button>
-                            <button class="btn btn-outline" onclick="rejectItem('${a.id}')" style="padding: 0.4rem 1rem; color: var(--color-error); border-color: var(--color-error);">Reject</button>
+                            <button class="btn btn-outline" onclick="rejectItem('${a.id}')" style="padding: 0.4rem 1rem; color: var(--color-danger); border-color: var(--color-danger);">Reject</button>
                         ` : ''}
                     </div>
                 </div>
@@ -542,7 +542,7 @@ async function loadIntegrityCheckResults() {
                     const label = integrityCheckLabel(c);
                     const details = formatIntegrityDetails(c);
                     return `<tr>
-                        <td>${AccountsCommon.formatDate(r.run_date || r.timestamp || r.created_at, true)}</td>
+                        <td>${AccountsCommon.formatDate(r.checked_at || r.run_date || r.timestamp || r.created_at, true)}</td>
                         <td>${AccountsCommon.escapeHtml(label)}</td>
                         <td><span class="badge ${passed ? 'status-active' : 'status-rejected'}">${passed ? 'PASS' : 'FAIL'}</span></td>
                         <td>${AccountsCommon.escapeHtml(details)}</td>
@@ -783,8 +783,22 @@ async function saveChecklist() {
         return;
     }
 
+    // Backend requires fiscal_period_id — find the current/latest open period for the selected FY
+    let fiscal_period_id = null;
+    try {
+        const periodsRes = await api.request(AccountsCommon.buildUrl('fiscal/periods', { fiscalYearId: fiscal_year_id }), { _skipSpinner: true });
+        const periods = Array.isArray(periodsRes) ? periodsRes : (periodsRes?.data || periodsRes?.items || []);
+        const now = new Date().toISOString().split('T')[0];
+        // Pick the period that contains today, or fallback to the latest open period
+        fiscal_period_id = (periods.find(p => p.start_date <= now && p.end_date >= now) || periods.find(p => p.status === 'open') || periods[0])?.id;
+    } catch (e) { /* ignore */ }
+    if (!fiscal_period_id) {
+        Toast.error('No fiscal period found for the selected fiscal year');
+        return;
+    }
+
     const closing_type = document.getElementById('checklistClosingType')?.value || 'month_end';
-    const payload = { name, fiscal_year_id, closing_type, description };
+    const payload = { name, fiscal_period_id, closing_type, description };
 
     try {
         if (id) {
@@ -824,7 +838,7 @@ async function viewChecklist(id) {
             return;
         }
 
-        const allCompleted = items.every(i => i.completed);
+        const allCompleted = items.every(i => i.is_completed || i.completed);
 
         body.innerHTML = `
             <p style="color: var(--text-secondary); margin-bottom: 1rem;">
@@ -836,15 +850,15 @@ async function viewChecklist(id) {
                 <thead><tr><th style="width: 50px;"></th><th>Item</th><th>Status</th></tr></thead>
                 <tbody>${items.map(i => `<tr>
                     <td style="text-align: center;">
-                        ${i.completed
+                        ${i.is_completed || i.completed
                             ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`
                             : `<button class="btn-icon" onclick="completeChecklistItem('${id}', '${i.id}')" data-tooltip="Mark Complete" style="color: var(--text-secondary);">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
                               </button>`
                         }
                     </td>
-                    <td>${AccountsCommon.escapeHtml(i.name || i.title || '-')}</td>
-                    <td>${i.completed
+                    <td>${AccountsCommon.escapeHtml(i.description || i.name || i.title || '-')}</td>
+                    <td>${i.is_completed || i.completed
                         ? `<span class="badge status-active">Completed</span>`
                         : `<span class="badge status-pending">Pending</span>`
                     }</td>

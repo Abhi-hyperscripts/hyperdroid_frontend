@@ -962,7 +962,7 @@ function updateOpeningBalanceTotals() {
         } else {
             const diff = totalDebit - totalCredit;
             statusEl.textContent = `Unbalanced: ${diff > 0 ? 'debits exceed credits' : 'credits exceed debits'} by ${AccountsCommon.formatCurrency(Math.abs(diff))}.`;
-            statusEl.style.color = 'var(--color-error)';
+            statusEl.style.color = 'var(--color-danger)';
         }
     }
 }

@@ -478,7 +478,7 @@ function renderClaimsTable() {
         let actions = `<button class="btn-icon" onclick="viewClaim('${c.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
         if (isAdmin && c.status === 'submitted') {
             actions += ` <button class="btn-icon" onclick="approveClaim('${c.id}')" data-tooltip="Approve" data-admin-only><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>`;
-            actions += ` <button class="btn-icon" onclick="showRejectClaimModal('${c.id}')" data-tooltip="Reject" data-admin-only><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-error)" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+            actions += ` <button class="btn-icon" onclick="showRejectClaimModal('${c.id}')" data-tooltip="Reject" data-admin-only><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
         }
         if (isAdmin && c.status === 'approved') {
             actions += ` <button class="btn-icon" onclick="showReimburseClaimModal('${c.id}')" data-tooltip="Reimburse" data-admin-only><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-success)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></button>`;
@@ -528,7 +528,7 @@ function addClaimItem() {
         <td><input type="text" class="form-control claim-item-desc" data-idx="${idx}" placeholder="Description"></td>
         <td><input type="number" class="form-control claim-item-amount" data-idx="${idx}" min="0" step="0.01" placeholder="0.00" onchange="calculateClaimTotal()" oninput="calculateClaimTotal()"></td>
         <td><input type="date" class="form-control claim-item-date" data-idx="${idx}" value="${new Date().toISOString().split('T')[0]}"></td>
-        <td><button type="button" class="btn-icon" onclick="removeClaimItem(${idx})" data-tooltip="Remove"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-error)" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
+        <td><button type="button" class="btn-icon" onclick="removeClaimItem(${idx})" data-tooltip="Remove"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     tbody.appendChild(row);
 }
 
@@ -612,7 +612,7 @@ async function viewClaim(id) {
                 <div class="form-group"><label>Status</label><p>${AccountsCommon.statusBadge(claim.status)}</p></div>
             </div>
             <div class="form-group"><label>Description</label><p>${AccountsCommon.escapeHtml(claim.description || '-')}</p></div>
-            ${claim.rejection_reason ? `<div class="form-group"><label>Rejection Reason</label><p style="color:var(--color-error);">${AccountsCommon.escapeHtml(claim.rejection_reason)}</p></div>` : ''}
+            ${claim.rejection_reason ? `<div class="form-group"><label>Rejection Reason</label><p style="color:var(--color-danger);">${AccountsCommon.escapeHtml(claim.rejection_reason)}</p></div>` : ''}
             <label style="margin-top:1rem; font-weight:600;">Items</label>
             ${itemsHtml}`;
         AccountsCommon.openModal('claimDetailModal');

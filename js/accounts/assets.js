@@ -140,7 +140,9 @@ function editCategory(id) {
     document.getElementById('categoryModalTitle').textContent = 'Edit Asset Category';
     document.getElementById('categoryId').value = cat.id;
     document.getElementById('categoryName').value = cat.name || '';
-    document.getElementById('categoryMethod').value = cat.depreciation_method || '';
+    const methodSel = document.getElementById('categoryMethod');
+    methodSel.value = cat.depreciation_method || '';
+    if (methodSel._searchableDropdown) methodSel._searchableDropdown.setValue(cat.depreciation_method || '');
     document.getElementById('categoryUsefulLife').value = cat.useful_life_years ?? '';
     document.getElementById('categoryRate').value = cat.depreciation_rate ?? '';
     populateCategoryAccountSelects(cat.asset_account_id || cat.gl_account_id, cat.depreciation_account_id || cat.depreciation_expense_account_id);
@@ -201,18 +203,22 @@ async function populateCategoryAccountSelects(glAccountId, depAccountId) {
         const glSel = document.getElementById('categoryGlAccount');
         const depSel = document.getElementById('categoryDepAccount');
 
-        const optionsHtml = accounts.map(a =>
-            `<option value="${a.id}">${AccountsCommon.escapeHtml(a.account_code ? a.account_code + ' - ' + (a.account_name || a.name) : (a.account_name || a.name))}</option>`
-        ).join('');
+        const sdOptions = [{ value: '', label: 'Select account...' }].concat(accounts.map(a => ({
+            value: a.id,
+            label: a.account_code ? a.account_code + ' - ' + (a.account_name || a.name) : (a.account_name || a.name)
+        })));
 
-        if (glSel) {
-            glSel.innerHTML = '<option value="">Select account...</option>' + optionsHtml;
-            if (glAccountId) glSel.value = glAccountId;
-        }
-        if (depSel) {
-            depSel.innerHTML = '<option value="">Select account...</option>' + optionsHtml;
-            if (depAccountId) depSel.value = depAccountId;
-        }
+        [glSel, depSel].forEach((sel, i) => {
+            if (!sel) return;
+            const selectedId = i === 0 ? glAccountId : depAccountId;
+            if (sel._searchableDropdown) {
+                sel._searchableDropdown.setOptions(sdOptions, false);
+                if (selectedId) sel._searchableDropdown.setValue(selectedId);
+            } else {
+                sel.innerHTML = sdOptions.map(o => `<option value="${o.value}">${AccountsCommon.escapeHtml(o.label)}</option>`).join('');
+                if (selectedId) sel.value = selectedId;
+            }
+        });
     } catch (err) {
         console.error('[Assets] populateCategoryAccountSelects error:', err);
     }
