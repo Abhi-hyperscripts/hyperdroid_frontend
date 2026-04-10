@@ -127,6 +127,26 @@
                         </div>
                     </div>
 
+                    <!-- Import Section -->
+                    <div class="nav-group" data-group="import">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Import
+                            </span>
+                            <span class="chevron">&#9660;</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="statement-import" id="statementImportTab">
+                                <span class="nav-number">4</span><span class="nav-label">Import Statement</span>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Reconciliation Section -->
                     <div class="nav-group" data-group="reconciliation">
                         <div class="nav-group-header">
@@ -141,7 +161,7 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="reconciliation" id="reconciliationTab">
-                                <span class="nav-number">4</span><span class="nav-label">Reconciliation</span>
+                                <span class="nav-number">5</span><span class="nav-label">Reconciliation</span>
                             </button>
                         </div>
                     </div>
@@ -358,7 +378,100 @@
                 </div>
 
                 <!-- ============================================================ -->
-                <!-- Tab 4: Reconciliation -->
+                <!-- Tab 4: Import Statement -->
+                <!-- ============================================================ -->
+                <div class="tab-content" id="statement-import">
+                    <!-- Step 1: Upload -->
+                    <div id="importStep1">
+                        <div class="glass-card" style="margin-bottom:1.5rem;">
+                            <div class="glass-card-body">
+                                <h4 style="margin-bottom:0.5rem;">Import Bank Statement</h4>
+                                <p style="color:var(--text-secondary);margin-bottom:1.25rem;font-size:0.9rem;">
+                                    Download our template, paste your bank statement data into it, then upload the filled file.
+                                </p>
+
+                                <div class="form-row two-col" style="margin-bottom:1rem;">
+                                    <div class="form-group">
+                                        <label>Bank Account *</label>
+                                        <div class="searchable-dropdown-container" id="importBankContainer"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Default Counter Account *</label>
+                                        <div class="searchable-dropdown-container" id="importCounterContainer"></div>
+                                    </div>
+                                </div>
+
+                                <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1.5rem;">
+                                    <button class="btn btn-outline" onclick="downloadStatementTemplate()" style="display:inline-flex;align-items:center;gap:0.5rem;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                        Download Template
+                                    </button>
+                                    <span style="color:var(--text-secondary);font-size:0.85rem;">Excel file with sample data &amp; instructions</span>
+                                </div>
+
+                                <div id="statementDropZone" style="border:2px dashed var(--border-primary);border-radius:12px;padding:2.5rem;text-align:center;cursor:pointer;transition:border-color 0.2s, background 0.2s;" onclick="document.getElementById('statementFileInput').click()">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" style="margin-bottom:0.75rem;">
+                                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                        <line x1="12" y1="18" x2="12" y2="12"/>
+                                        <polyline points="9 15 12 12 15 15"/>
+                                    </svg>
+                                    <p style="color:var(--text-secondary);margin:0;">Drag &amp; drop your filled template here, or click to browse</p>
+                                    <p style="color:var(--text-secondary);font-size:0.8rem;margin:0.25rem 0 0;">Accepts .xlsx files</p>
+                                    <input type="file" id="statementFileInput" accept=".xlsx" onchange="handleStatementFileSelect(event)" style="display:none;">
+                                </div>
+
+                                <div id="statementSelectedFile" style="display:none;margin-top:1rem;padding:0.75rem 1rem;background:var(--bg-secondary);border-radius:8px;display:none;align-items:center;justify-content:space-between;">
+                                    <span id="statementFileName" style="font-weight:500;"></span>
+                                    <button class="btn btn-outline btn-sm" onclick="clearStatementFile()" style="padding:0.25rem 0.75rem;">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Preview -->
+                    <div id="importStep2" style="display:none;">
+                        <div class="glass-card" style="margin-bottom:1rem;">
+                            <div class="glass-card-body">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                                    <h4>Preview Import (<span id="importRowCount">0</span> transactions)</h4>
+                                    <div style="display:flex;gap:0.5rem;">
+                                        <button class="btn btn-outline" onclick="cancelStatementImport()">Cancel</button>
+                                        <button class="btn btn-primary" id="confirmImportBtn" onclick="confirmStatementImport()">Confirm Import</button>
+                                    </div>
+                                </div>
+                                <div id="importValidationSummary" style="margin-bottom:1rem;"></div>
+                                <div class="data-table-container" style="max-height:500px;overflow-y:auto;">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:40px;">#</th>
+                                                <th style="width:70px;">Status</th>
+                                                <th>Date</th>
+                                                <th>Description</th>
+                                                <th style="text-align:right;">Debit</th>
+                                                <th style="text-align:right;">Credit</th>
+                                                <th style="text-align:right;">Balance</th>
+                                                <th>Reference</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="importPreviewTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Results -->
+                    <div id="importStep3" style="display:none;">
+                        <div class="glass-card">
+                            <div class="glass-card-body" id="importResultsContent"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- Tab 5: Reconciliation -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="reconciliation">
                     <div class="glass-card" style="margin-bottom:1.5rem;">
@@ -611,6 +724,9 @@
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/banking.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
+
+    <!-- SheetJS for Excel parsing (statement import) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <!-- Flatpickr for Date/Time Picker -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>

@@ -24,6 +24,11 @@ let txnBankFilterDropdown = null;
 let transferFromDropdown = null;
 let transferToDropdown = null;
 let reconBankDropdown = null;
+let importBankDropdown = null;
+let importCounterDropdown = null;
+
+// Statement import state
+let parsedStatementRows = [];
 
 // ============================================================================
 // PAGE INIT
@@ -36,6 +41,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         'bank-accounts': 'Bank Accounts',
         'bank-transactions': 'Transactions',
         'bank-transfers': 'Inter-Bank Transfer',
+        'statement-import': 'Import Statement',
         'reconciliation': 'Reconciliation'
     };
 
@@ -45,6 +51,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     await loadInitialData();
     AccountsCommon.initSearchableDropdownsWithRetry(initDropdowns);
+    // Ensure dropdowns are populated after data + dropdown init are both complete
+    refreshBankDropdowns();
+    refreshImportCounterDropdown();
     setupSearchListeners();
 });
 
@@ -57,6 +66,7 @@ function onTabSwitch(tabId) {
         case 'bank-accounts':      loadBankAccounts(); break;
         case 'bank-transactions':  loadBankTransactions(); break;
         case 'bank-transfers':     loadRecentTransfers(); break;
+        case 'statement-import':   initImportTab(); break;
         case 'reconciliation':     break; // user-triggered
     }
 }
@@ -813,6 +823,33 @@ function initDropdowns() {
         });
     }
 
+    // Import bank dropdown
+    const importBankContainer = document.getElementById('importBankContainer');
+    if (importBankContainer) {
+        importBankDropdown = new SearchableDropdown(importBankContainer, {
+            id: 'importBank',
+            options: bankOptsWithAll,
+            placeholder: 'Search bank account...',
+            compact: true
+        });
+    }
+
+    // Import counter account dropdown
+    const counterOpts = [{ value: '', label: 'Select Counter Account' },
+        ...coaAccounts
+            .filter(a => a.allow_direct_posting)
+            .map(a => ({ value: a.id, label: `${a.account_code} - ${a.account_name}` }))
+    ];
+    const importCounterContainer = document.getElementById('importCounterContainer');
+    if (importCounterContainer) {
+        importCounterDropdown = new SearchableDropdown(importCounterContainer, {
+            id: 'importCounter',
+            options: counterOpts,
+            placeholder: 'Search GL account...',
+            compact: true
+        });
+    }
+
     // Set default date for transfer
     const transferDate = document.getElementById('transferDate');
     if (transferDate && !transferDate.value) transferDate.value = new Date().toISOString().split('T')[0];
@@ -825,4 +862,365 @@ function refreshBankDropdowns() {
     transferFromDropdown?.setOptions?.([{ value: '', label: 'Select Account' }, ...bankOpts]);
     transferToDropdown?.setOptions?.([{ value: '', label: 'Select Account' }, ...bankOpts]);
     reconBankDropdown?.setOptions?.(bankOptsWithAll);
+    importBankDropdown?.setOptions?.(bankOptsWithAll);
+}
+
+function refreshImportCounterDropdown() {
+    if (!importCounterDropdown) return;
+    const counterOpts = [{ value: '', label: 'Select Counter Account' },
+        ...coaAccounts
+            .filter(a => a.allow_direct_posting)
+            .map(a => ({ value: a.id, label: `${a.account_code} - ${a.account_name}` }))
+    ];
+    importCounterDropdown.setOptions(counterOpts);
+}
+
+// ============================================================================
+// 5. STATEMENT IMPORT
+// ============================================================================
+
+let importTabInitialized = false;
+
+function initImportTab() {
+    if (importTabInitialized) return;
+    importTabInitialized = true;
+
+    // Setup drag-and-drop
+    const dropZone = document.getElementById('statementDropZone');
+    if (dropZone) {
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--brand-primary)';
+            dropZone.style.background = 'var(--bg-secondary)';
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = 'var(--border-primary)';
+            dropZone.style.background = '';
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--border-primary)';
+            dropZone.style.background = '';
+            const file = e.dataTransfer?.files?.[0];
+            if (file) processStatementFile(file);
+        });
+    }
+}
+
+async function downloadStatementTemplate() {
+    try {
+        const baseUrl = api._getBaseUrl('/accounts/');
+        const url = `${baseUrl}/accounts/bank/statement-template?tenantId=${AccountsCommon.getTenantId()}`;
+        const response = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${api.token}` }
+        });
+        if (!response.ok) throw new Error('Failed to download template');
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = 'bank_statement_template.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        Toast.success('Template downloaded');
+    } catch (err) {
+        console.error('[Import] Download template error:', err);
+        Toast.error('Failed to download template');
+    }
+}
+
+function handleStatementFileSelect(event) {
+    const file = event.target.files?.[0];
+    if (file) processStatementFile(file);
+}
+
+async function processStatementFile(file) {
+    if (!file.name.endsWith('.xlsx')) {
+        Toast.error('Please upload an .xlsx file');
+        return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+        Toast.error('File too large (max 10MB)');
+        return;
+    }
+
+    // Show selected file
+    document.getElementById('statementSelectedFile').style.display = 'flex';
+    document.getElementById('statementFileName').textContent = file.name;
+
+    try {
+        const data = await file.arrayBuffer();
+        parseExcelAndPreview(data);
+    } catch (err) {
+        console.error('[Import] File read error:', err);
+        Toast.error('Failed to read file');
+    }
+}
+
+function parseExcelAndPreview(arrayBuffer) {
+    // Use SheetJS if available, otherwise parse via backend
+    // Since we're using OpenXML on backend, let's parse client-side with a lightweight approach
+    // We'll use the XLSX library (SheetJS) which is commonly available
+    if (typeof XLSX === 'undefined') {
+        Toast.error('Excel parser not loaded. Please refresh the page.');
+        return;
+    }
+
+    try {
+        const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+
+        if (rows.length < 2) {
+            Toast.error('File has no data rows (only header found)');
+            return;
+        }
+
+        // Find header row (look for "Date" in first few rows)
+        let headerIdx = -1;
+        for (let i = 0; i < Math.min(5, rows.length); i++) {
+            const row = rows[i];
+            if (row && row.some(c => typeof c === 'string' && c.toLowerCase().trim() === 'date')) {
+                headerIdx = i;
+                break;
+            }
+        }
+        if (headerIdx === -1) {
+            Toast.error('Could not find header row with "Date" column');
+            return;
+        }
+
+        const headers = rows[headerIdx].map(h => (h || '').toString().toLowerCase().trim());
+        const colMap = {
+            date: headers.indexOf('date'),
+            description: headers.indexOf('description'),
+            debit: headers.indexOf('debit'),
+            credit: headers.indexOf('credit'),
+            balance: headers.indexOf('balance'),
+            reference: headers.indexOf('reference')
+        };
+
+        if (colMap.date === -1 || colMap.description === -1) {
+            Toast.error('Template must have "Date" and "Description" columns');
+            return;
+        }
+        if (colMap.debit === -1 && colMap.credit === -1) {
+            Toast.error('Template must have "Debit" and/or "Credit" columns');
+            return;
+        }
+
+        // Parse data rows (skip header, skip instruction rows)
+        parsedStatementRows = [];
+        for (let i = headerIdx + 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length === 0) continue;
+
+            const dateVal = colMap.date >= 0 ? (row[colMap.date] || '').toString().trim() : '';
+            const desc = colMap.description >= 0 ? (row[colMap.description] || '').toString().trim() : '';
+            const debitVal = colMap.debit >= 0 ? (row[colMap.debit] || '').toString().trim() : '';
+            const creditVal = colMap.credit >= 0 ? (row[colMap.credit] || '').toString().trim() : '';
+            const balVal = colMap.balance >= 0 ? (row[colMap.balance] || '').toString().trim() : '';
+            const refVal = colMap.reference >= 0 ? (row[colMap.reference] || '').toString().trim() : '';
+
+            // Skip empty/instruction rows
+            if (!dateVal && !desc) continue;
+            if (desc.toLowerCase().startsWith('instructions:')) continue;
+
+            const parsedDate = parseFlexibleDate(dateVal);
+            const debit = parseAmount(debitVal);
+            const credit = parseAmount(creditVal);
+            const balance = parseAmount(balVal);
+
+            let status = 'valid';
+            let error = '';
+            if (!parsedDate) { status = 'error'; error = 'Invalid date'; }
+            else if (debit === null && credit === null) { status = 'error'; error = 'No amount'; }
+            else if (debit !== null && credit !== null && debit > 0 && credit > 0) { status = 'error'; error = 'Both debit & credit filled'; }
+            else if (!desc) { status = 'error'; error = 'No description'; }
+
+            parsedStatementRows.push({
+                row_number: i + 1,
+                date: parsedDate,
+                date_str: dateVal,
+                description: desc,
+                debit, credit, balance,
+                reference: refVal,
+                status, error
+            });
+        }
+
+        if (parsedStatementRows.length === 0) {
+            Toast.error('No valid data rows found in the file');
+            return;
+        }
+
+        renderImportPreview();
+    } catch (err) {
+        console.error('[Import] Parse error:', err);
+        Toast.error('Failed to parse Excel file: ' + err.message);
+    }
+}
+
+function parseFlexibleDate(str) {
+    if (!str) return null;
+    // Try ISO: YYYY-MM-DD
+    let m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+    // Try DD/MM/YYYY or DD-MM-YYYY
+    m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+    // Try MM/DD/YYYY
+    m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m && +m[1] <= 12) return new Date(+m[3], +m[1] - 1, +m[2]);
+    // Try Date.parse as fallback
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+function parseAmount(str) {
+    if (!str) return null;
+    // Remove currency symbols, commas, spaces
+    const cleaned = str.replace(/[^0-9.\-]/g, '');
+    if (!cleaned) return null;
+    const num = parseFloat(cleaned);
+    return isNaN(num) || num < 0 ? null : (num === 0 ? null : num);
+}
+
+function renderImportPreview() {
+    document.getElementById('importStep1').style.display = 'none';
+    document.getElementById('importStep2').style.display = '';
+    document.getElementById('importStep3').style.display = 'none';
+
+    const valid = parsedStatementRows.filter(r => r.status === 'valid');
+    const errors = parsedStatementRows.filter(r => r.status === 'error');
+
+    document.getElementById('importRowCount').textContent = valid.length;
+
+    // Summary
+    const summary = document.getElementById('importValidationSummary');
+    let summaryHtml = `<div style="display:flex;gap:1.5rem;flex-wrap:wrap;">`;
+    summaryHtml += `<span style="color:var(--color-success);font-weight:500;">${valid.length} valid</span>`;
+    if (errors.length > 0)
+        summaryHtml += `<span style="color:var(--color-error);font-weight:500;">${errors.length} errors (will be skipped)</span>`;
+    summaryHtml += `</div>`;
+    summary.innerHTML = summaryHtml;
+
+    // Table
+    const tbody = document.getElementById('importPreviewTable');
+    const fmt = AccountsCommon.formatCurrency;
+    tbody.innerHTML = parsedStatementRows.map((r, i) => {
+        const rowStyle = r.status === 'error' ? 'background:rgba(var(--color-error-rgb, 220,53,69),0.08);' : '';
+        const statusBadge = r.status === 'error'
+            ? `<span class="badge" style="background:var(--color-error);color:#fff;font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;" title="${AccountsCommon.escapeHtml(r.error)}">Error</span>`
+            : `<span class="badge" style="background:var(--color-success);color:#fff;font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;">OK</span>`;
+        const dateStr = r.date ? r.date.toISOString().split('T')[0] : r.date_str;
+        return `<tr style="${rowStyle}">
+            <td>${i + 1}</td>
+            <td>${statusBadge}</td>
+            <td>${AccountsCommon.escapeHtml(dateStr)}</td>
+            <td>${AccountsCommon.escapeHtml(r.description)}</td>
+            <td style="text-align:right;">${r.debit != null ? fmt(r.debit) : ''}</td>
+            <td style="text-align:right;">${r.credit != null ? fmt(r.credit) : ''}</td>
+            <td style="text-align:right;">${r.balance != null ? fmt(r.balance) : ''}</td>
+            <td>${AccountsCommon.escapeHtml(r.reference || '')}</td>
+        </tr>`;
+    }).join('');
+
+    // Disable confirm if no valid rows
+    document.getElementById('confirmImportBtn').disabled = valid.length === 0;
+}
+
+async function confirmStatementImport() {
+    const bankId = importBankDropdown?.getValue?.();
+    const counterId = importCounterDropdown?.getValue?.();
+
+    if (!bankId) { Toast.error('Please select a bank account'); return; }
+    if (!counterId) { Toast.error('Please select a counter account'); return; }
+
+    const validRows = parsedStatementRows.filter(r => r.status === 'valid');
+    if (validRows.length === 0) { Toast.error('No valid rows to import'); return; }
+
+    const payload = {
+        counter_account_id: counterId,
+        transactions: validRows.map(r => ({
+            transaction_date: r.date.getFullYear() + '-' + String(r.date.getMonth()+1).padStart(2,'0') + '-' + String(r.date.getDate()).padStart(2,'0'),
+            description: r.description,
+            debit: r.debit || null,
+            credit: r.credit || null,
+            balance: r.balance || null,
+            reference_number: r.reference || null
+        })),
+        skip_duplicates: true
+    };
+
+    try {
+        const btn = document.getElementById('confirmImportBtn');
+        btn.disabled = true;
+        btn.textContent = 'Importing...';
+
+        const result = await api.request(AccountsCommon.buildUrl(`bank/accounts/${bankId}/import-statement`), {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        showImportResults(result);
+        Toast.success(`Imported ${result.imported} transactions`);
+    } catch (err) {
+        console.error('[Import] Error:', err);
+        Toast.error(err.message || 'Import failed');
+        const btn = document.getElementById('confirmImportBtn');
+        btn.disabled = false;
+        btn.textContent = 'Confirm Import';
+    }
+}
+
+function showImportResults(result) {
+    document.getElementById('importStep1').style.display = 'none';
+    document.getElementById('importStep2').style.display = 'none';
+    document.getElementById('importStep3').style.display = '';
+
+    const container = document.getElementById('importResultsContent');
+    let html = `<h4 style="margin-bottom:1rem;">Import Complete</h4>`;
+    html += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:1.5rem;">`;
+    html += `<div class="stat-card"><div class="stat-value">${result.total_rows}</div><div class="stat-label">Total Rows</div></div>`;
+    html += `<div class="stat-card"><div class="stat-value" style="color:var(--color-success);">${result.imported}</div><div class="stat-label">Imported</div></div>`;
+    if (result.skipped_duplicates > 0)
+        html += `<div class="stat-card"><div class="stat-value" style="color:var(--color-warning);">${result.skipped_duplicates}</div><div class="stat-label">Duplicates Skipped</div></div>`;
+    if (result.skipped_errors > 0)
+        html += `<div class="stat-card"><div class="stat-value" style="color:var(--color-error);">${result.skipped_errors}</div><div class="stat-label">Errors Skipped</div></div>`;
+    html += `</div>`;
+
+    if (result.errors?.length > 0) {
+        html += `<h5 style="margin-bottom:0.5rem;">Errors</h5>`;
+        html += `<div class="data-table-container" style="max-height:200px;overflow-y:auto;">`;
+        html += `<table class="data-table"><thead><tr><th>Row</th><th>Error</th></tr></thead><tbody>`;
+        result.errors.forEach(e => {
+            html += `<tr><td>${e.row_number}</td><td>${AccountsCommon.escapeHtml(e.message)}</td></tr>`;
+        });
+        html += `</tbody></table></div>`;
+    }
+
+    html += `<div style="margin-top:1.5rem;"><button class="btn btn-primary" onclick="resetStatementImport()">Import Another</button></div>`;
+    container.innerHTML = html;
+}
+
+function cancelStatementImport() {
+    resetStatementImport();
+}
+
+function resetStatementImport() {
+    parsedStatementRows = [];
+    document.getElementById('importStep1').style.display = '';
+    document.getElementById('importStep2').style.display = 'none';
+    document.getElementById('importStep3').style.display = 'none';
+    document.getElementById('statementSelectedFile').style.display = 'none';
+    document.getElementById('statementFileName').textContent = '';
+    const fileInput = document.getElementById('statementFileInput');
+    if (fileInput) fileInput.value = '';
+}
+
+function clearStatementFile() {
+    resetStatementImport();
 }
