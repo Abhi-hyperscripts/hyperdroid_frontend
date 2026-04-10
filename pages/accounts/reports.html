@@ -288,16 +288,10 @@
                 <!-- Tab 5: Account Ledger -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="account-ledger">
-                    <div class="filters-bar">
+                    <div class="filters-bar" style="display:flex;align-items:flex-end;gap:0.75rem;flex-wrap:wrap;">
                         <div class="searchable-dropdown-container" id="ledgerAccountContainer"></div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="ledgerFromDate" style="font-size:0.8rem;margin-bottom:2px;">From</label>
-                            <input type="text" id="ledgerFromDate" class="form-control flatpickr-input" placeholder="From date">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="ledgerToDate" style="font-size:0.8rem;margin-bottom:2px;">To</label>
-                            <input type="text" id="ledgerToDate" class="form-control flatpickr-input" placeholder="To date">
-                        </div>
+                        <input type="text" id="ledgerFromDate" class="form-control flatpickr-input" placeholder="From date" style="max-width:160px;">
+                        <input type="text" id="ledgerToDate" class="form-control flatpickr-input" placeholder="To date" style="max-width:160px;">
                         <button class="btn btn-primary" onclick="loadAccountLedger()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                             Generate
@@ -321,11 +315,8 @@
                 <!-- Tab 6: Day Book -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="day-book">
-                    <div class="filters-bar">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="dayBookDate" style="font-size:0.8rem;margin-bottom:2px;">Date</label>
-                            <input type="text" id="dayBookDate" class="form-control flatpickr-input" placeholder="Select date">
-                        </div>
+                    <div class="filters-bar" style="display:flex;align-items:flex-end;gap:0.75rem;flex-wrap:wrap;">
+                        <input type="text" id="dayBookDate" class="form-control flatpickr-input" placeholder="Select date" style="max-width:160px;">
                         <button class="btn btn-primary" onclick="loadDayBook()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                             Generate
@@ -349,16 +340,10 @@
                 <!-- Tab 7: Cash Book -->
                 <!-- ============================================================ -->
                 <div class="tab-content" id="cash-book">
-                    <div class="filters-bar">
+                    <div class="filters-bar" style="display:flex;align-items:flex-end;gap:0.75rem;flex-wrap:wrap;">
                         <div class="searchable-dropdown-container" id="cashBookBankContainer"></div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="cashBookFromDate" style="font-size:0.8rem;margin-bottom:2px;">From</label>
-                            <input type="text" id="cashBookFromDate" class="form-control flatpickr-input" placeholder="From date">
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label for="cashBookToDate" style="font-size:0.8rem;margin-bottom:2px;">To</label>
-                            <input type="text" id="cashBookToDate" class="form-control flatpickr-input" placeholder="To date">
-                        </div>
+                        <input type="text" id="cashBookFromDate" class="form-control flatpickr-input" placeholder="From date" style="max-width:160px;">
+                        <input type="text" id="cashBookToDate" class="form-control flatpickr-input" placeholder="To date" style="max-width:160px;">
                         <button class="btn btn-primary" onclick="loadCashBook()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                             Generate

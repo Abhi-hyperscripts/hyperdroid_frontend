@@ -485,6 +485,16 @@ body.accounts-dashboard::before {
 }
 #cardAdmin:hover { border-color: #64748b; }
 
+#cardProforma .action-icon {
+    background: linear-gradient(135deg, #a78bfa, #7c3aed);
+}
+#cardProforma:hover { border-color: #7c3aed; }
+
+#cardPurchaseOrders .action-icon {
+    background: linear-gradient(135deg, #fb923c, #ea580c);
+}
+#cardPurchaseOrders:hover { border-color: #ea580c; }
+
 /* =============================================================
    SECTION HEADERS
    ============================================================= */
