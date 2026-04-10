@@ -180,7 +180,8 @@ function renderBillsTable() {
     tbody.innerHTML = vendorBills.map(b => {
         // Every bill, regardless of status, gets a View button. Status-specific
         // actions are layered on top of that.
-        let actions = `<button class="btn-icon" onclick="viewBill('${b.id}')" data-tooltip="View">${viewSvg}</button>`;
+        const pdfSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+        let actions = `<button class="btn-icon" onclick="viewBill('${b.id}')" data-tooltip="View">${viewSvg}</button><button class="btn-icon" onclick="downloadBillPdf('${b.id}', '${(b.bill_number||'').replace(/'/g,'')}')" data-tooltip="Download PDF">${pdfSvg}</button>`;
         if (isAdmin && b.status === 'draft') {
             actions += `<button class="btn-icon" onclick="editBill('${b.id}')" data-tooltip="Edit">${editSvg}</button><button class="btn-icon" onclick="approveBill('${b.id}')" data-tooltip="Approve">${checkSvg}</button><button class="btn-icon danger" onclick="cancelBill('${b.id}')" data-tooltip="Cancel">${cancelSvg}</button>`;
         } else if (isAdmin && (b.status === 'approved' || b.status === 'partially_paid')) {
@@ -1064,5 +1065,27 @@ async function viewDebitNote(id) {
         Toast.info(`${dn.debit_note_number} — ${vendorName} — ${AccountsCommon.formatCurrency(dn.amount)} — ${dn.status}`);
     } catch (err) {
         Toast.error('Failed to load debit note');
+    }
+}
+
+async function downloadBillPdf(id, billNumber) {
+    try {
+        const baseUrl = api._getBaseUrl('/accounts/');
+        const url = `${baseUrl}/accounts/vendor-bills/${id}/pdf?tenantId=${AccountsCommon.getTenantId()}`;
+        const response = await fetch(url, { headers: { 'Authorization': `Bearer ${api.token}` } });
+        if (!response.ok) throw new Error('Failed to download PDF');
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `Bill-${billNumber || id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        Toast.success('Bill PDF downloaded');
+    } catch (err) {
+        console.error('[Payables] PDF download error:', err);
+        Toast.error('Failed to download PDF');
     }
 }

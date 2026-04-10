@@ -227,8 +227,9 @@ async function loadCustomerInvoices() {
 }
 
 function invoiceActions(inv) {
-    // View button always shown
+    // View + PDF buttons always shown
     let html = `<button class="btn-icon" data-tooltip="View" onclick="viewInvoice('${inv.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+    html += ` <button class="btn-icon" data-tooltip="Download PDF" onclick="downloadInvoicePdf('${inv.id}', '${(inv.invoice_number||'').replace(/'/g,'')}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>`;
     if (inv.status === 'draft') {
         html += ` <button class="btn-icon" data-tooltip="Edit" onclick="editInvoice('${inv.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`;
         html += ` <button class="btn-icon" data-tooltip="Approve" onclick="approveInvoice('${inv.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>`;
@@ -859,4 +860,26 @@ async function loadCustomerStatement() {
 function setText(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
+}
+
+async function downloadInvoicePdf(id, invoiceNumber) {
+    try {
+        const baseUrl = api._getBaseUrl('/accounts/');
+        const url = `${baseUrl}/accounts/invoices/${id}/pdf?tenantId=${AccountsCommon.getTenantId()}`;
+        const response = await fetch(url, { headers: { 'Authorization': `Bearer ${api.token}` } });
+        if (!response.ok) throw new Error('Failed to download PDF');
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `Invoice-${invoiceNumber || id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        Toast.success('Invoice PDF downloaded');
+    } catch (err) {
+        console.error('[Receivables] PDF download error:', err);
+        Toast.error('Failed to download PDF');
+    }
 }
