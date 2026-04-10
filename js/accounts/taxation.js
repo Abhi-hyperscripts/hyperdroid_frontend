@@ -307,7 +307,7 @@ async function loadTaxRates() {
         }
 
         const params = { configId };
-        if (search) params.search = search;
+        // Note: backend GetTaxRates doesn't support `search` param — filter client-side if needed
 
         const url = AccountsCommon.buildUrl('tax/rates', params);
         const res = await api.request(url, { _skipSpinner: true });

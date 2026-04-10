@@ -596,7 +596,7 @@ async function viewClaim(id) {
                         <td>${AccountsCommon.escapeHtml(i.category_name || '-')}</td>
                         <td>${AccountsCommon.escapeHtml(i.description || '-')}</td>
                         <td>${AccountsCommon.formatCurrency(i.amount)}</td>
-                        <td>${AccountsCommon.formatDate(i.date)}</td>
+                        <td>${AccountsCommon.formatDate(i.expense_date || i.date)}</td>
                     </tr>`).join('')}</tbody>
                 </table>
             </div>` : '<p>No items</p>';
