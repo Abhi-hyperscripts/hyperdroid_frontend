@@ -333,55 +333,93 @@ body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):n
 /* =============================================================
    STATUS BADGES — Accounting-specific statuses
    ============================================================= */
-.status-badge {
+/* =============================================================
+   STATUS BADGES — Theme-aware, contrast-safe, distinct per status
+   Both .badge and .status-badge selectors for compatibility
+   Hardcoded text colors ensure readability in light AND dark modes
+   ============================================================= */
+.badge, .status-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
     border-radius: 6px;
     font-size: 0.75rem;
-    font-weight: 500;
+    font-weight: 600;
     white-space: nowrap;
+    letter-spacing: 0.3px;
 }
 
-.status-badge.active, .status-badge.approved, .status-badge.posted, .status-badge.status-active, .status-badge.status-approved, .status-badge.status-posted {
-    background: var(--color-success-light, rgba(16,185,129,0.1));
-    color: var(--color-success);
-}
-
-.status-badge.paid, .status-badge.reimbursed, .status-badge.status-paid, .status-badge.status-reimbursed {
-    background: rgba(16,185,129,0.15);
+/* GREEN — Active, Approved, Posted, Paid, Reimbursed, Completed */
+.badge.status-active, .status-badge.active, .status-badge.approved,
+.status-badge.posted, .status-badge.status-active {
+    background: rgba(16, 185, 129, 0.15);
     color: #059669;
 }
 
-.status-badge.draft, .status-badge.inactive, .status-badge.status-draft, .status-badge.status-inactive {
-    background: var(--hover-overlay, rgba(148,163,184,0.1));
-    color: var(--text-secondary);
+.badge.status-paid, .status-badge.paid, .status-badge.reimbursed,
+.status-badge.completed, .status-badge.status-paid {
+    background: rgba(16, 185, 129, 0.2);
+    color: #047857;
 }
 
-.status-badge.submitted, .status-badge.status-submitted {
-    background: var(--color-info-light, rgba(59,130,246,0.1));
-    color: var(--color-info, #3b82f6);
+/* BLUE — Sent, Submitted, In Progress */
+.badge.status-sent, .status-badge.sent, .status-badge.status-sent {
+    background: rgba(59, 130, 246, 0.15);
+    color: #2563eb;
 }
 
-.status-badge.pending, .status-badge.partially_paid, .status-badge.partial, .status-badge.status-pending, .status-badge.status-partially_paid {
-    background: var(--color-warning-light, rgba(245,158,11,0.1));
-    color: var(--color-warning, #f59e0b);
+.badge.status-submitted, .status-badge.submitted, .status-badge.status-submitted {
+    background: rgba(99, 102, 241, 0.15);
+    color: #4f46e5;
 }
 
-.status-badge.rejected, .status-badge.cancelled, .status-badge.overdue, .status-badge.status-rejected, .status-badge.status-cancelled, .status-badge.status-overdue {
-    background: var(--color-danger-light, rgba(239,68,68,0.1));
-    color: var(--color-danger, #ef4444);
+/* AMBER — Draft, Pending, Partially Paid */
+.badge.status-pending, .status-badge.pending, .status-badge.partially_paid,
+.status-badge.partial, .status-badge.status-pending, .status-badge.status-partially_paid {
+    background: rgba(245, 158, 11, 0.15);
+    color: #d97706;
 }
 
-.status-badge.reversed, .status-badge.status-reversed {
-    background: rgba(249,115,22,0.1);
-    color: #f97316;
+.badge.status-draft, .status-badge.draft, .status-badge.status-draft {
+    background: rgba(148, 163, 184, 0.15);
+    color: #64748b;
 }
 
-.status-badge.closed, .status-badge.status-closed {
-    background: rgba(107,114,128,0.15);
+/* RED — Rejected, Cancelled, Overdue, Failed */
+.badge.status-rejected, .status-badge.rejected, .status-badge.cancelled,
+.status-badge.overdue, .status-badge.status-rejected, .status-badge.status-cancelled,
+.status-badge.status-overdue {
+    background: rgba(239, 68, 68, 0.15);
+    color: #dc2626;
+}
+
+/* ORANGE — Reversed, Expired */
+.badge.status-reversed, .status-badge.reversed, .status-badge.expired,
+.status-badge.status-reversed {
+    background: rgba(249, 115, 22, 0.15);
+    color: #ea580c;
+}
+
+/* GRAY — Inactive, Closed, Disposed */
+.badge.status-inactive, .status-badge.inactive, .status-badge.closed,
+.status-badge.disposed, .status-badge.status-inactive, .status-badge.status-closed {
+    background: rgba(107, 114, 128, 0.15);
     color: #6b7280;
+}
+
+/* TEAL — Accepted, Received */
+.badge.status-accepted, .status-badge.accepted, .status-badge.received,
+.status-badge.status-accepted {
+    background: rgba(20, 184, 166, 0.15);
+    color: #0d9488;
+}
+
+/* PURPLE — Invoiced, Billed, Converted */
+.badge.status-invoiced, .status-badge.invoiced, .status-badge.billed,
+.status-badge.status-invoiced {
+    background: rgba(139, 92, 246, 0.15);
+    color: #7c3aed;
 }
 
 /* =============================================================

@@ -422,17 +422,22 @@ const AccountsCommon = {
     statusBadge(status) {
         if (!status) return '';
         const s = String(status).toLowerCase();
+        // Each status gets its own CSS class for distinct visual identity
         const classMap = {
-            active: 'status-active', approved: 'status-active', paid: 'status-active',
-            submitted: 'status-active', sent: 'status-active', reimbursed: 'status-active',
-            completed: 'status-active', posted: 'status-active',
-            pending: 'status-pending', draft: 'status-pending', partial: 'status-pending',
-            partially_paid: 'status-pending', in_progress: 'status-pending',
-            trial: 'status-pending', not_started: 'status-pending',
-            rejected: 'status-rejected', overdue: 'status-rejected', cancelled: 'status-rejected',
-            disposed: 'status-rejected', written_off: 'status-rejected', past_due: 'status-rejected',
-            expired: 'status-rejected', reversed: 'status-rejected', failed: 'status-rejected',
-            inactive: 'status-inactive', closed: 'status-inactive'
+            active: 'status-active', approved: 'status-active', posted: 'status-active',
+            completed: 'status-active',
+            paid: 'status-paid', reimbursed: 'status-paid',
+            sent: 'status-sent',
+            submitted: 'status-submitted', in_progress: 'status-submitted',
+            draft: 'status-draft', not_started: 'status-draft', trial: 'status-draft',
+            pending: 'status-pending', partially_paid: 'status-pending', partial: 'status-pending',
+            rejected: 'status-rejected', overdue: 'status-rejected', failed: 'status-rejected',
+            cancelled: 'status-rejected', past_due: 'status-rejected',
+            reversed: 'status-reversed', expired: 'status-reversed',
+            disposed: 'status-rejected', written_off: 'status-rejected',
+            inactive: 'status-inactive', closed: 'status-inactive',
+            accepted: 'status-accepted', received: 'status-accepted',
+            invoiced: 'status-invoiced', billed: 'status-invoiced'
         };
         const cls = classMap[s] || 'status-pending';
         const label = this.escapeHtml(status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
