@@ -165,24 +165,92 @@ function renderAuditLogs() {
         return;
     }
 
-    tbody.innerHTML = auditLogs.map(l => {
+    tbody.innerHTML = auditLogs.map((l, i) => {
         const actionLower = (l.action || '').toLowerCase();
         const actionBadge = ['created', 'approved', 'submitted', 'reimbursed', 'posted', 'completed'].includes(actionLower) || actionLower === 'create' ? 'status-active'
             : ['deleted', 'rejected', 'cancelled', 'reversed'].includes(actionLower) || actionLower === 'delete' ? 'status-rejected'
             : 'status-pending';
-
-        const trailLink = l.entity_id && l.entity_type
-            ? `<a href="#" class="btn-link" onclick="event.preventDefault(); viewEntityAudit('${AccountsCommon.escapeHtml(l.entity_type)}', '${AccountsCommon.escapeHtml(l.entity_id)}')" style="margin-left: 0.5rem; font-size: 0.8rem;">View Trail</a>`
-            : '';
 
         return `<tr>
             <td>${AccountsCommon.formatDate(l.timestamp || l.created_at, true)}</td>
             <td>${AccountsCommon.escapeHtml(l.entity_type || '-')}</td>
             <td><span class="badge ${actionBadge}">${AccountsCommon.escapeHtml(l.action || '-')}</span></td>
             <td>${AccountsCommon.escapeHtml(l.performed_by_name || l.user_name || (l.performed_by === 'system' ? 'System' : l.performed_by ? l.performed_by.substring(0, 8) + '...' : '-'))}</td>
-            <td style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><span data-tooltip="${AccountsCommon.escapeHtml(typeof l.details === 'string' ? l.details : JSON.stringify(l.details || ''))}">${AccountsCommon.escapeHtml(truncateStr(l.details_summary || (typeof l.details === 'string' ? l.details : JSON.stringify(l.details || '-')), 60))}</span>${trailLink}</td>
+            <td>
+                <button class="btn btn-outline" style="padding:0.2rem 0.6rem;font-size:0.8rem;" onclick="viewAuditLogDetail(${i})">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    View
+                </button>
+            </td>
         </tr>`;
     }).join('');
+}
+
+let auditLogPanel = null;
+
+function viewAuditLogDetail(index) {
+    const l = auditLogs[index];
+    if (!l) return;
+
+    if (!auditLogPanel) {
+        auditLogPanel = new SlidePanel({ id: 'auditLogDetailPanel', title: 'Audit Detail', width: '440px' });
+    }
+
+    const formatType = (t) => (t || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+    // Parse details JSON into key-value pairs
+    let detailItems = [];
+    try {
+        const raw = typeof l.details === 'string' ? JSON.parse(l.details) : l.details;
+        if (raw && typeof raw === 'object') {
+            detailItems = Object.entries(raw).map(([key, val]) => ({
+                label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+                value: val != null ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : '-'
+            }));
+        }
+    } catch { /* ignore parse errors */ }
+
+    const actionLower = (l.action || '').toLowerCase();
+    const actionBadge = ['created', 'approved', 'submitted', 'reimbursed', 'posted', 'completed'].includes(actionLower) || actionLower === 'create' ? 'status-active'
+        : ['deleted', 'rejected', 'cancelled', 'reversed'].includes(actionLower) || actionLower === 'delete' ? 'status-rejected'
+        : 'status-pending';
+
+    let body = SlidePanel.createHeaderCard({
+        avatar: { initials: formatType(l.entity_type)?.[0] || 'A' },
+        title: formatType(l.entity_type),
+        subtitle: AccountsCommon.formatDate(l.timestamp || l.created_at, true),
+        badges: [{ text: l.action || '-', class: actionBadge }]
+    });
+
+    const entityDisplay = l.entity_display_name
+        ? `<strong>${AccountsCommon.escapeHtml(l.entity_display_name)}</strong>`
+        : (l.entity_id ? `<code style="font-size:0.75rem">${l.entity_id}</code>` : '-');
+
+    body += SlidePanel.createInfoSection({
+        title: 'Overview', icon: 'info', iconColor: 'blue',
+        items: [
+            { label: 'Action', value: formatType(l.action) },
+            { label: 'Entity Type', value: formatType(l.entity_type) },
+            { label: 'Reference', value: entityDisplay },
+            { label: 'Performed By', value: l.performed_by_name || l.user_name || (l.performed_by === 'system' ? 'System' : l.performed_by || '-') },
+            { label: 'IP Address', value: l.ip_address || '-' },
+            { label: 'Timestamp', value: AccountsCommon.formatDate(l.timestamp || l.created_at, true) }
+        ]
+    });
+
+    if (detailItems.length > 0) {
+        body += SlidePanel.createInfoSection({
+            title: 'Details', icon: 'file', iconColor: 'green',
+            items: detailItems
+        });
+    }
+
+    if (l.entity_id && l.entity_type) {
+        body += `<div style="margin-top:1rem;"><button class="btn btn-outline" style="width:100%;" onclick="viewEntityAudit('${AccountsCommon.escapeHtml(l.entity_type)}', '${AccountsCommon.escapeHtml(l.entity_id)}')">View Full Audit Trail</button></div>`;
+    }
+
+    auditLogPanel.setTitle(`${formatType(l.entity_type)} — ${formatType(l.action)}`);
+    auditLogPanel.open({ body });
 }
 
 function truncateStr(str, max) {
