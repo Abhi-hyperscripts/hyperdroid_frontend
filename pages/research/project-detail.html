@@ -24,6 +24,7 @@
         document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');
         document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');
         document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');
+        document.write('<link rel="stylesheet" href="../../css/research-custom-table.css?v=' + CACHE_VERSION + '">');
         document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');
         document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
@@ -5166,14 +5167,24 @@
         }
 
         /* ===== OPEN-END CODING ===== */
-        #codeframeModal, #codeEditModal, #costBreakdownModal, #responseEditModal {
+        #codeframeModal, #codeEditModal, #costBreakdownModal, #responseEditModal, #waveModal, #customTableModal {
             display: none !important;
             pointer-events: none;
         }
-        #codeframeModal.active, #codeEditModal.active, #costBreakdownModal.active, #responseEditModal.active {
+        #codeframeModal.active, #codeEditModal.active, #costBreakdownModal.active, #responseEditModal.active, #waveModal.active, #customTableModal.active {
             display: flex !important;
             opacity: 1 !important;
             pointer-events: auto;
+        }
+        /* The global navbar is z:999999. Overlays default to z:10000 which puts
+           them behind the navbar. Bump our builder modals above everything so
+           nothing clips across the top edge. */
+        #waveModal.active,
+        #customTableModal.active {
+            z-index: 1000001 !important;
+            align-items: flex-start !important;
+            padding-top: 72px !important;
+            padding-bottom: 20px !important;
         }
         /* Fix gm-modal inputs/buttons inside OE modals */
         #codeframeModal .gm-input,
@@ -5549,6 +5560,8 @@
             <nav class="research-breadcrumb">
                 <a href="dashboard.html">Research</a>
                 <span class="separator">/</span>
+                <a href="primary-dashboard.html">Primary Research</a>
+                <span class="separator">/</span>
                 <span class="current" id="breadcrumbProjectName">Project</span>
             </nav>
 
@@ -5602,6 +5615,34 @@
                         </svg>
                         <span></span>
                     </span>
+                </div>
+                <!-- Analyze Dropdown (SPSS-style function launcher → each item opens its own modal)
+                     Only visible when the Variables tab is active AND a file is selected. -->
+                <div class="project-actions-dropdown" id="analyzeDropdown" style="display: none;">
+                    <button class="actions-trigger" id="analyzeTrigger" onclick="toggleAnalyzeDropdown()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="20" x2="18" y2="10"/>
+                            <line x1="12" y1="20" x2="12" y2="4"/>
+                            <line x1="6" y1="20" x2="6" y2="14"/>
+                        </svg>
+                        Analyze
+                        <svg class="actions-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </button>
+                    <div class="actions-menu" id="analyzeMenu">
+                        <div class="actions-section-label">Tables</div>
+                        <button class="actions-item" onclick="openCustomTableModal(); closeAnalyzeDropdown();">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <line x1="3" y1="9" x2="21" y2="9"/>
+                                <line x1="3" y1="15" x2="21" y2="15"/>
+                                <line x1="9" y1="3" x2="9" y2="21"/>
+                                <line x1="15" y1="3" x2="15" y2="21"/>
+                            </svg>
+                            Custom Tables
+                        </button>
+                    </div>
                 </div>
                 <!-- Actions Dropdown -->
                 <div class="project-actions-dropdown" id="projectActionsDropdown">
@@ -6675,6 +6716,8 @@
         document.write('<script src="https://cdn.jsdelivr.net/npm/apexcharts@4.3.0/dist/apexcharts.min.js"><\/script>');
         document.write('<script src="../../js/research/project-detail.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/research/openend-coding.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/research/custom-table/expand.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/research/custom-table/ui.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -6700,6 +6743,485 @@
         <span>Function Results</span>
         <span class="fn-popup-pill-info" id="fnPillInfo"></span>
     </div>
+    <!-- =======================================================
+         WAVE APPEND MODAL (PR 5)
+         One modal with two tabs (Append data, History) and a
+         multi-state flow inside Append data:
+           upload → running → report → committing → success
+         ======================================================= -->
+    <style>
+        #waveModal .wave-modal-scroll { max-height: calc(75vh - 200px); overflow-y: auto; }
+        .wave-tabs {
+            display: flex;
+            gap: 4px;
+            margin-top: 12px;
+            border-bottom: 1px solid var(--border-primary);
+        }
+        .wave-tab {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 0.2s ease, border-color 0.2s ease;
+        }
+        .wave-tab:hover { color: var(--text-primary); }
+        .wave-tab.active {
+            color: var(--brand-primary);
+            border-bottom-color: var(--brand-primary);
+        }
+        .wave-dropzone {
+            border: 2px dashed var(--border-primary);
+            border-radius: 12px;
+            padding: 40px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background 0.2s ease;
+            color: var(--text-secondary);
+        }
+        .wave-dropzone:hover, .wave-dropzone.drag-over {
+            border-color: var(--brand-primary);
+            background: color-mix(in srgb, var(--brand-primary) 6%, transparent);
+        }
+        .wave-dropzone svg { color: var(--brand-primary); margin-bottom: 12px; }
+        .wave-dropzone-main { color: var(--text-primary); font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+        .wave-dropzone-sub { font-size: 12px; }
+        .wave-dropzone-file {
+            color: var(--brand-primary);
+            font-weight: 600;
+        }
+
+        .wave-summary-banner {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            padding: 16px 18px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            border: 1px solid var(--border-primary);
+        }
+        .wave-summary-banner.success {
+            background: color-mix(in srgb, var(--color-success) 10%, transparent);
+            border-color: color-mix(in srgb, var(--color-success) 40%, transparent);
+        }
+        .wave-summary-banner.blocked {
+            background: color-mix(in srgb, var(--color-error) 10%, transparent);
+            border-color: color-mix(in srgb, var(--color-error) 40%, transparent);
+        }
+        .wave-summary-banner.warning {
+            background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+            border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
+        }
+        .wave-summary-icon {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            color: var(--text-inverse, #fff);
+        }
+        .wave-summary-banner.success  .wave-summary-icon { background: var(--color-success); }
+        .wave-summary-banner.blocked  .wave-summary-icon { background: var(--color-error); }
+        .wave-summary-banner.warning  .wave-summary-icon { background: var(--color-warning); }
+        .wave-summary-text .wave-summary-title { font-weight: 600; color: var(--text-primary); font-size: 15px; }
+        .wave-summary-text .wave-summary-sub { color: var(--text-secondary); font-size: 13px; margin-top: 2px; }
+
+        .wave-report-warnings {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+        .wave-report-warning {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+            border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent);
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+        .wave-report-warning svg { color: var(--color-warning); flex-shrink: 0; margin-top: 1px; }
+
+        .wave-status-filters {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .wave-status-filter {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            transition: all 0.15s ease;
+        }
+        .wave-status-filter:hover { color: var(--text-primary); }
+        .wave-status-filter.active {
+            background: var(--brand-primary);
+            border-color: var(--brand-primary);
+            color: var(--text-inverse, #fff);
+        }
+
+        .wave-var-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .wave-var-table thead th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            border-bottom: 1px solid var(--border-primary);
+            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .wave-var-table tbody td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-primary);
+            color: var(--text-primary);
+            vertical-align: top;
+        }
+        .wave-var-table tbody tr:hover td {
+            background: color-mix(in srgb, var(--brand-primary) 4%, transparent);
+        }
+
+        /* Status chips — one per classifier verdict */
+        .wave-chip {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+        .wave-chip.unchanged              { background: color-mix(in srgb, var(--text-secondary) 12%, transparent); color: var(--text-secondary); border-color: color-mix(in srgb, var(--text-secondary) 25%, transparent); }
+        .wave-chip.added                  { background: color-mix(in srgb, var(--color-success) 12%, transparent); color: var(--color-success); border-color: color-mix(in srgb, var(--color-success) 35%, transparent); }
+        .wave-chip.dormant                { background: color-mix(in srgb, var(--color-warning) 10%, transparent); color: var(--color-warning); border-color: color-mix(in srgb, var(--color-warning) 30%, transparent); }
+        .wave-chip.labels_extended        { background: color-mix(in srgb, var(--brand-primary) 12%, transparent); color: var(--brand-primary); border-color: color-mix(in srgb, var(--brand-primary) 35%, transparent); }
+        .wave-chip.width_grew             { background: color-mix(in srgb, var(--brand-primary) 12%, transparent); color: var(--brand-primary); border-color: color-mix(in srgb, var(--brand-primary) 35%, transparent); }
+        .wave-chip.warning_variable_label_changed,
+        .wave-chip.warning_measure_changed,
+        .wave-chip.warning_missing_codes_changed {
+            background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+            color: var(--color-warning);
+            border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);
+        }
+        .wave-chip.blocked_label_remap,
+        .wave-chip.blocked_label_removed_with_data,
+        .wave-chip.blocked_type_change,
+        .wave-chip.blocked_width_shrink {
+            background: color-mix(in srgb, var(--color-error) 12%, transparent);
+            color: var(--color-error);
+            border-color: color-mix(in srgb, var(--color-error) 35%, transparent);
+        }
+
+        .wave-var-reason {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+        .wave-var-name { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; }
+        .wave-label-delta-table {
+            margin-top: 8px;
+            font-size: 12px;
+            border-collapse: collapse;
+        }
+        .wave-label-delta-table td, .wave-label-delta-table th {
+            padding: 4px 10px;
+            border: 1px solid var(--border-primary);
+            color: var(--text-secondary);
+        }
+        .wave-label-delta-table th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .wave-label-delta-table .kind-relabeled { color: var(--color-error); font-weight: 600; }
+        .wave-label-delta-table .kind-removed   { color: var(--color-warning); font-weight: 600; }
+        .wave-label-delta-table .kind-added     { color: var(--color-success); font-weight: 600; }
+
+        .wave-running-state,
+        .wave-committing-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            gap: 16px;
+            color: var(--text-secondary);
+        }
+        .wave-spinner {
+            width: 48px; height: 48px;
+            border: 3px solid var(--border-primary);
+            border-top-color: var(--brand-primary);
+            border-radius: 50%;
+            animation: wave-spin 0.9s linear infinite;
+        }
+        @keyframes wave-spin { to { transform: rotate(360deg); } }
+
+        .wave-history-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        .wave-history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .wave-history-table th,
+        .wave-history-table td {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-primary);
+            color: var(--text-primary);
+        }
+        .wave-history-table th {
+            background: var(--bg-secondary);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .wave-history-wave-num {
+            display: inline-block;
+            padding: 3px 10px;
+            background: color-mix(in srgb, var(--brand-primary) 15%, transparent);
+            color: var(--brand-primary);
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 11px;
+        }
+    </style>
+
+    <!-- =======================================================
+         CUSTOM TABLES MODAL (PR A1)
+         Opens from Analyze dropdown → Custom Tables.
+         Builder has: active-file label, variable palette on the left,
+         3 drop slots (Columns, Rows, Filter), and a preview grid.
+         ======================================================= -->
+    <div class="gm-overlay" id="customTableModal">
+        <div class="gm-modal gm-lg" style="max-width: 1280px; width: 95vw; max-height: 92vh;">
+            <div class="gm-header" style="padding-bottom: 12px;">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <line x1="3" y1="9" x2="21" y2="9"/>
+                            <line x1="3" y1="15" x2="21" y2="15"/>
+                            <line x1="9" y1="3" x2="9" y2="21"/>
+                            <line x1="15" y1="3" x2="15" y2="21"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Custom Tables</h3>
+                        <p class="gm-subtitle" id="ctActiveFile">No file selected</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeCustomTableModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body" style="padding: 0; overflow: hidden; flex: 1; min-height: 0;">
+                <div class="ct-workbench">
+                    <aside class="ct-palette">
+                        <div class="ct-palette-header">
+                            <div class="ct-palette-header-row" onclick="ctTogglePalette()" title="Collapse / expand variable palette">
+                                <svg class="ct-slot-header-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                <div class="ct-palette-title">Variables</div>
+                            </div>
+                            <input type="text" class="ct-search" id="ctSearch" placeholder="Search variables...">
+                        </div>
+                        <div class="ct-palette-body" id="ctPaletteList">
+                            <div class="ct-empty-palette">Loading variables…</div>
+                        </div>
+                    </aside>
+                    <section class="ct-builder">
+                        <div class="ct-layout" id="ctLayoutPanel">
+                            <div class="ct-layout-header" onclick="ctToggleLayout()" title="Collapse / expand layout panel">
+                                <span class="ct-layout-title">Layout <span class="ct-layout-subtitle">Columns, Rows, Filter</span></span>
+                                <svg class="ct-slot-header-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                            </div>
+                            <div class="ct-slots">
+                                <div class="ct-slot" data-slot="columns">
+                                    <div class="ct-slot-header">
+                                        <span>Columns<span class="ct-slot-header-count" id="ctSlotCountColumns"></span></span>
+                                    </div>
+                                    <div class="ct-slot-body" id="ctSlotColumns">
+                                        <div class="ct-slot-empty">Drag a variable here</div>
+                                    </div>
+                                </div>
+                                <div class="ct-slot" data-slot="rows">
+                                    <div class="ct-slot-header">
+                                        <span>Rows<span class="ct-slot-header-count" id="ctSlotCountRows"></span></span>
+                                    </div>
+                                    <div class="ct-slot-body" id="ctSlotRows">
+                                        <div class="ct-slot-empty">Drag a variable here</div>
+                                    </div>
+                                </div>
+                                <div class="ct-slot" data-slot="filter">
+                                    <div class="ct-slot-header">
+                                        <span>Filter<span class="ct-slot-header-count" id="ctSlotCountFilter"></span></span>
+                                    </div>
+                                    <div class="ct-slot-body" id="ctSlotFilter">
+                                        <div class="ct-slot-empty">Drag a variable here</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ct-preview">
+                            <div class="ct-preview-header">Preview</div>
+                            <div class="ct-preview-body" id="ctPreview">
+                                <div class="ct-preview-empty">Drop a variable on Rows or Columns and press Run to see results.</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            <div class="gm-footer ct-footer">
+                <div class="ct-footer-weight" data-slot="weight">
+                    <div class="ct-footer-weight-body ct-slot-body" id="ctSlotWeight">
+                        <div class="ct-slot-empty">Drag a weight variable here</div>
+                    </div>
+                </div>
+                <div class="ct-footer-actions">
+                    <button class="gm-btn gm-btn-secondary" onclick="ctReset()">Reset</button>
+                    <button class="gm-btn gm-btn-secondary" onclick="closeCustomTableModal()">Cancel</button>
+                    <button class="gm-btn gm-btn-primary" id="ctRunBtn" onclick="ctRun()" disabled>Run</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="gm-overlay" id="waveModal">
+        <div class="gm-modal gm-lg" style="max-width: 960px;">
+            <div class="gm-header" style="flex-direction: column; align-items: stretch; gap: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                    <div>
+                        <h3 style="margin: 0 0 4px 0;">Add wave</h3>
+                        <div style="color: var(--text-secondary); font-size: 13px;" id="waveModalFileName"></div>
+                    </div>
+                    <button class="gm-close" onclick="closeWaveModal()">&times;</button>
+                </div>
+                <div class="wave-tabs">
+                    <button class="wave-tab active" data-tab="append" onclick="waveSwitchTab('append')">Append data</button>
+                    <button class="wave-tab" data-tab="history" onclick="waveSwitchTab('history')">History</button>
+                </div>
+            </div>
+
+            <div class="gm-body wave-modal-scroll">
+                <!-- ======================================
+                     Tab: Append data
+                     ====================================== -->
+                <div id="waveTabAppend">
+
+                    <!-- State: upload -->
+                    <div id="waveStateUpload">
+                        <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">
+                            Upload a zipped SPSS file (<code>.sav</code> inside <code>.zip</code>) with new wave data.
+                            We'll compare it against the existing data and show a compatibility report before anything is written.
+                        </p>
+                        <label class="wave-dropzone" for="waveFileInput" id="waveDropzone">
+                            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <div class="wave-dropzone-main" id="waveDropzoneMain">Click to select a ZIP file or drag and drop</div>
+                            <div class="wave-dropzone-sub">Must contain exactly one .sav file</div>
+                            <input type="file" id="waveFileInput" accept=".zip" style="display:none;" onchange="waveOnFileSelected(this)">
+                        </label>
+                        <div style="margin-top: 16px;">
+                            <label for="waveTagInput" style="display:block; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 600;">Wave label (optional)</label>
+                            <input type="text" id="waveTagInput" placeholder="e.g. Wave 2 — Q1 2026 refresh"
+                                   style="width:100%; padding:10px 12px; border:1px solid var(--border-primary); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:14px; outline:none;"
+                                   onfocus="this.style.borderColor='var(--border-focus)'" onblur="this.style.borderColor='var(--border-primary)'">
+                        </div>
+                    </div>
+
+                    <!-- State: running dry-run -->
+                    <div id="waveStateRunning" style="display:none;">
+                        <div class="wave-running-state">
+                            <div class="wave-spinner"></div>
+                            <div style="font-weight: 600; color: var(--text-primary);">Analyzing compatibility…</div>
+                            <div style="font-size: 12px;">Parsing incoming SPSS file and comparing variables.</div>
+                        </div>
+                    </div>
+
+                    <!-- State: report -->
+                    <div id="waveStateReport" style="display:none;">
+                        <div id="waveReportSummary"></div>
+                        <div id="waveReportWarnings"></div>
+                        <div class="wave-status-filters" id="waveStatusFilters"></div>
+                        <div style="overflow: auto; border: 1px solid var(--border-primary); border-radius: 10px;">
+                            <table class="wave-var-table" id="waveVarTable">
+                                <thead>
+                                    <tr>
+                                        <th>Variable</th>
+                                        <th>Status</th>
+                                        <th>Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="waveVarTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- State: committing -->
+                    <div id="waveStateCommitting" style="display:none;">
+                        <div class="wave-committing-state">
+                            <div class="wave-spinner"></div>
+                            <div style="font-weight: 600; color: var(--text-primary);">Appending wave…</div>
+                            <div style="font-size: 12px;">Updating data tables and datamap.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ======================================
+                     Tab: History
+                     ====================================== -->
+                <div id="waveTabHistory" style="display:none;">
+                    <div id="waveHistoryContent">
+                        <div class="wave-history-empty">
+                            <div class="wave-spinner" style="width:32px; height:32px; margin:0 auto 12px;"></div>
+                            Loading wave history…
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gm-footer" id="waveModalFooter" style="display:flex; justify-content:flex-end; gap:8px;">
+                <button class="gm-btn gm-btn-secondary" onclick="closeWaveModal()">Cancel</button>
+                <button class="gm-btn gm-btn-primary" id="waveModalPrimaryBtn" onclick="waveHandlePrimaryClick()" disabled>Run compatibility check</button>
+            </div>
+        </div>
+    </div>
+
     <!-- AI Copilot Widget -->
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="research" data-title="Research Assistant"><\/script>');</script>
 </body>

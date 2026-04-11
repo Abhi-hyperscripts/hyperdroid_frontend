@@ -21,8 +21,195 @@
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/research.css?v=' + CACHE_VERSION + '">');</script>
-    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <style>
+        .research-hub-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 28px;
+        }
+
+        /* Glassy bento card with animated gradient border on hover */
+        .research-hub-card {
+            position: relative;
+            border-radius: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .research-hub-card:hover {
+            text-decoration: none;
+            color: inherit;
+            transform: translateY(-4px);
+        }
+
+        /* Gradient border layer — hidden until hover (matches home bento) */
+        .research-hub-card .card-border {
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            padding: 1.5px;
+            background: transparent;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .research-hub-card:hover .card-border {
+            opacity: 1;
+        }
+
+        /* Glassy content surface — theme-aware */
+        .research-hub-card .card-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 28px;
+            height: 100%;
+            border-radius: 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(16px) saturate(140%);
+            -webkit-backdrop-filter: blur(16px) saturate(140%);
+            box-shadow: 0 4px 18px var(--shadow-color, rgba(0, 0, 0, 0.12));
+            transition: border-color 0.3s ease, background 0.3s ease;
+        }
+        [data-theme="dark"] .research-hub-card .card-content {
+            background: color-mix(in srgb, var(--bg-card) 70%, transparent);
+            border: 1px solid color-mix(in srgb, var(--text-primary) 8%, transparent);
+        }
+        .research-hub-card:hover .card-content {
+            border-color: transparent;
+        }
+
+        /* Per-variant gradient borders + hover glows — all theme vars */
+        .research-hub-card.primary:hover .card-border {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+        }
+        .research-hub-card.primary:hover {
+            box-shadow: 0 10px 30px color-mix(in srgb, var(--brand-primary) 28%, transparent);
+        }
+        .research-hub-card.secondary:hover .card-border {
+            background: linear-gradient(135deg, var(--brand-secondary), var(--brand-accent));
+        }
+        .research-hub-card.secondary:hover {
+            box-shadow: 0 10px 30px color-mix(in srgb, var(--brand-secondary) 28%, transparent);
+        }
+        .research-hub-card.focus:hover .card-border {
+            background: linear-gradient(135deg, var(--color-cyan), var(--color-cyan-dark));
+        }
+        .research-hub-card.focus:hover {
+            box-shadow: 0 10px 30px color-mix(in srgb, var(--color-cyan) 28%, transparent);
+        }
+
+        /* Colored gradient icon chip */
+        .research-hub-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-inverse, #fff);
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 18px color-mix(in srgb, var(--text-primary) 20%, transparent);
+        }
+        .research-hub-icon::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 30% 20%,
+                color-mix(in srgb, var(--text-inverse, #fff) 35%, transparent),
+                transparent 60%);
+            pointer-events: none;
+        }
+        .research-hub-icon svg {
+            width: 28px;
+            height: 28px;
+            position: relative;
+            z-index: 1;
+        }
+        .research-hub-card.primary .research-hub-icon {
+            background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+        }
+        .research-hub-card.secondary .research-hub-icon {
+            background: linear-gradient(135deg, var(--brand-secondary), var(--brand-accent));
+        }
+        .research-hub-card.focus .research-hub-icon {
+            background: linear-gradient(135deg, var(--color-cyan), var(--color-cyan-dark));
+        }
+
+        .research-hub-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        .research-hub-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin: 0;
+            line-height: 1.55;
+        }
+        .research-hub-features {
+            list-style: none;
+            padding: 0;
+            margin: 4px 0 0 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .research-hub-features li {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .research-hub-features li::before {
+            content: "";
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .research-hub-card.primary  .research-hub-features li::before { background: var(--brand-primary); }
+        .research-hub-card.secondary .research-hub-features li::before { background: var(--brand-secondary); }
+        .research-hub-card.focus    .research-hub-features li::before { background: var(--color-cyan); }
+
+        .research-hub-cta {
+            margin-top: auto;
+            padding-top: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .research-hub-card.primary   .research-hub-cta { color: var(--brand-primary-light); }
+        .research-hub-card.secondary .research-hub-cta { color: var(--brand-secondary); }
+        .research-hub-card.focus     .research-hub-cta { color: var(--color-cyan); }
+        .research-hub-cta svg {
+            transition: transform 0.3s ease;
+        }
+        .research-hub-card:hover .research-hub-cta svg {
+            transform: translateX(5px);
+        }
+    </style>
 </head>
 <body class="dashboard research-page">
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
@@ -36,234 +223,96 @@
     </nav>
 
     <div class="research-container">
-        <!-- Page Header -->
         <div class="research-header">
             <div>
                 <h1>Research</h1>
-                <p>Data analysis and insights</p>
-            </div>
-            <div class="utility-btn-group">
-                <button class="research-btn btn-primary" id="newProjectBtn" onclick="showModal('createProjectModal')">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                    New Project
-                </button>
-                <div style="position: relative;">
-                    <button class="research-btn btn-primary utility-dropdown-btn" onclick="toggleUtilityDropdown(event)" title="Utilities">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="5" r="2"/>
-                            <circle cx="12" cy="12" r="2"/>
-                            <circle cx="12" cy="19" r="2"/>
-                        </svg>
-                    </button>
-                    <div class="utility-dropdown" id="utilityDropdown">
-                        <button class="utility-dropdown-item" onclick="showCsvUploadModal()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                <polyline points="14 2 14 8 20 8"/>
-                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                <line x1="16" y1="17" x2="8" y2="17"/>
-                            </svg>
-                            CSV to SPSS
-                        </button>
-                    </div>
-                </div>
+                <p>Pick a workspace to get started</p>
             </div>
         </div>
 
-        <!-- Stats Grid -->
-        <div class="research-stats-grid" id="statsGrid">
-            <div class="research-stat-card">
-                <div class="stat-icon primary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                    </svg>
-                </div>
-                <div class="stat-text">
-                    <div class="stat-value" id="totalProjects">-</div>
-                    <div class="stat-label">Total Projects</div>
-                </div>
-            </div>
-
-            <div class="research-stat-card">
-                <div class="stat-icon success">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                </div>
-                <div class="stat-text">
-                    <div class="stat-value" id="totalFiles">-</div>
-                    <div class="stat-label">Total Files</div>
-                </div>
-            </div>
-
-            <div class="research-stat-card">
-                <div class="stat-icon warning">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="8" y1="6" x2="21" y2="6"/>
-                        <line x1="8" y1="12" x2="21" y2="12"/>
-                        <line x1="8" y1="18" x2="21" y2="18"/>
-                        <line x1="3" y1="6" x2="3.01" y2="6"/>
-                        <line x1="3" y1="12" x2="3.01" y2="12"/>
-                        <line x1="3" y1="18" x2="3.01" y2="18"/>
-                    </svg>
-                </div>
-                <div class="stat-text">
-                    <div class="stat-value" id="totalRows">-</div>
-                    <div class="stat-label">Total Rows</div>
-                </div>
-            </div>
-
-            <div class="research-stat-card" id="secondaryResearchCard" onclick="window.location.href='secondary-dashboard.html'" style="cursor: pointer;" title="AI-powered topic research from internet sources">
-                <div class="stat-icon purple">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 16v-4"/>
-                        <path d="M12 8h.01"/>
-                    </svg>
-                </div>
-                <div class="stat-text">
-                    <div class="stat-value" style="font-size: 14px;">Secondary Research</div>
-                    <div class="stat-label">AI Topic Research <span style="font-size: 10px; opacity: 0.7;">→</span></div>
-                </div>
-            </div>
-
-            <div class="research-stat-card" id="focusGroupCard" onclick="window.location.href='focus-groups.html'" style="cursor: pointer;" title="Focus group audio transcription with speaker diarization">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #0ea5e9, #06b6d4);">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                </div>
-                <div class="stat-text">
-                    <div class="stat-value" style="font-size: 14px;">Focus Groups</div>
-                    <div class="stat-label">Speaker Diarization <span style="font-size: 10px; opacity: 0.7;">→</span></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Projects Section -->
-        <div class="research-filters">
-            <h3 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); color: var(--text-primary); margin: 0;">Projects</h3>
-            <div class="research-search-wrapper">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"/>
-                    <path d="m21 21-4.35-4.35"/>
-                </svg>
-                <input type="text" class="research-search-input" id="projectSearch" placeholder="Search projects...">
-            </div>
-        </div>
-
-        <div id="projectsGrid">
-            <div class="research-loading">
-                <div class="spinner"></div>
-                <p>Loading projects...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- CSV Upload Modal (Glassmorphic) -->
-    <div id="csvUploadModal" class="gm-overlay" onclick="if(event.target===this)closeModal('csvUploadModal')">
-        <div class="gm-modal">
-            <div class="gm-header">
-                <div class="gm-header-left">
-                    <div class="gm-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
+        <div class="research-hub-grid">
+            <a class="research-hub-card primary" href="primary-dashboard.html">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="research-hub-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 3v18h18"/>
+                            <rect x="7" y="12" width="3" height="6"/>
+                            <rect x="12" y="8" width="3" height="10"/>
+                            <rect x="17" y="4" width="3" height="14"/>
                         </svg>
                     </div>
-                    <div class="gm-title-group">
-                        <h3 class="gm-title">Convert CSV to SPSS</h3>
-                        <p class="gm-subtitle">Upload a CSV survey file to convert it to SPSS (.sav) format with auto-detected metadata</p>
-                    </div>
+                    <h2 class="research-hub-title">Primary Research</h2>
+                    <p class="research-hub-desc">Survey data analysis with SPSS files, cross-tabulations, descriptive stats, and open-end coding.</p>
+                    <ul class="research-hub-features">
+                        <li>SPSS &amp; CSV upload</li>
+                        <li>Cross-tabs, frequencies, TURF</li>
+                        <li>AI-assisted open-end coding</li>
+                    </ul>
+                    <span class="research-hub-cta">
+                        Open Primary Research
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                            <polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                    </span>
                 </div>
-                <button class="gm-close" onclick="closeModal('csvUploadModal')">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="gm-body">
-                <label class="csv-upload-dropzone" for="csvFileInput">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="17 8 12 3 7 8"/>
-                        <line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
-                    <span class="csv-file-label" id="csvFileLabel">Click to select a CSV file or drag and drop</span>
-                    <input type="file" id="csvFileInput" accept=".csv" style="display:none;" onchange="handleCsvFileSelect(this)">
-                </label>
-            </div>
-            <div class="gm-footer" style="display:flex; justify-content:flex-end; gap:8px;">
-                <button type="button" class="gm-btn gm-btn-secondary" onclick="closeModal('csvUploadModal')">Cancel</button>
-                <button type="button" class="gm-btn gm-btn-primary" id="csvSubmitBtn" disabled onclick="submitCsvConversion()">Convert to SPSS</button>
-            </div>
-        </div>
-    </div>
+            </a>
 
-    <!-- CSV Conversion Progress Panel (bottom-right, matches file processing panel) -->
-    <div id="csvConversionOverlay" class="csv-progress-panel" style="display:none;">
-        <div class="csv-progress-header">
-            <span>CSV to SPSS Conversion</span>
-            <div class="csv-progress-header-actions">
-                <button onclick="closeCsvConversionOverlay()" title="Close">&times;</button>
-            </div>
-        </div>
-        <div class="csv-progress-body">
-            <div class="csv-progress-name" id="csvConversionStage">Initializing...</div>
-            <div class="csv-progress-status" id="csvConversionMessage"></div>
-            <div class="csv-progress-bar">
-                <div class="csv-progress-fill" id="csvConversionProgressFill"></div>
-            </div>
-            <div class="csv-progress-stats" id="csvConversionStats"></div>
-        </div>
-    </div>
-
-    <!-- Create/Edit Project Modal (Glassmorphic) -->
-    <div id="createProjectModal" class="gm-overlay" onclick="if(event.target===this)closeModal('createProjectModal')">
-        <div class="gm-modal">
-            <div class="gm-header">
-                <div class="gm-header-left">
-                    <div class="gm-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            <a class="research-hub-card secondary" href="secondary-dashboard.html">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="research-hub-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                         </svg>
                     </div>
-                    <div class="gm-title-group">
-                        <h3 class="gm-title" id="projectModalTitle">Create New Project</h3>
-                        <p class="gm-subtitle">Add a new research project</p>
-                    </div>
+                    <h2 class="research-hub-title">Secondary Research</h2>
+                    <p class="research-hub-desc">AI-powered desk research that scans the web and synthesizes findings into structured insights.</p>
+                    <ul class="research-hub-features">
+                        <li>Topic-based web research</li>
+                        <li>Cited, multi-source synthesis</li>
+                        <li>Exportable reports</li>
+                    </ul>
+                    <span class="research-hub-cta">
+                        Open Secondary Research
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                            <polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                    </span>
                 </div>
-                <button class="gm-close" onclick="closeModal('createProjectModal')">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </button>
-            </div>
-            <form id="createProjectForm">
-                <div class="gm-body">
-                    <div class="research-form-group">
-                        <label for="projectName">Project Name</label>
-                        <input type="text" id="projectName" placeholder="Enter project name" required>
+            </a>
+
+            <a class="research-hub-card focus" href="focus-groups.html">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="research-hub-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
                     </div>
-                    <div class="research-form-group">
-                        <label for="projectDescription">Description</label>
-                        <textarea id="projectDescription" rows="3" placeholder="Describe your research project..."></textarea>
-                    </div>
+                    <h2 class="research-hub-title">Focus Groups</h2>
+                    <p class="research-hub-desc">Upload focus group audio or video and get diarized transcripts, summaries, and theme extraction.</p>
+                    <ul class="research-hub-features">
+                        <li>Speaker diarization</li>
+                        <li>Multi-language transcription</li>
+                        <li>Theme &amp; sentiment analysis</li>
+                    </ul>
+                    <span class="research-hub-cta">
+                        Open Focus Groups
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                            <polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                    </span>
                 </div>
-                <div class="gm-footer" style="display:flex; justify-content:flex-end; gap:8px;">
-                    <button type="button" class="gm-btn gm-btn-secondary" onclick="closeModal('createProjectModal')">Cancel</button>
-                    <button type="submit" class="gm-btn gm-btn-primary" id="projectSubmitBtn">Create Project</button>
-                </div>
-            </form>
+            </a>
         </div>
     </div>
 
@@ -272,7 +321,6 @@
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/research/dashboard.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {

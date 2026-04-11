@@ -293,6 +293,13 @@ function renderFileRow(file) {
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                 </button>` : ''}
+                ${status === 'ready' ? `<button class="btn-icon" onclick="openWaveModal('${fileId}', '${escapeHtml(fileName)}')" title="Add wave / append more data" style="color: var(--text-secondary);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>
+                        <path d="M3 6c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>
+                        <path d="M3 18c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>
+                    </svg>
+                </button>` : ''}
                 <button class="btn-icon-danger" onclick="deleteFile('${fileId}', '${escapeHtml(fileName)}')" title="${['uploading','parsing','loading_data'].includes(status) ? 'Cannot delete while processing' : 'Delete file'}"${['uploading','parsing','loading_data'].includes(status) ? ' disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"/>
@@ -340,6 +347,13 @@ function renderFileCard(file) {
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                </button>` : ''}
+                ${status === 'ready' ? `<button class="btn-icon" onclick="openWaveModal('${fileId}', '${escapeHtml(fileName)}')" title="Add wave / append more data" style="color: var(--text-secondary);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>
+                        <path d="M3 6c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>
+                        <path d="M3 18c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>
                     </svg>
                 </button>` : ''}
                 <button class="btn-icon-danger" onclick="deleteFile('${fileId}', '${escapeHtml(fileName)}')" title="${isProcessing ? 'Cannot delete while processing' : 'Delete file'}"${isProcessing ? ' disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
@@ -465,14 +479,17 @@ function handleFileProgressUpdate(data) {
             refreshProjectHeader();
             variablesLoaded = false;
             loadVariables();
-            loadFilesTable();
+            // Full reload of the files list so the row re-renders with all ready-only
+            // action buttons (edit, add wave). refreshFileRow below only patches the
+            // status cell in place, which leaves the row's action column stale.
+            loadFiles();
             if (typeof initOpenEndCoding === 'function') initOpenEndCoding();
         } else if (status === 'failed') {
             Toast.error(`File processing failed: ${message}`);
+        } else {
+            // Non-terminal update — patch the status cell in place
+            refreshFileRow(fileId);
         }
-
-        // Update the table row from the server
-        refreshFileRow(fileId);
 
         // Clean up after a moment
         setTimeout(() => {
@@ -601,7 +618,8 @@ function startPollingFile(fileId) {
                     refreshProjectHeader();
                     variablesLoaded = false;
                     loadVariables();
-                    loadFilesTable();
+                    // Full reload so the row re-renders with action buttons for ready state
+                    loadFiles();
                     if (typeof reloadOeFiles === 'function') reloadOeFiles();
                 } else if (file.status === 'failed') {
                     const errorMsg = file.errorMessage || file.error_message || 'Unknown error';
@@ -1016,6 +1034,35 @@ function switchTab(tabName) {
     if (tabName === 'opencoding') {
         if (typeof initOpenEndCoding === 'function') initOpenEndCoding();
     }
+
+    // Analyze button: only visible on Variables tab when a file is selected.
+    if (typeof updateAnalyzeButtonVisibility === 'function') updateAnalyzeButtonVisibility();
+    // Actions dropdown: hide on tabs that don't need project-level actions
+    // (Open End Coding is its own full-screen workflow).
+    updateActionsButtonVisibility();
+}
+
+/**
+ * The project-level Actions dropdown (Upload / Edit / Delete) belongs to the
+ * Files tab. Every other tab has its own workflow and doesn't need it.
+ */
+function updateActionsButtonVisibility() {
+    const drop = document.getElementById('projectActionsDropdown');
+    if (!drop) return;
+    drop.style.display = activeTab === 'files' ? '' : 'none';
+}
+
+/**
+ * Toggle the Analyze dropdown's visibility based on tab + file selection.
+ * Called from switchTab() and from the variableFileFilter onChange so the
+ * button appears/disappears in real time as the user picks a file.
+ */
+function updateAnalyzeButtonVisibility() {
+    const drop = document.getElementById('analyzeDropdown');
+    if (!drop) return;
+    const isVarsTab = activeTab === 'variables';
+    const fileId = (typeof getFileFilterValue === 'function') ? getFileFilterValue() : '';
+    drop.style.display = (isVarsTab && fileId) ? '' : 'none';
 }
 
 // ============================================
@@ -1806,13 +1853,17 @@ function populateFileFilter() {
         fileFilterDropdown = convertSelectToSearchable('variableFileFilter', {
             placeholder: 'Select file...',
             searchPlaceholder: 'Search files...',
-            onChange: () => filterVariables()
+            onChange: () => {
+                filterVariables();
+                if (typeof updateAnalyzeButtonVisibility === 'function') updateAnalyzeButtonVisibility();
+            }
         });
         // Set the first file in the searchable dropdown too
         if (allVariables.length > 0) {
             fileFilterDropdown.setValue(allVariables[0].fileId);
         }
     }
+    if (typeof updateAnalyzeButtonVisibility === 'function') updateAnalyzeButtonVisibility();
 }
 
 function getFileFilterValue() {
@@ -8738,4 +8789,385 @@ function viewInsights() {
     }).catch(() => {
         Toast.info('Share link: ' + fullUrl);
     });
+}
+
+// ============================================================================
+// WAVE APPEND MODAL (PR 5)
+// ============================================================================
+// State machine for the wave modal. Kept tiny on purpose — one variable holds
+// the current state, one function transitions to a new state and updates both
+// the body (which content div is visible) and the footer (which button text /
+// handler is active). No framework, no async state soup.
+
+const waveModalState = {
+    fileId: null,
+    fileName: '',
+    selectedFile: null,
+    dryRunId: null,
+    report: null,
+    phase: 'upload', // 'upload' | 'running' | 'report' | 'committing'
+    activeTab: 'append',
+    statusFilter: 'all',
+};
+
+function openWaveModal(fileId, fileName) {
+    waveModalState.fileId = fileId;
+    waveModalState.fileName = fileName;
+    waveModalState.selectedFile = null;
+    waveModalState.dryRunId = null;
+    waveModalState.report = null;
+    waveModalState.phase = 'upload';
+    waveModalState.activeTab = 'append';
+    waveModalState.statusFilter = 'all';
+
+    document.getElementById('waveModalFileName').textContent = fileName;
+    document.getElementById('waveFileInput').value = '';
+    document.getElementById('waveTagInput').value = '';
+    document.getElementById('waveDropzoneMain').textContent = 'Click to select a ZIP file or drag and drop';
+    document.getElementById('waveDropzone').classList.remove('drag-over');
+
+    waveGoToPhase('upload');
+    waveSwitchTab('append');
+    setupWaveDropzone();
+    document.getElementById('waveModal').classList.add('active');
+}
+
+function closeWaveModal() {
+    document.getElementById('waveModal').classList.remove('active');
+    // Clear transient state — keep fileId so a subsequent reload still works
+    waveModalState.selectedFile = null;
+    waveModalState.dryRunId = null;
+    waveModalState.report = null;
+}
+
+// Drag-drop wiring — once per modal open to avoid duplicate listeners.
+let _waveDropzoneInitialized = false;
+function setupWaveDropzone() {
+    if (_waveDropzoneInitialized) return;
+    _waveDropzoneInitialized = true;
+    const zone = document.getElementById('waveDropzone');
+    ['dragenter', 'dragover'].forEach(evt => zone.addEventListener(evt, e => {
+        e.preventDefault(); e.stopPropagation();
+        zone.classList.add('drag-over');
+    }));
+    ['dragleave', 'drop'].forEach(evt => zone.addEventListener(evt, e => {
+        e.preventDefault(); e.stopPropagation();
+        zone.classList.remove('drag-over');
+    }));
+    zone.addEventListener('drop', e => {
+        const f = e.dataTransfer?.files?.[0];
+        if (f) { document.getElementById('waveFileInput').files = e.dataTransfer.files; waveOnFileSelected(document.getElementById('waveFileInput')); }
+    });
+}
+
+function waveOnFileSelected(input) {
+    const f = input.files?.[0];
+    if (!f) { waveModalState.selectedFile = null; waveUpdateFooter(); return; }
+    if (!/\.zip$/i.test(f.name)) {
+        Toast.error('Only .zip files are accepted. Please compress your .sav file into a ZIP archive first.');
+        input.value = '';
+        waveModalState.selectedFile = null;
+        waveUpdateFooter();
+        return;
+    }
+    waveModalState.selectedFile = f;
+    document.getElementById('waveDropzoneMain').innerHTML =
+        `<span class="wave-dropzone-file">${escapeHtml(f.name)}</span> <span style="color: var(--text-secondary); font-weight: 400;">(${formatFileSize(f.size)})</span>`;
+    waveUpdateFooter();
+}
+
+function waveSwitchTab(tab) {
+    waveModalState.activeTab = tab;
+    document.querySelectorAll('#waveModal .wave-tab').forEach(el => {
+        el.classList.toggle('active', el.dataset.tab === tab);
+    });
+    document.getElementById('waveTabAppend').style.display = (tab === 'append') ? '' : 'none';
+    document.getElementById('waveTabHistory').style.display = (tab === 'history') ? '' : 'none';
+    waveUpdateFooter();
+    if (tab === 'history') {
+        loadWaveHistory();
+    }
+}
+
+function waveGoToPhase(phase) {
+    waveModalState.phase = phase;
+    ['Upload', 'Running', 'Report', 'Committing'].forEach(p => {
+        const el = document.getElementById('waveState' + p);
+        if (el) el.style.display = (p.toLowerCase() === phase) ? '' : 'none';
+    });
+    waveUpdateFooter();
+}
+
+function waveUpdateFooter() {
+    const btn = document.getElementById('waveModalPrimaryBtn');
+    const footer = document.getElementById('waveModalFooter');
+    if (waveModalState.activeTab === 'history') {
+        footer.style.display = 'none';
+        return;
+    }
+    footer.style.display = 'flex';
+    const phase = waveModalState.phase;
+    if (phase === 'upload') {
+        btn.textContent = 'Run compatibility check';
+        btn.disabled = !waveModalState.selectedFile;
+        btn.style.display = '';
+    } else if (phase === 'running' || phase === 'committing') {
+        btn.textContent = phase === 'running' ? 'Checking…' : 'Committing…';
+        btn.disabled = true;
+        btn.style.display = '';
+    } else if (phase === 'report') {
+        const r = waveModalState.report;
+        if (r && r.can_append) {
+            btn.textContent = `Append wave (${r.incoming_row_count} rows)`;
+            btn.disabled = false;
+            btn.style.display = '';
+        } else {
+            btn.textContent = `Cannot append — ${r?.blocker_count || 0} blocker(s)`;
+            btn.disabled = true;
+            btn.style.display = '';
+        }
+    }
+}
+
+async function waveHandlePrimaryClick() {
+    if (waveModalState.phase === 'upload') {
+        await waveRunDryRun();
+    } else if (waveModalState.phase === 'report') {
+        await waveCommit();
+    }
+}
+
+async function waveRunDryRun() {
+    if (!waveModalState.selectedFile) return;
+    waveGoToPhase('running');
+
+    try {
+        const token = getAuthToken();
+        const url = `${CONFIG.researchApiBaseUrl}/files/${waveModalState.fileId}/waves/dry-run`;
+        const fd = new FormData();
+        fd.append('file', waveModalState.selectedFile);
+
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: fd,
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(body.error || `Dry-run failed (${res.status})`);
+        }
+        waveModalState.dryRunId = body.dry_run_id;
+        waveModalState.report = body.report;
+        waveModalState.statusFilter = 'all';
+        renderWaveReport();
+        waveGoToPhase('report');
+    } catch (err) {
+        console.error('[wave dry-run]', err);
+        Toast.error(err.message || 'Compatibility check failed');
+        waveGoToPhase('upload');
+    }
+}
+
+async function waveCommit() {
+    const r = waveModalState.report;
+    if (!r || !r.can_append) return;
+
+    waveGoToPhase('committing');
+    try {
+        const token = getAuthToken();
+        const url = `${CONFIG.researchApiBaseUrl}/files/${waveModalState.fileId}/waves/commit`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                dry_run_id: waveModalState.dryRunId,
+                wave_tag: document.getElementById('waveTagInput').value || null,
+            }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(body.error || `Commit failed (${res.status})`);
+        }
+        Toast.success(`Wave ${body.wave_number} appended — ${body.rows_inserted} rows added (rows ${body.row_start}–${body.row_end}).`);
+        closeWaveModal();
+        await loadFiles();  // refresh row counts in the file list
+    } catch (err) {
+        console.error('[wave commit]', err);
+        Toast.error(err.message || 'Wave commit failed');
+        // Stay on report so the user can retry without re-uploading
+        waveGoToPhase('report');
+    }
+}
+
+// ---- Report rendering ----
+
+function renderWaveReport() {
+    const r = waveModalState.report;
+    if (!r) return;
+
+    // Summary banner
+    const summary = document.getElementById('waveReportSummary');
+    const bannerClass = r.can_append
+        ? (r.warning_count > 0 ? 'warning' : 'success')
+        : 'blocked';
+    const iconPath = r.can_append
+        ? '<path d="M5 13l4 4L19 7"/>'
+        : '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>';
+    const headline = r.can_append
+        ? `Can append ${r.incoming_row_count} rows`
+        : `Cannot append — ${r.blocker_count} blocker(s)`;
+    const sub = r.can_append
+        ? `${r.warning_count} warning(s). Review below and confirm to merge.`
+        : `Fix the blocking variables in your SPSS file and re-upload.`;
+    summary.innerHTML = `
+        <div class="wave-summary-banner ${bannerClass}">
+            <div class="wave-summary-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    ${iconPath}
+                </svg>
+            </div>
+            <div class="wave-summary-text">
+                <div class="wave-summary-title">${escapeHtml(headline)}</div>
+                <div class="wave-summary-sub">${escapeHtml(sub)}</div>
+            </div>
+        </div>`;
+
+    // Report-level warnings
+    const warningsEl = document.getElementById('waveReportWarnings');
+    if (r.report_warnings && r.report_warnings.length > 0) {
+        warningsEl.innerHTML = '<div class="wave-report-warnings">' +
+            r.report_warnings.map(w => `
+                <div class="wave-report-warning">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <div>${escapeHtml(w.message)}</div>
+                </div>`).join('') +
+            '</div>';
+    } else {
+        warningsEl.innerHTML = '';
+    }
+
+    // Status filter chips
+    const counts = r.summary || {};
+    const filterChips = [['all', 'All']];
+    Object.keys(counts).forEach(k => {
+        filterChips.push([k, k.replace(/_/g, ' ')]);
+    });
+    document.getElementById('waveStatusFilters').innerHTML = filterChips.map(([key, label]) => {
+        const count = key === 'all' ? (r.variables?.length || 0) : (counts[key] || 0);
+        const active = waveModalState.statusFilter === key ? ' active' : '';
+        return `<button class="wave-status-filter${active}" onclick="waveFilterStatus('${key}')">${escapeHtml(label)} · ${count}</button>`;
+    }).join('');
+
+    renderWaveVarTable();
+}
+
+function waveFilterStatus(key) {
+    waveModalState.statusFilter = key;
+    // Re-render just the chips + table, not the whole report
+    document.querySelectorAll('#waveStatusFilters .wave-status-filter').forEach(el => {
+        el.classList.toggle('active', el.textContent.toLowerCase().startsWith(
+            key === 'all' ? 'all ' : key.replace(/_/g, ' ') + ' '));
+    });
+    renderWaveVarTable();
+}
+
+function renderWaveVarTable() {
+    const r = waveModalState.report;
+    const body = document.getElementById('waveVarTableBody');
+    const filter = waveModalState.statusFilter;
+
+    const rows = (r.variables || []).filter(v => filter === 'all' || v.status === filter);
+    if (rows.length === 0) {
+        body.innerHTML = `<tr><td colspan="3" style="text-align:center; color: var(--text-secondary); padding: 30px;">No variables match this filter.</td></tr>`;
+        return;
+    }
+
+    body.innerHTML = rows.map(v => {
+        const chipClass = v.status;
+        const chipLabel = v.status.replace(/_/g, ' ');
+        let deltaHtml = '';
+        if (v.label_deltas && v.label_deltas.length > 0) {
+            const nonIdentical = v.label_deltas.filter(d => d.kind !== 'identical');
+            if (nonIdentical.length > 0) {
+                deltaHtml = `
+                    <table class="wave-label-delta-table">
+                        <thead><tr><th>Code</th><th>Old label</th><th>New label</th><th>Existing rows</th><th>Kind</th></tr></thead>
+                        <tbody>
+                            ${nonIdentical.map(d => `
+                                <tr>
+                                    <td>${escapeHtml(String(d.code))}</td>
+                                    <td>${d.old_label == null ? '—' : escapeHtml(d.old_label)}</td>
+                                    <td>${d.new_label == null ? '—' : escapeHtml(d.new_label)}</td>
+                                    <td>${d.existing_rows_using_code ?? '—'}</td>
+                                    <td class="kind-${d.kind}">${d.kind}</td>
+                                </tr>`).join('')}
+                        </tbody>
+                    </table>`;
+            }
+        }
+        return `
+            <tr>
+                <td class="wave-var-name">${escapeHtml(v.variable_name)}</td>
+                <td><span class="wave-chip ${chipClass}">${escapeHtml(chipLabel)}</span></td>
+                <td>
+                    ${escapeHtml(v.reason || '')}
+                    ${deltaHtml}
+                </td>
+            </tr>`;
+    }).join('');
+}
+
+// ---- History tab ----
+
+async function loadWaveHistory() {
+    const container = document.getElementById('waveHistoryContent');
+    container.innerHTML = '<div class="wave-history-empty"><div class="wave-spinner" style="width:32px; height:32px; margin:0 auto 12px;"></div>Loading wave history…</div>';
+
+    try {
+        const token = getAuthToken();
+        const url = `${CONFIG.researchApiBaseUrl}/files/${waveModalState.fileId}/waves`;
+        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+        const body = await res.json();
+        const waves = body.waves || [];
+        if (waves.length === 0) {
+            container.innerHTML = '<div class="wave-history-empty">No waves recorded yet.</div>';
+            return;
+        }
+        container.innerHTML = `
+            <table class="wave-history-table">
+                <thead>
+                    <tr>
+                        <th>Wave</th>
+                        <th>Tag</th>
+                        <th>Source file</th>
+                        <th>Rows</th>
+                        <th>Row range</th>
+                        <th>Committed</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${waves.map(w => `
+                        <tr>
+                            <td><span class="wave-history-wave-num">#${w.wave_number}</span></td>
+                            <td>${escapeHtml(w.wave_tag || '—')}</td>
+                            <td>${escapeHtml(w.source_filename || '—')}</td>
+                            <td>${formatNumber(w.row_count)}</td>
+                            <td>${w.row_start}–${w.row_end}</td>
+                            <td>${w.committed_at ? formatDate(w.committed_at) : '—'}</td>
+                            <td>${escapeHtml(w.status)}</td>
+                        </tr>`).join('')}
+                </tbody>
+            </table>`;
+    } catch (err) {
+        console.error('[wave history]', err);
+        container.innerHTML = `<div class="wave-history-empty" style="color: var(--color-error);">Failed to load history: ${escapeHtml(err.message || 'unknown error')}</div>`;
+    }
 }

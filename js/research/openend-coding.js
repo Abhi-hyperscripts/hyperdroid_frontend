@@ -708,16 +708,55 @@ function renderJobCard(job) {
 
     // Complete
     const coded = repsCoded + propagated + verified;
+    // PR 6 — wave-aware coding. Show wave badge when the job is wave-scoped so
+    // users can tell which wave's responses this job covers.
+    const waveNumber = job.waveNumber ?? job.wave_number;
+    const waveBadge = waveNumber
+        ? `<span style="font-size:0.65rem;padding:1px 5px;border-radius:3px;background:color-mix(in srgb,var(--brand-secondary) 25%,transparent);color:var(--brand-secondary);font-weight:600;margin-left:4px;" title="This job only codes rows from wave ${waveNumber}">wave ${waveNumber}</span>`
+        : '';
+    const fileId = job.fileId || job.file_id;
     return `<div class="oe-job-row" id="oe-job-${job.id}" data-job-id="${job.id}">
-        <span class="oe-job-var">${escapeHtml(varName)}${vBadge}</span>
+        <span class="oe-job-var">${escapeHtml(varName)}${vBadge}${waveBadge}</span>
         <span class="status-badge ready">Complete</span>
         <span class="oe-job-row-info">${totalResp.toLocaleString()} responses &middot; ${clusters} clusters &middot; ${coded.toLocaleString()} coded</span>
         <span class="oe-job-row-info">${elapsed}</span>
         <button class="oe-btn oe-btn-primary oe-btn-xs" onclick="loadOeResults('${job.id}')">View Results</button>
         <button class="oe-btn oe-btn-ghost oe-btn-xs" onclick="openCostBreakdown('${job.id}')">Cost</button>
         <button class="oe-btn oe-btn-secondary oe-btn-xs" onclick="rerunCoding('${job.id}')">Re-run</button>
+        <button class="oe-btn oe-btn-secondary oe-btn-xs" onclick="codeNewRows('${fileId}', '${escapeHtml(varName).replace(/'/g, "\\'")}')" title="Code new rows from the latest wave, reusing this codeframe">Code new rows</button>
         <button class="oe-btn oe-btn-ghost oe-btn-xs" onclick="exportCoding('${job.id}')">Export</button>
     </div>`;
+}
+
+/**
+ * PR 6 — wave-aware coding.
+ * Asks the backend to create a wave-scoped coding job for the latest wave on
+ * this file, inheriting the most recent job's codeframe. The backend returns
+ * 409 with a clear message when there's nothing new to code (only one wave, or
+ * the latest wave is already coded), so failures surface as toasts.
+ */
+async function codeNewRows(fileId, variableName) {
+    try {
+        const url = `${CONFIG.researchApiBaseUrl}/projects/${projectId}/openend-coding/jobs/code-new-rows`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ file_id: fileId, variable_name: variableName }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(body.error || `Failed (${res.status})`);
+        }
+        Toast.success(`Coding wave ${body.wave_number} for "${variableName}" using the existing codeframe.`);
+        // Refresh the job list so the new wave-scoped job appears
+        if (typeof loadOeJobs === 'function') await loadOeJobs();
+    } catch (err) {
+        console.error('[code new rows]', err);
+        Toast.error(err.message || 'Could not start wave coding');
+    }
 }
 
 function formatDuration(ms) {

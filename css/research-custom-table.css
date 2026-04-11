@@ -1,0 +1,1016 @@
+/* ============================================================================
+ * Custom Tables builder styles (PR A1)
+ * Lives inside #customTableModal gm-overlay. 2-column workbench (palette + builder).
+ * All colors come from theme.css vars so dark / light modes just work.
+ * ============================================================================ */
+
+/* ---- workbench: palette + builder ---- */
+.ct-workbench {
+    display: grid;
+    /* minmax(0, 1fr) is the CSS-grid incantation that lets the builder column
+       SHRINK instead of growing to fit the widest content inside it. Without
+       this a 100k-pixel-wide result table would stretch the grid track and
+       blow the modal out to the right. */
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 16px;
+    padding: 16px;
+    height: 100%;
+    min-height: 60vh;
+    overflow: hidden;
+}
+
+/* ---- variable palette ---- */
+.ct-palette {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 0;
+}
+.ct-palette-header {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-elevated);
+    flex-shrink: 0;
+}
+.ct-palette-header-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+.ct-palette-header-row .ct-slot-header-chevron {
+    width: 10px;
+    height: 10px;
+    transition: transform 0.18s ease;
+    opacity: 0.6;
+}
+/* Collapsed palette shrinks to a thin vertical strip with just a toggle */
+.ct-workbench.ct-palette-collapsed {
+    grid-template-columns: 40px minmax(0, 1fr);
+}
+.ct-workbench.ct-palette-collapsed .ct-palette .ct-palette-body,
+.ct-workbench.ct-palette-collapsed .ct-palette .ct-search,
+.ct-workbench.ct-palette-collapsed .ct-palette .ct-palette-title {
+    display: none;
+}
+.ct-workbench.ct-palette-collapsed .ct-palette-header-row .ct-slot-header-chevron {
+    transform: rotate(-90deg);
+}
+.ct-workbench.ct-palette-collapsed .ct-palette-header {
+    padding: 8px;
+}
+.ct-palette-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+.ct-search {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+}
+.ct-search:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.ct-palette-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px;
+}
+.ct-empty-palette,
+.ct-palette-empty-hint {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+}
+.ct-palette-group {
+    padding-top: 8px;
+}
+.ct-palette-group-title {
+    padding: 6px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.ct-var-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 13px;
+    user-select: none;
+    transition: background 0.12s ease, border-color 0.12s ease;
+    border: 1px solid transparent;
+}
+.ct-var-item:hover {
+    background: color-mix(in srgb, var(--brand-primary) 12%, transparent);
+    border-color: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+}
+.ct-var-item:active { cursor: grabbing; }
+.ct-var-item.dragging { opacity: 0.4; }
+
+.ct-var-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-inverse, #fff);
+    margin-top: 1px;
+}
+.ct-var-icon.nominal { background: var(--color-warning); }
+.ct-var-icon.ordinal { background: var(--brand-primary); }
+.ct-var-icon.scale   { background: var(--color-success); }
+.ct-var-icon.string  { background: var(--brand-secondary); }
+
+.ct-var-text {
+    flex: 1;
+    min-width: 0;  /* lets truncation actually happen */
+}
+.ct-var-name {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ct-var-label {
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.35;
+    margin-top: 2px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ---- builder area ---- */
+.ct-builder {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+}
+
+/* ---- layout panel: single wrapper around Columns / Rows / Filter so all
+   three collapse/expand together via one chevron. ---- */
+.ct-layout {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.ct-layout-header {
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.12s ease;
+}
+.ct-layout-header:hover {
+    background: color-mix(in srgb, var(--brand-primary) 10%, var(--bg-elevated));
+    color: var(--text-primary);
+}
+.ct-layout-title { display: inline-flex; align-items: baseline; gap: 8px; }
+.ct-layout-subtitle {
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    opacity: 0.7;
+    font-size: 11px;
+}
+.ct-layout.collapsed .ct-slot-header-chevron { transform: rotate(-90deg); }
+.ct-layout.collapsed .ct-slots { display: none; }
+
+.ct-layout .ct-slots {
+    padding: 8px;
+    border: none;
+    border-radius: 0;
+}
+
+/* ---- footer-embedded Weight drop zone ---- */
+.ct-footer {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    justify-content: space-between;
+}
+.ct-footer-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.ct-footer-weight {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+/* Override .ct-slot-body's column/wrap so the weight chip sits inline. */
+.ct-footer-weight-body {
+    flex: 1 1 auto !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center;
+    padding: 4px 8px !important;
+    min-height: 30px !important;
+    min-width: 0;
+    max-width: 420px;
+    background: var(--bg-elevated);
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    gap: 6px !important;
+}
+.ct-footer-weight-body .ct-slot-empty {
+    padding: 0;
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin: 0;
+}
+.ct-footer-weight-body .ct-group {
+    background: transparent;
+    border: none;
+    padding: 0;
+    flex-direction: row;
+    gap: 6px;
+}
+.ct-footer-weight-body .ct-group-var {
+    padding: 3px 8px;
+    font-size: 11px;
+    background: color-mix(in srgb, var(--brand-primary) 10%, var(--bg-card));
+    border-color: color-mix(in srgb, var(--brand-primary) 40%, transparent);
+}
+.ct-footer-weight-body.drag-over {
+    background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+    outline: 2px dashed var(--brand-primary);
+    outline-offset: -4px;
+    border-color: var(--brand-primary);
+}
+
+/* ---- row-group stats button + sub-row styling ---- */
+.ct-group-stats-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-top: 4px;
+    align-self: flex-start;
+}
+.ct-group-stats-btn:hover {
+    background: color-mix(in srgb, var(--brand-primary) 15%, var(--bg-elevated));
+    color: var(--text-primary);
+    border-color: var(--brand-primary);
+}
+.ct-group-stats-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 4px;
+    border-radius: 7px;
+    background: var(--brand-primary);
+    color: var(--text-inverse, #fff);
+    font-size: 9px;
+    font-weight: 700;
+}
+.ct-codes-sub {
+    padding: 6px 12px 0;
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+.ct-stats-target {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--border-color);
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+.ct-stats-target-lbl {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+}
+.ct-stats-target select {
+    flex: 1;
+    padding: 5px 8px;
+    font-size: 12px;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    outline: none;
+}
+
+/* Summary stat rows — rendered once at the top of the table, same weight as
+   Base row but with a softer brand tint so they read as a summary block. */
+.ct-result-table tbody tr.ct-row-stat td {
+    background: color-mix(in srgb, var(--brand-primary) 6%, var(--bg-card));
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 14px;
+}
+.ct-result-table tbody tr.ct-row-stat .ct-col-sticky {
+    background: color-mix(in srgb, var(--brand-primary) 6%, var(--bg-card));
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* ---- result: blank separator row between row-variable groups ---- */
+.ct-result-table tbody tr.ct-row-separator td {
+    height: 10px;
+    padding: 0;
+    background: color-mix(in srgb, var(--brand-primary) 10%, var(--bg-card));
+    border-top: 1px solid color-mix(in srgb, var(--brand-primary) 40%, var(--border-color));
+    border-bottom: 1px solid color-mix(in srgb, var(--brand-primary) 40%, var(--border-color));
+}
+.ct-result-table tbody tr.ct-row-separator .ct-col-sticky {
+    background: color-mix(in srgb, var(--brand-primary) 10%, var(--bg-card));
+}
+.ct-result-table tbody tr.ct-row-section td {
+    background: color-mix(in srgb, var(--brand-primary) 14%, var(--bg-card));
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.ct-result-table tbody tr.ct-row-section .ct-col-sticky {
+    background: color-mix(in srgb, var(--brand-primary) 14%, var(--bg-card));
+}
+.ct-layout .ct-slot {
+    background: var(--bg-elevated);
+}
+.ct-slots {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    flex-shrink: 0;
+}
+.ct-builder.ct-collapsed .ct-slots {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+.ct-builder.ct-collapsed .ct-slot-body {
+    display: none;
+}
+.ct-builder.ct-collapsed .ct-slot {
+    min-height: 0;
+}
+
+/* Size estimator chip shown between the slots and the preview. */
+.ct-size-hint {
+    margin: 0;
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 0;
+}
+.ct-size-hint:empty { display: none; }
+.ct-size-hint.warn {
+    color: var(--color-error);
+    background: color-mix(in srgb, var(--color-error) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin: 0;
+}
+.ct-size-hint.warn svg { color: var(--color-error); flex-shrink: 0; }
+.ct-slot {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+}
+.ct-slot-header {
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.12s ease;
+}
+.ct-slot-header:hover {
+    background: color-mix(in srgb, var(--brand-primary) 10%, var(--bg-elevated));
+    color: var(--text-primary);
+}
+.ct-slot-header-count {
+    font-weight: 500;
+    opacity: 0.75;
+    margin-left: 6px;
+}
+.ct-slot-header-chevron {
+    width: 10px;
+    height: 10px;
+    transition: transform 0.18s ease;
+    opacity: 0.6;
+}
+.ct-slot.collapsed .ct-slot-header-chevron {
+    transform: rotate(-90deg);
+}
+.ct-slot.collapsed .ct-slot-body {
+    display: none;
+}
+.ct-slot.collapsed {
+    min-height: 0;
+}
+.ct-slot-body {
+    padding: 12px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 110px;
+}
+.ct-slot-body.drag-over {
+    background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+    outline: 2px dashed var(--brand-primary);
+    outline-offset: -6px;
+    border-radius: 8px;
+}
+.ct-slot-empty {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-style: italic;
+    text-align: center;
+    padding: 18px 8px;
+    pointer-events: none;
+}
+
+/* ---- dropped token ---- */
+.ct-token {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+.ct-token-name {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 600;
+}
+.ct-token-label {
+    color: var(--text-secondary);
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+.ct-token-remove {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 16px;
+    line-height: 1;
+    transition: background 0.1s ease, color 0.1s ease;
+}
+.ct-token-remove:hover {
+    background: color-mix(in srgb, var(--color-error) 20%, transparent);
+    color: var(--color-error);
+}
+
+/* ---- group (nested set of variables in one axis slot) ----
+   Each group is a stacked card. Multiple groups in one slot sit side-by-side
+   (axis stacking). Vars inside a group stack vertically joined by "×" to
+   indicate Cartesian nesting. */
+.ct-group {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 6px;
+    background: color-mix(in srgb, var(--brand-primary) 8%, var(--bg-card));
+    border: 1px dashed color-mix(in srgb, var(--brand-primary) 45%, transparent);
+    border-radius: 8px;
+    min-width: 0;
+    flex: 0 1 auto;
+}
+.ct-group.drop-target {
+    background: color-mix(in srgb, var(--brand-primary) 18%, var(--bg-card));
+    border-color: var(--brand-primary);
+    border-style: solid;
+}
+.ct-group-joiner {
+    display: block;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    line-height: 1;
+}
+.ct-group-var {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-primary);
+    min-width: 0;
+}
+.ct-group-var-name {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.ct-group-var-label {
+    color: var(--text-secondary);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+.ct-group-var-remove {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+.ct-group-var-remove:hover {
+    background: color-mix(in srgb, var(--color-error) 20%, transparent);
+    color: var(--color-error);
+}
+
+/* The slot body becomes a wrapping flex so multiple groups fit side-by-side. */
+.ct-slot-body {
+    flex-wrap: wrap;
+    flex-direction: row !important;
+    align-content: flex-start;
+}
+
+/* Badge showing count of kept codes when the var is partially filtered. */
+.ct-group-var-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 16px;
+    padding: 0 5px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--brand-primary);
+    color: var(--text-inverse, #fff);
+    flex-shrink: 0;
+}
+.ct-group-var { cursor: pointer; }
+.ct-group-var:hover {
+    border-color: color-mix(in srgb, var(--brand-primary) 50%, transparent);
+}
+
+/* ---- Code include/exclude popover (A8.3) ---- */
+.ct-codes-popover {
+    /* !important because styles.css has a blanket `body.dashboard > *` rule
+       that forces position:relative on unknown children — we win this fight. */
+    position: fixed !important;
+    z-index: 1000010 !important;
+    width: 300px;
+    max-height: 420px;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+    color: var(--text-primary);
+    font-size: 12px;
+    overflow: hidden;
+    animation: ctCodesFadeIn 0.12s ease-out;
+}
+@keyframes ctCodesFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.ct-codes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-elevated);
+}
+.ct-codes-title {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--text-primary);
+}
+.ct-codes-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.ct-codes-close:hover {
+    background: color-mix(in srgb, var(--color-error) 20%, transparent);
+    color: var(--color-error);
+}
+.ct-codes-actions {
+    display: flex;
+    gap: 4px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+.ct-codes-action {
+    flex: 1;
+    padding: 5px 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.1s ease, color 0.1s ease;
+}
+.ct-codes-action:hover {
+    background: color-mix(in srgb, var(--brand-primary) 15%, var(--bg-elevated));
+    color: var(--text-primary);
+}
+.ct-codes-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px;
+}
+.ct-codes-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.ct-codes-row:hover {
+    background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+}
+.ct-codes-row input[type="checkbox"] {
+    accent-color: var(--brand-primary);
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.ct-codes-label {
+    flex: 1;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ct-codes-count {
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+.ct-codes-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-elevated);
+}
+.ct-codes-selected {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 500;
+}
+.ct-codes-apply {
+    padding: 6px 14px;
+    background: var(--brand-primary);
+    color: var(--text-inverse, #fff);
+    border: none;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.ct-codes-apply:hover {
+    background: color-mix(in srgb, #000 8%, var(--brand-primary));
+}
+.ct-codes-loading,
+.ct-codes-empty {
+    padding: 18px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-style: italic;
+}
+
+/* ---- preview area ---- */
+.ct-preview {
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+.ct-preview-header {
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.ct-preview-body {
+    flex: 1;
+    /* NOT overflow:auto — the inner .ct-result-scroll is the primary scroller.
+       We keep the body as a flex container so the toolbar stays pinned above
+       the scrolling grid. */
+    overflow: hidden;
+    padding: 16px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.ct-preview-empty {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 48px 16px;
+    font-size: 13px;
+}
+.ct-preview-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 16px;
+    color: var(--text-secondary);
+    gap: 12px;
+}
+.ct-preview-error {
+    padding: 16px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--color-error) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
+    color: var(--color-error);
+    font-size: 13px;
+}
+
+/* ---- result toolbar (above grid) ---- */
+.ct-result-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 0 10px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+.ct-result-summary {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ct-result-size {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+.ct-btn-sm {
+    padding: 5px 10px !important;
+    font-size: 12px !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ---- result scroll container ----
+   Primary scroll area for the grid. Both axes scroll here; the parent
+   .ct-preview-body is overflow:hidden so clipping happens at this boundary.
+   flex:1 fills the remaining vertical space the parent allocates. */
+.ct-result-scroll {
+    flex: 1;
+    min-height: 0;           /* required for flex children to actually shrink */
+    overflow: auto;          /* scrolls both axes */
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    will-change: transform;  /* avoids tearing on GPU-composited sticky scroll */
+}
+
+/* ---- result table ---- */
+.ct-result-table {
+    width: max-content;           /* natural width so wide tables can scroll horizontally */
+    min-width: 100%;
+    border-collapse: separate;    /* separate so sticky cells can have their own background */
+    border-spacing: 0;
+    font-size: 13px;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+/* Whole thead sticks as one unit — avoids per-row staircase offsets that leave
+   gaps when actual row heights differ from the hardcoded px values. Works in
+   Chrome 91+, Firefox 59+, Safari 14+. */
+.ct-result-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+}
+.ct-result-table thead th {
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    border-left: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+    text-align: center;
+    white-space: normal;
+    max-width: 180px;
+    min-width: 70px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    line-height: 1.25;
+}
+.ct-result-table thead tr:first-child th {
+    background: color-mix(in srgb, var(--brand-primary) 18%, var(--bg-card));
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 700;
+}
+.ct-result-table thead tr:nth-child(2) th {
+    background: color-mix(in srgb, var(--brand-primary) 12%, var(--bg-card));
+    font-weight: 600;
+}
+.ct-result-table thead tr:nth-child(3) th {
+    background: color-mix(in srgb, var(--brand-primary) 7%, var(--bg-card));
+}
+.ct-result-table thead tr:nth-child(4) th {
+    background: color-mix(in srgb, var(--brand-primary) 3%, var(--bg-card));
+}
+.ct-result-table tbody td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: top;
+    background: var(--bg-card);    /* SOLID — sticky headers must fully occlude */
+    white-space: nowrap;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ct-result-table tbody tr:hover td {
+    background: color-mix(in srgb, var(--brand-primary) 6%, var(--bg-card));
+}
+.ct-result-table .ct-row-base td {
+    background: color-mix(in srgb, var(--text-secondary) 8%, var(--bg-card));
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* ---- sticky first column (row labels) ---- */
+.ct-result-table .ct-col-sticky {
+    position: sticky;
+    left: 0;
+    z-index: 2;                    /* above body cells, below sticky thead (z:3) */
+    background: var(--bg-card);
+    font-weight: 500;
+    color: var(--text-primary);
+    border-right: 1px solid var(--border-color);
+    max-width: 260px;
+}
+.ct-result-table thead th.ct-col-sticky {
+    z-index: 4;                    /* corner: above sticky thead */
+    background: color-mix(in srgb, var(--brand-primary) 18%, var(--bg-card));
+}
+.ct-result-table .ct-row-base .ct-col-sticky {
+    background: color-mix(in srgb, var(--text-secondary) 8%, var(--bg-card));
+}
+.ct-result-table tbody tr:hover .ct-col-sticky {
+    background: color-mix(in srgb, var(--brand-primary) 6%, var(--bg-card));
+}
+
+/* ---- row virtualization via content-visibility ----
+   Browser skips layout + paint for rows off-screen. Pairs with
+   contain-intrinsic-size so the scroll height stays accurate. Activated
+   only for large tables via the .ct-result-virtualized modifier so small
+   tables don't pay the tiny repaint cost.                                */
+.ct-result-virtualized tbody tr {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 36px;
+}
+
+/* ---- wide screen: slots become a wider strip ---- */
+@media (max-width: 1280px) {
+    .ct-workbench { grid-template-columns: 240px 1fr; }
+    .ct-slots { grid-template-columns: 1fr 1fr; }
+    .ct-slot[data-slot="filter"], .ct-slot[data-slot="weight"] { min-height: 100px; }
+}
+@media (max-width: 900px) {
+    .ct-workbench { grid-template-columns: 1fr; }
+    .ct-slots { grid-template-columns: 1fr; }
+    .ct-slot[data-slot="filter"] { grid-column: auto; }
+}
