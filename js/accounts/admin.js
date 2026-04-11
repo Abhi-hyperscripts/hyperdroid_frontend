@@ -198,15 +198,23 @@ function viewAuditLogDetail(index) {
 
     const formatType = (t) => (t || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-    // Parse details JSON into key-value pairs
+    // Parse details JSON into key-value pairs (filter out internal GUID fields)
+    const HIDDEN_KEYS = new Set(['tenant_id','tenantid','created_by','createdby','updated_by','updatedby',
+        'invoice_id','invoiceid','bill_id','billid','customer_id','customerid','vendor_id','vendorid',
+        'account_id','accountid','id','entry_id','entryid','reference_id','referenceid','gl_entry_id','glentryid',
+        'bank_account_id','bankaccountid','fiscal_year_id','fiscalyearid','fiscal_period_id','fiscalperiodid']);
+    const isGuid = (s) => typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
     let detailItems = [];
     try {
-        const raw = typeof l.details === 'string' ? JSON.parse(l.details) : l.details;
+        let raw = typeof l.details === 'string' ? JSON.parse(l.details) : l.details;
+        if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch {} }
         if (raw && typeof raw === 'object') {
-            detailItems = Object.entries(raw).map(([key, val]) => ({
-                label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-                value: val != null ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : '-'
-            }));
+            detailItems = Object.entries(raw)
+                .filter(([k, v]) => !HIDDEN_KEYS.has(k.toLowerCase()) && !isGuid(v))
+                .map(([key, val]) => ({
+                    label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+                    value: val != null ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : '-'
+                }));
         }
     } catch { /* ignore parse errors */ }
 
@@ -276,23 +284,38 @@ async function viewEntityAudit(entityType, entityId) {
         }
 
         const formatLabel = (k) => k.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').replace(/\s+/g, ' ').trim().replace(/\b\w/g, c => c.toUpperCase());
+        // Hide internal ID fields — they're GUIDs that mean nothing to users
+        const HIDDEN_KEYS = new Set(['tenant_id','tenantid','created_by','createdby','updated_by','updatedby',
+            'invoice_id','invoiceid','bill_id','billid','customer_id','customerid','vendor_id','vendorid',
+            'account_id','accountid','id','entry_id','entryid','reference_id','referenceid','gl_entry_id','glentryid',
+            'bank_account_id','bankaccountid','fiscal_year_id','fiscalyearid','fiscal_period_id','fiscalperiodid']);
+        const isGuid = (s) => typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
         const parseDetails = (d) => {
             try {
                 let raw = typeof d === 'string' ? JSON.parse(d) : d;
                 if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch {} }
                 if (raw && typeof raw === 'object') {
-                    return Object.entries(raw).map(([k, v]) => ({
-                        label: formatLabel(k),
-                        value: v == null ? '-' : (typeof v === 'object' ? JSON.stringify(v) : String(v))
-                    }));
+                    return Object.entries(raw)
+                        .filter(([k, v]) => {
+                            const kLower = k.toLowerCase();
+                            if (HIDDEN_KEYS.has(kLower)) return false;
+                            // Also filter out any remaining raw GUID values
+                            if (isGuid(v)) return false;
+                            return true;
+                        })
+                        .map(([k, v]) => ({
+                            label: formatLabel(k),
+                            value: v == null ? '-' : (typeof v === 'object' ? JSON.stringify(v) : String(v))
+                        }));
                 }
             } catch {}
             return [];
         };
 
+        const entityLabel = entityType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         body.innerHTML = `
             <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.85rem;">
-                ${AccountsCommon.escapeHtml(entityType)} &bull; <code style="font-size: 0.75rem;">${AccountsCommon.escapeHtml(entityId)}</code>
+                ${AccountsCommon.escapeHtml(entityLabel)}
             </p>
             <div class="entity-audit-timeline">
                 ${logs.map(l => {
