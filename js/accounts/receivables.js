@@ -238,10 +238,35 @@ function invoiceActions(inv) {
     if (inv.status === 'approved') {
         html += ` <button class="btn-icon" data-tooltip="Send" onclick="sendInvoice('${inv.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>`;
     }
-    if (inv.status === 'sent' || inv.status === 'approved' || inv.status === 'partially_paid') {
+    if (inv.status === 'sent' || inv.status === 'approved' || inv.status === 'partially_paid' || inv.status === 'overdue') {
+        html += ` <button class="btn-icon" data-tooltip="Send Reminder" onclick="sendInvoiceReminder('${inv.id}', '${(inv.invoice_number||'').replace(/'/g,'')}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>`;
         html += ` <button class="btn btn-outline" style="padding:0.2rem 0.6rem;font-size:0.75rem;" onclick="showRecordPaymentModal(); document.getElementById('paymentCustomerId').value='${inv.customer_id}';">Pay</button>`;
     }
     return html;
+}
+
+/**
+ * Send a manual payment reminder email for an invoice and show the result.
+ * The backend records the send attempt in the invoice_reminders table so the
+ * history is visible in the reminder timeline (also accessible via
+ * GET /invoices/{id}/reminders).
+ */
+async function sendInvoiceReminder(invoiceId, invoiceNumber) {
+    const ok = await Confirm.show({
+        title: 'Send Payment Reminder',
+        message: `Send a payment reminder email for invoice ${invoiceNumber || invoiceId}? The customer will receive an email immediately and the send will be logged to the reminder history.`,
+        confirmText: 'Send Reminder',
+        type: 'info'
+    });
+    if (!ok) return;
+    try {
+        const res = await api.request(AccountsCommon.buildUrl(`invoices/${invoiceId}/send-reminder`), { method: 'POST' });
+        const sentAt = res?.sent_at ? AccountsCommon.formatDate(res.sent_at, true) : 'now';
+        Toast.success(`Reminder sent at ${sentAt}`);
+    } catch (err) {
+        console.error('[Receivables] sendInvoiceReminder error:', err);
+        Toast.error(err.message || 'Failed to send reminder');
+    }
 }
 
 // ============================================================================

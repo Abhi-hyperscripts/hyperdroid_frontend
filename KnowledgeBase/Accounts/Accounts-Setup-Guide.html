@@ -1346,6 +1346,7 @@ body::before {
         </div>
         <ul class="toc__sub">
           <li><a class="toc__link" href="#s-10-1">10.1 Open Accounts Receivable</a></li>
+          <li><a class="toc__link" href="#s-10-5">10.5 Late payment reminders</a></li>
           <li><a class="toc__link" href="#s-10-2">10.2 Creating an invoice</a></li>
           <li><a class="toc__link" href="#s-10-3">10.3 Save Draft &rarr; Approve</a></li>
         </ul>
@@ -1830,31 +1831,44 @@ body::before {
           <h3 class="subsection__title">The KPI tiles &mdash; what each number means</h3>
           <div class="prose">
             <p>
-              Across the top of the dashboard you'll see six tiles. Each one is a real-time count or sum derived from the General
-              Ledger. On a clean install they all read zero or a dash &mdash; here's what they will mean once you have data.
+              Across the top of the dashboard you'll see <strong>seven business KPI tiles</strong>. These are not GL-counts or
+              technical metrics &mdash; they are the numbers a founder, CFO, or controller actually asks about in a morning standup.
+              Every tile is rolled up live from the underlying GL, AR, AP, and bank data by a single backend call to
+              <code>GET /api/accounts/dashboard/kpis</code>. On a fresh install they all read zero; once real invoices, bills, and
+              payments flow through the system they give you the whole business-health picture at a glance.
             </p>
-            <ul>
-              <li><strong>Total GL Entries</strong> &mdash; how many journal entries (of any kind) live in the General Ledger.
-                  Includes drafts, posted, and reversed.</li>
-              <li><strong>Posted Entries</strong> &mdash; the subset that have been finalised. Posted entries actually move account balances.</li>
-              <li><strong>Draft Entries</strong> &mdash; entries someone has started but not yet posted. These do <em>not</em> affect any balance.</li>
-              <li><strong>Total Debit (Posted)</strong> &mdash; the sum of every debit line across all posted entries.</li>
-              <li><strong>Total Credit (Posted)</strong> &mdash; the sum of every credit line. <em>This must equal Total Debit, always.</em>
-                  If it doesn't, your books aren't balanced and you should investigate immediately.</li>
-              <li><strong>Net Balance</strong> &mdash; equals Total Debit minus Total Credit. Should always be zero on a healthy ledger.</li>
-            </ul>
           </div>
-          <figure class="figure">
-            <img loading="lazy" decoding="async" src="./images/03-3-kpi-tiles.png" alt="KPI tiles strip on the dashboard">
-            <div class="figure__caption"><strong>Figure 3.3 &mdash;</strong> The six KPI tiles at the top of the dashboard.</div>
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/03-6-kpi-tiles-live.png" alt="Live KPI tiles on the accounts dashboard">
+            <div class="figure__caption"><strong>Figure 3.3 &mdash;</strong> The seven live KPI tiles after the demo tenant has booked a working set of invoices, bills, payments, and a bank account. Every number refreshes on page load and on the Refresh button in the header.</div>
           </figure>
+
+          <p>What each tile means, in reading order:</p>
+          <ul>
+            <li><strong>Cash Position</strong> &mdash; sum of every active bank account's current balance, with a sublabel that splits Bank vs. Cash/Petty Cash so you can see how much is in a tellable account vs. in physical cash. Pulled from <code>bank_accounts.current_balance</code>, grouped by <code>account_type</code>.</li>
+            <li><strong>Revenue (MTD)</strong> &mdash; total revenue posted in the current calendar month, with a trend arrow in the top-right of the tile comparing against the previous month. Green up-arrow if you're ahead of last month, red down-arrow if you're behind. Computed as <code>credit &minus; debit</code> on every GL line against an Income-type account in the current month window.</li>
+            <li><strong>Revenue (YTD)</strong> &mdash; same math but for the active fiscal year. The sublabel shows the FY name (e.g. "FY 2026-27") so you always know which window you're looking at. On a tenant with no active FY, this tile shows a dash.</li>
+            <li><strong>Net Profit (YTD)</strong> &mdash; <code>Revenue YTD &minus; Expenses YTD</code>. Goes red if you're running at a loss. This is the single most important number senior management looks at &mdash; it's the bottom line.</li>
+            <li><strong>AR Outstanding</strong> &mdash; total <code>balance_due</code> across every customer invoice in <em>approved</em>, <em>sent</em>, <em>partially_paid</em>, or <em>overdue</em> status. Sublabel counts how many open invoices make up that total. A red <em>OVERDUE</em> badge appears in the corner if any of those invoices are past their due date, so you can tell at a glance whether collections is on top of things or needs a nudge.</li>
+            <li><strong>AP Outstanding</strong> &mdash; mirror of AR on the vendor side: what you owe vendors today across all open bills, with the same overdue badge and count sublabel.</li>
+            <li><strong>Projected Balance (30d)</strong> &mdash; a simple 30-day cash flow forecast. Starts from your current cash position, adds every AR balance due in the next 30 days, subtracts every AP bill due in the next 30 days, and shows what the bank is likely to look like a month from now if collections and payments run to schedule. Sublabel breaks down the inflow and outflow components so you can see whether the change is driven by money coming in, money going out, or both.</li>
+          </ul>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Where the old "Total GL Entries" tiles went</span>
+              <h4 class="callout__title">Technical counts moved to Administration</h4>
+              <p>Earlier versions of the dashboard showed six tiles counting GL entries, debits, credits, and balance sums. Those are still accessible via <em>Administration &rarr; System &rarr; GL Summary</em> (&sect;15.5) because they're useful for debugging, but they're not what day-to-day management wants on the main dashboard. The new tiles answer business questions (how much cash? what's the revenue this month? who owes us?) instead of system-health questions (how many journal entries are in the database?).</p>
+            </div>
+          </div>
+
           <div class="callout callout--what">
             <div class="callout__icon">!</div>
             <div class="callout__body">
               <span class="callout__label">What this tells you</span>
-              <h4 class="callout__title">If Total Debit &ne; Total Credit, stop everything</h4>
-              <p>It means somewhere in your General Ledger an entry was posted with mismatched lines. The system is supposed to make
-              that impossible &mdash; if you ever see it happen, raise it with your administrator. Healthy books always have a Net Balance of <code>0</code>.</p>
+              <h4 class="callout__title">If Revenue YTD goes up but Net Profit goes down, expenses are outpacing sales</h4>
+              <p>The dashboard doesn't just give you the numbers &mdash; it gives you the relationship between them. Read the tiles as a row, not as isolated stats: Cash Position + Net Profit YTD + AR Outstanding + Projected Balance 30d together tell you whether the business is solvent, profitable, getting paid on time, and likely to stay liquid next month. If any one of those is red or alarming, click into the corresponding module (Banking, Receivables, Reports) and drill down to find out why.</p>
             </div>
           </div>
         </div>
@@ -2896,6 +2910,93 @@ body::before {
             </div>
           </div>
         </div>
+
+        <!-- ==================== 10.5 LATE PAYMENT REMINDERS ==================== -->
+        <div class="subsection" id="s-10-5">
+          <span class="subsection__num">10.5</span>
+          <h3 class="subsection__title">Late payment reminders &mdash; automatic and manual</h3>
+          <div class="prose">
+            <p>
+              An invoice that's been approved, sent, and is past its due date is not a paid invoice &mdash; it's an overdue
+              receivable. Every day that passes without a reminder is a day that gently teaches your customer that payment
+              deadlines are optional. Ragenaizer automates the nudge with two complementary reminder channels: a scheduled
+              Hangfire job that fires every morning without human input, and a manual <em>Send Reminder</em> button on every
+              open invoice row so the collections person can fire a one-off escalation whenever they need to.
+            </p>
+          </div>
+
+          <div class="callout">
+            <div class="callout__icon">?</div>
+            <div class="callout__body">
+              <h4 class="callout__title">Reminder vs. invoice email</h4>
+              <p>The email the customer got when the invoice was first approved was a <em>new-invoice notification</em> (&sect;10.3's Send button). A <strong>reminder</strong> is a follow-up sent <em>after</em> the invoice has been outstanding past a threshold. Both use the same email transport; the difference is the subject line, tone, and the fact that reminders are recorded in the <code>invoice_reminders</code> table for audit.</p>
+            </div>
+          </div>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">The two automatic jobs</h4>
+          <p>
+            Two recurring Hangfire jobs are registered at startup and run every day regardless of whether you have the UI open:
+          </p>
+          <ul>
+            <li><strong><code>before-due-reminders</code> &mdash; 09:00 server time.</strong> Finds every approved / sent invoice where <code>due_date = CURRENT_DATE + 3 days</code> and sends a friendly "your invoice is due in 3 days" reminder to the customer's billing contact. This is the "nudge" email &mdash; tone is polite, assumes the customer intends to pay.</li>
+            <li><strong><code>overdue-invoices</code> &mdash; same job that flips invoices to <em>overdue</em> status at 06:00 each morning.</strong> After the status flip it iterates every newly-overdue row and fires a follow-up reminder. The tone escalates with days overdue:
+              <ul>
+                <li><em>on_due</em> (0 days) &mdash; friendly reminder, "just a heads-up, today is due date".</li>
+                <li><em>overdue_7</em> (1&ndash;7 days late) &mdash; firm but still friendly, "we haven't received payment, can you confirm the payment date?".</li>
+                <li><em>overdue_15</em> (8&ndash;15 days late) &mdash; serious, "this invoice is now 15 days past due; please remit immediately or contact us to discuss a payment plan".</li>
+                <li><em>overdue_30</em> (16+ days late) &mdash; final-notice language, "failure to respond within 7 days may result in escalation".</li>
+              </ul>
+            </li>
+          </ul>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Dedupe &mdash; one reminder per invoice per day</span>
+              <h4 class="callout__title">A cron running every hour would still only send one email per day</h4>
+              <p>Before every send, the job asks the <code>invoice_reminders</code> table whether a successful reminder has already been inserted for this <code>(tenant_id, invoice_id)</code> with <code>DATE(sent_at) = CURRENT_DATE</code>. If yes, it silently skips. This means you can run the job manually in the middle of the day (e.g. after fixing a downtime blip) without spamming the customer with a second email. Failed sends are NOT deduped &mdash; a transient SMTP failure leaves a <code>success=false</code> row, so the next run will retry until the send actually goes out.</p>
+            </div>
+          </div>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">The manual Send Reminder button</h4>
+          <p>
+            For when "tomorrow morning's auto-run is too far away". Every invoice row in the Receivables &rarr; Invoices table now
+            has a bell-icon <em>Send Reminder</em> action alongside the existing View, Download PDF, and Pay buttons. It appears
+            only on invoices in statuses where a reminder is meaningful: <em>approved</em>, <em>sent</em>, <em>partially_paid</em>,
+            and <em>overdue</em>. Draft invoices don't get the button (nothing to remind about) and paid invoices don't either
+            (nothing owed).
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/10-14-invoice-reminder-btn.png" alt="Send Reminder button on invoice row">
+            <div class="figure__caption"><strong>Figure 10.5a &mdash;</strong> The Invoices list with the new bell-icon <em>Send Reminder</em> action visible on every row where the customer still owes money. Status-aware: the button only renders for approved / sent / partially_paid / overdue; draft and paid invoices don't get it. PDF download and Pay still work as before.</div>
+          </figure>
+
+          <p>Click the bell icon on any open invoice.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/10-15-reminder-confirm.png" alt="Send Reminder confirmation dialog">
+            <div class="figure__caption"><strong>Figure 10.5b &mdash;</strong> The Send Payment Reminder confirm. Target invoice is named in the message and the primary button says <em>Send Reminder</em> (not a generic "OK"). Click it to send immediately; click Cancel to back out. The send lands in the backend <code>SendInvoiceReminder</code> business-layer method which: (1) fetches the invoice + customer, (2) refuses if the invoice is paid / cancelled / written-off or has zero balance, (3) calls the notification service to dispatch the email, (4) inserts a row into <code>invoice_reminders</code> with <code>reminder_type = 'manual'</code> and <code>sent_by = &lt;your user id&gt;</code>, (5) emits an audit log entry.</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">What if the customer has no email?</span>
+              <h4 class="callout__title">The send short-circuits and still records the attempt</h4>
+              <p>If the customer row has an empty <code>email</code> field, the business layer does NOT call the notification service (there's nothing to send to). Instead it inserts a <code>invoice_reminders</code> row with <code>success = false</code> and <code>error_message = 'Customer has no email address'</code>. This turns up in the reminder-history endpoint so the collections person knows the reminder never actually went out and can follow up via phone or set the customer's email and retry. Silent-failure is not an option &mdash; every reminder attempt leaves a trail.</p>
+            </div>
+          </div>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Reminder history API</h4>
+          <p>
+            Every send (automatic or manual, success or failure) writes one row to <code>invoice_reminders</code> tagged with the
+            invoice, the reminder_type, the user (NULL for automatic runs), the recipient email, the subject line, and a
+            success boolean + optional error message. You can query the full history for a specific invoice via
+            <code>GET /api/accounts/invoices/{id}/reminders</code>. For audit purposes the audit log (&sect;15.5) also captures
+            every send under entity type <code>customer_invoice</code> with action <code>reminder_sent</code>.
+          </p>
+        </div>
       </section>
 
       <section class="section" id="s-11">
@@ -3278,7 +3379,7 @@ body::before {
 
         <div class="subsection" id="s-13-2">
           <span class="subsection__num">13.2</span>
-          <h3 class="subsection__title">Profit &amp; Loss</h3>
+          <h3 class="subsection__title">Profit &amp; Loss (with year-over-year comparison)</h3>
           <div class="prose">
             <p>
               Click P&amp;L in the sidebar. The Profit &amp; Loss statement summarises your <em>income statement</em> &mdash; revenues earned during the
@@ -3289,11 +3390,55 @@ body::before {
             <img loading="lazy" decoding="async" src="./images/11-2-profit-loss.png" alt="Profit and loss statement">
             <div class="figure__caption"><strong>Figure 13.2 &mdash;</strong> The P&amp;L for FY 2026-27. Revenue ₹1,50,000 (the opening Sales balance + the Lumira invoice) minus Office Rent ₹12,000 = Net Profit ₹1,38,000.</div>
           </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2.5rem;color:var(--ink);">Comparative mode &mdash; "Compare to"</h4>
+          <p>
+            A raw P&amp;L tells you what this year looks like. A <em>comparative</em> P&amp;L tells you whether that's good or bad
+            relative to the period you care about. In the toolbar above the report there's a <strong>Compare to</strong> dropdown
+            with three options: <em>None</em> (the default, backward compatible with every prior use of the report),
+            <em>Previous Year</em> (same date range shifted back one year &mdash; this is the most common view for annual reviews),
+            and <em>Previous Period</em> (the immediately preceding window of the same length &mdash; useful for month-over-month
+            trend analysis).
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13-10-reports-compare-dropdown.png" alt="Compare to dropdown on reports toolbar">
+            <div class="figure__caption"><strong>Figure 13.2a &mdash;</strong> The reports toolbar with the new <em>Compare to</em> dropdown right next to the fiscal year dropdown. Default is <em>None</em> so the existing one-column view still works without any user action; switching to <em>Previous Year</em> or <em>Previous Period</em> is what unlocks the comparison columns.</div>
+          </figure>
+
+          <p>
+            Select <em>Previous Year</em> and click Generate. The report refreshes with <strong>six columns</strong> instead of the
+            usual two: Code, Account Name, Current, Comparison, Variance, Variance %. Every variance cell is colored
+            <em>direction-aware</em> &mdash; green when it's favorable (income up, expense down), red when unfavorable.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13-11-pl-compare-result.png" alt="P&L with previous-year comparison">
+            <div class="figure__caption"><strong>Figure 13.2b &mdash;</strong> P&amp;L for FY 2026-27 compared to FY 2025-26. Every row shows both windows side-by-side with signed variance and percentage. Where the prior-year balance was zero (new account or account that didn't exist last year), the Variance % column shows <strong>NEW</strong> in the same direction-aware color &mdash; green for a new income account (good news: new revenue stream), red for a new expense account (new cost to watch). The banner at the top states the exact comparison window: "Comparison: 01 Apr 2025 &ndash; 31 Mar 2026".</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">How variance direction is decided</span>
+              <h4 class="callout__title">Income/assets/equity favorable when up, expenses/liabilities favorable when down</h4>
+              <p>Variance is computed as <code>current &minus; comparison</code>. The sign alone isn't enough to know if it's good news &mdash; an income account with a positive variance is good (you earned more) but an expense account with a positive variance is bad (you spent more). The UI codes this at render time: income rows color-positive-green, expense rows color-negative-green. The PDF export follows the same rule, so printouts match screen.</p>
+            </div>
+          </div>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">"Previous Period" vs "Previous Year"</span>
+              <h4 class="callout__title">Same length, not same start date</h4>
+              <p><em>Previous Year</em> shifts both endpoints by exactly 1 year (so comparing Apr&ndash;Jun 2026 produces Apr&ndash;Jun 2025). <em>Previous Period</em> shifts by the length of the current window (so the same Apr&ndash;Jun 2026 selection compares against Jan&ndash;Mar 2026). The first is "how am I doing versus last year?"; the second is "how am I doing versus last quarter?". For a full-year P&amp;L both choices mean a prior full year; the difference only matters when you're looking at partial windows.</p>
+            </div>
+          </div>
         </div>
 
         <div class="subsection" id="s-13-3">
           <span class="subsection__num">13.3</span>
-          <h3 class="subsection__title">Balance Sheet</h3>
+          <h3 class="subsection__title">Balance Sheet (with point-in-time comparison)</h3>
           <div class="prose">
             <p>
               The Balance Sheet is a snapshot of <em>what you own</em> (assets), <em>what you owe</em> (liabilities), and <em>what's left over</em>
@@ -3305,6 +3450,27 @@ body::before {
             <img loading="lazy" decoding="async" src="./images/11-3-balance-sheet.png" alt="Balance sheet">
             <div class="figure__caption"><strong>Figure 13.3 &mdash;</strong> Balance Sheet for FY 2026-27. Assets (₹1,50,000) = Liabilities (₹12,000) + Equity (₹1,38,000). The system tells you so explicitly at the bottom.</div>
           </figure>
+
+          <p>
+            The Balance Sheet has the same <strong>Compare to</strong> dropdown as the P&amp;L (see &sect;13.2). The difference is
+            in what the comparison window means for a point-in-time report: <em>Previous Year</em> shifts the as-at date back
+            exactly 12 months (for the most common year-over-year view), and <em>Previous Period</em> shifts it back exactly
+            1 month (useful for catching month-over-month drift).
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/13-12-bs-compare-result.png" alt="Balance Sheet with comparison">
+            <div class="figure__caption"><strong>Figure 13.3a &mdash;</strong> Balance Sheet with <em>Previous Period</em> selected &mdash; "Comparison: 11 Mar 2026". Six columns: Code, Account Name, Current, Comparison, Variance, Variance %. The current-date assets are all new since last month (we set up the demo tenant in April), so every row shows <strong>NEW</strong> in the Variance % column. In a live tenant you'd see signed percentages (e.g. "+12.3%" for a growing receivable, "-4.7%" for a shrinking loan balance).</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Balance Sheet comparison shows drift, not activity</span>
+              <h4 class="callout__title">If nothing changed, every row is zero variance</h4>
+              <p>A P&amp;L comparison is about activity (what was earned/spent in each period). A Balance Sheet comparison is about position (what balances stood at each date). For example, if your Cash in Hand was &#8377;50,000 on Mar 11 and it's still &#8377;50,000 on Apr 11, the Variance is &#8377;0 and the row simply tells you "unchanged". This is what you want for catching silent drift: accounts that should be moving but aren't, or accounts that suddenly jumped when nothing was supposed to happen in them.</p>
+            </div>
+          </div>
         </div>
 
         <div class="subsection" id="s-13-4">
@@ -4528,6 +4694,70 @@ body::before {
                 from the payroll side &mdash; salary postings, statutory deductions, loan disbursements, and reimbursements all flow
                 back into the GL you just built.
               </p>
+            </div>
+          </div>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2.5rem;color:var(--ink);">Payment gateway setup &mdash; per-tenant Razorpay credentials</h4>
+          <p>
+            Ragenaizer's Accounts module can generate payment links, accept gateway webhooks, and auto-apply received payments
+            against open customer invoices &mdash; but only if your tenant has its own Razorpay credentials configured. These
+            credentials are stored <strong>per tenant</strong>, AES-256-GCM encrypted at rest in the same <code>tenant_api_keys</code>
+            table that holds your AI provider keys (OpenAI, Deepgram, etc.), and fetched at runtime by the Accounts service via
+            gRPC. Nothing is ever stored in <code>appsettings.json</code> and keys never cross the REST boundary on read.
+          </p>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Per-tenant, not per-instance</span>
+              <h4 class="callout__title">Your Razorpay account is yours alone</h4>
+              <p>Each tenant's payment-gateway credentials are isolated. Tenant A's Razorpay key cannot be used by tenant B &mdash; the lookup path is <code>(tenant_id, provider='razorpay', service_type='payment_gateway')</code> and there is no shared/global key. This is deliberate: every invoice payment your tenant receives goes directly to your tenant's Razorpay account, and every webhook signature is verified against your tenant's webhook secret. A single Ragenaizer deployment can serve dozens of tenants each connected to a different Razorpay account.</p>
+            </div>
+          </div>
+
+          <p>
+            To configure them, you need <em>Superadmin</em> access to the Auth service's admin dashboard (this is a separate page
+            from the Accounts dashboard because the keys are stored in the Auth database for security). Open
+            <code>/pages/auth/dashboard.html</code> and click the <strong>API Keys</strong> tab on the left.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/16I-10-auth-api-keys-list.png" alt="Auth admin API Keys list">
+            <div class="figure__caption"><strong>Figure 15.5g &mdash;</strong> The Auth admin API Keys tab. Each row represents a saved API key with provider / service type / key hint / status / created date. On a fresh tenant the list is empty; here the demo tenant already has Anthropic (LLM), Gladia (STT), and &mdash; after the setup below &mdash; Razorpay (payment_gateway). The key hint column only shows a short display fragment; raw keys are never returned by the REST API.</div>
+          </figure>
+
+          <p>
+            Click <em>Add API Key</em>. Select <strong>Razorpay (Payment Gateway)</strong> from the Provider dropdown. The form
+            changes: the generic single-value API Key input disappears, and three Razorpay-specific fields appear in its place:
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/16I-11-auth-razorpay-modal.png" alt="Add API Key modal with Razorpay selected">
+            <div class="figure__caption"><strong>Figure 15.5h &mdash;</strong> The Add API Key modal with Razorpay selected. Three fields: <em>Key ID</em> (the public <code>rzp_test_*</code> or <code>rzp_live_*</code> identifier from the Razorpay dashboard), <em>Key Secret</em> (the server-side secret that matches the Key ID &mdash; shown as a password field), and <em>Webhook Secret</em> (optional; only required if you want automatic payment confirmation via Razorpay's webhook callbacks). Service Type is auto-locked to <em>payment_gateway</em> because that's the only meaningful service type for a payment provider.</div>
+          </figure>
+
+          <ol>
+            <li>Log into <a href="https://dashboard.razorpay.com">dashboard.razorpay.com</a> and navigate to <em>Settings &rarr; API Keys</em>. Click <em>Generate Key</em> (or reveal your existing one). Copy the Key ID and Key Secret.</li>
+            <li>For webhooks: <em>Settings &rarr; Webhooks &rarr; Add New Webhook</em>. Set the URL to <code>https://accounts.yourdomain.com/api/accounts/bank/webhooks/razorpay/&lt;your-tenant-id&gt;</code>. Razorpay will give you a webhook secret &mdash; copy that too.</li>
+            <li>Paste all three values into the Ragenaizer Add API Key form (Key ID, Key Secret, Webhook Secret). Click Save.</li>
+            <li>The Auth service encrypts the three values as a JSON blob with AES-256-GCM and stores them in <code>tenant_api_keys</code>. Raw values are not logged, not returned by the REST GET endpoint, and cached on AccountsService's side for only 5 minutes before being re-fetched.</li>
+          </ol>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">How to verify it worked</span>
+              <h4 class="callout__title">GET /api/accounts/bank/razorpay/status</h4>
+              <p>After saving, hit <code>GET /api/accounts/bank/razorpay/status</code> with a normal Accounts JWT. If the round-trip worked (gRPC fetch &rarr; decrypt &rarr; parse JSON &rarr; return) the response is <code>{"configured": true, "message": "Razorpay credentials are configured for this tenant &mdash; payment links and webhooks are available."}</code>. If something's missing or malformed you get <code>{"configured": false, "message": "Razorpay credentials are not configured. Add them on the Auth admin dashboard &rarr; API Keys tab (provider: Razorpay)."}</code> &mdash; no stack trace, no partial state. The endpoint is deliberately cheap so the UI can use it for feature-gating (e.g. hiding the "Send payment link" button when the tenant hasn't set up a gateway yet).</p>
+            </div>
+          </div>
+
+          <div class="callout callout--warn">
+            <div class="callout__icon">!</div>
+            <div class="callout__body">
+              <span class="callout__label">Webhook URL is per-tenant</span>
+              <h4 class="callout__title">Use <code>/webhooks/razorpay/{tenant-id}</code>, not the legacy shared path</h4>
+              <p>The old version of this webhook handler lived at <code>/api/accounts/bank/webhooks/razorpay</code> with no tenant in the path &mdash; it read a single shared webhook secret from <code>appsettings</code>. That endpoint has been removed. The new endpoint requires the tenant id in the path so the service can deterministically look up <em>which</em> tenant's webhook secret to verify the signature against. Each tenant configures Razorpay with their own URL, and if two tenants share a deployment they each end up pointing at a different path. If you're migrating from the shared-key model, update the webhook URL in your Razorpay dashboard before rotating any keys.</p>
             </div>
           </div>
         </div>
