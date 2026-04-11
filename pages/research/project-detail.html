@@ -5167,11 +5167,11 @@
         }
 
         /* ===== OPEN-END CODING ===== */
-        #codeframeModal, #codeEditModal, #costBreakdownModal, #responseEditModal, #waveModal, #customTableModal, #rimWeightingModal, #rimWeightingResultModal {
+        #codeframeModal, #codeEditModal, #costBreakdownModal, #responseEditModal, #waveModal, #customTableModal, #rimWeightingModal, #rimWeightingResultModal, #computeVariableModal, #computeVariableResultModal {
             display: none !important;
             pointer-events: none;
         }
-        #codeframeModal.active, #codeEditModal.active, #costBreakdownModal.active, #responseEditModal.active, #waveModal.active, #customTableModal.active, #rimWeightingModal.active, #rimWeightingResultModal.active {
+        #codeframeModal.active, #codeEditModal.active, #costBreakdownModal.active, #responseEditModal.active, #waveModal.active, #customTableModal.active, #rimWeightingModal.active, #rimWeightingResultModal.active, #computeVariableModal.active, #computeVariableResultModal.active {
             display: flex !important;
             opacity: 1 !important;
             pointer-events: auto;
@@ -5181,14 +5181,16 @@
            nothing clips across the top edge. */
         #waveModal.active,
         #customTableModal.active,
-        #rimWeightingModal.active {
+        #rimWeightingModal.active,
+        #computeVariableModal.active {
             z-index: 1000001 !important;
             align-items: flex-start !important;
             padding-top: 72px !important;
             padding-bottom: 20px !important;
         }
-        /* Result modal stacks ABOVE the builder modal */
-        #rimWeightingResultModal.active {
+        /* Result modals stack ABOVE the builder modal */
+        #rimWeightingResultModal.active,
+        #computeVariableResultModal.active {
             z-index: 1000010 !important;
             align-items: center !important;
         }
@@ -5571,82 +5573,283 @@
             font-family: 'JetBrains Mono', ui-monospace, monospace;
         }
         #rimWeightingModal .rw-target-name-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.25); }
-        /* Result rendering — scoped to BOTH the builder modal (legacy) and
-           the new result popup. */
-        #rimWeightingModal .rw-result-wrap,
-        #rimWeightingResultModal .rw-result-wrap { padding: 4px 4px 12px; }
-        #rimWeightingModal .rw-result-summary,
-        #rimWeightingResultModal .rw-result-summary {
+        /* Result rendering — unscoped so the same .rw-result-* classes work
+           inside both #rimWeightingResultModal and #computeVariableResultModal. */
+        .rw-result-wrap { padding: 4px 4px 12px; }
+        .rw-result-summary {
             font-size: 12px; color: #94a3b8; margin-bottom: 14px;
             padding: 10px 12px;
             background: #0f172a; border: 1px solid #334155;
             border-radius: 8px;
             font-family: 'JetBrains Mono', ui-monospace, monospace;
+            word-break: break-word;
         }
-        #rimWeightingModal .rw-result-stats,
-        #rimWeightingResultModal .rw-result-stats {
+        .rw-result-stats {
             display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
         }
-        #rimWeightingModal .rw-stat-pill,
-        #rimWeightingResultModal .rw-stat-pill {
+        .rw-stat-pill {
             background: #1e293b; border: 1px solid #334155;
             border-radius: 999px; padding: 6px 14px; font-size: 12px; color: #94a3b8;
             display: inline-flex; align-items: center; gap: 4px;
             white-space: nowrap;
         }
-        #rimWeightingModal .rw-stat-pill strong,
-        #rimWeightingResultModal .rw-stat-pill strong { color: #f1f5f9; margin-left: 2px; font-weight: 700; }
-        #rimWeightingModal .rw-stat-good,
-        #rimWeightingResultModal .rw-stat-good { background: rgba(34,197,94,.15); color: #22c55e; border-color: rgba(34,197,94,.4); }
-        #rimWeightingModal .rw-stat-warn,
-        #rimWeightingResultModal .rw-stat-warn { background: rgba(245,158,11,.15); color: #f59e0b; border-color: rgba(245,158,11,.4); }
-        #rimWeightingModal .rw-result-table,
-        #rimWeightingResultModal .rw-result-table {
+        .rw-stat-pill strong { color: #f1f5f9; margin-left: 2px; font-weight: 700; }
+        .rw-stat-good { background: rgba(34,197,94,.15); color: #22c55e; border-color: rgba(34,197,94,.4); }
+        .rw-stat-warn { background: rgba(245,158,11,.15); color: #f59e0b; border-color: rgba(245,158,11,.4); }
+        .rw-result-table {
             width: 100%; border-collapse: collapse; font-size: 13px;
             margin-top: 4px;
             border: 1px solid #334155;
             border-radius: 8px;
             overflow: hidden;
         }
-        #rimWeightingModal .rw-result-table th,
-        #rimWeightingResultModal .rw-result-table th {
+        .rw-result-table th {
             text-align: left; font-weight: 600; color: #94a3b8;
             padding: 10px 14px; border-bottom: 1px solid #334155;
             background: #1e293b;
             font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
         }
-        #rimWeightingModal .rw-result-table th.rw-num,
-        #rimWeightingResultModal .rw-result-table th.rw-num { text-align: right; }
-        #rimWeightingModal .rw-result-table td,
-        #rimWeightingResultModal .rw-result-table td {
+        .rw-result-table th.rw-num { text-align: right; }
+        .rw-result-table td {
             padding: 9px 14px; border-bottom: 1px solid #1e293b;
             color: #f1f5f9;
+            vertical-align: top;
         }
-        #rimWeightingModal .rw-result-table tr:last-child td,
-        #rimWeightingResultModal .rw-result-table tr:last-child td { border-bottom: none; }
-        #rimWeightingModal .rw-result-table tr:nth-child(even) td,
-        #rimWeightingResultModal .rw-result-table tr:nth-child(even) td { background: rgba(15,23,42,.4); }
-        #rimWeightingModal .rw-result-table .rw-num,
-        #rimWeightingResultModal .rw-result-table .rw-num {
+        .rw-result-table tr:last-child td { border-bottom: none; }
+        .rw-result-table tr:nth-child(even) td { background: rgba(15,23,42,.4); }
+        .rw-result-table .rw-num {
             font-family: 'JetBrains Mono', ui-monospace, monospace; text-align: right;
+            white-space: nowrap;
         }
-        #rimWeightingModal .rw-row-ok td,
-        #rimWeightingResultModal .rw-row-ok td { color: #f1f5f9; }
-        #rimWeightingModal .rw-row-warn td,
-        #rimWeightingResultModal .rw-row-warn td { background: rgba(245,158,11,.08) !important; }
+        .rw-row-ok td { color: #f1f5f9; }
+        .rw-row-warn td { background: rgba(245,158,11,.08) !important; }
         /* Modal body padding for the result popup */
         #rimWeightingResultModal .gm-body { padding: 18px 22px !important; }
-        /* Error block styling for failure case */
-        #rimWeightingResultModal .rw-error-block,
-        #rimWeightingModal .rw-error-block {
+        #computeVariableResultModal .gm-body { padding: 18px 22px !important; }
+
+        /* ===== Compute Variable modal ===== */
+        #computeVariableModal #cvBranches {
+            display: flex !important;
+            flex-direction: column !important;
+            flex-wrap: nowrap !important;
+            gap: 14px !important;
+            padding: 14px !important;
+            overflow: visible !important;
+            background: transparent !important;
+            border: none !important;
+        }
+        /* Reuse the same scroll-chain overrides as RIM */
+        #computeVariableModal .gm-body { overflow: hidden !important; }
+        #computeVariableModal .ct-builder {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+        #computeVariableModal .ct-layout {
+            overflow: visible !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            flex: 1 1 auto !important;
+            min-height: 0;
+            display: flex; flex-direction: column;
+        }
+        #computeVariableModal .ct-slots {
+            overflow: visible !important;
+            flex: 1 1 auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            min-height: 0;
+        }
+        #computeVariableModal .ct-slot {
+            overflow: visible !important;
+            background: transparent !important;
+            border: none !important;
+            flex: 1 1 auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            min-height: 0;
+            max-height: none !important;
+        }
+        #computeVariableModal .ct-slot-header {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 14px 6px !important;
+            flex-shrink: 0;
+        }
+
+        /* Branch card */
+        #computeVariableModal .cv-branch-card {
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 10px;
+            padding: 12px 14px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .18);
+        }
+        #computeVariableModal .cv-else-card {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, .04);
+        }
+        #computeVariableModal .cv-branch-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        #computeVariableModal .cv-branch-label {
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            font-size: 11px; font-weight: 700;
+            color: #3b82f6;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            background: rgba(59, 130, 246, .12);
+            border: 1px solid rgba(59, 130, 246, .35);
+            border-radius: 4px;
+            padding: 3px 8px;
+        }
+        #computeVariableModal .cv-else-label {
+            color: #f59e0b;
+            background: rgba(245, 158, 11, .12);
+            border-color: rgba(245, 158, 11, .4);
+        }
+        #computeVariableModal .cv-branch-remove {
+            background: #0f172a; color: #94a3b8;
+            border: 1px solid #334155; border-radius: 6px;
+            width: 24px; height: 24px; line-height: 1; font-size: 14px; cursor: pointer;
+        }
+        #computeVariableModal .cv-branch-remove:hover {
+            color: #ef4444; border-color: #ef4444;
+        }
+        #computeVariableModal .cv-branch-row {
+            margin-bottom: 8px;
+        }
+        #computeVariableModal .cv-condition-input {
+            width: 100%;
+            padding: 9px 12px;
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: #f1f5f9;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+        }
+        #computeVariableModal .cv-condition-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, .25);
+        }
+        #computeVariableModal .cv-condition-input::placeholder {
+            color: #475569; font-style: italic;
+        }
+        #computeVariableModal .cv-condition-input.cv-drag-over {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, .12);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, .35);
+        }
+        #computeVariableModal .cv-else-hint {
+            color: #94a3b8; font-size: 12px; font-style: italic;
+            display: block; padding: 4px 0;
+        }
+        #computeVariableModal .cv-branch-then {
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        }
+        #computeVariableModal .cv-then-label {
+            color: #94a3b8; font-size: 11px;
+            text-transform: uppercase; letter-spacing: .5px;
+            font-weight: 600;
+        }
+        #computeVariableModal .cv-code-input {
+            width: 70px;
+            padding: 6px 10px;
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: #f1f5f9;
+            font-size: 12px;
+            text-align: center;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+        }
+        #computeVariableModal .cv-code-input::-webkit-outer-spin-button,
+        #computeVariableModal .cv-code-input::-webkit-inner-spin-button {
+            -webkit-appearance: none; margin: 0;
+        }
+        #computeVariableModal .cv-code-input { -moz-appearance: textfield; }
+        #computeVariableModal .cv-code-input:focus,
+        #computeVariableModal .cv-label-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, .25);
+        }
+        #computeVariableModal .cv-label-input {
+            flex: 1; min-width: 100px; max-width: 280px;
+            padding: 6px 10px;
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: #f1f5f9;
+            font-size: 12px;
+        }
+        #computeVariableModal .cv-add-row {
+            display: flex; gap: 8px; padding: 4px 0;
+        }
+        #computeVariableModal .cv-add-btn {
+            background: #1e293b;
+            color: #94a3b8;
+            border: 1px dashed #475569;
+            border-radius: 8px;
+            padding: 9px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+        }
+        #computeVariableModal .cv-add-btn:hover {
+            background: rgba(59, 130, 246, .12);
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        #computeVariableModal .cv-add-btn-secondary:hover {
+            background: rgba(245, 158, 11, .12);
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+        /* Footer for compute modal: name + label inputs */
+        #computeVariableModal .cv-footer-meta {
+            display: flex; align-items: center; gap: 12px; flex: 1; flex-wrap: wrap;
+        }
+        #computeVariableModal .cv-footer-field {
+            display: flex; align-items: center; gap: 6px;
+        }
+        #computeVariableModal .cv-footer-field-label {
+            font-size: 12px; color: #94a3b8; white-space: nowrap;
+        }
+        #computeVariableModal .cv-footer-field input {
+            padding: 8px 12px;
+            background: #0f172a; border: 1px solid #475569;
+            border-radius: 8px; color: #f1f5f9; font-size: 13px;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+        }
+        #computeVariableModal .cv-footer-field input:focus {
+            outline: none; border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, .25);
+        }
+        #computeVariableModal .cv-footer-name { width: 220px; }
+        #computeVariableModal .cv-footer-label-input { width: 260px; }
+        /* Result table — branch column should wrap long expressions */
+        #computeVariableResultModal .cv-result-branch {
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            font-size: 11px;
+            color: #cbd5e1;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        /* Error block styling for failure case — unscoped, used by both
+           rim and compute result modals. */
+        .rw-error-block {
             display: flex; gap: 14px; align-items: flex-start;
             padding: 18px 20px;
             background: rgba(239, 68, 68, .08);
             border: 1px solid rgba(239, 68, 68, .35);
             border-radius: 10px;
         }
-        #rimWeightingResultModal .rw-error-icon,
-        #rimWeightingModal .rw-error-icon {
+        .rw-error-icon {
             flex-shrink: 0;
             width: 36px; height: 36px;
             border-radius: 50%;
@@ -5655,15 +5858,12 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 20px; font-weight: 700;
         }
-        #rimWeightingResultModal .rw-error-content,
-        #rimWeightingModal .rw-error-content { flex: 1; min-width: 0; }
-        #rimWeightingResultModal .rw-error-title,
-        #rimWeightingModal .rw-error-title {
+        .rw-error-content { flex: 1; min-width: 0; }
+        .rw-error-title {
             font-size: 14px; font-weight: 700; color: #ef4444;
             margin-bottom: 6px;
         }
-        #rimWeightingResultModal .rw-error-message,
-        #rimWeightingModal .rw-error-message {
+        .rw-error-message {
             font-size: 13px; color: #f1f5f9;
             font-family: 'JetBrains Mono', ui-monospace, monospace;
             background: rgba(15, 23, 42, .6);
@@ -5673,8 +5873,7 @@
             word-break: break-word;
             margin-bottom: 8px;
         }
-        #rimWeightingResultModal .rw-error-hint,
-        #rimWeightingModal .rw-error-hint {
+        .rw-error-hint {
             font-size: 12px; color: #94a3b8;
             font-style: italic;
         }
@@ -6144,6 +6343,16 @@
                                 <line x1="18.4" y1="5.6" x2="5.6" y2="18.4"/>
                             </svg>
                             RIM Weighting
+                        </button>
+                        <div class="actions-section-label">Transform</div>
+                        <button class="actions-item" onclick="openComputeVariableModal(); closeAnalyzeDropdown();">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 6h16"/>
+                                <path d="M4 12h10"/>
+                                <path d="M4 18h7"/>
+                                <path d="M17 14l4 4-4 4"/>
+                            </svg>
+                            Compute Variable
                         </button>
                     </div>
                 </div>
@@ -7222,6 +7431,7 @@
         document.write('<script src="../../js/research/custom-table/expand.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/research/custom-table/ui.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/research/weighting/ui.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/research/compute/ui.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -7742,6 +7952,125 @@
                     <button class="gm-btn gm-btn-secondary" onclick="closeRimWeightingModal()">Cancel</button>
                     <button class="gm-btn gm-btn-primary" id="rwRunBtn" onclick="rwRun()" disabled>Generate Weights</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =======================================================
+         COMPUTE VARIABLE MODAL
+         Opens from Analyze → Transform → Compute Variable.
+         Creates a new integer column from IF / ELSE IF / ELSE
+         branches via the backend compute_variable function.
+         ======================================================= -->
+    <div class="gm-overlay" id="computeVariableModal">
+        <div class="gm-modal gm-lg" style="max-width: 1280px; width: 95vw; max-height: 92vh;">
+            <div class="gm-header" style="padding-bottom: 12px;">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 6h16"/>
+                            <path d="M4 12h10"/>
+                            <path d="M4 18h7"/>
+                            <path d="M17 14l4 4-4 4"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Compute Variable</h3>
+                        <p class="gm-subtitle" id="cvActiveFile">No file selected</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeComputeVariableModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body" style="padding: 0; overflow: hidden; flex: 1; min-height: 0;">
+                <div class="ct-workbench">
+                    <aside class="ct-palette">
+                        <div class="ct-palette-header">
+                            <div class="ct-palette-header-row">
+                                <div class="ct-palette-title">Variables</div>
+                            </div>
+                            <input type="text" class="ct-search" id="cvSearch" placeholder="Search variables...">
+                            <div style="font-size: 10px; color: #64748b; margin-top: 6px; font-style: italic;">
+                                Click or drag a variable into a condition.
+                            </div>
+                        </div>
+                        <div class="ct-palette-body" id="cvPaletteList">
+                            <div class="ct-empty-palette">Loading variables…</div>
+                        </div>
+                    </aside>
+                    <section class="ct-builder">
+                        <div class="ct-layout" id="cvLayoutPanel">
+                            <div class="ct-layout-header">
+                                <span class="ct-layout-title">Branches <span class="ct-layout-subtitle">IF / ELSE IF / ELSE</span></span>
+                            </div>
+                            <div class="ct-slots" style="grid-template-columns: 1fr;">
+                                <div class="ct-slot" data-slot="branches">
+                                    <div class="ct-slot-body" id="cvBranches" style="min-height: 200px;">
+                                        <!-- branches rendered here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            <div class="gm-footer ct-footer">
+                <div class="cv-footer-meta">
+                    <div class="cv-footer-field">
+                        <span class="cv-footer-field-label">New variable:</span>
+                        <input type="text" id="cvTargetName" class="cv-footer-name"
+                               placeholder="CUSTOMER_SEG" autocomplete="off" spellcheck="false">
+                    </div>
+                    <div class="cv-footer-field">
+                        <span class="cv-footer-field-label">Label:</span>
+                        <input type="text" id="cvTargetLabel" class="cv-footer-label-input"
+                               placeholder="Customer segmentation (optional)" autocomplete="off">
+                    </div>
+                </div>
+                <div class="ct-footer-actions">
+                    <button class="gm-btn gm-btn-secondary" onclick="cvReset()">Reset</button>
+                    <button class="gm-btn gm-btn-secondary" onclick="closeComputeVariableModal()">Cancel</button>
+                    <button class="gm-btn gm-btn-primary" id="cvRunBtn" onclick="cvRun()" disabled>Compute Variable</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =======================================================
+         Compute Variable RESULT modal — branch counts after run
+         ======================================================= -->
+    <div class="gm-overlay" id="computeVariableResultModal">
+        <div class="gm-modal" style="max-width: 760px; width: 92vw; max-height: 88vh;">
+            <div class="gm-header" style="padding-bottom: 12px;">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 11l3 3L22 4"/>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Variable Computed</h3>
+                        <p class="gm-subtitle" id="cvResultSubtitle">Branch counts</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeComputeVariableResultModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body" id="cvResultBody" style="overflow-y: auto;">
+                <div class="ct-preview-empty">No result yet.</div>
+            </div>
+            <div class="gm-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+                <button class="gm-btn gm-btn-secondary" onclick="closeComputeVariableResultModal()">Close</button>
+                <button class="gm-btn gm-btn-primary" onclick="closeComputeVariableResultModal(); closeComputeVariableModal();">Done</button>
             </div>
         </div>
     </div>
