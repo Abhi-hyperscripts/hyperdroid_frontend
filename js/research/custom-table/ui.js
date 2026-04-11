@@ -643,11 +643,12 @@
         const weightVar = state.weight?.[0]?.vars?.[0]?.name;
         if (weightVar) baseRequest.input_params.weight = { variable: weightVar };
 
-        // Fan out one parallel request per row group that has stats enabled.
-        // Each variant gets ONLY that group's rows plus its own statistics[]
-        // so the backend computes the stats against just that group's
-        // distribution — not a union across every row variable in the table.
+        // Assemble the atomic unit list: the base table plus one variant per
+        // row group that has stats enabled. The backend runs each in sequence
+        // via /execute-batch so the whole table renders from a single round
+        // trip rather than N parallel HTTP calls.
         const statVariants = buildStatVariantRequests(baseRequest);
+        const batchVariants = [baseRequest.input_params, ...statVariants.map(v => v.request.input_params)];
 
         const preview = document.getElementById('ctPreview');
         preview.innerHTML = `
@@ -657,20 +658,31 @@
             </div>`;
 
         try {
-            const url = `${CONFIG.researchApiBaseUrl}/projects/${projectId}/functions/execute`;
-            const headers = {
-                'Authorization': `Bearer ${getAuthToken()}`,
-                'Content-Type': 'application/json',
-            };
-            const baseP = fetch(url, { method: 'POST', headers, body: JSON.stringify(baseRequest) })
-                .then(r => r.json().catch(() => ({})).then(b => ({ ok: r.ok, body: b, res: r })));
-            const variantPs = statVariants.map(v =>
-                fetch(url, { method: 'POST', headers, body: JSON.stringify(v.request) })
-                    .then(r => r.json().catch(() => ({})).then(b => ({ ok: r.ok, body: b, groupId: v.groupId })))
-            );
-            const [base, ...variants] = await Promise.all([baseP, ...variantPs]);
-            if (!base.ok) throw new Error(base.body?.error || base.body?.message || `Request failed (${base.res.status})`);
-            renderResult(mergeVariantStatsIntoBase(base.body, variants.filter(v => v.ok)));
+            const url = `${CONFIG.researchApiBaseUrl}/projects/${projectId}/functions/execute-batch`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${getAuthToken()}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    function_name: 'custom_table',
+                    variants: batchVariants,
+                }),
+            });
+            const body = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(body.error || body.message || `Request failed (${res.status})`);
+            const results = body.results || [];
+            if (results.length === 0 || results[0].success === false) {
+                throw new Error(results[0]?.error || 'Base table query failed');
+            }
+            const baseResult = results[0];
+            const variantResults = statVariants.map((v, i) => ({
+                ok: results[i + 1]?.success !== false,
+                body: results[i + 1],
+                groupId: v.groupId,
+            }));
+            renderResult(mergeVariantStatsIntoBase(baseResult, variantResults.filter(v => v.ok)));
         } catch (err) {
             console.error('[customtable run]', err);
             preview.innerHTML = `<div class="ct-preview-error">${escapeHtml(err.message || 'Request failed')}</div>`;
