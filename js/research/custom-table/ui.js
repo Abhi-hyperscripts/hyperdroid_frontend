@@ -809,7 +809,7 @@
                     ${escapeHtml(result.summary || '')}
                     <span class="ct-result-size">${rows.length} rows × ${cols.length - 1} cols (${cellCount.toLocaleString()} cells)</span>
                 </div>
-                <button class="ct-btn ct-btn-ghost ct-btn-sm" onclick="ctExportCsv()">
+                <button class="gm-btn gm-btn-secondary ct-export-btn" onclick="ctExportCsv()">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="7 10 12 15 17 10"/>

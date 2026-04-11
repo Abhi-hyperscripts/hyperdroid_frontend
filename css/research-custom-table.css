@@ -888,6 +888,17 @@
     gap: 6px;
 }
 
+/* Theme-aware Export CSV button — uses gm-btn-secondary base + tighter
+   padding so it fits the result toolbar next to the summary text. */
+.ct-export-btn.gm-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
 /* ---- result scroll container ----
    Primary scroll area for the grid. Both axes scroll here; the parent
    .ct-preview-body is overflow:hidden so clipping happens at this boundary.
