@@ -1330,6 +1330,7 @@ body::before {
         </div>
         <ul class="toc__sub">
           <li><a class="toc__link" href="#s-15-1">15.1 Banking</a></li>
+          <li><a class="toc__link" href="#s-15-1-6">15.1.6 Statement import (Excel)</a></li>
           <li><a class="toc__link" href="#s-15-2">15.2 Expense management</a></li>
           <li><a class="toc__link" href="#s-15-3">15.3 Fixed assets</a></li>
           <li><a class="toc__link" href="#s-15-4">15.4 Subscription billing</a></li>
@@ -1340,11 +1341,39 @@ body::before {
       <li class="toc__group">
         <div class="toc__head" data-toggle>
           <span class="toc__num">16</span>
+          <span class="toc__title">Recurring transactions</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-16-1">16.1 What they are</a></li>
+          <li><a class="toc__link" href="#s-16-2">16.2 Creating a template</a></li>
+          <li><a class="toc__link" href="#s-16-3">16.3 Run Due Now &amp; the scheduler</a></li>
+          <li><a class="toc__link" href="#s-16-4">16.4 Pause, resume, cancel</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">17</span>
+          <span class="toc__title">Budgets &amp; variance</span>
+          <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-with="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <ul class="toc__sub">
+          <li><a class="toc__link" href="#s-17-1">17.1 Why budget</a></li>
+          <li><a class="toc__link" href="#s-17-2">17.2 Create a budget</a></li>
+          <li><a class="toc__link" href="#s-17-3">17.3 Budget vs. actual</a></li>
+          <li><a class="toc__link" href="#s-17-4">17.4 Copy from prior year</a></li>
+        </ul>
+      </li>
+
+      <li class="toc__group">
+        <div class="toc__head" data-toggle>
+          <span class="toc__num">18</span>
           <span class="toc__title">Glossary</span>
           <svg class="toc__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         <ul class="toc__sub">
-          <li><a class="toc__link" href="#s-16">Every term, defined</a></li>
+          <li><a class="toc__link" href="#s-18">Every term, defined</a></li>
         </ul>
       </li>
     </ul>
@@ -3366,6 +3395,89 @@ body::before {
             <div class="figure__caption"><strong>Figure 15.1.31 &mdash;</strong> Reconciliation completed and locked. The workspace closes and the form returns to the Start state &mdash; ready for next month.</div>
           </figure>
 
+          <!-- ================= 15.1.6 STATEMENT IMPORT ================ -->
+          <h4 id="s-15-1-6" style="font-family:var(--font-display);font-size:1.5rem;margin-top:2.5rem;color:var(--ink);">Tab 5 &mdash; Import Statement (Excel)</h4>
+          <p>
+            Typing in a month's worth of bank transactions one at a time is a job for an intern &mdash; and even then,
+            a boring one. When you have 40+ transactions to enter for the month, the Import Statement tab is the right
+            answer. You download a standard Excel template, paste your real bank statement's debits/credits into it,
+            upload the filled file, preview every row, and post them all in one click.
+          </p>
+
+          <div class="callout">
+            <div class="callout__icon">?</div>
+            <div class="callout__body">
+              <h4 class="callout__title">Why a template instead of direct bank format?</h4>
+              <p>HDFC, ICICI, SBI, Axis, Kotak &mdash; every bank exports CSV in its own shape. Date columns are named differently, debit/credit come in one column in some formats and two in others, running balance may or may not be included, and the exact header row changes across years. Maintaining a parser for every bank in every country is a tar pit. Instead, Ragenaizer defines one clean 6-column template (Date, Description, Debit, Credit, Balance, Reference), and asks <em>you</em> to paste your bank's data into the right columns. Two minutes of copy-paste, zero maintenance burden, works for literally any bank in any country.</p>
+            </div>
+          </div>
+
+          <p>
+            Click the <strong>Import Statement</strong> item in the Banking sidebar. On a fresh tenant the page has three things:
+            a <em>Bank Account</em> dropdown (which physical bank this statement belongs to), a <em>Default Counter Account</em>
+            dropdown (the contra side for every imported line &mdash; usually a suspense account you'll reclassify later),
+            and a drag-and-drop zone for the Excel file.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-32-statement-import-empty.png" alt="Statement import empty state">
+            <div class="figure__caption"><strong>Figure 15.1.32 &mdash;</strong> The empty Import Statement tab. Before uploading anything, click <em>Download Template</em> once (just above the drop zone) to get the reference Excel with three sample rows and an instruction footer. Open it, wipe the sample rows, paste your bank's data into the six columns, save, and come back to upload.</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Counter account purpose</span>
+              <h4 class="callout__title">Pick an account you'll reclassify later</h4>
+              <p>Every imported line needs a double-entry pair: one side is your bank account (obvious), the other side is the contra. You probably don't know the <em>right</em> GL account for each line at import time &mdash; that's what reconciliation is for. So pick a placeholder like <em>1180 Other Current Assets</em> or create a dedicated <em>1199 Bank Import Suspense</em> account for this purpose. After import, you can walk the list and edit each transaction's counter account to the real expense/revenue category. The import just gets the numbers into the books; classification is a separate pass.</p>
+            </div>
+          </div>
+
+          <p>Select the bank and counter account. We'll import into HDFC Current and use Cash in Hand as the counter for this demo.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-33-statement-import-bank-selected.png" alt="Statement import bank selected">
+            <div class="figure__caption"><strong>Figure 15.1.33 &mdash;</strong> Both dropdowns filled. Both are SearchableDropdown instances &mdash; type to filter if you have 50+ GL accounts in your chart. The drop zone becomes active once both are selected.</div>
+          </figure>
+
+          <p>
+            Click the drop zone (or drag your filled Excel onto it). The file is read client-side with SheetJS &mdash; no upload yet.
+            The parser figures out which row is the header by looking for "Date" in the first 5 rows, finds the six columns by their
+            names (not position, so extra columns like Reference are fine), and tries to parse every data row. Three validations run
+            on each row: (1) date parses, (2) description is non-empty, (3) exactly one of Debit or Credit has a value. If any row
+            fails, it's flagged in the preview with a red <em>Error</em> badge and will be skipped on import.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-34-statement-import-preview.png" alt="Statement import preview">
+            <div class="figure__caption"><strong>Figure 15.1.34 &mdash;</strong> Preview of 6 parsed transactions from a demo April 2026 HDFC statement &mdash; three credits (customer payments via NEFT/RTGS) and three debits (coffee, electricity bill, salary). Every row has a green <em>OK</em> badge. Below the preview count, a summary says <em>6 valid &middot; 0 errors</em>. At the top right, Cancel and <em>Confirm Import</em> buttons. Nothing is posted to the GL yet &mdash; the file parse is entirely in the browser.</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Duplicate detection is automatic</span>
+              <h4 class="callout__title">Re-importing a statement is safe</h4>
+              <p>When you click <em>Confirm Import</em>, the backend queries existing bank transactions for this bank account within the min/max date range of your upload, builds a set of composite keys <code>(date|amount|description)</code>, and skips any upload row whose key already exists. So if you accidentally upload the same file twice, or if the file for April overlaps the last three days of March that you've already imported, nothing is double-posted. The result summary tells you exactly how many were imported and how many were skipped as duplicates.</p>
+            </div>
+          </div>
+
+          <p>Click <em>Confirm Import</em>. The backend starts an atomic database transaction, loops through every valid row, creates a GL entry per row (Dr Bank / Cr Counter for deposits, Dr Counter / Cr Bank for withdrawals), creates a bank transaction row for each, and updates the bank account balance by the net delta. Either every row succeeds or the entire batch rolls back &mdash; you never end up with half a statement imported.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/12H-35-statement-import-results.png" alt="Statement import results">
+            <div class="figure__caption"><strong>Figure 15.1.35 &mdash;</strong> The Import Complete summary with <em>Total Rows &middot; Imported &middot; Duplicates Skipped &middot; Errors Skipped</em>. In this run all 6 were fresh and imported. If any errors existed, a table beneath the summary would list them with their 1-indexed row numbers and the specific validation message. Click <em>Import Another</em> to reset the form for the next statement &mdash; or switch to the <em>Transactions</em> tab (Banking sidebar) to see the six new rows sitting in the HDFC register, ready to be reconciled next month.</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">After import, still two things to do</span>
+              <h4 class="callout__title">Reclassify counter accounts, then reconcile</h4>
+              <p>The import is step 1 of a three-step workflow. Step 2: open each imported transaction and change its counter account from the suspense placeholder to the real category (this coffee was Travel &amp; Conveyance, this salary was Salary &amp; Wages, this customer payment offsets an invoice). Step 3: at month-end, run reconciliation (Tab 4) against the bank's closing balance to prove you caught every transaction. If the reconciliation balances, you're done; if it doesn't, you missed something &mdash; go back to step 2 and find it.</p>
+            </div>
+          </div>
+
           <div class="callout callout--warn">
             <div class="callout__icon">!</div>
             <div class="callout__body">
@@ -3980,11 +4092,302 @@ body::before {
         </div>
       </section>
 
-      <!-- ========== SECTION 16: GLOSSARY ========== -->
+      <!-- ========== SECTION 16: RECURRING TRANSACTIONS ========== -->
       <section class="section" id="s-16">
         <div class="section__head">
           <span class="section__num">16</span>
           <span class="section__eyebrow">Section sixteen</span>
+          <h2 class="section__title">Recurring <em>transactions</em>.</h2>
+          <p class="section__sub">The transactions you create every month by hand &mdash; rent, retainer invoices, SaaS subscription bills, month-end accruals &mdash; are exactly the kind of thing a computer should be creating for you. This section teaches you how to turn a one-time invoice, bill, or journal entry into a schedule that auto-generates real, posted transactions on the date you choose, at the frequency you choose, until the end date you choose.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="callout">
+          <div class="callout__icon">?</div>
+          <div class="callout__body">
+            <h4 class="callout__title">Recurring transaction</h4>
+            <p>A saved <em>template</em> plus a <em>schedule</em>. The template holds everything the eventual invoice / bill / journal needs &mdash; the customer or vendor, the line description, the amount, the GL account. The schedule says "every month, starting on this date, until this date". At 3 AM every day a background job finds every schedule whose <em>next run date</em> is today or earlier, creates the real transaction from the template, and advances the next-run date forward one period. Nothing you haven't previewed ever gets posted to the books.</p>
+          </div>
+        </div>
+
+        <!-- ==================== 16.1 WHAT ==================== -->
+        <div class="subsection" id="s-16-1">
+          <span class="subsection__num">16.1</span>
+          <h3 class="subsection__title">What a recurring transaction is (and what it isn't)</h3>
+          <div class="prose">
+            <p>Three common SMB scenarios:</p>
+            <ul>
+              <li><strong>Monthly rent.</strong> You owe your landlord &#8377;85,000 on the 1st of every month. You don't want to copy-paste last month's vendor bill and change the date every time &mdash; you want the bill to appear on its own, already in Draft status, ready for you to approve.</li>
+              <li><strong>SaaS subscription invoice.</strong> ABC Corp pays you a flat &#8377;49,999/month for platform access. On the 1st of every month you want an invoice raised to them automatically, sent to their AP team, and waiting for payment.</li>
+              <li><strong>Month-end accrual journal.</strong> You book a &#8377;25,000 prepaid-insurance amortisation on the last day of every month. Same entry, same amount, every month.</li>
+            </ul>
+            <p>A recurring transaction handles all three. It is <strong>not</strong> the same as a payment plan or an EMI schedule &mdash; those are for one big liability split over N months with different amounts. This is for <em>the same thing, on a cadence</em>.</p>
+            <p>Three types are supported: <strong>Customer Invoice</strong>, <strong>Vendor Bill</strong>, and <strong>Journal Entry</strong>. Five frequencies: <strong>daily, weekly, monthly, quarterly, yearly</strong>.</p>
+          </div>
+
+          <p>Open <em>Accounts &rarr; Recurring Transactions</em> from the dashboard Quick Actions grid, or go to <code>/pages/accounts/recurring.html</code> directly. On a fresh tenant you'll see the stats row (Active / Paused / Total Generated) and an empty list. Our tenant already has one running invoice schedule from our earlier SaaS example.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/17-1-recurring-baseline.png" alt="Recurring Transactions baseline">
+            <div class="figure__caption"><strong>Figure 16.1 &mdash;</strong> The Recurring Transactions list with one active schedule. Stats show <em>1 Active &middot; 0 Paused &middot; 1 Total Generated</em> &mdash; the "Total Generated" counter is the number of real transactions this schedule has created so far. The <em>Next Run</em> column shows <em>01 May 2026</em> because we created the row on Apr 10 and the last run already executed for April.</div>
+          </figure>
+        </div>
+
+        <!-- ==================== 16.2 CREATING ==================== -->
+        <div class="subsection" id="s-16-2">
+          <span class="subsection__num">16.2</span>
+          <h3 class="subsection__title">Creating a template &mdash; Monthly Office Rent</h3>
+          <div class="prose">
+            <p>We'll add a second schedule for our monthly office rent. Click <em>+ New Recurring</em>.</p>
+          </div>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/17-2-recurring-modal-empty.png" alt="New Recurring Transaction modal empty">
+            <div class="figure__caption"><strong>Figure 16.2 &mdash;</strong> The empty New Recurring Transaction modal. Every field is a searchable dropdown or a native input: <em>Name</em>, <em>Transaction Type</em> (Invoice / Bill / Journal), <em>Frequency</em> (daily / weekly / monthly / quarterly / yearly), <em>Start Date</em>, <em>End Date</em> (optional), the contextual party dropdown (<em>Customer</em> for invoice, <em>Vendor</em> for bill, hidden for journal), <em>Description</em>, <em>Amount</em>, and <em>GL Account</em>.</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Why the party dropdown flips</span>
+              <h4 class="callout__title">Invoices need a customer, bills need a vendor, journals need neither</h4>
+              <p>When you change the <em>Transaction Type</em> dropdown, the form shows the right party field and hides the other. A customer-invoice recurring template with no customer would be meaningless, as would a vendor-bill template with no vendor. A journal-entry recurring template (for things like prepaid amortisations) doesn't reference any external party &mdash; only GL accounts &mdash; so both party dropdowns stay hidden.</p>
+            </div>
+          </div>
+
+          <p>Fill the form as follows:</p>
+          <ul>
+            <li><strong>Name:</strong> <em>Monthly Office Rent</em> &mdash; this is the label that shows in the list; make it human.</li>
+            <li><strong>Transaction Type:</strong> <em>Vendor Bill</em> &mdash; rent is a bill from the landlord, not an invoice you raise.</li>
+            <li><strong>Frequency:</strong> <em>Monthly</em>.</li>
+            <li><strong>Start Date:</strong> <em>01 May 2026</em> &mdash; the first run will happen on this date.</li>
+            <li><strong>End Date:</strong> <em>30 Apr 2027</em> &mdash; the lease runs one year; when the schedule's next run would exceed this date the schedule auto-marks itself <em>completed</em> and stops. Leave blank for "run forever".</li>
+            <li><strong>Vendor:</strong> the landlord (we used CloudKite Hosting as a placeholder in the demo tenant).</li>
+            <li><strong>Description:</strong> <em>Office premises rent &mdash; Whitefield, Bangalore</em>.</li>
+            <li><strong>Amount:</strong> <em>85000</em>.</li>
+            <li><strong>GL Account:</strong> <em>5310 &mdash; Rent</em>. This is the expense account that will be debited on every generated bill.</li>
+          </ul>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/17-3-recurring-modal-filled.png" alt="New Recurring Transaction modal filled">
+            <div class="figure__caption"><strong>Figure 16.3 &mdash;</strong> The filled template. Every schedule has an all-or-nothing validator: if any required field is empty, clicking <em>Create</em> shows a toast "Please fill all required fields" and no request is sent. The backend validates further &mdash; end-date must be after start-date, unit-price must be positive, the lines array can't be empty &mdash; so bad data never makes it into the database.</div>
+          </figure>
+
+          <p>Click <em>Create</em>. Toast shows <em>Recurring transaction created</em>, the modal closes, and the new row appears at the top of the table.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/17-4-recurring-list-two-rows.png" alt="Recurring list with two rows">
+            <div class="figure__caption"><strong>Figure 16.4 &mdash;</strong> Two schedules now running. Stats update to <em>2 Active</em>. The new Monthly Office Rent row shows <em>Generated = 0</em> (nothing's been created yet because the first run date is in the future) and <em>Next Run = 01 May 2026</em>.</div>
+          </figure>
+        </div>
+
+        <!-- ==================== 16.3 PROCESSING ==================== -->
+        <div class="subsection" id="s-16-3">
+          <span class="subsection__num">16.3</span>
+          <h3 class="subsection__title">How and when schedules run &mdash; the 3 AM job and Run Due Now</h3>
+          <div class="prose">
+            <p>Recurring schedules run in two places:</p>
+            <ol>
+              <li><strong>Automatic &mdash; 3 AM every day.</strong> A Hangfire recurring job called <code>recurring-transactions</code> runs at 03:00 server time. It asks the database for every schedule where <code>status = 'active' AND next_run_date &lt;= CURRENT_DATE</code>, processes each one, creates the corresponding invoice / bill / journal entry in <em>Draft</em> status (so you can still review before posting), advances the <code>next_run_date</code> forward one period (+1 day / +7 days / +1 month / +3 months / +12 months), and increments the <code>total_generated</code> counter. If <code>next_run_date</code> now exceeds <code>end_date</code>, the status flips to <em>completed</em> and the schedule stops.</li>
+              <li><strong>Manual &mdash; the <em>Run Due Now</em> button.</strong> Useful when you've just created a schedule with a past start date and want to catch up immediately, or when you're troubleshooting and want to see the behaviour without waiting for 3 AM. The button processes only schedules whose <code>next_run_date &lt;= today</code> &mdash; it does not force future schedules to run early.</li>
+            </ol>
+          </div>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/17-5-recurring-process-confirm.png" alt="Run Due Now confirmation dialog">
+            <div class="figure__caption"><strong>Figure 16.5 &mdash;</strong> Clicking <em>Run Due Now</em> opens a confirmation. The message is deliberately specific: <em>"This will process all recurring transactions that are due. Continue?"</em> &mdash; not a generic "Are you sure?". Click <em>Process</em>.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/17-6-recurring-after-process.png" alt="Recurring list after processing">
+            <div class="figure__caption"><strong>Figure 16.6 &mdash;</strong> After processing: the toast said <em>"Processed 0 recurring transaction(s)"</em> because neither schedule was due (rent starts in May, SaaS next run is already May 1). In a real session where a schedule is due, the generated-count in the list would bump by one and you'd find the new invoice or bill in Draft status on its respective page (Receivables or Payables).</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9888;</div>
+            <div class="callout__body">
+              <span class="callout__label">Generated documents land in Draft, not Posted</span>
+              <h4 class="callout__title">Automation does not skip human review</h4>
+              <p>Every recurring schedule creates the downstream invoice / bill / journal in <em>Draft</em> status. The human reviewer still has to open it, check the amount (did rent go up this year? did the consultant take vacation this month?) and click <em>Approve</em> to post it to the GL. This is deliberate: a silent 3 AM auto-post to the General Ledger is exactly the kind of thing that surfaces as a nasty surprise at month-end close. Automating the keystrokes is useful; automating away the review is not.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== 16.4 PAUSE/RESUME/CANCEL ==================== -->
+        <div class="subsection" id="s-16-4">
+          <span class="subsection__num">16.4</span>
+          <h3 class="subsection__title">Pause, resume, cancel &mdash; the row actions</h3>
+          <div class="prose">
+            <p>Each row in the list has one or two action buttons depending on its current status:</p>
+            <ul>
+              <li><strong>Active</strong> &rarr; <em>Pause</em> (&#10074;&#10074;) + <em>Cancel</em> (&times;)</li>
+              <li><strong>Paused</strong> &rarr; <em>Resume</em> (&#9654;) + <em>Cancel</em> (&times;)</li>
+              <li><strong>Completed</strong> or <strong>Cancelled</strong> &rarr; no actions (read-only).</li>
+            </ul>
+          </div>
+
+          <p>Click the <em>Pause</em> (double-bar) button on Monthly Office Rent.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/17-7-recurring-paused.png" alt="Recurring schedule paused">
+            <div class="figure__caption"><strong>Figure 16.7 &mdash;</strong> Rent row now shows the yellow <em>paused</em> badge. Stats update: <em>1 Active &middot; 1 Paused</em>. The 3 AM job will skip every paused schedule &mdash; no new bills will be generated for rent until you resume it. The row's action changed from Pause to Resume (&#9654;).</div>
+          </figure>
+
+          <p>Use Pause when you know in advance that the recurrence needs to stop temporarily (landlord is renovating and has waived one month's rent; the customer is on a pilot extension and won't be billed in August). Use Cancel when the schedule is done forever (the lease ended; the customer churned).</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/17-8-recurring-cancel-confirm.png" alt="Cancel recurring confirmation">
+            <div class="figure__caption"><strong>Figure 16.8 &mdash;</strong> The Cancel confirmation. It's a destructive-style warning (yellow) with a <em>Cancel It</em> primary button because the action is a soft-delete &mdash; the row stays in the database with <code>status = 'cancelled'</code> for audit (you can still see the 12 generated bills that came from it via the audit log), but the schedule will never produce another document. Click the grey <em>Cancel</em> at the bottom of the dialog to back out &mdash; we won't actually cancel here.</div>
+          </figure>
+
+          <p>Click <em>Resume</em> to bring rent back online.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/17-9-recurring-resumed.png" alt="Recurring schedule resumed">
+            <div class="figure__caption"><strong>Figure 16.9 &mdash;</strong> Back to <em>2 Active &middot; 0 Paused</em>. Resume is a pure status flip &mdash; it doesn't back-date anything, so any run dates that passed while the schedule was paused are simply missed. If you want to catch up, click <em>Run Due Now</em> afterwards.</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Soft-delete, not destructive</span>
+              <h4 class="callout__title">Cancelled schedules keep their history</h4>
+              <p>When you Cancel a schedule, the database row is not deleted &mdash; its <code>status</code> is flipped to <code>cancelled</code>. Every invoice, bill, or journal entry this schedule has ever generated stays exactly where it is in the GL &mdash; cancellation affects only future runs. The audit log (Section 14) keeps the full history, including who cancelled it and when. To find the child documents a schedule created, filter the Ledger page by <code>reference_type = 'recurring'</code>.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SECTION 17: BUDGETS & VARIANCE ========== -->
+      <section class="section" id="s-17">
+        <div class="section__head">
+          <span class="section__num">17</span>
+          <span class="section__eyebrow">Section seventeen</span>
+          <h2 class="section__title">Budgets &amp; <em>variance</em>.</h2>
+          <p class="section__sub">A budget is a promise you make to yourself about next year. Ragenaizer's budget module lets you set an annual amount against any Income or Expense account, distribute it across twelve months (auto-split or manual), then watch the actuals roll in against it throughout the year. The Budget vs. Actual report is the single most important management report once you get past your first month of real revenue &mdash; this section shows you how to build one.</p>
+        </div>
+        <hr class="section__rule">
+
+        <div class="callout">
+          <div class="callout__icon">?</div>
+          <div class="callout__body">
+            <h4 class="callout__title">Budget</h4>
+            <p>A row in the <code>budgets</code> table: one fiscal year + one GL account + one annual amount + twelve per-month amounts. It has no effect on posting &mdash; you can still book ₹10&nbsp;lakh to Rent even if your budget is ₹6&nbsp;lakh &mdash; but it unlocks the <em>Budget vs. Actual</em> report that flags the overrun with a red variance number.</p>
+          </div>
+        </div>
+
+        <!-- ==================== 17.1 WHY ==================== -->
+        <div class="subsection" id="s-17-1">
+          <span class="subsection__num">17.1</span>
+          <h3 class="subsection__title">Why bother budgeting inside the books?</h3>
+          <div class="prose">
+            <p>Most early-stage founders maintain a budget as a Google Sheet and update it once a quarter. That's fine until the spreadsheet and the real ledger drift apart &mdash; and they always drift. The problems it causes downstream:</p>
+            <ul>
+              <li><strong>Stale.</strong> The sheet is updated manually from last month's books. By the time it reflects reality, it's already a week old.</li>
+              <li><strong>Invisible.</strong> Nobody outside the founder/finance person sees it. Department heads can't check their own burn without asking.</li>
+              <li><strong>Disconnected from drill-down.</strong> When the sheet flags a variance, you have no way to click into the individual GL entries that caused it. You have to switch apps and rebuild the filter from scratch.</li>
+            </ul>
+            <p>Budgets inside the books fix all three. Every actual you book to Rent is immediately compared against the budget; you can open the Budget vs. Actual tab at any time and see the live variance; clicking any row drills into the General Ledger with a pre-filtered view (coming in Phase 2).</p>
+          </div>
+
+          <p>Open <em>Accounts &rarr; Budgets</em> from the dashboard Quick Actions grid.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/18-1-budgets-baseline.png" alt="Budgets page baseline">
+            <div class="figure__caption"><strong>Figure 17.1 &mdash;</strong> The Budgets page with seven rows already populated for FY&nbsp;2026-27 &mdash; three Income accounts (Product Sales, Service Revenue, Subscription Revenue) and four Expense accounts (Cost of Goods Sold, Direct Labour, Salary &amp; Wages, Rent). Stats at the top: <em>7 Budgets &middot; ₹60,00,000 Total Annual Budget</em>. The Fiscal Year searchable dropdown at the top-left selects which FY's budgets are shown.</div>
+          </figure>
+        </div>
+
+        <!-- ==================== 17.2 CREATE ==================== -->
+        <div class="subsection" id="s-17-2">
+          <span class="subsection__num">17.2</span>
+          <h3 class="subsection__title">Creating a budget &mdash; annual amount + monthly breakdown</h3>
+          <div class="prose">
+            <p>Click <em>+ Add Budget</em>.</p>
+          </div>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/18-2-budget-modal-empty.png" alt="Add Budget modal empty">
+            <div class="figure__caption"><strong>Figure 17.2 &mdash;</strong> The Add Budget modal. Three required fields at the top (<em>GL Account</em>, <em>Annual Amount</em>, <em>Notes</em>), then a <strong>Monthly Breakdown</strong> grid of twelve inputs labelled Jan through Dec. Above the grid, the <em>Auto-split evenly</em> button divides the annual amount by 12 and populates all twelve cells in one click. The GL Account dropdown only shows Income and Expense accounts that <em>allow direct posting</em> &mdash; you cannot budget against headers, Assets, Liabilities, or Equity.</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">The sum must match the annual</span>
+              <h4 class="callout__title">Monthly total = annual total (within one paisa)</h4>
+              <p>When you edit the twelve monthly cells manually, the backend enforces that their sum equals the annual amount to within &#8377;0.01 (to absorb legitimate 4-decimal rounding). If you enter &#8377;10&nbsp;lakh annual but your twelve monthly amounts only sum to &#8377;9.5&nbsp;lakh, the Save call returns a 400 with the message <em>"Sum of monthly amounts (950000.00) must equal annual amount (1000000.00)"</em>. Also, no individual month can be negative. Both rules exist to prevent the nightmare where the Budget vs. Actual report's annual summary disagrees with its own monthly drill-down.</p>
+            </div>
+          </div>
+
+          <p>We'll budget <strong>Travel &amp; Conveyance</strong> (account 5370) at &#8377;3,60,000/year &mdash; &#8377;30,000/month, assuming roughly one customer-site visit per month. Select the account from the dropdown, type <code>360000</code> into Annual Amount, click <em>Auto-split evenly</em>, and add a note.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/18-3-budget-modal-filled.png" alt="Add Budget modal filled">
+            <div class="figure__caption"><strong>Figure 17.3 &mdash;</strong> Filled. Twelve cells now show <em>30000.00</em> each. <em>Auto-split evenly</em> handles the remainder automatically &mdash; when 1 million is split 12 ways it gives 83,333.33 for 11 months and 83,333.37 on the last month to keep the sum exact. You can always edit any cell by hand after auto-split (for example, if your sales cycle is lumpy and you spend more on travel in Q4).</div>
+          </figure>
+
+          <p>Click <em>Save</em>.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/18-4-budget-list-after-save.png" alt="Budgets list after save">
+            <div class="figure__caption"><strong>Figure 17.4 &mdash;</strong> The new row appears at the bottom of the list. Stats now say <em>8 Budgets &middot; ₹63,60,000 Total Annual Budget</em>. The <em>Per Month</em> column is a read-only convenience view showing the annual divided by 12 (not the same as the raw <code>m1..m12</code> values &mdash; if you front-loaded Q1, the monthly total is a simple average; the actual per-month values are only visible in Edit mode).</div>
+          </figure>
+        </div>
+
+        <!-- ==================== 17.3 BUDGET VS ACTUAL ==================== -->
+        <div class="subsection" id="s-17-3">
+          <span class="subsection__num">17.3</span>
+          <h3 class="subsection__title">Budget vs. Actual &mdash; the management report</h3>
+          <div class="prose">
+            <p>Click the <strong>Budget vs Actual</strong> tab (next to the Budget List tab at the top of the page). This is the report senior management will care about the most.</p>
+          </div>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/18-5-budget-analysis-top.png" alt="Budget vs Actual - top">
+            <div class="figure__caption"><strong>Figure 17.5 &mdash;</strong> Three summary cards at the top: <em>Total Budget</em> (&#8377;63,60,000), <em>Total Actual</em> (&#8377;7,76,497), and <em>Variance</em> (&#8377;55,83,503 under budget shown in green). Below, sections for <strong>Income</strong> and <strong>Expenses</strong>. Each row shows <em>Code &middot; Account &middot; Budget &middot; Actual &middot; Variance &middot; Variance&nbsp;% &middot; Progress bar</em>. Rows with under-consumption (income exceeding target, expense below target) are green; over-consumption is red. The progress bar fills to the utilisation &#37; &mdash; it goes yellow above 80% and red above 100%.</div>
+          </figure>
+
+          <p>Scroll down to see the Expenses section.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/18-6-budget-analysis-expenses.png" alt="Budget vs Actual - expenses">
+            <div class="figure__caption"><strong>Figure 17.6 &mdash;</strong> Expenses section with all four budgeted accounts. Because no expenses have been booked in FY&nbsp;2026-27 yet (we created the budgets today), every row shows 100% variance and the progress bars are empty. As real bills and salary runs start hitting the GL, these bars will fill and the Actual column will update in real time &mdash; the Budget vs. Actual report reads directly from <code>account_period_balances</code>, the same cached structure the P&amp;L uses, so variance is never stale.</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">How the variance is computed</span>
+              <h4 class="callout__title">Variance&nbsp;= Budget&nbsp;-&nbsp;Actual (the sign is direction-aware)</h4>
+              <p>For <strong>Income</strong>, a positive variance means you're <em>behind</em> your revenue target (you budgeted ₹12L but only booked ₹4.48L). For <strong>Expenses</strong>, a positive variance means you're <em>under budget</em> (you budgeted ₹6L but only spent ₹2L). The colour coding flips the sign so green always means "good news" regardless of account type. The Variance&nbsp;% column is the absolute variance as a percentage of the budget (not the actual).</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ==================== 17.4 COPY FROM PRIOR YEAR ==================== -->
+        <div class="subsection" id="s-17-4">
+          <span class="subsection__num">17.4</span>
+          <h3 class="subsection__title">Copy from prior year &mdash; the annual bootstrap</h3>
+          <div class="prose">
+            <p>Every April, the first thing finance has to do for the new fiscal year is create a fresh budget. Most of the time that budget is "last year's budget, plus an escalation factor, minus a couple of things we killed". Recreating all 15-30 budget rows by hand is a waste of an hour &mdash; the <em>Copy from Prior Year</em> button does it in two clicks.</p>
+            <p>Click <em>Copy from Prior Year</em> (toolbar, top right).</p>
+          </div>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/18-7-budget-copy-modal.png" alt="Copy from Prior Year modal">
+            <div class="figure__caption"><strong>Figure 17.7 &mdash;</strong> The Copy from Prior Year modal. One required field: <em>Source Fiscal Year</em>. The target is always the fiscal year currently selected in the page toolbar &mdash; so you pick the target first from the main dropdown, then open this modal and pick the source. The copy is additive: every existing budget in the target FY stays untouched; only accounts that exist in the source but not yet in the target get a new row. This means you can run Copy multiple times safely &mdash; duplicates are de-duped by <code>(fiscal_year_id, account_id)</code> unique key.</div>
+          </figure>
+
+          <p>Pick the source, click <em>Copy Budgets</em>, and the toast reports how many rows were copied. Then open the list tab &mdash; every account in the source year is now budgeted in the target year at exactly the same annual amount and monthly breakdown. Edit the ones that need adjusting and delete the ones that are no longer relevant. Five minutes to bootstrap next year's budget, versus an hour doing it from scratch.</p>
+        </div>
+      </section>
+
+      <!-- ========== SECTION 18: GLOSSARY ========== -->
+      <section class="section" id="s-18">
+        <div class="section__head">
+          <span class="section__num">18</span>
+          <span class="section__eyebrow">Section eighteen</span>
           <h2 class="section__title"><em>Glossary</em>.</h2>
           <p class="section__sub">Every term used in this guide, defined in plain English. You can come back here at any time.</p>
         </div>

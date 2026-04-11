@@ -1512,3 +1512,45 @@ At end of this fix-pass session:
     - Trial balance held at `₹23,500 = ₹23,500` (books still balanced) ✓
   - All four prediction checks pass. The accounting integrity hole is closed.
 - **UX nit (logged, not yet fixed):** The Void Payment confirm dialog uses the generic `Confirm.danger` helper which renders a "Delete" button instead of "Void". Consistent with pattern flagged in bugs #38, #43, #44 — the Confirm helper should accept a custom destructive verb. Not blocking; will batch with the other generic-confirm cleanups in a later sweep.
+
+---
+
+## Session K — Recurring Transactions, Budgets, Statement Import (Apr 11, 2026)
+
+### 58. Recurring Transactions — template_data accepted negative unit_price and empty lines
+
+**Symptom:** POST `/api/accounts/recurring` with `template_data` containing `unit_price: -100`, or with an empty object `{}`, or with `transaction_type: "invoice"` and no `customer_id` — all returned 201 and the bad row was inserted. The scheduled Hangfire job would then try to generate a transaction from the broken template and either crash or post garbage to the GL.
+
+**Root cause:** `BusinessLayer_Recurring.CreateRecurringTransaction` only called `JsonDocument.Parse(request.template_data)` to verify the string was valid JSON. It never inspected the content: no check that `lines` existed, no per-line validation, no requirement that invoice templates carry a `customer_id` (or bill templates a `vendor_id`). Junk rows could sit in `recurring_transactions` for days until the 3 AM job tried to process them, at which point the process blew up mid-tenant in an untracked `ArgumentException`.
+
+**Fix:** Added `ValidateTemplateDataContent(string templateJson, string transactionType)` in `BusinessLayer_Recurring.cs`. Called on both create and update. Checks:
+1. Root is a JSON object
+2. For `invoice` → `customer_id` is a parseable Guid string
+3. For `bill` → `vendor_id` is a parseable Guid string
+4. `lines` array exists and has at least one element
+5. Each line has a non-empty `description`
+6. Each line has an `account_id` that parses as a Guid
+7. Each line has a `unit_price` that is a number `> 0`
+8. Each line's `quantity` (if present) is a number `> 0`
+
+All errors include the line index so the user knows which row is bad: `"Line 3: unit_price must be greater than zero"`.
+
+- **File:** `AccountsService/BusinessLayers/BusinessLayer_Recurring.cs` — added `ValidateTemplateDataContent` helper and wired it into create + update.
+- **Verified:** `curl` smoke tests for negative unit_price, empty lines, and invoice-without-customer_id all now return HTTP 400 with specific error messages.
+- **Build & restart:** clean build, 0 errors; restarted via `dotnet run`.
+
+### 59. Budgets — monthly amounts silently diverged from annual total
+
+**Symptom:** POST `/api/accounts/budgets` with `annual_amount: 120000` and `monthly_amounts: [10k×9, 5k, 3k, 2k]` (sum = ₹1,00,000) returned 201 and stored the row. The Budget vs Actuals report then showed ₹1,20,000 in the annual column but derived the per-period targets from the `m1..m12` columns — so "October Actual vs Budget" was comparing to ₹5,000 while the annual summary claimed ₹1,20,000. The numbers don't add up anywhere.
+
+Also: `monthly_amounts: [-1000, ...]` was silently accepted (treated as an "adjustment" by the aggregation query even though a negative expense budget is nonsense).
+
+**Root cause:** `BusinessLayer_Budgets.UpsertBudget` had a branch that split the annual evenly if `monthly_amounts` was null-or-wrong-length, but when the caller DID supply 12 values, the code jumped straight to `_databaseLayer.UpsertBudget(...)` with zero validation. No sum check, no sign check, nothing.
+
+**Fix:** In the `else` branch, added two checks:
+1. Loop: each of `m1..m12` must be `>= 0`, error identifies the 1-indexed month.
+2. Sum of all 12 values must equal `annual_amount` within a `0.01` tolerance (to absorb legitimate 4-decimal rounding). Error message reports both the computed sum and the annual so the caller sees exactly where the mismatch is.
+
+- **File:** `AccountsService/BusinessLayers/BusinessLayer_Budgets.cs` `UpsertBudget` method — added the validation block after the "split evenly" auto-fill branch.
+- **Verified:** curl tests for mismatched sum (returns "Sum of monthly amounts (100000.00) must equal annual amount (120000.00)") and negative month (returns "Month 10 budget cannot be negative") both now HTTP 400.
+- **Build & restart:** clean, 0 errors.
