@@ -1279,6 +1279,8 @@ body::before {
           <li><a class="toc__link" href="#s-11-1">11.1 Open Vendor Bills</a></li>
           <li><a class="toc__link" href="#s-11-2">11.2 Creating a bill</a></li>
           <li><a class="toc__link" href="#s-11-3">11.3 Approve and watch the GL</a></li>
+          <li><a class="toc__link" href="#s-11-4">11.4 Tour the other Payables tabs</a></li>
+          <li><a class="toc__link" href="#s-11-5">11.5 Purchase Orders</a></li>
         </ul>
       </li>
 
@@ -1318,7 +1320,9 @@ body::before {
         <ul class="toc__sub">
           <li><a class="toc__link" href="#s-14-1">14.1 Audit Logs &mdash; "who did what"</a></li>
           <li><a class="toc__link" href="#s-14-2">14.2 Other Administration tabs</a></li>
-          <li><a class="toc__link" href="#s-14-3">14.3 Closing a fiscal period &mdash; the recap</a></li>
+          <li><a class="toc__link" href="#s-14-3">14.3 Closing Checklists</a></li>
+          <li><a class="toc__link" href="#s-14-4">14.4 Year-End Closing</a></li>
+          <li><a class="toc__link" href="#s-14-5">14.5 Period close vs. year-end close</a></li>
         </ul>
       </li>
 
@@ -2289,6 +2293,65 @@ body::before {
             <img loading="lazy" decoding="async" src="./images/04-23a-fiscal-period-lock-confirm.png" alt="Lock period confirm">
             <div class="figure__caption"><strong>Figure 5.2b &mdash;</strong> The Lock Period confirm dialog. It names the specific period and explains exactly what locking means &mdash; existing entries are not affected, only new ones are blocked.</div>
           </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2.5rem;color:var(--ink);">What happens when you post into a locked period</h4>
+          <p>
+            Let's prove the lock actually does something. Flip to the General Ledger page, click <em>Create Entry</em>, and try to
+            save a balanced journal entry dated inside a locked period. The front-end form will happily let you fill it in &mdash;
+            the check happens at the API layer, not the client &mdash; so the real moment of truth comes when you click <em>Save as Draft</em>.
+            The backend looks up the fiscal period that contains <code>entry_date</code>, sees <code>is_locked = true</code>,
+            and returns an HTTP&nbsp;409&nbsp;Conflict with a targeted message:
+          </p>
+          <pre style="background:var(--overlay-subtle);border:1px solid var(--border-color-light);border-radius:8px;padding:0.85rem 1rem;overflow-x:auto;font-size:0.85rem;"><code>HTTP/1.1 409 Conflict
+{
+  "error": "Cannot create entry in locked period 'Dec-2026'"
+}</code></pre>
+          <p>
+            The same rule applies everywhere a GL entry would be posted: approving a customer invoice dated inside a locked period,
+            approving a vendor bill, recording a bank transaction &mdash; every single write path goes through the same
+            <code>CheckPeriodLocked</code> guard in <code>BusinessLayer_Fiscal</code>, so it's impossible to sneak a past-dated
+            entry into a closed month through the UI <em>or</em> the API. The front-end surfaces the backend error as a toast.
+          </p>
+
+          <div class="callout callout--warn">
+            <div class="callout__icon">!</div>
+            <div class="callout__body">
+              <span class="callout__label">Existing entries are not retroactively affected</span>
+              <h4 class="callout__title">Locking is about new writes, not old reads</h4>
+              <p>Every invoice, bill, payment, and manual JE that was <em>already</em> in the period before you locked it stays exactly as it was &mdash; the month's Trial Balance, P&amp;L, and Balance Sheet are untouched. The lock is a write-guard on future writes only. Reports read through it freely, the audit log keeps every action, and the closing report you generated before the lock is still a valid frozen snapshot.</p>
+            </div>
+          </div>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2.5rem;color:var(--ink);">Demo: lock a future period and watch the badge flip</h4>
+          <p>
+            You should not lock the current month mid-month &mdash; live transactions are still landing in it &mdash; so for demo
+            purposes we'll lock a period that's safely in the future (say Dec&nbsp;2026) and then unlock it so the books remain
+            exactly as we started.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/05-10-fiscal-periods-baseline.png" alt="Fiscal periods baseline">
+            <div class="figure__caption"><strong>Figure 5.2c &mdash;</strong> Fiscal Periods tab baseline for FY 2026-27. Every row shows <em>Open</em> status with a <em>Lock</em> action button. We'll lock Dec-2026 for this demo.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/05-11-fiscal-period-lock-confirm.png" alt="Lock Dec-2026 confirm">
+            <div class="figure__caption"><strong>Figure 5.2d &mdash;</strong> Click <em>Lock</em> on the Dec-2026 row. The confirm dialog names the target period explicitly and describes the consequence: <em>"This will prevent new entries from being posted in this period. Existing entries will be unaffected. Continue?"</em> The primary action button says <em>Lock</em> (not a generic "OK"); click it to proceed.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/05-12-fiscal-period-locked.png" alt="Dec-2026 locked state">
+            <div class="figure__caption"><strong>Figure 5.2e &mdash;</strong> After confirming: the Dec-2026 row's status badge flips from <em>Open</em> (green) to <em>Locked</em> (red), and its action button changes from <em>Lock</em> to <em>Unlock</em>. The other eleven periods are still open. Clicking <em>Unlock</em> on the locked row reverses the state &mdash; same confirm pattern, inverted label &mdash; and brings it back to Open. Both actions are audit-logged (entity_type = <code>fiscal_period</code>, action = <em>locked</em> or <em>unlocked</em>), so you can always see who locked what and when in the Audit Logs tab.</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Typical month-end workflow</span>
+              <h4 class="callout__title">Lock only after sign-off, unlock only for genuine corrections</h4>
+              <p>In practice: on the 5th of the following month (after all invoices for last month have been approved, all bills recorded, all bank reconciliations completed, and the Trial Balance cross-checked), you go to Fiscal Periods and lock the previous month. If a week later a genuine correction needs to hit that period (e.g. a vendor's invoice arrived late with the prior month's date), an admin can unlock, post the entry, and re-lock. Every state change lands in the audit log so the trail is auditable for your CA at year-end. Two rules: (1) only admins can unlock, and (2) the audit log is searchable by action so you can always produce a list of every lock/unlock event for a given fiscal year if a reviewer asks.</p>
+            </div>
+          </div>
         </div>
 
         <div class="subsection" id="s-5-3">
@@ -2812,6 +2875,108 @@ body::before {
             <div class="figure__caption"><strong>Figure 11.4c &mdash;</strong> Vendor Statements. Pick a vendor and a date range to generate a running statement of bills, payments, and credit notes. Use it to reconcile with the vendor's own records before signing off on monthly accounts.</div>
           </figure>
         </div>
+
+        <!-- ==================== 11.5 PURCHASE ORDERS ==================== -->
+        <div class="subsection" id="s-11-5">
+          <span class="subsection__num">11.5</span>
+          <h3 class="subsection__title">Purchase Orders &mdash; the pre-bill lifecycle</h3>
+          <div class="prose">
+            <p>
+              A <strong>Purchase Order</strong> (PO) is a document you raise <em>before</em> a vendor sends you a bill.
+              It says "I plan to buy X from you; please deliver, then send me an invoice". It isn't a financial transaction &mdash;
+              no GL entry is posted when a PO is created, approved, or sent &mdash; but it anchors the entire procurement
+              flow from "we want to buy this" to "we've been billed and we've paid". It's the Accounts module's way of
+              answering three questions a vendor bill alone can't: <em>was this order authorised?</em>, <em>did the goods
+              actually arrive?</em>, and <em>did the bill match the order?</em>
+            </p>
+          </div>
+
+          <div class="callout">
+            <div class="callout__icon">?</div>
+            <div class="callout__body">
+              <h4 class="callout__title">Purchase Order</h4>
+              <p>A vendor-facing document that moves through six statuses &mdash; <em>draft</em>, <em>approved</em>, <em>sent</em>, <em>partially received</em>, <em>received</em>, <em>billed</em> &mdash; with an additional <em>cancelled</em> terminal state. Status transitions are controlled by row-action buttons in the list view and by the PO's own detail modal. No GL impact until the PO is converted into a vendor bill (step 11.3 above), at which point the bill takes over the financial lifecycle.</p>
+            </div>
+          </div>
+
+          <p>Open <em>Accounts &rarr; Purchase Orders</em> from the dashboard. The demo tenant ships with eight POs across every status so you can see the full spectrum without creating new data.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/11-10-po-list-baseline.png" alt="Purchase Orders list baseline">
+            <div class="figure__caption"><strong>Figure 11.5a &mdash;</strong> Eight purchase orders across six statuses. Stats row at the top breaks them down: <em>Total 8 &middot; Draft 1 &middot; Approved 2 &middot; Sent 2 &middot; Received 1 &middot; Billed 1</em> plus ₹3,04,000 combined value. The status badges tell you at a glance where each PO is in the pipeline: green for active-in-flight, yellow for pending action, grey for terminal.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">The six-state lifecycle</h4>
+          <ol>
+            <li><strong>Draft</strong> &mdash; the PO exists but can still be edited freely. No commitment to the vendor yet. Delete is allowed.</li>
+            <li><strong>Approved</strong> &mdash; an authoriser (typically a manager) has ticked the approve button. The PO is locked down; fields can no longer change. Ready to be sent.</li>
+            <li><strong>Sent</strong> &mdash; you've clicked <em>Send</em>, which in a real deployment emails the vendor a formatted PDF of the PO. In the demo, it just flips the status flag. The vendor is now on the hook to deliver.</li>
+            <li><strong>Partially Received</strong> &mdash; you got some of the ordered items but not all. The received-quantity column updates line-by-line and the status moves to this intermediate state until all lines are fulfilled.</li>
+            <li><strong>Received</strong> &mdash; every line is received in full. You can now generate a vendor bill from it.</li>
+            <li><strong>Billed</strong> &mdash; you clicked <em>Convert to Bill</em> on a received PO. A new vendor bill row is created with the same vendor, lines, amounts &mdash; and, crucially, a back-reference to the originating PO. From here the bill follows the normal vendor-bill lifecycle (section 11.2).</li>
+          </ol>
+          <p>
+            A seventh state, <strong>Cancelled</strong>, is a terminal off-ramp &mdash; you can cancel a PO in any state before it becomes Billed.
+            The demo data shows PO-2026-00007 in this state.
+          </p>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Creating a new PO</h4>
+          <p>Click <em>+ Create PO</em>. The form is wider than most because it includes the line-items grid inline.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/11-11-po-modal-empty.png" alt="Create Purchase Order modal empty">
+            <div class="figure__caption"><strong>Figure 11.5b &mdash;</strong> The empty Create Purchase Order modal. Header fields: <em>Vendor</em>, <em>PO Date</em>, <em>Expected Date</em>, <em>Currency</em>, <em>Notes</em>. Below that, the <em>Line Items</em> section with inline rows &mdash; each row needs Description, Account (GL expense), Qty, Unit Price, and computes Amount live. Click <em>+ Add Line</em> to append more rows; the X on the right of each row removes it. Totals for Subtotal, Tax, and Grand Total update as you type.</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Why the Account field is per-line, not per-PO</span>
+              <h4 class="callout__title">A single PO can span multiple expense categories</h4>
+              <p>A PO to Office Depot might have two line items: <em>printer cartridges</em> (&rarr; Office Supplies) and <em>folding tables</em> (&rarr; Furniture &amp; Fixtures). Those hit different GL accounts when the bill is eventually posted. So the account is captured on the line, not the PO header. When the PO converts to a bill, each line's account carries forward intact &mdash; no re-classification needed.</p>
+            </div>
+          </div>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">The View modal &mdash; the source of truth</h4>
+          <p>
+            Click the <em>View</em> (eye) icon on any row to open a read-only detail modal. It's the same layout as the create modal
+            but with every field disabled, plus it shows the PO number, its current status badge, and the final computed total.
+            Use it when you need to reference a PO's details without risk of accidentally editing. It's also what the
+            <em>Send PO</em> action renders internally before formatting the outgoing email.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/11-12-po-view-detail.png" alt="PO view detail modal">
+            <div class="figure__caption"><strong>Figure 11.5c &mdash;</strong> The View modal for PO-2026-00002, an existing <em>Received</em> PO from DataPipe Networks for ₹24,000. Status badge at the top right, one line item (<em>AS Service Aid</em> mapped to 1170 Prepaid Expenses), PO date + expected date inline. At the bottom right: <em>Send</em> and <em>Close</em> buttons. Because this PO is already in <em>received</em> status, a <em>Convert to Bill</em> option is also available in the row's action menu in the list view &mdash; clicking it creates a vendor bill pre-populated from this PO.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">Converting to a bill &mdash; where the GL finally wakes up</h4>
+          <p>
+            A PO posts zero GL entries &mdash; it's a pure document. The moment financial reality catches up is when you click
+            <em>Convert to Bill</em> on a received PO. This action:
+          </p>
+          <ol>
+            <li>Creates a new row in <code>vendor_bills</code> with <code>po_id</code> set to the source PO (so you can always trace back).</li>
+            <li>Copies the vendor, every line item (description, account, quantity, rate, amount, tax), and the totals over to the new bill.</li>
+            <li>Leaves the bill in <em>Draft</em> status so the AP clerk can still edit it if the vendor's invoice doesn't exactly match the PO (a common case &mdash; rate adjustment, partial shipment, tax calculation difference).</li>
+            <li>Flips the source PO's status from <em>received</em> to <em>billed</em> (the terminal non-cancelled state).</li>
+          </ol>
+          <p>
+            From here the bill follows the normal AP lifecycle (sections 11.2&ndash;11.3): approve, post the GL entry
+            (<strong>Dr Expense / Cr Accounts Payable</strong>), record payment when money leaves the bank. The PO becomes the audit anchor
+            that links "we ordered this" to "we received this" to "we were billed this" to "we paid this" &mdash; all four events
+            connected through stable foreign keys, not manual filing.
+          </p>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">3-way matching in one module</span>
+              <h4 class="callout__title">PO qty vs. received qty vs. billed qty</h4>
+              <p>In procurement-heavy businesses, the classical control is the "3-way match" &mdash; the PO, the Goods Receipt Note, and the vendor's invoice must all agree on quantities before AP is allowed to release payment. Ragenaizer does a lightweight version: the PO's per-line <em>received_qty</em> must be populated (via the <em>Receive</em> action on the row) before <em>Convert to Bill</em> is enabled, and the resulting bill carries those same quantities &mdash; so a PO for 10 units that was only half-received produces a bill for 5 units, not 10. If the vendor then bills for 10, you edit the bill line down to 5 in Draft and the GL matches the physical reality.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="section" id="s-12">
@@ -3060,16 +3225,131 @@ body::before {
 
         <div class="subsection" id="s-14-3">
           <span class="subsection__num">14.3</span>
-          <h3 class="subsection__title">Closing a fiscal period &mdash; the recap</h3>
+          <h3 class="subsection__title">Closing Checklists &mdash; the standardised month-end protocol</h3>
           <div class="prose">
             <p>
-              We covered period locking back in Section 5.2. The recap: at month-end, after you've reviewed the books and the Trial Balance is
-              clean, go to <em>Setup &rarr; Fiscal Periods</em> and click the Lock button on the row. Locking prevents new journal entries from being
-              posted to that month. If you need to amend something later, an admin can unlock the period &mdash; the audit log records both events.
+              Locking a period (which we met briefly in &sect;5.2) is only the <em>last</em> step of month-end &mdash;
+              before that you have a dozen other things to finish: all customer invoices approved, all vendor bills
+              received and recorded, bank statements reconciled, depreciation run, TDS verified, suspense accounts at
+              zero, and so on. Every controller has their own mental list for this; the problem is that mental lists
+              drift &mdash; you forget an item, the junior person forgets a different item, and by the time anyone
+              notices, the TB has already been signed off with a hole in it.
             </p>
             <p>
-              Year-end is the same idea, one level up: lock all twelve periods, run year-end closing from the Administration tab, and the system
-              creates a new fiscal year for you with the closing balances rolled forward as opening balances.
+              <strong>Closing Checklists</strong> makes the list explicit. Open <em>Administration &rarr; Closing
+              Checklists</em>. Each row is a checklist for one period (month, quarter, or year-end), with the set of
+              items that must be ticked off before the period can be considered closed. The system ships with a default
+              14-item template for month-end (covering everything from bank reconciliation to expense claim approval),
+              and you can copy or author new templates as your firm's protocol evolves.
+            </p>
+          </div>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14-10-closing-checklists-baseline.png" alt="Closing checklists tab">
+            <div class="figure__caption"><strong>Figure 14.3a &mdash;</strong> The Closing Checklists tab under Administration. One checklist per period; here we have one <em>Month End</em> checklist for Apr-2026 currently in <em>In Progress</em> status. The row shows the period's fiscal year, the close type, the status, and a count of completed-vs-total items as a progress indicator. Toolbar: <em>+ Create Checklist</em> and a fiscal-year filter.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14-11-checklist-detail.png" alt="Checklist detail">
+            <div class="figure__caption"><strong>Figure 14.3b &mdash;</strong> The Checklist Detail modal. 14 standard items, each a one-line task with a status badge &mdash; <em>Done</em> (green), <em>Pending</em> (yellow), <em>Skipped</em> (grey). Items cover: verify all invoices posted &amp; approved, verify all bills received, verify bank reconciliation, run depreciation, clear suspense, review tax/TDS, review accruals, review prepaid amortisation, review payroll, review inter-company entries, close out drafts, lock fiscal period, generate closing reports, sign-off. You can tick items one-by-one with the checkbox on the left &mdash; each toggle is audit-logged with the timestamp and user, so reviewers can see exactly who signed off on what.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14-12-checklist-create-modal.png" alt="Create checklist modal">
+            <div class="figure__caption"><strong>Figure 14.3c &mdash;</strong> The Create Closing Checklist modal. Four fields: <em>Checklist Name</em> (free-form label like "Apr-2026 Month End"), <em>Fiscal Year</em>, <em>Closing Type</em> (Month End / Quarter End / Year End &mdash; determines the default item template), and <em>Description</em>. Clicking Save creates a new in-progress checklist with all items defaulted to Pending, ready for the closing team to work through.</div>
+          </figure>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Checklists are advisory, not blocking</span>
+              <h4 class="callout__title">Ticking the boxes doesn't automatically lock the period</h4>
+              <p>This is deliberate. The checklist is a <em>protocol</em>, not an enforcement mechanism &mdash; you can lock a period even if the checklist isn't 100% complete, and you can complete the checklist without locking. The separation exists because some teams want hard blocks (lock is disabled until the checklist is done) and others want soft reminders (checklist is a TODO list, lock happens whenever the controller is satisfied). The current shipping mode is "soft". A later enhancement may allow an admin toggle to make checklist completion a prerequisite for locking.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-14-4">
+          <span class="subsection__num">14.4</span>
+          <h3 class="subsection__title">Year-End Closing &mdash; the once-a-year procedure</h3>
+          <div class="prose">
+            <p>
+              Once the final month of a fiscal year is locked and every closing checklist is signed off, you run
+              <strong>Year-End Closing</strong>. Open <em>Administration &rarr; Year-End Closing</em>. The page takes a
+              fiscal year, runs a series of <em>pre-flight checks</em> to prove the books are safe to close, and &mdash;
+              only if every check passes &mdash; enables the irreversible <em>Close Fiscal Year</em> button.
+            </p>
+          </div>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14-13-year-end-empty.png" alt="Year-end closing empty state">
+            <div class="figure__caption"><strong>Figure 14.4a &mdash;</strong> The Year-End Closing page before anything is selected. Prominent warning at the top: <em>"Close a fiscal year to prevent further modifications. This will lock all periods and carry forward balances. This action cannot be undone."</em> A single <em>Select Fiscal Year</em> dropdown is the only input.</div>
+          </figure>
+
+          <p>Pick the fiscal year you want to close. The page runs its pre-flight checks immediately.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14-14-year-end-fy-selected.png" alt="Year-end pre-flight checks passed">
+            <div class="figure__caption"><strong>Figure 14.4b &mdash;</strong> Pre-Flight Checks for FY 2026-27. Three hard checks: <em>TB Balance (Dr = Cr)</em> &mdash; the total debits in the GL must equal total credits to the paisa (if they don't, the books are already inconsistent and closing would freeze that inconsistency forever); <em>Account Balance Drift</em> &mdash; the cached <code>account_period_balances</code> must agree with the live sum from <code>gl_entry_lines</code> for every account (otherwise the cached reports are lying about the true position); <em>Period Balance Consistency</em> &mdash; every fiscal period's cached aggregate must match its GL sum. All three passed here, so the <em>Close Fiscal Year</em> button below is enabled. If any check had failed, the button would be disabled and the offending row would be red with a drill-down explanation.</div>
+          </figure>
+
+          <div class="callout callout--warn">
+            <div class="callout__icon">!</div>
+            <div class="callout__body">
+              <span class="callout__label">Fix checks before proceeding, never bypass</span>
+              <h4 class="callout__title">A failing check is a real inconsistency &mdash; fix the source, re-run</h4>
+              <p>If the TB Balance check fails, your debits and credits in <code>gl_entry_lines</code> don't add up &mdash; this is almost always a half-posted JE from a service restart mid-write, or a manually-edited row in the database. Fix the underlying row (usually by voiding the broken JE and re-posting it), re-run the integrity check under Administration, and come back. If Account Balance Drift fails, the cache is stale &mdash; run <em>Recompute Balances</em> under Administration &rarr; System and come back. Never edit the database to force a pre-flight check to pass &mdash; you'll just be burying the inconsistency in the closing entries.</p>
+            </div>
+          </div>
+
+          <p>With pre-flight green, click <em>Close Fiscal Year</em>.</p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/14-15-year-end-confirm.png" alt="Close Fiscal Year confirm">
+            <div class="figure__caption"><strong>Figure 14.4c &mdash;</strong> The Close Fiscal Year confirmation &mdash; a red destructive warning that names the target fiscal year and spells out the three things that are about to happen: (1) all twelve periods in the year get locked, (2) Revenue and Expense accounts are zeroed out by a system-generated closing JE that debits Revenue / credits Expenses / plugs the difference into <em>3300 Current Year Earnings</em>, (3) the closing balance of <em>3300 Current Year Earnings</em> rolls into <em>3200 Retained Earnings</em>. <strong>This action CANNOT be undone.</strong> Click <em>Close Year</em> to commit.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">What the system does behind the scenes</h4>
+          <p>When you click the red button, the backend runs <em>all</em> of the following inside a single database transaction:</p>
+          <ol>
+            <li>Re-runs the three pre-flight checks (just in case anything changed between loading the page and clicking the button).</li>
+            <li>For every Revenue account with a non-zero balance, creates a closing journal line: <strong>Dr Revenue</strong> for the full balance, <strong>Cr 3300 Current Year Earnings</strong>.</li>
+            <li>For every Expense account with a non-zero balance, creates the mirror: <strong>Dr 3300 Current Year Earnings</strong>, <strong>Cr Expense</strong> for the full balance.</li>
+            <li>Posts the aggregate closing JE (journal type <em>CLOSING</em>, entry date = fiscal year end date, description = <em>"FY 2026-27 Year-End Closing"</em>).</li>
+            <li>Rolls <em>3300 Current Year Earnings</em> into <em>3200 Retained Earnings</em> with a second JE (Dr 3300 / Cr 3200 for the net profit, or Dr 3200 / Cr 3300 for a net loss).</li>
+            <li>Locks all twelve fiscal periods by setting <code>is_locked = true</code>.</li>
+            <li>Flips the fiscal year row's <code>is_closed = true</code>.</li>
+            <li>Creates the next fiscal year (e.g. FY 2027-28) with the just-computed Asset / Liability / Equity closing balances as opening balances in the new year. Revenue and Expense accounts start at zero, as they should &mdash; they're period accounts.</li>
+            <li>Logs every step to the audit log under <code>entity_type = 'fiscal_year'</code>, <code>action = 'closed'</code>.</li>
+          </ol>
+          <p>
+            If <em>any</em> step fails, the entire transaction rolls back &mdash; you end the click exactly where you started,
+            with a toast-level error identifying which step failed. There is no half-closed state: either the year is fully
+            closed and the next year is fully created, or nothing happened.
+          </p>
+
+          <div class="callout callout--warn">
+            <div class="callout__icon">!</div>
+            <div class="callout__body">
+              <span class="callout__label">Irreversible by design</span>
+              <h4 class="callout__title">Unlike period-lock, year-end close has no Unlock button</h4>
+              <p>Period locks can be lifted by an admin (&sect;5.2). Year-end closing cannot &mdash; there is no <em>Unclose Fiscal Year</em> action in the UI or API. The reason is accounting integrity: the closing JEs have already propagated their numbers into next year's opening balances, and unwinding that would require also unwinding every transaction you've already booked to the new fiscal year &mdash; which in a real operating business is a cascade that quickly becomes uncorrectable. If something did go wrong and a legitimate correction to the closed year is genuinely necessary, the accounting convention is to post the correction as a <em>prior-period adjustment</em> in the <strong>current</strong> fiscal year (hit Retained Earnings, not the closed P&amp;L), with full prose explaining the reason in the journal entry's description. The audit log keeps both the original closing and the correction.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="subsection" id="s-14-5">
+          <span class="subsection__num">14.5</span>
+          <h3 class="subsection__title">Period close vs. year-end close &mdash; the distinction in one paragraph</h3>
+          <div class="prose">
+            <p>
+              <strong>Period close</strong> is monthly: it freezes a single month against further writes while leaving the rest
+              of the year open. It is reversible (admin can unlock), auditable (log captures every lock/unlock), and local
+              (only that one period is affected). <strong>Year-end close</strong> is annual: it freezes every period in the
+              fiscal year simultaneously, posts the closing journal entries that zero out Revenue and Expense, rolls net
+              profit into Retained Earnings, and creates the next fiscal year with the closing balances as opening
+              balances. It is <em>not</em> reversible, is gated by pre-flight integrity checks that must all pass, and
+              affects the entire chart of accounts. You'll run period close 12 times a year; you'll run year-end close once.
             </p>
           </div>
         </div>
