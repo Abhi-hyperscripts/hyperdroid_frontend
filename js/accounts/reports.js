@@ -315,10 +315,19 @@ async function loadAPAgingReport() {
 
 async function exportReport(reportType, format) {
     try {
-        const url = AccountsCommon.buildUrl(`reports/export/${reportType}`, { format });
-        const res = await api.request(url, { method: 'POST', responseType: 'blob' });
+        // Use direct fetch for binary responses — api.request() auto-parses
+        // responses as JSON/text which corrupts PDF/CSV downloads.
+        const baseUrl = api._getBaseUrl('/accounts/');
+        const tenantId = AccountsCommon.getTenantId();
+        const url = `${baseUrl}/accounts/reports/export/${reportType}?format=${format}&tenantId=${tenantId}`;
 
-        const blob = res instanceof Blob ? res : new Blob([res]);
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${api.token}` }
+        });
+        if (!response.ok) throw new Error(`Export failed: ${response.status}`);
+
+        const blob = await response.blob();
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = `${reportType}-report.${format}`;
