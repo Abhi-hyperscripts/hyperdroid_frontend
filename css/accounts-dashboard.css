@@ -320,11 +320,11 @@ body.accounts-dashboard::before {
 }
 
 /* =============================================================
-   QUICK ACTIONS — 3-column card grid (matches HRMS)
+   QUICK ACTIONS — 4-column card grid
    ============================================================= */
 .acct-dash-container .quick-actions {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: var(--space-3, 12px);
     margin-bottom: var(--space-4, 16px);
 }
