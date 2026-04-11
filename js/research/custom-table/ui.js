@@ -59,6 +59,10 @@
         weight: [],      // same shape as other slots; max 1 group / 1 var
         searchTerm: '',
         significance: { enabled: false, confidence: 0.95, minBase: 30 },
+        // Post-render cell visibility — toggled from the result toolbar.
+        // These don't trigger a new query; the table re-renders from the
+        // cached structured result.
+        show: { count: true, percent: true, sig: true },
     };
 
     /** Return true if the variable def represents a true numeric value (no
@@ -642,6 +646,7 @@
         // stats across all row groups.
         const baseRequest = window.CustomTable.buildCustomTableRequest(state, variablesByName, state.fileId, codesCache);
         baseRequest.input_params.measure = { type: 'count' };
+        baseRequest.input_params.cell_format = 'object';  // structured count/pct/sig per cell
         const weightVar = state.weight?.[0]?.vars?.[0]?.name;
         if (weightVar) baseRequest.input_params.weight = { variable: weightVar };
         if (state.significance.enabled) {
@@ -792,8 +797,18 @@
     // Result renderer
     // -----------------------------------------------------------------------
 
-    /** Last rendered result kept so the CSV export can re-serialize without a refetch. */
+    /** Last rendered result kept so the CSV export and visibility toggles
+     *  can re-render without a new fetch. */
     let lastResult = null;
+
+    function ctSetShow(key, on) {
+        if (!(key in state.show)) return;
+        state.show[key] = !!on;
+        if (lastResult) {
+            // Re-render by passing the cached wrapper shape renderResult accepts.
+            renderResult({ result: lastResult });
+        }
+    }
 
     function renderResult(body) {
         // The function's response unwraps into body.result OR body directly
@@ -810,12 +825,18 @@
         const rows = result.rows;
         const cellCount = (cols.length - 1) * rows.length;
 
-        // Toolbar: summary + export. Always visible for every result.
+        // Toolbar: summary + visibility toggles + export. Visibility toggles
+        // re-render from the cached result without a new fetch.
         const toolbarHtml = `
             <div class="ct-result-toolbar">
                 <div class="ct-result-summary">
                     ${escapeHtml(result.summary || '')}
                     <span class="ct-result-size">${rows.length} rows × ${cols.length - 1} cols (${cellCount.toLocaleString()} cells)</span>
+                </div>
+                <div class="ct-result-show">
+                    <label><input type="checkbox" ${state.show.count ? 'checked' : ''} onchange="ctSetShow('count', this.checked)"><span>Count</span></label>
+                    <label><input type="checkbox" ${state.show.percent ? 'checked' : ''} onchange="ctSetShow('percent', this.checked)"><span>%</span></label>
+                    <label><input type="checkbox" ${state.show.sig ? 'checked' : ''} onchange="ctSetShow('sig', this.checked)"><span>Sig</span></label>
                 </div>
                 <button class="gm-btn gm-btn-secondary ct-export-btn" onclick="ctExportCsv()">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -875,9 +896,11 @@
                     : isStatSub
                         ? 'ct-row-stat'
                         : '';
-            const tds = cols.map((c, i) =>
-                `<td class="${i === 0 ? 'ct-col-sticky' : ''}" title="${escapeHtml(String(row[c] ?? ''))}">${escapeHtml(String(row[c] ?? ''))}</td>`
-            ).join('');
+            const tds = cols.map((c, i) => {
+                const raw = row[c];
+                const body = i === 0 ? escapeHtml(String(raw ?? '')) : formatDataCell(raw);
+                return `<td class="${i === 0 ? 'ct-col-sticky' : ''}" title="${escapeHtml(i === 0 ? String(raw ?? '') : cellTitle(raw))}">${body}</td>`;
+            }).join('');
             parts.push(`<tr class="${rowClass}">${tds}</tr>`);
         }
         const bodyHtml = parts.join('');
@@ -952,6 +975,100 @@
         return rows.join('');
     }
 
+    /**
+     * Stack count / percentage / sig-letters on separate lines inside a cell.
+     * Backend emits strings like:
+     *   "168 (64.9%) CEFGJN"  — count + pct + letters
+     *   "168 (64.9%)"          — count + pct
+     *   "168"                  — count only
+     *   "168 *"                — suppressed
+     *   "20.7 B"               — stat-row number + letter
+     *   "-"                    — NaN / missing
+     * Returns escaped HTML with <div> lines when there's more than one part.
+     */
+    /**
+     * Render a single data cell. Structured cells arrive from the backend
+     * as `{count, percent, value, sig, display, suppressed, nan}` when we
+     * request `cell_format: "object"`. Legacy string cells ("168 (64.9%) B")
+     * are parsed as a fallback so older responses still render.
+     *
+     * The `show` state (count/percent/sig) lets the user toggle visibility
+     * post-render without re-fetching.
+     */
+    function formatDataCell(raw) {
+        // Structured object path
+        if (raw && typeof raw === 'object') {
+            if (raw.suppressed) return escapeHtml(raw.display || '*');
+            if (raw.nan) return escapeHtml(raw.display || '-');
+
+            const lines = [];
+            // Mean/median/value stat rows → one number
+            if (raw.value !== null && raw.value !== undefined) {
+                if (state.show.count || state.show.percent) {
+                    lines.push(`<span class="ct-cell-num">${escapeHtml(formatValue(raw.value))}</span>`);
+                }
+            } else {
+                if (state.show.count && raw.count !== null && raw.count !== undefined) {
+                    lines.push(`<span class="ct-cell-num">${escapeHtml(formatInt(raw.count))}</span>`);
+                }
+                if (state.show.percent && raw.percent !== null && raw.percent !== undefined) {
+                    lines.push(`<span class="ct-cell-pct">${escapeHtml(formatPct(raw.percent))}</span>`);
+                }
+            }
+            if (state.show.sig && raw.sig) {
+                lines.push(`<span class="ct-cell-sig">${escapeHtml(raw.sig)}</span>`);
+            }
+            if (lines.length === 0) return '';
+            if (lines.length === 1) return lines[0];
+            return `<div class="ct-cell-stack">${lines.join('')}</div>`;
+        }
+
+        // Legacy string path — parse by paren indices.
+        const s = String(raw || '').trim();
+        if (!s) return '';
+        let num = '', pct = '', tail = '';
+        const open = s.indexOf('(');
+        if (open !== -1) {
+            const close = s.indexOf(')', open);
+            num = s.slice(0, open).trim();
+            if (close > open) {
+                pct = s.slice(open + 1, close).trim();
+                tail = s.slice(close + 1).trim();
+            }
+        } else {
+            const sp = s.search(/\s/);
+            if (sp === -1) { num = s; }
+            else { num = s.slice(0, sp).trim(); tail = s.slice(sp + 1).trim(); }
+        }
+        const lines = [];
+        if (state.show.count && num) lines.push(`<span class="ct-cell-num">${escapeHtml(num)}</span>`);
+        if (state.show.percent && pct) lines.push(`<span class="ct-cell-pct">${escapeHtml(pct)}</span>`);
+        if (state.show.sig && tail) lines.push(`<span class="ct-cell-sig">${escapeHtml(tail)}</span>`);
+        if (lines.length === 0) return '';
+        if (lines.length === 1) return lines[0];
+        return `<div class="ct-cell-stack">${lines.join('')}</div>`;
+    }
+
+    function formatInt(n) {
+        const v = Number(n);
+        if (!Number.isFinite(v)) return '';
+        return v.toLocaleString();
+    }
+    function formatValue(n) {
+        const v = Number(n);
+        if (!Number.isFinite(v)) return '';
+        return v === Math.floor(v) ? v.toLocaleString() : v.toFixed(2);
+    }
+    function formatPct(n) {
+        const v = Number(n);
+        if (!Number.isFinite(v)) return '';
+        return `${v}%`;
+    }
+    function cellTitle(raw) {
+        if (raw && typeof raw === 'object') return raw.display || '';
+        return String(raw ?? '');
+    }
+
     /** Two column paths share the same prefix up to (but not including) `level`. */
     function parentPathEquals(a, b, level) {
         for (let k = 0; k < level; k++) {
@@ -970,12 +1087,29 @@
         const rows = lastResult.rows;
         const escape = (v) => {
             const s = String(v ?? '');
-            // RFC 4180 — quote if it contains comma, quote, or newline
             return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        };
+        // Build a plain-text cell string honoring the current visibility
+        // toggles so the CSV matches what the user sees on screen.
+        const cellString = (raw) => {
+            if (raw && typeof raw === 'object') {
+                if (raw.suppressed) return raw.display || '*';
+                if (raw.nan) return raw.display || '-';
+                const parts = [];
+                if (raw.value !== null && raw.value !== undefined) {
+                    if (state.show.count || state.show.percent) parts.push(formatValue(raw.value));
+                } else {
+                    if (state.show.count && raw.count !== null && raw.count !== undefined) parts.push(formatInt(raw.count));
+                    if (state.show.percent && raw.percent !== null && raw.percent !== undefined) parts.push(formatPct(raw.percent));
+                }
+                if (state.show.sig && raw.sig) parts.push(raw.sig);
+                return parts.join(' ');
+            }
+            return String(raw ?? '');
         };
         const lines = [cols.map(escape).join(',')];
         for (const row of rows) {
-            lines.push(cols.map(c => escape(row[c])).join(','));
+            lines.push(cols.map((c, i) => escape(i === 0 ? row[c] : cellString(row[c]))).join(','));
         }
         const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
         const url = URL.createObjectURL(blob);
@@ -1273,6 +1407,7 @@
     window.toggleAnalyzeDropdown = toggleAnalyzeDropdown;
     window.closeAnalyzeDropdown = closeAnalyzeDropdown;
     window.ctExportCsv = ctExportCsv;
+    window.ctSetShow = ctSetShow;
     window.ctReset = ctReset;
     window.ctRun = ctRun;
     window.ctTogglePalette = ctTogglePalette;

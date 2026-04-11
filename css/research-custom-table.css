@@ -1011,6 +1011,57 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* Visibility toggles in the result toolbar. */
+.ct-result-show {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.ct-result-show label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    user-select: none;
+}
+.ct-result-show input[type="checkbox"] {
+    accent-color: var(--brand-primary);
+    width: 13px;
+    height: 13px;
+    cursor: pointer;
+}
+
+/* Stacked cell: count / percent / sig-letters on separate lines. */
+.ct-cell-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.25;
+    gap: 1px;
+}
+.ct-cell-stack .ct-cell-num {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+.ct-cell-stack .ct-cell-pct {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+.ct-cell-stack .ct-cell-sig {
+    color: var(--brand-primary);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
 .ct-result-table tbody tr:hover td {
     background: color-mix(in srgb, var(--brand-primary) 6%, var(--bg-card));
 }
