@@ -825,28 +825,31 @@
         const rows = result.rows;
         const cellCount = (cols.length - 1) * rows.length;
 
-        // Toolbar: summary + visibility toggles + export. Visibility toggles
-        // re-render from the cached result without a new fetch.
-        const toolbarHtml = `
-            <div class="ct-result-toolbar">
-                <div class="ct-result-summary">
-                    ${escapeHtml(result.summary || '')}
-                    <span class="ct-result-size">${rows.length} rows × ${cols.length - 1} cols (${cellCount.toLocaleString()} cells)</span>
-                </div>
-                <div class="ct-result-show">
-                    <label><input type="checkbox" ${state.show.count ? 'checked' : ''} onchange="ctSetShow('count', this.checked)"><span>Count</span></label>
-                    <label><input type="checkbox" ${state.show.percent ? 'checked' : ''} onchange="ctSetShow('percent', this.checked)"><span>%</span></label>
-                    <label><input type="checkbox" ${state.show.sig ? 'checked' : ''} onchange="ctSetShow('sig', this.checked)"><span>Sig</span></label>
-                </div>
-                <button class="gm-btn gm-btn-secondary ct-export-btn" onclick="ctExportCsv()">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    Export CSV
-                </button>
-            </div>`;
+        // Visibility toggles + Export CSV live in the .ct-preview-header
+        // (right side) to save vertical space. The summary chip sits below
+        // the table grid. Visibility toggles re-render from cached result
+        // without a new fetch.
+        const headerToolsHtml = `
+            <div class="ct-result-show">
+                <label><input type="checkbox" ${state.show.count ? 'checked' : ''} onchange="ctSetShow('count', this.checked)"><span>Count</span></label>
+                <label><input type="checkbox" ${state.show.percent ? 'checked' : ''} onchange="ctSetShow('percent', this.checked)"><span>%</span></label>
+                <label><input type="checkbox" ${state.show.sig ? 'checked' : ''} onchange="ctSetShow('sig', this.checked)"><span>Sig</span></label>
+            </div>
+            <button class="gm-btn gm-btn-secondary ct-export-btn" onclick="ctExportCsv()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Export CSV
+            </button>`;
+        const headerTools = document.getElementById('ctPreviewHeaderTools');
+        if (headerTools) headerTools.innerHTML = headerToolsHtml;
+
+        // Summary chip is gone — the preview header tools convey everything
+        // the user needs (visibility toggles + export). The row × col size
+        // sat in the chip but it's redundant once you can see the table.
+        const toolbarHtml = '';
 
         // Build a hierarchical thead. Columns are named like
         // "Male / Metro / Yes / Couple with dependent children" when the
