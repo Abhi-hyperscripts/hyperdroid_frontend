@@ -7067,6 +7067,21 @@
                                 <span class="ct-layout-title">Layout <span class="ct-layout-subtitle">Columns, Rows, Filter</span></span>
                                 <svg class="ct-slot-header-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                             </div>
+                            <div class="ct-options-bar">
+                                <label class="ct-sig-toggle">
+                                    <input type="checkbox" id="ctSigEnabled">
+                                    <span>Significance testing</span>
+                                </label>
+                                <label class="ct-sig-conf">
+                                    <span class="ct-sig-conf-lbl">Confidence</span>
+                                    <select id="ctSigConfidence">
+                                        <option value="0.90">90%</option>
+                                        <option value="0.95" selected>95%</option>
+                                        <option value="0.99">99%</option>
+                                    </select>
+                                </label>
+                                <span class="ct-sig-hint">z-test for counts · Welch's t-test for means · column-pair letters</span>
+                            </div>
                             <div class="ct-slots">
                                 <div class="ct-slot" data-slot="columns">
                                     <div class="ct-slot-header">

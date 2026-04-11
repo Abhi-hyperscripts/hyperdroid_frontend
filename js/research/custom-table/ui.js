@@ -58,6 +58,7 @@
         filter: [],
         weight: [],      // same shape as other slots; max 1 group / 1 var
         searchTerm: '',
+        significance: { enabled: false, confidence: 0.95, minBase: 30 },
     };
 
     /** Return true if the variable def represents a true numeric value (no
@@ -117,6 +118,7 @@
             state.initialized = true;
             wireSearch();
             wireDropZones();
+            wireSignificanceBar();
         }
 
         render();
@@ -642,6 +644,12 @@
         baseRequest.input_params.measure = { type: 'count' };
         const weightVar = state.weight?.[0]?.vars?.[0]?.name;
         if (weightVar) baseRequest.input_params.weight = { variable: weightVar };
+        if (state.significance.enabled) {
+            baseRequest.input_params.significance = {
+                confidence_level: state.significance.confidence,
+                min_base: state.significance.minBase,
+            };
+        }
 
         // Assemble the atomic unit list: the base table plus one variant per
         // row group that has stats enabled. The backend runs each in sequence
@@ -993,6 +1001,20 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
+    }
+
+    // -----------------------------------------------------------------------
+    // Significance testing toggle (z-test for counts, t-test for means)
+    // -----------------------------------------------------------------------
+
+    function wireSignificanceBar() {
+        const cb = document.getElementById('ctSigEnabled');
+        const sel = document.getElementById('ctSigConfidence');
+        if (!cb || !sel) return;
+        cb.checked = state.significance.enabled;
+        sel.value = String(state.significance.confidence);
+        cb.addEventListener('change', () => { state.significance.enabled = cb.checked; });
+        sel.addEventListener('change', () => { state.significance.confidence = Number(sel.value); });
     }
 
     // -----------------------------------------------------------------------

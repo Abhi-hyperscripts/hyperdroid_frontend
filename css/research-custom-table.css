@@ -289,6 +289,65 @@
     border-color: var(--brand-primary);
 }
 
+/* ---- significance toggle bar inside the Layout panel ---- */
+.ct-options-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    background: color-mix(in srgb, var(--brand-primary) 3%, var(--bg-card));
+    flex-wrap: wrap;
+    font-size: 12px;
+}
+.ct-layout.collapsed .ct-options-bar { display: none; }
+.ct-sig-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-weight: 600;
+    user-select: none;
+}
+.ct-sig-toggle input[type="checkbox"] {
+    accent-color: var(--brand-primary);
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+.ct-sig-conf {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+}
+.ct-sig-conf-lbl {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.ct-sig-conf select {
+    padding: 4px 8px;
+    font-size: 12px;
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    outline: none;
+}
+.ct-sig-conf select:focus {
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+.ct-sig-hint {
+    margin-left: auto;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-style: italic;
+}
+
 /* ---- row-group stats button + sub-row styling ---- */
 .ct-group-stats-btn {
     display: inline-flex;
