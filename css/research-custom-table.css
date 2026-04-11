@@ -442,6 +442,7 @@
     border-radius: 12px;
     overflow: hidden;
     min-height: 160px;
+    max-height: 220px;        /* cap so slots don't push Preview off-screen */
     display: flex;
     flex-direction: column;
 }
@@ -487,11 +488,13 @@
 }
 .ct-slot-body {
     padding: 12px;
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     gap: 8px;
     min-height: 110px;
+    overflow-y: auto;         /* scroll when content exceeds slot height */
+    overflow-x: hidden;
 }
 .ct-slot-body.drag-over {
     background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
