@@ -228,16 +228,9 @@ async function confirmCopy() {
 }
 
 function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach(b => {
-        if (b.dataset.tab === tab) {
-            b.style.borderBottomColor = 'var(--brand-primary)';
-            b.style.color = 'var(--brand-primary)';
-            b.classList.add('active');
-        } else {
-            b.style.borderBottomColor = 'transparent';
-            b.style.color = 'var(--text-secondary)';
-            b.classList.remove('active');
-        }
+    document.querySelectorAll('.budget-tab-btn').forEach(b => {
+        if (b.dataset.tab === tab) b.classList.add('active');
+        else b.classList.remove('active');
     });
     document.getElementById('listTab').style.display = tab === 'list' ? '' : 'none';
     document.getElementById('analysisTab').style.display = tab === 'analysis' ? '' : 'none';
