@@ -277,7 +277,7 @@ body.accounts-dashboard::before {
 
 .acct-gl-section .data-table th {
     background: var(--overlay-subtle);
-    padding: 10px 16px;
+    padding: 8px 16px;
     text-align: left;
     font-size: 0.7rem;
     font-weight: 600;
@@ -288,7 +288,7 @@ body.accounts-dashboard::before {
 }
 
 .acct-gl-section .data-table td {
-    padding: 10px 16px;
+    padding: 6px 16px;
     border-bottom: 1px solid var(--border-color-lighter, var(--border-color-light));
     font-size: 0.82rem;
     color: var(--text-primary);

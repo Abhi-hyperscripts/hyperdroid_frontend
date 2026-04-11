@@ -299,7 +299,7 @@ body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):n
 
 .data-table th {
     background: var(--hover-overlay);
-    padding: 10px 14px;
+    padding: 8px 14px;
     text-align: left;
     font-size: 0.75rem;
     font-weight: 600;
@@ -311,7 +311,7 @@ body.dashboard > *:not(.navbar):not(.glassmorphic-modal):not(.confirm-overlay):n
 }
 
 .data-table td {
-    padding: 10px 14px;
+    padding: 6px 14px;
     border-bottom: 1px solid var(--hover-overlay);
     font-size: 0.85rem;
     vertical-align: middle;
