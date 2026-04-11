@@ -501,6 +501,12 @@ body.accounts-dashboard::before {
 }
 #cardRecurring:hover { border-color: #0d9488; }
 
+/* Budgets - Pink/Rose */
+#cardBudgets .action-icon {
+    background: linear-gradient(135deg, #f472b6, #db2777);
+}
+#cardBudgets:hover { border-color: #db2777; }
+
 /* =============================================================
    SECTION HEADERS
    ============================================================= */
