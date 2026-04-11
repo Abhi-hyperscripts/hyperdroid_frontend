@@ -17,7 +17,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 async function loadDashboard() {
     try {
         await Promise.all([
-            loadGLSummary(),
+            loadKpis(),
+            loadRevenueTrend(),
             loadBankingSummary(),
             loadRecentEntries(),
             loadPendingApprovals()
@@ -36,34 +37,87 @@ function refreshDashboard() {
 }
 
 // ============================================================================
-// GL Summary (Stats Cards)
+// KPIs — single roll-up call for all dashboard tiles
 // ============================================================================
 
-async function loadGLSummary() {
+async function loadKpis() {
+    const ids = ['kpiCashPosition', 'kpiRevenueMtd', 'kpiRevenueYtd', 'kpiNetProfitYtd',
+        'kpiArOutstanding', 'kpiApOutstanding', 'kpiProjected30d'];
     try {
-        const url = AccountsCommon.buildUrl('system/gl-summary');
-        const data = await api.request(url, { _skipSpinner: true });
+        const url = AccountsCommon.buildUrl('dashboard/kpis');
+        const k = await api.request(url, { _skipSpinner: true });
 
-        const rows = data.by_type_and_status || [];
-        const totalEntries = data.total_entries ?? rows.reduce((s, r) => s + (r.entry_count || 0), 0);
-        const postedEntries = data.posted_entries ?? rows.filter(r => r.status === 'posted').reduce((s, r) => s + (r.entry_count || 0), 0);
-        const draftEntries = rows.filter(r => r.status === 'draft').reduce((s, r) => s + (r.entry_count || 0), 0);
-        const totalDebit = rows.reduce((s, r) => s + (parseFloat(r.total_debit) || 0), 0);
-        const totalCredit = rows.reduce((s, r) => s + (parseFloat(r.total_credit) || 0), 0);
-        const postedDebit = rows.filter(r => r.status === 'posted').reduce((s, r) => s + (parseFloat(r.total_debit) || 0), 0);
-        const postedCredit = rows.filter(r => r.status === 'posted').reduce((s, r) => s + (parseFloat(r.total_credit) || 0), 0);
+        // Cash
+        setCurrency('kpiCashPosition', k.total_liquid);
+        setText('kpiCashSplit',
+            `Bank ${AccountsCommon.formatCurrency(k.total_bank_balance || 0)} · Cash ${AccountsCommon.formatCurrency(k.total_cash_balance || 0)}`);
 
-        setText('totalEntries', totalEntries);
-        setText('postedEntries', postedEntries);
-        setText('draftEntries', draftEntries);
-        setCurrency('totalDebit', postedDebit);
-        setCurrency('totalCredit', postedCredit);
-        setCurrency('netBalance', postedDebit - postedCredit);
+        // Revenue MTD + trend vs prev month
+        setCurrency('kpiRevenueMtd', k.revenue_mtd);
+        renderTrend('kpiRevenueMtdTrend', k.revenue_mtd, k.revenue_prev_month);
+
+        // Revenue YTD
+        setCurrency('kpiRevenueYtd', k.revenue_ytd);
+        setText('kpiFyLabel', k.fiscal_year_name || '');
+
+        // Net profit YTD
+        setCurrency('kpiNetProfitYtd', k.net_profit_ytd);
+        setText('kpiExpensesYtd',
+            `Expenses ${AccountsCommon.formatCurrency(k.expenses_ytd || 0)}`);
+
+        // AR
+        setCurrency('kpiArOutstanding', k.ar_outstanding);
+        setText('kpiArCount',
+            `${k.ar_open_invoices_count || 0} open invoice${(k.ar_open_invoices_count || 0) === 1 ? '' : 's'}`);
+        renderOverdueBadge('kpiArOverdueBadge', k.ar_overdue_count, k.ar_overdue);
+
+        // AP
+        setCurrency('kpiApOutstanding', k.ap_outstanding);
+        setText('kpiApCount',
+            `${k.ap_open_bills_count || 0} open bill${(k.ap_open_bills_count || 0) === 1 ? '' : 's'}`);
+        renderOverdueBadge('kpiApOverdueBadge', k.ap_overdue_count, k.ap_overdue);
+
+        // Projected 30d balance
+        setCurrency('kpiProjected30d', k.projected_balance_30d);
+        setText('kpiFlow30d',
+            `In ${AccountsCommon.formatCurrency(k.expected_inflow_30d || 0)} · Out ${AccountsCommon.formatCurrency(k.expected_outflow_30d || 0)}`);
     } catch (err) {
-        console.error('[Accounts:Dashboard] loadGLSummary error:', err);
-        ['totalEntries', 'postedEntries', 'draftEntries', 'totalDebit', 'totalCredit', 'netBalance']
-            .forEach(id => setText(id, '-'));
+        console.error('[Accounts:Dashboard] loadKpis error:', err);
+        ids.forEach(id => setText(id, '-'));
     }
+}
+
+async function loadRevenueTrend() {
+    try {
+        const url = AccountsCommon.buildUrl('dashboard/revenue-trend', { months: 12 });
+        const trend = await api.request(url, { _skipSpinner: true });
+        // TODO: wire to chart library (Chart.js / ApexCharts) — for now just log so
+        // the endpoint is exercised and the shape is visible during dev.
+        console.log('[Accounts:Dashboard] Revenue trend (last 12 months):', trend);
+    } catch (err) {
+        console.error('[Accounts:Dashboard] loadRevenueTrend error:', err);
+    }
+}
+
+function renderTrend(elId, current, previous) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const cur = parseFloat(current) || 0;
+    const prev = parseFloat(previous) || 0;
+    if (prev === 0 && cur === 0) { el.textContent = ''; el.className = 'kpi-trend'; return; }
+    const deltaPct = prev === 0 ? 100 : ((cur - prev) / Math.abs(prev)) * 100;
+    const up = deltaPct >= 0;
+    el.textContent = `${up ? '▲' : '▼'} ${Math.abs(deltaPct).toFixed(1)}%`;
+    el.className = 'kpi-trend ' + (up ? 'kpi-trend-up' : 'kpi-trend-down');
+}
+
+function renderOverdueBadge(elId, count, amount) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const c = parseInt(count, 10) || 0;
+    if (c <= 0) { el.style.display = 'none'; return; }
+    el.style.display = 'inline-block';
+    el.textContent = `${c} overdue · ${AccountsCommon.formatCurrency(amount || 0)}`;
 }
 
 // ============================================================================

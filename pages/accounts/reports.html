@@ -215,6 +215,11 @@
                 <div class="tab-content" id="profit-loss">
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="plFiscalYearContainer"></div>
+                        <select id="plCompareTo" class="form-control" style="max-width:200px;" title="Compare to">
+                            <option value="none">Compare to: None</option>
+                            <option value="previous_year">Compare to: Previous Year</option>
+                            <option value="previous_period">Compare to: Previous Period</option>
+                        </select>
                         <button class="btn btn-primary" onclick="loadProfitLoss()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                             Generate
@@ -240,6 +245,11 @@
                 <div class="tab-content" id="balance-sheet">
                     <div class="filters-bar">
                         <div class="searchable-dropdown-container" id="bsFiscalYearContainer"></div>
+                        <select id="bsCompareTo" class="form-control" style="max-width:200px;" title="Compare to">
+                            <option value="none">Compare to: None</option>
+                            <option value="previous_year">Compare to: Previous Year</option>
+                            <option value="previous_period">Compare to: Previous Period</option>
+                        </select>
                         <button class="btn btn-primary" onclick="loadBalanceSheet()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                             Generate

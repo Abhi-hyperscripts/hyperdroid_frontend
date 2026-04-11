@@ -186,8 +186,11 @@ async function loadProfitLoss() {
     const fyId = plFiscalYearDropdown?.getValue?.();
     if (!fyId) { Toast.error('Please select a fiscal year'); return; }
 
+    const compareTo = document.getElementById('plCompareTo')?.value || 'none';
     try {
-        const url = AccountsCommon.buildUrl('reports/profit-loss', { fiscalYearId: fyId });
+        const params = { fiscalYearId: fyId };
+        if (compareTo && compareTo !== 'none') params.compareTo = compareTo;
+        const url = AccountsCommon.buildUrl('reports/profit-loss', params);
         const data = await api.request(url);
         const fy = fiscalYears.find(f => f.id === fyId);
         document.getElementById('profitLossPeriod').textContent = fy ? (fy.name || `${fy.start_date} to ${fy.end_date}`) : '';
@@ -202,8 +205,11 @@ async function loadBalanceSheet() {
     const fyId = bsFiscalYearDropdown?.getValue?.();
     if (!fyId) { Toast.error('Please select a fiscal year'); return; }
 
+    const compareTo = document.getElementById('bsCompareTo')?.value || 'none';
     try {
-        const url = AccountsCommon.buildUrl('reports/balance-sheet', { fiscalYearId: fyId });
+        const params = { fiscalYearId: fyId };
+        if (compareTo && compareTo !== 'none') params.compareTo = compareTo;
+        const url = AccountsCommon.buildUrl('reports/balance-sheet', params);
         const data = await api.request(url);
         const fy = fiscalYears.find(f => f.id === fyId);
         document.getElementById('balanceSheetPeriod').textContent = fy ? (fy.name || `${fy.start_date} to ${fy.end_date}`) : '';
@@ -404,11 +410,52 @@ function renderTrialBalanceReport(data) {
 
 // ---- Profit & Loss ----
 
+// Direction-aware variance color. For Income accounts a positive variance (earning more)
+// is favorable → green. For Expense accounts a positive variance (spending more) is
+// unfavorable → red. Matches the rule used in budgets.js.
+function varianceColor(variance, isExpense) {
+    const v = parseFloat(variance || 0);
+    if (v === 0) return 'var(--text-secondary)';
+    const favorable = isExpense ? v < 0 : v > 0;
+    return favorable ? 'var(--color-success)' : 'var(--color-error)';
+}
+
+/**
+ * Render a variance percentage cell.
+ * - If the comparison was non-zero → show signed percentage (e.g. "+62.7%")
+ * - If the comparison was zero AND current is non-zero → show "NEW"
+ *   (backend correctly returns null in this case to avoid divide-by-zero;
+ *   the UI interprets that as "didn't exist in comparison window")
+ * - If both were zero → "—"
+ *
+ * The `comparison` and `current` params are optional; if omitted we fall
+ * back to the legacy behavior of showing "-" for null (keeps backward
+ * compatibility for any callers that haven't been updated).
+ */
+function fmtVariancePct(pct, current, comparison) {
+    if (pct === null || pct === undefined || pct === '') {
+        // Prior was zero — interpret via current/comparison values
+        if (current !== undefined && comparison !== undefined) {
+            const curNum = parseFloat(current) || 0;
+            const cmpNum = parseFloat(comparison) || 0;
+            if (cmpNum === 0 && curNum !== 0) return 'NEW';
+            if (cmpNum === 0 && curNum === 0) return '—';
+        }
+        return '-';
+    }
+    const n = parseFloat(pct);
+    if (!isFinite(n)) return '-';
+    const sign = n > 0 ? '+' : '';
+    return `${sign}${n.toFixed(1)}%`;
+}
+
 function renderProfitLossReport(data) {
     const container = document.getElementById('profitLossContent');
     if (!data) { container.innerHTML = '<div class="empty-message"><p>No data available</p></div>'; return; }
 
-    // Backend returns { sections: [{account_type, accounts: [{account_code, account_name, balance}]}], total_revenue, total_expenses, net_profit }
+    const hasComparison = !!data.compare_to && data.compare_to !== 'none';
+
+    // Backend returns { sections: [{account_type, accounts: [{account_code, account_name, balance, comparison_balance, variance, variance_percentage}]}], total_revenue, ... }
     const sections = data.sections || [];
     const incomeSection = sections.find(s => (s.account_type || '').toLowerCase().includes('income') || (s.account_type || '').toLowerCase().includes('revenue'));
     const expenseSection = sections.find(s => (s.account_type || '').toLowerCase().includes('expense'));
@@ -418,31 +465,104 @@ function renderProfitLossReport(data) {
     const totalExpenses = parseFloat(data.total_expenses || 0);
     const netProfit = parseFloat(data.net_profit ?? (totalRevenue - totalExpenses));
 
-    const renderSection = (items, label) => {
-        if (!items.length) return `<tr class="section-header"><td colspan="2"><strong>${esc(label)}</strong></td></tr>
-            <tr><td colspan="2" style="padding-left:2rem;color:var(--text-secondary);">No items</td></tr>`;
-        const rows = items.map(i => `<tr>
-            <td style="padding-left:2rem;">${esc(i.account_name || i.name)}</td>
-            <td class="amount">${fmt(i.amount || i.balance || 0)}</td>
-        </tr>`).join('');
-        return `<tr class="section-header"><td colspan="2"><strong>${esc(label)}</strong></td></tr>${rows}`;
+    const colSpan = hasComparison ? 6 : 2;
+
+    const renderSection = (items, label, isExpense) => {
+        if (!items.length) return `<tr class="section-header"><td colspan="${colSpan}"><strong>${esc(label)}</strong></td></tr>
+            <tr><td colspan="${colSpan}" style="padding-left:2rem;color:var(--text-secondary);">No items</td></tr>`;
+        const rows = items.map(i => {
+            const code = esc(i.account_code || '');
+            const name = esc(i.account_name || i.name || '');
+            const bal = parseFloat(i.amount || i.balance || 0);
+            if (!hasComparison) {
+                return `<tr>
+                    <td style="padding-left:2rem;">${name}</td>
+                    <td class="amount">${fmt(bal)}</td>
+                </tr>`;
+            }
+            const cmp = parseFloat(i.comparison_balance || 0);
+            const variance = parseFloat(i.variance ?? (bal - cmp));
+            const varPct = i.variance_percentage;
+            const vcolor = varianceColor(variance, isExpense);
+            return `<tr>
+                <td>${code}</td>
+                <td>${name}</td>
+                <td class="amount">${fmt(bal)}</td>
+                <td class="amount">${fmt(cmp)}</td>
+                <td class="amount" style="color:${vcolor};">${fmt(variance)}</td>
+                <td class="amount" style="color:${vcolor};">${fmtVariancePct(varPct, bal, cmp)}</td>
+            </tr>`;
+        }).join('');
+        return `<tr class="section-header"><td colspan="${colSpan}"><strong>${esc(label)}</strong></td></tr>${rows}`;
     };
 
+    // Headers
+    const headerRow = hasComparison
+        ? `<tr>
+              <th>Code</th>
+              <th>Account Name</th>
+              <th class="amount">Current</th>
+              <th class="amount">Comparison</th>
+              <th class="amount">Variance</th>
+              <th class="amount">Variance %</th>
+           </tr>`
+        : `<tr><th>Particulars</th><th class="amount">Amount</th></tr>`;
+
+    // Subtotals
+    const revCmp = parseFloat(data.total_revenue_comparison || 0);
+    const expCmp = parseFloat(data.total_expenses_comparison || 0);
+    const netCmp = parseFloat(data.net_profit_comparison || 0);
+    const revVar = parseFloat(data.total_revenue_variance ?? (totalRevenue - revCmp));
+    const expVar = parseFloat(data.total_expenses_variance ?? (totalExpenses - expCmp));
+    const netVar = parseFloat(data.net_profit_variance ?? (netProfit - netCmp));
+
+    const revVColor = varianceColor(revVar, false);
+    const expVColor = varianceColor(expVar, true);
+    const netVColor = netVar >= 0 ? 'var(--color-success)' : 'var(--color-error)';
+
+    const subtotalRow = (label, current, cmp, variance, varPct, color) => {
+        if (!hasComparison) {
+            return `<tr class="subtotal-row"><td><strong>${label}</strong></td><td class="amount"><strong>${fmt(current)}</strong></td></tr>`;
+        }
+        return `<tr class="subtotal-row">
+            <td colspan="2"><strong>${label}</strong></td>
+            <td class="amount"><strong>${fmt(current)}</strong></td>
+            <td class="amount"><strong>${fmt(cmp)}</strong></td>
+            <td class="amount" style="color:${color};"><strong>${fmt(variance)}</strong></td>
+            <td class="amount" style="color:${color};"><strong>${fmtVariancePct(varPct, current, cmp)}</strong></td>
+        </tr>`;
+    };
+
+    const totalRow = hasComparison
+        ? `<tr class="total-row ${netProfit >= 0 ? 'profit' : 'loss'}">
+               <td colspan="2"><strong>${netProfit >= 0 ? 'Net Profit' : 'Net Loss'}</strong></td>
+               <td class="amount"><strong>${fmt(Math.abs(netProfit))}</strong></td>
+               <td class="amount"><strong>${fmt(Math.abs(netCmp))}</strong></td>
+               <td class="amount" style="color:${netVColor};"><strong>${fmt(netVar)}</strong></td>
+               <td class="amount" style="color:${netVColor};"><strong>${fmtVariancePct(data.net_profit_variance_percentage, netProfit, netCmp)}</strong></td>
+           </tr>`
+        : `<tr class="total-row ${netProfit >= 0 ? 'profit' : 'loss'}">
+               <td><strong>${netProfit >= 0 ? 'Net Profit' : 'Net Loss'}</strong></td>
+               <td class="amount"><strong>${fmt(Math.abs(netProfit))}</strong></td>
+           </tr>`;
+
+    const comparisonBanner = hasComparison && data.comparison_label
+        ? `<div class="report-note" style="margin-bottom:0.5rem;">Comparison: <strong>${esc(data.comparison_label)}</strong></div>`
+        : '';
+
     container.innerHTML = `
+        ${comparisonBanner}
         <div class="data-table-container">
             <table class="data-table report-table">
-                <thead><tr><th>Particulars</th><th class="amount">Amount</th></tr></thead>
+                <thead>${headerRow}</thead>
                 <tbody>
-                    ${renderSection(revenue, 'Revenue / Income')}
-                    <tr class="subtotal-row"><td><strong>Total Revenue</strong></td><td class="amount"><strong>${fmt(totalRevenue)}</strong></td></tr>
-                    ${renderSection(expenses, 'Expenses')}
-                    <tr class="subtotal-row"><td><strong>Total Expenses</strong></td><td class="amount"><strong>${fmt(totalExpenses)}</strong></td></tr>
+                    ${renderSection(revenue, 'Revenue / Income', false)}
+                    ${subtotalRow('Total Revenue', totalRevenue, revCmp, revVar, data.total_revenue_variance_percentage, revVColor)}
+                    ${renderSection(expenses, 'Expenses', true)}
+                    ${subtotalRow('Total Expenses', totalExpenses, expCmp, expVar, data.total_expenses_variance_percentage, expVColor)}
                 </tbody>
                 <tfoot>
-                    <tr class="total-row ${netProfit >= 0 ? 'profit' : 'loss'}">
-                        <td><strong>${netProfit >= 0 ? 'Net Profit' : 'Net Loss'}</strong></td>
-                        <td class="amount"><strong>${fmt(Math.abs(netProfit))}</strong></td>
-                    </tr>
+                    ${totalRow}
                 </tfoot>
             </table>
         </div>`;
@@ -454,7 +574,9 @@ function renderBalanceSheetReport(data) {
     const container = document.getElementById('balanceSheetContent');
     if (!data) { container.innerHTML = '<div class="empty-message"><p>No data available</p></div>'; return; }
 
-    // Backend returns { sections: [{account_type, accounts}], total_assets, total_liabilities, total_equity, current_year_pl }
+    const hasComparison = !!data.compare_to && data.compare_to !== 'none';
+
+    // Backend returns { sections: [{account_type, accounts}], total_assets, total_liabilities, total_equity, current_year_pl, ... }
     const sections = data.sections || [];
     const assets = sections.find(s => (s.account_type || '').toLowerCase().includes('asset'))?.accounts || data.assets || [];
     const liabilities = sections.find(s => (s.account_type || '').toLowerCase().includes('liabilit'))?.accounts || data.liabilities || [];
@@ -464,30 +586,106 @@ function renderBalanceSheetReport(data) {
     const totalEquity = parseFloat(data.total_equity || 0) + parseFloat(data.current_year_pl || 0);
     const liabEquity = totalLiabilities + totalEquity;
 
+    const colSpan = hasComparison ? 6 : 2;
+
+    // For Balance Sheet: Assets growing is favorable (green), Liabilities growing is
+    // unfavorable (red). Equity growing is favorable.
+    const sectionIsUnfavorableWhenUp = (label) => label === 'Liabilities';
+
     const renderSection = (items, label) => {
-        const rows = items.map(i => `<tr>
-            <td style="padding-left:2rem;">${esc(i.account_name || i.name)}</td>
-            <td class="amount">${fmt(i.amount || i.balance || 0)}</td>
-        </tr>`).join('');
-        return `<tr class="section-header"><td colspan="2"><strong>${esc(label)}</strong></td></tr>
-            ${rows || '<tr><td colspan="2" style="padding-left:2rem;color:var(--text-secondary);">No items</td></tr>'}`;
+        const isUnfavUp = sectionIsUnfavorableWhenUp(label);
+        const rows = items.map(i => {
+            const code = esc(i.account_code || '');
+            const name = esc(i.account_name || i.name || '');
+            const bal = parseFloat(i.amount || i.balance || 0);
+            if (!hasComparison) {
+                return `<tr>
+                    <td style="padding-left:2rem;">${name}</td>
+                    <td class="amount">${fmt(bal)}</td>
+                </tr>`;
+            }
+            const cmp = parseFloat(i.comparison_balance || 0);
+            const variance = parseFloat(i.variance ?? (bal - cmp));
+            const varPct = i.variance_percentage;
+            const vcolor = varianceColor(variance, isUnfavUp);
+            return `<tr>
+                <td>${code}</td>
+                <td>${name}</td>
+                <td class="amount">${fmt(bal)}</td>
+                <td class="amount">${fmt(cmp)}</td>
+                <td class="amount" style="color:${vcolor};">${fmt(variance)}</td>
+                <td class="amount" style="color:${vcolor};">${fmtVariancePct(varPct, bal, cmp)}</td>
+            </tr>`;
+        }).join('');
+        return `<tr class="section-header"><td colspan="${colSpan}"><strong>${esc(label)}</strong></td></tr>
+            ${rows || `<tr><td colspan="${colSpan}" style="padding-left:2rem;color:var(--text-secondary);">No items</td></tr>`}`;
     };
+
+    const headerRow = hasComparison
+        ? `<tr>
+              <th>Code</th>
+              <th>Account Name</th>
+              <th class="amount">Current</th>
+              <th class="amount">Comparison</th>
+              <th class="amount">Variance</th>
+              <th class="amount">Variance %</th>
+           </tr>`
+        : `<tr><th>Particulars</th><th class="amount">Amount</th></tr>`;
+
+    const assetsCmp = parseFloat(data.total_assets_comparison || 0);
+    const liabCmp = parseFloat(data.total_liabilities_comparison || 0);
+    const equityCmp = parseFloat(data.total_equity_comparison || 0);
+    const assetsVar = parseFloat(data.total_assets_variance ?? (totalAssets - assetsCmp));
+    const liabVar = parseFloat(data.total_liabilities_variance ?? (totalLiabilities - liabCmp));
+    const equityVar = parseFloat(data.total_equity_variance ?? (totalEquity - equityCmp));
+
+    const assetsColor = varianceColor(assetsVar, false);
+    const liabColor = varianceColor(liabVar, true);
+    const equityColor = varianceColor(equityVar, false);
+
+    const subtotalRow = (label, current, cmp, variance, varPct, color) => {
+        if (!hasComparison) {
+            return `<tr class="subtotal-row"><td><strong>${label}</strong></td><td class="amount"><strong>${fmt(current)}</strong></td></tr>`;
+        }
+        return `<tr class="subtotal-row">
+            <td colspan="2"><strong>${label}</strong></td>
+            <td class="amount"><strong>${fmt(current)}</strong></td>
+            <td class="amount"><strong>${fmt(cmp)}</strong></td>
+            <td class="amount" style="color:${color};"><strong>${fmt(variance)}</strong></td>
+            <td class="amount" style="color:${color};"><strong>${fmtVariancePct(varPct, current, cmp)}</strong></td>
+        </tr>`;
+    };
+
+    const totalRow = hasComparison
+        ? `<tr class="total-row">
+               <td colspan="2"><strong>Liabilities + Equity</strong></td>
+               <td class="amount"><strong>${fmt(liabEquity)}</strong></td>
+               <td class="amount"><strong>${fmt(liabCmp + equityCmp)}</strong></td>
+               <td class="amount"><strong>${fmt(liabVar + equityVar)}</strong></td>
+               <td class="amount">—</td>
+           </tr>`
+        : `<tr class="total-row"><td><strong>Liabilities + Equity</strong></td><td class="amount"><strong>${fmt(liabEquity)}</strong></td></tr>`;
+
+    const comparisonBanner = hasComparison && data.comparison_label
+        ? `<div class="report-note" style="margin-bottom:0.5rem;">Comparison as at: <strong>${esc(data.comparison_label)}</strong></div>`
+        : '';
 
     const balanced = Math.abs(totalAssets - liabEquity) < 0.01;
     container.innerHTML = `
+        ${comparisonBanner}
         <div class="data-table-container">
             <table class="data-table report-table">
-                <thead><tr><th>Particulars</th><th class="amount">Amount</th></tr></thead>
+                <thead>${headerRow}</thead>
                 <tbody>
                     ${renderSection(assets, 'Assets')}
-                    <tr class="subtotal-row"><td><strong>Total Assets</strong></td><td class="amount"><strong>${fmt(totalAssets)}</strong></td></tr>
+                    ${subtotalRow('Total Assets', totalAssets, assetsCmp, assetsVar, data.total_assets_variance_percentage, assetsColor)}
                     ${renderSection(liabilities, 'Liabilities')}
-                    <tr class="subtotal-row"><td><strong>Total Liabilities</strong></td><td class="amount"><strong>${fmt(totalLiabilities)}</strong></td></tr>
+                    ${subtotalRow('Total Liabilities', totalLiabilities, liabCmp, liabVar, data.total_liabilities_variance_percentage, liabColor)}
                     ${renderSection(equity, 'Equity')}
-                    <tr class="subtotal-row"><td><strong>Total Equity</strong></td><td class="amount"><strong>${fmt(totalEquity)}</strong></td></tr>
+                    ${subtotalRow('Total Equity', totalEquity, equityCmp, equityVar, data.total_equity_variance_percentage, equityColor)}
                 </tbody>
                 <tfoot>
-                    <tr class="total-row"><td><strong>Liabilities + Equity</strong></td><td class="amount"><strong>${fmt(liabEquity)}</strong></td></tr>
+                    ${totalRow}
                 </tfoot>
             </table>
         </div>

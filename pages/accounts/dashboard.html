@@ -55,48 +55,28 @@
             </button>
         </div>
 
-        <!-- Stats Overview -->
+        <!-- KPI Overview — live data from /accounts/dashboard/kpis -->
         <div class="stats-grid" id="statsGrid">
-            <div class="stat-card">
-                <div class="stat-card-header">
-                    <div class="stat-icon acct-accounts">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 7V4a2 2 0 0 1 2-2h8.5L20 7.5V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="2" y1="15" x2="12" y2="15"/>
-                        </svg>
-                    </div>
-                </div>
-                <div class="stat-value" id="totalEntries">-</div>
-                <div class="stat-label">Total GL Entries</div>
-            </div>
-
+            <!-- Cash Position -->
             <div class="stat-card">
                 <div class="stat-card-header">
                     <div class="stat-icon acct-assets">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 11 12 14 22 4"/>
-                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                            <line x1="3" y1="22" x2="21" y2="22"/>
+                            <line x1="6" y1="18" x2="6" y2="11"/>
+                            <line x1="10" y1="18" x2="10" y2="11"/>
+                            <line x1="14" y1="18" x2="14" y2="11"/>
+                            <line x1="18" y1="18" x2="18" y2="11"/>
+                            <polygon points="12 2 2 8 22 8"/>
                         </svg>
                     </div>
                 </div>
-                <div class="stat-value" id="postedEntries">-</div>
-                <div class="stat-label">Posted Entries</div>
+                <div class="stat-value" id="kpiCashPosition">-</div>
+                <div class="stat-label">Cash Position</div>
+                <div class="stat-sublabel" id="kpiCashSplit">Bank + Cash</div>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-card-header">
-                    <div class="stat-icon acct-liabilities">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                    </div>
-                </div>
-                <div class="stat-value" id="draftEntries">-</div>
-                <div class="stat-label">Draft Entries</div>
-            </div>
-
+            <!-- MTD Revenue with trend arrow -->
             <div class="stat-card">
                 <div class="stat-card-header">
                     <div class="stat-icon acct-revenue">
@@ -105,24 +85,27 @@
                             <polyline points="17 6 23 6 23 12"/>
                         </svg>
                     </div>
+                    <span id="kpiRevenueMtdTrend" class="kpi-trend"></span>
                 </div>
-                <div class="stat-value" id="totalDebit">-</div>
-                <div class="stat-label">Total Debit (Posted)</div>
+                <div class="stat-value" id="kpiRevenueMtd">-</div>
+                <div class="stat-label">Revenue (MTD)</div>
             </div>
 
+            <!-- YTD Revenue -->
             <div class="stat-card">
                 <div class="stat-card-header">
-                    <div class="stat-icon acct-expenses">
+                    <div class="stat-icon acct-revenue">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
-                            <polyline points="17 18 23 18 23 12"/>
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                         </svg>
                     </div>
                 </div>
-                <div class="stat-value" id="totalCredit">-</div>
-                <div class="stat-label">Total Credit (Posted)</div>
+                <div class="stat-value" id="kpiRevenueYtd">-</div>
+                <div class="stat-label">Revenue (YTD)</div>
+                <div class="stat-sublabel" id="kpiFyLabel"></div>
             </div>
 
+            <!-- Net Profit YTD -->
             <div class="stat-card">
                 <div class="stat-card-header">
                     <div class="stat-icon acct-net-income">
@@ -132,8 +115,59 @@
                         </svg>
                     </div>
                 </div>
-                <div class="stat-value" id="netBalance">-</div>
-                <div class="stat-label">Net Balance</div>
+                <div class="stat-value" id="kpiNetProfitYtd">-</div>
+                <div class="stat-label">Net Profit (YTD)</div>
+                <div class="stat-sublabel" id="kpiExpensesYtd"></div>
+            </div>
+
+            <!-- AR Outstanding with overdue badge -->
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon acct-accounts">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                            <line x1="1" y1="10" x2="23" y2="10"/>
+                        </svg>
+                    </div>
+                    <span id="kpiArOverdueBadge" class="kpi-badge kpi-badge-danger" style="display:none;"></span>
+                </div>
+                <div class="stat-value" id="kpiArOutstanding">-</div>
+                <div class="stat-label">AR Outstanding</div>
+                <div class="stat-sublabel" id="kpiArCount"></div>
+            </div>
+
+            <!-- AP Outstanding with overdue badge -->
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon acct-liabilities">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                    </div>
+                    <span id="kpiApOverdueBadge" class="kpi-badge kpi-badge-danger" style="display:none;"></span>
+                </div>
+                <div class="stat-value" id="kpiApOutstanding">-</div>
+                <div class="stat-label">AP Outstanding</div>
+                <div class="stat-sublabel" id="kpiApCount"></div>
+            </div>
+
+            <!-- Projected Balance 30 days -->
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon acct-expenses">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <polyline points="1 20 1 14 7 14"/>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="stat-value" id="kpiProjected30d">-</div>
+                <div class="stat-label">Projected Balance (30d)</div>
+                <div class="stat-sublabel" id="kpiFlow30d"></div>
             </div>
         </div>
 
