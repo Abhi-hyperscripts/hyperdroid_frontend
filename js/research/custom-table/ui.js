@@ -1117,7 +1117,7 @@
             const checked = checkedSet.has(String(c.code)) ? 'checked' : '';
             return `<label class="ct-codes-row">
                 <input type="checkbox" data-code="${escapeHtml(String(c.code))}" ${checked}>
-                <span class="ct-codes-label">${escapeHtml(c.label || `${varName}=${c.code}`)}</span>
+                <span class="ct-codes-label">${escapeHtml(c.label ? `${c.code} - ${c.label}` : `${c.code} (no label)`)}</span>
                 <span class="ct-codes-count">${(c.count || 0).toLocaleString()}</span>
             </label>`;
         }).join('');

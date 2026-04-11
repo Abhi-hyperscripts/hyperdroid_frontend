@@ -94,7 +94,7 @@
                 // deserve a column that renders as all-zero).
                 .filter(e => includeAll ? (e.count || 0) > 0 : keep(e.code))
                 .map(e => ({
-                    label: e.label || `${variableName} (code ${e.code})`,
+                    label: e.label ? `${e.code} - ${e.label}` : `${variableName} (code ${e.code})`,
                     expression: `${variableName} = ${literalFor(e.code)}`,
                 }));
         }
@@ -105,7 +105,7 @@
             return labels
                 .filter(([code]) => keep(code))
                 .map(([code, label]) => ({
-                    label: label || `${variableName} (code ${code})`,
+                    label: label ? `${code} - ${label}` : `${variableName} (code ${code})`,
                     expression: `${variableName} = ${literalFor(code)}`,
                 }));
         }
