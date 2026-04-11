@@ -638,19 +638,16 @@
         // appends descriptive-stat rows below the data rows, computed across
         // the row values in each column. Deduplicate the union of enabled
         // stats across all row groups.
-        const request = window.CustomTable.buildCustomTableRequest(state, variablesByName, state.fileId, codesCache);
-        request.input_params.measure = { type: 'count' };
-        const allStats = new Set();
-        for (const group of state.rows || []) {
-            for (const s of (group.stats || [])) allStats.add(s);
-        }
-        if (allStats.size > 0) {
-            request.input_params.statistics = Array.from(allStats);
-        }
+        const baseRequest = window.CustomTable.buildCustomTableRequest(state, variablesByName, state.fileId, codesCache);
+        baseRequest.input_params.measure = { type: 'count' };
         const weightVar = state.weight?.[0]?.vars?.[0]?.name;
-        if (weightVar) {
-            request.input_params.weight = { variable: weightVar };
-        }
+        if (weightVar) baseRequest.input_params.weight = { variable: weightVar };
+
+        // Fan out one parallel request per row group that has stats enabled.
+        // Each variant gets ONLY that group's rows plus its own statistics[]
+        // so the backend computes the stats against just that group's
+        // distribution — not a union across every row variable in the table.
+        const statVariants = buildStatVariantRequests(baseRequest);
 
         const preview = document.getElementById('ctPreview');
         preview.innerHTML = `
@@ -661,21 +658,114 @@
 
         try {
             const url = `${CONFIG.researchApiBaseUrl}/projects/${projectId}/functions/execute`;
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${getAuthToken()}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(request),
-            });
-            const body = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(body.error || body.message || `Request failed (${res.status})`);
-            renderResult(body);
+            const headers = {
+                'Authorization': `Bearer ${getAuthToken()}`,
+                'Content-Type': 'application/json',
+            };
+            const baseP = fetch(url, { method: 'POST', headers, body: JSON.stringify(baseRequest) })
+                .then(r => r.json().catch(() => ({})).then(b => ({ ok: r.ok, body: b, res: r })));
+            const variantPs = statVariants.map(v =>
+                fetch(url, { method: 'POST', headers, body: JSON.stringify(v.request) })
+                    .then(r => r.json().catch(() => ({})).then(b => ({ ok: r.ok, body: b, groupId: v.groupId })))
+            );
+            const [base, ...variants] = await Promise.all([baseP, ...variantPs]);
+            if (!base.ok) throw new Error(base.body?.error || base.body?.message || `Request failed (${base.res.status})`);
+            renderResult(mergeVariantStatsIntoBase(base.body, variants.filter(v => v.ok)));
         } catch (err) {
             console.error('[customtable run]', err);
             preview.innerHTML = `<div class="ct-preview-error">${escapeHtml(err.message || 'Request failed')}</div>`;
         }
+    }
+
+    /**
+     * For every row group that has stats enabled, produce a cloned request
+     * where `rows` is replaced by JUST that group's expansion and where
+     * `statistics` carries the group's enabled stat list.
+     */
+    function buildStatVariantRequests(baseRequest) {
+        const variants = [];
+        for (const group of state.rows || []) {
+            if (!group.stats || group.stats.length === 0) continue;
+            const expanded = window.CustomTable.expandGroup(group, variablesByName, codesCache);
+            if (expanded.length === 0) continue;
+            const req = JSON.parse(JSON.stringify(baseRequest));
+            // Keep a Base row first so backend stat skip-list still excludes it.
+            req.input_params.rows = [
+                { label: 'Base', expression: '1=1' },
+                ...expanded,
+            ];
+            req.input_params.statistics = [...group.stats];
+            variants.push({ groupId: group.id, request: req });
+        }
+        return variants;
+    }
+
+    /**
+     * Merge per-group stat rows from the variant responses into the base
+     * result. For each group we locate the last category row that belongs
+     * to it, then insert the variant's stat rows (Mean/Std Dev/…) right
+     * after it — so each group's stats sit at the end of its own section.
+     */
+    function mergeVariantStatsIntoBase(baseBody, variantResponses) {
+        const base = baseBody.result || baseBody;
+        if (!base?.rows || variantResponses.length === 0) return baseBody;
+
+        const cols = base.columns || [];
+        const rowLabelKey = cols[0];
+        if (!rowLabelKey) return baseBody;
+
+        // Label → groupId map so we can find each group's last row index.
+        const labelToGroupId = new Map();
+        for (const g of state.rows || []) {
+            const expanded = window.CustomTable.expandGroup(g, variablesByName, codesCache);
+            for (const e of expanded) {
+                labelToGroupId.set(e.label, g.id);
+                // Backend may indent labels when there are multiple groups.
+                labelToGroupId.set('  ' + e.label, g.id);
+            }
+        }
+
+        // Extract stat-row labels ('Mean', 'Median', 'Std Dev', …) from each
+        // variant response. These are the rows the backend appended.
+        const STAT_LABELS = new Set(['Mean', 'Median', 'Std Dev', 'Variance', 'Min', 'Max', 'Sum']);
+        const statRowsByGroup = new Map();
+        for (const v of variantResponses) {
+            const vResult = v.body.result || v.body;
+            const vRows = (vResult.rows || []).filter(r => {
+                const lbl = String(r[rowLabelKey] ?? '').trim();
+                return STAT_LABELS.has(lbl);
+            });
+            // Mark them so renderResult styles them as ct-row-stat.
+            for (const r of vRows) r.__ct_stat_sub = true;
+            statRowsByGroup.set(v.groupId, vRows);
+        }
+
+        // Walk base rows. For each row that belongs to a group, remember it as
+        // the current group's "last row". When the group changes (or we reach
+        // the end), flush that group's stat rows into the output.
+        const newRows = [];
+        let currentGroup = null;
+        for (let i = 0; i < base.rows.length; i++) {
+            const row = base.rows[i];
+            const lbl = String(row[rowLabelKey] ?? '');
+            const gid = labelToGroupId.get(lbl) || null;
+
+            if (currentGroup && gid !== currentGroup) {
+                // Flush stats for the group we're leaving.
+                const stats = statRowsByGroup.get(currentGroup) || [];
+                for (const s of stats) newRows.push(s);
+                currentGroup = null;
+            }
+            newRows.push(row);
+            if (gid) currentGroup = gid;
+        }
+        // End of table — flush the last seen group if any.
+        if (currentGroup) {
+            const stats = statRowsByGroup.get(currentGroup) || [];
+            for (const s of stats) newRows.push(s);
+        }
+
+        return { result: { ...base, rows: newRows } };
     }
 
     // -----------------------------------------------------------------------
