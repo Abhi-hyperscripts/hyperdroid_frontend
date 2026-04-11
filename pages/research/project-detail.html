@@ -5167,11 +5167,11 @@
         }
 
         /* ===== OPEN-END CODING ===== */
-        #codeframeModal, #codeEditModal, #costBreakdownModal, #responseEditModal, #waveModal, #customTableModal {
+        #codeframeModal, #codeEditModal, #costBreakdownModal, #responseEditModal, #waveModal, #customTableModal, #rimWeightingModal, #rimWeightingResultModal {
             display: none !important;
             pointer-events: none;
         }
-        #codeframeModal.active, #codeEditModal.active, #costBreakdownModal.active, #responseEditModal.active, #waveModal.active, #customTableModal.active {
+        #codeframeModal.active, #codeEditModal.active, #costBreakdownModal.active, #responseEditModal.active, #waveModal.active, #customTableModal.active, #rimWeightingModal.active, #rimWeightingResultModal.active {
             display: flex !important;
             opacity: 1 !important;
             pointer-events: auto;
@@ -5180,11 +5180,503 @@
            them behind the navbar. Bump our builder modals above everything so
            nothing clips across the top edge. */
         #waveModal.active,
-        #customTableModal.active {
+        #customTableModal.active,
+        #rimWeightingModal.active {
             z-index: 1000001 !important;
             align-items: flex-start !important;
             padding-top: 72px !important;
             padding-bottom: 20px !important;
+        }
+        /* Result modal stacks ABOVE the builder modal */
+        #rimWeightingResultModal.active {
+            z-index: 1000010 !important;
+            align-items: center !important;
+        }
+        /* ===== RIM Weighting modal — RW-specific styles =====
+           This project uses --bg-input, --border-color, --brand-primary,
+           --text-primary, --text-secondary. Other --bg-* / --border-primary
+           variants don't exist here — fall back to literals so styles always
+           apply, even if the theme variables drift. */
+
+        /* The slot is a vertical stack of factor cards + ONE compact drop
+           zone at the bottom. nowrap + visible overflow keeps everything
+           in a single column. */
+        #rimWeightingModal #rwSlotFactors {
+            display: flex !important;
+            flex-direction: column !important;
+            flex-wrap: nowrap !important;
+            gap: 14px !important;
+            align-items: stretch !important;
+            padding: 14px !important;
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
+            background: transparent !important;
+            border: none !important;
+        }
+        /* Single drop zone — always present as the last child of the slot.
+           Compact (140px tall on first render, expands when dragging over). */
+        #rimWeightingModal .rw-drop-zone {
+            flex-shrink: 0;
+            min-height: 140px;
+            border: 2px dashed #475569;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, .35);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: #64748b; font-size: 13px;
+            transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+        }
+        #rimWeightingModal .rw-drop-zone-icon {
+            width: 44px; height: 44px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            background: rgba(59, 130, 246, .12);
+            border: 1px solid rgba(59, 130, 246, .3);
+            color: #3b82f6;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; line-height: 1;
+            pointer-events: none;
+        }
+        #rimWeightingModal .rw-drop-zone-text {
+            font-weight: 500;
+            pointer-events: none;
+        }
+        #rimWeightingModal .rw-drop-zone-sub {
+            font-size: 11px; color: #475569; margin-top: 4px;
+            pointer-events: none;
+        }
+        /* Drag-over highlight */
+        #rimWeightingModal .rw-drop-zone.drag-over {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, .12);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, .25);
+            color: #3b82f6;
+        }
+        /* Scroll chain: keep the modal body / workbench at fixed height
+           (.ct-workbench is CSS Grid with 280px palette + 1fr builder — DO
+           NOT change display). The builder column gets `overflow-y: auto`
+           so stacked factor cards scroll inside it while the palette stays
+           pinned. */
+        #rimWeightingModal .gm-body { overflow: hidden !important; }
+        #rimWeightingModal .ct-builder {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+        /* Strip the layout panel's own background/border/rounded corners so
+           the factor cards sit directly on the modal background. The CT
+           builder uses a "card inside a card" frame which made the RIM
+           layout look like nested boxes — for RIM, the factor cards are
+           THE primary visual unit and shouldn't be wrapped in another.
+
+           Also flex: 1 down the chain so the Factors slot fills the entire
+           builder column height. Otherwise the empty drop zone is only
+           ~380px tall and there's a big un-droppable gap below it. */
+        #rimWeightingModal .ct-layout {
+            overflow: visible !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            flex: 1 1 auto !important;
+            min-height: 0;
+            display: flex; flex-direction: column;
+        }
+        #rimWeightingModal .ct-slots {
+            overflow: visible !important;
+            flex: 1 1 auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            min-height: 0;
+        }
+        #rimWeightingModal .ct-slot[data-slot="factors"] {
+            overflow: visible !important;
+            background: transparent !important;
+            border: none !important;
+            flex: 1 1 auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            min-height: 0;
+            max-height: none !important;  /* CT CSS caps slots at 220px — RIM has no preview competing for space */
+        }
+        #rimWeightingModal .ct-slot-header {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 14px 6px !important;
+            flex-shrink: 0;
+        }
+        #rimWeightingModal .rw-factor-card {
+            display: block;
+            width: 100%;
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin: 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+        }
+        #rimWeightingModal .rw-factor-loading { opacity: .65; }
+        #rimWeightingModal .rw-factor-loading-text { font-size: 12px; color: #94a3b8; }
+        #rimWeightingModal .rw-factor-header {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            gap: 10px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        #rimWeightingModal .rw-factor-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        #rimWeightingModal .rw-factor-name { font-weight: 700; font-size: 13px; color: #f1f5f9; letter-spacing: .2px; }
+        #rimWeightingModal .rw-factor-label {
+            font-size: 11px; color: #94a3b8;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px;
+        }
+        #rimWeightingModal .rw-factor-actions { display: flex; gap: 4px; }
+        #rimWeightingModal .rw-factor-equalize,
+        #rimWeightingModal .rw-factor-remove {
+            background: #0f172a; color: #94a3b8;
+            border: 1px solid #334155; border-radius: 6px;
+            width: 24px; height: 24px; line-height: 1; font-size: 13px; cursor: pointer;
+        }
+        #rimWeightingModal .rw-factor-equalize:hover,
+        #rimWeightingModal .rw-factor-remove:hover { color: #f1f5f9; border-color: #3b82f6; }
+        #rimWeightingModal .rw-factor-table {
+            width: 100%; border-collapse: collapse; font-size: 12px;
+            table-layout: fixed;
+        }
+        #rimWeightingModal .rw-factor-table th {
+            text-align: left; font-weight: 600; color: #94a3b8;
+            padding: 6px 10px; border-bottom: 1px solid #334155;
+            font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+        }
+        #rimWeightingModal .rw-factor-table th.rw-th-target { text-align: right; padding-right: 14px; }
+        #rimWeightingModal .rw-factor-table td {
+            padding: 6px 10px; border-bottom: 1px dashed #334155;
+            color: #f1f5f9; vertical-align: middle;
+        }
+        #rimWeightingModal .rw-factor-table tr:last-child td { border-bottom: none; }
+        #rimWeightingModal .rw-factor-table col.rw-col-code   { width: 70px; }
+        #rimWeightingModal .rw-factor-table col.rw-col-label  { width: auto; }
+        #rimWeightingModal .rw-factor-table col.rw-col-actual { width: 110px; }
+        #rimWeightingModal .rw-factor-table col.rw-col-target { width: 140px; }
+        #rimWeightingModal .rw-factor-table th.rw-th-actual { text-align: right; padding-right: 14px; }
+        #rimWeightingModal .rw-actual-cell {
+            text-align: right; padding-right: 14px;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            color: #94a3b8; font-size: 12px;
+        }
+        #rimWeightingModal .rw-pct-inline {
+            color: #64748b; margin-left: 2px; font-size: 11px;
+        }
+        #rimWeightingModal .rw-code-cell {
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            color: #f1f5f9;
+        }
+        #rimWeightingModal .rw-code-label-cell {
+            color: #94a3b8;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        #rimWeightingModal .rw-code-input-cell {
+            text-align: right; padding-right: 10px;
+        }
+        /* Wrap input + % suffix together so they read as a single input box.
+           The visible border is on the wrapper. Use literal hex so this works
+           regardless of which CSS variable schema the rest of the page uses. */
+        #rimWeightingModal .rw-target-input-wrap {
+            display: inline-flex; align-items: center;
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            padding: 0 8px 0 0;
+            transition: border-color .12s ease, box-shadow .12s ease;
+            width: 120px; margin-left: auto;
+        }
+        #rimWeightingModal .rw-target-input-wrap:hover { border-color: #64748b; }
+        #rimWeightingModal .rw-target-input-wrap:focus-within {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, .25);
+            background: #1e293b;
+        }
+        #rimWeightingModal .rw-target-input {
+            flex: 1; min-width: 0;
+            padding: 7px 10px;
+            background: transparent; border: none; outline: none;
+            color: #f1f5f9; text-align: right;
+            font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px;
+        }
+        /* Strip the spinner buttons — they make the visible width inconsistent
+           and steal click space from the right edge of the field. */
+        #rimWeightingModal .rw-target-input::-webkit-outer-spin-button,
+        #rimWeightingModal .rw-target-input::-webkit-inner-spin-button {
+            -webkit-appearance: none; margin: 0;
+        }
+        #rimWeightingModal .rw-target-input { -moz-appearance: textfield; }
+        #rimWeightingModal .rw-pct-suffix {
+            color: #94a3b8; font-size: 11px;
+            padding-left: 2px; pointer-events: none;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+        }
+        #rimWeightingModal .rw-factor-sum {
+            margin-top: 8px; font-size: 11px; padding: 6px 10px;
+            border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;
+        }
+        #rimWeightingModal .rw-sum-valid { background: rgba(34,197,94,.12); color: #22c55e; }
+        #rimWeightingModal .rw-sum-invalid { background: rgba(239,68,68,.12); color: #ef4444; }
+        #rimWeightingModal .rw-sum-icon { font-weight: 700; }
+        #rimWeightingModal .rw-palette-disabled-title {
+            color: #94a3b8; opacity: .7; margin-top: 6px;
+        }
+        #rimWeightingModal .rw-var-disabled { opacity: .4; pointer-events: none; }
+        /* ----- Collapsible Filter strip pinned at the top of the layout ----- */
+        #rimWeightingModal .rw-filter-collapsible {
+            border: 1px solid #334155;
+            border-radius: 8px;
+            background: #0f172a;
+            margin: 10px 14px 8px;
+            overflow: visible;  /* let the (i) popover escape this container */
+            position: relative;
+            z-index: 50;
+        }
+        #rimWeightingModal .rw-filter-toggle {
+            display: flex; align-items: center; gap: 8px;
+            width: 100%; padding: 8px 12px;
+            background: transparent; border: none; cursor: pointer;
+            color: #94a3b8; font-size: 11px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .5px;
+            text-align: left;
+        }
+        #rimWeightingModal .rw-filter-toggle:hover { color: #f1f5f9; }
+        #rimWeightingModal .rw-filter-chevron {
+            transition: transform .15s ease;
+            color: #64748b;
+        }
+        #rimWeightingModal .rw-filter-toggle[aria-expanded="true"] .rw-filter-chevron {
+            transform: rotate(90deg);
+        }
+        #rimWeightingModal .rw-filter-toggle-label { flex: 0 0 auto; }
+        #rimWeightingModal .rw-filter-toggle-summary {
+            flex: 1; min-width: 0; text-align: right;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            font-size: 11px; font-weight: 500; color: #3b82f6;
+            text-transform: none; letter-spacing: 0;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        #rimWeightingModal .rw-filter-body {
+            padding: 0 12px 10px;
+        }
+        #rimWeightingModal .rw-filter-input {
+            width: 100%; padding: 8px 10px;
+            background: #1e293b; border: 1px solid #475569;
+            border-radius: 6px; color: #f1f5f9; font-size: 12px;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+        }
+        #rimWeightingModal .rw-filter-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.25); }
+        #rimWeightingModal .rw-filter-input::placeholder {
+            color: #475569;
+            font-style: italic;
+        }
+        /* Input row: input field + (i) help button side-by-side */
+        #rimWeightingModal .rw-filter-input-row {
+            display: flex; align-items: stretch; gap: 8px;
+        }
+        #rimWeightingModal .rw-filter-input-row .rw-filter-input { flex: 1; }
+        /* Help button — small (i) circle */
+        #rimWeightingModal .rw-filter-help {
+            position: relative;
+            flex-shrink: 0;
+        }
+        #rimWeightingModal .rw-filter-help-btn {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #94a3b8;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-style: italic;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+        }
+        #rimWeightingModal .rw-filter-help-btn:hover,
+        #rimWeightingModal .rw-filter-help.open .rw-filter-help-btn {
+            background: rgba(59, 130, 246, .15);
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        /* Popover lives in document.body (moved by JS) to escape the modal's
+           transformed containing block, which broke position:fixed. JS sets
+           top/left and toggles display. !important needed because there's
+           a global `body.dashboard > *` rule with massive specificity that
+           sets position:relative on all direct body children that aren't on
+           its exception list. */
+        body > .rw-filter-popover {
+            position: fixed !important;
+            min-width: 360px !important;
+            max-width: 480px !important;
+            background: #0f172a !important;
+            border: 1px solid #475569 !important;
+            border-radius: 10px !important;
+            padding: 14px !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .6) !important;
+            display: none;
+            flex-direction: column !important;
+            gap: 6px !important;
+            z-index: 1000050 !important;  /* above the builder modal and result modal */
+            top: 0;
+            left: 0;
+        }
+        .rw-filter-popover-title {
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            font-weight: 600;
+            padding-bottom: 6px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid #1e293b;
+        }
+        .rw-filter-popover-footer {
+            font-size: 10px;
+            color: #64748b;
+            font-style: italic;
+            padding-top: 8px;
+            margin-top: 4px;
+            border-top: 1px solid #1e293b;
+        }
+        .rw-filter-popover-intro {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            line-height: 1.45;
+        }
+        .rw-filter-popover .rw-filter-example {
+            background: rgba(15, 23, 42, .5);
+            border-left: 2px solid #475569;
+            padding: 5px 10px;
+            color: #cbd5e1;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+            user-select: text;
+            cursor: text;
+        }
+        /* Footer name input */
+        #rimWeightingModal .rw-target-name-wrap { display: flex; align-items: center; gap: 8px; flex: 1; }
+        #rimWeightingModal .rw-target-name-label { font-size: 12px; color: #94a3b8; white-space: nowrap; }
+        #rimWeightingModal .rw-target-name-input {
+            flex: 1; max-width: 320px; padding: 8px 12px;
+            background: #0f172a; border: 1px solid #475569;
+            border-radius: 8px; color: #f1f5f9; font-size: 13px;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+        }
+        #rimWeightingModal .rw-target-name-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.25); }
+        /* Result rendering — scoped to BOTH the builder modal (legacy) and
+           the new result popup. */
+        #rimWeightingModal .rw-result-wrap,
+        #rimWeightingResultModal .rw-result-wrap { padding: 4px 4px 12px; }
+        #rimWeightingModal .rw-result-summary,
+        #rimWeightingResultModal .rw-result-summary {
+            font-size: 12px; color: #94a3b8; margin-bottom: 14px;
+            padding: 10px 12px;
+            background: #0f172a; border: 1px solid #334155;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+        }
+        #rimWeightingModal .rw-result-stats,
+        #rimWeightingResultModal .rw-result-stats {
+            display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+        }
+        #rimWeightingModal .rw-stat-pill,
+        #rimWeightingResultModal .rw-stat-pill {
+            background: #1e293b; border: 1px solid #334155;
+            border-radius: 999px; padding: 6px 14px; font-size: 12px; color: #94a3b8;
+            display: inline-flex; align-items: center; gap: 4px;
+            white-space: nowrap;
+        }
+        #rimWeightingModal .rw-stat-pill strong,
+        #rimWeightingResultModal .rw-stat-pill strong { color: #f1f5f9; margin-left: 2px; font-weight: 700; }
+        #rimWeightingModal .rw-stat-good,
+        #rimWeightingResultModal .rw-stat-good { background: rgba(34,197,94,.15); color: #22c55e; border-color: rgba(34,197,94,.4); }
+        #rimWeightingModal .rw-stat-warn,
+        #rimWeightingResultModal .rw-stat-warn { background: rgba(245,158,11,.15); color: #f59e0b; border-color: rgba(245,158,11,.4); }
+        #rimWeightingModal .rw-result-table,
+        #rimWeightingResultModal .rw-result-table {
+            width: 100%; border-collapse: collapse; font-size: 13px;
+            margin-top: 4px;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #rimWeightingModal .rw-result-table th,
+        #rimWeightingResultModal .rw-result-table th {
+            text-align: left; font-weight: 600; color: #94a3b8;
+            padding: 10px 14px; border-bottom: 1px solid #334155;
+            background: #1e293b;
+            font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+        }
+        #rimWeightingModal .rw-result-table th.rw-num,
+        #rimWeightingResultModal .rw-result-table th.rw-num { text-align: right; }
+        #rimWeightingModal .rw-result-table td,
+        #rimWeightingResultModal .rw-result-table td {
+            padding: 9px 14px; border-bottom: 1px solid #1e293b;
+            color: #f1f5f9;
+        }
+        #rimWeightingModal .rw-result-table tr:last-child td,
+        #rimWeightingResultModal .rw-result-table tr:last-child td { border-bottom: none; }
+        #rimWeightingModal .rw-result-table tr:nth-child(even) td,
+        #rimWeightingResultModal .rw-result-table tr:nth-child(even) td { background: rgba(15,23,42,.4); }
+        #rimWeightingModal .rw-result-table .rw-num,
+        #rimWeightingResultModal .rw-result-table .rw-num {
+            font-family: 'JetBrains Mono', ui-monospace, monospace; text-align: right;
+        }
+        #rimWeightingModal .rw-row-ok td,
+        #rimWeightingResultModal .rw-row-ok td { color: #f1f5f9; }
+        #rimWeightingModal .rw-row-warn td,
+        #rimWeightingResultModal .rw-row-warn td { background: rgba(245,158,11,.08) !important; }
+        /* Modal body padding for the result popup */
+        #rimWeightingResultModal .gm-body { padding: 18px 22px !important; }
+        /* Error block styling for failure case */
+        #rimWeightingResultModal .rw-error-block,
+        #rimWeightingModal .rw-error-block {
+            display: flex; gap: 14px; align-items: flex-start;
+            padding: 18px 20px;
+            background: rgba(239, 68, 68, .08);
+            border: 1px solid rgba(239, 68, 68, .35);
+            border-radius: 10px;
+        }
+        #rimWeightingResultModal .rw-error-icon,
+        #rimWeightingModal .rw-error-icon {
+            flex-shrink: 0;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, .15);
+            color: #ef4444;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; font-weight: 700;
+        }
+        #rimWeightingResultModal .rw-error-content,
+        #rimWeightingModal .rw-error-content { flex: 1; min-width: 0; }
+        #rimWeightingResultModal .rw-error-title,
+        #rimWeightingModal .rw-error-title {
+            font-size: 14px; font-weight: 700; color: #ef4444;
+            margin-bottom: 6px;
+        }
+        #rimWeightingResultModal .rw-error-message,
+        #rimWeightingModal .rw-error-message {
+            font-size: 13px; color: #f1f5f9;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            background: rgba(15, 23, 42, .6);
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            word-break: break-word;
+            margin-bottom: 8px;
+        }
+        #rimWeightingResultModal .rw-error-hint,
+        #rimWeightingModal .rw-error-hint {
+            font-size: 12px; color: #94a3b8;
+            font-style: italic;
         }
         /* Fix gm-modal inputs/buttons inside OE modals */
         #codeframeModal .gm-input,
@@ -5641,6 +6133,17 @@
                                 <line x1="15" y1="3" x2="15" y2="21"/>
                             </svg>
                             Custom Tables
+                        </button>
+                        <div class="actions-section-label">Weighting</div>
+                        <button class="actions-item" onclick="openRimWeightingModal(); closeAnalyzeDropdown();">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="9"/>
+                                <line x1="12" y1="3" x2="12" y2="21"/>
+                                <line x1="3" y1="12" x2="21" y2="12"/>
+                                <line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/>
+                                <line x1="18.4" y1="5.6" x2="5.6" y2="18.4"/>
+                            </svg>
+                            RIM Weighting
                         </button>
                     </div>
                 </div>
@@ -6718,6 +7221,7 @@
         document.write('<script src="../../js/research/openend-coding.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/research/custom-table/expand.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/research/custom-table/ui.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/research/weighting/ui.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -7128,6 +7632,153 @@
                     <button class="gm-btn gm-btn-secondary" onclick="closeCustomTableModal()">Cancel</button>
                     <button class="gm-btn gm-btn-primary" id="ctRunBtn" onclick="ctRun()" disabled>Run</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =======================================================
+         RIM WEIGHTING MODAL
+         Opens from Analyze → RIM Weighting. Generates a respondent
+         weight column via iterative proportional fitting (raking)
+         and writes it back to the wave table + variable_definitions.
+         ======================================================= -->
+    <div class="gm-overlay" id="rimWeightingModal">
+        <div class="gm-modal gm-lg" style="max-width: 1280px; width: 95vw; max-height: 92vh;">
+            <div class="gm-header" style="padding-bottom: 12px;">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9"/>
+                            <line x1="12" y1="3" x2="12" y2="21"/>
+                            <line x1="3" y1="12" x2="21" y2="12"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">RIM Weighting</h3>
+                        <p class="gm-subtitle" id="rwActiveFile">No file selected</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeRimWeightingModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body" style="padding: 0; overflow: hidden; flex: 1; min-height: 0;">
+                <div class="ct-workbench">
+                    <aside class="ct-palette">
+                        <div class="ct-palette-header">
+                            <div class="ct-palette-header-row">
+                                <div class="ct-palette-title">Variables</div>
+                            </div>
+                            <input type="text" class="ct-search" id="rwSearch" placeholder="Search variables...">
+                        </div>
+                        <div class="ct-palette-body" id="rwPaletteList">
+                            <div class="ct-empty-palette">Loading variables…</div>
+                        </div>
+                    </aside>
+                    <section class="ct-builder">
+                        <div class="ct-layout" id="rwLayoutPanel">
+                            <!-- Filter: collapsible single-line input pinned to the top.
+                                 Click the header to expand. Collapsed by default to give
+                                 the factors area maximum vertical space. -->
+                            <div class="rw-filter-collapsible" id="rwFilterCollapsible">
+                                <button type="button" class="rw-filter-toggle" id="rwFilterToggle"
+                                        aria-expanded="false" onclick="rwToggleFilter()">
+                                    <svg class="rw-filter-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="9 18 15 12 9 6"/>
+                                    </svg>
+                                    <span class="rw-filter-toggle-label">Filter (optional)</span>
+                                    <span class="rw-filter-toggle-summary" id="rwFilterSummary"></span>
+                                </button>
+                                <div class="rw-filter-body" id="rwFilterBody" hidden>
+                                    <div class="rw-filter-input-row">
+                                        <input type="text" id="rwFilterExpression" class="rw-filter-input"
+                                               placeholder='AGE_GROUP IN (1,2,3) AND (Q4 = 1 OR Q5 BETWEEN 2 AND 4)'
+                                               autocomplete="off" spellcheck="false">
+                                        <div class="rw-filter-help" id="rwFilterHelp">
+                                            <button type="button" class="rw-filter-help-btn"
+                                                    aria-label="Show filter examples"
+                                                    title="Show filter examples">i</button>
+                                            <div class="rw-filter-popover" role="dialog" aria-label="Filter syntax help">
+                                                <div class="rw-filter-popover-title">Filter syntax — examples</div>
+                                                <div class="rw-filter-popover-intro">Use your own variable names. Combine with AND / OR / parentheses.</div>
+                                                <div class="rw-filter-example">VAR = 1</div>
+                                                <div class="rw-filter-example">VAR IN (1, 2, 3)</div>
+                                                <div class="rw-filter-example">VAR_A = 1 AND VAR_B IN (1, 2)</div>
+                                                <div class="rw-filter-example">VAR_A = 1 OR VAR_A = 2</div>
+                                                <div class="rw-filter-example">VAR BETWEEN 18 AND 34</div>
+                                                <div class="rw-filter-example">VAR != 2</div>
+                                                <div class="rw-filter-example">(VAR_A = 1 AND VAR_B = 1) OR (VAR_A = 2 AND VAR_B IN (3, 4))</div>
+                                                <div class="rw-filter-popover-footer">Rows outside the filter stay NULL in the new weight column.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ct-slots" style="grid-template-columns: 1fr;">
+                                <div class="ct-slot" data-slot="factors">
+                                    <div class="ct-slot-header">
+                                        <span>Factors<span class="ct-slot-header-count" id="rwSlotCountFactors"></span></span>
+                                    </div>
+                                    <div class="ct-slot-body" id="rwSlotFactors" style="min-height: 120px;">
+                                        <div class="ct-slot-empty">Drag a categorical variable here</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            <div class="gm-footer ct-footer">
+                <div class="rw-target-name-wrap">
+                    <span class="rw-target-name-label">New weight column:</span>
+                    <input type="text" id="rwTargetName" class="rw-target-name-input"
+                           placeholder="WT_RIM_W33" autocomplete="off" spellcheck="false">
+                </div>
+                <div class="ct-footer-actions">
+                    <button class="gm-btn gm-btn-secondary" onclick="rwReset()">Reset</button>
+                    <button class="gm-btn gm-btn-secondary" onclick="closeRimWeightingModal()">Cancel</button>
+                    <button class="gm-btn gm-btn-primary" id="rwRunBtn" onclick="rwRun()" disabled>Generate Weights</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =======================================================
+         RIM Weighting RESULT modal — shown after Generate Weights
+         completes. Decoupled from the builder modal so the builder
+         keeps all its vertical space for factors.
+         ======================================================= -->
+    <div class="gm-overlay" id="rimWeightingResultModal">
+        <div class="gm-modal" style="max-width: 760px; width: 92vw; max-height: 88vh;">
+            <div class="gm-header" style="padding-bottom: 12px;">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 11l3 3L22 4"/>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Weights Generated</h3>
+                        <p class="gm-subtitle" id="rwResultSubtitle">Marginal check &amp; statistics</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeRimWeightingResultModal()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body" id="rwResultBody" style="overflow-y: auto;">
+                <div class="ct-preview-empty">No result yet.</div>
+            </div>
+            <div class="gm-footer" style="display:flex; justify-content:flex-end; gap:8px;">
+                <button class="gm-btn gm-btn-secondary" onclick="closeRimWeightingResultModal()">Close</button>
+                <button class="gm-btn gm-btn-primary" onclick="closeRimWeightingResultModal(); closeRimWeightingModal();">Done</button>
             </div>
         </div>
     </div>
