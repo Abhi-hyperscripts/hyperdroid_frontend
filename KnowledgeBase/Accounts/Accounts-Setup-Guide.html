@@ -2775,6 +2775,44 @@ body::before {
             <img loading="lazy" decoding="async" src="./images/10J-5-customer-statements.png" alt="Customer statements">
             <div class="figure__caption"><strong>Figure 10.4d &mdash;</strong> Customer Statements. Pick a customer and a date range to generate a per-customer statement listing every invoice, payment, and credit note in that window with running balance. Email it to the customer with one click on the toolbar.</div>
           </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2.5rem;color:var(--ink);">Customer Payments &mdash; view only, correct via credit note</h4>
+          <p>
+            Once you have a few customer payments recorded, the Customer Payments tab shows one row per payment with
+            date, customer, invoice, amount, bank account, reference, and a single <em>View</em> action.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/10-13-customer-payments-list.png" alt="Customer payments list">
+            <div class="figure__caption"><strong>Figure 10.4e &mdash;</strong> Customer Payments populated with 2 rows (SkyBridge Networks and Acme Corp). Each row has only a <em>View</em> icon &mdash; no Edit and no Void. The asymmetry with Vendor Payments (which has Void) is deliberate: if you recorded a customer payment incorrectly, the accounting-correct fix is to issue a <strong>credit note</strong> against the original invoice, not to delete the payment. A credit note:</div>
+          </figure>
+
+          <ul>
+            <li>Leaves the original payment intact (so the bank reconciliation against the actual bank statement is still sound).</li>
+            <li>Creates a visible offsetting entry with a clear reason and line items describing the adjustment.</li>
+            <li>Can be partially applied (only a portion of the invoice was wrong) or fully applied (the whole invoice is being cancelled).</li>
+            <li>Reduces the customer's outstanding balance by the credit amount.</li>
+          </ul>
+
+          <p>
+            Concretely: suppose you recorded a &#8377;50,000 payment from Acme Corp against INV-2026-00020, but the customer actually
+            sent only &#8377;5,000 &mdash; the extra &#8377;45,000 was a typo. Don't void the payment. Instead:
+          </p>
+          <ol>
+            <li>Go to <em>Credit Notes</em> tab (&sect;10.4b).</li>
+            <li>Create a new credit note, customer = Acme Corp, linked invoice = INV-2026-00020, amount = &#8377;45,000, description = <em>"Overpayment correction &mdash; typo in original payment entry"</em>.</li>
+            <li>Approve the credit note &mdash; the system posts <strong>Dr Sales Returns / Cr Accounts Receivable</strong>, clearing the &#8377;45,000 from the customer's AR balance.</li>
+            <li>The customer statement now shows INV-2026-00020 (&#8377;50,000), PAY-2026-00015 (&#8377;50,000 against it), and CRN-2026-00003 (&#8377;45,000 credit against it) &mdash; net balance &#8377;45,000 <em>in customer's favour</em>, to be applied against their next invoice or refunded to their bank account with a manual journal.</li>
+          </ol>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Why not a direct void?</span>
+              <h4 class="callout__title">Bank reconciliation truth vs. book correction</h4>
+              <p>The customer actually <em>did</em> send money into your bank &mdash; even if it was the wrong amount, the bank statement will show the full credit. If you void the payment record, your book's bank balance no longer matches the actual bank balance, and your next reconciliation breaks. The credit note approach keeps the bank side untouched (money received is still recorded correctly) and records the customer-side correction as an explicit, auditable adjustment. This is the same distinction we covered for vendor payments in &sect;11.4 &mdash; the difference is that on the vendor side you're refunding a bill you shouldn't have paid, so the bank side <em>does</em> need to be reversed (money going back out of your account), which makes a full void the right call. On the customer side the bank credit is real, so only the book entry needs adjusting &mdash; credit note it is.</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -2874,6 +2912,56 @@ body::before {
             <img loading="lazy" decoding="async" src="./images/11J-5-vendor-statements.png" alt="Vendor statements">
             <div class="figure__caption"><strong>Figure 11.4c &mdash;</strong> Vendor Statements. Pick a vendor and a date range to generate a running statement of bills, payments, and credit notes. Use it to reconcile with the vendor's own records before signing off on monthly accounts.</div>
           </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2.5rem;color:var(--ink);">Voiding a vendor payment &mdash; the full reversal</h4>
+          <p>
+            Three things are guaranteed to happen in real life: vendors send duplicate invoices, you pay the wrong one, and
+            by the time you notice it the payment is already posted. The <em>Void Payment</em> action on each row in the
+            Vendor Payments list undoes the entire posting in one click, cleanly and reversibly, without deleting anything
+            that would disrupt audit trails.
+          </p>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/11-13-payments-list-baseline.png" alt="Vendor payments list with void buttons">
+            <div class="figure__caption"><strong>Figure 11.4d &mdash;</strong> The Payments tab listing all recorded vendor payments. Each row has a red circle-slash <em>Void</em> action in the Actions column. Clicking it does <em>not</em> just delete the row &mdash; it triggers a full transactional reversal across four tables (vendor_bills, vendor_payment_allocations, gl_entries, bank_accounts). See bug #57 in <code>_BUGS_FIXED_DURING_CAPTURE.md</code> for the motivation: the pre-fix version of this feature soft-deleted the payment row but left the ledger, bill balance, and bank account completely untouched &mdash; classic silent-books-corruption bug.</div>
+          </figure>
+
+          <figure class="figure figure--wide">
+            <img loading="lazy" decoding="async" src="./images/11-14-payment-void-confirm.png" alt="Void Payment confirmation">
+            <div class="figure__caption"><strong>Figure 11.4e &mdash;</strong> The Void Payment confirmation. Red destructive style that names the specific payment being reversed. Click <em>Delete</em> (yes, the button label is a current UX nit &mdash; it should say <em>Void</em> to match the action &mdash; tracked in the bug log as a consistency fix) to execute the full reversal.</div>
+          </figure>
+
+          <h4 style="font-family:var(--font-display);font-size:1.5rem;margin-top:2rem;color:var(--ink);">What the reversal actually does (in one atomic transaction)</h4>
+          <p>When you confirm the Void, the backend runs all of the following inside a single database transaction. Either every step succeeds or none of them do &mdash; there is no half-voided state:</p>
+          <ol>
+            <li>Reads every <code>vendor_payment_allocations</code> row for this payment to find which bills and how much of each bill it paid.</li>
+            <li>For each allocated bill: subtracts the allocated amount from the bill's <code>paid_amount</code>, adds it back to <code>balance_due</code>, and recomputes <code>status</code> &mdash; if the bill is now back to fully unpaid it flips from <em>paid</em> or <em>partially_paid</em> back to <em>approved</em>.</li>
+            <li>Looks up the original GL entry that the payment created (journal type <em>BANK</em>, ref_type <em>vendor_payment</em>), and posts a mirror reversing entry &mdash; same lines, same amounts, debits and credits swapped, ref_type <em>reversal</em>, description <em>"Reversal: Void payment PAY-&hellip;"</em>. The original entry's <code>is_reversed</code> flag flips to <code>true</code>, so it still appears in the GL but is visibly marked as reversed and ignored by the Trial Balance calculations.</li>
+            <li>Updates the bank account balance by <code>+amount</code> to undo the original <code>-amount</code>. Your HDFC balance goes back to exactly what it was before the payment.</li>
+            <li>Deletes the allocation rows (they no longer point to real money). The parent <code>vendor_payments</code> row stays in the database but is soft-deleted via <code>is_active = false</code> &mdash; so the audit history survives, but queries like <em>GET /payments</em> filter it out.</li>
+            <li>Writes one audit-log entry for the void with <code>allocations_reversed</code> count and the operator's user ID.</li>
+          </ol>
+          <p>
+            The end state: the books are exactly where they were before the payment was ever recorded. The bill is back to <em>Approved</em>, the bank balance is back to pre-payment, the GL shows both the original entry and its mirror reversal so a reviewer can see the full history. Trial Balance still balances to the paisa because the two GL entries net to zero. Audit log keeps every hop.
+          </p>
+
+          <div class="callout callout--warn">
+            <div class="callout__icon">!</div>
+            <div class="callout__body">
+              <span class="callout__label">Why it isn't a hard delete</span>
+              <h4 class="callout__title">Audit history must survive even the worst user mistake</h4>
+              <p>The naive implementation would be "just delete the payment row and recompute everything". This is wrong for two reasons: (1) auditors need to see that a payment was made, voided, and who voided it &mdash; hard-deleting loses that evidence forever; (2) the original GL entry has already been referenced by bank reconciliation, cash flow reports, and possibly other systems &mdash; deleting it would rip holes through downstream data. The right move is a mirror reversal: the original stays, the mirror nullifies its effect, and both are visible in the audit log. This is the same pattern accountants have used on paper ledgers for centuries &mdash; you never erase, you post a corrective entry.</p>
+            </div>
+          </div>
+
+          <div class="callout callout--note">
+            <div class="callout__icon">&#9432;</div>
+            <div class="callout__body">
+              <span class="callout__label">Customer payment void &mdash; not yet symmetrical</span>
+              <h4 class="callout__title">Use a credit note for customer overpayment errors</h4>
+              <p>The Vendor Payments tab has a Void action. The Customer Payments tab (under Receivables) currently has only a View action &mdash; there is no symmetrical <em>Void Customer Payment</em> endpoint yet. This is a deliberate workflow choice for now: if a customer payment was recorded in error (e.g. you entered &#8377;50,000 when the customer actually sent &#8377;5,000), the accounting-correct response is to issue a <strong>credit note</strong> for the excess, which offsets the ledger and the customer statement in one step. The Credit Note workflow is covered in &sect;10.6 above. A Void Customer Payment feature is on the roadmap for parity with the vendor side, but until it ships, reach for the credit note as the idiomatic correction mechanism.</p>
+            </div>
+          </div>
         </div>
 
         <!-- ==================== 11.5 PURCHASE ORDERS ==================== -->
