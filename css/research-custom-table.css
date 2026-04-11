@@ -232,31 +232,32 @@
 .ct-footer {
     display: flex !important;
     align-items: center;
-    gap: 12px;
-    justify-content: space-between;
+    gap: 10px;
+    justify-content: flex-start;
 }
 .ct-footer-actions {
     display: flex;
     gap: 8px;
     flex-shrink: 0;
+    margin-left: auto;       /* push Reset/Cancel/Run to the right edge */
 }
 .ct-footer-weight {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-width: 0;
 }
 /* Override .ct-slot-body's column/wrap so the weight chip sits inline. */
 .ct-footer-weight-body {
-    flex: 1 1 auto !important;
+    flex: 0 0 auto !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
     align-items: center;
     padding: 4px 8px !important;
     min-height: 30px !important;
-    min-width: 0;
-    max-width: 420px;
+    min-width: 260px;
+    max-width: 260px;
     background: var(--bg-elevated);
     border: 1px dashed var(--border-color);
     border-radius: 6px;
@@ -289,64 +290,40 @@
     border-color: var(--brand-primary);
 }
 
-/* ---- significance toggle bar inside the Layout panel ---- */
-.ct-options-bar {
+/* ---- significance cluster inside modal footer ---- */
+.ct-footer-sig {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border-color);
-    background: color-mix(in srgb, var(--brand-primary) 3%, var(--bg-card));
-    flex-wrap: wrap;
-    font-size: 12px;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 0 10px 0 4px;
+    white-space: nowrap;
+    flex-wrap: nowrap;
 }
-.ct-layout.collapsed .ct-options-bar { display: none; }
-.ct-sig-toggle {
+.ct-footer-sig .ct-sig-toggle {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     cursor: pointer;
     color: var(--text-primary);
-    font-weight: 600;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
     user-select: none;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
-.ct-sig-toggle input[type="checkbox"] {
+.ct-footer-sig .ct-sig-toggle span { white-space: nowrap; }
+.ct-footer-sig .ct-sig-toggle input[type="checkbox"] {
     accent-color: var(--brand-primary);
     width: 14px;
     height: 14px;
     cursor: pointer;
 }
-.ct-sig-conf {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-secondary);
-}
-.ct-sig-conf-lbl {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-}
-.ct-sig-conf select {
-    padding: 4px 8px;
-    font-size: 12px;
-    background: var(--bg-elevated);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    outline: none;
-}
-.ct-sig-conf select:focus {
-    border-color: var(--brand-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary) 20%, transparent);
-}
-.ct-sig-hint {
-    margin-left: auto;
-    color: var(--text-secondary);
-    font-size: 11px;
-    font-style: italic;
-}
+.ct-footer-sig select { display: none; }
+.ct-footer-sig .searchable-dropdown-wrapper { min-width: 90px; }
+.ct-footer-sig .searchable-dropdown { font-size: 12px; }
 
 /* ---- row-group stats button + sub-row styling ---- */
 .ct-group-stats-btn {

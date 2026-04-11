@@ -1014,7 +1014,11 @@
         cb.checked = state.significance.enabled;
         sel.value = String(state.significance.confidence);
         cb.addEventListener('change', () => { state.significance.enabled = cb.checked; });
-        sel.addEventListener('change', () => { state.significance.confidence = Number(sel.value); });
+        // Wrap the native select with SearchableDropdown (platform convention).
+        convertSelectToSearchable('ctSigConfidence', {
+            placeholder: '95%',
+            onChange: (value) => { state.significance.confidence = Number(value); },
+        });
     }
 
     // -----------------------------------------------------------------------
