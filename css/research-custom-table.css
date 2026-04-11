@@ -1004,12 +1004,17 @@
 .ct-result-table tbody td {
     padding: 9px 14px;
     border-bottom: 1px solid var(--border-color);
-    vertical-align: top;
+    vertical-align: middle;
+    text-align: center;            /* center-align all data cells */
     background: var(--bg-card);    /* SOLID — sticky headers must fully occlude */
     white-space: nowrap;
     max-width: 240px;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+/* First column stays left-aligned (it's the row label). */
+.ct-result-table tbody td.ct-col-sticky {
+    text-align: left;
 }
 
 /* Visibility toggles in the result toolbar. */
@@ -1041,7 +1046,7 @@
 .ct-cell-stack {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: center;
     line-height: 1.25;
     gap: 1px;
 }

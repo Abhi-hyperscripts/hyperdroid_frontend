@@ -1414,4 +1414,5 @@
     window.ctToggleSlot = ctToggleSlot;
     window.ctToggleLayout = ctToggleLayout;
     window._ctDebugState = () => JSON.parse(JSON.stringify(state));
+    window._ctDebugLastResult = () => lastResult;
 })();
