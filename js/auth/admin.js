@@ -2265,8 +2265,48 @@ function openAddApiKeyModal() {
     document.getElementById('apiKeyServiceType').disabled = false;
     document.getElementById('apiKeyValue').value = '';
     document.getElementById('apiKeyValue').type = 'password';
+    // Reset Razorpay-specific fields
+    const rpKeyId = document.getElementById('razorpayKeyId');
+    const rpKeySecret = document.getElementById('razorpayKeySecret');
+    const rpWebhook = document.getElementById('razorpayWebhookSecret');
+    if (rpKeyId) rpKeyId.value = '';
+    if (rpKeySecret) { rpKeySecret.value = ''; rpKeySecret.type = 'password'; }
+    if (rpWebhook) { rpWebhook.value = ''; rpWebhook.type = 'password'; }
+    onApiKeyProviderChange();
     document.getElementById('apiKeySaveBtn').textContent = 'Save';
     openModal('apiKeyModal');
+}
+
+/**
+ * Swap the form UI between the default single-value key input and the
+ * Razorpay-specific 3-field block (key_id + key_secret + webhook_secret).
+ * Razorpay stores all three values as a JSON blob in the single api_key
+ * column of the tenant_api_keys table so Auth itself needs no changes.
+ */
+function onApiKeyProviderChange() {
+    const provider = document.getElementById('apiKeyProvider').value;
+    const isRazorpay = provider === 'Razorpay';
+    const singleGroup = document.getElementById('apiKeySingleGroup');
+    const razorpayGroup = document.getElementById('apiKeyRazorpayGroup');
+    const serviceTypeSelect = document.getElementById('apiKeyServiceType');
+
+    if (singleGroup) singleGroup.style.display = isRazorpay ? 'none' : '';
+    if (razorpayGroup) razorpayGroup.style.display = isRazorpay ? '' : 'none';
+
+    // For Razorpay, force service type to payment_gateway and lock it
+    if (isRazorpay && serviceTypeSelect) {
+        serviceTypeSelect.value = 'payment_gateway';
+        serviceTypeSelect.disabled = true;
+    } else if (!apiKeyEditMode && serviceTypeSelect) {
+        serviceTypeSelect.disabled = false;
+    }
+}
+
+/** Toggle visibility of a specific password-type input by id. */
+function toggleFieldVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.type = input.type === 'password' ? 'text' : 'password';
 }
 
 function openEditApiKeyModal(provider, serviceType) {
@@ -2294,7 +2334,26 @@ function openEditApiKeyModal(provider, serviceType) {
 async function saveApiKey() {
     const provider = document.getElementById('apiKeyProvider').value;
     const serviceType = document.getElementById('apiKeyServiceType').value;
-    const apiKeyVal = document.getElementById('apiKeyValue').value;
+
+    // Razorpay stores all 3 credential fields as a JSON blob in the single
+    // api_key column. Other providers use the plain single-value input.
+    let apiKeyVal;
+    if (provider === 'Razorpay') {
+        const keyId = document.getElementById('razorpayKeyId').value.trim();
+        const keySecret = document.getElementById('razorpayKeySecret').value;
+        const webhookSecret = document.getElementById('razorpayWebhookSecret').value;
+        if (!keyId || !keySecret) {
+            showToast('Razorpay requires Key ID and Key Secret', 'error');
+            return;
+        }
+        apiKeyVal = JSON.stringify({
+            key_id: keyId,
+            key_secret: keySecret,
+            webhook_secret: webhookSecret || ''
+        });
+    } else {
+        apiKeyVal = document.getElementById('apiKeyValue').value;
+    }
 
     if (!provider || !serviceType || !apiKeyVal) {
         showToast('Please fill in all fields', 'error');

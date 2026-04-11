@@ -908,18 +908,19 @@
                     <form id="apiKeyForm">
                         <div class="form-group">
                             <label>Provider</label>
-                            <select id="apiKeyProvider" required>
+                            <select id="apiKeyProvider" required onchange="onApiKeyProviderChange()">
                                 <option value="">Select provider...</option>
-                                <option value="Deepgram">Deepgram</option>
-                                <option value="Gladia">Gladia</option>
-                                <option value="Anthropic">Anthropic</option>
-                                <option value="OpenAI">OpenAI</option>
+                                <option value="Deepgram">Deepgram (Speech-to-Text)</option>
+                                <option value="Gladia">Gladia (Speech-to-Text)</option>
+                                <option value="Anthropic">Anthropic (LLM)</option>
+                                <option value="OpenAI">OpenAI (LLM)</option>
                                 <option value="Google">Google</option>
                                 <option value="Azure">Azure</option>
+                                <option value="Razorpay">Razorpay (Payment Gateway)</option>
                                 <option value="Custom">Custom</option>
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="apiKeyServiceTypeGroup">
                             <label>Service Type</label>
                             <select id="apiKeyServiceType" required>
                                 <option value="">Select service type...</option>
@@ -928,18 +929,49 @@
                                 <option value="tts">TTS (Text-to-Speech)</option>
                                 <option value="vision">Vision</option>
                                 <option value="embedding">Embedding</option>
+                                <option value="payment_gateway">Payment Gateway</option>
                             </select>
                         </div>
-                        <div class="form-group">
+
+                        <!-- Default single-value API key input (hidden when Razorpay is selected) -->
+                        <div class="form-group" id="apiKeySingleGroup">
                             <label>API Key</label>
                             <div class="apikey-input-wrapper">
-                                <input type="password" id="apiKeyValue" required placeholder="Enter API key...">
+                                <input type="password" id="apiKeyValue" placeholder="Enter API key...">
                                 <button type="button" class="apikey-toggle-btn" onclick="toggleApiKeyVisibility()">
                                     <svg id="apiKeyEyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                                         <circle cx="12" cy="12" r="3"/>
                                     </svg>
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- Razorpay-specific 3-field input (shown only when Razorpay is selected) -->
+                        <div id="apiKeyRazorpayGroup" style="display:none;">
+                            <div class="form-group">
+                                <label>Key ID</label>
+                                <input type="text" id="razorpayKeyId" placeholder="rzp_test_xxx or rzp_live_xxx" autocomplete="off">
+                                <small style="color:var(--text-secondary);font-size:0.75rem;">The public key ID from your Razorpay dashboard.</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Key Secret</label>
+                                <div class="apikey-input-wrapper">
+                                    <input type="password" id="razorpayKeySecret" placeholder="Enter key secret..." autocomplete="off">
+                                    <button type="button" class="apikey-toggle-btn" onclick="toggleFieldVisibility('razorpayKeySecret', 'razorpayKeySecretEye')">
+                                        <svg id="razorpayKeySecretEye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Webhook Secret (optional)</label>
+                                <div class="apikey-input-wrapper">
+                                    <input type="password" id="razorpayWebhookSecret" placeholder="Webhook signing secret..." autocomplete="off">
+                                    <button type="button" class="apikey-toggle-btn" onclick="toggleFieldVisibility('razorpayWebhookSecret', 'razorpayWebhookSecretEye')">
+                                        <svg id="razorpayWebhookSecretEye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </button>
+                                </div>
+                                <small style="color:var(--text-secondary);font-size:0.75rem;">Required if you want automatic payment confirmation via Razorpay webhooks.</small>
                             </div>
                         </div>
                     </form>
