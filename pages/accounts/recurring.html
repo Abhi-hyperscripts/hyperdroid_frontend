@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Recurring Transactions - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/accounts.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div class="accounts-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">Accounts</a>
+                    <span class="separator">/</span>
+                    <span class="current">Recurring Transactions</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <h1>Recurring Transactions</h1>
+                </div>
+            </div>
+        </div>
+
+        <div class="organization-layout" style="display:block;">
+            <main class="organization-content" style="padding:1.5rem;">
+
+                <!-- Stats -->
+                <div class="stats-row" style="margin-bottom:1.5rem;">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statActive">0</div>
+                        <div class="stat-label">Active</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statPaused">0</div>
+                        <div class="stat-label">Paused</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">Total Generated</div>
+                    </div>
+                </div>
+
+                <!-- Toolbar -->
+                <div style="display:flex;gap:0.75rem;margin-bottom:1rem;align-items:center;">
+                    <button class="btn btn-primary" onclick="openCreateModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        New Recurring
+                    </button>
+                    <button class="btn btn-outline" onclick="processDue()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                        Run Due Now
+                    </button>
+                </div>
+
+                <!-- Table -->
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Frequency</th>
+                                <th>Start Date</th>
+                                <th>Next Run</th>
+                                <th>Generated</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recurringTable">
+                            <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-secondary);">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Create Modal -->
+    <div id="recurringModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Recurring Transaction</h5>
+                    <button class="close-btn" onclick="AccountsCommon.closeModal('recurringModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                </div>
+                <div class="modal-body">
+                    <form id="recurringForm">
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label>Name *</label>
+                                <input type="text" id="rName" class="form-control" required placeholder="e.g., Monthly Office Rent">
+                            </div>
+                            <div class="form-group">
+                                <label>Transaction Type *</label>
+                                <div class="searchable-dropdown-container" id="rTypeContainer"></div>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label>Frequency *</label>
+                                <div class="searchable-dropdown-container" id="rFrequencyContainer"></div>
+                            </div>
+                            <div class="form-group">
+                                <label>Start Date *</label>
+                                <input type="date" id="rStartDate" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label>End Date (optional)</label>
+                                <input type="date" id="rEndDate" class="form-control">
+                            </div>
+                            <div class="form-group" id="customerGroup">
+                                <label>Customer *</label>
+                                <div class="searchable-dropdown-container" id="rCustomerContainer"></div>
+                            </div>
+                            <div class="form-group" id="vendorGroup" style="display:none;">
+                                <label>Vendor *</label>
+                                <div class="searchable-dropdown-container" id="rVendorContainer"></div>
+                            </div>
+                        </div>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label>Description *</label>
+                                <input type="text" id="rDescription" class="form-control" required placeholder="e.g., SaaS License - Monthly">
+                            </div>
+                            <div class="form-group">
+                                <label>Amount *</label>
+                                <input type="number" id="rAmount" class="form-control" required min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>GL Account *</label>
+                            <div class="searchable-dropdown-container" id="rAccountContainer"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="AccountsCommon.closeModal('recurringModal')">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveRecurring()">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/confirm-dialog.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/accounts/recurring.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>
