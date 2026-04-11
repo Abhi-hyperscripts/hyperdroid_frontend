@@ -275,25 +275,52 @@ async function viewEntityAudit(entityType, entityId) {
             return;
         }
 
+        const formatLabel = (k) => k.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').replace(/\s+/g, ' ').trim().replace(/\b\w/g, c => c.toUpperCase());
+        const parseDetails = (d) => {
+            try {
+                let raw = typeof d === 'string' ? JSON.parse(d) : d;
+                if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch {} }
+                if (raw && typeof raw === 'object') {
+                    return Object.entries(raw).map(([k, v]) => ({
+                        label: formatLabel(k),
+                        value: v == null ? '-' : (typeof v === 'object' ? JSON.stringify(v) : String(v))
+                    }));
+                }
+            } catch {}
+            return [];
+        };
+
         body.innerHTML = `
-            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                ${AccountsCommon.escapeHtml(entityType)} &bull; ID: ${AccountsCommon.escapeHtml(entityId)}
+            <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.85rem;">
+                ${AccountsCommon.escapeHtml(entityType)} &bull; <code style="font-size: 0.75rem;">${AccountsCommon.escapeHtml(entityId)}</code>
             </p>
             <div class="entity-audit-timeline">
-                ${logs.map(l => `
+                ${logs.map(l => {
+                    const items = parseDetails(l.details);
+                    const actionLower = (l.action || '').toLowerCase();
+                    const badgeClass = ['created','approved','submitted','reimbursed','posted','completed','create'].includes(actionLower) ? 'status-active'
+                        : ['deleted','rejected','cancelled','reversed','delete'].includes(actionLower) ? 'status-rejected'
+                        : 'status-pending';
+                    const detailsHtml = items.length > 0
+                        ? `<div style="margin-top: 0.5rem; display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 0.75rem; font-size: 0.8rem;">
+                            ${items.map(it => `
+                                <div style="color: var(--text-secondary); white-space: nowrap;">${AccountsCommon.escapeHtml(it.label)}:</div>
+                                <div style="color: var(--text-primary); word-break: break-word;">${AccountsCommon.escapeHtml(it.value)}</div>
+                            `).join('')}
+                        </div>`
+                        : (l.details_summary ? `<div style="margin-top: 0.25rem; font-size: 0.8rem; color: var(--text-secondary);">${AccountsCommon.escapeHtml(l.details_summary)}</div>` : '');
+                    return `
                     <div class="audit-timeline-item" style="display: flex; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border-primary);">
-                        <div style="min-width: 140px; color: var(--text-secondary); font-size: 0.85rem;">
+                        <div style="min-width: 120px; color: var(--text-secondary); font-size: 0.8rem;">
                             ${AccountsCommon.formatDate(l.timestamp || l.created_at, true)}
                         </div>
-                        <div style="flex: 1;">
-                            <span class="badge ${['created','approved','submitted','reimbursed','posted','completed','create'].includes((l.action||'').toLowerCase()) ? 'status-active' : ['deleted','rejected','cancelled','reversed','delete'].includes((l.action||'').toLowerCase()) ? 'status-rejected' : 'status-pending'}">${AccountsCommon.escapeHtml(l.action || '-')}</span>
+                        <div style="flex: 1; min-width: 0;">
+                            <span class="badge ${badgeClass}">${AccountsCommon.escapeHtml(l.action || '-')}</span>
                             <span style="margin-left: 0.5rem; color: var(--text-secondary); font-size: 0.85rem;">by ${AccountsCommon.escapeHtml(l.performed_by_name || l.user_name || (l.performed_by === 'system' ? 'System' : l.performed_by ? l.performed_by.substring(0, 8) + '...' : '-'))}</span>
-                            <div style="margin-top: 0.25rem; font-size: 0.85rem; color: var(--text-secondary);">
-                                ${AccountsCommon.escapeHtml(l.details_summary || JSON.stringify(l.details || '-'))}
-                            </div>
+                            ${detailsHtml}
                         </div>
-                    </div>
-                `).join('')}
+                    </div>`;
+                }).join('')}
             </div>`;
     } catch (err) {
         console.error('[Admin] viewEntityAudit error:', err);
