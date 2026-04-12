@@ -85,11 +85,12 @@
                         console.warn('[Brief] Failed to parse brief_json:', e);
                     }
                 }
-                // Fallback: load from project's ai_instructions (text only)
-                if (!state.customInstructions) {
+                // Fallback: load from project's ai_instructions and parse
+                // structured fields from the known format
+                if (!state.customInstructions || state.focusVariables.length === 0) {
                     const proj = await api.request(`/research/projects/${projectId}`);
                     if (proj?.ai_instructions) {
-                        state.customInstructions = proj.ai_instructions;
+                        parseInstructionsIntoState(proj.ai_instructions);
                     }
                 }
             } catch (e) {
@@ -399,6 +400,88 @@
             const inputs = document.querySelectorAll('#briefSegments .brief-seg-label');
             inputs[inputs.length - 1]?.focus();
         }, 0);
+    }
+
+    // -----------------------------------------------------------------------
+    // Parse ai_instructions text into structured state
+    // -----------------------------------------------------------------------
+
+    function parseInstructionsIntoState(text) {
+        if (!text) return;
+        const lines = text.split('\n');
+        let section = null;
+        let customLines = [];
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+
+            // Detect section headers
+            if (/^FOCUS VARIABLES/i.test(trimmed)) { section = 'focus'; continue; }
+            if (/^MANDATORY CROSS-TABS/i.test(trimmed)) { section = 'crosstab'; continue; }
+            if (/^MANDATORY ANALYSES/i.test(trimmed)) { section = 'analyses'; continue; }
+            if (/^FOCUS SEGMENTS/i.test(trimmed)) { section = 'segments'; continue; }
+            if (/^ADDITIONAL INSTRUCTIONS/i.test(trimmed) || /^CRITICAL.*REQUIREMENTS/i.test(trimmed)) { section = 'custom'; continue; }
+            if (/^WAVE COMPARISON/i.test(trimmed) || /^EXISTING CHARTS/i.test(trimmed)) { section = 'custom'; customLines.push(trimmed); continue; }
+
+            if (!trimmed || trimmed === '') continue;
+
+            if (section === 'focus' && /^-\s+/.test(trimmed)) {
+                // "- Q11 — Overall Satisfaction — primary KPI"
+                const content = trimmed.replace(/^-\s+/, '');
+                const parts = content.split(/\s*[—–-]\s*/);
+                const variable = (parts[0] || '').trim();
+                const reason = parts.slice(1).join(' — ').trim();
+                if (variable && state.focusVariables.every(f => f.variable !== variable)) {
+                    state.focusVariables.push({ variable, reason });
+                }
+            }
+            else if (section === 'crosstab' && /^-\s+/.test(trimmed)) {
+                // "- Q11 x D1 — Satisfaction by country"
+                const content = trimmed.replace(/^-\s+/, '');
+                const dashParts = content.split(/\s*[—–]\s*/);
+                const varPart = dashParts[0] || '';
+                const note = dashParts.slice(1).join(' — ').trim();
+                const xMatch = varPart.match(/^(\S+)\s*[x×]\s*(\S+)/i);
+                if (xMatch) {
+                    const row = xMatch[1].trim();
+                    const column = xMatch[2].trim();
+                    if (state.mandatoryCrossTabs.every(ct => !(ct.row === row && ct.column === column))) {
+                        state.mandatoryCrossTabs.push({ row, column, note });
+                    }
+                }
+            }
+            else if (section === 'analyses' && /^-\s+/.test(trimmed)) {
+                const content = trimmed.replace(/^-\s+/, '').toLowerCase();
+                if (content.includes('driver') || content.includes('regression')) state.mandatoryAnalyses.driver = true;
+                if (content.includes('cluster') || content.includes('segmentation')) state.mandatoryAnalyses.cluster = true;
+                if (content.includes('correlation') || content.includes('heatmap')) state.mandatoryAnalyses.correlation = true;
+                if (content.includes('trend')) state.mandatoryAnalyses.trend = true;
+            }
+            else if (section === 'segments' && /^-\s+/.test(trimmed)) {
+                // '- "Young Adults" (D3R IN (1, 2)) — client target'
+                const content = trimmed.replace(/^-\s+/, '');
+                const labelMatch = content.match(/^"([^"]+)"\s*\(([^)]+)\)/);
+                if (labelMatch) {
+                    const label = labelMatch[1];
+                    const expression = labelMatch[2];
+                    const noteMatch = content.match(/\)\s*[—–-]\s*(.+)/);
+                    const note = noteMatch ? noteMatch[1].trim() : '';
+                    if (state.focusSegments.every(s => s.label !== label)) {
+                        state.focusSegments.push({ expression, label, note });
+                    }
+                }
+            }
+            else if (section === 'custom') {
+                customLines.push(trimmed);
+            }
+        }
+
+        if (customLines.length > 0 && !state.customInstructions) {
+            state.customInstructions = customLines.join('\n');
+        } else if (!state.customInstructions) {
+            // If no sections were detected, put everything in custom instructions
+            state.customInstructions = text;
+        }
     }
 
     // -----------------------------------------------------------------------
