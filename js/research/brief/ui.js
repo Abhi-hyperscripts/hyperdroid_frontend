@@ -488,6 +488,14 @@
     // Public surface
     // -----------------------------------------------------------------------
 
+    function briefSwitchTab(tabName) {
+        document.querySelectorAll('#insightsBriefModal .brief-tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.tab === tabName);
+        });
+        document.getElementById('briefTabInstructions').style.display = tabName === 'instructions' ? '' : 'none';
+        document.getElementById('briefTabAdvanced').style.display = tabName === 'advanced' ? '' : 'none';
+    }
+
     window.openBriefBuilder = openBriefBuilder;
     window.closeBriefBuilder = closeBriefBuilder;
     window.briefHandleSkip = handleSkipBrief;
@@ -495,4 +503,5 @@
     window.briefAddFocusVar = briefAddFocusVar;
     window.briefAddCrossTab = briefAddCrossTab;
     window.briefAddSegment = briefAddSegment;
+    window.briefSwitchTab = briefSwitchTab;
 })();
