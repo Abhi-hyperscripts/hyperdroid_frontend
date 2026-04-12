@@ -8147,6 +8147,17 @@
                               placeholder="e.g. Focus on the gaming category. Client is Xbox — don't frame analysis favorably toward competitors. Board presentation in 2 weeks — keep language executive-friendly."
                               rows="4"></textarea>
                 </div>
+
+                <!-- Baseline Dashboard (Regenerate+Replay) -->
+                <div class="brief-section" id="briefBaselineSection" style="display:none;">
+                    <div class="brief-section-title">Baseline Dashboard</div>
+                    <div class="brief-section-desc">An existing approved dashboard was found. Check the box to keep all existing charts and add new ones on top.</div>
+                    <label class="brief-analysis-option" style="margin-bottom:8px;">
+                        <input type="checkbox" id="briefUseBaseline">
+                        <span>Keep all existing charts and add new ones per instructions above</span>
+                    </label>
+                    <div id="briefBaselineSummary" style="font-size:11px; color:#64748b; padding:6px 10px; background:#0f172a; border-radius:6px; display:none;"></div>
+                </div>
             </div>
             <div class="gm-footer" style="display:flex; justify-content:space-between; gap:12px;">
                 <button class="gm-btn gm-btn-secondary" onclick="briefHandleSkip()" style="opacity: .7;">

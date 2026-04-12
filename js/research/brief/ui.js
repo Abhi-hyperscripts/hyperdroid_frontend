@@ -20,8 +20,10 @@
     'use strict';
 
     let _fileId = null;
-    let _onGenerate = null;  // callback: (briefJson) => void
+    let _onGenerate = null;  // callback: (briefJson, useBaseline, briefStateJson) => void
     let _initialized = false;
+    let _hasExistingDashboard = false;
+    let _briefStateJson = null; // structured brief JSON to persist on backend
 
     // -----------------------------------------------------------------------
     // State
@@ -52,19 +54,77 @@
             wireEventHandlers();
         }
 
-        // Pre-fill from project's ai_instructions if this is the first open
-        // (no state yet) or state is empty. Fetches from the API so it always
-        // reflects the latest saved instructions (including from previous
-        // Brief Builder runs).
-        if (!state.customInstructions && typeof projectId !== 'undefined' && typeof api !== 'undefined') {
+        // Restore structured state from the backend's brief_json (persisted
+        // in insights_dashboards). This works across browsers/devices since
+        // it's stored server-side.
+        const isEmpty = state.focusVariables.length === 0 &&
+            state.mandatoryCrossTabs.length === 0 &&
+            state.focusSegments.length === 0 &&
+            !state.customInstructions &&
+            !state.mandatoryAnalyses.trend &&
+            !state.mandatoryAnalyses.driver &&
+            !state.mandatoryAnalyses.cluster &&
+            !state.mandatoryAnalyses.correlation;
+
+        if (isEmpty && typeof api !== 'undefined' && typeof projectId !== 'undefined') {
             try {
-                const proj = await api.request(`/research/projects/${projectId}`);
-                if (proj?.ai_instructions) {
-                    state.customInstructions = proj.ai_instructions;
+                const insights = await api.request(
+                    `/research/projects/${projectId}/files/${fileId}/insights`,
+                    { _skipSpinner: true });
+                // Load structured brief from brief_json
+                if (insights?.brief_json) {
+                    try {
+                        const parsed = JSON.parse(insights.brief_json);
+                        if (parsed.focusVariables) state.focusVariables = parsed.focusVariables;
+                        if (parsed.mandatoryCrossTabs) state.mandatoryCrossTabs = parsed.mandatoryCrossTabs;
+                        if (parsed.mandatoryAnalyses) state.mandatoryAnalyses = { ...state.mandatoryAnalyses, ...parsed.mandatoryAnalyses };
+                        if (parsed.focusSegments) state.focusSegments = parsed.focusSegments;
+                        if (parsed.customInstructions) state.customInstructions = parsed.customInstructions;
+                        console.info('[Brief] Restored structured state from backend brief_json');
+                    } catch (e) {
+                        console.warn('[Brief] Failed to parse brief_json:', e);
+                    }
+                }
+                // Fallback: load from project's ai_instructions (text only)
+                if (!state.customInstructions) {
+                    const proj = await api.request(`/research/projects/${projectId}`);
+                    if (proj?.ai_instructions) {
+                        state.customInstructions = proj.ai_instructions;
+                    }
                 }
             } catch (e) {
-                // Non-fatal — user can still type instructions manually
-                console.warn('[Brief] Failed to load project ai_instructions:', e);
+                // No existing insights — that's fine for first-time generation
+                console.info('[Brief] No existing insights, starting fresh');
+            }
+        }
+
+        // Check if an existing dashboard exists (for baseline/replay checkbox)
+        _hasExistingDashboard = false;
+        const baselineSection = document.getElementById('briefBaselineSection');
+        const baselineSummary = document.getElementById('briefBaselineSummary');
+        const baselineCheckbox = document.getElementById('briefUseBaseline');
+        if (baselineSection && typeof api !== 'undefined' && typeof projectId !== 'undefined') {
+            try {
+                const insights = await api.request(`/research/projects/${projectId}/files/${fileId}/insights`, { _skipSpinner: true });
+                if (insights?.status === 'ready' && insights?.dashboard_json) {
+                    _hasExistingDashboard = true;
+                    baselineSection.style.display = '';
+                    // Show a summary of the existing dashboard
+                    try {
+                        const dash = JSON.parse(insights.dashboard_json);
+                        const tabs = dash.tabs || [];
+                        const chartCount = tabs.reduce((a, t) => a + (t.charts?.length || 0), 0);
+                        const tabNames = tabs.map(t => t.tab_label || '?').join(', ');
+                        if (baselineSummary) {
+                            baselineSummary.style.display = '';
+                            baselineSummary.textContent = `Existing: ${tabs.length} tabs, ${chartCount} charts — ${tabNames}`;
+                        }
+                    } catch { /* ignore parse errors */ }
+                } else {
+                    baselineSection.style.display = 'none';
+                }
+            } catch {
+                baselineSection.style.display = 'none';
             }
         }
 
@@ -176,14 +236,28 @@
 
     function handleSkipBrief() {
         closeBriefBuilder();
-        if (_onGenerate) _onGenerate(null);
+        if (_onGenerate) _onGenerate(null, false, null);
     }
 
     function handleGenerateWithBrief() {
         const brief = buildBriefJson();
         const promptText = briefToPromptText(brief);
+
+        // Build brief_json for backend persistence (stored in insights_dashboards.brief_json)
+        const briefStateJson = JSON.stringify({
+            focusVariables: state.focusVariables,
+            mandatoryCrossTabs: state.mandatoryCrossTabs,
+            mandatoryAnalyses: state.mandatoryAnalyses,
+            focusSegments: state.focusSegments,
+            customInstructions: state.customInstructions
+        });
+        // Store on the _onGenerate call so the caller can include it in the POST
+        _briefStateJson = briefStateJson;
+
+        const useBaseline = _hasExistingDashboard && document.getElementById('briefUseBaseline')?.checked;
+
         closeBriefBuilder();
-        if (_onGenerate) _onGenerate(promptText);
+        if (_onGenerate) _onGenerate(promptText, useBaseline, briefStateJson);
     }
 
     // -----------------------------------------------------------------------

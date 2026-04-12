@@ -8702,10 +8702,16 @@ async function generateInsights() {
     }
 
     // Open the Brief Builder modal instead of a simple confirm dialog.
-    // The brief builder calls _doGenerateInsights(briefText) when the user
-    // clicks either "Skip brief" (briefText=null) or "Generate with brief".
+    // The brief builder calls back with (briefText, useBaseline, briefStateJson).
+    // If useBaseline=true, uses regenerate-replay endpoint to keep existing charts.
     if (typeof openBriefBuilder === 'function') {
-        openBriefBuilder(fileId, (briefText) => _doGenerateInsights(fileId, briefText));
+        openBriefBuilder(fileId, (briefText, useBaseline, briefStateJson) => {
+            if (useBaseline) {
+                _doRegenerateReplay(fileId, briefText);
+            } else {
+                _doGenerateInsights(fileId, briefText, briefStateJson);
+            }
+        });
         return;
     }
 
@@ -8715,7 +8721,7 @@ async function generateInsights() {
     _doGenerateInsights(fileId, null);
 }
 
-async function _doGenerateInsights(fileId, briefText) {
+async function _doGenerateInsights(fileId, briefText, briefStateJson) {
     const genBtn = document.getElementById('generateInsightsBtn');
     const viewBtn = document.getElementById('viewInsightsBtn');
 
@@ -8757,8 +8763,10 @@ async function _doGenerateInsights(fileId, briefText) {
         updateInsightsProgressItem(fileId, 'generating', 'Starting insights generation...');
         showProgressPanel();
 
+        const generateBody = briefStateJson ? { brief_json: briefStateJson } : undefined;
         const result = await api.request(`/research/projects/${projectId}/files/${fileId}/insights/generate`, {
-            method: 'POST'
+            method: 'POST',
+            body: generateBody ? JSON.stringify(generateBody) : undefined
         });
 
         insightsShareToken = result.share_token;
@@ -8775,6 +8783,43 @@ async function _doGenerateInsights(fileId, briefText) {
         delete activeProgressFiles[progressKey];
         removeProgressPanelItem(progressKey);
         activeInsightsFileId = null;
+    }
+}
+
+async function _doRegenerateReplay(fileId, briefText) {
+    const genBtn = document.getElementById('generateInsightsBtn');
+    const viewBtn = document.getElementById('viewInsightsBtn');
+
+    try {
+        genBtn.disabled = true;
+        genBtn.querySelector('#generateInsightsLabel').textContent = 'Regenerating...';
+        if (viewBtn) viewBtn.style.display = 'none';
+
+        // Save brief as ai_instructions
+        if (briefText) {
+            try {
+                await api.request(`/research/projects/${projectId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ ai_instructions: briefText })
+                });
+            } catch (e) { console.warn('[Insights] Failed to save brief:', e); }
+        }
+
+        const result = await api.request(`/research/projects/${projectId}/files/${fileId}/insights/regenerate-replay`, {
+            method: 'POST',
+            body: JSON.stringify({
+                source_file_id: fileId,
+                instructions: briefText
+            })
+        });
+
+        insightsShareToken = result.share_token;
+        Toast.success('Regenerating with baseline — existing charts preserved, new ones being added...');
+        startInsightsPolling(fileId);
+    } catch (err) {
+        genBtn.disabled = false;
+        genBtn.querySelector('#generateInsightsLabel').textContent = 'Generate Insights';
+        Toast.error(err.data?.error || err.message || 'Regenerate+replay failed');
     }
 }
 
