@@ -8118,12 +8118,33 @@
                 <!-- Tab 1: Instructions (most used) -->
                 <div class="brief-tab-content active" id="briefTabInstructions" style="padding: 20px 24px;">
                     <!-- Custom Instructions -->
-                    <div class="brief-section">
+                    <div class="brief-section" style="flex:1; display:flex; flex-direction:column;">
                         <div class="brief-section-title">Instructions for AI Analyst</div>
-                        <div class="brief-section-desc">Tell the AI what to focus on, which charts to include, any specific requirements.</div>
-                        <textarea id="briefCustomInstructions" class="brief-textarea"
-                                  placeholder="e.g. Focus on brand health (Q11, Q12). Must include cross-tab of satisfaction by country as a LINE chart. Include Apple vs Samsung head-to-head comparison. Board presentation — keep language C-suite appropriate."
-                                  rows="8"></textarea>
+                        <div class="brief-section-desc">Describe exactly what you want in your dashboard — tabs, charts, comparisons, segments, language style. Write as if briefing a research analyst. The more detail you provide, the more precisely the AI will build your dashboard.</div>
+                        <textarea id="briefCustomInstructions" class="brief-textarea" style="flex:1; min-height:280px; resize:vertical;"
+                                  placeholder="Example:
+
+Build a dashboard with the following tabs:
+
+Tab 1: Executive Summary
+- 6 KPI gauges: Overall Satisfaction, NPS, Brand Share (Apple), Repurchase Intent, Switching Risk, AI Interest
+- Scatter chart: Feature importance vs satisfaction (gap analysis)
+- Treemap: Purchase driver distribution
+
+Tab 2: Brand Health
+- Line chart: Satisfaction by country (must be LINE not bar)
+- Stacked bar: NPS categories by gender with significance markers
+- Radar: Apple vs Samsung brand perception profile
+
+Tab 3: Wave Comparison
+- Line charts: Q11 and Q12 trends across waves using _RAGENAIZER_WAVE column
+- Stacked bar: Brand share Wave 1 vs Wave 2
+
+Additional notes:
+- Focus on Apple vs Samsung rivalry throughout
+- Use C-suite language, no statistical jargon
+- Always show significance testing on cross-tabs
+- Include at least 2 radar charts for brand profiles"></textarea>
                     </div>
 
                     <!-- Baseline Dashboard (Regenerate+Replay) -->
