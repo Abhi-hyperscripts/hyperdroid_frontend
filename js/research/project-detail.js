@@ -751,11 +751,13 @@ function handleInsightsProgressUpdate(data) {
             Toast.success('Insights dashboard is ready!');
             const genBtn = document.getElementById('generateInsightsBtn');
             const viewBtn = document.getElementById('viewInsightsBtn');
+            const replayBtn = document.getElementById('replayInsightsBtn');
             if (genBtn) {
                 genBtn.disabled = false;
                 genBtn.querySelector('#generateInsightsLabel').textContent = 'Regenerate Insights';
             }
             if (viewBtn) viewBtn.style.display = '';
+            if (replayBtn) replayBtn.style.display = '';
         } else {
             Toast.error('Insights generation failed: ' + message);
             const genBtn = document.getElementById('generateInsightsBtn');
@@ -8631,6 +8633,7 @@ async function checkInsightsAvailability() {
     const divider = document.getElementById('insightsDivider');
     const genBtn = document.getElementById('generateInsightsBtn');
     const viewBtn = document.getElementById('viewInsightsBtn');
+    const replayBtn = document.getElementById('replayInsightsBtn');
     if (!divider || !genBtn || !viewBtn) return;
 
     const fileId = getQuestionFileFilterValue();
@@ -8638,6 +8641,7 @@ async function checkInsightsAvailability() {
         divider.style.display = 'none';
         genBtn.style.display = 'none';
         viewBtn.style.display = 'none';
+        if (replayBtn) replayBtn.style.display = 'none';
         return;
     }
 
@@ -8648,6 +8652,7 @@ async function checkInsightsAvailability() {
             divider.style.display = 'none';
             genBtn.style.display = 'none';
             viewBtn.style.display = 'none';
+            if (replayBtn) replayBtn.style.display = 'none';
             return;
         }
 
@@ -8662,24 +8667,30 @@ async function checkInsightsAvailability() {
                 insightsShareToken = insights.share_token;
                 viewBtn.style.display = '';
                 genBtn.querySelector('#generateInsightsLabel').textContent = 'Regenerate Insights';
+                // Show Replay button — recipe-based instant regeneration
+                if (replayBtn) replayBtn.style.display = '';
             } else if (insights.status === 'generating') {
                 insightsShareToken = insights.share_token;
                 genBtn.disabled = true;
                 genBtn.querySelector('#generateInsightsLabel').textContent = 'Generating...';
                 viewBtn.style.display = 'none';
+                if (replayBtn) replayBtn.style.display = 'none';
                 startInsightsPolling(fileId);
             } else {
                 viewBtn.style.display = 'none';
+                if (replayBtn) replayBtn.style.display = 'none';
             }
         } catch {
             // No insights yet — that's fine
             viewBtn.style.display = 'none';
+            if (replayBtn) replayBtn.style.display = 'none';
             genBtn.querySelector('#generateInsightsLabel').textContent = 'Generate Insights';
         }
     } catch {
         divider.style.display = 'none';
         genBtn.style.display = 'none';
         viewBtn.style.display = 'none';
+        if (replayBtn) replayBtn.style.display = 'none';
     }
 }
 
@@ -8690,9 +8701,21 @@ async function generateInsights() {
         return;
     }
 
+    // Open the Brief Builder modal instead of a simple confirm dialog.
+    // The brief builder calls _doGenerateInsights(briefText) when the user
+    // clicks either "Skip brief" (briefText=null) or "Generate with brief".
+    if (typeof openBriefBuilder === 'function') {
+        openBriefBuilder(fileId, (briefText) => _doGenerateInsights(fileId, briefText));
+        return;
+    }
+
+    // Fallback if brief builder not loaded
     const confirmed = await showConfirm('Generate AI insights dashboard? This uses your AI API key and may take 10-30 seconds.', 'Generate Insights');
     if (!confirmed) return;
+    _doGenerateInsights(fileId, null);
+}
 
+async function _doGenerateInsights(fileId, briefText) {
     const genBtn = document.getElementById('generateInsightsBtn');
     const viewBtn = document.getElementById('viewInsightsBtn');
 
@@ -8709,6 +8732,20 @@ async function generateInsights() {
             await joinInsightsProgressGroup(fileId);
         }
         activeInsightsFileId = fileId;
+
+        // If a brief was provided, save it as the project's ai_instructions
+        // so the backend's Phase 1 pipeline picks it up via gRPC.
+        if (briefText) {
+            try {
+                await api.request(`/research/projects/${projectId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ ai_instructions: briefText })
+                });
+            } catch (e) {
+                console.warn('[Insights] Failed to save brief as ai_instructions:', e);
+                // Non-fatal — continue with generation
+            }
+        }
 
         // Show progress panel immediately
         const progressKey = `insights-${fileId}`;
@@ -8738,6 +8775,55 @@ async function generateInsights() {
         delete activeProgressFiles[progressKey];
         removeProgressPanelItem(progressKey);
         activeInsightsFileId = null;
+    }
+}
+
+async function replayInsights() {
+    const fileId = getQuestionFileFilterValue();
+    if (!fileId) {
+        Toast.error('No file selected');
+        return;
+    }
+
+    const confirmed = await showConfirm(
+        'Replay the existing dashboard recipe with current data?\n\n' +
+        'This re-runs the same analysis functions (frequency, cross-tab, etc.) ' +
+        'against the current dataset — instantly, with no AI cost.\n\n' +
+        'Use this when you\'ve appended new wave data and want the same dashboard structure with updated numbers.',
+        'Replay Insights'
+    );
+    if (!confirmed) return;
+
+    const replayBtn = document.getElementById('replayInsightsBtn');
+    const origText = replayBtn?.querySelector('#replayInsightsLabel')?.textContent;
+    try {
+        if (replayBtn) {
+            replayBtn.disabled = true;
+            replayBtn.querySelector('#replayInsightsLabel').textContent = 'Replaying...';
+        }
+
+        const result = await api.request(`/research/projects/${projectId}/files/${fileId}/insights/replay`, {
+            method: 'POST',
+            body: JSON.stringify({ source_file_id: fileId })
+        });
+
+        if (result.success) {
+            insightsShareToken = result.share_token;
+            Toast.success(`Replay complete — ${result.steps_succeeded} steps succeeded` +
+                (result.steps_skipped > 0 ? `, ${result.steps_skipped} skipped` : ''));
+            const viewBtn = document.getElementById('viewInsightsBtn');
+            if (viewBtn) viewBtn.style.display = '';
+        } else {
+            Toast.error(result.error || 'Replay failed');
+        }
+    } catch (err) {
+        const msg = err.data?.error || err.message || 'Replay failed';
+        Toast.error(msg);
+    } finally {
+        if (replayBtn) {
+            replayBtn.disabled = false;
+            replayBtn.querySelector('#replayInsightsLabel').textContent = origText || 'Replay Insights';
+        }
     }
 }
 

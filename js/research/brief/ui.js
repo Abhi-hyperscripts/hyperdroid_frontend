@@ -1,0 +1,341 @@
+/**
+ * Insights Brief Builder — UI module
+ *
+ * Opens BEFORE insights generation. Lets users specify:
+ *   - Focus variables (key metrics the dashboard MUST analyze)
+ *   - Mandatory cross-tabs (row × column combos)
+ *   - Mandatory analyses (driver, cluster, correlation, trend)
+ *   - Focus segments (filter expressions + labels)
+ *   - Custom instructions (free text)
+ *
+ * Two exit paths:
+ *   "Skip brief — let AI decide" → generates with no brief (fully autonomous)
+ *   "Generate with brief"        → sends brief_json alongside the POST
+ *
+ * Public surface:
+ *   openBriefBuilder(fileId, onGenerate)  — open the modal
+ *   closeBriefBuilder()                   — close it
+ */
+(function () {
+    'use strict';
+
+    let _fileId = null;
+    let _onGenerate = null;  // callback: (briefJson) => void
+    let _initialized = false;
+
+    // -----------------------------------------------------------------------
+    // State
+    // -----------------------------------------------------------------------
+    const state = {
+        focusVariables: [],      // [{ variable, reason }]
+        mandatoryCrossTabs: [],  // [{ row, column, note }]
+        mandatoryAnalyses: {     // checkboxes
+            trend: false,
+            driver: false,
+            cluster: false,
+            correlation: false,
+        },
+        focusSegments: [],       // [{ expression, label, note }]
+        customInstructions: '',
+    };
+
+    // -----------------------------------------------------------------------
+    // Open / close
+    // -----------------------------------------------------------------------
+
+    async function openBriefBuilder(fileId, onGenerate) {
+        _fileId = fileId;
+        _onGenerate = onGenerate;
+
+        if (!_initialized) {
+            _initialized = true;
+            wireEventHandlers();
+        }
+
+        // Pre-fill from project's ai_instructions if this is the first open
+        // (no state yet) or state is empty. Fetches from the API so it always
+        // reflects the latest saved instructions (including from previous
+        // Brief Builder runs).
+        if (!state.customInstructions && typeof projectId !== 'undefined' && typeof api !== 'undefined') {
+            try {
+                const proj = await api.request(`/research/projects/${projectId}`);
+                if (proj?.ai_instructions) {
+                    state.customInstructions = proj.ai_instructions;
+                }
+            } catch (e) {
+                // Non-fatal — user can still type instructions manually
+                console.warn('[Brief] Failed to load project ai_instructions:', e);
+            }
+        }
+
+        render();
+        document.getElementById('insightsBriefModal')?.classList.add('active');
+    }
+
+    function closeBriefBuilder() {
+        document.getElementById('insightsBriefModal')?.classList.remove('active');
+    }
+
+    function wireEventHandlers() {
+        // Custom instructions textarea
+        const ta = document.getElementById('briefCustomInstructions');
+        if (ta) {
+            ta.addEventListener('input', () => {
+                state.customInstructions = ta.value;
+            });
+        }
+
+        // Analysis checkboxes
+        document.querySelectorAll('.brief-analysis-check').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const key = cb.dataset.analysis;
+                if (key) state.mandatoryAnalyses[key] = cb.checked;
+            });
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // Build brief JSON
+    // -----------------------------------------------------------------------
+
+    function buildBriefJson() {
+        const brief = { brief_version: 1 };
+
+        if (state.focusVariables.length > 0)
+            brief.focus_variables = state.focusVariables;
+
+        if (state.mandatoryCrossTabs.length > 0)
+            brief.mandatory_crosstabs = state.mandatoryCrossTabs;
+
+        const activeAnalyses = Object.entries(state.mandatoryAnalyses)
+            .filter(([_, v]) => v).map(([k]) => ({ type: k }));
+        if (activeAnalyses.length > 0)
+            brief.mandatory_analyses = activeAnalyses;
+
+        if (state.focusSegments.length > 0)
+            brief.focus_segments = state.focusSegments;
+
+        if (state.customInstructions.trim())
+            brief.custom_instructions = state.customInstructions.trim();
+
+        // If nothing was specified, return null (fully autonomous)
+        const hasContent = (brief.focus_variables || brief.mandatory_crosstabs ||
+            brief.mandatory_analyses || brief.focus_segments || brief.custom_instructions);
+        return hasContent ? brief : null;
+    }
+
+    function briefToPromptText(brief) {
+        if (!brief) return '';
+        const lines = [];
+
+        if (brief.focus_variables?.length > 0) {
+            lines.push('FOCUS VARIABLES (must have dedicated analysis):');
+            brief.focus_variables.forEach(f => {
+                lines.push(`  - ${f.variable}${f.reason ? ` — ${f.reason}` : ''}`);
+            });
+            lines.push('');
+        }
+
+        if (brief.mandatory_crosstabs?.length > 0) {
+            lines.push('MANDATORY CROSS-TABS (must appear as charts):');
+            brief.mandatory_crosstabs.forEach(ct => {
+                lines.push(`  - ${ct.row} x ${ct.column}${ct.note ? ` — ${ct.note}` : ''}`);
+            });
+            lines.push('');
+        }
+
+        if (brief.mandatory_analyses?.length > 0) {
+            lines.push('MANDATORY ANALYSES:');
+            const labels = { trend: 'Trend analysis across waves', driver: 'Key driver analysis (regression)',
+                cluster: 'Customer segmentation (clustering)', correlation: 'Correlation matrix (heatmap)' };
+            brief.mandatory_analyses.forEach(a => {
+                lines.push(`  - ${labels[a.type] || a.type}`);
+            });
+            lines.push('');
+        }
+
+        if (brief.focus_segments?.length > 0) {
+            lines.push('FOCUS SEGMENTS (must include in cross-tabs):');
+            brief.focus_segments.forEach(s => {
+                lines.push(`  - "${s.label}" (${s.expression})${s.note ? ` — ${s.note}` : ''}`);
+            });
+            lines.push('');
+        }
+
+        if (brief.custom_instructions) {
+            lines.push('ADDITIONAL INSTRUCTIONS:');
+            lines.push(brief.custom_instructions);
+        }
+
+        return lines.join('\n');
+    }
+
+    // -----------------------------------------------------------------------
+    // Actions
+    // -----------------------------------------------------------------------
+
+    function handleSkipBrief() {
+        closeBriefBuilder();
+        if (_onGenerate) _onGenerate(null);
+    }
+
+    function handleGenerateWithBrief() {
+        const brief = buildBriefJson();
+        const promptText = briefToPromptText(brief);
+        closeBriefBuilder();
+        if (_onGenerate) _onGenerate(promptText);
+    }
+
+    // -----------------------------------------------------------------------
+    // Render
+    // -----------------------------------------------------------------------
+
+    function render() {
+        renderFocusVariables();
+        renderCrossTabs();
+        renderSegments();
+        renderCustomInstructions();
+        renderAnalysisCheckboxes();
+    }
+
+    function renderFocusVariables() {
+        const host = document.getElementById('briefFocusVars');
+        if (!host) return;
+        let html = state.focusVariables.map((f, i) => `
+            <div class="brief-item">
+                <input type="text" class="brief-var-input" value="${escapeHtml(f.variable)}" placeholder="Variable name" data-idx="${i}" data-field="variable">
+                <input type="text" class="brief-reason-input" value="${escapeHtml(f.reason || '')}" placeholder="Why important?" data-idx="${i}" data-field="reason">
+                <button class="brief-remove-btn" data-section="focus" data-idx="${i}">&times;</button>
+            </div>`).join('');
+        html += `<button class="brief-add-btn" onclick="briefAddFocusVar()">+ Add focus variable</button>`;
+        host.innerHTML = html;
+
+        host.querySelectorAll('.brief-var-input, .brief-reason-input').forEach(inp => {
+            inp.addEventListener('input', () => {
+                const idx = parseInt(inp.dataset.idx);
+                state.focusVariables[idx][inp.dataset.field] = inp.value;
+            });
+        });
+        host.querySelectorAll('.brief-remove-btn[data-section="focus"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                state.focusVariables.splice(parseInt(btn.dataset.idx), 1);
+                renderFocusVariables();
+            });
+        });
+    }
+
+    function renderCrossTabs() {
+        const host = document.getElementById('briefCrossTabs');
+        if (!host) return;
+        let html = state.mandatoryCrossTabs.map((ct, i) => `
+            <div class="brief-item">
+                <input type="text" class="brief-ct-row" value="${escapeHtml(ct.row)}" placeholder="Row variable" data-idx="${i}">
+                <span class="brief-ct-x">×</span>
+                <input type="text" class="brief-ct-col" value="${escapeHtml(ct.column)}" placeholder="Column variable" data-idx="${i}">
+                <input type="text" class="brief-ct-note" value="${escapeHtml(ct.note || '')}" placeholder="Note" data-idx="${i}">
+                <button class="brief-remove-btn" data-section="ct" data-idx="${i}">&times;</button>
+            </div>`).join('');
+        html += `<button class="brief-add-btn" onclick="briefAddCrossTab()">+ Add cross-tab</button>`;
+        host.innerHTML = html;
+
+        host.querySelectorAll('.brief-ct-row').forEach(inp => {
+            inp.addEventListener('input', () => { state.mandatoryCrossTabs[parseInt(inp.dataset.idx)].row = inp.value; });
+        });
+        host.querySelectorAll('.brief-ct-col').forEach(inp => {
+            inp.addEventListener('input', () => { state.mandatoryCrossTabs[parseInt(inp.dataset.idx)].column = inp.value; });
+        });
+        host.querySelectorAll('.brief-ct-note').forEach(inp => {
+            inp.addEventListener('input', () => { state.mandatoryCrossTabs[parseInt(inp.dataset.idx)].note = inp.value; });
+        });
+        host.querySelectorAll('.brief-remove-btn[data-section="ct"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                state.mandatoryCrossTabs.splice(parseInt(btn.dataset.idx), 1);
+                renderCrossTabs();
+            });
+        });
+    }
+
+    function renderSegments() {
+        const host = document.getElementById('briefSegments');
+        if (!host) return;
+        let html = state.focusSegments.map((s, i) => `
+            <div class="brief-item">
+                <input type="text" class="brief-seg-label" value="${escapeHtml(s.label)}" placeholder="Segment label" data-idx="${i}">
+                <input type="text" class="brief-seg-expr" value="${escapeHtml(s.expression)}" placeholder="e.g. AGE_GROUP IN (1,2)" data-idx="${i}">
+                <button class="brief-remove-btn" data-section="seg" data-idx="${i}">&times;</button>
+            </div>`).join('');
+        html += `<button class="brief-add-btn" onclick="briefAddSegment()">+ Add segment</button>`;
+        host.innerHTML = html;
+
+        host.querySelectorAll('.brief-seg-label').forEach(inp => {
+            inp.addEventListener('input', () => { state.focusSegments[parseInt(inp.dataset.idx)].label = inp.value; });
+        });
+        host.querySelectorAll('.brief-seg-expr').forEach(inp => {
+            inp.addEventListener('input', () => { state.focusSegments[parseInt(inp.dataset.idx)].expression = inp.value; });
+        });
+        host.querySelectorAll('.brief-remove-btn[data-section="seg"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                state.focusSegments.splice(parseInt(btn.dataset.idx), 1);
+                renderSegments();
+            });
+        });
+    }
+
+    function renderCustomInstructions() {
+        const ta = document.getElementById('briefCustomInstructions');
+        if (ta && ta.value !== state.customInstructions) {
+            ta.value = state.customInstructions;
+        }
+    }
+
+    function renderAnalysisCheckboxes() {
+        Object.entries(state.mandatoryAnalyses).forEach(([key, val]) => {
+            const cb = document.querySelector(`.brief-analysis-check[data-analysis="${key}"]`);
+            if (cb) cb.checked = val;
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // Add helpers (called from onclick)
+    // -----------------------------------------------------------------------
+
+    function briefAddFocusVar() {
+        state.focusVariables.push({ variable: '', reason: '' });
+        renderFocusVariables();
+        // Focus the new input
+        setTimeout(() => {
+            const inputs = document.querySelectorAll('#briefFocusVars .brief-var-input');
+            inputs[inputs.length - 1]?.focus();
+        }, 0);
+    }
+
+    function briefAddCrossTab() {
+        state.mandatoryCrossTabs.push({ row: '', column: '', note: '' });
+        renderCrossTabs();
+        setTimeout(() => {
+            const inputs = document.querySelectorAll('#briefCrossTabs .brief-ct-row');
+            inputs[inputs.length - 1]?.focus();
+        }, 0);
+    }
+
+    function briefAddSegment() {
+        state.focusSegments.push({ expression: '', label: '', note: '' });
+        renderSegments();
+        setTimeout(() => {
+            const inputs = document.querySelectorAll('#briefSegments .brief-seg-label');
+            inputs[inputs.length - 1]?.focus();
+        }, 0);
+    }
+
+    // -----------------------------------------------------------------------
+    // Public surface
+    // -----------------------------------------------------------------------
+
+    window.openBriefBuilder = openBriefBuilder;
+    window.closeBriefBuilder = closeBriefBuilder;
+    window.briefHandleSkip = handleSkipBrief;
+    window.briefHandleGenerate = handleGenerateWithBrief;
+    window.briefAddFocusVar = briefAddFocusVar;
+    window.briefAddCrossTab = briefAddCrossTab;
+    window.briefAddSegment = briefAddSegment;
+})();

@@ -5167,11 +5167,11 @@
         }
 
         /* ===== OPEN-END CODING ===== */
-        #codeframeModal, #codeEditModal, #costBreakdownModal, #responseEditModal, #waveModal, #customTableModal, #rimWeightingModal, #rimWeightingResultModal, #computeVariableModal, #computeVariableResultModal {
+        #codeframeModal, #codeEditModal, #costBreakdownModal, #responseEditModal, #waveModal, #customTableModal, #rimWeightingModal, #rimWeightingResultModal, #computeVariableModal, #computeVariableResultModal, #insightsBriefModal {
             display: none !important;
             pointer-events: none;
         }
-        #codeframeModal.active, #codeEditModal.active, #costBreakdownModal.active, #responseEditModal.active, #waveModal.active, #customTableModal.active, #rimWeightingModal.active, #rimWeightingResultModal.active, #computeVariableModal.active, #computeVariableResultModal.active {
+        #codeframeModal.active, #codeEditModal.active, #costBreakdownModal.active, #responseEditModal.active, #waveModal.active, #customTableModal.active, #rimWeightingModal.active, #rimWeightingResultModal.active, #computeVariableModal.active, #computeVariableResultModal.active, #insightsBriefModal.active {
             display: flex !important;
             opacity: 1 !important;
             pointer-events: auto;
@@ -5832,6 +5832,104 @@
         }
         #computeVariableModal .cv-footer-name { width: 220px; }
         #computeVariableModal .cv-footer-label-input { width: 260px; }
+        /* ===== Insights Brief Builder ===== */
+        #insightsBriefModal.active {
+            z-index: 1000010 !important;
+            align-items: center !important;
+        }
+        #insightsBriefModal .brief-section {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #1e293b;
+        }
+        #insightsBriefModal .brief-section:last-child { border-bottom: none; }
+        #insightsBriefModal .brief-section-title {
+            font-size: 13px; font-weight: 700; color: #f1f5f9;
+            margin-bottom: 4px;
+        }
+        #insightsBriefModal .brief-section-desc {
+            font-size: 11px; color: #64748b; margin-bottom: 10px;
+        }
+        #insightsBriefModal .brief-item {
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 8px;
+        }
+        #insightsBriefModal .brief-var-input,
+        #insightsBriefModal .brief-ct-row,
+        #insightsBriefModal .brief-ct-col,
+        #insightsBriefModal .brief-seg-label {
+            width: 160px; padding: 7px 10px;
+            background: #0f172a; border: 1px solid #475569;
+            border-radius: 6px; color: #f1f5f9; font-size: 12px;
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+        }
+        #insightsBriefModal .brief-reason-input,
+        #insightsBriefModal .brief-ct-note,
+        #insightsBriefModal .brief-seg-expr {
+            flex: 1; padding: 7px 10px;
+            background: #0f172a; border: 1px solid #334155;
+            border-radius: 6px; color: #94a3b8; font-size: 12px;
+        }
+        #insightsBriefModal .brief-var-input:focus,
+        #insightsBriefModal .brief-ct-row:focus,
+        #insightsBriefModal .brief-ct-col:focus,
+        #insightsBriefModal .brief-seg-label:focus,
+        #insightsBriefModal .brief-reason-input:focus,
+        #insightsBriefModal .brief-ct-note:focus,
+        #insightsBriefModal .brief-seg-expr:focus {
+            outline: none; border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, .25);
+        }
+        #insightsBriefModal .brief-ct-x {
+            color: #64748b; font-weight: 700; font-size: 14px;
+        }
+        #insightsBriefModal .brief-remove-btn {
+            background: #0f172a; color: #94a3b8;
+            border: 1px solid #334155; border-radius: 6px;
+            width: 26px; height: 26px; cursor: pointer;
+            font-size: 14px; line-height: 1;
+        }
+        #insightsBriefModal .brief-remove-btn:hover {
+            color: #ef4444; border-color: #ef4444;
+        }
+        #insightsBriefModal .brief-add-btn {
+            background: transparent; color: #3b82f6;
+            border: 1px dashed #334155; border-radius: 6px;
+            padding: 6px 14px; font-size: 12px; cursor: pointer;
+            margin-top: 4px;
+        }
+        #insightsBriefModal .brief-add-btn:hover {
+            background: rgba(59, 130, 246, .08);
+            border-color: #3b82f6;
+        }
+        #insightsBriefModal .brief-analysis-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+        }
+        #insightsBriefModal .brief-analysis-option {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 12px; border-radius: 8px;
+            background: #0f172a; border: 1px solid #334155;
+            color: #94a3b8; font-size: 12px; cursor: pointer;
+        }
+        #insightsBriefModal .brief-analysis-option:has(input:checked) {
+            background: rgba(59, 130, 246, .1);
+            border-color: #3b82f6;
+            color: #f1f5f9;
+        }
+        #insightsBriefModal .brief-textarea {
+            width: 100%; padding: 10px 12px;
+            background: #0f172a; border: 1px solid #475569;
+            border-radius: 8px; color: #f1f5f9; font-size: 12px;
+            resize: vertical; min-height: 80px;
+        }
+        #insightsBriefModal .brief-textarea:focus {
+            outline: none; border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, .25);
+        }
+        #insightsBriefModal .brief-textarea::placeholder {
+            color: #475569; font-style: italic;
+        }
+
         /* Result table — branch column should wrap long expressions */
         #computeVariableResultModal .cv-result-branch {
             font-family: 'JetBrains Mono', ui-monospace, monospace;
@@ -6598,6 +6696,13 @@
                                     <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
                                 </svg>
                                 <span id="generateInsightsLabel">Generate Insights</span>
+                            </button>
+                            <button class="actions-item" id="replayInsightsBtn" style="display:none;" onclick="replayInsights(); closeQuestionActionsDropdown();">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="1 4 1 10 7 10"/>
+                                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                                </svg>
+                                <span id="replayInsightsLabel">Replay Insights</span>
                             </button>
                             <button class="actions-item" id="viewInsightsBtn" style="display:none;" onclick="viewInsights(); closeQuestionActionsDropdown();">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -7432,6 +7537,7 @@
         document.write('<script src="../../js/research/custom-table/ui.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/research/weighting/ui.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/research/compute/ui.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/research/brief/ui.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -7951,6 +8057,104 @@
                     <button class="gm-btn gm-btn-secondary" onclick="rwReset()">Reset</button>
                     <button class="gm-btn gm-btn-secondary" onclick="closeRimWeightingModal()">Cancel</button>
                     <button class="gm-btn gm-btn-primary" id="rwRunBtn" onclick="rwRun()" disabled>Generate Weights</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =======================================================
+         INSIGHTS BRIEF BUILDER MODAL
+         Opens BEFORE insights generation. Users specify what
+         they want in the dashboard — focus variables, mandatory
+         cross-tabs, analyses, segments, custom instructions.
+         ======================================================= -->
+    <div class="gm-overlay" id="insightsBriefModal">
+        <div class="gm-modal" style="max-width: 720px; width: 92vw; max-height: 90vh;">
+            <div class="gm-header" style="padding-bottom: 12px;">
+                <div class="gm-header-left">
+                    <div class="gm-icon" style="color: #3b82f6;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Dashboard Brief</h3>
+                        <p class="gm-subtitle">Tell AI what to include in the insights dashboard</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeBriefBuilder()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body" style="overflow-y: auto; padding: 20px 24px;">
+                <!-- Focus Variables -->
+                <div class="brief-section">
+                    <div class="brief-section-title">Focus Variables</div>
+                    <div class="brief-section-desc">Key metrics the dashboard MUST analyze in depth.</div>
+                    <div id="briefFocusVars"></div>
+                </div>
+
+                <!-- Mandatory Cross-Tabs -->
+                <div class="brief-section">
+                    <div class="brief-section-title">Mandatory Cross-Tabs</div>
+                    <div class="brief-section-desc">Variable combinations that MUST appear as charts.</div>
+                    <div id="briefCrossTabs"></div>
+                </div>
+
+                <!-- Mandatory Analyses -->
+                <div class="brief-section">
+                    <div class="brief-section-title">Mandatory Analyses</div>
+                    <div class="brief-section-desc">Advanced analyses the dashboard MUST include.</div>
+                    <div class="brief-analysis-grid">
+                        <label class="brief-analysis-option">
+                            <input type="checkbox" class="brief-analysis-check" data-analysis="trend">
+                            <span>Trend analysis across waves</span>
+                        </label>
+                        <label class="brief-analysis-option">
+                            <input type="checkbox" class="brief-analysis-check" data-analysis="driver">
+                            <span>Key driver analysis (regression)</span>
+                        </label>
+                        <label class="brief-analysis-option">
+                            <input type="checkbox" class="brief-analysis-check" data-analysis="cluster">
+                            <span>Customer segmentation (clustering)</span>
+                        </label>
+                        <label class="brief-analysis-option">
+                            <input type="checkbox" class="brief-analysis-check" data-analysis="correlation">
+                            <span>Correlation matrix (heatmap)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Focus Segments -->
+                <div class="brief-section">
+                    <div class="brief-section-title">Focus Segments</div>
+                    <div class="brief-section-desc">Audience segments the analysis should highlight.</div>
+                    <div id="briefSegments"></div>
+                </div>
+
+                <!-- Custom Instructions -->
+                <div class="brief-section">
+                    <div class="brief-section-title">Additional Instructions</div>
+                    <div class="brief-section-desc">Any other guidance for the AI analyst.</div>
+                    <textarea id="briefCustomInstructions" class="brief-textarea"
+                              placeholder="e.g. Focus on the gaming category. Client is Xbox — don't frame analysis favorably toward competitors. Board presentation in 2 weeks — keep language executive-friendly."
+                              rows="4"></textarea>
+                </div>
+            </div>
+            <div class="gm-footer" style="display:flex; justify-content:space-between; gap:12px;">
+                <button class="gm-btn gm-btn-secondary" onclick="briefHandleSkip()" style="opacity: .7;">
+                    Skip brief — let AI decide
+                </button>
+                <div style="display:flex; gap:8px;">
+                    <button class="gm-btn gm-btn-secondary" onclick="closeBriefBuilder()">Cancel</button>
+                    <button class="gm-btn gm-btn-primary" onclick="briefHandleGenerate()">Generate with Brief</button>
                 </div>
             </div>
         </div>
