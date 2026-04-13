@@ -8634,6 +8634,7 @@ async function checkInsightsAvailability() {
     const genBtn = document.getElementById('generateInsightsBtn');
     const viewBtn = document.getElementById('viewInsightsBtn');
     const replayBtn = document.getElementById('replayInsightsBtn');
+    const deleteBtn = document.getElementById('deleteInsightsBtn');
     if (!divider || !genBtn || !viewBtn) return;
 
     const fileId = getQuestionFileFilterValue();
@@ -8642,6 +8643,7 @@ async function checkInsightsAvailability() {
         genBtn.style.display = 'none';
         viewBtn.style.display = 'none';
         if (replayBtn) replayBtn.style.display = 'none';
+        if (deleteBtn) deleteBtn.style.display = 'none';
         return;
     }
 
@@ -8669,21 +8671,25 @@ async function checkInsightsAvailability() {
                 genBtn.querySelector('#generateInsightsLabel').textContent = 'Regenerate Insights';
                 // Show Replay button — recipe-based instant regeneration
                 if (replayBtn) replayBtn.style.display = '';
+                if (deleteBtn) deleteBtn.style.display = '';
             } else if (insights.status === 'generating') {
                 insightsShareToken = insights.share_token;
                 genBtn.disabled = true;
                 genBtn.querySelector('#generateInsightsLabel').textContent = 'Generating...';
                 viewBtn.style.display = 'none';
                 if (replayBtn) replayBtn.style.display = 'none';
+                if (deleteBtn) deleteBtn.style.display = 'none';
                 startInsightsPolling(fileId);
             } else {
                 viewBtn.style.display = 'none';
                 if (replayBtn) replayBtn.style.display = 'none';
+                if (deleteBtn) deleteBtn.style.display = 'none';
             }
         } catch {
             // No insights yet — that's fine
             viewBtn.style.display = 'none';
             if (replayBtn) replayBtn.style.display = 'none';
+            if (deleteBtn) deleteBtn.style.display = 'none';
             genBtn.querySelector('#generateInsightsLabel').textContent = 'Generate Insights';
         }
     } catch {
@@ -8691,6 +8697,7 @@ async function checkInsightsAvailability() {
         genBtn.style.display = 'none';
         viewBtn.style.display = 'none';
         if (replayBtn) replayBtn.style.display = 'none';
+        if (deleteBtn) deleteBtn.style.display = 'none';
     }
 }
 
@@ -8920,6 +8927,26 @@ function viewInsights() {
     }).catch(() => {
         Toast.info('Share link: ' + fullUrl);
     });
+}
+
+async function deleteInsights() {
+    const fileId = getQuestionFileFilterValue();
+    if (!fileId) { Toast.error('No file selected'); return; }
+
+    const confirmed = await showConfirm(
+        'Delete the insights dashboard for this file? This removes the dashboard, recipe, and brief data. You can regenerate it afterwards.',
+        'Delete Insights'
+    );
+    if (!confirmed) return;
+
+    try {
+        await api.request(`/research/projects/${projectId}/files/${fileId}/insights`, { method: 'DELETE' });
+        Toast.success('Insights dashboard deleted');
+        insightsShareToken = null;
+        checkInsightsAvailability();
+    } catch (err) {
+        Toast.error('Failed to delete insights: ' + (err.message || err));
+    }
 }
 
 // ============================================================================
