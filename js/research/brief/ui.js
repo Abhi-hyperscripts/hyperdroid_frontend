@@ -39,6 +39,7 @@
         },
         focusSegments: [],       // [{ expression, label, note }]
         customInstructions: '',
+        waveVariable: '',        // wave/period identifier column name
     };
 
     // -----------------------------------------------------------------------
@@ -80,6 +81,7 @@
                         if (parsed.mandatoryAnalyses) state.mandatoryAnalyses = { ...state.mandatoryAnalyses, ...parsed.mandatoryAnalyses };
                         if (parsed.focusSegments) state.focusSegments = parsed.focusSegments;
                         if (parsed.customInstructions) state.customInstructions = parsed.customInstructions;
+                        if (parsed.waveVariable) state.waveVariable = parsed.waveVariable;
                         console.info('[Brief] Restored structured state from backend brief_json');
                     } catch (e) {
                         console.warn('[Brief] Failed to parse brief_json:', e);
@@ -130,6 +132,31 @@
         }
 
         render();
+
+        // Populate wave variable dropdown from file's variables
+        const waveSelect = document.getElementById('briefWaveVariable');
+        if (waveSelect && typeof api !== 'undefined' && typeof projectId !== 'undefined') {
+            try {
+                const resp = await api.request(`/research/projects/${projectId}/files/${fileId}/variables`, { _skipSpinner: true });
+                const vars = resp?.variables || resp;
+                waveSelect.innerHTML = '<option value="">— Not set (no wave comparison) —</option>';
+                if (vars && Array.isArray(vars)) {
+                    vars.forEach(v => {
+                        const opt = document.createElement('option');
+                        const name = v.variable_name || v.variableName || v.name;
+                        opt.value = name;
+                        opt.textContent = `${name} — ${v.variable_label || v.variableLabel || v.label || ''}`;
+                        waveSelect.appendChild(opt);
+                    });
+                }
+                // Set selected value from state
+                if (state.waveVariable) waveSelect.value = state.waveVariable;
+                waveSelect.addEventListener('change', () => { state.waveVariable = waveSelect.value; });
+            } catch (e) {
+                console.warn('[Brief] Failed to load variables for wave selector:', e);
+            }
+        }
+
         document.getElementById('insightsBriefModal')?.classList.add('active');
     }
 
@@ -179,15 +206,26 @@
         if (state.customInstructions.trim())
             brief.custom_instructions = state.customInstructions.trim();
 
+        if (state.waveVariable)
+            brief.wave_variable = state.waveVariable;
+
         // If nothing was specified, return null (fully autonomous)
         const hasContent = (brief.focus_variables || brief.mandatory_crosstabs ||
-            brief.mandatory_analyses || brief.focus_segments || brief.custom_instructions);
+            brief.mandatory_analyses || brief.focus_segments || brief.custom_instructions ||
+            brief.wave_variable);
         return hasContent ? brief : null;
     }
 
     function briefToPromptText(brief) {
         if (!brief) return '';
         const lines = [];
+
+        if (brief.wave_variable) {
+            lines.push(`WAVE VARIABLE: "${brief.wave_variable}"`);
+            lines.push('Use this variable to filter or cross-tabulate by wave/period for ALL trend analysis charts.');
+            lines.push('For wave comparison tabs: run separate frequency/cross_tab calls filtered by each wave value, or use cross_tab with this variable as the banner.');
+            lines.push('');
+        }
 
         if (brief.focus_variables?.length > 0) {
             lines.push('FOCUS VARIABLES (must have dedicated analysis):');
@@ -250,7 +288,8 @@
             mandatoryCrossTabs: state.mandatoryCrossTabs,
             mandatoryAnalyses: state.mandatoryAnalyses,
             focusSegments: state.focusSegments,
-            customInstructions: state.customInstructions
+            customInstructions: state.customInstructions,
+            waveVariable: state.waveVariable
         });
         // Store on the _onGenerate call so the caller can include it in the POST
         _briefStateJson = briefStateJson;
@@ -271,6 +310,9 @@
         renderSegments();
         renderCustomInstructions();
         renderAnalysisCheckboxes();
+        // Sync wave variable dropdown
+        const waveSelect = document.getElementById('briefWaveVariable');
+        if (waveSelect && state.waveVariable) waveSelect.value = state.waveVariable;
     }
 
     function renderFocusVariables() {
@@ -416,6 +458,11 @@
             const trimmed = line.trim();
 
             // Detect section headers
+            if (/^WAVE VARIABLE:\s*"?([^"]+)"?/i.test(trimmed)) {
+                const wvMatch = trimmed.match(/^WAVE VARIABLE:\s*"?([^"]+)"?/i);
+                if (wvMatch) state.waveVariable = wvMatch[1].trim();
+                continue;
+            }
             if (/^FOCUS VARIABLES/i.test(trimmed)) { section = 'focus'; continue; }
             if (/^MANDATORY CROSS-TABS/i.test(trimmed)) { section = 'crosstab'; continue; }
             if (/^MANDATORY ANALYSES/i.test(trimmed)) { section = 'analyses'; continue; }
