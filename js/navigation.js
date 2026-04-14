@@ -256,7 +256,9 @@ const Navigation = {
         'research': 'Research',
         'pms': 'PMS',
         'lms': 'LMS',
-        'procurement': 'Procurement'
+        'procurement': 'Procurement',
+        'accounts': 'Accounts',
+        'news': 'KIP'
         // 'admin' and 'home' don't require service licensing
     },
 
