@@ -2476,33 +2476,33 @@ function formatServiceType(type) {
 // ==================== Sub-Tenants Management ====================
 
 async function checkSubTenantsVisibility() {
-    // Check if we should show the Sub-Tenants tab
-    // Only visible to SaaS platform admin (not sub-tenant admins)
+    // Check if we should show platform-only tabs.
+    // Only visible to SaaS platform admin (not sub-tenant admins):
+    //   - Sub-Tenants
+    //   - Platform Compliance (country-pack fan-out)
     const subtenantsTab = document.getElementById('subtenantsSidebarTab');
+    const platformComplianceTab = document.getElementById('platformComplianceSidebarTab');
+
+    const showPlatformOnly = (visible) => {
+        const action = visible ? 'remove' : 'add';
+        if (subtenantsTab) subtenantsTab.classList[action]('hidden-tab');
+        if (platformComplianceTab) platformComplianceTab.classList[action]('hidden-tab');
+    };
 
     try {
         const response = await api.getSubTenants();
 
         if (response && response.success && response.isSaaSPlatform) {
-            // Show the Sub-Tenants tab (remove hidden-tab class)
-            if (subtenantsTab) {
-                subtenantsTab.classList.remove('hidden-tab');
-            }
+            showPlatformOnly(true);
             isSaaSPlatformAdmin = true;
             subTenantsData = response;
         } else {
-            // Hide the Sub-Tenants tab (add hidden-tab class)
-            if (subtenantsTab) {
-                subtenantsTab.classList.add('hidden-tab');
-            }
+            showPlatformOnly(false);
             isSaaSPlatformAdmin = false;
         }
     } catch (error) {
         console.log('Not a SaaS platform admin or error checking sub-tenants:', error.message);
-        // Hide the Sub-Tenants tab on error (add hidden-tab class)
-        if (subtenantsTab) {
-            subtenantsTab.classList.add('hidden-tab');
-        }
+        showPlatformOnly(false);
         isSaaSPlatformAdmin = false;
     }
 }

@@ -537,10 +537,16 @@
                 if (card) {
                     const hasRole = user.roles.includes('SUPERADMIN') || user.roles.includes(role);
 
-                    // Check if service is licensed (SUPERADMIN bypasses licensing)
+                    // Check if service is licensed.
+                    // SUPERADMIN does NOT bypass licensing — sub-tenant super
+                    // admins must only see tiles their tenant actually paid
+                    // for. The platform root SuperAdmin's license already
+                    // includes every service, so they still see everything.
+                    // adminCard / newsCard are admin tools, not licensed
+                    // services, so they skip the license check (still gated
+                    // by the SUPERADMIN role above).
                     const serviceName = serviceNameMapping[cardId];
-                    const isLicensed = user.roles.includes('SUPERADMIN') ||
-                                       cardId === 'adminCard' || cardId === 'newsCard' ||
+                    const isLicensed = cardId === 'adminCard' || cardId === 'newsCard' ||
                                        !licensedServices ||
                                        licensedServices.includes(serviceName);
 
