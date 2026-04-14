@@ -155,6 +155,9 @@
                             <button class="sidebar-btn" data-tab="profile" id="profileSidebarTab">
                                 <span class="nav-number">7</span><span class="nav-label">Company Profile</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="platform-compliance" id="platformComplianceSidebarTab">
+                                <span class="nav-number">8</span><span class="nav-label">Platform Compliance</span>
+                            </button>
                         </div>
                     </div>
                 </nav>
@@ -636,6 +639,27 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- Platform Compliance Tab -->
+                <div class="tab-content" id="platform-compliance">
+                    <div class="profile-page">
+                        <div class="profile-header-row">
+                            <div>
+                                <h2 class="profile-title">Platform Statutory Compliance</h2>
+                                <p class="profile-sub">Upload a country's statutory config once here &mdash; it's pushed to every sub-tenant's HRMS automatically via gRPC. HRMS validates each push exactly as if the tenant had uploaded it themselves. A tenant can still upload their own override through the HRMS UI; whichever version has the newer <code>effective_from</code> wins.</p>
+                            </div>
+                            <div class="profile-actions">
+                                <button class="btn btn-primary" id="platformComplianceUploadBtn" onclick="openPlatformComplianceUploadModal()">Upload Country JSON</button>
+                            </div>
+                        </div>
+
+                        <div id="platformComplianceList" style="margin-top: 16px;">
+                            <div class="empty-message" style="text-align:center; color: var(--ink-3); padding: 40px 0;">
+                                Loading platform configs&hellip;
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
@@ -1027,6 +1051,49 @@
         </div>
     </div>
 
+    <!-- Platform Compliance — Upload Modal -->
+    <div class="modal" id="platformComplianceUploadModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Upload Country JSON</h3>
+                    <button type="button" class="modal-close" onclick="closePlatformComplianceUploadModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted" style="margin-bottom:12px">Paste the full country config JSON. Auth extracts the country code / version / effective date for keying, then HRMS validates the JSON against <code>globalSchemaV3.json</code> in each sub-tenant. Schema or business-rule errors are reported per tenant in the distribution summary after save.</p>
+                    <div class="form-group">
+                        <label>Description (optional)</label>
+                        <input type="text" id="platformComplianceDescription" placeholder="e.g. India FY2025-26 release">
+                    </div>
+                    <div class="form-group">
+                        <label>Country JSON</label>
+                        <textarea id="platformComplianceJson" rows="18" spellcheck="false" style="font-family: var(--font-mono, monospace); font-size: 12px; width: 100%;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closePlatformComplianceUploadModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="platformComplianceSubmitBtn" onclick="submitPlatformComplianceUpload()">Save &amp; Distribute</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Platform Compliance — Detail Drawer -->
+    <div class="modal" id="platformComplianceDetailModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="platformComplianceDetailTitle">Platform Config</h3>
+                    <button type="button" class="modal-close" onclick="closePlatformComplianceDetailModal()">&times;</button>
+                </div>
+                <div class="modal-body" id="platformComplianceDetailBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closePlatformComplianceDetailModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
@@ -1038,6 +1105,7 @@
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auth/admin.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/auth/admin-platform-compliance.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>
         // Initialize navigation

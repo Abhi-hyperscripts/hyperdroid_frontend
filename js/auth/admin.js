@@ -1490,7 +1490,8 @@ function switchTab(tabName) {
         'license': 'License',
         'apikeys': 'API Keys',
         'subtenants': 'Sub-Tenants',
-        'profile': 'Company Profile'
+        'profile': 'Company Profile',
+        'platform-compliance': 'Platform Compliance'
     };
 
     // Update sidebar buttons
@@ -1526,6 +1527,11 @@ function switchTab(tabName) {
     // Load tenant profile when switching to that tab
     if (tabName === 'profile') {
         loadTenantProfile();
+    }
+
+    // Load platform compliance configs when switching to that tab
+    if (tabName === 'platform-compliance' && typeof loadPlatformComplianceConfigs === 'function') {
+        loadPlatformComplianceConfigs();
     }
 }
 
