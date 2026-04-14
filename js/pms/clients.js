@@ -8,6 +8,45 @@ let allClients = [];
 let currentEditClientId = null;
 let currentContactsClientId = null;
 
+// ==================== Role helpers ====================
+/**
+ * True if the current user has any role that gives them access to the Accounts
+ * module (so the "Manage in Accounts" link would actually work). A PMS developer
+ * with only PMS_USER shouldn't be bounced into a 403 — we show them a toast
+ * telling them to contact Finance instead.
+ */
+function _hasAccountsAccess() {
+    try {
+        const user = JSON.parse(localStorage.getItem('ragenaizer_user') || '{}');
+        const roles = user.roles || [];
+        const allowed = ['SUPERADMIN','ACCOUNTS_ADMIN','ACCOUNTS_USER','ACCOUNTS_MANAGER','ACCOUNTS_AUDITOR'];
+        return roles.some(r => allowed.includes(r));
+    } catch { return false; }
+}
+/** True if the current user can trigger the legacy-client reconciliation. */
+function _canReconcile() {
+    try {
+        const user = JSON.parse(localStorage.getItem('ragenaizer_user') || '{}');
+        const roles = user.roles || [];
+        return roles.includes('PMS_ADMIN') || roles.includes('SUPERADMIN');
+    } catch { return false; }
+}
+
+/**
+ * Handler for the row-level "Manage" action. If the current user has Accounts
+ * access we send them straight to the customer list; otherwise we surface a
+ * friendly note pointing them at Finance so they don't hit a permission wall.
+ */
+function manageClientInAccounts() {
+    if (_hasAccountsAccess()) {
+        window.location.href = '../accounts/parties.html#customer-list';
+        return;
+    }
+    const msg = 'Client details are owned by the Accounts module. To update this client please contact your Accounts team — your current role does not include Accounts access.';
+    if (typeof Toast !== 'undefined') Toast.info(msg);
+    else alert(msg);
+}
+
 // ==================== Initialization ====================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,6 +61,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // can approve them — preserving their UUID (and therefore their project /
 // task / time-entry FKs) intact.
 async function checkOrphanedClients() {
+    // Only PMS admins can trigger the reconciliation, so only show the banner
+    // to them. A PMS_USER seeing an amber "click to fix" that they can't
+    // actually click is worse than not seeing the banner at all.
+    if (!_canReconcile()) return;
     try {
         const response = await api.request('/pms/clients/orphans-count');
         const count = response.orphan_count || 0;
@@ -198,13 +241,15 @@ function renderClientsTable(clients) {
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                         </svg>
                     </button>
-                    <a class="crm-action-btn" href="../accounts/parties.html#customer-list" title="Manage in Accounts" style="display:inline-flex;align-items:center;justify-content:center;color:var(--text-secondary);">
+                    <button class="crm-action-btn" onclick="manageClientInAccounts()"
+                            title="${_hasAccountsAccess() ? 'Manage this customer in Accounts' : 'Contact the Accounts team to update this client'}"
+                            style="display:inline-flex;align-items:center;justify-content:center;color:var(--text-secondary);">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                            <polyline points="15 3 21 3 21 9"/>
-                            <line x1="10" y1="14" x2="21" y2="3"/>
+                            ${_hasAccountsAccess()
+                                ? `<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>`
+                                : `<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>`}
                         </svg>
-                    </a>
+                    </button>
                 </div>
             </td>
         </tr>

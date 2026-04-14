@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     loadClientDetail();
+    renderClientDetailActions();
 
     // Init searchable dropdowns
     if (typeof convertSelectToSearchable === 'function') {
@@ -224,6 +225,45 @@ async function deleteContact(contactId) {
 }
 
 // ==================== Client Edit ====================
+
+/**
+ * Refactored 2026-04-14: client fields are owned by Accounts. This renders the
+ * header action as either a live link (if the user has an Accounts role) or a
+ * soft informational button that surfaces a toast directing them to Finance.
+ */
+function renderClientDetailActions() {
+    const host = document.getElementById('clientDetailActions');
+    if (!host) return;
+    let hasAccountsAccess = false;
+    try {
+        const user = JSON.parse(localStorage.getItem('ragenaizer_user') || '{}');
+        const allowed = ['SUPERADMIN','ACCOUNTS_ADMIN','ACCOUNTS_USER','ACCOUNTS_MANAGER','ACCOUNTS_AUDITOR'];
+        hasAccountsAccess = (user.roles || []).some(r => allowed.includes(r));
+    } catch {}
+
+    if (hasAccountsAccess) {
+        host.innerHTML = `
+            <a class="btn btn-secondary btn-sm" href="../accounts/parties.html#customer-list" title="Manage this customer in Accounts">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/>
+                    <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+                Manage in Accounts
+            </a>`;
+    } else {
+        host.innerHTML = `
+            <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border-primary);color:var(--text-secondary);cursor:default"
+                    onclick="(typeof Toast!=='undefined'?Toast.info:alert)('Client details are owned by the Accounts module. Please contact your Accounts team to update this client — your current role does not include Accounts access.')"
+                    title="Managed by the Accounts team">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                Managed by Accounts
+            </button>`;
+    }
+}
 
 function openEditClientModal() {
     document.getElementById('editClientName').value = client.client_name || '';

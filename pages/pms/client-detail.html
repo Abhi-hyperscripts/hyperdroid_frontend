@@ -62,19 +62,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="pms-detail-actions">
+                <div class="pms-detail-actions" id="clientDetailActions">
                     <!--
                       Refactored 2026-04-14: Edit/Delete removed. Customer master
                       lives in Accounts; PMS is read-only on customer fields.
+                      Button is role-gated at load time — see client-detail.js.
                     -->
-                    <a class="btn btn-secondary btn-sm" href="../accounts/parties.html#customer-list" title="Edit this customer in Accounts">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                            <polyline points="15 3 21 3 21 9"/>
-                            <line x1="10" y1="14" x2="21" y2="3"/>
-                        </svg>
-                        Manage in Accounts
-                    </a>
                 </div>
             </div>
             <div class="pms-detail-description" id="clientNotes" style="display:none;"></div>
