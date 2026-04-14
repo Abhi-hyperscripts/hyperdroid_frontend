@@ -13,7 +13,66 @@ let currentContactsClientId = null;
 document.addEventListener('DOMContentLoaded', () => {
     Navigation.init('pms', '../');
     loadClients();
+    checkOrphanedClients();
 });
+
+// ==================== Reconciliation banner ====================
+// Surface legacy PMS clients that have no Accounts customer record. Lets a
+// PMS admin one-shot submit them as pending requests in Accounts so Finance
+// can approve them — preserving their UUID (and therefore their project /
+// task / time-entry FKs) intact.
+async function checkOrphanedClients() {
+    try {
+        const response = await api.request('/pms/clients/orphans-count');
+        const count = response.orphan_count || 0;
+        if (count > 0) renderReconcileBanner(count);
+    } catch (e) {
+        // Endpoint missing on older builds — silent
+        console.warn('Orphan-count probe failed:', e.message || e);
+    }
+}
+
+function renderReconcileBanner(count) {
+    const main = document.querySelector('.crm-page, main, .main-content') || document.body;
+    const banner = document.createElement('div');
+    banner.id = 'pmsReconcileBanner';
+    banner.style.cssText = 'margin:16px 0;padding:14px 18px;background:var(--bg-tertiary,#1f2128);border:1px solid var(--color-warning,#b07a1d);border-left:3px solid var(--color-warning,#b07a1d);border-radius:6px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between';
+    banner.innerHTML = `
+        <div style="display:flex;gap:12px;align-items:flex-start">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning,#b07a1d)" stroke-width="2" style="flex-shrink:0;margin-top:2px">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div style="font-size:13px;line-height:1.5;color:var(--text-secondary,#a8aab3)">
+                <strong>${count} legacy client${count===1?'':'s'} need${count===1?'s':''} to be promoted to Accounts.</strong>
+                These were created in PMS before the migration to the Accounts-as-source-of-truth model. Click below to submit them as pending customer requests &mdash; their UUIDs (and all existing project/task/time-entry links) will be preserved through Finance approval.
+            </div>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="runClientReconciliation(this)" style="white-space:nowrap;flex-shrink:0">Run Reconciliation</button>
+    `;
+    main.insertBefore(banner, main.firstChild);
+}
+
+async function runClientReconciliation(btn) {
+    if (!confirm('Submit all orphaned PMS clients to Accounts as pending customer requests? Finance will need to approve each one before they reappear here.')) return;
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+    try {
+        const result = await api.request('/pms/clients/reconcile-with-accounts', { method: 'POST' });
+        const msg = `Reconciliation complete. ${result.requests_submitted} request${result.requests_submitted===1?'':'s'} submitted to Accounts. ${result.submission_failures ? result.submission_failures + ' failure(s).' : ''} ${result.already_in_accounts} customer(s) were already in Accounts.`;
+        if (typeof Toast !== 'undefined') Toast.success(msg);
+        else alert(msg);
+        const banner = document.getElementById('pmsReconcileBanner');
+        if (banner) banner.remove();
+    } catch (e) {
+        const m = 'Reconciliation failed: ' + (e.message || e);
+        if (typeof Toast !== 'undefined') Toast.error(m);
+        else alert(m);
+        btn.disabled = false;
+        btn.textContent = 'Run Reconciliation';
+    }
+}
 
 // ==================== Data Loading ====================
 
@@ -92,8 +151,8 @@ function renderClientsTable(clients) {
                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                             <polyline points="9 22 9 12 15 12 15 22"/>
                         </svg>
-                        <p>No clients found</p>
-                        <button class="btn btn-sm btn-primary" onclick="openNewClientModal()">Add your first client</button>
+                        <p>No clients yet</p>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top: 8px;">Clients are managed in <a href="../accounts/parties.html#customer-list" style="color: var(--brand-primary)">Accounts</a> &mdash; close a deal Won in CRM or have Finance approve a customer there. Approved customers will appear here automatically.</p>
                     </div>
                 </td>
             </tr>
@@ -139,18 +198,13 @@ function renderClientsTable(clients) {
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                         </svg>
                     </button>
-                    <button class="crm-action-btn" onclick="openEditClientModal('${client.id}')" title="Edit">
+                    <a class="crm-action-btn" href="../accounts/parties.html#customer-list" title="Manage in Accounts" style="display:inline-flex;align-items:center;justify-content:center;color:var(--text-secondary);">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                            <polyline points="15 3 21 3 21 9"/>
+                            <line x1="10" y1="14" x2="21" y2="3"/>
                         </svg>
-                    </button>
-                    <button class="crm-action-btn action-delete" onclick="deleteClient('${client.id}')" title="Delete">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        </svg>
-                    </button>
+                    </a>
                 </div>
             </td>
         </tr>

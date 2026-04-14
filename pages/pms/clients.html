@@ -51,14 +51,24 @@
                 </nav>
                 <div class="crm-header-row">
                     <h1>Clients</h1>
-                    <button class="btn btn-primary" id="newClientBtn" onclick="openNewClientModal()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        New Client
-                    </button>
+                    <!--
+                      Refactored 2026-04-14: clients are managed in Accounts.
+                      New Client / Edit / Delete buttons removed; PMS is now a
+                      read-only consumer of the Accounts customer master.
+                    -->
                 </div>
+            </div>
+        </div>
+
+        <!-- Info banner — explain the new architecture to the user -->
+        <div style="margin: 16px 0 24px; padding: 14px 18px; background: var(--bg-tertiary, #1f2128); border: 1px solid var(--border-primary, #2a2d36); border-left: 3px solid var(--brand-primary, #3b82f6); border-radius: 6px; display: flex; gap: 12px; align-items: flex-start;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand-primary, #3b82f6)" stroke-width="2" style="flex-shrink:0;margin-top:2px">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <div style="font-size: 13px; line-height: 1.5; color: var(--text-secondary, #a8aab3)">
+                Clients are owned by the <strong>Accounts</strong> module &mdash; the same approved customer list shows here. To add a new client, either close a deal Won in <a href="../crm/deals.html" style="color:var(--brand-primary,#3b82f6)">CRM</a> (auto-promotes the company) or have Finance create the customer in <a href="../accounts/parties.html#customer-list" style="color:var(--brand-primary,#3b82f6)">Accounts &rarr; Vendors &amp; Customers</a>. PMS reads, projects, and bills against this single source of truth.
             </div>
         </div>
 
