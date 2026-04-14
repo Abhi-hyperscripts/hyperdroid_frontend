@@ -515,7 +515,8 @@
                 'pmsCard': 'PMS',
                 'procurementCard': 'Procurement',
                 'lmsCard': 'LMS',
-                'accountsCard': 'Accounts'
+                'accountsCard': 'Accounts',
+                'newsCard': 'KIP'
             };
 
             // Get licensed services from cached organization info (populated at login from JWT)
@@ -542,11 +543,13 @@
                     // admins must only see tiles their tenant actually paid
                     // for. The platform root SuperAdmin's license already
                     // includes every service, so they still see everything.
-                    // adminCard / newsCard are admin tools, not licensed
-                    // services, so they skip the license check (still gated
-                    // by the SUPERADMIN role above).
+                    // Only adminCard (the per-tenant admin dashboard) is a
+                    // built-in tool that skips the license check — every
+                    // tenant gets it regardless of license. Everything else,
+                    // including KIP, must appear in the tenant's license to
+                    // be visible.
                     const serviceName = serviceNameMapping[cardId];
-                    const isLicensed = cardId === 'adminCard' || cardId === 'newsCard' ||
+                    const isLicensed = cardId === 'adminCard' ||
                                        !licensedServices ||
                                        licensedServices.includes(serviceName);
 
