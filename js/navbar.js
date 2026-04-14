@@ -270,6 +270,7 @@ const NavbarComponent = {
                 <div class="nav-dropdown-menu">
                     <div class="nav-dropdown-label">Setup Guides</div>
                     <a href="/KnowledgeBase/Accounts/Accounts-Setup-Guide.html" class="nav-dropdown-item" data-nav="kb-accounts">Accounts <span>Books, invoices, GST &mdash; from zero</span></a>
+                    <a href="/KnowledgeBase/crm/CRM-Setup-Guide.html" class="nav-dropdown-item" data-nav="kb-crm">CRM <span>Pipeline, deals, promotion to Accounts</span></a>
                     <div class="nav-dropdown-divider"></div>
                     <div class="nav-dropdown-label">For Investors</div>
                     <a href="/pitch-deck/ragenaizer-pitch-deck.html" class="nav-dropdown-item" data-nav="kb-pitch-deck">Pitch Deck 2026 <span>The investor narrative &mdash; 11 slides</span></a>
@@ -321,6 +322,7 @@ const NavbarComponent = {
             <div class="nav-mobile-divider"></div>
             <div class="nav-mobile-section">Knowledge Base</div>
             <a href="/KnowledgeBase/Accounts/Accounts-Setup-Guide.html" class="nav-mobile-link" data-nav="kb-accounts">Accounts <span>Books, invoices, GST &mdash; from zero</span></a>
+            <a href="/KnowledgeBase/crm/CRM-Setup-Guide.html" class="nav-mobile-link" data-nav="kb-crm">CRM <span>Pipeline, deals, promotion to Accounts</span></a>
             <a href="/pitch-deck/ragenaizer-pitch-deck.html" class="nav-mobile-link" data-nav="kb-pitch-deck">Pitch Deck 2026 <span>The investor narrative</span></a>
             <div class="nav-mobile-divider"></div>
             <div class="nav-mobile-cta">

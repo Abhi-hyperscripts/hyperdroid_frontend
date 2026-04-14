@@ -69,6 +69,23 @@ async function loadCompanies() {
 
 // ─── Rendering ──────────────────────────────────────────────────────────────
 
+function renderCompanyStatus(status) {
+    // Status mapping for the Companies grid (refactored 2026-04-14):
+    //   "prospect" — local CRM company, no Accounts customer row yet. The default
+    //                state for any company in the sales pipeline. Edit/delete
+    //                works freely; nothing has hit the books.
+    //   "customer" — promoted to an Accounts customer (typically auto-promoted at
+    //                Deal Won). The same UUID now exists in both CRM and Accounts;
+    //                invoices/proformas can reference this counterparty.
+    if (status === 'customer') {
+        return `<span class="badge" style="background: var(--status-active, #1f7a3a); color: #fff;" title="Promoted to an Accounts customer. The Finance team owns this counterparty in the books.">Customer</span>`;
+    }
+    if (status === 'prospect') {
+        return `<span class="badge" style="background: var(--bg-tertiary, #2a2a35); color: var(--text-secondary, #aaa); border: 1px solid var(--border-primary, #3a3a45);" title="Local sales-pipeline company. Will be promoted to an Accounts customer when a deal is won.">Prospect</span>`;
+    }
+    return `<span style="color: var(--text-muted);">-</span>`;
+}
+
 function renderCompanies() {
     const tbody = document.getElementById('companiesTableBody');
     const emptyState = document.getElementById('emptyState');
@@ -103,6 +120,7 @@ function renderCompanies() {
                 <td>${escapeHtml(company.phone) || '<span style="color: var(--text-muted);">-</span>'}</td>
                 <td>${escapeHtml(company.email) || '<span style="color: var(--text-muted);">-</span>'}</td>
                 <td>${location ? escapeHtml(location) : '<span style="color: var(--text-muted);">-</span>'}</td>
+                <td>${renderCompanyStatus(company.status)}</td>
                 <td style="white-space: nowrap;">${formatDate(company.created_at)}</td>
                 <td class="actions-cell">
                     <button class="action-btn" title="Edit" onclick="openEditCompanyModal('${company.id}')">

@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to set up CRM — Ragenaizer Knowledge Base</title>
+<meta name="description" content="A complete, no-jargon walkthrough for setting up Ragenaizer CRM. Pipeline configuration, companies, contacts, leads, deals, and the cross-service promotion to Accounts when a deal closes Won. Built for first-time implementers.">
+<meta name="author" content="Ragenaizer">
+<link rel="canonical" href="https://ragenaizer.com/KnowledgeBase/crm/CRM-Setup-Guide.html">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Ragenaizer Knowledge Base">
+<meta property="og:url" content="https://ragenaizer.com/KnowledgeBase/crm/CRM-Setup-Guide.html">
+<meta property="og:title" content="How to set up CRM — from first prospect to first invoice">
+<meta property="og:description" content="A complete walkthrough — Settings, Companies, Contacts, Leads, Deals, and the moment Won → Accounts customer.">
+
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Onest:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --paper:#faf9f6; --paper-2:#f3f1ea; --ink:#0a0a0a; --ink-2:#2d2a26; --ink-3:#6b6660; --ink-4:#a8a39d;
+  --line:#e7e3da; --line-2:#d8d4cb; --card:#ffffff;
+  --blue:#3b82f6; --blue-dark:#2563eb; --blue-light:#dbeafe;
+  --clay:#b85c38; --clay-dark:#8f4426; --clay-light:#f5e6dc;
+  --tip-bg:#ecfdf5; --tip-border:#10b981; --tip-ink:#065f46;
+  --warn-bg:#fffbeb; --warn-border:#f59e0b; --warn-ink:#78350f;
+  --term-bg:#eff6ff; --term-border:var(--blue); --term-ink:#1e3a8a;
+  --try-bg:#fdf3ee; --try-border:var(--clay); --try-ink:var(--clay-dark);
+  --what-bg:#f5f3ff; --what-border:#8b5cf6; --what-ink:#5b21b6;
+  --font-display:'Instrument Serif',Georgia,serif;
+  --font-body:'Onest',system-ui,-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sidebar-w:280px; --content-w:760px; --margin-w:96px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#0a0a0a; --paper-2:#161616; --ink:#ededed; --ink-2:#d4d4d4; --ink-3:#a3a3a3; --ink-4:#525252;
+    --line:#262626; --line-2:#404040; --card:#161616;
+    --blue-light:#172554; --clay-light:#2d1810;
+    --tip-bg:#052e1c; --tip-ink:#6ee7b7; --warn-bg:#2d1f04; --warn-ink:#fcd34d;
+    --term-bg:#0f1d3a; --term-ink:#93c5fd; --try-bg:#2d1408; --try-ink:#fdba74;
+    --what-bg:#1f1438; --what-ink:#c4b5fd;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{font-family:var(--font-body);font-size:17px;line-height:1.65;color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased}
+.app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:var(--paper);overflow-y:auto;padding:28px 24px 80px}
+.brand{display:flex;align-items:center;gap:10px;padding-bottom:24px;margin-bottom:24px;border-bottom:1px solid var(--line)}
+.brand__mark{width:28px;height:28px;background:var(--ink);color:var(--paper);border-radius:6px;display:grid;place-items:center;font-family:var(--font-display);font-size:19px;font-style:italic}
+.brand__name{font-family:var(--font-display);font-size:19px}
+.brand__sub{display:block;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-top:2px}
+.toc{list-style:none}
+.toc a{display:block;padding:8px 12px;color:var(--ink-3);text-decoration:none;border-radius:6px;font-size:14px;line-height:1.4}
+.toc a:hover{background:var(--paper-2);color:var(--ink)}
+.toc a.active{background:var(--clay-light);color:var(--clay-dark);font-weight:500}
+.toc__num{display:inline-block;width:24px;font-family:var(--font-mono);font-size:11px;color:var(--ink-4)}
+.main{padding:48px 64px 120px;max-width:calc(var(--content-w) + var(--margin-w) * 2 + 120px);margin:0 auto}
+.hero{padding:48px 0 64px;border-bottom:1px solid var(--line);margin-bottom:64px}
+.hero__eyebrow{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--clay);margin-bottom:24px}
+.hero__title{font-family:var(--font-display);font-size:64px;line-height:1.05;font-weight:400;letter-spacing:-.02em;margin-bottom:24px;color:var(--ink)}
+.hero__title em{font-style:italic;color:var(--clay)}
+.hero__lead{font-size:21px;line-height:1.5;color:var(--ink-2);max-width:680px;font-weight:300}
+.hero__meta{display:flex;gap:24px;margin-top:40px;font-size:13px;color:var(--ink-3)}
+.hero__meta strong{color:var(--ink)}
+section{padding:64px 0;border-bottom:1px solid var(--line);max-width:var(--content-w)}
+section:last-child{border-bottom:0}
+.sect__num{font-family:var(--font-display);font-size:96px;line-height:1;color:var(--clay);font-style:italic;margin-bottom:8px;display:block}
+.sect__eyebrow{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--clay);margin-bottom:8px}
+h1.sect__title{font-family:var(--font-display);font-size:48px;line-height:1.1;font-weight:400;letter-spacing:-.02em;margin-bottom:24px;color:var(--ink)}
+h2{font-family:var(--font-display);font-size:32px;line-height:1.2;font-weight:400;margin:48px 0 16px;color:var(--ink)}
+h3{font-family:var(--font-body);font-size:18px;font-weight:600;margin:32px 0 12px;color:var(--ink)}
+p{margin-bottom:18px;color:var(--ink-2)}
+ul,ol{margin:0 0 18px 24px;color:var(--ink-2)}
+li{margin-bottom:6px}
+strong{color:var(--ink);font-weight:600}
+em{font-style:italic}
+code{font-family:var(--font-mono);font-size:.9em;background:var(--paper-2);padding:1px 6px;border-radius:4px;color:var(--clay-dark)}
+a{color:var(--clay);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+figure{margin:32px 0}
+figure img{max-width:100%;border-radius:8px;border:1px solid var(--line);box-shadow:0 2px 8px rgba(10,10,10,.06),0 8px 24px rgba(10,10,10,.06)}
+figcaption{font-size:13px;color:var(--ink-3);margin-top:12px;font-style:italic;line-height:1.55}
+.callout{margin:24px 0;padding:18px 22px;border-left:3px solid;border-radius:0 6px 6px 0;font-size:15px;line-height:1.55}
+.callout__label{display:block;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.callout--tip{background:var(--tip-bg);border-color:var(--tip-border);color:var(--tip-ink)}
+.callout--tip .callout__label{color:var(--tip-border)}
+.callout--warn{background:var(--warn-bg);border-color:var(--warn-border);color:var(--warn-ink)}
+.callout--warn .callout__label{color:var(--warn-border)}
+.callout--term{background:var(--term-bg);border-color:var(--term-border);color:var(--term-ink)}
+.callout--term .callout__label{color:var(--term-border)}
+.callout--try{background:var(--try-bg);border-color:var(--try-border);color:var(--try-ink)}
+.callout--try .callout__label{color:var(--try-border)}
+.callout--what{background:var(--what-bg);border-color:var(--what-border);color:var(--what-ink)}
+.callout--what .callout__label{color:var(--what-border)}
+.callout p:last-child{margin-bottom:0}
+.diagram{margin:32px 0;padding:32px;background:var(--paper-2);border-radius:8px;text-align:center;font-family:var(--font-mono);font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--ink-2)}
+table{width:100%;border-collapse:collapse;margin:24px 0;font-size:14px}
+th,td{border:1px solid var(--line);padding:10px 14px;text-align:left}
+th{background:var(--paper-2);font-weight:600;color:var(--ink)}
+td{color:var(--ink-2)}
+.footer{padding:64px 0;text-align:center;color:var(--ink-3);font-size:13px}
+@media(max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .main{padding:32px 24px}
+  .hero__title{font-size:42px}
+  h1.sect__title{font-size:32px}
+  .sect__num{font-size:64px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside class="sidebar">
+  <a href="#top" class="brand" style="text-decoration:none;color:inherit">
+    <span class="brand__mark">R</span>
+    <span class="brand__name">Ragenaizer<span class="brand__sub">Knowledge Base</span></span>
+  </a>
+  <ul class="toc">
+    <li><a href="#welcome"><span class="toc__num">01</span>Welcome</a></li>
+    <li><a href="#mental-model"><span class="toc__num">02</span>Mental model</a></li>
+    <li><a href="#dashboard"><span class="toc__num">03</span>Login &amp; Dashboard</a></li>
+    <li><a href="#settings"><span class="toc__num">04</span>Settings first</a></li>
+    <li><a href="#companies"><span class="toc__num">05</span>Companies</a></li>
+    <li><a href="#contacts"><span class="toc__num">06</span>Contacts</a></li>
+    <li><a href="#leads"><span class="toc__num">07</span>Leads</a></li>
+    <li><a href="#deals"><span class="toc__num">08</span>Deals</a></li>
+    <li><a href="#closing"><span class="toc__num">09</span>Closing the deal</a></li>
+    <li><a href="#glossary"><span class="toc__num">10</span>Glossary</a></li>
+  </ul>
+</aside>
+
+<main class="main" id="top">
+
+<header class="hero">
+  <div class="hero__eyebrow">CRM · Implementation guide</div>
+  <h1 class="hero__title">How to set up <em>CRM</em> — from first prospect to first invoice</h1>
+  <p class="hero__lead">A complete walkthrough of Ragenaizer CRM. We will build a real
+  sales pipeline from a clean install: configure stages and lead sources, capture
+  a company, attach contacts, run a deal through the kanban, and watch what happens
+  the moment that deal closes Won — the company is auto-promoted to an Accounts
+  customer for billing, with the same UUID flowing across services.</p>
+  <div class="hero__meta">
+    <div><strong>~15 minutes</strong> end to end</div>
+    <div><strong>Tenant:</strong> demo</div>
+    <div><strong>Backends:</strong> CRM 5112 · Accounts 5122</div>
+  </div>
+</header>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="welcome">
+  <span class="sect__num">1</span>
+  <div class="sect__eyebrow">Welcome</div>
+  <h1 class="sect__title">Why a CRM, and what makes this one different</h1>
+
+  <p>A CRM is the home of your sales pipeline. It captures the people and
+  organisations you are talking to, the conversations you have with them, and the
+  open opportunities you are working to close. Done well, it answers the only two
+  questions sales leadership ever really has — <em>who&rsquo;s in the funnel</em>,
+  and <em>what&rsquo;s going to close this quarter</em>.</p>
+
+  <p>Ragenaizer CRM looks like the CRMs you already know — Pipeline, Kanban,
+  Companies, Contacts. The difference is what happens at the end of the line.
+  When a deal moves to <strong>Won</strong>, the CRM does <em>not</em> stop at
+  &ldquo;congratulations&rdquo;. It hands the won counterparty over to Accounts
+  as a <strong>client_vendor_request</strong> for Finance to review. On approval
+  the company appears as a <strong>customer</strong> in your books, with the
+  <em>same UUID</em>, ready for invoicing. There is no copy/paste between systems
+  and no &ldquo;Sales said this customer exists; Finance has no record&rdquo;
+  drift.</p>
+
+  <div class="callout callout--term">
+    <span class="callout__label">Vocabulary</span>
+    <p><strong>Prospect</strong> &mdash; a company in the CRM that has not yet
+    closed a deal. Lives only in CRM. <strong>Customer</strong> &mdash; same
+    company after a deal Won; now also exists in Accounts under the same id.
+    <strong>Promotion</strong> &mdash; the cross-service event that creates the
+    Accounts customer record from the CRM company on Won.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="mental-model">
+  <span class="sect__num">2</span>
+  <div class="sect__eyebrow">The 30,000-ft view</div>
+  <h1 class="sect__title">Pipeline is wide, books are narrow</h1>
+
+  <p>Sales adds dozens of companies and contacts a day. The vast majority will
+  never become customers. If every one of them hit the Accounts approval queue,
+  Finance would drown in noise about prospects they will never invoice. So we
+  draw the line in the right place:</p>
+
+  <div class="diagram">CRM (wide) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ Accounts (narrow)
+
+   Companies, Contacts, Leads, Deals          Customers, Invoices, GL
+   live freely. No approval required.         Strict. Auditable.
+   Status = "prospect" by default.            Each row touched money.
+
+   ┌──────────────────────┐                   ┌──────────────────────┐
+   │  Northwind (Prospect)│                   │                      │
+   │  ↓                   │                   │   (empty)            │
+   │  Deal $480K          │                   │                      │
+   │  ↓ stages            │                   │                      │
+   │  Won  ━━━━━━━━━━━━━━━━━━━ promote ━━━━━━━▶ client_vendor_req   │
+   │                      │   (same UUID)     │   ↓ Finance approves │
+   │  Status flips to     ◀━━━━━━━━━━━━━━━━━━━ │   customer CUST-0001 │
+   │  "Customer" (green)  │                   │   ready for invoices │
+   └──────────────────────┘                   └──────────────────────┘</div>
+
+  <p>The thing that makes this work is the <strong>shared UUID</strong>. When a
+  CRM company is promoted on Deal Won, CRM passes its <code>company.id</code>
+  along with the request. Accounts uses that same id for the request and (on
+  approval) the resulting customer row. From that moment on, deals, proformas
+  and invoices in Accounts can all FK back to the same identity the salesperson
+  saw in CRM.</p>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="dashboard">
+  <span class="sect__num">3</span>
+  <div class="sect__eyebrow">Session A</div>
+  <h1 class="sect__title">Login &amp; the CRM dashboard</h1>
+
+  <p>From the Ragenaizer home grid, click into <strong>CRM</strong>. Every module
+  on the home page is the same shape — pick yours and go.</p>
+
+  <figure>
+    <img src="images/03-1-home.png" alt="Ragenaizer home tile grid">
+    <figcaption>Ragenaizer home. Twelve modules, one click each. CRM lives in
+    the second row, between Drive and Projects.</figcaption>
+  </figure>
+
+  <p>The CRM dashboard opens to a clean board: four KPI tiles at the top
+  (Total Leads, Active Deals, Pipeline Value, Converted Leads), a lead funnel,
+  and a row of Quick Action cards.</p>
+
+  <figure>
+    <img src="images/03-2-crm-dashboard.png" alt="Empty CRM dashboard">
+    <figcaption>The dashboard on a clean install &mdash; everything zero. The
+    Quick Actions row (New Lead / New Deal / New Contact / New Company / Settings)
+    is the fastest way to start anything new.</figcaption>
+  </figure>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">Tip</span>
+    <p>Numbers on the dashboard are read-only and refreshed live. If a tile shows
+    zero when you expect data, hit the <strong>Refresh</strong> button top-right
+    instead of reloading the page &mdash; faster and avoids losing any unsaved
+    work in another tab.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="settings">
+  <span class="sect__num">4</span>
+  <div class="sect__eyebrow">Session B &middot; setup foundation</div>
+  <h1 class="sect__title">Settings first &mdash; the pipeline that everything else hangs from</h1>
+
+  <p>Resist the urge to jump into Companies. Take five minutes in <strong>Settings
+  → Pipeline</strong> first. The deal stages you define here are referenced from
+  every deal, every kanban column, and from the cross-service promotion logic
+  (which fires only when a deal lands in a stage of type <code>won</code>).
+  Adding a stage later is fine; deciding what they should be <em>is the easy thing
+  to skip</em>.</p>
+
+  <h2>4.1 General</h2>
+
+  <p>The General tab holds the default currency for new deals. Set it to whatever
+  your books are kept in. We leave it at <strong>USD ($)</strong> for the demo.</p>
+
+  <figure>
+    <img src="images/04-1-settings-general.png" alt="CRM Settings — General tab">
+    <figcaption>General tab &mdash; default currency only. Pipeline value tiles
+    on the dashboard render in this currency.</figcaption>
+  </figure>
+
+  <h2>4.2 Pipeline stages</h2>
+
+  <p>A fresh tenant has zero stages. The kanban won&rsquo;t render anything until
+  you create at least one Open stage and at least one Won/Lost stage.</p>
+
+  <figure>
+    <img src="images/04-2-settings-pipeline-empty.png" alt="Pipeline stages — empty state">
+    <figcaption>Empty pipeline. Two ways forward: build stages one by one with
+    <strong>+ Add Stage</strong>, or click <strong>Seed Defaults</strong> for the
+    canonical five-stage funnel below.</figcaption>
+  </figure>
+
+  <p>For the demo we click <strong>Seed Defaults</strong>, which gives us
+  Qualification → Proposal → Negotiation → Won → Lost. Each stage carries a
+  <code>stage_type</code> (open / won / lost), a win-probability percent used in
+  forecast totals, and a colour for the kanban header.</p>
+
+  <figure>
+    <img src="images/04-3-stages-after-seed.png" alt="Default pipeline stages seeded">
+    <figcaption>Five seeded stages. Note the row badges: <strong>Open</strong>
+    on the first three, <strong>Won</strong> and <strong>Lost</strong> on the
+    last two. The cross-service promotion logic in the next session keys off
+    those <code>won</code> badges, not off the stage <em>name</em>.</figcaption>
+  </figure>
+
+  <div class="callout callout--warn">
+    <span class="callout__label">Why the type matters more than the name</span>
+    <p>You can call a stage anything you want &mdash; &ldquo;Closed Sale&rdquo;,
+    &ldquo;Booked&rdquo;, &ldquo;PO Received&rdquo;. But the promotion to
+    Accounts only fires when the stage&rsquo;s <code>stage_type</code> is
+    <code>won</code>. If you create a custom &ldquo;Verbally Agreed&rdquo; stage
+    and forget to set its type, dropping a deal into it will look like a win in
+    the kanban but Finance will never hear about it.</p>
+  </div>
+
+  <h2>4.3 Lead Sources &mdash; how leads will arrive</h2>
+
+  <p>Switch to the <strong>Lead Sources</strong> tab in the sidebar. A
+  <em>lead source</em> is a configured channel through which leads enter your
+  pipeline: a contact form on your marketing site, a Google Ads landing page, a
+  LinkedIn lead-gen ad, an event scanner app, or just &ldquo;Manual&rdquo; for
+  leads someone types in by hand. Each source gets its own webhook URL, so you
+  can wire any external system to drop leads straight into CRM.</p>
+
+  <figure>
+    <img src="images/04-4-settings-sources.png" alt="Lead Sources — empty state">
+    <figcaption>Lead Sources tab on a clean tenant. The empty-state CTA opens
+    the same modal as <strong>+ Add Source</strong>.</figcaption>
+  </figure>
+
+  <p>Click <strong>+ Add Lead Source</strong> to open the modal.</p>
+
+  <figure>
+    <img src="images/04-5-source-modal-empty.png" alt="New Lead Source modal — empty">
+    <figcaption>The New Lead Source modal. Three required things at the top
+    (Source Name, Source Type, optional Source Identifier), then the
+    <strong>Field Mappings</strong> block underneath &mdash; this is where the
+    real power is.</figcaption>
+  </figure>
+
+  <p>Field mappings tell CRM which incoming JSON field names to interpret as
+  which CRM fields. The defaults cover almost every form library on the planet
+  (<code>first_name</code>, <code>firstName</code>, <code>fname</code>,
+  <code>given_name</code> all map to First Name; same shape for Email, Phone,
+  Company, Job Title, etc.). If your source uses an oddball field name, add it
+  to the comma-separated list and CRM will pick it up.</p>
+
+  <p>For our demo we&rsquo;ll create a simple Website Contact Form source:</p>
+
+  <ul>
+    <li><strong>Source Name</strong>: Website Contact Form</li>
+    <li><strong>Source Type</strong>: Website</li>
+    <li><strong>Source Identifier</strong>: northwind-traders.example.com</li>
+    <li><strong>Field Mappings</strong>: leave defaults</li>
+  </ul>
+
+  <figure>
+    <img src="images/04-6-source-modal-filled.png" alt="New Lead Source modal — filled">
+    <figcaption>Filled in. Click <strong>Create Source</strong> &mdash; CRM
+    generates a webhook key behind the scenes that any external system can POST
+    JSON to.</figcaption>
+  </figure>
+
+  <p>The new source lands in the table with six row actions:
+  <strong>Copy URL</strong> (the webhook endpoint), <strong>Customize Form</strong>
+  (the live-preview form designer), <strong>Embed Code</strong> (snippet to
+  paste on your site), <strong>Edit</strong>, <strong>Regenerate Webhook
+  Key</strong>, <strong>Delete</strong>.</p>
+
+  <figure>
+    <img src="images/04-7-sources-after-save.png" alt="Lead Sources list — Website Contact Form active">
+    <figcaption>The new source is live. Status is <strong>ACTIVE</strong>; the
+    Webhook URL column carries the unique key <code>cf5blhdsaw1439…</code> that
+    authenticates inbound POSTs against this source.</figcaption>
+  </figure>
+
+  <h2>4.4 The Embed Code &mdash; two ways to paste it on your site</h2>
+
+  <p>Click the <strong>Embed Code</strong> action on the row. The dialog gives
+  you two options &mdash; the choice depends on how much control you want.</p>
+
+  <figure>
+    <img src="images/04-8-embed-code-widget.png" alt="Embed Code modal — Widget Script tab">
+    <figcaption>The <strong>Widget Script</strong> tab. A single
+    <code>&lt;script&gt;</code> tag you paste anywhere on your page. CRM
+    auto-renders a styled popup form (designed via the Form Styling editor in
+    §4.5) and binds it to a button via <code>data-trigger</code>. Best for
+    marketing sites where you don&rsquo;t want to touch the page&rsquo;s own
+    HTML.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="images/04-9-embed-code-html.png" alt="Embed Code modal — HTML Form tab">
+    <figcaption>The <strong>HTML Form</strong> tab. Raw, self-contained HTML
+    you can paste into a static site, an email template, or anywhere a script
+    tag isn&rsquo;t allowed. Ships with inline styles so it renders standalone
+    without external CSS.</figcaption>
+  </figure>
+
+  <h2>4.5 Form Styling &mdash; the live-preview designer</h2>
+
+  <p>Click the <strong>Customize Form</strong> action (paintbrush icon) on the
+  source row. You land in a full WYSIWYG form designer.</p>
+
+  <figure>
+    <img src="images/04-10-form-styling-modal.png" alt="Form Styling editor — split view of controls and live preview">
+    <figcaption>The Form Styling editor. Left rail: every visual knob &mdash;
+    Layout, Colors, Sizing, Button, Branding, Shape. Right side: a live form
+    preview rendered exactly as it will appear when embedded, on a checkered
+    transparency background so you can see how borders and shadows look against
+    any page colour.</figcaption>
+  </figure>
+
+  <p>Every change re-renders the preview instantly. The controls cover:</p>
+
+  <table>
+    <thead><tr><th style="width:120px">Group</th><th>Knobs</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Layout</strong></td><td>Form Title, Theme (Light/Dark), Position (Center/corners), Show field labels</td></tr>
+      <tr><td><strong>Colors</strong></td><td>Background, Opacity, Text, Label, Input fill, Input text</td></tr>
+      <tr><td><strong>Sizing</strong></td><td>Form width (desktop), Input height, Button height</td></tr>
+      <tr><td><strong>Button</strong></td><td>Background colour, text colour, label text</td></tr>
+      <tr><td><strong>Branding</strong></td><td>Logo URL, position (header/footer), height</td></tr>
+      <tr><td><strong>Shape</strong></td><td>Border colour, corner radius, frosted-glass effect toggle</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">Workflow</span>
+    <p>Style the form once per source. Click <strong>Save Styling</strong> when
+    you&rsquo;re done &mdash; the Widget Script in §4.4 will render the
+    pop-up with these settings on your live site without you touching the
+    embed code again.</p>
+  </div>
+
+  <div class="callout callout--what">
+    <span class="callout__label">End of Settings &mdash; what's in the database</span>
+    <p>One row in <code>deal_stages</code> per pipeline stage. One row in
+    <code>lead_sources</code> with a unique <code>webhook_key</code> for inbound
+    auth. The styling JSON lives on the lead-source row itself
+    (<code>field_mappings</code> + a styling blob). Nothing else has touched
+    your books yet.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="companies">
+  <span class="sect__num">5</span>
+  <div class="sect__eyebrow">Session C</div>
+  <h1 class="sect__title">Companies &mdash; the prospects in your pipeline</h1>
+
+  <p>A Company in CRM is any organisation you might one day sell to. It is
+  intentionally cheap to add: name, email, phone, address, and an industry tag.
+  No GST number, no payment terms, no credit limit &mdash; those are
+  Finance&rsquo;s concerns, asked for only at promotion time when it actually
+  matters.</p>
+
+  <figure>
+    <img src="images/05-1-companies-empty.png" alt="Companies — empty state">
+    <figcaption>Clean tenant, no companies yet. The empty-state CTA opens the
+    same modal as <strong>+ New Company</strong> top-right.</figcaption>
+  </figure>
+
+  <p>Click <strong>Add Company</strong> and the modal slides in.</p>
+
+  <figure>
+    <img src="images/05-2-modal-empty.png" alt="New Company modal — empty">
+    <figcaption>The New Company modal. Only Company Name is required; everything
+    else is opt-in. The Industry dropdown is a simple taxonomy used for filtering
+    later.</figcaption>
+  </figure>
+
+  <p>Filling it in for our demo customer:</p>
+
+  <ul>
+    <li><strong>Company Name</strong>: Northwind Traders Pvt Ltd</li>
+    <li><strong>Industry</strong>: Retail</li>
+    <li><strong>Website</strong>: https://northwind-traders.example.com</li>
+    <li><strong>Phone</strong>: +91-9988776655</li>
+    <li><strong>Email</strong>: accounts@northwind-traders.example.com</li>
+    <li><strong>Address</strong>: Unit 304, Tower B, DLF Cyber City</li>
+    <li><strong>City / State / Country</strong>: Gurugram, Haryana, India</li>
+  </ul>
+
+  <figure>
+    <img src="images/05-3-modal-filled.png" alt="New Company modal — filled with Northwind data">
+    <figcaption>All fields populated. The form&rsquo;s validation only blocks on
+    the required Company Name; everything else can be left blank now and edited
+    later.</figcaption>
+  </figure>
+
+  <p>Click <strong>Create Company</strong>. The row appears immediately in the
+  list with a neutral <strong>PROSPECT</strong> badge.</p>
+
+  <figure>
+    <img src="images/05-4-row-prospect.png" alt="Companies list — Northwind row with PROSPECT badge">
+    <figcaption>Northwind in the list. The Status column reads <strong>PROSPECT</strong>
+    &mdash; this row exists only in the CRM database. No Accounts customer yet,
+    no books impact. Edit and Delete are fully available.</figcaption>
+  </figure>
+
+  <div class="callout callout--what">
+    <span class="callout__label">What just happened in the database</span>
+    <p>One <code>INSERT</code> into the local CRM <code>companies</code> table.
+    Zero gRPC calls to Accounts. The CRM company exists as a sales-pipeline
+    record only &mdash; it has no presence in your books yet, and won&rsquo;t
+    until a deal closes Won.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="contacts">
+  <span class="sect__num">6</span>
+  <div class="sect__eyebrow">Session D</div>
+  <h1 class="sect__title">Contacts &mdash; the people you actually talk to</h1>
+
+  <p>A Company is an abstraction; deals are won and lost by the <em>humans</em>
+  inside it. A Contact in CRM is one person, optionally attached to one Company.
+  The same person can switch employers without you losing their history &mdash;
+  reassign the company link and all their past leads, deals, and notes follow.</p>
+
+  <p>Open the Contacts page, click <strong>+ Add Contact</strong>, and fill the
+  form pointing at our Northwind company:</p>
+
+  <ul>
+    <li><strong>First / Last Name</strong>: Pradeep Kapoor</li>
+    <li><strong>Email</strong>: pradeep.kapoor@northwind-traders.example.com</li>
+    <li><strong>Phone / Mobile</strong>: +91-1244567890 / +91-9988776654</li>
+    <li><strong>Company</strong>: Northwind Traders Pvt Ltd (picked from the dropdown)</li>
+    <li><strong>Job Title</strong>: Head of Procurement</li>
+    <li><strong>Contact Source</strong>: Website</li>
+  </ul>
+
+  <p>Save and the contact lands in the list, joined to its company.</p>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">Sales tip</span>
+    <p>Always fill <strong>Job Title</strong>. Knowing whether you&rsquo;re
+    talking to the Head of Procurement, the CTO, or the office manager changes
+    the entire deal motion. Reports later let you slice pipeline by title.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="leads">
+  <span class="sect__num">7</span>
+  <div class="sect__eyebrow">Session E</div>
+  <h1 class="sect__title">Leads &mdash; the top of the funnel</h1>
+
+  <p>A Lead is a person who has expressed some interest but hasn&rsquo;t been
+  qualified yet. They might be a form fill from your website, a name from a
+  conference, a referral from a partner. Leads have their own status track
+  (<code>new → contacted → qualified → converted | unqualified</code>) so you
+  can see at a glance how the top of your funnel is moving.</p>
+
+  <p>Click <strong>+ New Lead</strong> on the Leads page and capture an inbound:</p>
+
+  <ul>
+    <li><strong>Name</strong>: Anita Verma</li>
+    <li><strong>Email / Phone</strong>: anita.verma@kovid-foods.example.com / +91-9123456789</li>
+    <li><strong>Company / Title</strong>: Kovid Foods Pvt Ltd, Operations Director</li>
+    <li><strong>Lead Source</strong>: Website (matches a source we configured in §4)</li>
+    <li><strong>Notes</strong>: Inbound from website contact form. Looking at our
+    SaaS pricing for a 200-person team. Wants a demo next week.</li>
+  </ul>
+
+  <p>The lead lands in the table with status <strong>NEW</strong>. Once you have
+  spoken to them and qualified the opportunity, the row gets a
+  <strong>Convert to Contact</strong> action that promotes them out of the lead
+  funnel and (optionally) creates a Deal in one shot.</p>
+
+  <div class="callout callout--term">
+    <span class="callout__label">Lead vs Contact vs Company</span>
+    <p>A <strong>Lead</strong> is unverified interest &mdash; we haven&rsquo;t
+    decided yet whether they belong in our long-term contact list. A
+    <strong>Contact</strong> is a verified person we maintain a relationship with.
+    A <strong>Company</strong> is the organisation behind that contact. Leads
+    convert into a Contact (and usually a Deal) once you decide they&rsquo;re
+    real.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="deals">
+  <span class="sect__num">8</span>
+  <div class="sect__eyebrow">Session F</div>
+  <h1 class="sect__title">Deals &mdash; money in motion</h1>
+
+  <p>A Deal is the actual revenue opportunity. Deal Name, Deal Value, Currency,
+  Stage, Expected Close Date, and (most importantly) the Company it is for.
+  Open the Deals page and you land on the <strong>Kanban view</strong>: one
+  column per pipeline stage, drag a card across columns to move it through the
+  funnel.</p>
+
+  <figure>
+    <img src="images/08-1-deals-empty.png" alt="Empty kanban">
+    <figcaption>The kanban on a clean install. Columns reflect the stages we
+    seeded in §4. Headers carry colour-coded stripes and live count + value
+    totals.</figcaption>
+  </figure>
+
+  <p>Click <strong>+ New Deal</strong> and create one for Northwind:</p>
+
+  <ul>
+    <li><strong>Deal Name</strong>: Northwind &mdash; Annual SaaS Subscription</li>
+    <li><strong>Deal Value</strong>: 480000 (in the currency from §4.1)</li>
+    <li><strong>Stage</strong>: Proposal (we&rsquo;re past initial qualification)</li>
+    <li><strong>Expected Close Date</strong>: 2026-05-15</li>
+    <li><strong>Company</strong>: Northwind Traders Pvt Ltd (picked from the dropdown)</li>
+    <li><strong>Notes</strong>: 3-year contract, 200 seats, dedicated CSM. Closing this quarter.</li>
+  </ul>
+
+  <figure>
+    <img src="images/08-2-deal-modal-filled.png" alt="New Deal modal — filled">
+    <figcaption>New Deal modal with Northwind details. The Company dropdown is
+    where the cross-service link is established &mdash; pick a Company here and
+    the deal carries that <code>company.id</code> through to the Won
+    promotion.</figcaption>
+  </figure>
+
+  <p>Save and the card lands in the Proposal column.</p>
+
+  <figure>
+    <img src="images/08-3-deal-in-proposal.png" alt="Deal in Proposal column">
+    <figcaption>The deal lives in <strong>Proposal</strong>. The header tile
+    shows column count (1) and column value ($480.0K). Click <strong>Edit</strong>
+    on the card to open the same modal in edit mode.</figcaption>
+  </figure>
+
+  <p>Drag the card from <strong>Proposal</strong> into <strong>Negotiation</strong>.
+  The change is persisted instantly &mdash; no Save button.</p>
+
+  <figure>
+    <img src="images/08-4-deal-in-negotiation.png" alt="Deal moved to Negotiation">
+    <figcaption>Deal now in Negotiation. The header tile updates live, and a
+    stage-history row is written behind the scenes so you have an audit trail of
+    how long the deal sat in each column.</figcaption>
+  </figure>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">Two ways to mark Won</span>
+    <p>Drag the card into the <strong>Won</strong> column, OR click
+    <strong>Mark as Won</strong> on the card. Both paths trigger the same
+    cross-service promotion logic &mdash; CRM checks the destination
+    stage&rsquo;s type, and if it is <code>won</code>, fires the request to
+    Accounts. Lost works the same way (closes the deal but no Accounts call).</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="closing">
+  <span class="sect__num">9</span>
+  <div class="sect__eyebrow">Session G &middot; the cross-service moment</div>
+  <h1 class="sect__title">Closing the deal &mdash; promotion to Accounts</h1>
+
+  <p>Drag the Northwind card from <strong>Negotiation</strong> into
+  <strong>Won</strong>. To the salesperson, the only visible thing is a
+  &ldquo;Deal stage updated&rdquo; toast and the card landing in the Won column.
+  Behind the scenes a chain of events fires.</p>
+
+  <figure>
+    <img src="images/08-5-deal-in-won.png" alt="Deal in Won column">
+    <figcaption>Northwind deal in <strong>Won</strong>. The board re-tallies:
+    Won column shows 1 deal at $480K. From the salesperson&rsquo;s perspective,
+    that&rsquo;s it &mdash; they move on.</figcaption>
+  </figure>
+
+  <h2>9.1 What just happened across the wire</h2>
+
+  <ol>
+    <li>CRM updated the deal&rsquo;s <code>stage_id</code> to the Won stage and
+    set <code>actual_close_date</code> to today.</li>
+    <li>Because the new stage is type <code>won</code>, CRM called
+    <code>TryPromoteCompanyToAccountsAsync(company.id)</code>.</li>
+    <li>That helper checked &mdash; via gRPC &mdash; whether Accounts already had
+    a customer with id <code>e5879ca3-…</code> (Northwind&rsquo;s CRM company
+    id). It did not.</li>
+    <li>So CRM submitted a <code>client_vendor_request</code> to Accounts,
+    explicitly passing <code>client_id = company.id</code> so the same UUID
+    flows through.</li>
+    <li>Accounts inserted a row in <code>client_vendor_requests</code> with
+    <code>status = pending</code>, <code>requested_from_service = "CRM"</code>,
+    and the same id <code>e5879ca3-…</code>. A 48-hour SLA timer started.</li>
+  </ol>
+
+  <p>None of this blocked the salesperson&rsquo;s win. The promotion is
+  best-effort &mdash; if Accounts is down, the deal still goes Won; the
+  promotion is logged as a non-blocking warning.</p>
+
+  <h2>9.2 Finance reviews the request</h2>
+
+  <p>Switch to <strong>Accounts → Vendors &amp; Customers</strong>. The sidebar
+  shows a <strong>1</strong> badge next to <em>Pending Customers</em> &mdash;
+  that&rsquo;s our Northwind request waiting for review.</p>
+
+  <figure>
+    <img src="images/09-1-accounts-pending.png" alt="Pending Customers in Accounts">
+    <figcaption>Pending Customers tab in Accounts. Northwind is the one row,
+    showing it was requested by &ldquo;Abhishek Anand&rdquo;, came From Service
+    <strong>CRM</strong>, with a 48-hour SLA. The two action icons are Approve
+    (green check) and Reject (red X).</figcaption>
+  </figure>
+
+  <p>Click the green check. Accounts opens an <strong>Approve Request</strong>
+  modal pre-filled with everything CRM sent. The one field that&rsquo;s blank is
+  <strong>Tax ID (GST/PAN)</strong> &mdash; that&rsquo;s a Finance concern that
+  CRM never collected. Fill it in (we use <code>06AABCN1234E1ZF</code>) and
+  click <strong>Approve &amp; Create</strong>.</p>
+
+  <figure>
+    <img src="images/09-2-approve-modal.png" alt="Approve Request modal">
+    <figcaption>Approve modal. Email, Phone, Address, City, State, Country and
+    Payment Terms come from the CRM submission. Finance only needs to add the
+    Tax ID, which CRM doesn&rsquo;t collect.</figcaption>
+  </figure>
+
+  <h2>9.3 The customer appears in the books</h2>
+
+  <p>Behind the modal, Accounts:</p>
+  <ol>
+    <li>Updated the request&rsquo;s <code>status</code> to <code>approved</code>.</li>
+    <li>Auto-generated the next customer code (<strong>CUST-0001</strong>).</li>
+    <li>Inserted a row into <code>customers</code> using <code>request.id</code>
+    as the customer id &mdash; which equals the original CRM
+    <code>company.id</code> from step 4 above. Same UUID throughout.</li>
+  </ol>
+
+  <figure>
+    <img src="images/09-4-accounts-customer-cust0001.png" alt="Northwind appears in Accounts Customer List">
+    <figcaption>Northwind in the Accounts Customer List as <strong>CUST-0001</strong>,
+    fully active, with the GSTIN Finance just typed. From this moment on,
+    invoices and proformas can be raised against this counterparty.</figcaption>
+  </figure>
+
+  <h2>9.4 Round-trip closes in CRM</h2>
+
+  <p>Switch back to <strong>CRM → Companies</strong>. Northwind&rsquo;s Status
+  badge has flipped from neutral <strong>PROSPECT</strong> to green
+  <strong>CUSTOMER</strong>. The flip happens automatically the next time the
+  CRM page reads its companies list &mdash; CRM cross-checks Accounts for any
+  matching customer ids and renders the badge accordingly.</p>
+
+  <figure>
+    <img src="images/09-3-crm-companies-customer-badge.png" alt="CRM Companies — Northwind now shows CUSTOMER badge">
+    <figcaption>Round-trip complete. Northwind&rsquo;s badge in CRM is now
+    <strong>CUSTOMER</strong> (green). The id you see &mdash; <code>e5879ca3-…</code>
+    &mdash; is identical to the id Accounts is using for CUST-0001. No
+    drift.</figcaption>
+  </figure>
+
+  <div class="callout callout--what">
+    <span class="callout__label">What just happened across the database</span>
+    <p>Three rows now share the UUID <code>e5879ca3-…</code>: the CRM
+    <code>companies</code> row, the Accounts <code>client_vendor_requests</code>
+    row (now status=approved), and the Accounts <code>customers</code> row. Any
+    future deal, proforma, or invoice in either system can FK back to this
+    single identity. Sales and Finance see the same counterparty without ever
+    talking about &ldquo;the customer record&rdquo;.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="glossary">
+  <span class="sect__num">10</span>
+  <div class="sect__eyebrow">Reference</div>
+  <h1 class="sect__title">Glossary</h1>
+
+  <table>
+    <thead>
+      <tr><th style="width:200px">Term</th><th>Meaning</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Pipeline</td><td>The set of deal stages. A tenant can have many pipelines (e.g. New Business, Renewals); the default one is &ldquo;Default&rdquo;.</td></tr>
+      <tr><td>Stage</td><td>One column on the kanban. Has a <code>stage_type</code> (open/won/lost) and a <code>win_probability</code> percent used in forecast totals.</td></tr>
+      <tr><td>Lead Source</td><td>A configured channel through which leads arrive (Website Contact Form, Google Ads, LinkedIn, etc.). Each gets a webhook URL for inbound automation.</td></tr>
+      <tr><td>Lead</td><td>An unqualified person of interest. Has its own status track (<code>new → contacted → qualified → converted | unqualified</code>) and converts into a Contact + Deal.</td></tr>
+      <tr><td>Company</td><td>An organisation in the CRM. Local-only by default. Status is <strong>Prospect</strong> until promoted to an Accounts customer.</td></tr>
+      <tr><td>Contact</td><td>A person inside a Company. Holds the relationship history.</td></tr>
+      <tr><td>Deal</td><td>A revenue opportunity for a Company. Lives on the kanban; has a value, expected close date, and stage.</td></tr>
+      <tr><td>Promotion</td><td>The cross-service event fired when a deal moves to a stage of type <code>won</code>. CRM submits a <code>client_vendor_request</code> to Accounts.</td></tr>
+      <tr><td>Customer</td><td>A Company that has been promoted and approved in Accounts. Same UUID as the CRM company. Eligible for invoicing.</td></tr>
+      <tr><td>client_vendor_request</td><td>The Accounts-side row created by promotion. Has status pending / approved / rejected and a 48-hour SLA. Approval generates the customer (or vendor) record.</td></tr>
+      <tr><td>CUST-NNNN</td><td>The auto-generated customer code in Accounts (or VEND-NNNN for vendors). Tenant-scoped monotonic.</td></tr>
+    </tbody>
+  </table>
+
+  <p class="footer">&copy; Ragenaizer. Built with care &mdash; corrections welcome at
+  <a href="mailto:docs@ragenaizer.com">docs@ragenaizer.com</a>.</p>
+</section>
+
+</main>
+</div>
+
+<script>
+// Highlight the active TOC entry as the reader scrolls
+const sections = document.querySelectorAll('section[id]');
+const tocLinks = document.querySelectorAll('.toc a');
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.getAttribute('id');
+      tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+    }
+  });
+}, { rootMargin: '-40% 0px -55% 0px' });
+sections.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>
