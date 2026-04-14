@@ -121,10 +121,15 @@ function openPlatformComplianceUploadModal() {
     if (!modal) return;
     document.getElementById('platformComplianceDescription').value = '';
     document.getElementById('platformComplianceJson').value = '';
-    modal.classList.add('show');
+    // Match the existing admin.js modal show pattern (`gm-animating` + `active`).
+    modal.classList.add('gm-animating');
+    requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('active')));
 }
 function closePlatformComplianceUploadModal() {
-    document.getElementById('platformComplianceUploadModal')?.classList.remove('show');
+    const modal = document.getElementById('platformComplianceUploadModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    setTimeout(() => modal.classList.remove('gm-animating'), 200);
 }
 
 async function submitPlatformComplianceUpload() {
@@ -168,7 +173,8 @@ async function viewPlatformComplianceDetail(id) {
     const body = document.getElementById('platformComplianceDetailBody');
     const title = document.getElementById('platformComplianceDetailTitle');
     if (!modal || !body) return;
-    modal.classList.add('show');
+    modal.classList.add('gm-animating');
+    requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('active')));
     body.innerHTML = '<p>Loading…</p>';
     try {
         const row = await _platformComplianceFetch('/configs/' + encodeURIComponent(id));
@@ -203,7 +209,10 @@ async function viewPlatformComplianceDetail(id) {
     }
 }
 function closePlatformComplianceDetailModal() {
-    document.getElementById('platformComplianceDetailModal')?.classList.remove('show');
+    const modal = document.getElementById('platformComplianceDetailModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    setTimeout(() => modal.classList.remove('gm-animating'), 200);
 }
 
 // ------- Row actions -----------------------------------------------------
