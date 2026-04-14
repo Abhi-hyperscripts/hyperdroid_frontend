@@ -55,6 +55,28 @@
             </button>
         </div>
 
+        <!-- Setup Status — readiness checklist that catches missing config
+             (Taxation, Fiscal Year, etc.) BEFORE the CA discovers it while
+             trying to invoice. Auto-collapses to a thin "all ready" strip
+             once every check is green. -->
+        <div class="setup-status-panel" id="setupStatusPanel" hidden>
+            <div class="setup-status-header">
+                <div>
+                    <h3 class="setup-status-title">Setup status</h3>
+                    <p class="setup-status-sub" id="setupStatusSub">Checking your tenant…</p>
+                </div>
+                <div class="setup-status-actions">
+                    <span class="setup-status-progress" id="setupStatusProgress">0 of 6</span>
+                    <button type="button" id="setupStatusToggle" onclick="toggleSetupStatusCollapsed()" title="Collapse">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="setup-status-grid" id="setupStatusGrid">
+                <!-- rows injected by setup status JS -->
+            </div>
+        </div>
+
         <!-- KPI Overview — live data from /accounts/dashboard/kpis -->
         <div class="stats-grid" id="statsGrid">
             <!-- Cash Position -->
@@ -222,7 +244,22 @@
                 <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
 
-            <!-- 2. Vendors & Customers -->
+            <!-- 2. Taxation — set up BEFORE invoices so GST appears on first invoice -->
+            <div class="action-card" id="cardTaxation" onclick="location.href='taxation.html'">
+                <div class="action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <polyline points="9 12 11 14 15 10"/>
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h4>Taxation</h4>
+                    <p>GST rates, HSN/SAC, tax configs &mdash; configure before invoicing</p>
+                </div>
+                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+
+            <!-- 3. Vendors & Customers -->
             <div class="action-card" id="cardParties" onclick="location.href='parties.html'">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -383,21 +420,6 @@
                 <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
 
-            <!-- 9. Taxation -->
-            <div class="action-card" id="cardTaxation" onclick="location.href='taxation.html'">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        <polyline points="9 12 11 14 15 10"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Taxation</h4>
-                    <p>Tax configs, GST returns & compliance</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </div>
-
             <!-- 11. Billing -->
             <div class="action-card" id="cardBilling" onclick="location.href='billing.html'">
                 <div class="action-icon">
@@ -462,6 +484,118 @@
 
     <!-- Toast Container -->
 
+    <style>
+        /* Setup Status panel — readiness checklist on the Accounts dashboard.
+           All colors flow from theme variables so dark/light themes stay
+           consistent. The panel is only visible when at least one check is
+           failing; once everything is green it collapses to a thin strip. */
+        .setup-status-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+        .setup-status-panel.is-collapsed .setup-status-grid { display: none; }
+        .setup-status-panel.is-collapsed #setupStatusToggle svg { transform: rotate(180deg); }
+        /* Visible chevron toggle — `btn btn-icon` doesn't have a default
+           appearance in this context, so style it explicitly with theme
+           variables. Higher-specificity selector + !important on the
+           appearance properties to win against the global `.btn` rules. */
+        .setup-status-panel #setupStatusToggle.btn,
+        .setup-status-panel #setupStatusToggle {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            width: 32px !important;
+            height: 32px !important;
+            padding: 0 !important;
+            background: var(--bg-card-hover) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 8px !important;
+            cursor: pointer;
+            transition: background 120ms, border-color 120ms, color 120ms;
+        }
+        .setup-status-panel #setupStatusToggle:hover {
+            background: color-mix(in srgb, var(--brand-primary) 14%, var(--bg-card-hover)) !important;
+            border-color: var(--brand-primary) !important;
+            color: var(--brand-primary) !important;
+        }
+        .setup-status-panel #setupStatusToggle svg {
+            transition: transform 200ms;
+            width: 18px;
+            height: 18px;
+        }
+        .setup-status-panel.is-all-green {
+            background: color-mix(in srgb, var(--color-success, #2e7d32) 8%, var(--bg-card));
+            border-color: color-mix(in srgb, var(--color-success, #2e7d32) 30%, transparent);
+        }
+        .setup-status-header {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 12px;
+        }
+        .setup-status-title {
+            margin: 0; font-size: 1rem; color: var(--text-primary);
+        }
+        .setup-status-sub {
+            margin: 2px 0 0; font-size: 0.8rem; color: var(--text-secondary);
+        }
+        .setup-status-actions {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .setup-status-progress {
+            font-size: 0.78rem; color: var(--text-secondary);
+            background: var(--bg-card-hover);
+            padding: 4px 10px; border-radius: 999px;
+            border: 1px solid var(--border-color);
+        }
+        .setup-status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .setup-status-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px;
+            background: var(--bg-body);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: border-color 120ms;
+        }
+        .setup-status-row.ok        { border-color: color-mix(in srgb, var(--color-success, #2e7d32) 35%, var(--border-color)); }
+        .setup-status-row.warn      { border-color: color-mix(in srgb, var(--color-warning, #ed6c02) 50%, var(--border-color)); }
+        .setup-status-row.error     { border-color: color-mix(in srgb, var(--color-error, #c33) 45%, var(--border-color)); }
+        .setup-status-icon {
+            width: 28px; height: 28px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .setup-status-row.ok    .setup-status-icon { background: color-mix(in srgb, var(--color-success, #2e7d32) 18%, transparent); color: var(--color-success, #2e7d32); }
+        .setup-status-row.warn  .setup-status-icon { background: color-mix(in srgb, var(--color-warning, #ed6c02) 18%, transparent); color: var(--color-warning, #ed6c02); }
+        .setup-status-row.error .setup-status-icon { background: color-mix(in srgb, var(--color-error,   #c33)   18%, transparent); color: var(--color-error,   #c33); }
+        .setup-status-text { flex: 1; min-width: 0; }
+        .setup-status-label {
+            display: block; font-size: 0.88rem; color: var(--text-primary);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .setup-status-detail {
+            display: block; font-size: 0.76rem; color: var(--text-secondary);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .setup-status-action {
+            font-size: 0.78rem; color: var(--brand-primary);
+            background: transparent; border: 1px solid currentColor;
+            padding: 4px 10px; border-radius: 6px; cursor: pointer;
+            white-space: nowrap; flex-shrink: 0;
+            text-decoration: none;
+        }
+        .setup-status-action:hover {
+            background: color-mix(in srgb, var(--brand-primary) 12%, transparent);
+        }
+    </style>
+
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
@@ -469,6 +603,7 @@
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');

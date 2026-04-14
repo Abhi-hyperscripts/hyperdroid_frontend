@@ -1464,6 +1464,592 @@ async function initializeTemplate(country) {
 }
 
 // ============================================================================
+// 9b. CUSTOM TEMPLATE UPLOAD (CSV / JSON)
+// ============================================================================
+// CAs maintain their own Chart of Accounts in Excel. This lets them dump the
+// CoA as CSV (or JSON) and bulk-import via POST /api/accounts/coa/import.
+// The backend dedupes by account_code so re-uploads are idempotent.
+
+// Required + optional columns. Order in this array determines sample-file order.
+const COA_TEMPLATE_COLUMNS = [
+    { key: 'account_code',    required: true,  example: '1100' },
+    { key: 'account_name',    required: true,  example: 'Current Assets' },
+    { key: 'account_type',    required: true,  example: 'Assets' },     // Assets/Liabilities/Equity/Income/Expenses
+    { key: 'account_group',   required: false, example: 'Current Assets' },
+    { key: 'parent_code',     required: false, example: '1000' },
+    { key: 'description',     required: false, example: 'Bucket for short-term assets' },
+    { key: 'opening_balance', required: false, example: '' },
+    { key: 'balance_type',    required: false, example: '' }            // debit/credit
+];
+
+const COA_SAMPLE_ROWS = [
+    { account_code: '1000', account_name: 'Assets',          account_type: 'Assets',      account_group: '',                  parent_code: '',     description: 'Top-level assets',         opening_balance: '', balance_type: '' },
+    { account_code: '1100', account_name: 'Current Assets',  account_type: 'Assets',      account_group: 'Current Assets',    parent_code: '1000', description: 'Cash + receivables',       opening_balance: '', balance_type: '' },
+    { account_code: '1110', account_name: 'Cash & Bank',     account_type: 'Assets',      account_group: 'Current Assets',    parent_code: '1100', description: '',                          opening_balance: '', balance_type: '' },
+    { account_code: '1111', account_name: 'Cash in Hand',    account_type: 'Assets',      account_group: 'Current Assets',    parent_code: '1110', description: 'Petty cash',               opening_balance: '5000',  balance_type: 'debit'  },
+    { account_code: '2000', account_name: 'Liabilities',     account_type: 'Liabilities', account_group: '',                  parent_code: '',     description: '',                          opening_balance: '', balance_type: '' },
+    { account_code: '2100', account_name: 'Accounts Payable',account_type: 'Liabilities', account_group: 'Current Liabilities', parent_code: '2000', description: 'Vendor dues',           opening_balance: '12000', balance_type: 'credit' },
+    { account_code: '3000', account_name: 'Equity',          account_type: 'Equity',      account_group: '',                  parent_code: '',     description: '',                          opening_balance: '', balance_type: '' },
+    { account_code: '4000', account_name: 'Sales Revenue',   account_type: 'Income',      account_group: 'Operating Income',  parent_code: '',     description: 'Goods + services revenue', opening_balance: '', balance_type: '' },
+    { account_code: '5000', account_name: 'Operating Expenses', account_type: 'Expenses', account_group: 'Operating Expenses', parent_code: '',     description: '',                          opening_balance: '', balance_type: '' },
+    { account_code: '5100', account_name: 'Salaries',        account_type: 'Expenses',    account_group: 'Operating Expenses', parent_code: '5000', description: 'Payroll cost',             opening_balance: '', balance_type: '' }
+];
+
+let _customTemplateParsedRows = []; // cached rows from the chosen file
+
+function downloadCoaSample(format) {
+    const cols = COA_TEMPLATE_COLUMNS.map(c => c.key);
+
+    let blob, filename;
+    if (format === 'csv') {
+        const lines = [cols.join(',')];
+        for (const row of COA_SAMPLE_ROWS) {
+            lines.push(cols.map(c => _csvEscape(row[c] ?? '')).join(','));
+        }
+        blob = new Blob([lines.join('\n') + '\n'], { type: 'text/csv;charset=utf-8' });
+        filename = 'coa-template-sample.csv';
+    } else {
+        blob = new Blob([JSON.stringify({ accounts: COA_SAMPLE_ROWS }, null, 2)], { type: 'application/json' });
+        filename = 'coa-template-sample.json';
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function _csvEscape(value) {
+    const str = String(value ?? '');
+    return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+}
+
+function openCustomTemplateModal() {
+    _customTemplateParsedRows = [];
+    document.getElementById('customTemplateFile').value = '';
+    const preview = document.getElementById('customTemplatePreview');
+    const err = document.getElementById('customTemplateError');
+    const chosen = document.getElementById('customTemplateChosenName');
+    const dz = document.getElementById('customTemplateDropZone');
+    if (preview) preview.hidden = true;
+    if (err) err.hidden = true;
+    if (chosen) { chosen.hidden = true; chosen.textContent = ''; }
+    if (dz) dz.classList.remove('is-dragging', 'has-file');
+    document.getElementById('customTemplateImportBtn').disabled = true;
+    AccountsCommon.openModal('customTemplateModal');
+}
+
+// Drop-zone drag handlers — keep them tiny + idempotent.
+function onCustomTemplateDragOver(ev) {
+    ev.preventDefault();
+    document.getElementById('customTemplateDropZone')?.classList.add('is-dragging');
+}
+function onCustomTemplateDragLeave(ev) {
+    ev.preventDefault();
+    document.getElementById('customTemplateDropZone')?.classList.remove('is-dragging');
+}
+function onCustomTemplateDrop(ev) {
+    ev.preventDefault();
+    document.getElementById('customTemplateDropZone')?.classList.remove('is-dragging');
+    const file = ev.dataTransfer?.files?.[0];
+    if (!file) return;
+    // Mirror the file into the hidden <input> so the rest of the pipeline
+    // (which reads from the file input) keeps working unchanged.
+    const input = document.getElementById('customTemplateFile');
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+function closeCustomTemplateModal() {
+    AccountsCommon.closeModal('customTemplateModal');
+}
+
+async function onCustomTemplateFileChosen(event) {
+    const file = event.target.files?.[0];
+    const errEl = document.getElementById('customTemplateError');
+    const previewEl = document.getElementById('customTemplatePreview');
+    const importBtn = document.getElementById('customTemplateImportBtn');
+    const chosenEl = document.getElementById('customTemplateChosenName');
+    const dz = document.getElementById('customTemplateDropZone');
+    errEl.hidden = true;
+    previewEl.hidden = true;
+    importBtn.disabled = true;
+    if (chosenEl) { chosenEl.hidden = true; chosenEl.textContent = ''; }
+    if (dz) dz.classList.remove('has-file');
+    _customTemplateParsedRows = [];
+
+    if (!file) return;
+
+    // Show the picked filename inside the drop zone for clear feedback.
+    if (chosenEl) {
+        const sizeKb = (file.size / 1024).toFixed(1);
+        chosenEl.textContent = `${file.name} · ${sizeKb} KB`;
+        chosenEl.hidden = false;
+    }
+    if (dz) dz.classList.add('has-file');
+
+    try {
+        const text = await file.text();
+        let rows;
+        if (file.name.toLowerCase().endsWith('.json') || file.type === 'application/json') {
+            const parsed = JSON.parse(text);
+            // Accept either { accounts: [...] } or a bare [...]
+            rows = Array.isArray(parsed) ? parsed : (parsed.accounts || []);
+        } else {
+            rows = _parseCsv(text);
+        }
+        if (!Array.isArray(rows) || rows.length === 0) throw new Error('No rows found in file.');
+
+        // Validate required fields per row
+        const issues = [];
+        const valid = [];
+        rows.forEach((row, idx) => {
+            const code = (row.account_code || '').toString().trim();
+            const name = (row.account_name || '').toString().trim();
+            const type = (row.account_type || '').toString().trim();
+            if (!code || !name || !type) {
+                issues.push(`Row ${idx + 2}: missing ${[!code && 'account_code', !name && 'account_name', !type && 'account_type'].filter(Boolean).join(', ')}`);
+                return;
+            }
+            valid.push({
+                account_code: code,
+                account_name: name,
+                account_type: type,
+                account_group: (row.account_group || '').toString().trim() || null,
+                parent_code:   (row.parent_code   || '').toString().trim() || null,
+                description:   (row.description   || '').toString().trim() || null,
+                opening_balance: row.opening_balance !== '' && row.opening_balance != null ? Number(row.opening_balance) : null,
+                balance_type:  (row.balance_type  || '').toString().trim().toLowerCase() || null
+            });
+        });
+
+        if (valid.length === 0) {
+            throw new Error('No valid rows. ' + issues.slice(0, 5).join(' | '));
+        }
+
+        _customTemplateParsedRows = valid;
+
+        // Render preview (first 50 rows)
+        const body = document.getElementById('customTemplatePreviewBody');
+        body.innerHTML = valid.slice(0, 50).map(r => `
+            <tr>
+                <td><code>${AccountsCommon.escapeHtml(r.account_code)}</code></td>
+                <td>${AccountsCommon.escapeHtml(r.account_name)}</td>
+                <td>${AccountsCommon.escapeHtml(r.account_type)}</td>
+                <td>${AccountsCommon.escapeHtml(r.account_group || '—')}</td>
+                <td>${r.parent_code ? `<code>${AccountsCommon.escapeHtml(r.parent_code)}</code>` : '—'}</td>
+                <td>${r.opening_balance != null ? `${r.opening_balance} ${r.balance_type || ''}` : '—'}</td>
+            </tr>
+        `).join('');
+        document.getElementById('customTemplateRowCount').textContent =
+            `${valid.length} row${valid.length === 1 ? '' : 's'} parsed${valid.length > 50 ? ' (showing first 50)' : ''}`;
+        document.getElementById('customTemplateValidationSummary').textContent =
+            issues.length ? `${issues.length} skipped — ${issues[0]}` : 'All rows look valid';
+        previewEl.hidden = false;
+        importBtn.disabled = false;
+    } catch (err) {
+        console.error('[Setup] custom template parse error', err);
+        errEl.textContent = err.message || 'Could not parse file.';
+        errEl.hidden = false;
+    }
+}
+
+// Tiny CSV parser — handles quoted fields, escaped quotes, CRLF/LF.
+// Header row is mandatory; column order can be anything as long as headers match.
+function _parseCsv(text) {
+    const rows = [];
+    let i = 0, field = '', row = [], inQuotes = false;
+    const pushField = () => { row.push(field); field = ''; };
+    const pushRow   = () => { rows.push(row); row = []; };
+    while (i < text.length) {
+        const ch = text[i];
+        if (inQuotes) {
+            if (ch === '"') {
+                if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+                inQuotes = false; i++; continue;
+            }
+            field += ch; i++; continue;
+        }
+        if (ch === '"') { inQuotes = true; i++; continue; }
+        if (ch === ',') { pushField(); i++; continue; }
+        if (ch === '\r') { i++; continue; }
+        if (ch === '\n') { pushField(); pushRow(); i++; continue; }
+        field += ch; i++;
+    }
+    if (field.length > 0 || row.length > 0) { pushField(); pushRow(); }
+    if (rows.length === 0) return [];
+
+    const headers = rows.shift().map(h => h.trim());
+    return rows
+        .filter(r => r.some(cell => (cell ?? '').trim() !== ''))
+        .map(r => {
+            const obj = {};
+            headers.forEach((h, idx) => { obj[h] = (r[idx] ?? '').trim(); });
+            return obj;
+        });
+}
+
+// ============================================================================
+// 9c. MANUAL CoA BUILDER (in-modal row grid)
+// ============================================================================
+// Same end-state as the CSV upload — submits to POST /api/accounts/coa/import
+// — but lets the CA add accounts row by row in a modal grid. Useful when the
+// chart is small enough that opening Excel feels heavier than typing rows.
+
+const MANUAL_COA_TYPES = ['Assets', 'Liabilities', 'Equity', 'Income', 'Expenses'];
+let _manualCoaRowSeq = 0;
+// Per-row SearchableDropdown instances so we can read their values back +
+// dispose them when the row is removed. Keyed by row id.
+const _manualCoaDropdowns = new Map(); // id -> { type, balance, parent }
+
+function openManualCoaBuilderModal() {
+    const body = document.getElementById('manualCoaTableBody');
+    if (body) body.innerHTML = '';
+    document.getElementById('manualCoaError').hidden = true;
+    _manualCoaDropdowns.clear();
+    _manualCoaRowSeq = 0;
+    // Seed with 3 empty rows to give CAs something to type into.
+    addManualCoaRow();
+    addManualCoaRow();
+    addManualCoaRow();
+    AccountsCommon.openModal('manualCoaModal');
+}
+function closeManualCoaBuilderModal() {
+    AccountsCommon.closeModal('manualCoaModal');
+}
+
+function addManualCoaRow(prefill) {
+    const body = document.getElementById('manualCoaTableBody');
+    if (!body) return;
+    const id = ++_manualCoaRowSeq;
+    const p = prefill || {};
+
+    // Parent dropdown options = (1) every existing account in the system
+    // (loaded into the global `accounts` array by setup.js init) + (2) every
+    // code already typed into a previous row in this modal. Recomputed every
+    // time we render so newer rows can parent older ones.
+    const tr = document.createElement('tr');
+    tr.dataset.manualRow = id;
+    tr.innerHTML = `
+        <td><input type="text" data-col="account_code" placeholder="e.g. 1100" value="${_attr(p.account_code)}"></td>
+        <td><input type="text" data-col="account_name" placeholder="e.g. Current Assets" value="${_attr(p.account_name)}"></td>
+        <td><div class="searchable-dropdown-container manual-coa-sd" data-col="account_type" id="manualCoaType-${id}"></div></td>
+        <td><input type="text" data-col="account_group" placeholder="optional" value="${_attr(p.account_group)}"></td>
+        <td><div class="searchable-dropdown-container manual-coa-sd" data-col="parent_code" id="manualCoaParent-${id}"></div></td>
+        <td><input type="number" data-col="opening_balance" step="0.01" placeholder="0.00" value="${_attr(p.opening_balance)}"></td>
+        <td><div class="searchable-dropdown-container manual-coa-sd" data-col="balance_type" id="manualCoaBalance-${id}"></div></td>
+        <td>
+            <button type="button" class="manual-coa-remove" title="Remove row" onclick="removeManualCoaRow(${id})">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </td>
+    `;
+    body.appendChild(tr);
+
+    // Replace the native selects with SearchableDropdown — house style is to
+    // never use the browser default <select> in our forms.
+    const typeDropdown = new SearchableDropdown(document.getElementById(`manualCoaType-${id}`), {
+        id: `manualCoaType-${id}-sd`,
+        options: [
+            { value: '', label: '— select —' },
+            ...MANUAL_COA_TYPES.map(t => ({ value: t, label: t }))
+        ],
+        value: p.account_type || '',
+        placeholder: '— select —',
+        compact: true
+    });
+    const balanceDropdown = new SearchableDropdown(document.getElementById(`manualCoaBalance-${id}`), {
+        id: `manualCoaBalance-${id}-sd`,
+        options: [
+            { value: '',       label: '—' },
+            { value: 'debit',  label: 'Debit'  },
+            { value: 'credit', label: 'Credit' }
+        ],
+        value: p.balance_type || '',
+        placeholder: '—',
+        compact: true
+    });
+
+    // Parent dropdown — searchable list of (a) codes already typed in this
+    // modal + (b) accounts already in the tenant's CoA. Built fresh now,
+    // refreshed by _refreshManualCoaParentSuggestions when other rows change.
+    const parentDropdown = new SearchableDropdown(document.getElementById(`manualCoaParent-${id}`), {
+        id: `manualCoaParent-${id}-sd`,
+        options: _buildManualCoaParentOptions(),
+        value: p.parent_code || '',
+        placeholder: 'optional',
+        searchPlaceholder: 'Search parent…',
+        compact: true,
+        virtualScroll: true
+    });
+
+    _manualCoaDropdowns.set(id, { type: typeDropdown, balance: balanceDropdown, parent: parentDropdown });
+
+    // Re-pull parent options whenever this row's code changes — debounced
+    // so we don't rebuild on every keystroke.
+    const codeInput = tr.querySelector('input[data-col="account_code"]');
+    let _t = null;
+    codeInput?.addEventListener('input', () => {
+        clearTimeout(_t);
+        _t = setTimeout(_refreshManualCoaParentSuggestions, 250);
+    });
+
+    // Refresh sibling parent dropdowns + recount
+    _refreshManualCoaParentSuggestions();
+    _updateManualCoaRowCount();
+}
+
+function _buildManualCoaParentOptions() {
+    // (1) Existing accounts in the tenant — populated by setup.js into the
+    //     global `accounts` variable when the page loads.
+    const existing = (Array.isArray(window.accounts) ? window.accounts
+                       : (typeof accounts !== 'undefined' ? accounts : []))
+        .map(a => ({ value: a.account_code, label: `${a.account_code} — ${a.account_name}` }));
+    // (2) Codes typed in the current modal session
+    const inModal = Array.from(document.querySelectorAll('#manualCoaTableBody tr'))
+        .map(tr => (tr.querySelector('input[data-col="account_code"]')?.value || '').trim())
+        .filter(c => c.length > 0)
+        .map(c => ({ value: c, label: `${c} (in this batch)` }));
+    // Dedupe by value
+    const seen = new Set();
+    const merged = [{ value: '', label: '— none —' }];
+    for (const opt of [...inModal, ...existing]) {
+        if (seen.has(opt.value)) continue;
+        seen.add(opt.value);
+        merged.push(opt);
+    }
+    return merged;
+}
+
+function removeManualCoaRow(id) {
+    const tr = document.querySelector(`#manualCoaTableBody tr[data-manual-row="${id}"]`);
+    if (tr) tr.remove();
+    _manualCoaDropdowns.delete(id);
+    _refreshManualCoaParentSuggestions();
+    _updateManualCoaRowCount();
+}
+
+function _attr(v) {
+    if (v === undefined || v === null) return '';
+    return String(v).replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function _updateManualCoaRowCount() {
+    const n = document.querySelectorAll('#manualCoaTableBody tr').length;
+    const el = document.getElementById('manualCoaRowCount');
+    if (el) el.textContent = `${n} row${n === 1 ? '' : 's'}`;
+}
+
+// Rebuild parent dropdown options for every row whenever code typing/row
+// changes happen. Each row's SearchableDropdown is re-rendered in place,
+// preserving its current selection.
+function _refreshManualCoaParentSuggestions() {
+    const opts = _buildManualCoaParentOptions();
+    _manualCoaDropdowns.forEach((dds) => {
+        if (dds.parent) {
+            const current = dds.parent.selectedValue;
+            dds.parent.options = opts;
+            dds.parent.filteredOptions = [...opts];
+            dds.parent.render();
+            dds.parent.bindEvents();
+            // Restore selection if still valid
+            if (current && opts.some(o => String(o.value) === String(current))) {
+                dds.parent.selectedValue = current;
+                dds.parent.render();
+                dds.parent.bindEvents();
+            }
+        }
+    });
+}
+
+function _collectManualCoaRows() {
+    const rows = [];
+    const issues = [];
+    document.querySelectorAll('#manualCoaTableBody tr').forEach((tr, idx) => {
+        const id = Number(tr.dataset.manualRow);
+        const dropdowns = _manualCoaDropdowns.get(id);
+        const get = (col) => (tr.querySelector(`input[data-col="${col}"]`)?.value || '').trim();
+        const code = get('account_code');
+        const name = get('account_name');
+        const type = (dropdowns?.type?.selectedValue || '').toString().trim();
+        const balance = (dropdowns?.balance?.selectedValue || '').toString().trim();
+
+        // Drop fully-empty rows silently — CAs leave blanks at the bottom
+        if (!code && !name && !type) return;
+
+        if (!code || !name || !type) {
+            issues.push(`Row ${idx + 1}: missing ${[!code && 'code', !name && 'name', !type && 'type'].filter(Boolean).join(', ')}`);
+            tr.querySelectorAll('input').forEach(el => {
+                if (el.dataset.col === 'account_code' && !code) el.classList.add('row-error');
+                else if (el.dataset.col === 'account_name' && !name) el.classList.add('row-error');
+                else el.classList.remove('row-error');
+            });
+            // Mark the type dropdown container if missing
+            const typeContainer = tr.querySelector('[data-col="account_type"]');
+            if (typeContainer) typeContainer.classList.toggle('row-error', !type);
+            return;
+        }
+        // Clear any prior error highlight for this row
+        tr.querySelectorAll('input').forEach(el => el.classList.remove('row-error'));
+        tr.querySelector('[data-col="account_type"]')?.classList.remove('row-error');
+
+        // Parent is now a SearchableDropdown that returns the bare code (no
+        // " — Name" suffix), so no parsing needed.
+        const parentCode = (dropdowns?.parent?.selectedValue || '').toString().trim();
+        const opening = get('opening_balance');
+
+        rows.push({
+            account_code: code,
+            account_name: name,
+            account_type: type,
+            account_group: get('account_group') || null,
+            parent_code:   parentCode || null,
+            description:   null,
+            opening_balance: opening !== '' ? Number(opening) : null,
+            balance_type:  balance || null
+        });
+    });
+    return { rows, issues };
+}
+
+async function submitManualCoa() {
+    const errEl = document.getElementById('manualCoaError');
+    errEl.hidden = true;
+
+    const { rows, issues } = _collectManualCoaRows();
+    if (rows.length === 0) {
+        errEl.textContent = issues.length
+            ? `Fix these before saving: ${issues.slice(0, 5).join(' | ')}`
+            : 'Add at least one account before saving.';
+        errEl.hidden = false;
+        return;
+    }
+    if (issues.length > 0) {
+        errEl.textContent = `Fix these before saving: ${issues.slice(0, 5).join(' | ')}`;
+        errEl.hidden = false;
+        return;
+    }
+
+    const ok = await Confirm.show({
+        title: 'Save Chart of Accounts',
+        message: `Save ${rows.length} account${rows.length === 1 ? '' : 's'}? Existing codes will be skipped automatically.`,
+        confirmText: 'Save',
+        type: 'warning'
+    });
+    if (!ok) return;
+
+    const btn = document.getElementById('manualCoaSaveBtn');
+    btn.disabled = true;
+    const prevText = btn.textContent;
+    btn.textContent = 'Saving…';
+    try {
+        const result = await api.request(AccountsCommon.buildUrl('coa/import'), {
+            method: 'POST',
+            body: JSON.stringify({ accounts: rows })
+        });
+
+        const created = result.created ?? 0;
+        const skipped = result.skipped ?? 0;
+        const failed  = result.failed  ?? 0;
+        Toast.success(`Saved ${created} new, skipped ${skipped} existing, ${failed} failed.`);
+
+        if (Array.isArray(result.results)) {
+            const firstFailure = result.results.find(r => r.status === 'failed');
+            if (firstFailure) {
+                console.warn('[Setup] Manual CoA failure:', firstFailure);
+                Toast.error(`First failure: ${firstFailure.account_code} — ${firstFailure.reason}`);
+            }
+            const warned = result.results.filter(r => r.warning);
+            if (warned.length > 0) {
+                console.warn('[Setup] Manual CoA warnings:', warned);
+                const first = warned[0];
+                const more = warned.length > 1 ? ` (+${warned.length - 1} more — see console)` : '';
+                Toast.warning?.(`${first.account_code}: ${first.warning}${more}`)
+                    ?? Toast.error(`${first.account_code}: ${first.warning}${more}`);
+            }
+        }
+
+        // Only close if everything was created without hard failures.
+        // If there are failures, leave modal open so the CA can fix and resave.
+        if (failed === 0) {
+            closeManualCoaBuilderModal();
+        }
+
+        await Promise.all([loadAccountTypes(), loadAccountGroups()]);
+        await loadAccounts();
+    } catch (err) {
+        console.error('[Setup] submitManualCoa error:', err);
+        Toast.error(err.message || 'Failed to save accounts');
+        errEl.textContent = err.message || 'Failed to save accounts';
+        errEl.hidden = false;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = prevText;
+    }
+}
+
+async function submitCustomTemplate() {
+    if (_customTemplateParsedRows.length === 0) {
+        Toast.error('Pick a file first.');
+        return;
+    }
+    const ok = await Confirm.show({
+        title: 'Import Custom Chart of Accounts',
+        message: `Import ${_customTemplateParsedRows.length} accounts? Existing codes are skipped automatically.`,
+        confirmText: 'Import',
+        type: 'warning'
+    });
+    if (!ok) return;
+
+    const btn = document.getElementById('customTemplateImportBtn');
+    btn.disabled = true;
+    const prevText = btn.textContent;
+    btn.textContent = 'Importing…';
+    try {
+        const result = await api.request(AccountsCommon.buildUrl('coa/import'), {
+            method: 'POST',
+            body: JSON.stringify({ accounts: _customTemplateParsedRows })
+        });
+
+        const created = result.created ?? 0;
+        const skipped = result.skipped ?? 0;
+        const failed  = result.failed  ?? 0;
+        Toast.success(`Imported ${created} new, skipped ${skipped} existing, ${failed} failed.`);
+
+        if (Array.isArray(result.results)) {
+            // Surface the first failure (hard error)
+            const firstFailure = result.results.find(r => r.status === 'failed');
+            if (firstFailure) {
+                console.warn('[Setup] First import failure:', firstFailure);
+                Toast.error(`First failure: ${firstFailure.account_code} — ${firstFailure.reason}`);
+            }
+            // Also surface warnings — created-but-with-issues (missing parent, missing group,
+            // opening balance not applied, etc). Important so CAs notice fat-fingered codes.
+            const warned = result.results.filter(r => r.warning);
+            if (warned.length > 0) {
+                console.warn('[Setup] Import warnings:', warned);
+                const first = warned[0];
+                const more  = warned.length > 1 ? ` (+${warned.length - 1} more — see console)` : '';
+                Toast.warning?.(`${first.account_code}: ${first.warning}${more}`)
+                    ?? Toast.error(`${first.account_code}: ${first.warning}${more}`);
+            }
+        }
+
+        closeCustomTemplateModal();
+        await Promise.all([loadAccountTypes(), loadAccountGroups()]);
+        await loadAccounts();
+    } catch (err) {
+        console.error('[Setup] submitCustomTemplate error:', err);
+        Toast.error(err.message || 'Failed to import accounts');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = prevText;
+    }
+}
+
+// ============================================================================
 // SEARCHABLE DROPDOWNS INIT
 // ============================================================================
 

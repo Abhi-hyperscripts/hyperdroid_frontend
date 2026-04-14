@@ -511,6 +511,16 @@ function convertSelectToSearchable(selectId, options = {}) {
     if (existingContainer) {
         existingContainer.remove();
     }
+    // Also remove any container created by the global auto-searchable-select
+    // helper (it inserts a `.sd-auto-container` as a sibling to convert every
+    // native <select> at page load). Without this cleanup, calling
+    // convertSelectToSearchable explicitly in page code would leave a
+    // duplicate dropdown stacked on top.
+    const prev = select.previousElementSibling;
+    const next = select.nextElementSibling;
+    if (prev && prev.classList?.contains('sd-auto-container')) prev.remove();
+    if (next && next.classList?.contains('sd-auto-container')) next.remove();
+    delete select.dataset.sdConverted;
     select.style.display = '';
     select.removeAttribute('data-searchable');
 

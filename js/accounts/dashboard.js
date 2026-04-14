@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 async function loadDashboard() {
     try {
         await Promise.all([
+            loadSetupStatus(),
             loadKpis(),
             loadRevenueTrend(),
             loadBankingSummary(),
@@ -252,4 +253,179 @@ function setCurrency(id, amount) {
     } else {
         el.classList.remove('negative');
     }
+}
+
+// ============================================================================
+// Setup Status — readiness checklist for CA-style onboarding
+// ============================================================================
+// Catches missing config (no fiscal year, no taxation, etc.) BEFORE the user
+// hits an empty dropdown on the invoice screen. Each row queries one endpoint;
+// passes are silent (green), failures get an actionable button to navigate to
+// the page that fixes them. Once all 6 checks pass, the panel auto-collapses
+// to a thin "all ready" strip — out of the way but still discoverable.
+
+const SETUP_STATUS_COLLAPSED_KEY = 'accounts_setupStatus_userCollapsed';
+
+async function loadSetupStatus() {
+    const panel = document.getElementById('setupStatusPanel');
+    const grid  = document.getElementById('setupStatusGrid');
+    if (!panel || !grid) return;
+    panel.hidden = false;
+
+    // Fire all 6 reads in parallel; never throw — each check has its own
+    // catch so one broken endpoint can't break the whole readiness panel.
+    const safeGet = async (path) => {
+        try { return await api.request(AccountsCommon.buildUrl(path), { _skipSpinner: true }); }
+        catch (e) { return { _err: e?.message || 'failed' }; }
+    };
+
+    const [coa, fy, taxConfigs, customers, vendors, banks] = await Promise.all([
+        safeGet('coa'),
+        safeGet('fiscal/years/active'),
+        safeGet('tax/configurations'),
+        safeGet('customers'),
+        safeGet('vendors'),
+        safeGet('bank/accounts')
+    ]);
+
+    const checks = [];
+
+    // 1. Chart of Accounts
+    {
+        const list = Array.isArray(coa) ? coa : (coa?.accounts || []);
+        const ok = list.length > 0;
+        checks.push(_setupCheck({
+            label: 'Chart of Accounts',
+            ok,
+            detail: ok ? `${list.length} account${list.length === 1 ? '' : 's'} configured` : 'No accounts yet — invoices and journal entries can\'t post',
+            actionLabel: ok ? 'Manage' : 'Set up now',
+            href: 'setup.html#accounts'
+        }));
+    }
+
+    // 2. Fiscal Year
+    {
+        const active = fy && !fy._err && (fy.id || fy.fiscal_year_id || fy.name);
+        const ok = !!active;
+        const detail = ok
+            ? `${fy.name || 'Active fiscal year'} (${(fy.start_date||'').slice(0,10)} → ${(fy.end_date||'').slice(0,10)})`
+            : 'No active fiscal year — opening balances + period reports can\'t resolve';
+        checks.push(_setupCheck({
+            label: 'Fiscal Year',
+            ok,
+            detail,
+            actionLabel: ok ? 'View' : 'Create now',
+            href: 'setup.html#fiscal-years'
+        }));
+    }
+
+    // 3. Taxation — if there's at least one configuration AND it has at least one rate.
+    //    Cheaper proxy: just count configurations. If a config exists, the CA can drill in.
+    {
+        const list = Array.isArray(taxConfigs) ? taxConfigs : (taxConfigs?.configurations || []);
+        const ok = list.length > 0;
+        checks.push(_setupCheck({
+            label: 'Taxation (GST/VAT)',
+            ok,
+            detail: ok
+                ? `${list.length} tax configuration${list.length === 1 ? '' : 's'} ready — invoices will pick up the right slabs`
+                : 'Not configured — GST won\'t appear on invoices until you set this up',
+            actionLabel: ok ? 'Manage' : 'Set up now',
+            href: 'taxation.html',
+            severity: ok ? 'ok' : 'error'   // taxation missing is a hard error, not just a warning
+        }));
+    }
+
+    // 4. Customers
+    {
+        const list = Array.isArray(customers) ? customers : (customers?.customers || []);
+        const ok = list.length > 0;
+        checks.push(_setupCheck({
+            label: 'Customers',
+            ok,
+            detail: ok ? `${list.length} customer${list.length === 1 ? '' : 's'} on file` : 'No customers yet — needed to issue invoices',
+            actionLabel: ok ? 'View' : 'Add first',
+            href: 'parties.html#customers'
+        }));
+    }
+
+    // 5. Vendors
+    {
+        const list = Array.isArray(vendors) ? vendors : (vendors?.vendors || []);
+        const ok = list.length > 0;
+        checks.push(_setupCheck({
+            label: 'Vendors',
+            ok,
+            detail: ok ? `${list.length} vendor${list.length === 1 ? '' : 's'} on file` : 'No vendors yet — needed to record bills',
+            actionLabel: ok ? 'View' : 'Add first',
+            href: 'parties.html#vendors'
+        }));
+    }
+
+    // 6. Bank Account
+    {
+        const list = Array.isArray(banks) ? banks : (banks?.bank_accounts || []);
+        const ok = list.length > 0;
+        checks.push(_setupCheck({
+            label: 'Bank Account',
+            ok,
+            detail: ok ? `${list.length} account${list.length === 1 ? '' : 's'} linked` : 'No bank account linked — payments can\'t be reconciled',
+            actionLabel: ok ? 'Manage' : 'Link now',
+            href: 'banking.html'
+        }));
+    }
+
+    grid.innerHTML = checks.map(_renderSetupRow).join('');
+
+    // Header summary + collapse behavior
+    const passed = checks.filter(c => c.ok).length;
+    const total  = checks.length;
+    const allGreen = passed === total;
+    document.getElementById('setupStatusProgress').textContent = `${passed} of ${total}`;
+    document.getElementById('setupStatusSub').textContent = allGreen
+        ? 'All systems ready — start invoicing and recording transactions.'
+        : `${total - passed} step${total - passed === 1 ? '' : 's'} remaining before you can transact cleanly.`;
+
+    panel.classList.toggle('is-all-green', allGreen);
+
+    // Default expanded if anything is missing; collapsed when all-green.
+    // Respect the user's manual collapse choice across reloads.
+    const userPref = localStorage.getItem(SETUP_STATUS_COLLAPSED_KEY);
+    let collapsed;
+    if (userPref === 'true' || userPref === 'false') {
+        collapsed = userPref === 'true';
+    } else {
+        collapsed = allGreen;
+    }
+    panel.classList.toggle('is-collapsed', collapsed);
+}
+
+function _setupCheck({ label, ok, detail, actionLabel, href, severity }) {
+    return { label, ok, detail, actionLabel, href, severity: severity || (ok ? 'ok' : 'warn') };
+}
+
+function _renderSetupRow(c) {
+    const icon = c.ok
+        ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+        : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/><circle cx="12" cy="12" r="10"/></svg>';
+    const safeLabel  = AccountsCommon.escapeHtml(c.label);
+    const safeDetail = AccountsCommon.escapeHtml(c.detail || '');
+    const safeAction = AccountsCommon.escapeHtml(c.actionLabel || (c.ok ? 'View' : 'Fix'));
+    const safeHref   = AccountsCommon.escapeHtml(c.href || '#');
+    return `
+        <div class="setup-status-row ${c.severity}">
+            <span class="setup-status-icon">${icon}</span>
+            <div class="setup-status-text">
+                <span class="setup-status-label">${safeLabel}</span>
+                <span class="setup-status-detail">${safeDetail}</span>
+            </div>
+            <a class="setup-status-action" href="${safeHref}">${safeAction}</a>
+        </div>`;
+}
+
+function toggleSetupStatusCollapsed() {
+    const panel = document.getElementById('setupStatusPanel');
+    if (!panel) return;
+    panel.classList.toggle('is-collapsed');
+    localStorage.setItem(SETUP_STATUS_COLLAPSED_KEY, String(panel.classList.contains('is-collapsed')));
 }

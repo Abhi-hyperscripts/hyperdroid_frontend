@@ -10146,3 +10146,42 @@ label.toggle-switch,
     border-radius: 8px;
     padding: 12px 16px;
 }
+
+/* ============================================================================
+ * Modal form normalization
+ * Inside any popup modal, all form controls (inputs, dropdowns, native
+ * selects fallback) must render at exactly the same height. Without this,
+ * the .form-control inputs are 40px tall and the SearchableDropdown trigger
+ * is 30px — a visible mismatch that makes modals look unfinished.
+ * ============================================================================ */
+.modal .form-control,
+.modal .form-group .form-control,
+.modal-body .form-control,
+.modal-body .form-group .form-control,
+.modal .searchable-dropdown .searchable-dropdown-trigger,
+.modal .form-group .searchable-dropdown .searchable-dropdown-trigger,
+.modal-body .searchable-dropdown .searchable-dropdown-trigger,
+.modal-body .form-group .searchable-dropdown .searchable-dropdown-trigger,
+.modal .searchable-dropdown--compact .searchable-dropdown-trigger,
+.modal-body .searchable-dropdown--compact .searchable-dropdown-trigger {
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    box-sizing: border-box !important;
+    line-height: 1.4 !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    /* Same border-radius across every form control in the modal so number
+       inputs (which browsers round more aggressively due to spinner buttons)
+       don't visually pop out from the rest. */
+    border-radius: 6px !important;
+}
+.modal textarea.form-control,
+.modal-body textarea.form-control,
+.modal .form-group textarea.form-control,
+.modal-body .form-group textarea.form-control {
+    height: auto !important;
+    min-height: 80px !important;
+    max-height: none !important;
+    border-radius: 6px !important;
+}

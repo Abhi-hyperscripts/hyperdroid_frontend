@@ -596,7 +596,7 @@
                         </div>
                     </div>
 
-                    <div class="filters-bar" style="gap: 1rem;">
+                    <div class="filters-bar" style="gap: 1rem; flex-wrap: wrap;">
                         <button class="btn btn-primary" id="initTemplateBtn" onclick="initializeTemplate('india')" data-admin-only>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -609,12 +609,433 @@
                             </svg>
                             Initialize Default Template
                         </button>
+                        <button class="btn btn-secondary" onclick="openCustomTemplateModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Upload Custom Template
+                        </button>
+                        <button class="btn btn-secondary" onclick="openManualCoaBuilderModal()" data-admin-only>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Build Manually
+                        </button>
+                        <button class="btn btn-outline" onclick="downloadCoaSample('csv')" type="button">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Download Sample CSV
+                        </button>
+                        <button class="btn btn-outline" onclick="downloadCoaSample('json')" type="button">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            Download Sample JSON
+                        </button>
                     </div>
                 </div>
 
             </main>
         </div>
     </div>
+
+    <!-- Upload Custom CoA Template Modal -->
+    <div id="customTemplateModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload Custom Chart of Accounts</h5>
+                    <button class="close-btn" onclick="closeCustomTemplateModal()" aria-label="Close">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="custom-coa-intro">
+                        Pick a <strong>.csv</strong> or <strong>.json</strong> file. Existing accounts (matched by
+                        <code class="custom-coa-code">account_code</code>) will be skipped — re-uploading is safe.
+                    </p>
+                    <p class="custom-coa-help">
+                        Need the format? Use the <strong>Download Sample</strong> buttons. Required columns:
+                        <code class="custom-coa-code">account_code</code>,
+                        <code class="custom-coa-code">account_name</code>,
+                        <code class="custom-coa-code">account_type</code>. Optional:
+                        <code class="custom-coa-code">account_group</code>,
+                        <code class="custom-coa-code">parent_code</code>,
+                        <code class="custom-coa-code">description</code>,
+                        <code class="custom-coa-code">opening_balance</code>,
+                        <code class="custom-coa-code">balance_type</code>.
+                    </p>
+
+                    <div class="form-group">
+                        <div id="customTemplateDropZone" class="custom-coa-dropzone"
+                             onclick="document.getElementById('customTemplateFile').click()"
+                             ondragover="onCustomTemplateDragOver(event)"
+                             ondragleave="onCustomTemplateDragLeave(event)"
+                             ondrop="onCustomTemplateDrop(event)"
+                             role="button" tabindex="0"
+                             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('customTemplateFile').click();}">
+                            <svg class="custom-coa-dropzone-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <div class="custom-coa-dropzone-primary">
+                                <strong>Click to browse</strong> or drag &amp; drop a file
+                            </div>
+                            <div class="custom-coa-dropzone-hint">.csv or .json &middot; up to 5 MB</div>
+                            <div id="customTemplateChosenName" class="custom-coa-dropzone-chosen" hidden></div>
+                        </div>
+                        <input type="file" id="customTemplateFile"
+                               accept=".csv,.json,text/csv,application/json"
+                               onchange="onCustomTemplateFileChosen(event)"
+                               style="display:none;" />
+                    </div>
+
+                    <div id="customTemplatePreview" class="custom-coa-preview" hidden>
+                        <div class="custom-coa-preview-header">
+                            <strong id="customTemplateRowCount">0 rows parsed</strong>
+                            <span id="customTemplateValidationSummary" class="custom-coa-summary"></span>
+                        </div>
+                        <div class="custom-coa-preview-scroll data-table-container">
+                            <table class="data-table" id="customTemplatePreviewTable">
+                                <thead>
+                                    <tr>
+                                        <th>Code</th><th>Name</th><th>Type</th><th>Group</th><th>Parent</th><th>Opening</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customTemplatePreviewBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="customTemplateError" class="custom-coa-error" hidden></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeCustomTemplateModal()">Cancel</button>
+                    <button class="btn btn-primary" id="customTemplateImportBtn" onclick="submitCustomTemplate()" disabled>
+                        Import Accounts
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual CoA Builder Modal -->
+    <div id="manualCoaModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered manual-coa-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Build Chart of Accounts Manually</h5>
+                    <button class="close-btn" onclick="closeManualCoaBuilderModal()" aria-label="Close">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="manual-coa-intro">
+                        Add accounts row by row. Code + Name + Type are required; the rest are optional.
+                        <strong>Parent</strong> picks any account already in the table or already in your CoA.
+                        Save submits all rows together — duplicates are skipped, the rest are created.
+                    </p>
+
+                    <div class="manual-coa-toolbar">
+                        <button type="button" class="btn btn-outline btn-sm" onclick="addManualCoaRow()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Row
+                        </button>
+                        <span class="manual-coa-rowcount" id="manualCoaRowCount">0 rows</span>
+                    </div>
+
+                    <div class="data-table-container manual-coa-scroll">
+                        <table class="data-table manual-coa-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 110px">Code *</th>
+                                    <th style="width: 220px">Name *</th>
+                                    <th style="width: 140px">Type *</th>
+                                    <th style="width: 160px">Group</th>
+                                    <th style="width: 160px">Parent</th>
+                                    <th style="width: 110px">Opening</th>
+                                    <th style="width: 110px">Balance</th>
+                                    <th style="width: 50px"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="manualCoaTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="manualCoaError" class="custom-coa-error" hidden></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeManualCoaBuilderModal()">Cancel</button>
+                    <button class="btn btn-primary" id="manualCoaSaveBtn" onclick="submitManualCoa()">
+                        Save All Accounts
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Scoped styles for the Custom CoA upload modal — uses theme variables
+           so it stays readable in light + dark themes. */
+        #customTemplateModal .custom-coa-intro,
+        #customTemplateModal .custom-coa-help {
+            color: var(--text-secondary);
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        #customTemplateModal .custom-coa-help {
+            font-size: 0.82rem;
+            margin-bottom: 1rem;
+        }
+        #customTemplateModal .custom-coa-code {
+            background: var(--bg-card-hover);
+            color: var(--brand-primary);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.82em;
+            border: 1px solid var(--border-color);
+        }
+        #customTemplateModal .custom-coa-preview {
+            margin-top: 1.25rem;
+        }
+        #customTemplateModal .custom-coa-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        #customTemplateModal .custom-coa-summary {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+        }
+        #customTemplateModal .custom-coa-preview-scroll {
+            max-height: 320px;
+            overflow: auto;
+        }
+        #customTemplateModal .data-table {
+            color: var(--text-primary);
+        }
+        #customTemplateModal .data-table tbody td {
+            color: var(--text-primary);
+            background: var(--bg-card);
+        }
+        #customTemplateModal .data-table tbody tr:nth-child(even) td {
+            background: var(--bg-card-hover);
+        }
+        #customTemplateModal .data-table tbody td code {
+            background: var(--bg-body);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.85em;
+        }
+        #customTemplateModal .custom-coa-error {
+            margin-top: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            background: color-mix(in srgb, var(--color-error) 12%, var(--bg-card-hover));
+            color: var(--color-error);
+            border: 1px solid color-mix(in srgb, var(--color-error) 35%, transparent);
+            font-size: 0.88rem;
+        }
+        #customTemplateModal input[type="file"].form-control {
+            padding: 6px 10px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        /* Drop zone */
+        #customTemplateModal .custom-coa-dropzone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 28px 20px;
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            cursor: pointer;
+            text-align: center;
+            transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+            user-select: none;
+        }
+        #customTemplateModal .custom-coa-dropzone:hover,
+        #customTemplateModal .custom-coa-dropzone:focus-visible {
+            border-color: var(--brand-primary);
+            background: color-mix(in srgb, var(--brand-primary) 6%, var(--bg-card));
+            outline: none;
+        }
+        #customTemplateModal .custom-coa-dropzone.is-dragging {
+            border-color: var(--brand-primary);
+            background: color-mix(in srgb, var(--brand-primary) 14%, var(--bg-card));
+        }
+        #customTemplateModal .custom-coa-dropzone.has-file {
+            border-style: solid;
+            border-color: var(--color-success, #2e7d32);
+            background: color-mix(in srgb, var(--color-success, #2e7d32) 8%, var(--bg-card));
+        }
+        #customTemplateModal .custom-coa-dropzone-icon {
+            color: var(--brand-primary);
+            opacity: 0.85;
+        }
+        #customTemplateModal .custom-coa-dropzone.has-file .custom-coa-dropzone-icon {
+            color: var(--color-success, #2e7d32);
+            opacity: 1;
+        }
+        #customTemplateModal .custom-coa-dropzone-primary {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+        #customTemplateModal .custom-coa-dropzone-hint {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+        #customTemplateModal .custom-coa-dropzone-chosen {
+            margin-top: 4px;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            background: var(--bg-card-hover);
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Manual CoA builder modal — overrides modal-dialog defaults so the
+           grid has room to breathe on wide screens, falls back to viewport
+           width on narrow ones. */
+        #manualCoaModal .manual-coa-dialog {
+            max-width: min(1280px, 96vw);
+            width: min(1280px, 96vw);
+        }
+        #manualCoaModal .modal-content {
+            max-width: 100%;
+            width: 100%;
+        }
+        #manualCoaModal .manual-coa-intro {
+            color: var(--text-secondary);
+            margin: 0 0 0.75rem 0;
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+        #manualCoaModal .manual-coa-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 0.5rem;
+        }
+        #manualCoaModal .manual-coa-toolbar .btn {
+            /* Global `.btn` is `width: 100%` in some places — pin to content. */
+            width: auto !important;
+            flex: 0 0 auto;
+        }
+        #manualCoaModal .manual-coa-rowcount {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
+        /* Don't clip the table — SearchableDropdown panels are absolutely
+           positioned and would get cut off by overflow:auto. Instead let the
+           modal-body scroll vertically, and let the table expand naturally.
+           The dropdown panel then escapes the table just fine. */
+        #manualCoaModal .modal-body {
+            max-height: 70vh;
+            overflow: auto;
+        }
+        #manualCoaModal .manual-coa-scroll {
+            overflow: visible;
+            max-height: none;
+        }
+        #manualCoaModal .manual-coa-table {
+            color: var(--text-primary);
+            border-collapse: collapse;
+            width: 100%;
+        }
+        #manualCoaModal .manual-coa-table thead th {
+            position: sticky;
+            top: 0;
+            background: var(--bg-card-hover);
+            z-index: 1;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        /* Lift any open SearchableDropdown above the sticky thead (z:1) and
+           sibling rows so its options panel renders cleanly. */
+        #manualCoaModal .searchable-dropdown.open {
+            z-index: 1000;
+            position: relative;
+        }
+        #manualCoaModal .searchable-dropdown.open .searchable-dropdown-menu,
+        #manualCoaModal .searchable-dropdown.open .searchable-dropdown-options,
+        #manualCoaModal .searchable-dropdown.open .searchable-dropdown-list {
+            z-index: 1001;
+        }
+        #manualCoaModal .manual-coa-table tbody td,
+        #manualCoaModal .manual-coa-table thead th {
+            /* `.data-table` sets td/th overflow:hidden, which clips the
+               absolutely-positioned SearchableDropdown panel to the cell.
+               Force overflow:visible per cell so dropdowns can pop out. */
+            overflow: visible !important;
+        }
+        #manualCoaModal .manual-coa-table tbody td {
+            padding: 4px;
+            background: var(--bg-card);
+            vertical-align: top;
+        }
+        #manualCoaModal .manual-coa-table tbody tr:nth-child(even) td {
+            background: var(--bg-card-hover);
+        }
+        #manualCoaModal .manual-coa-table input,
+        #manualCoaModal .manual-coa-table select {
+            width: 100%;
+            padding: 6px 8px;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        #manualCoaModal .manual-coa-table input:focus,
+        #manualCoaModal .manual-coa-table select:focus {
+            border-color: var(--brand-primary);
+            outline: none;
+        }
+        #manualCoaModal .manual-coa-table input.row-error {
+            border-color: var(--color-error);
+        }
+        #manualCoaModal .manual-coa-remove {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 4px;
+            padding: 4px 6px;
+            cursor: pointer;
+            transition: color 120ms, border-color 120ms, background 120ms;
+        }
+        #manualCoaModal .manual-coa-remove:hover {
+            color: var(--color-error);
+            border-color: var(--color-error);
+            background: color-mix(in srgb, var(--color-error) 10%, transparent);
+        }
+    </style>
 
     <!-- ================================================================== -->
     <!-- MODALS -->
@@ -1022,6 +1443,7 @@
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/accounts/accounts-common.js?v=' + CACHE_VERSION + '"><\/script>');
