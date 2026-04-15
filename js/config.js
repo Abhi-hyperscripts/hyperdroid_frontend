@@ -519,3 +519,11 @@ function getOrganizationInfo() {
     const cached = localStorage.getItem('organization_info');
     return cached ? JSON.parse(cached) : null;
 }
+
+// Expose globals on window so non-module consumers (e.g., embed/widget.js) can
+// read them. Top-level `const` in classic <script> tags goes to script scope,
+// not the window object — without these explicit assignments, code that does
+// `window.CONFIG?.authApiBaseUrl` silently falls back to localhost in prod.
+window.CONFIG = CONFIG;
+window.FIREBASE_CONFIG = FIREBASE_CONFIG;
+window.FIREBASE_VAPID_KEY = FIREBASE_VAPID_KEY;

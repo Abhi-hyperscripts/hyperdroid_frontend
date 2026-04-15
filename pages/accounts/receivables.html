@@ -482,7 +482,7 @@
 
     <!-- Customer Invoice Modal -->
     <div id="customerInvoiceModal" class="modal">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-dialog modal-dialog-centered po-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="invoiceModalTitle">Create Invoice</h5>
@@ -491,7 +491,7 @@
                 <div class="modal-body">
                     <form id="invoiceForm">
                         <input type="hidden" id="invoiceId">
-                        <div class="form-row two-col">
+                        <div class="form-row po-header-row">
                             <div class="form-group">
                                 <label for="invoiceCustomerId">Customer *</label>
                                 <select id="invoiceCustomerId" class="form-control" required>
@@ -502,63 +502,52 @@
                                 <label for="invoiceDate">Invoice Date *</label>
                                 <input type="text" id="invoiceDate" class="form-control" required placeholder="Select date">
                             </div>
-                        </div>
-                        <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="invoiceDueDate">Due Date *</label>
                                 <input type="text" id="invoiceDueDate" class="form-control" required placeholder="Select date">
                             </div>
+                            <div class="form-group">
+                                <label for="invoiceCurrency">Currency</label>
+                                <input type="text" id="invoiceCurrency" class="form-control" value="INR" placeholder="e.g. INR">
+                            </div>
+                        </div>
+                        <div class="form-row">
                             <div class="form-group">
                                 <label for="invoiceNotes">Notes</label>
                                 <input type="text" id="invoiceNotes" class="form-control" placeholder="Optional notes">
                             </div>
                         </div>
 
-                        <!-- Line Items -->
-                        <div class="form-group" style="margin-top: 1rem;">
+                        <div class="form-group po-lines-wrap" style="margin-top: 1rem;">
                             <label>Line Items</label>
-                            <div class="data-table-container" style="margin-top: 0.5rem;">
-                                <table class="data-table" id="invoiceLinesTable">
+                            <div class="data-table-container po-lines-container" style="margin-top: 0.5rem;">
+                                <table class="data-table po-lines-table" id="invoiceLinesTable">
                                     <thead>
                                         <tr>
+                                            <th style="width:220px;">Account *</th>
                                             <th>Description</th>
-                                            <th style="width:150px;">Account</th>
                                             <th style="width:100px;">HSN/SAC</th>
-                                            <th style="width:80px;">Qty</th>
-                                            <th style="width:100px;">Rate</th>
-                                            <th style="width:100px;">Amount</th>
+                                            <th style="width:110px;">Qty</th>
+                                            <th style="width:140px;">Unit Price</th>
+                                            <th style="width:160px;">Tax (Output GST)</th>
+                                            <th style="width:140px; text-align:right;">Amount</th>
                                             <th style="width:40px;"></th>
                                         </tr>
                                     </thead>
-                                    <tbody id="invoiceLines">
-                                        <!-- Populated by JS -->
-                                    </tbody>
+                                    <tbody id="invoiceLines"></tbody>
                                 </table>
                             </div>
-                            <button type="button" class="btn btn-outline" onclick="addInvoiceLine()" style="margin-top: 0.5rem;">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
+                            <button type="button" class="btn btn-outline po-add-line-btn" onclick="addInvoiceLine()" style="margin-top: 0.5rem;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                 Add Line
                             </button>
                         </div>
 
-                        <!-- Totals -->
-                        <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-                            <div style="min-width: 250px;">
-                                <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; color: var(--text-secondary);">
-                                    <span>Subtotal:</span>
-                                    <span id="invoiceSubtotal">0.00</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; color: var(--text-secondary);">
-                                    <span>Tax:</span>
-                                    <span id="invoiceTax">0.00</span>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; font-weight: 600; border-top: 1px solid var(--border-primary); color: var(--text-primary);">
-                                    <span>Total:</span>
-                                    <span id="invoiceTotal">0.00</span>
-                                </div>
+                        <div class="po-totals">
+                            <div class="po-totals-inner">
+                                <div class="po-totals-row"><span>Subtotal:</span><span id="invoiceSubtotal">0.00</span></div>
+                                <div class="po-totals-row"><span>Tax (Output GST):</span><span id="invoiceTax">0.00</span></div>
+                                <div class="po-totals-row po-totals-grand"><span>Total:</span><span id="invoiceTotal">0.00</span></div>
                             </div>
                         </div>
                     </form>

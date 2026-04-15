@@ -231,21 +231,39 @@ async function viewProforma(id) {
         const custName = pi.customer_name || customers.find(c => c.id === pi.customer_id)?.name || '-';
         const lines = pi.lines || [];
 
+        // Per-line tax derived from each line's tax_config_id. Backend doesn't
+        // currently roll these up into pi.tax_amount for proformas (tax is only
+        // computed at invoice approval time), so the view computes its own
+        // totals to stay consistent with what the user picked at save time.
+        let computedTax = 0;
+        const lineRows = lines.map(l => {
+            const cfg = taxConfigs.find(t => t.id === l.tax_config_id);
+            const rate = cfg ? Number(cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? (cfg.name?.match(/(\d+(?:\.\d+)?)/)?.[1] ?? 0)) : 0;
+            const lineAmt = Number(l.amount) || 0;
+            const lineTax = lineAmt * rate / 100;
+            computedTax += lineTax;
+            const taxLabel = cfg ? `${cfg.name || 'Tax'} (${rate}%)` : '—';
+            return `<tr>
+                <td>${esc(l.description || '-')}</td>
+                <td>${esc(l.account_code ? l.account_code + ' — ' + (l.account_name || '') : (l.account_name || '-'))}</td>
+                <td>${l.quantity}</td>
+                <td class="text-right">${fmt(l.unit_price)}</td>
+                <td>${esc(taxLabel)}</td>
+                <td class="text-right">${fmt(lineAmt + lineTax)}</td>
+            </tr>`;
+        }).join('');
+
         let linesHtml = '';
         if (lines.length) {
             linesHtml = `<div class="data-table-container" style="margin-top: 1rem;">
                 <table class="data-table">
-                    <thead><tr><th>Description</th><th>Account</th><th style="width:80px;">Qty</th><th style="width:100px;">Unit Price</th><th style="width:100px;">Amount</th></tr></thead>
-                    <tbody>${lines.map(l => `<tr>
-                        <td>${esc(l.description || '-')}</td>
-                        <td>${esc(l.account_code ? l.account_code + ' — ' + (l.account_name || '') : (l.account_name || '-'))}</td>
-                        <td>${l.quantity}</td>
-                        <td class="text-right">${fmt(l.unit_price)}</td>
-                        <td class="text-right">${fmt(l.amount)}</td>
-                    </tr>`).join('')}</tbody>
+                    <thead><tr><th>Description</th><th>Account</th><th style="width:80px;">Qty</th><th style="width:100px;">Unit Price</th><th style="width:140px;">Tax</th><th style="width:110px;">Amount</th></tr></thead>
+                    <tbody>${lineRows}</tbody>
                 </table>
             </div>`;
         }
+        const displayTax = computedTax > 0 ? computedTax : Number(pi.tax_amount || 0);
+        const displayTotal = computedTax > 0 ? (Number(pi.subtotal || 0) + computedTax) : Number(pi.total_amount || 0);
 
         let convertedHtml = '';
         if (pi.converted_invoice_id) {
@@ -282,13 +300,13 @@ async function viewProforma(id) {
                         <span>Subtotal:</span><span>${fmt(pi.subtotal)}</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;color:var(--text-secondary);">
-                        <span>Tax:</span><span>${fmt(pi.tax_amount)}</span>
+                        <span>Tax:</span><span>${fmt(displayTax)}</span>
                     </div>
                     ${pi.discount_amount ? `<div style="display:flex;justify-content:space-between;padding:0.4rem 0;color:var(--text-secondary);">
                         <span>Discount:</span><span>-${fmt(pi.discount_amount)}</span>
                     </div>` : ''}
                     <div style="display:flex;justify-content:space-between;padding:0.5rem 0;font-weight:600;border-top:1px solid var(--border-primary);color:var(--text-primary);">
-                        <span>Total:</span><span>${fmt(pi.total_amount)}</span>
+                        <span>Total:</span><span>${fmt(displayTotal)}</span>
                     </div>
                     ${convertedHtml}
                 </div>
@@ -354,15 +372,149 @@ function addProformaLine(data = {}) {
         return `<option value="${a.id}" ${a.id === data.account_id ? 'selected' : ''}>${AccountsCommon.escapeHtml(label)}</option>`;
     }).join('');
 
+    // Same column order as PO / Invoice / Bill
     row.innerHTML = `
+        <td><select class="form-control line-account" data-no-sd="true"><option value="">Select...</option>${acctOptions}</select><div class="searchable-dropdown-container line-account-sd"></div></td>
         <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(data.description || '')}" placeholder="Description"></td>
-        <td><select class="form-control line-account"><option value="">Select...</option>${acctOptions}</select></td>
         <td><input type="number" class="form-control line-qty" value="${data.quantity || 1}" min="0" step="any" oninput="calculateProformaTotals()"></td>
         <td><input type="number" class="form-control line-rate" value="${data.unit_price || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculateProformaTotals()"></td>
+        <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
         <td><button type="button" class="btn-icon btn-icon-danger" onclick="removeProformaLine(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     tbody.appendChild(row);
+
+    const select = row.querySelector('.line-account');
+    select.style.display = 'none';
+    if (data.account_id) select.value = data.account_id;
+
+    const buildAccountOptions = () => [
+        { value: '', label: 'Select...' },
+        ...accounts.map(a => {
+            const code = a.account_code || a.code || '';
+            const name = a.account_name || a.name || '';
+            return { value: a.id, label: code && name ? `${code} — ${name}` : (name || code) };
+        })
+    ];
+    const accDd = new SearchableDropdown(row.querySelector('.line-account-sd'), {
+        id: `prof-line-account-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        options: buildAccountOptions(),
+        value: data.account_id || '',
+        placeholder: 'Select account...',
+        searchPlaceholder: 'Search accounts…',
+        compact: true,
+        quickAdd: { title: 'Create new account', onClick: (instance) => openProformaQuickAddAccount(instance, buildAccountOptions) },
+        onChange: (v) => { select.value = v; select.dispatchEvent(new Event('change', { bubbles: true })); }
+    });
+    row._lineAccountDropdown = accDd;
+
+    const taxOptions = [
+        { value: '', label: 'No tax (0%)' },
+        ...taxConfigs.map(t => ({ value: t.id, label: `${t.name || t.tax_type || 'Tax'} (${_proformaTaxRateFor(t.id)}%)` }))
+    ];
+    const initialTaxId = data.tax_config_id !== undefined ? (data.tax_config_id || '') : _proformaDefaultTaxConfigId();
+    const taxDd = new SearchableDropdown(row.querySelector('.line-tax-sd'), {
+        id: `prof-line-tax-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        options: taxOptions,
+        value: initialTaxId,
+        placeholder: 'No tax',
+        searchPlaceholder: 'Search tax…',
+        compact: true,
+        onChange: () => calculateProformaTotals()
+    });
+    row._lineTaxDropdown = taxDd;
+
     calculateProformaTotals();
+}
+
+function _proformaTaxRateFor(configId) {
+    const cfg = taxConfigs.find(t => t.id === configId);
+    if (!cfg) return 0;
+    const r = Number(cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? 0);
+    if (r) return r;
+    if (Array.isArray(cfg.rates)) return cfg.rates.reduce((s, r) => s + Number(r.rate_percentage ?? r.percentage ?? 0), 0);
+    const m = (cfg.name || '').match(/(\d+(?:\.\d+)?)/);
+    return m ? Number(m[1]) : 0;
+}
+function _proformaDefaultTaxConfigId() {
+    if (!taxConfigs?.length) return '';
+    const eighteen = taxConfigs.find(t => /18/.test(t.name || '') || _proformaTaxRateFor(t.id) === 18);
+    return eighteen ? eighteen.id : taxConfigs[0].id;
+}
+
+async function openProformaQuickAddAccount(dropdownInstance, rebuildOptions) {
+    let m = document.getElementById('profQuickAddAccountModal');
+    if (!m) {
+        m = document.createElement('div');
+        m.id = 'profQuickAddAccountModal';
+        m.className = 'modal';
+        m.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="max-width: 520px;">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Quick Add Account</h5>
+                        <button class="close-btn" onclick="AccountsCommon.closeModal('profQuickAddAccountModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-row two-col">
+                            <div class="form-group"><label for="profQaCode">Code *</label><input type="text" id="profQaCode" class="form-control" required></div>
+                            <div class="form-group"><label for="profQaName">Name *</label><input type="text" id="profQaName" class="form-control" required></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label for="profQaType">Account Type *</label><div class="searchable-dropdown-container" id="profQaTypeContainer"></div></div>
+                        </div>
+                        <div id="profQaError" hidden style="margin-top:0.5rem; padding:0.5rem 0.75rem; border-radius:6px; background: color-mix(in srgb, var(--color-error, #c33) 12%, var(--bg-card-hover)); color: var(--color-error, #c33); font-size: 0.85rem;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" onclick="AccountsCommon.closeModal('profQuickAddAccountModal')">Cancel</button>
+                        <button class="btn btn-primary" id="profQaSaveBtn">Save</button>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(m);
+    }
+    document.getElementById('profQaCode').value = '';
+    document.getElementById('profQaName').value = '';
+    document.getElementById('profQaError').hidden = true;
+    const typeContainer = document.getElementById('profQaTypeContainer');
+    typeContainer.innerHTML = '';
+    let types = [];
+    try { const tr = await api.request(AccountsCommon.buildUrl('coa/types'), { _skipSpinner: true }); types = Array.isArray(tr) ? tr : (tr?.data || []); } catch {}
+    const typeDd = new SearchableDropdown(typeContainer, {
+        id: 'profQaType-sd',
+        options: [{ value: '', label: '— select —' }, ...types.map(t => ({ value: t.id, label: t.name }))],
+        value: '', placeholder: '— select —', compact: false
+    });
+
+    AccountsCommon.openModal('profQuickAddAccountModal');
+    setTimeout(() => document.getElementById('profQaCode').focus(), 100);
+
+    document.getElementById('profQaSaveBtn').onclick = async () => {
+        const code = document.getElementById('profQaCode').value.trim();
+        const name = document.getElementById('profQaName').value.trim();
+        const typeId = typeDd.selectedValue;
+        const errEl = document.getElementById('profQaError');
+        errEl.hidden = true;
+        if (!code || !name || !typeId) { errEl.textContent = 'Code, Name, and Account Type are required.'; errEl.hidden = false; return; }
+        try {
+            const created = await api.request(AccountsCommon.buildUrl('coa'), { method: 'POST', body: JSON.stringify({ account_code: code, account_name: name, account_type_id: typeId }) });
+            const fresh = await api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true });
+            accounts = Array.isArray(fresh) ? fresh : (fresh?.data || fresh?.items || []);
+            const newId = created?.id || accounts.find(a => a.account_code === code)?.id;
+            dropdownInstance.refreshOptions(rebuildOptions(), newId);
+            const tr = dropdownInstance.container.closest('tr');
+            const sel = tr?.querySelector('.line-account');
+            if (sel && newId) {
+                const opt = document.createElement('option'); opt.value = newId; opt.textContent = `${code} — ${name}`; opt.selected = true;
+                sel.appendChild(opt); sel.value = newId;
+            }
+            document.querySelectorAll('#proformaLines tr').forEach(r => {
+                const other = r._lineAccountDropdown;
+                if (other && other !== dropdownInstance) other.refreshOptions(rebuildOptions(), other.selectedValue);
+            });
+            Toast.success(`Account ${code} created and selected.`);
+            AccountsCommon.closeModal('profQuickAddAccountModal');
+        } catch (err) { errEl.textContent = err?.message || 'Failed to create account.'; errEl.hidden = false; }
+    };
 }
 
 function removeProformaLine(btn) {
@@ -372,19 +524,32 @@ function removeProformaLine(btn) {
 
 function calculateProformaTotals() {
     let subtotal = 0;
+    let totalTax = 0;
     document.querySelectorAll('#proformaLines tr').forEach(row => {
         const qty = parseFloat(row.querySelector('.line-qty')?.value) || 0;
         const rate = parseFloat(row.querySelector('.line-rate')?.value) || 0;
         const amt = qty * rate;
         subtotal += amt;
+
+        const taxConfigId = row._lineTaxDropdown?.selectedValue || '';
+        const taxPct = _proformaTaxRateFor(taxConfigId);
+        const lineTax = (amt * taxPct) / 100;
+        totalTax += lineTax;
+
         const amtCell = row.querySelector('.line-amount');
-        if (amtCell) amtCell.textContent = amt.toFixed(2);
+        if (amtCell) {
+            if (taxPct > 0) {
+                amtCell.innerHTML = `
+                    <div>${(amt + lineTax).toFixed(2)}</div>
+                    <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">${amt.toFixed(2)} + ${lineTax.toFixed(2)} tax</div>`;
+            } else {
+                amtCell.textContent = amt.toFixed(2);
+            }
+        }
     });
-    // Tax is computed server-side; show 0 for now
-    const tax = 0;
     setText('proformaSubtotal', subtotal.toFixed(2));
-    setText('proformaTax', tax.toFixed(2));
-    setText('proformaTotal', (subtotal + tax).toFixed(2));
+    setText('proformaTax', totalTax.toFixed(2));
+    setText('proformaTotal', (subtotal + totalTax).toFixed(2));
 }
 
 // ============================================================================
@@ -397,20 +562,27 @@ async function saveProforma() {
 
     const lines = [];
     document.querySelectorAll('#proformaLines tr').forEach(row => {
+        const taxConfigId = row._lineTaxDropdown?.selectedValue || null;
+        const taxRate = _proformaTaxRateFor(taxConfigId);
         lines.push({
             description: row.querySelector('.line-desc')?.value || '',
             account_id: row.querySelector('.line-account')?.value || null,
             quantity: parseFloat(row.querySelector('.line-qty')?.value) || 0,
-            unit_price: parseFloat(row.querySelector('.line-rate')?.value) || 0
+            unit_price: parseFloat(row.querySelector('.line-rate')?.value) || 0,
+            tax_config_id: taxConfigId,
+            tax_rate: taxRate || 0
         });
     });
 
+    // tax_configuration_id was previously a single header-level field —
+    // keeping a no-op default so the existing backend still parses, but tax
+    // is now per-line via the lines[*].tax_config_id field above.
     const payload = {
         customer_id: document.getElementById('proformaCustomerId').value,
         proforma_date: document.getElementById('proformaDate').value,
         valid_until: document.getElementById('proformaValidUntil').value,
         notes: document.getElementById('proformaNotes').value,
-        tax_configuration_id: document.getElementById('proformaTaxConfigId').value || null,
+        tax_configuration_id: null,
         lines
     };
 

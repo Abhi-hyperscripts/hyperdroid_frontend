@@ -66,6 +66,12 @@ const SearchableDropdown = (function() {
             this.disabled = options.disabled || false;
             this.compact = options.compact || false;
             this.linkedSelect = options.linkedSelect || null; // For form sync
+            // Optional inline "+" button next to the search input.
+            // Usage: quickAdd: { title: 'Add account', onClick: () => openModal() }
+            // or simply quickAdd: () => openModal()   (shorthand)
+            this.quickAdd = typeof options.quickAdd === 'function'
+                ? { title: 'Add new', onClick: options.quickAdd }
+                : (options.quickAdd || null);
 
             this.render();
             this.bindEvents();
@@ -95,6 +101,14 @@ const SearchableDropdown = (function() {
                                 <path d="m21 21-4.35-4.35"></path>
                             </svg>
                             <input type="text" placeholder="${escapeHtml(this.searchPlaceholder)}" autocomplete="off" aria-label="Search options">
+                            ${this.quickAdd ? `
+                                <button type="button" class="searchable-dropdown-quick-add" aria-label="${escapeHtml(this.quickAdd.title || 'Add new')}" title="${escapeHtml(this.quickAdd.title || 'Add new')}">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                </button>
+                            ` : ''}
                         </div>
                         <div class="searchable-dropdown-options">
                             ${this.renderOptions()}
@@ -195,6 +209,21 @@ const SearchableDropdown = (function() {
             this.searchInput.addEventListener('click', (e) => {
                 e.stopPropagation();
             });
+
+            // Quick-add button — fires the user's callback. The callback is
+            // responsible for showing its own modal; after it resolves with
+            // a new item, it can update this dropdown via refreshOptions().
+            const quickAddBtn = this.container.querySelector('.searchable-dropdown-quick-add');
+            if (quickAddBtn && this.quickAdd && this.quickAdd.onClick) {
+                quickAddBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    this.close();
+                    Promise.resolve(this.quickAdd.onClick(this)).catch(err => {
+                        console.warn('[SearchableDropdown] quickAdd onClick threw', err);
+                    });
+                });
+            }
 
             // Option click
             this.optionsEl.addEventListener('click', (e) => {
@@ -358,6 +387,30 @@ const SearchableDropdown = (function() {
             this.dropdownEl.classList.remove('open-up');
             this.triggerEl.setAttribute('aria-expanded', 'false');
             this.highlightedIndex = -1;
+            // Reset inline styles from fixed-escape positioning + restore the
+            // menu element back to its original parent (we portaled it to
+            // <body> on open to escape transformed ancestors).
+            if (this.menuEl && this._fixedEscapeActive) {
+                this.menuEl.classList.remove('searchable-dropdown-menu--portaled');
+                this.menuEl.style.position = '';
+                this.menuEl.style.top = '';
+                this.menuEl.style.left = '';
+                this.menuEl.style.width = '';
+                this.menuEl.style.zIndex = '';
+                this.menuEl.style.transform = '';
+                this.menuEl.style.display = '';
+                if (this._menuOriginalParent && this.menuEl.parentElement === document.body) {
+                    if (this._menuOriginalNextSibling && this._menuOriginalNextSibling.parentElement === this._menuOriginalParent) {
+                        this._menuOriginalParent.insertBefore(this.menuEl, this._menuOriginalNextSibling);
+                    } else {
+                        this._menuOriginalParent.appendChild(this.menuEl);
+                    }
+                }
+                this._menuOriginalParent = null;
+                this._menuOriginalNextSibling = null;
+                this._fixedEscapeActive = false;
+            }
+            this._detachReposition();
         }
 
         positionMenu() {
@@ -371,6 +424,100 @@ const SearchableDropdown = (function() {
             } else {
                 this.dropdownEl.classList.remove('open-up');
             }
+
+            // If ANY ancestor has overflow: auto/hidden/scroll, the menu (which
+            // is absolutely positioned relative to the dropdown) will get
+            // clipped. Detect that and promote the menu to position:fixed so
+            // it escapes every overflow ancestor.
+            this._fixedEscapeActive = false;
+            let el = this.dropdownEl.parentElement;
+            while (el && el !== document.body) {
+                const cs = getComputedStyle(el);
+                const ox = cs.overflowX, oy = cs.overflowY;
+                if (ox === 'auto' || ox === 'hidden' || ox === 'scroll' ||
+                    oy === 'auto' || oy === 'hidden' || oy === 'scroll') {
+                    this._fixedEscapeActive = true;
+                    break;
+                }
+                el = el.parentElement;
+            }
+            if (this._fixedEscapeActive) {
+                const openUp = this.dropdownEl.classList.contains('open-up');
+                const top = openUp ? (rect.top - 4) : (rect.bottom + 4);
+                // Portal the menu into <body> — any transformed/filtered
+                // ancestor (e.g., modal-content has `transform: matrix(...)`)
+                // would otherwise anchor `position: fixed` to the ancestor
+                // instead of the viewport, throwing the menu way offset.
+                if (this.menuEl.parentElement !== document.body) {
+                    this._menuOriginalParent = this.menuEl.parentElement;
+                    this._menuOriginalNextSibling = this.menuEl.nextSibling;
+                    document.body.appendChild(this.menuEl);
+                }
+                // Tag the portaled menu so it can be styled/selected even
+                // outside its original parent's stacking context.
+                this.menuEl.classList.add('searchable-dropdown-menu--portaled');
+                this.menuEl.style.position = 'fixed';
+                this.menuEl.style.top = `${top}px`;
+                this.menuEl.style.left = `${rect.left}px`;
+                this.menuEl.style.width = `${rect.width}px`;
+                this.menuEl.style.zIndex = '10050';
+                // The default rule `.searchable-dropdown.open .searchable-dropdown-menu`
+                // no longer applies once we've portaled out of that ancestor,
+                // so reveal the menu explicitly.
+                this.menuEl.style.display = 'block';
+                if (openUp) {
+                    this.menuEl.style.transform = 'translateY(-100%)';
+                } else {
+                    this.menuEl.style.transform = '';
+                }
+                // When anything scrolls, reposition — or close if the trigger
+                // is clearly offscreen.
+                if (!this._repositionHandler) {
+                    this._repositionHandler = () => {
+                        if (!this.isOpen) return;
+                        const r = this.triggerEl.getBoundingClientRect();
+                        if (r.bottom < 0 || r.top > window.innerHeight ||
+                            r.right < 0 || r.left > window.innerWidth) {
+                            this.close();
+                            return;
+                        }
+                        this.menuEl.style.top  = `${openUp ? r.top - 4 : r.bottom + 4}px`;
+                        this.menuEl.style.left = `${r.left}px`;
+                    };
+                    window.addEventListener('scroll', this._repositionHandler, true);
+                    window.addEventListener('resize', this._repositionHandler);
+                }
+            } else {
+                // Reset inline style if we previously used fixed
+                this.menuEl.style.position = '';
+                this.menuEl.style.top = '';
+                this.menuEl.style.left = '';
+                this.menuEl.style.width = '';
+                this.menuEl.style.zIndex = '';
+                this.menuEl.style.transform = '';
+            }
+        }
+
+        _detachReposition() {
+            if (this._repositionHandler) {
+                window.removeEventListener('scroll', this._repositionHandler, true);
+                window.removeEventListener('resize', this._repositionHandler);
+                this._repositionHandler = null;
+            }
+        }
+
+        /**
+         * Replace the option list and optionally set a new selected value.
+         * Used by quick-add flows: user opens a "create new" modal, saves,
+         * and the dropdown re-pulls the refreshed list with the new item
+         * auto-selected.
+         */
+        refreshOptions(newOptions, newValue) {
+            this.options = newOptions || [];
+            this.filteredOptions = [...this.options];
+            if (newValue !== undefined) this.selectedValue = newValue;
+            this.render();
+            this.bindEvents();
         }
 
         select(value) {

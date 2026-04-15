@@ -23,6 +23,7 @@
 
 let vendors = [];
 let accounts = [];
+let taxConfigs = [];
 
 // Module-scoped cache so row-action handlers can look up full entity by id
 let purchaseOrders = [];
@@ -70,12 +71,16 @@ function onTabSwitch(tabId) {
 
 async function loadInitialData() {
     try {
-        const [vendRes, acctRes] = await Promise.all([
+        const [vendRes, acctRes, taxRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('vendors'), { _skipSpinner: true }).catch(() => []),
-            api.request(AccountsCommon.buildUrl('coa', { isActive: true }), { _skipSpinner: true }).catch(() => [])
+            api.request(AccountsCommon.buildUrl('coa', { isActive: true }), { _skipSpinner: true }).catch(() => []),
+            api.request(AccountsCommon.buildUrl('tax/configurations'), { _skipSpinner: true }).catch(() => [])
         ]);
         vendors = Array.isArray(vendRes) ? vendRes : (vendRes?.data || vendRes?.items || []);
         accounts = Array.isArray(acctRes) ? acctRes : (acctRes?.data || acctRes?.items || []);
+        // Tax configurations seeded by "Initialize India GST" — used to
+        // auto-apply GST per PO line. Falls back to empty array if not seeded.
+        taxConfigs = Array.isArray(taxRes) ? taxRes : (taxRes?.data || []);
 
         populateSelect('poVendorId', vendors, 'id', 'name', 'Select vendor...');
 
@@ -83,6 +88,28 @@ async function loadInitialData() {
     } catch (err) {
         console.error('[PurchaseOrders] loadInitialData error:', err);
     }
+}
+
+// Pick a sensible default tax config (GST 18% if available, else first one).
+function _defaultTaxConfigId() {
+    if (!taxConfigs || !taxConfigs.length) return '';
+    const eighteen = taxConfigs.find(t => /18/.test(t.name || '') || Number(t.rate) === 18 || Number(t.tax_rate) === 18);
+    return eighteen ? eighteen.id : taxConfigs[0].id;
+}
+
+function _taxRateFor(configId) {
+    const cfg = taxConfigs.find(t => t.id === configId);
+    if (!cfg) return 0;
+    // Pull rate from the config — names vary slightly across the API surface.
+    const r = Number(cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? 0);
+    if (r) return r;
+    // Some configs only have rates inside their .rates array. Sum visible rates as fallback.
+    if (Array.isArray(cfg.rates)) {
+        return cfg.rates.reduce((s, r) => s + Number(r.rate_percentage ?? r.percentage ?? 0), 0);
+    }
+    // Last-ditch: parse "GST 18%" out of the name
+    const m = (cfg.name || '').match(/(\d+(?:\.\d+)?)/);
+    return m ? Number(m[1]) : 0;
 }
 
 function populateSelect(selectId, items, valueField, labelField, placeholder) {
@@ -238,21 +265,39 @@ async function viewPO(id) {
         const vendName = po.vendor_name || vendors.find(v => v.id === po.vendor_id)?.name || '-';
         const lines = po.lines || [];
 
+        // Per-line tax derived from each line's tax_config_id. PO header tax
+        // is only rolled up when the PO is converted to a vendor bill, so the
+        // view computes its own totals to stay consistent with what the user
+        // picked at draft time.
+        let computedTax = 0;
+        const lineRows = lines.map(l => {
+            const cfg = taxConfigs.find(t => t.id === l.tax_config_id);
+            const rate = cfg ? Number(cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? (cfg.name?.match(/(\d+(?:\.\d+)?)/)?.[1] ?? 0)) : 0;
+            const lineAmt = Number(l.amount) || 0;
+            const lineTax = lineAmt * rate / 100;
+            computedTax += lineTax;
+            const taxLabel = cfg ? `${cfg.name || 'Tax'} (${rate}%)` : '—';
+            return `<tr>
+                <td>${esc(l.description || '-')}</td>
+                <td>${esc(l.account_code ? l.account_code + ' — ' + (l.account_name || '') : (l.account_name || '-'))}</td>
+                <td>${l.quantity}</td>
+                <td class="text-right">${fmt(l.unit_price)}</td>
+                <td>${esc(taxLabel)}</td>
+                <td class="text-right">${fmt(lineAmt + lineTax)}</td>
+            </tr>`;
+        }).join('');
+
         let linesHtml = '';
         if (lines.length) {
             linesHtml = `<div class="data-table-container" style="margin-top: 1rem;">
                 <table class="data-table">
-                    <thead><tr><th>Description</th><th>Account</th><th style="width:80px;">Qty</th><th style="width:100px;">Unit Price</th><th style="width:100px;">Amount</th></tr></thead>
-                    <tbody>${lines.map(l => `<tr>
-                        <td>${esc(l.description || '-')}</td>
-                        <td>${esc(l.account_code ? l.account_code + ' — ' + (l.account_name || '') : (l.account_name || '-'))}</td>
-                        <td>${l.quantity}</td>
-                        <td class="text-right">${fmt(l.unit_price)}</td>
-                        <td class="text-right">${fmt(l.amount)}</td>
-                    </tr>`).join('')}</tbody>
+                    <thead><tr><th>Description</th><th>Account</th><th style="width:80px;">Qty</th><th style="width:100px;">Unit Price</th><th style="width:140px;">Tax</th><th style="width:110px;">Amount</th></tr></thead>
+                    <tbody>${lineRows}</tbody>
                 </table>
             </div>`;
         }
+        const displayTax = computedTax > 0 ? computedTax : Number(po.tax_amount || 0);
+        const displayTotal = computedTax > 0 ? (Number(po.subtotal || 0) + computedTax) : Number(po.total_amount || 0);
 
         let approvedHtml = '';
         if (po.approved_by) {
@@ -294,10 +339,10 @@ async function viewPO(id) {
                         <span>Subtotal:</span><span>${fmt(po.subtotal)}</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;padding:0.4rem 0;color:var(--text-secondary);">
-                        <span>Tax:</span><span>${fmt(po.tax_amount)}</span>
+                        <span>Tax:</span><span>${fmt(displayTax)}</span>
                     </div>
                     <div style="display:flex;justify-content:space-between;padding:0.5rem 0;font-weight:600;border-top:1px solid var(--border-primary);color:var(--text-primary);">
-                        <span>Total:</span><span>${fmt(po.total_amount)}</span>
+                        <span>Total:</span><span>${fmt(displayTotal)}</span>
                     </div>
                 </div>
             </div>`;
@@ -363,15 +408,222 @@ function addPOLine(data = {}) {
         return `<option value="${a.id}" ${a.id === data.account_id ? 'selected' : ''}>${AccountsCommon.escapeHtml(label)}</option>`;
     }).join('');
 
+    // Column order: Account first (primary selection), then Description, Qty,
+    // Unit Price, Amount. Account dropdown gets the widest cell so the
+    // code+name label fits without truncation.
+    // data-no-sd on the account select so the global auto-converter skips
+    // it — we wire a SearchableDropdown with a `quickAdd` callback below
+    // so CAs can add a new account without leaving the PO form.
     row.innerHTML = `
+        <td><select class="form-control line-account" data-no-sd="true"><option value="">Select...</option>${acctOptions}</select><div class="searchable-dropdown-container line-account-sd"></div></td>
         <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(data.description || '')}" placeholder="Description"></td>
-        <td><select class="form-control line-account"><option value="">Select...</option>${acctOptions}</select></td>
         <td><input type="number" class="form-control line-qty" value="${data.quantity || 1}" min="0" step="any" oninput="calculatePOTotals()"></td>
         <td><input type="number" class="form-control line-rate" value="${data.unit_price || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculatePOTotals()"></td>
+        <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
         <td><button type="button" class="btn-icon btn-icon-danger" onclick="removePOLine(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     tbody.appendChild(row);
+
+    // Hide the native select (display:none) and wire a SearchableDropdown to
+    // the sibling container with quickAdd enabled.
+    const select = row.querySelector('.line-account');
+    select.style.display = 'none';
+    const containerEl = row.querySelector('.line-account-sd');
+    const buildOptions = () => [
+        { value: '', label: 'Select...' },
+        ...accounts.map(a => {
+            const code = a.account_code || a.code || '';
+            const name = a.account_name || a.name || '';
+            return { value: a.id, label: code && name ? `${code} — ${name}` : (name || code) };
+        })
+    ];
+    const dd = new SearchableDropdown(containerEl, {
+        id: `po-line-account-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        options: buildOptions(),
+        value: data.account_id || '',
+        placeholder: 'Select account...',
+        searchPlaceholder: 'Search accounts…',
+        compact: true,
+        quickAdd: {
+            title: 'Create new account',
+            onClick: (instance) => openQuickAddAccountModal(instance, buildOptions)
+        },
+        onChange: (v) => { select.value = v; select.dispatchEvent(new Event('change', { bubbles: true })); }
+    });
+    row._lineAccountDropdown = dd;
+
+    // Tax-rate dropdown — defaults to GST 18% (or first available config).
+    // Each line carries its own rate so a single PO can mix exempt + taxed
+    // items. If no tax configs are seeded yet, dropdown is empty and tax
+    // stays at 0 — the "Initialize India GST" button on Setup → Taxation
+    // creates the standard 5/12/18/28 slabs in one click.
+    const taxContainer = row.querySelector('.line-tax-sd');
+    const taxOptions = [
+        { value: '', label: 'No tax (0%)' },
+        ...taxConfigs.map(t => ({
+            value: t.id,
+            label: `${t.name || t.tax_type || 'Tax'} (${_taxRateFor(t.id)}%)`
+        }))
+    ];
+    const initialTaxId = data.tax_config_id !== undefined
+        ? data.tax_config_id || ''
+        : _defaultTaxConfigId();
+    const taxDd = new SearchableDropdown(taxContainer, {
+        id: `po-line-tax-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        options: taxOptions,
+        value: initialTaxId,
+        placeholder: 'No tax',
+        searchPlaceholder: 'Search tax…',
+        compact: true,
+        onChange: () => calculatePOTotals()
+    });
+    row._lineTaxDropdown = taxDd;
+
     calculatePOTotals();
+}
+
+/**
+ * Lightweight "quick add" for Account from within the PO line-items
+ * dropdown. Prompts for just the essentials (code + name + type), POSTs to
+ * /coa, appends to the in-memory accounts[], refreshes the dropdown options,
+ * and auto-selects the newly created account.
+ */
+async function openQuickAddAccountModal(dropdownInstance, rebuildOptions) {
+    // Ensure the quick-add mini-modal exists on the page
+    let m = document.getElementById('poQuickAddAccountModal');
+    if (!m) {
+        m = document.createElement('div');
+        m.id = 'poQuickAddAccountModal';
+        m.className = 'modal';
+        m.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="max-width: 520px;">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Quick Add Account</h5>
+                        <button class="close-btn" onclick="AccountsCommon.closeModal('poQuickAddAccountModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                    </div>
+                    <div class="modal-body">
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0 0 0.75rem;">
+                            Create a new ledger account inline. It's added to your Chart of Accounts immediately.
+                        </p>
+                        <div class="form-row two-col">
+                            <div class="form-group">
+                                <label for="poQaCode">Code *</label>
+                                <input type="text" id="poQaCode" class="form-control" placeholder="e.g. 1200" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="poQaName">Name *</label>
+                                <input type="text" id="poQaName" class="form-control" placeholder="e.g. Office Supplies" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="poQaType">Account Type *</label>
+                                <div class="searchable-dropdown-container" id="poQaTypeContainer"></div>
+                            </div>
+                        </div>
+                        <div id="poQaError" class="custom-coa-error" hidden style="margin-top:0.5rem; padding:0.5rem 0.75rem; border-radius:6px; background: color-mix(in srgb, var(--color-error, #c33) 12%, var(--bg-card-hover)); color: var(--color-error, #c33); font-size: 0.85rem;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" onclick="AccountsCommon.closeModal('poQuickAddAccountModal')">Cancel</button>
+                        <button class="btn btn-primary" id="poQaSaveBtn">Save</button>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(m);
+    }
+    // Reset fields + attach a fresh Type dropdown
+    document.getElementById('poQaCode').value = '';
+    document.getElementById('poQaName').value = '';
+    document.getElementById('poQaError').hidden = true;
+    const typeContainer = document.getElementById('poQaTypeContainer');
+    typeContainer.innerHTML = '';
+    // Fetch account types (fall back to the built-in 5 if endpoint fails)
+    let types = [];
+    try {
+        const typesRes = await api.request(AccountsCommon.buildUrl('coa/types'), { _skipSpinner: true });
+        types = Array.isArray(typesRes) ? typesRes : (typesRes?.data || []);
+    } catch {
+        types = ['Assets', 'Liabilities', 'Equity', 'Income', 'Expenses'].map(n => ({ id: n, name: n }));
+    }
+    const typeDropdown = new SearchableDropdown(typeContainer, {
+        id: 'poQaType-sd',
+        options: [{ value: '', label: '— select —' }, ...types.map(t => ({ value: t.id, label: t.name }))],
+        value: '',
+        placeholder: '— select —',
+        compact: false
+    });
+
+    AccountsCommon.openModal('poQuickAddAccountModal');
+    setTimeout(() => document.getElementById('poQaCode').focus(), 100);
+
+    // Wire Save
+    const saveBtn = document.getElementById('poQaSaveBtn');
+    saveBtn.onclick = async () => {
+        const code = document.getElementById('poQaCode').value.trim();
+        const name = document.getElementById('poQaName').value.trim();
+        const typeId = typeDropdown.selectedValue;
+        const errEl = document.getElementById('poQaError');
+        errEl.hidden = true;
+        if (!code || !name || !typeId) {
+            errEl.textContent = 'Code, Name, and Account Type are required.';
+            errEl.hidden = false;
+            return;
+        }
+        saveBtn.disabled = true;
+        const prev = saveBtn.textContent;
+        saveBtn.textContent = 'Saving…';
+        try {
+            const created = await api.request(AccountsCommon.buildUrl('coa'), {
+                method: 'POST',
+                body: JSON.stringify({
+                    account_code: code,
+                    account_name: name,
+                    account_type_id: typeId
+                })
+            });
+            // Re-pull the full account list so our in-memory cache matches
+            const fresh = await api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true });
+            accounts = Array.isArray(fresh) ? fresh : (fresh?.data || fresh?.items || []);
+
+            // Rebuild this dropdown's options and auto-select the new account
+            const newId = created?.id || accounts.find(a => a.account_code === code)?.id;
+            dropdownInstance.refreshOptions(rebuildOptions(), newId);
+
+            // Sync the hidden native select too
+            const row = dropdownInstance.container.closest('tr');
+            const nativeSel = row?.querySelector('.line-account');
+            if (nativeSel && newId) {
+                // Ensure the new option exists in the native select for form posts
+                const opt = document.createElement('option');
+                opt.value = newId;
+                opt.textContent = `${code} — ${name}`;
+                opt.selected = true;
+                nativeSel.appendChild(opt);
+                nativeSel.value = newId;
+            }
+
+            // Also refresh every OTHER line-account dropdown so the new
+            // account shows up without re-rendering rows.
+            document.querySelectorAll('#poLines tr').forEach(tr => {
+                const other = tr._lineAccountDropdown;
+                if (other && other !== dropdownInstance) {
+                    const current = other.selectedValue;
+                    other.refreshOptions(rebuildOptions(), current);
+                }
+            });
+
+            Toast.success(`Account ${code} created and selected.`);
+            AccountsCommon.closeModal('poQuickAddAccountModal');
+        } catch (err) {
+            console.error('[PO quick-add account]', err);
+            errEl.textContent = err?.message || 'Failed to create account.';
+            errEl.hidden = false;
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = prev;
+        }
+    };
 }
 
 function removePOLine(btn) {
@@ -381,19 +633,37 @@ function removePOLine(btn) {
 
 function calculatePOTotals() {
     let subtotal = 0;
+    let totalTax = 0;
     document.querySelectorAll('#poLines tr').forEach(row => {
         const qty = parseFloat(row.querySelector('.line-qty')?.value) || 0;
         const rate = parseFloat(row.querySelector('.line-rate')?.value) || 0;
         const amt = qty * rate;
         subtotal += amt;
+
+        // Per-line tax — uses the SearchableDropdown's selected tax config
+        const taxConfigId = row._lineTaxDropdown?.selectedValue || '';
+        const taxPct = _taxRateFor(taxConfigId);
+        const lineTax = (amt * taxPct) / 100;
+        totalTax += lineTax;
+
+        // Show line subtotal + tax breakdown in the Amount cell
         const amtCell = row.querySelector('.line-amount');
-        if (amtCell) amtCell.textContent = amt.toFixed(2);
+        if (amtCell) {
+            if (taxPct > 0) {
+                amtCell.innerHTML = `
+                    <div>${(amt + lineTax).toFixed(2)}</div>
+                    <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
+                        ${amt.toFixed(2)} + ${lineTax.toFixed(2)} tax
+                    </div>`;
+            } else {
+                amtCell.textContent = amt.toFixed(2);
+            }
+        }
     });
-    // Tax is computed server-side; show 0 for now
-    const tax = 0;
+
     setText('poSubtotal', subtotal.toFixed(2));
-    setText('poTax', tax.toFixed(2));
-    setText('poTotal', (subtotal + tax).toFixed(2));
+    setText('poTax', totalTax.toFixed(2));
+    setText('poTotal', (subtotal + totalTax).toFixed(2));
 }
 
 // ============================================================================
@@ -406,11 +676,15 @@ async function savePO() {
 
     const lines = [];
     document.querySelectorAll('#poLines tr').forEach(row => {
+        const taxConfigId = row._lineTaxDropdown?.selectedValue || null;
+        const taxRate = _taxRateFor(taxConfigId);
         lines.push({
             description: row.querySelector('.line-desc')?.value || '',
             account_id: row.querySelector('.line-account')?.value || null,
             quantity: parseFloat(row.querySelector('.line-qty')?.value) || 0,
-            unit_price: parseFloat(row.querySelector('.line-rate')?.value) || 0
+            unit_price: parseFloat(row.querySelector('.line-rate')?.value) || 0,
+            tax_config_id: taxConfigId || null,
+            tax_rate: taxRate || 0
         });
     });
 

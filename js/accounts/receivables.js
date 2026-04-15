@@ -13,6 +13,7 @@
 
 let customers = [];
 let accounts = [];
+let taxConfigs = [];
 let bankAccounts = [];
 
 // Module-scoped caches so row-action handlers can look up the full entity
@@ -77,14 +78,18 @@ function onTabSwitch(tabId) {
 
 async function loadInitialData() {
     try {
-        const [custRes, acctRes, bankRes] = await Promise.all([
+        const [custRes, acctRes, bankRes, taxRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('customers'), { _skipSpinner: true }).catch(() => []),
             api.request(AccountsCommon.buildUrl('coa', { isActive: true }), { _skipSpinner: true }).catch(() => []),
-            api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => [])
+            api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => []),
+            api.request(AccountsCommon.buildUrl('tax/configurations'), { _skipSpinner: true }).catch(() => [])
         ]);
         customers = Array.isArray(custRes) ? custRes : (custRes?.data || custRes?.items || []);
         accounts = Array.isArray(acctRes) ? acctRes : (acctRes?.data || acctRes?.items || []);
         bankAccounts = Array.isArray(bankRes) ? bankRes : (bankRes?.data || bankRes?.items || []);
+        // Tax configs drive Output GST per Customer Invoice line — what
+        // the business owes the government.
+        taxConfigs = Array.isArray(taxRes) ? taxRes : (taxRes?.data || []);
         // Build bank account name map
         window._bankAccountMap = {};
         bankAccounts.forEach(b => { window._bankAccountMap[b.id] = b.account_name || b.bank_name || b.name; });
@@ -351,10 +356,22 @@ function showCreateInvoiceModal() {
     AccountsCommon.openModal('customerInvoiceModal');
 }
 
+// Alias: the row template binds the View action to viewInvoice(), but
+// historically the page only had editInvoice. Without this alias the
+// View button silently throws ReferenceError. Treat View as Edit for
+// now — drafts open editable, approved invoices still open in this
+// modal but the user can only re-approve or cancel out.
+const viewInvoice = (id) => editInvoice(id);
+
 async function editInvoice(id) {
     try {
         const inv = await api.request(AccountsCommon.buildUrl(`invoices/${id}`));
-        document.getElementById('invoiceModalTitle').textContent = `Edit Invoice ${inv.invoice_number || ''}`;
+        const isDraft = (inv.status || 'draft') === 'draft';
+        const titleEl = document.getElementById('invoiceModalTitle');
+        titleEl.textContent = isDraft
+            ? `Edit Invoice ${inv.invoice_number || ''}`
+            : `View Invoice ${inv.invoice_number || ''}  (${(inv.status || '').toUpperCase()} — read-only)`;
+
         document.getElementById('invoiceId').value = inv.id;
         document.getElementById('invoiceCustomerId').value = inv.customer_id || '';
         document.getElementById('invoiceDate').value = inv.invoice_date?.split('T')[0] || '';
@@ -370,9 +387,52 @@ async function editInvoice(id) {
             addInvoiceLine();
         }
         calculateInvoiceTotals();
+
+        // GST law: an issued tax invoice (status != 'draft') CANNOT be
+        // edited — would break GSTR-1 immutability and the customer's
+        // already-filed GSTR-2A. Lock the form to read-only and hide
+        // Save buttons. CAs needing changes must issue a Credit Note +
+        // a fresh invoice.
+        _setInvoiceModalReadOnly(!isDraft);
+
         AccountsCommon.openModal('customerInvoiceModal');
     } catch (err) {
         Toast.error('Failed to load invoice');
+    }
+}
+
+function _setInvoiceModalReadOnly(readOnly) {
+    const modal = document.getElementById('customerInvoiceModal');
+    if (!modal) return;
+    // Disable every editable control
+    modal.querySelectorAll('input, textarea, select, button').forEach(el => {
+        // Always keep Cancel and Close buttons usable
+        if (el.matches('.close-btn') || /^Cancel$/i.test(el.innerText?.trim() || '')) return;
+        if (readOnly) el.setAttribute('disabled', 'disabled');
+        else el.removeAttribute('disabled');
+    });
+    // Also hide Save Draft + Save & Approve in read-only mode
+    modal.querySelectorAll('.modal-footer button').forEach(b => {
+        const t = b.innerText.trim();
+        if (t === 'Save Draft' || t === 'Save & Approve') {
+            b.style.display = readOnly ? 'none' : '';
+        }
+    });
+    // Add a banner at top of body if missing
+    let banner = modal.querySelector('.invoice-readonly-banner');
+    if (readOnly && !banner) {
+        banner = document.createElement('div');
+        banner.className = 'invoice-readonly-banner';
+        banner.style.cssText = 'background: color-mix(in srgb, var(--color-warning, #ed6c02) 14%, var(--bg-card-hover)); color: var(--text-primary); padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 0.85rem; border: 1px solid color-mix(in srgb, var(--color-warning, #ed6c02) 35%, transparent);';
+        banner.innerHTML = `
+            <strong>This invoice has been issued and cannot be edited.</strong><br>
+            Once a tax invoice is approved, GST regulations require it to remain immutable for GSTR-1 filing.
+            To make corrections, <em>cancel this invoice</em> or issue a <em>credit note</em>, then create a fresh invoice.
+        `;
+        const body = modal.querySelector('.modal-body');
+        body.insertBefore(banner, body.firstChild);
+    } else if (!readOnly && banner) {
+        banner.remove();
     }
 }
 
@@ -388,16 +448,154 @@ function addInvoiceLine(data = {}) {
         return `<option value="${a.id}" ${a.id === data.account_id ? 'selected' : ''}>${AccountsCommon.escapeHtml(label)}</option>`;
     }).join('');
 
+    // Same column order as PO: Account first, then Description, HSN/SAC, Qty,
+    // Unit Price, Tax, Amount. HSN/SAC stays because India tax invoices ≥₹50K
+    // require it (backend currently drops it but Tier 3 will start using it).
     row.innerHTML = `
+        <td><select class="form-control line-account" data-no-sd="true"><option value="">Select...</option>${acctOptions}</select><div class="searchable-dropdown-container line-account-sd"></div></td>
         <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(data.description || '')}" placeholder="Description"></td>
-        <td><select class="form-control line-account"><option value="">Select...</option>${acctOptions}</select></td>
         <td><input type="text" class="form-control line-hsn" value="${AccountsCommon.escapeHtml(data.hsn_sac || '')}" placeholder="HSN/SAC"></td>
         <td><input type="number" class="form-control line-qty" value="${data.quantity || 1}" min="0" step="any" oninput="calculateInvoiceTotals()"></td>
         <td><input type="number" class="form-control line-rate" value="${data.rate || ''}" min="0" step="0.01" placeholder="0.00" oninput="calculateInvoiceTotals()"></td>
+        <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
         <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
         <td><button type="button" class="btn-icon btn-icon-danger" onclick="removeInvoiceLine(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     tbody.appendChild(row);
+
+    // Hide the native select + wire SearchableDropdown with quick-add
+    const select = row.querySelector('.line-account');
+    select.style.display = 'none';
+    if (data.account_id) select.value = data.account_id;
+
+    const buildAccountOptions = () => [
+        { value: '', label: 'Select...' },
+        ...accounts.map(a => {
+            const code = a.account_code || a.code || '';
+            const name = a.account_name || a.name || '';
+            return { value: a.id, label: code && name ? `${code} — ${name}` : (name || code) };
+        })
+    ];
+    const accDd = new SearchableDropdown(row.querySelector('.line-account-sd'), {
+        id: `inv-line-account-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        options: buildAccountOptions(),
+        value: data.account_id || '',
+        placeholder: 'Select account...',
+        searchPlaceholder: 'Search accounts…',
+        compact: true,
+        quickAdd: { title: 'Create new account', onClick: (instance) => openInvoiceQuickAddAccount(instance, buildAccountOptions) },
+        onChange: (v) => { select.value = v; select.dispatchEvent(new Event('change', { bubbles: true })); }
+    });
+    row._lineAccountDropdown = accDd;
+
+    // Tax dropdown — Output GST per line, defaults to GST 18%
+    const taxOptions = [
+        { value: '', label: 'No tax (0%)' },
+        ...taxConfigs.map(t => ({ value: t.id, label: `${t.name || t.tax_type || 'Tax'} (${_invoiceTaxRateFor(t.id)}%)` }))
+    ];
+    const initialTaxId = data.tax_config_id !== undefined ? (data.tax_config_id || '') : _invoiceDefaultTaxConfigId();
+    const taxDd = new SearchableDropdown(row.querySelector('.line-tax-sd'), {
+        id: `inv-line-tax-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        options: taxOptions,
+        value: initialTaxId,
+        placeholder: 'No tax',
+        searchPlaceholder: 'Search tax…',
+        compact: true,
+        onChange: () => calculateInvoiceTotals()
+    });
+    row._lineTaxDropdown = taxDd;
+
     calculateInvoiceTotals();
+}
+
+function _invoiceTaxRateFor(configId) {
+    const cfg = taxConfigs.find(t => t.id === configId);
+    if (!cfg) return 0;
+    const r = Number(cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? 0);
+    if (r) return r;
+    if (Array.isArray(cfg.rates)) return cfg.rates.reduce((s, r) => s + Number(r.rate_percentage ?? r.percentage ?? 0), 0);
+    const m = (cfg.name || '').match(/(\d+(?:\.\d+)?)/);
+    return m ? Number(m[1]) : 0;
+}
+function _invoiceDefaultTaxConfigId() {
+    if (!taxConfigs?.length) return '';
+    const eighteen = taxConfigs.find(t => /18/.test(t.name || '') || _invoiceTaxRateFor(t.id) === 18);
+    return eighteen ? eighteen.id : taxConfigs[0].id;
+}
+
+async function openInvoiceQuickAddAccount(dropdownInstance, rebuildOptions) {
+    let m = document.getElementById('invQuickAddAccountModal');
+    if (!m) {
+        m = document.createElement('div');
+        m.id = 'invQuickAddAccountModal';
+        m.className = 'modal';
+        m.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="max-width: 520px;">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Quick Add Account</h5>
+                        <button class="close-btn" onclick="AccountsCommon.closeModal('invQuickAddAccountModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-row two-col">
+                            <div class="form-group"><label for="invQaCode">Code *</label><input type="text" id="invQaCode" class="form-control" required></div>
+                            <div class="form-group"><label for="invQaName">Name *</label><input type="text" id="invQaName" class="form-control" required></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label for="invQaType">Account Type *</label><div class="searchable-dropdown-container" id="invQaTypeContainer"></div></div>
+                        </div>
+                        <div id="invQaError" hidden style="margin-top:0.5rem; padding:0.5rem 0.75rem; border-radius:6px; background: color-mix(in srgb, var(--color-error, #c33) 12%, var(--bg-card-hover)); color: var(--color-error, #c33); font-size: 0.85rem;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" onclick="AccountsCommon.closeModal('invQuickAddAccountModal')">Cancel</button>
+                        <button class="btn btn-primary" id="invQaSaveBtn">Save</button>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(m);
+    }
+    document.getElementById('invQaCode').value = '';
+    document.getElementById('invQaName').value = '';
+    document.getElementById('invQaError').hidden = true;
+    const typeContainer = document.getElementById('invQaTypeContainer');
+    typeContainer.innerHTML = '';
+    let types = [];
+    try { const tr = await api.request(AccountsCommon.buildUrl('coa/types'), { _skipSpinner: true }); types = Array.isArray(tr) ? tr : (tr?.data || []); } catch {}
+    const typeDd = new SearchableDropdown(typeContainer, {
+        id: 'invQaType-sd',
+        options: [{ value: '', label: '— select —' }, ...types.map(t => ({ value: t.id, label: t.name }))],
+        value: '', placeholder: '— select —', compact: false
+    });
+
+    AccountsCommon.openModal('invQuickAddAccountModal');
+    setTimeout(() => document.getElementById('invQaCode').focus(), 100);
+
+    document.getElementById('invQaSaveBtn').onclick = async () => {
+        const code = document.getElementById('invQaCode').value.trim();
+        const name = document.getElementById('invQaName').value.trim();
+        const typeId = typeDd.selectedValue;
+        const errEl = document.getElementById('invQaError');
+        errEl.hidden = true;
+        if (!code || !name || !typeId) { errEl.textContent = 'Code, Name, and Account Type are required.'; errEl.hidden = false; return; }
+        try {
+            const created = await api.request(AccountsCommon.buildUrl('coa'), { method: 'POST', body: JSON.stringify({ account_code: code, account_name: name, account_type_id: typeId }) });
+            const fresh = await api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true });
+            accounts = Array.isArray(fresh) ? fresh : (fresh?.data || fresh?.items || []);
+            const newId = created?.id || accounts.find(a => a.account_code === code)?.id;
+            dropdownInstance.refreshOptions(rebuildOptions(), newId);
+            const tr = dropdownInstance.container.closest('tr');
+            const sel = tr?.querySelector('.line-account');
+            if (sel && newId) {
+                const opt = document.createElement('option'); opt.value = newId; opt.textContent = `${code} — ${name}`; opt.selected = true;
+                sel.appendChild(opt); sel.value = newId;
+            }
+            document.querySelectorAll('#invoiceLines tr').forEach(r => {
+                const other = r._lineAccountDropdown;
+                if (other && other !== dropdownInstance) other.refreshOptions(rebuildOptions(), other.selectedValue);
+            });
+            Toast.success(`Account ${code} created and selected.`);
+            AccountsCommon.closeModal('invQuickAddAccountModal');
+        } catch (err) { errEl.textContent = err?.message || 'Failed to create account.'; errEl.hidden = false; }
+    };
 }
 
 function removeInvoiceLine(btn) {
@@ -407,19 +605,33 @@ function removeInvoiceLine(btn) {
 
 function calculateInvoiceTotals() {
     let subtotal = 0;
+    let totalTax = 0;
     document.querySelectorAll('#invoiceLines tr').forEach(row => {
         const qty = parseFloat(row.querySelector('.line-qty')?.value) || 0;
         const rate = parseFloat(row.querySelector('.line-rate')?.value) || 0;
         const amt = qty * rate;
         subtotal += amt;
+
+        const taxConfigId = row._lineTaxDropdown?.selectedValue || '';
+        const taxPct = _invoiceTaxRateFor(taxConfigId);
+        const lineTax = (amt * taxPct) / 100;
+        totalTax += lineTax;
+
         const amtCell = row.querySelector('.line-amount');
-        if (amtCell) amtCell.textContent = amt.toFixed(2);
+        if (amtCell) {
+            if (taxPct > 0) {
+                amtCell.innerHTML = `
+                    <div>${(amt + lineTax).toFixed(2)}</div>
+                    <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">${amt.toFixed(2)} + ${lineTax.toFixed(2)} tax</div>`;
+            } else {
+                amtCell.textContent = amt.toFixed(2);
+            }
+        }
     });
-    // Tax is computed server-side; show 0 for now
-    const tax = 0;
+
     setText('invoiceSubtotal', subtotal.toFixed(2));
-    setText('invoiceTax', tax.toFixed(2));
-    setText('invoiceTotal', (subtotal + tax).toFixed(2));
+    setText('invoiceTax', totalTax.toFixed(2));
+    setText('invoiceTotal', (subtotal + totalTax).toFixed(2));
 }
 
 async function saveInvoice(approve) {
@@ -428,15 +640,20 @@ async function saveInvoice(approve) {
 
     const lines = [];
     document.querySelectorAll('#invoiceLines tr').forEach(row => {
-        // Note: backend CreateCustomerInvoiceLineRequest accepts only
-        // {account_id, description, quantity, unit_price}. The `hsn_sac` field is silently
-        // dropped server-side; collected here so the future backend extension can use it.
+        const taxConfigId = row._lineTaxDropdown?.selectedValue || null;
+        const taxRate = _invoiceTaxRateFor(taxConfigId);
+        // Note: backend CreateCustomerInvoiceLineRequest currently accepts
+        // {account_id, description, quantity, unit_price}. hsn_sac, tax_config_id,
+        // and tax_rate are silently dropped today but Tier 3 will start using
+        // them so the GSTR returns can split CGST/SGST/IGST per line.
         lines.push({
             description: row.querySelector('.line-desc')?.value || '',
             account_id: row.querySelector('.line-account')?.value || null,
             hsn_sac: row.querySelector('.line-hsn')?.value || '',
             quantity: parseFloat(row.querySelector('.line-qty')?.value) || 0,
-            unit_price: parseFloat(row.querySelector('.line-rate')?.value) || 0
+            unit_price: parseFloat(row.querySelector('.line-rate')?.value) || 0,
+            tax_config_id: taxConfigId,
+            tax_rate: taxRate || 0
         });
     });
 

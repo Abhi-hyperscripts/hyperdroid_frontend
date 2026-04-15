@@ -167,6 +167,33 @@
     color: var(--text-secondary, var(--text-tertiary, #64748b));
 }
 
+/* Optional inline "quick add" button inside the search row — opens the
+ * parent page's "create new item" modal so users can add a new
+ * account/vendor/etc. without leaving their current form. */
+.searchable-dropdown-quick-add {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--brand-primary, #3b82f6);
+    color: var(--text-inverse, #ffffff);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 120ms, transform 120ms;
+}
+.searchable-dropdown-quick-add:hover {
+    background: var(--brand-primary-dark, #2563eb);
+    transform: scale(1.05);
+}
+.searchable-dropdown-quick-add:focus-visible {
+    outline: 2px solid var(--brand-primary, #3b82f6);
+    outline-offset: 2px;
+}
+
 /* Options container */
 .searchable-dropdown-options {
     max-height: 220px;

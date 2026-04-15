@@ -211,7 +211,7 @@
 
     <!-- Purchase Order Modal (Create / Edit) -->
     <div id="purchaseOrderModal" class="modal">
-        <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-dialog modal-dialog-centered po-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="poModalTitle">Create Purchase Order</h5>
@@ -220,7 +220,8 @@
                 <div class="modal-body">
                     <form id="poForm">
                         <input type="hidden" id="poId">
-                        <div class="form-row two-col">
+                        <!-- Compact header: Vendor / PO Date / Expected Date / Currency all on one row -->
+                        <div class="form-row po-header-row">
                             <div class="form-group">
                                 <label for="poVendorId">Vendor *</label>
                                 <select id="poVendorId" class="form-control" required>
@@ -231,17 +232,16 @@
                                 <label for="poDate">PO Date *</label>
                                 <input type="text" id="poDate" class="form-control" required placeholder="Select date">
                             </div>
-                        </div>
-                        <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="poExpectedDate">Expected Date *</label>
                                 <input type="text" id="poExpectedDate" class="form-control" required placeholder="Select date">
                             </div>
                             <div class="form-group">
                                 <label for="poCurrency">Currency</label>
-                                <input type="text" id="poCurrency" class="form-control" value="INR" placeholder="e.g. INR, USD, GBP">
+                                <input type="text" id="poCurrency" class="form-control" value="INR" placeholder="e.g. INR">
                             </div>
                         </div>
+                        <!-- Notes on its own row, full width -->
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="poNotes">Notes</label>
@@ -249,18 +249,19 @@
                             </div>
                         </div>
 
-                        <!-- Line Items -->
-                        <div class="form-group" style="margin-top: 1rem;">
+                        <!-- Line Items — Account first, then Description, with wider Qty -->
+                        <div class="form-group po-lines-wrap" style="margin-top: 1rem;">
                             <label>Line Items</label>
-                            <div class="data-table-container" style="margin-top: 0.5rem;">
-                                <table class="data-table" id="poLinesTable">
+                            <div class="data-table-container po-lines-container" style="margin-top: 0.5rem;">
+                                <table class="data-table po-lines-table" id="poLinesTable">
                                     <thead>
                                         <tr>
+                                            <th style="width:220px;">Account *</th>
                                             <th>Description</th>
-                                            <th style="width:150px;">Account</th>
-                                            <th style="width:80px;">Qty</th>
-                                            <th style="width:100px;">Unit Price</th>
-                                            <th style="width:100px;">Amount</th>
+                                            <th style="width:130px;">Qty</th>
+                                            <th style="width:150px;">Unit Price</th>
+                                            <th style="width:160px;">Tax</th>
+                                            <th style="width:150px; text-align:right;">Amount</th>
                                             <th style="width:40px;"></th>
                                         </tr>
                                     </thead>
@@ -269,7 +270,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <button type="button" class="btn btn-outline" onclick="addPOLine()" style="margin-top: 0.5rem;">
+                            <button type="button" class="btn btn-outline po-add-line-btn" onclick="addPOLine()" style="margin-top: 0.5rem;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -279,17 +280,17 @@
                         </div>
 
                         <!-- Totals -->
-                        <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
-                            <div style="min-width: 250px;">
-                                <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; color: var(--text-secondary);">
+                        <div class="po-totals">
+                            <div class="po-totals-inner">
+                                <div class="po-totals-row">
                                     <span>Subtotal:</span>
                                     <span id="poSubtotal">0.00</span>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; color: var(--text-secondary);">
+                                <div class="po-totals-row">
                                     <span>Tax:</span>
                                     <span id="poTax">0.00</span>
                                 </div>
-                                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; font-weight: 600; border-top: 1px solid var(--border-primary); color: var(--text-primary);">
+                                <div class="po-totals-row po-totals-grand">
                                     <span>Total:</span>
                                     <span id="poTotal">0.00</span>
                                 </div>
@@ -342,5 +343,146 @@
     <!-- Flatpickr for Date/Time Picker -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="accounts" data-title="Accounts Assistant"><\/script>');</script>
+
+    <style>
+        /* Purchase Order modal — wider dialog, compact header row, and the
+           line-items table has to allow dropdown panels to escape cell
+           boundaries (default .data-table td has overflow:hidden, which
+           would clip the SearchableDropdown panel inside the Account cell). */
+        #purchaseOrderModal .po-dialog {
+            max-width: min(1400px, 96vw);
+            width: min(1400px, 96vw);
+            max-height: 92vh;
+        }
+        #purchaseOrderModal .modal-content {
+            max-width: 100%;
+            width: 100%;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+        }
+        /* Only the line-items table body should scroll; Vendor / Notes /
+           Totals / Save bar stay pinned. To do that, modal-body itself does
+           NOT scroll — it's a flex column with a bounded height. */
+        #purchaseOrderModal .modal-body {
+            overflow: visible !important;
+            max-height: none !important;
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+            padding-bottom: 0 !important;
+        }
+        #purchaseOrderModal .modal-body > form {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+            gap: 0.75rem;
+        }
+        #purchaseOrderModal .po-header-row,
+        #purchaseOrderModal .modal-body > form > .form-row,
+        #purchaseOrderModal .po-totals {
+            flex: 0 0 auto;
+        }
+        #purchaseOrderModal .po-lines-wrap {
+            flex: 1 1 auto;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            margin-top: 0 !important;
+        }
+        /* Top meta row: Vendor / PO Date / Expected Date / Currency on one row */
+        #purchaseOrderModal .po-header-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 1rem;
+        }
+        #purchaseOrderModal .po-header-row .form-group { min-width: 0; }
+
+        /* Line-items table cells must not clip the SearchableDropdown panel */
+        #purchaseOrderModal .po-lines-table thead th,
+        #purchaseOrderModal .po-lines-table tbody td {
+            overflow: visible !important;
+            padding: 6px !important;
+            vertical-align: top;
+        }
+        /* Amount column stays right-aligned + centered vertically */
+        #purchaseOrderModal .po-lines-table td.line-amount {
+            vertical-align: middle;
+        }
+        /* Line-items container is the ONLY scroll region in the modal.
+           Known limitation: when the tbody scrolls, a SearchableDropdown
+           panel for Account lives inside the overflow box and will clip
+           if it extends past the visible area. For a typical 6-10 line PO
+           with Account in row 1-3 that's rarely hit; the dropdown search
+           also makes it less painful because users type to narrow. */
+        #purchaseOrderModal .po-lines-container {
+            flex: 1 1 auto;
+            min-height: 100px;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        #purchaseOrderModal .po-lines-table thead th {
+            position: sticky;
+            top: 0;
+            background: var(--bg-card-hover);
+            z-index: 3;
+        }
+
+        /* Totals — pinned at the bottom, nicely aligned to the right */
+        #purchaseOrderModal .po-totals {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color);
+            margin-top: 0.5rem;
+        }
+        #purchaseOrderModal .po-totals-inner {
+            min-width: 280px;
+        }
+        #purchaseOrderModal .po-totals-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.35rem 0;
+            color: var(--text-secondary);
+        }
+        #purchaseOrderModal .po-totals-row.po-totals-grand {
+            font-weight: 600;
+            color: var(--text-primary);
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.5rem;
+            margin-top: 0.25rem;
+        }
+        /* Qty + Unit Price inputs should use their cell width comfortably */
+        #purchaseOrderModal .po-lines-table .line-qty,
+        #purchaseOrderModal .po-lines-table .line-rate {
+            width: 100%;
+            min-width: 0;
+            text-align: right;
+        }
+        /* Cap Description so the numeric columns aren't squeezed when the
+           user types a long description. Qty / Unit Price / Amount are all
+           fixed-width, so Description is the elastic column — but we don't
+           want it dominating either. */
+        #purchaseOrderModal .po-lines-table td:nth-child(2),
+        #purchaseOrderModal .po-lines-table th:nth-child(2) {
+            max-width: 340px;
+            width: 35%;
+        }
+        #purchaseOrderModal .po-lines-table .line-desc {
+            width: 100%;
+            min-width: 0;
+        }
+        /* Add Line button — default accounts buttons stretch; pin to content */
+        #purchaseOrderModal .po-add-line-btn {
+            width: auto !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+    </style>
 </body>
 </html>

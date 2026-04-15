@@ -10185,3 +10185,138 @@ label.toggle-switch,
     max-height: none !important;
     border-radius: 6px !important;
 }
+
+/* ============================================================================
+ * Wide line-item modals (PO / Vendor Bill / Customer Invoice / Proforma)
+ * Shared shell: any modal that uses the .po-dialog class on its dialog and
+ * the .po-* helpers below gets a wide, compact layout with a scrollable
+ * line-items table while header / notes / totals / footer stay pinned.
+ * ============================================================================ */
+.modal .po-dialog {
+    max-width: min(1400px, 96vw);
+    width: min(1400px, 96vw);
+    max-height: 92vh;
+}
+.modal .po-dialog .modal-content {
+    max-width: 100%;
+    width: 100%;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+}
+.modal .po-dialog .modal-body {
+    overflow: visible !important;
+    max-height: none !important;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding-bottom: 0 !important;
+}
+.modal .po-dialog .modal-body > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 0.75rem;
+}
+.modal .po-dialog .po-header-row,
+.modal .po-dialog .modal-body > form > .form-row,
+.modal .po-dialog .po-totals {
+    flex: 0 0 auto;
+}
+.modal .po-dialog .po-lines-wrap {
+    flex: 1 1 auto;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    margin-top: 0 !important;
+}
+.modal .po-dialog .po-header-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 1rem;
+}
+.modal .po-dialog .po-header-row .form-group { min-width: 0; }
+.modal .po-dialog .po-lines-table thead th,
+.modal .po-dialog .po-lines-table tbody td {
+    overflow: visible !important;
+    padding: 6px !important;
+    vertical-align: top;
+}
+.modal .po-dialog .po-lines-table td.line-amount {
+    vertical-align: middle;
+}
+.modal .po-dialog .po-lines-container {
+    flex: 1 1 auto;
+    min-height: 100px;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+.modal .po-dialog .po-lines-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-card-hover);
+    z-index: 3;
+}
+.modal .po-dialog .po-totals {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 0.5rem;
+}
+.modal .po-dialog .po-totals-inner { min-width: 280px; }
+.modal .po-dialog .po-totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    color: var(--text-secondary);
+}
+.modal .po-dialog .po-totals-row.po-totals-grand {
+    font-weight: 600;
+    color: var(--text-primary);
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.5rem;
+    margin-top: 0.25rem;
+}
+.modal .po-dialog .po-lines-table .line-qty,
+.modal .po-dialog .po-lines-table .line-rate {
+    width: 100%;
+    min-width: 0;
+    text-align: right;
+}
+.modal .po-dialog .po-lines-table td:nth-child(2),
+.modal .po-dialog .po-lines-table th:nth-child(2) {
+    max-width: 340px;
+    width: 35%;
+}
+.modal .po-dialog .po-lines-table .line-desc {
+    width: 100%;
+    min-width: 0;
+}
+.modal .po-dialog .po-add-line-btn {
+    width: auto !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Hide the native number-input spinner arrows inside modals — they
+   eat horizontal space in narrow cells (PO line items Qty / Unit Price)
+   and don't match the rest of the form controls visually. Users can
+   still type numbers and use arrow keys on the keyboard. */
+.modal input[type="number"]::-webkit-outer-spin-button,
+.modal input[type="number"]::-webkit-inner-spin-button,
+.modal-body input[type="number"]::-webkit-outer-spin-button,
+.modal-body input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.modal input[type="number"],
+.modal-body input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}

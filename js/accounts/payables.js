@@ -13,6 +13,7 @@
 let vendorBills = [];
 let vendors = [];
 let accounts = [];
+let taxConfigs = [];
 let bankAccounts = [];
 let billLines = [];
 let currentBillPage = 1;
@@ -80,16 +81,20 @@ async function loadInitialData() {
         // instead of actual bank accounts → user couldn't select a valid bank → the
         // payment validation always failed silently. Dropped the broken coa preload and
         // assigned the real bank accounts to `bankAccounts`.
-        const [vendorRes, accountRes, bankAcctRes] = await Promise.all([
+        const [vendorRes, accountRes, bankAcctRes, taxRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('vendors'), { _skipSpinner: true }).catch(() => []),
             api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true }).catch(() => []),
-            api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => [])
+            api.request(AccountsCommon.buildUrl('bank/accounts'), { _skipSpinner: true }).catch(() => []),
+            api.request(AccountsCommon.buildUrl('tax/configurations'), { _skipSpinner: true }).catch(() => [])
         ]);
 
         vendors = Array.isArray(vendorRes) ? vendorRes : (vendorRes?.data || vendorRes?.items || []);
         const acctData = Array.isArray(accountRes) ? accountRes : (accountRes?.data || accountRes?.items || []);
         accounts = acctData;
         bankAccounts = Array.isArray(bankAcctRes) ? bankAcctRes : (bankAcctRes?.data || bankAcctRes?.items || []);
+        // Tax configurations seeded by "Initialize India GST" — drives Input
+        // GST per Vendor Bill line so ITC is captured correctly.
+        taxConfigs = Array.isArray(taxRes) ? taxRes : (taxRes?.data || []);
         // Build bank account name map for payment list rendering
         window._bankAccountMap = {};
         bankAccounts.forEach(b => { window._bankAccountMap[b.id] = b.account_name || b.bank_name || b.name; });
@@ -214,25 +219,52 @@ function showCreateBillModal() {
     AccountsCommon.openModal('vendorBillModal');
 }
 
-function setBillModalMode(mode) {
+function setBillModalMode(mode, bill) {
     // mode: 'create' | 'edit' | 'view'
+    const isView = mode === 'view';
+    const billNumber = bill?.bill_number || '';
+    const status = (bill?.status || '').toUpperCase();
+
     const title = document.getElementById('billModalTitle');
     const saveDraft = document.getElementById('billSaveDraftBtn');
     const saveApprove = document.getElementById('billSaveApproveBtn');
     const form = document.querySelector('#vendorBillModal form, #vendorBillModal .modal-body');
-    if (title) title.textContent = mode === 'create' ? 'Create Vendor Bill' : mode === 'edit' ? 'Edit Vendor Bill' : 'View Vendor Bill';
-    if (saveDraft) saveDraft.style.display = mode === 'view' ? 'none' : '';
-    if (saveApprove) saveApprove.style.display = mode === 'view' ? 'none' : '';
+    if (title) {
+        if (mode === 'create') title.textContent = 'Create Vendor Bill';
+        else if (mode === 'edit') title.textContent = `Edit Vendor Bill ${billNumber}`;
+        else title.textContent = `View Vendor Bill ${billNumber} (${status} — read-only)`;
+    }
+    if (saveDraft) saveDraft.style.display = isView ? 'none' : '';
+    if (saveApprove) saveApprove.style.display = isView ? 'none' : '';
     if (form) {
-        form.querySelectorAll('input, select, textarea, button.btn-icon').forEach(el => {
-            // Don't disable the Close/dismiss button
-            if (el.classList?.contains('close-btn') || el.type === 'button') return;
-            el.disabled = mode === 'view';
-            if ('readOnly' in el) el.readOnly = mode === 'view';
+        form.querySelectorAll('input, select, textarea, button').forEach(el => {
+            // Always keep Close/Cancel buttons usable
+            if (el.classList?.contains('close-btn')) return;
+            if (/^Cancel$/i.test(el.innerText?.trim() || '')) return;
+            if (isView) el.setAttribute('disabled', 'disabled');
+            else el.removeAttribute('disabled');
+            if ('readOnly' in el) el.readOnly = isView;
         });
-        // Hide the Add Line button in view mode — no adding lines to a closed bill
-        const addLineBtn = document.querySelector('#vendorBillModal button[onclick*="addBillLine"]');
-        if (addLineBtn) addLineBtn.style.display = mode === 'view' ? 'none' : '';
+    }
+
+    // GST compliance banner — same wording style as the invoice modal
+    const modal = document.getElementById('vendorBillModal');
+    let banner = modal?.querySelector('.bill-readonly-banner');
+    if (isView && !banner && modal) {
+        banner = document.createElement('div');
+        banner.className = 'bill-readonly-banner';
+        banner.style.cssText = 'background: color-mix(in srgb, var(--color-warning, #ed6c02) 14%, var(--bg-card-hover)); color: var(--text-primary); padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 0.85rem; border: 1px solid color-mix(in srgb, var(--color-warning, #ed6c02) 35%, transparent);';
+        banner.innerHTML = `
+            <strong>This bill has been approved and cannot be edited.</strong><br>
+            Once a vendor bill is booked into the GL, the related Input Tax Credit (ITC)
+            is part of your purchase register and will reconcile against GSTR-2A.
+            To make corrections, <em>cancel this bill</em> or raise a <em>debit note</em>,
+            then create a fresh bill.
+        `;
+        const body = modal.querySelector('.modal-body');
+        body?.insertBefore(banner, body.firstChild);
+    } else if (!isView && banner) {
+        banner.remove();
     }
 }
 
@@ -242,13 +274,24 @@ async function loadBillIntoModal(id, mode) {
         const bill = res?.data || res;
         if (!bill) { Toast.error('Bill not found'); return; }
 
+        // GST law mirror of the customer invoice rule: once a vendor bill is
+        // approved (status != 'draft'), it's been booked into the GL and any
+        // related ITC is reportable. Editing it would corrupt the purchase
+        // register / GSTR-2A reconciliation. Force view-mode regardless of
+        // what the caller asked for.
+        const isDraft = (bill.status || 'draft') === 'draft';
+        const effectiveMode = isDraft ? mode : 'view';
+
         document.getElementById('billId').value = bill.id;
         document.getElementById('billDate').value = (bill.bill_date || '').substring(0, 10);
         document.getElementById('billDueDate').value = (bill.due_date || '').substring(0, 10);
         document.getElementById('billPoReference').value = bill.po_reference || '';
         document.getElementById('billNotes').value = bill.notes || '';
-        document.getElementById('billTdsAmount').value = bill.tds_amount || '';
-        document.getElementById('billTdsSection').value = '';
+        // TDS fields were removed from the modal — guard against null
+        const tdsAmtEl = document.getElementById('billTdsAmount');
+        const tdsSecEl = document.getElementById('billTdsSection');
+        if (tdsAmtEl) tdsAmtEl.value = bill.tds_amount || '';
+        if (tdsSecEl) tdsSecEl.value = '';
         populateBillVendorSelect(bill.vendor_id);
 
         clearBillLines();
@@ -259,7 +302,7 @@ async function loadBillIntoModal(id, mode) {
             addBillLine();
         }
         calculateBillTotals();
-        setBillModalMode(mode);
+        setBillModalMode(effectiveMode, bill);
         AccountsCommon.openModal('vendorBillModal');
     } catch (err) {
         console.error('[Payables] loadBillIntoModal error:', err);
@@ -310,16 +353,176 @@ function addBillLine(data) {
             return `<option value="${a.id}" ${a.id === d.account_id ? 'selected' : ''}>${AccountsCommon.escapeHtml(label)}</option>`;
         }).join('');
 
-    const amt = ((parseFloat(d.quantity) || 0) * (parseFloat(d.rate) || 0)).toFixed(2);
-
+    // Same column order as the Purchase Order modal: Account first (primary
+    // selection), then Description, Qty, Unit Price, Tax, Amount, delete.
     row.innerHTML = `
-        <td><input type="text" class="form-control form-control-sm line-desc" value="${AccountsCommon.escapeHtml(d.description || '')}" placeholder="Description"></td>
-        <td><select class="form-control form-control-sm line-account">${accountOpts}</select></td>
-        <td><input type="number" class="form-control form-control-sm line-qty" value="${d.quantity ?? 1}" min="0" step="1" onchange="calculateBillTotals()" oninput="calculateBillTotals()"></td>
-        <td><input type="number" class="form-control form-control-sm line-rate" value="${d.rate ?? 0}" min="0" step="0.01" onchange="calculateBillTotals()" oninput="calculateBillTotals()"></td>
-        <td class="text-right line-amount">${amt}</td>
-        <td><button type="button" class="btn-icon danger" onclick="removeBillLine(${idx})" data-tooltip="Remove"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></td>`;
+        <td><select class="form-control line-account" data-no-sd="true">${accountOpts}</select><div class="searchable-dropdown-container line-account-sd"></div></td>
+        <td><input type="text" class="form-control line-desc" value="${AccountsCommon.escapeHtml(d.description || '')}" placeholder="Description"></td>
+        <td><input type="number" class="form-control line-qty" value="${d.quantity ?? 1}" min="0" step="any" oninput="calculateBillTotals()"></td>
+        <td><input type="number" class="form-control line-rate" value="${d.rate ?? 0}" min="0" step="0.01" placeholder="0.00" oninput="calculateBillTotals()"></td>
+        <td><div class="searchable-dropdown-container line-tax-sd"></div></td>
+        <td class="line-amount" style="text-align:right; padding-top:0.7rem;">0.00</td>
+        <td><button type="button" class="btn-icon btn-icon-danger" onclick="removeBillLine(${idx})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></td>`;
     tbody.appendChild(row);
+
+    // Hide the native select + wire a SearchableDropdown with quick-add
+    const select = row.querySelector('.line-account');
+    select.style.display = 'none';
+    if (d.account_id) select.value = d.account_id;
+
+    const buildAccountOptions = () => [
+        { value: '', label: 'Select...' },
+        ...accounts.map(a => {
+            const code = a.account_code || a.code || '';
+            const name = a.account_name || a.name || '';
+            return { value: a.id, label: code && name ? `${code} — ${name}` : (name || code) };
+        })
+    ];
+    const accDd = new SearchableDropdown(row.querySelector('.line-account-sd'), {
+        id: `bill-line-account-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        options: buildAccountOptions(),
+        value: d.account_id || '',
+        placeholder: 'Select account...',
+        searchPlaceholder: 'Search accounts…',
+        compact: true,
+        quickAdd: {
+            title: 'Create new account',
+            onClick: (instance) => openBillQuickAddAccount(instance, buildAccountOptions)
+        },
+        onChange: (v) => { select.value = v; select.dispatchEvent(new Event('change', { bubbles: true })); }
+    });
+    row._lineAccountDropdown = accDd;
+
+    // Tax dropdown — Input GST per line, defaults to GST 18%
+    const taxOptions = [
+        { value: '', label: 'No tax (0%)' },
+        ...taxConfigs.map(t => ({ value: t.id, label: `${t.name || t.tax_type || 'Tax'} (${_billTaxRateFor(t.id)}%)` }))
+    ];
+    const initialTaxId = data?.tax_config_id !== undefined ? (data.tax_config_id || '') : _billDefaultTaxConfigId();
+    const taxDd = new SearchableDropdown(row.querySelector('.line-tax-sd'), {
+        id: `bill-line-tax-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        options: taxOptions,
+        value: initialTaxId,
+        placeholder: 'No tax',
+        searchPlaceholder: 'Search tax…',
+        compact: true,
+        onChange: () => calculateBillTotals()
+    });
+    row._lineTaxDropdown = taxDd;
+
+    calculateBillTotals();
+}
+
+function _billTaxRateFor(configId) {
+    const cfg = taxConfigs.find(t => t.id === configId);
+    if (!cfg) return 0;
+    const r = Number(cfg.rate ?? cfg.tax_rate ?? cfg.percentage ?? 0);
+    if (r) return r;
+    if (Array.isArray(cfg.rates)) {
+        return cfg.rates.reduce((s, r) => s + Number(r.rate_percentage ?? r.percentage ?? 0), 0);
+    }
+    const m = (cfg.name || '').match(/(\d+(?:\.\d+)?)/);
+    return m ? Number(m[1]) : 0;
+}
+function _billDefaultTaxConfigId() {
+    if (!taxConfigs || !taxConfigs.length) return '';
+    const eighteen = taxConfigs.find(t => /18/.test(t.name || '') || _billTaxRateFor(t.id) === 18);
+    return eighteen ? eighteen.id : taxConfigs[0].id;
+}
+
+// Inline quick-add for Account from inside the Vendor Bill line — same
+// pattern as PO. Opens a small modal, POSTs to /coa, refreshes the
+// dropdown, auto-selects the new account.
+async function openBillQuickAddAccount(dropdownInstance, rebuildOptions) {
+    let m = document.getElementById('billQuickAddAccountModal');
+    if (!m) {
+        m = document.createElement('div');
+        m.id = 'billQuickAddAccountModal';
+        m.className = 'modal';
+        m.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="max-width: 520px;">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Quick Add Account</h5>
+                        <button class="close-btn" onclick="AccountsCommon.closeModal('billQuickAddAccountModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-row two-col">
+                            <div class="form-group"><label for="billQaCode">Code *</label><input type="text" id="billQaCode" class="form-control" required></div>
+                            <div class="form-group"><label for="billQaName">Name *</label><input type="text" id="billQaName" class="form-control" required></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label for="billQaType">Account Type *</label><div class="searchable-dropdown-container" id="billQaTypeContainer"></div></div>
+                        </div>
+                        <div id="billQaError" hidden style="margin-top:0.5rem; padding:0.5rem 0.75rem; border-radius:6px; background: color-mix(in srgb, var(--color-error, #c33) 12%, var(--bg-card-hover)); color: var(--color-error, #c33); font-size: 0.85rem;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" onclick="AccountsCommon.closeModal('billQuickAddAccountModal')">Cancel</button>
+                        <button class="btn btn-primary" id="billQaSaveBtn">Save</button>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(m);
+    }
+    document.getElementById('billQaCode').value = '';
+    document.getElementById('billQaName').value = '';
+    document.getElementById('billQaError').hidden = true;
+
+    const typeContainer = document.getElementById('billQaTypeContainer');
+    typeContainer.innerHTML = '';
+    let types = [];
+    try {
+        const tr = await api.request(AccountsCommon.buildUrl('coa/types'), { _skipSpinner: true });
+        types = Array.isArray(tr) ? tr : (tr?.data || []);
+    } catch { types = []; }
+    const typeDd = new SearchableDropdown(typeContainer, {
+        id: 'billQaType-sd',
+        options: [{ value: '', label: '— select —' }, ...types.map(t => ({ value: t.id, label: t.name }))],
+        value: '', placeholder: '— select —', compact: false
+    });
+
+    AccountsCommon.openModal('billQuickAddAccountModal');
+    setTimeout(() => document.getElementById('billQaCode').focus(), 100);
+
+    document.getElementById('billQaSaveBtn').onclick = async () => {
+        const code = document.getElementById('billQaCode').value.trim();
+        const name = document.getElementById('billQaName').value.trim();
+        const typeId = typeDd.selectedValue;
+        const errEl = document.getElementById('billQaError');
+        errEl.hidden = true;
+        if (!code || !name || !typeId) {
+            errEl.textContent = 'Code, Name, and Account Type are required.';
+            errEl.hidden = false;
+            return;
+        }
+        try {
+            const created = await api.request(AccountsCommon.buildUrl('coa'), {
+                method: 'POST',
+                body: JSON.stringify({ account_code: code, account_name: name, account_type_id: typeId })
+            });
+            const fresh = await api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true });
+            accounts = Array.isArray(fresh) ? fresh : (fresh?.data || fresh?.items || []);
+            const newId = created?.id || accounts.find(a => a.account_code === code)?.id;
+            dropdownInstance.refreshOptions(rebuildOptions(), newId);
+            const tr = dropdownInstance.container.closest('tr');
+            const sel = tr?.querySelector('.line-account');
+            if (sel && newId) {
+                const opt = document.createElement('option');
+                opt.value = newId; opt.textContent = `${code} — ${name}`; opt.selected = true;
+                sel.appendChild(opt); sel.value = newId;
+            }
+            // Refresh other lines too
+            document.querySelectorAll('#billLinesBody tr').forEach(r => {
+                const other = r._lineAccountDropdown;
+                if (other && other !== dropdownInstance) other.refreshOptions(rebuildOptions(), other.selectedValue);
+            });
+            Toast.success(`Account ${code} created and selected.`);
+            AccountsCommon.closeModal('billQuickAddAccountModal');
+        } catch (err) {
+            errEl.textContent = err?.message || 'Failed to create account.';
+            errEl.hidden = false;
+        }
+    };
 }
 
 function removeBillLine(index) {
@@ -335,18 +538,37 @@ function calculateBillTotals() {
     const tbody = document.getElementById('billLinesBody');
     if (!tbody) return;
     let subtotal = 0;
+    let totalTax = 0;
 
     tbody.querySelectorAll('tr').forEach(row => {
         const qty = parseFloat(row.querySelector('.line-qty')?.value) || 0;
         const rate = parseFloat(row.querySelector('.line-rate')?.value) || 0;
         const amt = qty * rate;
-        const amtCell = row.querySelector('.line-amount');
-        if (amtCell) amtCell.textContent = amt.toFixed(2);
         subtotal += amt;
+
+        const taxConfigId = row._lineTaxDropdown?.selectedValue || '';
+        const taxPct = _billTaxRateFor(taxConfigId);
+        const lineTax = (amt * taxPct) / 100;
+        totalTax += lineTax;
+
+        const amtCell = row.querySelector('.line-amount');
+        if (amtCell) {
+            if (taxPct > 0) {
+                amtCell.innerHTML = `
+                    <div>${(amt + lineTax).toFixed(2)}</div>
+                    <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">${amt.toFixed(2)} + ${lineTax.toFixed(2)} tax</div>`;
+            } else {
+                amtCell.textContent = amt.toFixed(2);
+            }
+        }
     });
 
-    const el = document.getElementById('billSubtotal');
-    if (el) el.textContent = subtotal.toFixed(2);
+    const sub = document.getElementById('billSubtotal');
+    const tax = document.getElementById('billTax');
+    const tot = document.getElementById('billTotal');
+    if (sub) sub.textContent = subtotal.toFixed(2);
+    if (tax) tax.textContent = totalTax.toFixed(2);
+    if (tot) tot.textContent = (subtotal + totalTax).toFixed(2);
 }
 
 // ============================================================================
@@ -366,7 +588,7 @@ async function saveBill(approve = false) {
         return;
     }
 
-    // Collect line items from DOM
+    // Collect line items from DOM (now Account-first, with per-line tax)
     const tbody = document.getElementById('billLinesBody');
     const lines = [];
     tbody?.querySelectorAll('tr').forEach(row => {
@@ -374,8 +596,17 @@ async function saveBill(approve = false) {
         const account_id = row.querySelector('.line-account')?.value || '';
         const quantity = parseFloat(row.querySelector('.line-qty')?.value) || 0;
         const rate = parseFloat(row.querySelector('.line-rate')?.value) || 0;
+        const tax_config_id = row._lineTaxDropdown?.selectedValue || null;
+        const tax_rate = _billTaxRateFor(tax_config_id);
         if (description || account_id) {
-            lines.push({ description, account_id: account_id || null, quantity, unit_price: rate });
+            lines.push({
+                description,
+                account_id: account_id || null,
+                quantity,
+                unit_price: rate,
+                tax_config_id,
+                tax_rate: tax_rate || 0
+            });
         }
     });
 
@@ -384,17 +615,13 @@ async function saveBill(approve = false) {
         return;
     }
 
-    // Backend CreateVendorBillRequest has NO `status` field — passing status:'approved'
-    // here was silently dropped, so "Save & Approve" only ever saved a draft. Fixed in
-    // Phase 4 Tier 1: send a clean payload without `status`, then chain a POST /approve
-    // when approve===true.
-    const tdsAmount = parseFloat(document.getElementById('billTdsAmount')?.value) || 0;
-    const tdsSection = document.getElementById('billTdsSection')?.value?.trim() || null;
-
+    // Note: TDS fields removed from this modal (they belonged in a separate
+    // TDS workflow). If the backend still requires them, send 0/null defaults
+    // so existing endpoints don't break.
     const payload = {
         vendor_id: vendorId, bill_date: billDate, due_date: dueDate,
         po_reference: poReference, notes, lines,
-        tds_amount: tdsAmount, tds_section: tdsSection
+        tds_amount: 0, tds_section: null
     };
 
     try {
