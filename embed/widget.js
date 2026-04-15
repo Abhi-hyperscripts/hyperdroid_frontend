@@ -151,11 +151,14 @@
             try {
                 const jwt = getCopilotJwt();
                 if (jwt) {
-                    const authBase = window.CONFIG?.authApiBaseUrl || window.appConfig?.endpoints?.auth || 'https://localhost:5098';
-                    // Single call returns both the LLM-key flag and the per-service toggle.
-                    // copilotService comes from data-service on the script tag (lowercase like "pms").
+                    // CONFIG.authApiBaseUrl already includes the trailing /api, so just
+                    // append the resource path. Older fallbacks (appConfig.endpoints.auth,
+                    // hardcoded localhost) point at the bare origin without /api, hence
+                    // the conditional join below.
+                    const authApi = window.CONFIG?.authApiBaseUrl
+                        || ((window.appConfig?.endpoints?.auth || 'https://localhost:5098') + '/api');
                     const svcParam = encodeURIComponent((copilotService || '').toUpperCase());
-                    const stateRes = await fetch(`${authBase}/api/tenant-settings/copilot/${svcParam}`, {
+                    const stateRes = await fetch(`${authApi}/tenant-settings/copilot/${svcParam}`, {
                         headers: { 'Authorization': `Bearer ${jwt}` }
                     });
                     if (stateRes.ok) {
