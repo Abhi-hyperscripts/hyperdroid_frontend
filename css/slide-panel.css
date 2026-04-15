@@ -2569,3 +2569,83 @@ body.modal-open {
         max-height: 300px;
     }
 }
+
+/* =========================================================================
+   Print styles for the AI Meeting Summary / MOM modal
+   When the user hits Ctrl+P / Cmd+P with this modal open, the browser's
+   native print dialog should render just the modal body with a Ragenaizer
+   header — not the dashboard chrome behind it.
+   ========================================================================= */
+
+/* The print header lives in DOM but is hidden on screen; only appears in
+   the printed output. */
+.summary-modal-print-header {
+    display: none;
+}
+
+@media print {
+    /* Hide everything, then selectively show the modal content. */
+    body > *:not(.summary-modal-overlay) {
+        display: none !important;
+    }
+    .summary-modal-overlay {
+        position: static !important;
+        background: transparent !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+    .summary-modal {
+        position: static !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        max-height: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        background: #fff !important;
+        color: #000 !important;
+    }
+    /* Drop the coloured header, footer, close button, and action buttons
+       from the print; the print-header below replaces the title. */
+    .summary-modal-header,
+    .summary-modal-footer,
+    .summary-modal-close,
+    .summary-modal-actions {
+        display: none !important;
+    }
+    .summary-modal-body {
+        overflow: visible !important;
+        max-height: none !important;
+        padding: 0 !important;
+        color: #000 !important;
+    }
+    .summary-modal-print-header {
+        display: flex !important;
+        align-items: center;
+        gap: 12px;
+        padding: 0 0 14px;
+        margin: 0 0 18px;
+        border-bottom: 2px solid #111;
+    }
+    .summary-modal-print-logo {
+        height: 32px;
+        width: auto;
+    }
+    .summary-modal-print-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #000;
+    }
+    /* Inside the body, normalize content colors to black-on-white for print. */
+    .summary-modal-body * {
+        color: #000 !important;
+        background: transparent !important;
+    }
+    .mom-modal-section-title {
+        border-bottom-color: #999 !important;
+    }
+    /* Suggest sensible page margins to the browser. */
+    @page {
+        margin: 14mm 12mm;
+    }
+}
