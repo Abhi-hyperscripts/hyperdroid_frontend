@@ -3584,7 +3584,7 @@ function openSummaryModal() {
             </div>
             <div class="summary-modal-body">
                 <div class="summary-modal-print-header" aria-hidden="true">
-                    <img src="/assets/logo-black.png" alt="Ragenaizer" class="summary-modal-print-logo">
+                    <img src="/assets/logo-name-blue.png" alt="Ragenaizer" class="summary-modal-print-logo">
                     <div class="summary-modal-print-title">${data.isAiGenerated ? 'AI Meeting Summary &amp; MOM' : 'Summary / Minutes'}</div>
                 </div>
                 ${modalBody}
