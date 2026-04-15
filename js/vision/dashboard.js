@@ -303,7 +303,15 @@ function createDashboardMeetingCard(meeting) {
     const typeBadge = getTypeBadgeHTML(type);
     const sourceBadge = getSourceBadgeHTML(meeting.source_service);
 
-    const liveIndicator = isStarted && isActive
+    // Defensive: don't trust a stale `is_started` flag if the meeting's
+    // scheduled end has passed by more than 15 minutes. The webhook that
+    // resets is_started can be missed (LiveKit restart, dropped delivery)
+    // which would otherwise leave a meeting marked LIVE forever.
+    const endTime = meeting.end_time ? new Date(meeting.end_time).getTime() : null;
+    const STALE_GRACE_MS = 15 * 60 * 1000;
+    const isLikelyStale = endTime && Date.now() > endTime + STALE_GRACE_MS;
+    const isLive = isStarted && isActive && !isLikelyStale;
+    const liveIndicator = isLive
         ? '<span class="meeting-live-indicator"><span class="live-dot"></span>LIVE</span>'
         : '';
 
