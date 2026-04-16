@@ -29,7 +29,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/crm-lead-import.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
-<body class="dashboard crm-page">
+<body class="dashboard crm-page crm-leads-page">
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <nav class="navbar">
         <div class="navbar-brand">
@@ -170,7 +170,7 @@
         <div class="crm-bulk-actions" id="bulkActionsBar" style="display: none;">
             <span class="bulk-count"><span id="selectedCount">0</span> selected</span>
             <button class="btn btn-sm btn-outline-primary" onclick="bulkAssign()">Assign</button>
-            <button class="btn btn-sm btn-outline-danger" onclick="bulkDelete()">Delete</button>
+            <button class="btn btn-sm btn-outline-danger" id="bulkDeleteBtn" onclick="bulkDelete()">Delete</button>
         </div>
 
         <!-- Leads Table -->
@@ -181,11 +181,13 @@
                         <th class="th-checkbox">
                             <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
                         </th>
+                        <th>Lead ID</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th class="hide-mobile">Phone</th>
                         <th class="hide-mobile">Source</th>
                         <th>Status</th>
+                        <th class="hide-mobile">Team</th>
                         <th class="hide-mobile">Owner</th>
                         <th class="hide-mobile">Created</th>
                         <th>Actions</th>
@@ -193,7 +195,7 @@
                 </thead>
                 <tbody id="leadsTableBody">
                     <tr>
-                        <td colspan="9" class="crm-empty-state">
+                        <td colspan="11" class="crm-empty-state">
                             <div class="crm-empty-content">
                                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -216,7 +218,7 @@
     <!-- New/Edit Lead Modal -->
     <div class="modal" id="leadModal">
         <div class="modal-backdrop" onclick="closeLeadModal()"></div>
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="leadModalTitle">New Lead</h5>
@@ -231,39 +233,36 @@
                     <form id="leadForm" onsubmit="handleLeadSubmit(event)">
                         <input type="hidden" id="leadId" value="">
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <label for="leadFirstName" class="form-label">First Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="leadFirstName" name="first_name" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <label for="leadLastName" class="form-label">Last Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="leadLastName" name="last_name" required>
                             </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <label for="leadEmail" class="form-label">Email <span class="text-danger">*</span></label>
                                 <input type="email" class="form-control" id="leadEmail" name="email" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <label for="leadPhone" class="form-label">Phone</label>
                                 <input type="tel" class="form-control" id="leadPhone" name="phone">
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <label for="leadCompany" class="form-label">Company</label>
                                 <input type="text" class="form-control" id="leadCompany" name="company">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <label for="leadJobTitle" class="form-label">Job Title</label>
                                 <input type="text" class="form-control" id="leadJobTitle" name="job_title">
                             </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <label for="leadSource" class="form-label">Lead Source</label>
                                 <select class="form-select" id="leadSource" name="lead_source">
+                                    <option value="">Select source...</option>
                                     <option value="manual">Manual</option>
                                     <option value="website">Website</option>
                                     <option value="facebook">Facebook</option>
@@ -276,7 +275,7 @@
                                     <option value="other">Other</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <label for="leadStatus" class="form-label">Status</label>
                                 <select class="form-select" id="leadStatus" name="status">
                                     <option value="new">New</option>
@@ -286,9 +285,55 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="leadNotes" class="form-label">Notes</label>
-                            <textarea class="form-control" id="leadNotes" name="notes" rows="3"></textarea>
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label for="leadCity" class="form-label">City</label>
+                                <input type="text" class="form-control" id="leadCity" name="city">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="leadState" class="form-label">State</label>
+                                <input type="text" class="form-control" id="leadState" name="state">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="leadCountry" class="form-label">Country</label>
+                                <input type="text" class="form-control" id="leadCountry" name="country">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="leadPincode" class="form-label">Pincode</label>
+                                <input type="text" class="form-control" id="leadPincode" name="pincode">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label for="leadAddress" class="form-label">Address</label>
+                                <input type="text" class="form-control" id="leadAddress" name="address">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="leadAltPhone" class="form-label">Alt. Phone</label>
+                                <input type="tel" class="form-control" id="leadAltPhone" name="alternate_phone">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="leadWebsite" class="form-label">Website</label>
+                                <input type="text" class="form-control" id="leadWebsite" name="website">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="leadCampaign" class="form-label">Campaign</label>
+                                <input type="text" class="form-control" id="leadCampaign" name="campaign_name">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label for="leadProductInterest" class="form-label">Product Interest</label>
+                                <input type="text" class="form-control" id="leadProductInterest" name="product_interest">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="leadEstimatedValue" class="form-label">Estimated Value</label>
+                                <input type="number" class="form-control" id="leadEstimatedValue" name="estimated_value" step="0.01">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="leadNotes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="leadNotes" name="notes" rows="1"></textarea>
+                            </div>
                         </div>
                         <div class="mb-3" id="customFieldsSection">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -492,8 +537,8 @@
             <div class="gm-header">
                 <div class="gm-header-left">
                     <div class="gm-title-group">
-                        <h3 class="gm-title">Transfer Lead to Another Team</h3>
-                        <p class="gm-subtitle">The transfer needs approval from your TL/Manager</p>
+                        <h3 class="gm-title">Transfer / Reassign Lead</h3>
+                        <p class="gm-subtitle">Transfer to another team or request reassignment within your team. Needs TL/Manager approval.</p>
                     </div>
                 </div>
                 <button class="gm-close" onclick="closeTransferRequestModal()">&times;</button>

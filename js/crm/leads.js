@@ -8,6 +8,10 @@ let allLeads = [];
 let selectedLeadIds = new Set();
 let currentEditLeadId = null;
 let convertingLeadId = null;
+let currentPage = 1;
+let pageSize = 50;
+let totalLeads = 0;
+let myTeamRole = 'member'; // default to most restrictive
 
 // Searchable dropdown instances
 let filterStatusDropdown = null;
@@ -19,29 +23,57 @@ let leadStatusDropdown = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     Navigation.init('crm', 'leads');
+    loadMyRole();
     loadLeads();
     loadLeadStats();
     loadSourceFilter();
     initSearchableDropdowns();
 });
 
+async function loadMyRole() {
+    try {
+        const user = api.getUser();
+        if (user?.roles?.includes('CRM_ADMIN') || user?.roles?.includes('SUPERADMIN')) {
+            myTeamRole = 'admin';
+        } else {
+            const res = await api.request('/crm/leads/my-role');
+            myTeamRole = res.role || 'member';
+        }
+    } catch { myTeamRole = 'member'; }
+    // Hide bulk delete for members
+    const bulkDelBtn = document.getElementById('bulkDeleteBtn');
+    if (bulkDelBtn && !canDeleteLead()) bulkDelBtn.style.display = 'none';
+}
+
+function canDeleteLead() {
+    return ['admin', 'manager', 'teamlead'].includes(myTeamRole);
+}
+
 // ==================== Data Loading ====================
 
 /**
  * Load leads from the API with optional filters
  */
-async function loadLeads() {
+async function loadLeads(page) {
+    if (page) currentPage = page;
     try {
         const params = buildFilterParams();
+        params.set('page', currentPage);
+        params.set('pageSize', pageSize);
         const queryString = params.toString();
         const endpoint = `/crm/leads${queryString ? '?' + queryString : ''}`;
 
         const response = await api.request(endpoint);
-        allLeads = response.data || response || [];
+        allLeads = response.data || [];
+        totalLeads = response.total || allLeads.length;
         renderLeadsTable(allLeads);
+        renderPagination();
     } catch (error) {
         console.error('Failed to load leads:', error);
+        allLeads = [];
+        totalLeads = 0;
         renderLeadsTable([]);
+        renderPagination();
         if (typeof Toast !== 'undefined') {
             Toast.error('Failed to load leads');
         }
@@ -116,6 +148,7 @@ function buildFilterParams() {
  * Apply filters and reload leads
  */
 function applyFilters() {
+    currentPage = 1;
     loadLeads();
 }
 
@@ -130,7 +163,7 @@ function renderLeadsTable(leads) {
     if (!leads || leads.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" class="crm-empty-state">
+                <td colspan="11" class="crm-empty-state">
                     <div class="crm-empty-content">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -152,7 +185,11 @@ function renderLeadsTable(leads) {
             <td class="td-checkbox">
                 <input type="checkbox" class="lead-checkbox" value="${lead.id}"
                     onchange="toggleLeadSelection('${lead.id}', this.checked)"
-                    ${selectedLeadIds.has(lead.id) ? 'checked' : ''}>
+                    ${selectedLeadIds.has(lead.id) ? 'checked' : ''}
+                    ${(lead.team_id || lead.teamName || lead.team_name) ? 'disabled title="Already assigned to a team"' : ''}>
+            </td>
+            <td>
+                <span class="crm-lead-number">${escapeHtml(lead.leadNumber || lead.lead_number || '-')}</span>
             </td>
             <td onclick="openLeadDetailPanel('${lead.id}')" style="cursor:pointer;">
                 <div class="crm-cell-primary">
@@ -173,9 +210,13 @@ function renderLeadsTable(leads) {
                 <span class="crm-status-badge status-${lead.status || 'new'}" onclick="openStatusChangeModal('${lead.id}')" style="cursor:pointer;" title="Click to change status">${formatStatus(lead.status)}</span>
                 ${lead.disposition ? `<span class="crm-disposition-badge disp-${lead.disposition}" title="${formatDisposition(lead.disposition)}">${formatDisposition(lead.disposition)}</span>` : ''}
                 ${lead.next_followup_date ? formatFollowupIndicator(lead.next_followup_date) : ''}
+                ${lead.has_pending_transfer ? '<span class="crm-transfer-pending-badge" title="Transfer/Reassignment pending approval">⇄ Transfer Pending</span>' : ''}
             </td>
             <td class="hide-mobile">
-                <span class="crm-cell-secondary">${escapeHtml(lead.owner_name || '-')}</span>
+                ${lead.teamName || lead.team_name ? `<span class="crm-team-badge ${teamColorClass(lead.teamName || lead.team_name)}">${escapeHtml(lead.teamName || lead.team_name)}</span>` : '<span class="crm-cell-secondary">—</span>'}
+            </td>
+            <td class="hide-mobile">
+                <span class="crm-cell-secondary">${escapeHtml(lead.ownerName || lead.owner_name || '-')}</span>
             </td>
             <td class="hide-mobile">
                 <span class="crm-cell-secondary">${formatDate(lead.created_at)}</span>
@@ -201,12 +242,12 @@ function renderLeadsTable(leads) {
                         </svg>
                     </button>
                     ` : ''}
-                    <button class="crm-action-btn action-delete" onclick="deleteLead('${lead.id}')" title="Delete">
+                    ${canDeleteLead() ? `<button class="crm-action-btn action-delete" onclick="deleteLead('${lead.id}')" title="Delete">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"/>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                         </svg>
-                    </button>
+                    </button>` : ''}
                 </div>
             </td>
         </tr>
@@ -288,6 +329,56 @@ function formatSource(source) {
     return labels[source] || source || 'Manual';
 }
 
+function renderPagination() {
+    let container = document.getElementById('leadsPagination');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'leadsPagination';
+        container.className = 'crm-pagination';
+        const table = document.getElementById('leadsTableBody')?.closest('table');
+        if (table) table.after(container);
+    }
+
+    const totalPages = Math.ceil(totalLeads / pageSize);
+    if (totalPages <= 1) {
+        container.innerHTML = `<span class="crm-pagination-info">Showing ${totalLeads} lead${totalLeads !== 1 ? 's' : ''}</span>`;
+        return;
+    }
+
+    const start = (currentPage - 1) * pageSize + 1;
+    const end = Math.min(currentPage * pageSize, totalLeads);
+
+    let buttons = '';
+    buttons += `<button class="crm-page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="loadLeads(${currentPage - 1})">‹</button>`;
+
+    // Show at most 7 page buttons
+    let pages = [];
+    if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+        pages = [1];
+        if (currentPage > 3) pages.push('...');
+        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
+        if (currentPage < totalPages - 2) pages.push('...');
+        pages.push(totalPages);
+    }
+
+    for (const p of pages) {
+        if (p === '...') {
+            buttons += `<span class="crm-page-ellipsis">…</span>`;
+        } else {
+            buttons += `<button class="crm-page-btn ${p === currentPage ? 'active' : ''}" onclick="loadLeads(${p})">${p}</button>`;
+        }
+    }
+
+    buttons += `<button class="crm-page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="loadLeads(${currentPage + 1})">›</button>`;
+
+    container.innerHTML = `
+        <span class="crm-pagination-info">${start}–${end} of ${totalLeads}</span>
+        <div class="crm-pagination-buttons">${buttons}</div>
+    `;
+}
+
 function formatDate(dateStr) {
     if (!dateStr) return '-';
     try {
@@ -300,6 +391,28 @@ function formatDate(dateStr) {
     } catch {
         return dateStr;
     }
+}
+
+function formatDateTime(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric'
+        }) + ' ' + date.toLocaleTimeString('en-US', {
+            hour: '2-digit', minute: '2-digit', hour12: true
+        });
+    } catch {
+        return dateStr;
+    }
+}
+
+function teamColorClass(name) {
+    if (!name) return '';
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    const colors = ['team-indigo', 'team-emerald', 'team-amber', 'team-rose', 'team-cyan', 'team-violet', 'team-orange', 'team-teal'];
+    return colors[Math.abs(hash) % colors.length];
 }
 
 // ==================== Selection & Bulk Actions ====================
@@ -400,7 +513,24 @@ function escHtml(s) {
 
 async function confirmBulkAssign(teamId, teamName) {
     try {
-        const ids = Array.from(selectedLeadIds);
+        // Filter out leads already assigned to a team (client-side check)
+        const allIds = Array.from(selectedLeadIds);
+        const alreadyAssigned = allIds.filter(id => {
+            const row = document.querySelector(`tr[data-lead-id="${id}"]`);
+            if (!row) return false;
+            const teamCell = row.querySelector('.crm-team-badge');
+            return !!teamCell;
+        });
+        const ids = allIds.filter(id => !alreadyAssigned.includes(id));
+
+        if (ids.length === 0) {
+            Toast.warning('All selected leads are already assigned to a team.');
+            return;
+        }
+        if (alreadyAssigned.length > 0) {
+            Toast.info(`${alreadyAssigned.length} lead(s) skipped — already assigned to a team.`);
+        }
+
         await api.request('/crm/leads/bulk-assign-team', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -446,6 +576,11 @@ function openNewLeadModal() {
     if (leadSourceDropdown) leadSourceDropdown.setValue('');
     if (leadStatusDropdown) leadStatusDropdown.setValue('');
     document.getElementById('leadId').value = '';
+    // Clear new fields
+    ['leadCity','leadState','leadCountry','leadPincode','leadAddress','leadAltPhone','leadWebsite','leadCampaign','leadProductInterest','leadEstimatedValue'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
     clearCustomFieldRows();
     clearCapturedData();
     openModal('leadModal');
@@ -497,6 +632,16 @@ async function handleLeadSubmit(event) {
         job_title: document.getElementById('leadJobTitle').value.trim(),
         lead_source: leadSourceDropdown ? (leadSourceDropdown.getValue() || '') : document.getElementById('leadSource').value,
         status: leadStatusDropdown ? (leadStatusDropdown.getValue() || '') : document.getElementById('leadStatus').value,
+        city: document.getElementById('leadCity').value.trim(),
+        state: document.getElementById('leadState').value.trim(),
+        country: document.getElementById('leadCountry').value.trim(),
+        pincode: document.getElementById('leadPincode').value.trim(),
+        address: document.getElementById('leadAddress').value.trim(),
+        alternate_phone: document.getElementById('leadAltPhone').value.trim(),
+        website: document.getElementById('leadWebsite').value.trim(),
+        campaign_name: document.getElementById('leadCampaign').value.trim(),
+        product_interest: document.getElementById('leadProductInterest').value.trim(),
+        estimated_value: document.getElementById('leadEstimatedValue').value ? parseFloat(document.getElementById('leadEstimatedValue').value) : null,
         notes: document.getElementById('leadNotes').value.trim(),
         custom_fields: Object.keys(customFields).length > 0 ? JSON.stringify(customFields) : null
     };
@@ -547,6 +692,16 @@ async function editLead(leadId) {
         document.getElementById('leadStatus').value = lead.status || 'new';
         if (leadSourceDropdown) leadSourceDropdown.setValue(lead.lead_source || 'manual');
         if (leadStatusDropdown) leadStatusDropdown.setValue(lead.status || 'new');
+        document.getElementById('leadCity').value = lead.city || '';
+        document.getElementById('leadState').value = lead.state || '';
+        document.getElementById('leadCountry').value = lead.country || '';
+        document.getElementById('leadPincode').value = lead.pincode || '';
+        document.getElementById('leadAddress').value = lead.address || '';
+        document.getElementById('leadAltPhone').value = lead.alternate_phone || '';
+        document.getElementById('leadWebsite').value = lead.website || '';
+        document.getElementById('leadCampaign').value = lead.campaign_name || '';
+        document.getElementById('leadProductInterest').value = lead.product_interest || '';
+        document.getElementById('leadEstimatedValue').value = lead.estimated_value || '';
         document.getElementById('leadNotes').value = lead.notes || '';
 
         // Populate custom fields

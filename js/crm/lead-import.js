@@ -289,11 +289,15 @@
                 <td class="col-header" title="${esc(h)}">${esc(h)}</td>
                 <td class="col-sample" title="${esc(sample[h] || '')}">${esc(sample[h] || '—')}</td>
                 <td>
-                    <select id="mapping_${i}" data-header="${esc(h)}">
-                        <option value="__skip__">— Skip —</option>
-                        ${fieldOptions}
-                        <option value="__custom__">Custom field...</option>
-                    </select>
+                    <div class="import-mapping-cell">
+                        <select id="mapping_${i}" data-header="${esc(h)}">
+                            <option value="__skip__">— Skip —</option>
+                            ${fieldOptions}
+                            <option value="__custom__">Custom field...</option>
+                        </select>
+                        <input type="text" id="customName_${i}" class="custom-field-name"
+                            placeholder="Enter field name (e.g. industry)" style="display:none;">
+                    </div>
                 </td>
             </tr>
         `).join('');
@@ -305,6 +309,18 @@
             if (guess && sel.querySelector(`option[value="${guess}"]`)) {
                 sel.value = guess;
             }
+            // Show/hide custom field name input on change
+            sel.addEventListener('change', () => {
+                const nameInput = document.getElementById(`customName_${i}`);
+                if (sel.value === '__custom__') {
+                    nameInput.style.display = '';
+                    nameInput.value = h.toLowerCase().replace(/\s+/g, '_');
+                    nameInput.focus();
+                } else {
+                    nameInput.style.display = 'none';
+                    nameInput.value = '';
+                }
+            });
         });
 
         // Show save config checkbox handler
@@ -362,25 +378,36 @@
         return map[h] || null;
     }
 
-    async function collectMappings() {
+    function collectMappings() {
         const mappings = {};
-        const selects = document.getElementById('importMappingBody').querySelectorAll('select');
-        selects.forEach(sel => {
+        const usedCustomNames = new Set();
+        const selects = [...document.getElementById('importMappingBody').querySelectorAll('select')];
+        for (const sel of selects) {
             const header = sel.dataset.header;
             const val = sel.value;
             if (val === '__skip__') {
                 mappings[header] = { target: null, type: 'skip' };
             } else if (val === '__custom__') {
-                const customKey = await showPrompt(`Enter a custom field name for column "${header}":`, '', 'Custom Field');
-                if (customKey) {
-                    mappings[header] = { target: customKey.trim().toLowerCase().replace(/\s+/g, '_'), type: 'custom' };
-                } else {
-                    mappings[header] = { target: null, type: 'skip' };
+                const idx = sel.id.replace('mapping_', '');
+                const nameInput = document.getElementById(`customName_${idx}`);
+                const customKey = nameInput ? nameInput.value.trim() : '';
+                if (!customKey) {
+                    Toast.warning(`Please enter a name for custom field "${header}" or skip it.`);
+                    nameInput?.focus();
+                    return null;
                 }
+                const normalizedKey = customKey.toLowerCase().replace(/\s+/g, '_');
+                if (usedCustomNames.has(normalizedKey)) {
+                    Toast.warning(`Duplicate custom field name "${customKey}". Each custom field must have a unique name.`);
+                    nameInput?.focus();
+                    return null;
+                }
+                usedCustomNames.add(normalizedKey);
+                mappings[header] = { target: normalizedKey, type: 'custom' };
             } else {
                 mappings[header] = { target: val, type: 'standard' };
             }
-        });
+        }
         return mappings;
     }
 
@@ -401,10 +428,13 @@
         summary.innerHTML = '';
 
         try {
+            const mappings = _selectedConfigId ? undefined : collectMappings();
+            if (!_selectedConfigId && mappings === null) return; // validation failed
+
             const req = {
                 file_id: _uploadResult.file_id,
                 config_id: _selectedConfigId || undefined,
-                column_mappings: _selectedConfigId ? undefined : await collectMappings(),
+                column_mappings: mappings,
                 default_values: collectDefaults()
             };
 
@@ -426,24 +456,26 @@
                 </div>
             `;
 
-            // Preview table
-            const tbody = document.getElementById('importPreviewBody');
+            // Preview table — dynamic columns from mapped_columns
+            const cols = result.mapped_columns || [];
+            const headerHtml = `<th>Row</th>` +
+                cols.map(c => `<th>${esc(c.label)}</th>`).join('') +
+                `<th>Status</th>`;
+
             body.innerHTML = `<table class="import-preview-table">
-                <thead><tr><th>Row</th><th>Name</th><th>Email</th><th>Phone</th><th>Company</th><th>Status</th></tr></thead>
+                <thead><tr>${headerHtml}</tr></thead>
                 <tbody id="importPreviewBody"></tbody>
             </table>`;
             const newTbody = document.getElementById('importPreviewBody');
             newTbody.innerHTML = result.preview.map(r => {
-                const name = [r.first_name, r.last_name].filter(Boolean).join(' ') || '—';
+                const fields = r.mapped_fields || {};
                 const badgeClass = r.status === 'new' ? 'badge-new' : r.status === 'duplicate' ? 'badge-duplicate' : 'badge-error';
                 const statusLabel = r.status === 'new' ? 'New' : r.status === 'duplicate' ? 'Dupe' : 'Error';
                 const title = r.duplicate_reason || '';
+                const cellsHtml = cols.map(c => `<td>${esc(fields[c.key] || '—')}</td>`).join('');
                 return `<tr class="row-${r.status}">
                     <td>${r.row_number}</td>
-                    <td>${esc(name)}</td>
-                    <td>${esc(r.email || '—')}</td>
-                    <td>${esc(r.phone || '—')}</td>
-                    <td>${esc(r.company_name || '—')}</td>
+                    ${cellsHtml}
                     <td><span class="import-row-badge ${badgeClass}" title="${esc(title)}">${statusLabel}</span></td>
                 </tr>`;
             }).join('');
@@ -463,10 +495,13 @@
             const saveConfig = document.getElementById('importSaveConfig').checked;
             const configName = document.getElementById('importConfigName').value.trim();
 
+            const importMappings = _selectedConfigId ? undefined : collectMappings();
+            if (!_selectedConfigId && importMappings === null) { nextBtn.disabled = false; nextBtn.textContent = 'Import'; return; }
+
             const req = {
                 file_id: _uploadResult.file_id,
                 config_id: _selectedConfigId || undefined,
-                column_mappings: _selectedConfigId ? undefined : await collectMappings(),
+                column_mappings: importMappings,
                 default_values: collectDefaults(),
                 skip_duplicates: document.getElementById('importSkipDupes').checked,
                 save_config_as: (saveConfig && configName) ? configName : undefined

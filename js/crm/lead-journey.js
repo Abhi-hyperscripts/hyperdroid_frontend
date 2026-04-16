@@ -188,23 +188,47 @@
             const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Unknown';
             document.getElementById('leadDetailName').textContent = name;
 
+            // Parse custom fields
+            let customFieldsHtml = '';
+            try {
+                const cf = typeof lead.custom_fields === 'string' ? JSON.parse(lead.custom_fields || '{}') : (lead.custom_fields || {});
+                for (const [k, v] of Object.entries(cf)) {
+                    if (v) customFieldsHtml += `<div class="lead-detail-item"><span class="lead-detail-label">${esc(k.replace(/_/g, ' '))}</span><span>${esc(v)}</span></div>`;
+                }
+            } catch {}
+
             document.getElementById('leadDetailInfo').innerHTML = `
                 <div class="lead-detail-grid">
+                    ${lead.lead_number ? `<div class="lead-detail-item"><span class="lead-detail-label">Lead ID</span><span class="crm-lead-number">${esc(lead.lead_number)}</span></div>` : ''}
                     ${lead.email ? `<div class="lead-detail-item"><span class="lead-detail-label">Email</span><span>${esc(lead.email)}</span></div>` : ''}
                     ${lead.phone ? `<div class="lead-detail-item"><span class="lead-detail-label">Phone</span><span>${esc(lead.phone)}</span></div>` : ''}
+                    ${lead.alternate_phone ? `<div class="lead-detail-item"><span class="lead-detail-label">Alt. Phone</span><span>${esc(lead.alternate_phone)}</span></div>` : ''}
                     ${lead.company_name ? `<div class="lead-detail-item"><span class="lead-detail-label">Company</span><span>${esc(lead.company_name)}</span></div>` : ''}
+                    ${lead.job_title ? `<div class="lead-detail-item"><span class="lead-detail-label">Job Title</span><span>${esc(lead.job_title)}</span></div>` : ''}
                     ${lead.lead_source ? `<div class="lead-detail-item"><span class="lead-detail-label">Source</span><span>${esc(lead.lead_source)}</span></div>` : ''}
-                    <div class="lead-detail-item"><span class="lead-detail-label">Status</span><span class="crm-status-badge status-${lead.status}">${formatStatus(lead.status)}</span></div>
-                    ${lead.disposition ? `<div class="lead-detail-item"><span class="lead-detail-label">Disposition</span><span class="crm-disposition-badge disp-${lead.disposition}">${formatDisposition(lead.disposition)}</span></div>` : ''}
+                    <div class="lead-detail-item"><span class="lead-detail-label">Status</span><span class="crm-status-badge status-${lead.status}" style="width:fit-content">${formatStatus(lead.status)}</span></div>
+                    ${lead.disposition ? `<div class="lead-detail-item"><span class="lead-detail-label">Disposition</span><span class="crm-disposition-badge disp-${lead.disposition}" style="width:fit-content">${formatDisposition(lead.disposition)}</span></div>` : ''}
                     ${lead.city ? `<div class="lead-detail-item"><span class="lead-detail-label">City</span><span>${esc(lead.city)}</span></div>` : ''}
+                    ${lead.state ? `<div class="lead-detail-item"><span class="lead-detail-label">State</span><span>${esc(lead.state)}</span></div>` : ''}
+                    ${lead.country ? `<div class="lead-detail-item"><span class="lead-detail-label">Country</span><span>${esc(lead.country)}</span></div>` : ''}
+                    ${lead.address ? `<div class="lead-detail-item"><span class="lead-detail-label">Address</span><span>${esc(lead.address)}</span></div>` : ''}
+                    ${lead.pincode ? `<div class="lead-detail-item"><span class="lead-detail-label">Pincode</span><span>${esc(lead.pincode)}</span></div>` : ''}
+                    ${lead.website ? `<div class="lead-detail-item"><span class="lead-detail-label">Website</span><span>${esc(lead.website)}</span></div>` : ''}
                     ${lead.product_interest ? `<div class="lead-detail-item"><span class="lead-detail-label">Interest</span><span>${esc(lead.product_interest)}</span></div>` : ''}
+                    ${lead.estimated_value ? `<div class="lead-detail-item"><span class="lead-detail-label">Est. Value</span><span>₹${Number(lead.estimated_value).toLocaleString()}</span></div>` : ''}
+                    ${lead.campaign_name ? `<div class="lead-detail-item"><span class="lead-detail-label">Campaign</span><span>${esc(lead.campaign_name)}</span></div>` : ''}
+                    ${lead.team_name ? `<div class="lead-detail-item"><span class="lead-detail-label">Team</span><span class="crm-team-badge">${esc(lead.team_name)}</span></div>` : ''}
+                    ${lead.owner_name ? `<div class="lead-detail-item"><span class="lead-detail-label">Owner</span><span>${esc(lead.owner_name)}</span></div>` : ''}
+                    ${lead.notes ? `<div class="lead-detail-item" style="grid-column:1/-1"><span class="lead-detail-label">Notes</span><span>${esc(lead.notes)}</span></div>` : ''}
+                    ${customFieldsHtml}
                     ${lead.lost_reason ? `<div class="lead-detail-item"><span class="lead-detail-label">Lost Reason</span><span style="color:var(--color-error);">${esc(lead.lost_reason)}</span></div>` : ''}
                     ${lead.next_followup_date ? `<div class="lead-detail-item"><span class="lead-detail-label">Next Follow-up</span><span>${new Date(lead.next_followup_date).toLocaleDateString()}</span></div>` : ''}
                     ${lead.first_contact_date ? `<div class="lead-detail-item"><span class="lead-detail-label">First Contact</span><span>${new Date(lead.first_contact_date).toLocaleDateString()}</span></div>` : ''}
                     ${lead.last_interaction_at ? `<div class="lead-detail-item"><span class="lead-detail-label">Last Interaction</span><span>${new Date(lead.last_interaction_at).toLocaleDateString()}</span></div>` : ''}
-                    ${lead.followup_count > 0 ? `<div class="lead-detail-item"><span class="lead-detail-label">Follow-up Count</span><span>${lead.followup_count}</span></div>` : ''}
+                    ${lead.followup_count > 0 ? `<div class="lead-detail-item"><span class="lead-detail-label">Follow-ups</span><span>${lead.followup_count}</span></div>` : ''}
                     ${lead.expected_closure_date ? `<div class="lead-detail-item"><span class="lead-detail-label">Expected Close</span><span>${new Date(lead.expected_closure_date).toLocaleDateString()}</span></div>` : ''}
-                    ${lead.won_deal_value ? `<div class="lead-detail-item"><span class="lead-detail-label">Deal Value</span><span>${lead.won_deal_value.toLocaleString()}</span></div>` : ''}
+                    ${lead.won_deal_value ? `<div class="lead-detail-item"><span class="lead-detail-label">Deal Value</span><span>₹${Number(lead.won_deal_value).toLocaleString()}</span></div>` : ''}
+                    <div class="lead-detail-item"><span class="lead-detail-label">Created</span><span>${new Date(lead.created_at).toLocaleString()}</span></div>
                 </div>
             `;
 
@@ -402,42 +426,124 @@
         document.getElementById('pendingTransfersOverlay').classList.remove('active');
     }
 
-    function renderPendingTransfers(transfers) {
+    async function renderPendingTransfers(transfers) {
         const container = document.getElementById('pendingTransfersList');
         if (transfers.length === 0) {
             container.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px;">No pending transfer requests</p>';
             return;
         }
 
-        container.innerHTML = transfers.map(t => `
-            <div class="transfer-card">
-                <div class="transfer-card-header">
-                    <strong>${esc(t.lead_name || 'Unknown Lead')}</strong>
-                    <span class="transfer-card-date">${new Date(t.created_at).toLocaleDateString()}</span>
-                </div>
-                <div class="transfer-card-route">
-                    <span class="transfer-team-from">${esc(t.from_team_name || '?')}</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                    <span class="transfer-team-to">${esc(t.to_team_name || '?')}</span>
-                </div>
-                <div class="transfer-card-reason">"${esc(t.reason)}"</div>
-                <div class="transfer-card-actions">
-                    <button class="btn btn-sm btn-success" onclick="approveTransfer('${t.id}')">Approve</button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="rejectTransfer('${t.id}')">Reject</button>
-                </div>
-            </div>
-        `).join('');
+        // Load team members for same-team reassignment picker
+        let teamMembersByTeam = {};
+        try {
+            const teams = await api.request('/crm/teams');
+            for (const team of teams) {
+                if (transfers.some(tr => tr.from_team_id === team.id)) {
+                    const detail = await api.request(`/crm/teams/${team.id}`);
+                    teamMembersByTeam[team.id] = (detail.members || []).filter(m => m.is_active);
+                }
+            }
+        } catch {}
+
+        container.innerHTML = transfers.map(t => {
+            const isSameTeam = t.from_team_id === t.to_team_id;
+            const members = teamMembersByTeam[t.from_team_id] || [];
+            // Exclude the requester from the picker (they're asking to be relieved)
+            const availableMembers = members.filter(m => m.user_id !== t.requested_by);
+
+            if (isSameTeam) {
+                // ── Same-team reassignment card ──
+                return `
+                <div class="transfer-card transfer-card-reassign">
+                    <div class="transfer-card-header">
+                        <div>
+                            <strong style="font-size:0.95rem;">${esc(t.lead_name || 'Unknown Lead')}</strong>
+                            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px;">
+                                Requested by <strong style="color:var(--text-primary);">${esc(t.requested_by_name || 'Unknown')}</strong>
+                            </div>
+                        </div>
+                        <span class="transfer-card-date">${new Date(t.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <div class="transfer-card-type-badge" style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:0.72rem;font-weight:600;background:rgba(249,115,22,0.12);color:#fb923c;border:1px solid rgba(249,115,22,0.2);margin-bottom:8px;">
+                        ⇄ Reassignment Request
+                    </div>
+                    <div class="transfer-card-reason" style="margin-bottom:10px;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.5;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        "${esc(t.reason)}"
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:0.78rem;color:var(--text-secondary);display:block;margin-bottom:4px;">Reassign this lead to:</label>
+                        <select id="reassignTo_${t.id}" class="form-control" style="height:34px;font-size:0.82rem;">
+                            <option value="">— Select team member —</option>
+                            ${availableMembers.map(m => `<option value="${m.user_id}">${esc(m.display_name || m.user_id)} (${m.role})</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="transfer-card-actions">
+                        <button class="btn btn-sm btn-success" onclick="approveTransfer('${t.id}', true, '${t.lead_id}')">Approve & Reassign</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="rejectTransfer('${t.id}')">Reject</button>
+                    </div>
+                </div>`;
+            } else {
+                // ── Cross-team transfer card ──
+                return `
+                <div class="transfer-card">
+                    <div class="transfer-card-header">
+                        <div>
+                            <strong style="font-size:0.95rem;">${esc(t.lead_name || 'Unknown Lead')}</strong>
+                            <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px;">
+                                Requested by <strong style="color:var(--text-primary);">${esc(t.requested_by_name || 'Unknown')}</strong>
+                            </div>
+                        </div>
+                        <span class="transfer-card-date">${new Date(t.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <div class="transfer-card-route">
+                        <span class="transfer-team-from">${esc(t.from_team_name || '?')}</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <span class="transfer-team-to">${esc(t.to_team_name || '?')}</span>
+                    </div>
+                    <div class="transfer-card-reason">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.5;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        "${esc(t.reason)}"
+                    </div>
+                    <div class="transfer-card-actions">
+                        <button class="btn btn-sm btn-success" onclick="approveTransfer('${t.id}', false, '${t.lead_id}')">Approve Transfer</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="rejectTransfer('${t.id}')">Reject</button>
+                    </div>
+                </div>`;
+            }
+        }).join('');
     }
 
-    async function approveTransfer(transferId) {
+    async function approveTransfer(transferId, isSameTeam, leadId) {
         try {
+            // For same-team reassignment, get selected member
+            let reassignTo = null;
+            if (isSameTeam) {
+                const sel = document.getElementById(`reassignTo_${transferId}`);
+                if (!sel || !sel.value) {
+                    Toast.warning('Please select a team member to reassign to');
+                    return;
+                }
+                reassignTo = sel.value;
+            }
+
             await api.request(`/crm/leads/transfer-requests/${transferId}/approve`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
+                body: JSON.stringify({ reassign_to: reassignTo })
             });
-            Toast.success('Transfer approved — lead moved to new team');
-            openPendingTransfersModal(); // refresh list
+
+            // If same-team, also reassign the lead owner
+            if (isSameTeam && reassignTo && leadId) {
+                await api.request(`/crm/leads/${leadId}/assign`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ owner_user_id: reassignTo })
+                });
+            }
+
+            Toast.success(isSameTeam ? 'Lead reassigned to team member' : 'Transfer approved — lead moved to new team');
+            openPendingTransfersModal();
             loadLeads();
             loadLeadStats();
             checkPendingTransfers();

@@ -428,15 +428,22 @@
     // overlay with a searchable list. Keeps the modal simple — no nested
     // dropdowns.
 
-    function openUserPicker(title, excludeIds, onPick) {
+    /**
+     * @param {string} title
+     * @param {string[]} excludeIds
+     * @param {Function} onPick - single-select: called with one user. multi: called with array.
+     * @param {boolean} multi - if true, show checkboxes + "Add Selected" button
+     */
+    function openUserPicker(title, excludeIds, onPick, multi = false) {
         const existing = document.getElementById('_userPickerOverlay');
         if (existing) existing.remove();
 
         const candidates = getAvailableUsersExcluding(excludeIds);
+        const selected = new Set();
         const overlay = document.createElement('div');
         overlay.id = '_userPickerOverlay';
         overlay.className = 'gm-overlay active';
-        overlay.style.zIndex = '10050'; // above team modal
+        overlay.style.zIndex = '10050';
         overlay.innerHTML = `
             <div class="gm-modal" style="max-width: 460px; width: 92vw;">
                 <div class="gm-header">
@@ -447,6 +454,10 @@
                     <input type="text" class="form-control" placeholder="Search by name or email…" id="_userPickerSearch" autocomplete="off">
                     <div id="_userPickerList" style="margin-top: 10px; max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;"></div>
                 </div>
+                ${multi ? `<div class="gm-footer" style="display:flex;justify-content:space-between;align-items:center;">
+                    <span id="_userPickerCount" style="font-size:0.82rem;color:var(--text-secondary);">0 selected</span>
+                    <button type="button" class="btn btn-primary btn-sm" id="_userPickerDone">Add Selected</button>
+                </div>` : ''}
             </div>`;
         document.body.appendChild(overlay);
 
@@ -461,18 +472,32 @@
                 list.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem; padding: 12px; text-align: center;">${candidates.length === 0 ? 'No available users — everyone else is already on another team.' : 'No match'}</div>`;
                 return;
             }
-            list.innerHTML = filtered.map(u => `
-                <button type="button" class="team-role-user" style="cursor: pointer; text-align: left; width: 100%; border: 1px solid var(--border-color);" data-user-id="${esc(u.user_id)}">
-                    <div class="team-role-user-name">
-                        ${esc(u.display_name || (u.first_name + ' ' + (u.last_name || '')).trim() || u.email)}
-                        ${u.email ? `<span class="team-role-user-email" style="display: block;">${esc(u.email)}</span>` : ''}
+            list.innerHTML = filtered.map(u => {
+                const isSelected = selected.has(u.user_id);
+                return `
+                <button type="button" class="team-role-user" style="cursor: pointer; text-align: left; width: 100%; border: 1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-color)'}; ${isSelected ? 'background: rgba(var(--brand-primary-rgb),0.08);' : ''}" data-user-id="${esc(u.user_id)}">
+                    <div class="team-role-user-name" style="display:flex;align-items:center;gap:8px;">
+                        ${multi ? `<span style="width:18px;height:18px;border-radius:4px;border:2px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-color)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;${isSelected ? 'background:var(--brand-primary);' : ''}">${isSelected ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}</span>` : ''}
+                        <div>
+                            ${esc(u.display_name || (u.first_name + ' ' + (u.last_name || '')).trim() || u.email)}
+                            ${u.email ? `<span class="team-role-user-email" style="display: block;">${esc(u.email)}</span>` : ''}
+                        </div>
                     </div>
-                </button>`).join('');
+                </button>`;
+            }).join('');
             list.querySelectorAll('[data-user-id]').forEach(btn => {
                 btn.onclick = () => {
-                    const u = candidates.find(x => x.user_id === btn.dataset.userId);
-                    overlay.remove();
-                    onPick(u);
+                    const uid = btn.dataset.userId;
+                    if (multi) {
+                        if (selected.has(uid)) selected.delete(uid); else selected.add(uid);
+                        render(document.getElementById('_userPickerSearch').value);
+                        const countEl = document.getElementById('_userPickerCount');
+                        if (countEl) countEl.textContent = `${selected.size} selected`;
+                    } else {
+                        const u = candidates.find(x => x.user_id === uid);
+                        overlay.remove();
+                        onPick(u);
+                    }
                 };
             });
         };
@@ -480,6 +505,13 @@
         document.getElementById('_userPickerSearch').oninput = e => render(e.target.value);
         overlay.querySelector('.gm-close').onclick = () => overlay.remove();
         overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+        if (multi) {
+            document.getElementById('_userPickerDone').onclick = () => {
+                const picked = candidates.filter(u => selected.has(u.user_id));
+                overlay.remove();
+                onPick(picked);
+            };
+        }
         setTimeout(() => document.getElementById('_userPickerSearch').focus(), 60);
     }
 
@@ -510,16 +542,20 @@
             ..._teamModal.teamleads.map(u => u.user_id),
             ..._teamModal.members.map(u => u.user_id)
         ];
-        const label = roleKey === 'teamlead' ? 'Select team lead' : 'Select member';
-        openUserPicker(label, exclude, (user) => {
-            list.push({
-                user_id: user.user_id,
-                email: user.email,
-                display_name: user.display_name || ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || user.email,
-                role: roleKey
-            });
+        const label = roleKey === 'teamlead' ? 'Select team lead(s)' : 'Select member(s)';
+        openUserPicker(label, exclude, (users) => {
+            // multi-select returns array
+            const picked = Array.isArray(users) ? users : [users];
+            for (const user of picked) {
+                list.push({
+                    user_id: user.user_id,
+                    email: user.email,
+                    display_name: user.display_name || ((user.first_name || '') + ' ' + (user.last_name || '')).trim() || user.email,
+                    role: roleKey
+                });
+            }
             if (roleKey === 'teamlead') renderTeamleadSlots(); else renderMemberSlots();
-        });
+        }, true);  // multi = true
     }
 
     function _removeRoleUser(roleKey, index) {
