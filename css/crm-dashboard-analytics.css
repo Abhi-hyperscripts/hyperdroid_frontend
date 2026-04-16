@@ -1,0 +1,258 @@
+/* ═══ CRM Dashboard — Glassy Bento Analytics ═══ */
+
+/* ── Notification Banner ── */
+.crm-notifications-banner {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.notif-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 0.83rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    backdrop-filter: blur(12px);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.notif-item:hover { transform: translateX(4px); }
+
+.notif-item.notif-overdue {
+    background: rgba(239, 68, 68, 0.08);
+    border-left: 3px solid #ef4444;
+}
+
+.notif-item.notif-due {
+    background: rgba(249, 115, 22, 0.08);
+    border-left: 3px solid #f97316;
+}
+
+.notif-item.notif-transfer {
+    background: rgba(99, 102, 241, 0.08);
+    border-left: 3px solid #6366f1;
+}
+
+.notif-item .notif-text {
+    flex: 1;
+    color: var(--text-primary);
+}
+
+.notif-item .notif-time {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+/* ── Bento Grid ── */
+.bento-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.bento-card {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.bento-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.bento-card-inner {
+    position: relative;
+    z-index: 1;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    height: 100%;
+}
+
+/* Gradient glow behind each card */
+.bento-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        ellipse 80% 60% at 20% 80%,
+        rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08) 0%,
+        transparent 60%
+    );
+    z-index: 0;
+    pointer-events: none;
+}
+
+.bento-card:nth-child(2)::before {
+    background: radial-gradient(ellipse 80% 60% at 80% 20%, rgba(34, 197, 94, 0.08) 0%, transparent 60%);
+}
+
+.bento-card:nth-child(3)::before {
+    background: radial-gradient(ellipse 80% 60% at 50% 80%, rgba(249, 115, 22, 0.08) 0%, transparent 60%);
+}
+
+.bento-card:nth-child(5)::before {
+    background: radial-gradient(ellipse 80% 60% at 80% 80%, rgba(239, 68, 68, 0.08) 0%, transparent 60%);
+}
+
+.bento-card:nth-child(6)::before {
+    background: radial-gradient(ellipse 80% 60% at 20% 20%, rgba(168, 85, 247, 0.08) 0%, transparent 60%);
+}
+
+.bento-wide {
+    grid-column: span 2;
+}
+
+.bento-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 12px 0;
+}
+
+/* Light theme overrides */
+[data-theme="light"] .bento-card-inner {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+}
+
+[data-theme="light"] .bento-card {
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* ── Conversion Stats ── */
+.conversion-stats {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.conversion-stats .stat-won { color: #22c55e; font-weight: 600; }
+.conversion-stats .stat-lost { color: #ef4444; font-weight: 600; }
+
+/* ── Agent Performance Table ── */
+.agent-performance { overflow-x: auto; }
+
+.agent-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.agent-table th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.agent-table td {
+    padding: 10px 10px;
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.agent-table tr:last-child td { border-bottom: none; }
+.agent-table tr:hover td { background: rgba(var(--brand-primary-rgb), 0.04); }
+
+.agent-name { font-weight: 500; }
+.agent-email { font-size: 0.72rem; color: var(--text-secondary); }
+
+.empty-analytics {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+}
+
+/* ── ApexCharts dark theme overrides ── */
+.apexcharts-canvas {
+    background: transparent !important;
+}
+
+.apexcharts-text, .apexcharts-legend-text {
+    fill: var(--text-secondary) !important;
+    color: var(--text-secondary) !important;
+}
+
+.apexcharts-gridline {
+    stroke: rgba(255, 255, 255, 0.06) !important;
+}
+
+.apexcharts-xaxis-label, .apexcharts-yaxis-label {
+    fill: var(--text-secondary) !important;
+}
+
+.apexcharts-tooltip {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.apexcharts-tooltip .apexcharts-tooltip-title {
+    background: var(--bg-tertiary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .bento-grid {
+        grid-template-columns: 1fr;
+    }
+    .bento-wide {
+        grid-column: span 1;
+    }
+}
+
+/* ── Compact Stat Cards (icon left, text right) ── */
+.stat-card.stat-card-compact {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px;
+    padding: 14px 16px !important;
+}
+
+.stat-card-compact .stat-card-header {
+    display: none;
+}
+
+.stat-card-compact .stat-icon {
+    flex-shrink: 0;
+}
+
+.stat-card-compact .stat-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.stat-card-compact .stat-value {
+    font-size: 1.4rem !important;
+    line-height: 1.2;
+}
+
+.stat-card-compact .stat-label {
+    font-size: 0.72rem !important;
+    margin-top: 0 !important;
+}

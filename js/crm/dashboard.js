@@ -45,7 +45,8 @@ async function loadDashboard() {
     try {
         await Promise.all([
             loadStats(),
-            loadLeadFunnel(),
+            loadAnalytics(),
+            loadNotifications(),
             loadRecentLeads()
         ]);
     } catch (error) {
@@ -236,4 +237,226 @@ function setTextContent(id, value) {
 function setBarWidth(id, percent) {
     const el = document.getElementById(id);
     if (el) el.style.width = Math.max(percent, 2) + '%';
+}
+
+// ═══ Analytics (ApexCharts) ═══
+
+const STATUS_ORDER = ['new', 'assigned', 'contacted', 'qualified', 'follow_up', 'opportunity', 'negotiation', 'won', 'lost', 'unqualified'];
+const STATUS_LABELS = {
+    new: 'New', assigned: 'Assigned', contacted: 'Contacted', qualified: 'Qualified',
+    unqualified: 'Unqualified', follow_up: 'Follow Up', opportunity: 'Opportunity',
+    negotiation: 'Negotiation', won: 'Won', lost: 'Lost'
+};
+const STATUS_COLORS = {
+    new: '#3b82f6', assigned: '#6366f1', contacted: '#eab308', qualified: '#22c55e',
+    unqualified: '#9ca3af', follow_up: '#f97316', opportunity: '#a855f7',
+    negotiation: '#ec4899', won: '#10b981', lost: '#ef4444'
+};
+const DISP_LABELS = {
+    not_responding: 'Not Responding', not_interested: 'Not Interested',
+    callback_later: 'Callback Later', hot_lead: 'Hot Lead',
+    wrong_number: 'Wrong Number', voicemail: 'Voicemail',
+    email_sent: 'Email Sent', meeting_scheduled: 'Meeting Scheduled',
+    proposal_sent: 'Proposal Sent', deal_in_progress: 'Deal In Progress'
+};
+
+let _charts = {};
+
+async function loadAnalytics() {
+    try {
+        const data = await api.request('/crm/dashboard/analytics');
+        renderPipelineChart(data.status_breakdown || {});
+        renderConversionChart(data);
+        renderSourceChart(data.leads_by_source || []);
+        renderAgentPerformance(data.agent_stats || []);
+        renderLostReasonsChart(data.lost_reasons || []);
+        renderDispositionsChart(data.disposition_breakdown || {});
+    } catch (e) {
+        console.error('Failed to load analytics:', e);
+    }
+}
+
+function apexDarkTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    return {
+        theme: { mode: isDark ? 'dark' : 'light' },
+        chart: { background: 'transparent', foreColor: isDark ? '#94a3b8' : '#475569' },
+        grid: { borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)' }
+    };
+}
+
+function renderChart(id, options) {
+    if (_charts[id]) { _charts[id].destroy(); }
+    const el = document.getElementById(id);
+    if (!el) return;
+    const t = apexDarkTheme();
+    options.chart = { ...options.chart, background: 'transparent', foreColor: t.chart.foreColor };
+    options.theme = t.theme;
+    if (options.grid) options.grid.borderColor = t.grid.borderColor;
+    _charts[id] = new ApexCharts(el, options);
+    _charts[id].render();
+}
+
+function renderPipelineChart(breakdown) {
+    const statuses = STATUS_ORDER.filter(s => (breakdown[s] || 0) > 0);
+    if (statuses.length === 0) {
+        document.getElementById('chartPipeline').innerHTML = '<p class="empty-analytics">No leads yet</p>';
+        return;
+    }
+    renderChart('chartPipeline', {
+        chart: { type: 'bar', height: Math.max(statuses.length * 45, 180), toolbar: { show: false } },
+        series: [{ name: 'Leads', data: statuses.map(s => breakdown[s] || 0) }],
+        xaxis: { categories: statuses.map(s => STATUS_LABELS[s] || s) },
+        colors: statuses.map(s => STATUS_COLORS[s] || '#6366f1'),
+        plotOptions: { bar: { horizontal: true, borderRadius: 3, distributed: true, barHeight: '55%' } },
+        dataLabels: { enabled: true, style: { fontSize: '11px', fontWeight: 600 } },
+        legend: { show: false },
+        grid: { xaxis: { lines: { show: false } }, yaxis: { lines: { show: false } }, padding: { top: -10, bottom: -10 } },
+        tooltip: { y: { formatter: v => v + ' leads' } }
+    });
+}
+
+function renderConversionChart(data) {
+    const won = data.won_leads || 0;
+    const lost = data.lost_leads || 0;
+    const other = Math.max(0, (data.total_leads || 0) - won - lost);
+
+    renderChart('chartConversion', {
+        chart: { type: 'polarArea', height: 320 },
+        series: [won, lost, other],
+        labels: ['Won', 'Lost', 'In Progress'],
+        colors: ['#10b981', '#ef4444', '#6366f1'],
+        stroke: { colors: ['transparent'] },
+        fill: { opacity: 0.85 },
+        plotOptions: { polarArea: { rings: { strokeWidth: 0 }, spokes: { strokeWidth: 0 } } },
+        legend: { position: 'left', fontSize: '11px', offsetY: 20 },
+        dataLabels: { enabled: false },
+        yaxis: { show: false }
+    });
+
+    const stats = document.getElementById('conversionStats');
+    if (stats) stats.innerHTML = `
+        <span class="stat-won">${won} won</span>
+        <span class="stat-lost">${lost} lost</span>
+        <span>${data.total_leads} total</span>
+        ${data.avg_closure_time_days > 0 ? `<span>Avg ${data.avg_closure_time_days}d to close</span>` : ''}
+    `;
+}
+
+function renderSourceChart(sources) {
+    if (sources.length === 0) {
+        document.getElementById('chartSource').innerHTML = '<p class="empty-analytics">No data yet</p>';
+        return;
+    }
+    const colors = ['#6366f1', '#3b82f6', '#22c55e', '#f97316', '#ec4899', '#eab308', '#a855f7', '#14b8a6'];
+    renderChart('chartSource', {
+        chart: { type: 'polarArea', height: 320 },
+        series: sources.map(s => s.count),
+        labels: sources.map(s => s.source),
+        colors: colors.slice(0, sources.length),
+        stroke: { colors: ['transparent'] },
+        fill: { opacity: 0.85 },
+        plotOptions: { polarArea: { rings: { strokeWidth: 0 }, spokes: { strokeWidth: 0 } } },
+        legend: { position: 'right', fontSize: '11px', offsetY: 20 },
+        dataLabels: { enabled: false },
+        yaxis: { show: false }
+    });
+}
+
+function renderAgentPerformance(agents) {
+    const container = document.getElementById('agentPerformance');
+    if (!container) return;
+    if (agents.length === 0) {
+        container.innerHTML = '<p class="empty-analytics">No assigned leads yet</p>';
+        return;
+    }
+    container.innerHTML = `
+        <table class="agent-table">
+            <thead><tr>
+                <th>Agent</th><th>Total</th><th>Won</th><th>Lost</th><th>Active</th><th>Conv %</th>
+            </tr></thead>
+            <tbody>
+                ${agents.map(a => `<tr>
+                    <td>
+                        <div class="agent-name">${escapeHtml(a.user_name || 'Unknown')}</div>
+                        <div class="agent-email">${escapeHtml(a.email || '')}</div>
+                    </td>
+                    <td>${a.total_leads}</td>
+                    <td style="color:#22c55e;font-weight:600;">${a.won_leads}</td>
+                    <td style="color:#ef4444;font-weight:600;">${a.lost_leads}</td>
+                    <td>${a.active_leads}</td>
+                    <td style="font-weight:700;">${a.conversion_rate}%</td>
+                </tr>`).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function renderLostReasonsChart(reasons) {
+    if (reasons.length === 0) {
+        document.getElementById('chartLostReasons').innerHTML = '<p class="empty-analytics">No lost leads yet</p>';
+        return;
+    }
+    renderChart('chartLostReasons', {
+        chart: { type: 'bar', height: Math.max(reasons.length * 45, 160), toolbar: { show: false } },
+        series: [{ name: 'Count', data: reasons.map(r => r.count) }],
+        xaxis: { categories: reasons.map(r => r.reason) },
+        colors: ['#ef4444'],
+        plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '65%' } },
+        dataLabels: { enabled: true, style: { fontSize: '12px', fontWeight: 600 } },
+        grid: { xaxis: { lines: { show: false } }, yaxis: { lines: { show: false } } },
+        legend: { show: false }
+    });
+}
+
+function renderDispositionsChart(breakdown) {
+    const entries = Object.entries(breakdown);
+    if (entries.length === 0) {
+        document.getElementById('chartDispositions').innerHTML = '<p class="empty-analytics">No dispositions set</p>';
+        return;
+    }
+    const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899', '#6366f1', '#14b8a6', '#9ca3af'];
+    renderChart('chartDispositions', {
+        chart: { type: 'bar', height: Math.max(entries.length * 45, 160), toolbar: { show: false } },
+        series: [{ name: 'Count', data: entries.map(e => e[1]) }],
+        xaxis: { categories: entries.map(e => DISP_LABELS[e[0]] || e[0]) },
+        colors: colors.slice(0, entries.length),
+        plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true, barHeight: '65%' } },
+        dataLabels: { enabled: true, style: { fontSize: '12px', fontWeight: 600 } },
+        grid: { xaxis: { lines: { show: false } }, yaxis: { lines: { show: false } } },
+        legend: { show: false }
+    });
+}
+
+// ═══ Notifications ═══
+
+async function loadNotifications() {
+    try {
+        const data = await api.request('/crm/dashboard/notifications');
+        const banner = document.getElementById('notificationsBanner');
+        const list = document.getElementById('notificationsList');
+        const header = document.getElementById('notificationsHeader');
+        if (!banner || !list) return;
+
+        if (data.items.length === 0) {
+            banner.style.display = 'none';
+            if (header) header.style.display = 'none';
+            return;
+        }
+
+        banner.style.display = '';
+        if (header) header.style.display = '';
+        list.innerHTML = data.items.slice(0, 3).map(n => {
+            const cls = n.type.includes('overdue') ? 'notif-overdue'
+                : n.type.includes('due') ? 'notif-due'
+                : 'notif-transfer';
+            const time = new Date(n.timestamp).toLocaleDateString();
+            return `<div class="notif-item ${cls}" onclick="${n.entity_id ? `navigateTo('leads.html')` : ''}">
+                <span class="notif-text">${escapeHtml(n.title)}${n.description ? ' — ' + escapeHtml(n.description).substring(0, 40) : ''}</span>
+                <span class="notif-time">${time}</span>
+            </div>`;
+        }).join('') + (data.items.length > 3 ? `<div style="text-align:center;padding:4px;"><a href="leads.html" style="color:var(--brand-primary);font-size:0.78rem;">+${data.items.length - 3} more</a></div>` : '');
+    } catch (e) {
+        console.error('Failed to load notifications:', e);
+    }
 }
