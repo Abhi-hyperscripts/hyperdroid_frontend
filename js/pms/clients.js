@@ -76,7 +76,9 @@ async function checkOrphanedClients() {
 }
 
 function renderReconcileBanner(count) {
-    const main = document.querySelector('.crm-page, main, .main-content') || document.body;
+    // Insert inside .crm-container after stats grid so it stays within page width
+    const anchor = document.querySelector('.crm-stats-grid, #clientStatsGrid');
+    const container = document.querySelector('.crm-container') || document.querySelector('.crm-page, main, .main-content') || document.body;
     const banner = document.createElement('div');
     banner.id = 'pmsReconcileBanner';
     banner.style.cssText = 'margin:16px 0;padding:14px 18px;background:var(--bg-tertiary,#1f2128);border:1px solid var(--color-warning,#b07a1d);border-left:3px solid var(--color-warning,#b07a1d);border-radius:6px;display:flex;gap:12px;align-items:flex-start;justify-content:space-between';
@@ -94,11 +96,20 @@ function renderReconcileBanner(count) {
         </div>
         <button class="btn btn-sm btn-primary" onclick="runClientReconciliation(this)" style="white-space:nowrap;flex-shrink:0">Run Reconciliation</button>
     `;
-    main.insertBefore(banner, main.firstChild);
+    if (anchor && anchor.nextSibling) {
+        container.insertBefore(banner, anchor.nextSibling);
+    } else {
+        container.appendChild(banner);
+    }
 }
 
 async function runClientReconciliation(btn) {
-    if (!confirm('Submit all orphaned PMS clients to Accounts as pending customer requests? Finance will need to approve each one before they reappear here.')) return;
+    const confirmed = await Confirm.show({
+        title: 'Run Client Reconciliation',
+        message: 'Submit all orphaned PMS clients to Accounts as pending customer requests? Finance will need to approve each one before they reappear here.',
+        type: 'warning'
+    });
+    if (!confirmed) return;
     btn.disabled = true;
     btn.textContent = 'Submitting…';
     try {
