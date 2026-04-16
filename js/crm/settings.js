@@ -104,7 +104,9 @@ const settingsTabNames = {
     'general': 'General',
     'pipeline': 'Pipeline',
     'integrations': 'Integrations',
-    'lead-sources': 'Lead Sources'
+    'lead-sources': 'Lead Sources',
+    'functional-groups': 'Functional Groups',
+    'teams': 'Teams Setup'
 };
 
 function setupSettingsSidebar() {
@@ -216,6 +218,10 @@ function switchSettingsTab(tabName) {
         loadFacebookPages();
     } else if (tabName === 'lead-sources') {
         loadLeadSources();
+    } else if (tabName === 'functional-groups' && typeof loadFunctionalGroups === 'function') {
+        loadFunctionalGroups();
+    } else if (tabName === 'teams' && typeof loadTeamsTab === 'function') {
+        loadTeamsTab();
     }
 }
 

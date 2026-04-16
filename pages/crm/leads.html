@@ -26,6 +26,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm-lead-import.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard crm-page">
@@ -61,6 +62,21 @@
                                 <line x1="8" y1="11" x2="14" y2="11"></line>
                             </svg>
                             Discover Leads
+                        </button>
+                        <button class="btn btn-outline-secondary" id="pendingTransfersBtn" onclick="openPendingTransfersModal()" style="display:none;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 3 21 3 21 9"/><line x1="21" y1="3" x2="14" y2="10"/>
+                                <polyline points="9 21 3 21 3 15"/><line x1="3" y1="21" x2="10" y2="14"/>
+                            </svg>
+                            Transfers <span id="pendingTransfersBadge" class="transfer-badge" style="display:none;">0</span>
+                        </button>
+                        <button class="btn btn-outline-primary" id="importLeadsBtn" onclick="openImportWizard()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            Import Leads
                         </button>
                         <button class="btn btn-primary" id="newLeadBtn" onclick="openNewLeadModal()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -127,24 +143,21 @@
                 <select id="filterStatus" class="form-select form-select-sm" onchange="applyFilters()">
                     <option value="">All Statuses</option>
                     <option value="new">New</option>
+                    <option value="assigned">Assigned</option>
                     <option value="contacted">Contacted</option>
                     <option value="qualified">Qualified</option>
-                    <option value="converted">Converted</option>
+                    <option value="unqualified">Unqualified</option>
+                    <option value="follow_up">Follow Up</option>
+                    <option value="opportunity">Opportunity</option>
+                    <option value="negotiation">Negotiation</option>
+                    <option value="won">Won</option>
+                    <option value="lost">Lost</option>
                 </select>
             </div>
             <div class="crm-filter-group">
                 <label for="filterSource">Source</label>
                 <select id="filterSource" class="form-select form-select-sm" onchange="applyFilters()">
                     <option value="">All Sources</option>
-                    <option value="manual">Manual</option>
-                    <option value="facebook">Facebook</option>
-                    <option value="website">Website</option>
-                    <option value="linkedin">LinkedIn</option>
-                    <option value="referral">Referral</option>
-                    <option value="google_ads">Google Ads</option>
-                    <option value="landing_page">Landing Page</option>
-                    <option value="api">API</option>
-                    <option value="import">Import</option>
                 </select>
             </div>
             <div class="crm-filter-group crm-search-group">
@@ -359,7 +372,410 @@
         </div>
     </div>
 
+    <!-- ═══ Status Change Modal ═══ -->
+    <div class="gm-overlay" id="statusChangeOverlay">
+        <div class="gm-modal gm-sm">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Change Lead Status</h3>
+                        <p class="gm-subtitle" id="statusChangeSubtitle">Select the next stage</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeStatusChangeModal()">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div class="status-current" id="statusCurrentLabel"></div>
+                <div class="status-options" id="statusOptions"></div>
+                <div id="lostReasonSection" style="display:none;margin-top:12px;">
+                    <label style="font-size:0.85rem;color:var(--text-secondary);">Reason for losing this lead *</label>
+                    <select id="lostReasonSelect" class="form-select form-select-sm" style="margin-top:4px;">
+                        <option value="">Select reason...</option>
+                        <option value="Price too high">Price too high</option>
+                        <option value="Not interested">Not interested</option>
+                        <option value="Competitor won">Competitor won</option>
+                        <option value="No budget">No budget</option>
+                        <option value="Bad timing">Bad timing</option>
+                        <option value="No response">No response</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="text" id="lostReasonCustom" class="form-control form-control-sm" placeholder="Specify reason..." style="display:none;margin-top:6px;">
+                </div>
+                <div id="wonValueSection" style="display:none;margin-top:12px;">
+                    <label style="font-size:0.85rem;color:var(--text-secondary);">Deal value</label>
+                    <input type="number" id="wonDealValue" class="form-control form-control-sm" placeholder="e.g. 50000" style="margin-top:4px;">
+                </div>
+            </div>
+            <div class="gm-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+                <button class="btn btn-outline-secondary" onclick="closeStatusChangeModal()">Cancel</button>
+                <button class="btn btn-primary" id="statusChangeConfirmBtn" onclick="confirmStatusChange()" disabled>Change Status</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Log Activity Modal ═══ -->
+    <div class="gm-overlay" id="logActivityOverlay">
+        <div class="gm-modal">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Log Activity</h3>
+                        <p class="gm-subtitle">Record a call, email, or meeting</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeLogActivityModal()">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                        <label class="form-label">Type *</label>
+                        <select id="activityType" class="form-select form-select-sm">
+                            <option value="call">Call</option>
+                            <option value="email">Email</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="note">Note</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Outcome</label>
+                        <select id="activityOutcome" class="form-select form-select-sm">
+                            <option value="">N/A</option>
+                            <option value="connected">Connected</option>
+                            <option value="not_reachable">Not Reachable</option>
+                            <option value="wrong_number">Wrong Number</option>
+                            <option value="voicemail">Voicemail</option>
+                            <option value="busy">Busy</option>
+                            <option value="callback_requested">Callback Requested</option>
+                            <option value="meeting_set">Meeting Set</option>
+                            <option value="email_bounced">Email Bounced</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top:10px;">
+                    <label class="form-label">Summary *</label>
+                    <textarea id="activitySummary" class="form-control" rows="3" placeholder="What happened during this interaction?"></textarea>
+                </div>
+                <div style="margin-top:10px;">
+                    <label class="form-label">Call Duration (minutes)</label>
+                    <input type="number" id="activityCallDuration" class="form-control form-control-sm" placeholder="e.g. 15" min="0" max="999">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+                    <div>
+                        <label class="form-label">Disposition</label>
+                        <select id="activityDisposition" class="form-select form-select-sm">
+                            <option value="">No change</option>
+                            <option value="hot_lead">Hot Lead</option>
+                            <option value="callback_later">Callback Later</option>
+                            <option value="not_responding">Not Responding</option>
+                            <option value="not_interested">Not Interested</option>
+                            <option value="meeting_scheduled">Meeting Scheduled</option>
+                            <option value="proposal_sent">Proposal Sent</option>
+                            <option value="deal_in_progress">Deal In Progress</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Next follow-up</label>
+                        <input type="datetime-local" id="activityNextFollowup" class="form-control form-control-sm">
+                    </div>
+                </div>
+            </div>
+            <div class="gm-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+                <button class="btn btn-outline-secondary" onclick="closeLogActivityModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitLogActivity()">Log Activity</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Transfer Request Modal ═══ -->
+    <div class="gm-overlay" id="transferRequestOverlay">
+        <div class="gm-modal gm-sm">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Transfer Lead to Another Team</h3>
+                        <p class="gm-subtitle">The transfer needs approval from your TL/Manager</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeTransferRequestModal()">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div>
+                    <label class="form-label">Transfer to Team *</label>
+                    <select id="transferTargetTeam" class="form-select form-select-sm">
+                        <option value="">Select team...</option>
+                    </select>
+                </div>
+                <div style="margin-top:10px;">
+                    <label class="form-label">Reason *</label>
+                    <textarea id="transferReason" class="form-control" rows="3" placeholder="Why should this lead be transferred? e.g., Lead needs Shopify expertise which the other team handles."></textarea>
+                </div>
+            </div>
+            <div class="gm-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+                <button class="btn btn-outline-secondary" onclick="closeTransferRequestModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitTransferRequest()">Request Transfer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Pending Transfers Panel ═══ -->
+    <div class="gm-overlay" id="pendingTransfersOverlay">
+        <div class="gm-modal">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Pending Transfer Requests</h3>
+                        <p class="gm-subtitle">Approve or reject lead transfers from your team</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closePendingTransfersModal()">&times;</button>
+            </div>
+            <div class="gm-body" id="pendingTransfersList">
+                <p style="color:var(--text-secondary);">Loading...</p>
+            </div>
+            <div class="gm-footer" style="display:flex;justify-content:flex-end;">
+                <button class="btn btn-outline-secondary" onclick="closePendingTransfersModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Schedule Follow-up Modal ═══ -->
+    <div class="gm-overlay" id="scheduleFollowupOverlay">
+        <div class="gm-modal gm-sm">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Schedule Follow-up</h3>
+                        <p class="gm-subtitle">Set a reminder to follow up with this lead</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeScheduleFollowupModal()">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div>
+                    <label class="form-label">Follow-up Type *</label>
+                    <select id="followupType" class="form-select form-select-sm">
+                        <option value="call">Call</option>
+                        <option value="email">Email</option>
+                        <option value="meeting">Meeting</option>
+                        <option value="demo">Demo</option>
+                        <option value="proposal">Send Proposal</option>
+                    </select>
+                </div>
+                <div style="margin-top:10px;">
+                    <label class="form-label">Date & Time *</label>
+                    <input type="datetime-local" id="followupDateTime" class="form-control form-control-sm">
+                </div>
+                <div style="margin-top:10px;">
+                    <label class="form-label">Notes</label>
+                    <textarea id="followupNotes" class="form-control" rows="2" placeholder="What to discuss or do during the follow-up..."></textarea>
+                </div>
+            </div>
+            <div class="gm-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+                <button class="btn btn-outline-secondary" onclick="closeScheduleFollowupModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitScheduleFollowup()">Schedule</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Lead Discovery Slide-Out Panel -->
+    <!-- ═══ Import Wizard Modal ═══ -->
+    <div class="gm-overlay" id="importWizardOverlay">
+        <div class="gm-modal import-wizard-modal">
+            <!-- Header -->
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title" id="importWizardTitle">Import Leads</h3>
+                        <p class="gm-subtitle">Upload an Excel or CSV file with your leads</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeImportWizard()">&times;</button>
+            </div>
+
+            <!-- Step indicators -->
+            <div class="import-steps">
+                <div class="import-step active" data-step="1">
+                    <span class="import-step-num">1</span>
+                    <span class="import-step-label">Upload</span>
+                </div>
+                <div class="import-step-line"></div>
+                <div class="import-step" data-step="2">
+                    <span class="import-step-num">2</span>
+                    <span class="import-step-label">Map Columns</span>
+                </div>
+                <div class="import-step-line"></div>
+                <div class="import-step" data-step="3">
+                    <span class="import-step-num">3</span>
+                    <span class="import-step-label">Preview</span>
+                </div>
+                <div class="import-step-line"></div>
+                <div class="import-step" data-step="4">
+                    <span class="import-step-num">4</span>
+                    <span class="import-step-label">Done</span>
+                </div>
+            </div>
+
+            <div class="gm-body">
+                <!-- Step 1: Upload -->
+                <div class="import-step-content active" id="importStep1">
+                    <div class="import-dropzone" id="importDropzone">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <p>Drop your file here or <span class="import-browse-link">browse</span></p>
+                        <p class="import-dropzone-hint">.xlsx, .xls, or .csv &mdash; up to 5,000 rows</p>
+                        <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" style="display:none">
+                    </div>
+                    <div class="import-file-info" id="importFileInfo" style="display:none;">
+                        <div class="import-file-name" id="importFileName"></div>
+                        <div class="import-file-meta" id="importFileMeta"></div>
+                        <button class="btn btn-sm btn-outline-danger" onclick="clearImportFile()">Remove</button>
+                    </div>
+                    <div id="importUploadError" class="import-error" style="display:none;"></div>
+
+                    <!-- Saved configs -->
+                    <div class="import-configs-section" id="importConfigsSection" style="display:none;">
+                        <h4>Choose a saved mapping</h4>
+                        <div class="import-configs-list" id="importConfigsList"></div>
+                        <button class="import-new-mapping-btn" id="importNewMappingBtn" onclick="importUseNewMapping()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            New Mapping
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Map Columns -->
+                <div class="import-step-content" id="importStep2">
+                    <p class="import-section-desc">Map each column from your file to a CRM field. Set "Skip" to ignore a column.</p>
+                    <div class="import-mapping-table-wrap">
+                        <table class="import-mapping-table" id="importMappingTable">
+                            <thead>
+                                <tr>
+                                    <th>Your Column</th>
+                                    <th>Sample Data</th>
+                                    <th>Maps To</th>
+                                </tr>
+                            </thead>
+                            <tbody id="importMappingBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="import-defaults-section">
+                        <h4>Default values <span class="import-optional">(applied to every row)</span></h4>
+                        <div class="import-defaults-row">
+                            <label>Lead Source</label>
+                            <input type="text" class="form-control form-control-sm" id="importDefaultSource" placeholder="e.g. Facebook, Indiamart">
+                        </div>
+                        <div class="import-defaults-row">
+                            <label>Country</label>
+                            <input type="text" class="form-control form-control-sm" id="importDefaultCountry" placeholder="e.g. India">
+                        </div>
+                    </div>
+                    <div class="import-save-config">
+                        <label><input type="checkbox" id="importSaveConfig"> Save this mapping for future imports</label>
+                        <input type="text" class="form-control form-control-sm" id="importConfigName" placeholder="Config name, e.g. 'Indiamart Sheet'" style="display:none;">
+                    </div>
+                </div>
+
+                <!-- Step 3: Preview -->
+                <div class="import-step-content" id="importStep3">
+                    <div class="import-preview-summary" id="importPreviewSummary"></div>
+                    <div class="import-preview-table-wrap">
+                        <table class="import-preview-table" id="importPreviewTable">
+                            <thead>
+                                <tr>
+                                    <th>Row</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Company</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="importPreviewBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="import-skip-dupes">
+                        <label><input type="checkbox" id="importSkipDupes" checked> Skip duplicate leads</label>
+                    </div>
+                </div>
+
+                <!-- Step 4: Done -->
+                <div class="import-step-content" id="importStep4">
+                    <div class="import-done-icon">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                    </div>
+                    <div class="import-done-stats" id="importDoneStats"></div>
+                    <div class="import-done-errors" id="importDoneErrors" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- Footer with nav buttons -->
+            <div class="gm-footer">
+                <button class="btn btn-outline-secondary" id="importBackBtn" onclick="importGoBack()" style="display:none;">Back</button>
+                <div style="flex:1;"></div>
+                <button class="btn btn-outline-secondary" id="importCancelBtn" onclick="closeImportWizard()">Cancel</button>
+                <button class="btn btn-primary" id="importNextBtn" onclick="importGoNext()" disabled>Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Lead Detail / Timeline Panel ═══ -->
+    <div class="slide-panel-overlay" id="leadDetailOverlay" onclick="closeLeadDetailPanel()"></div>
+    <div class="slide-panel" id="leadDetailPanel" style="--panel-width: 520px;">
+        <div class="panel-header">
+            <h3 class="panel-title" id="leadDetailName">Lead Details</h3>
+            <button class="panel-close-btn" onclick="closeLeadDetailPanel()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="panel-body">
+            <!-- Lead info summary -->
+            <div id="leadDetailInfo" class="lead-detail-info"></div>
+
+            <!-- Quick actions -->
+            <div class="lead-detail-actions" id="leadDetailActions">
+                <button class="btn btn-sm btn-outline-primary" onclick="openStatusChangeModal(window._leadDetailId)">Change Status</button>
+                <button class="btn btn-sm btn-outline-primary" onclick="openLogActivityModal(window._leadDetailId)">Log Activity</button>
+                <button class="btn btn-sm btn-outline-primary" onclick="openScheduleFollowupModal(window._leadDetailId)">Schedule Follow-up</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="openTransferRequestModal(window._leadDetailId)">Transfer to Team</button>
+            </div>
+
+            <!-- Timeline -->
+            <div class="lead-timeline-section">
+                <div class="lead-timeline-header">
+                    <h4>Activity Timeline</h4>
+                    <div class="lead-timeline-toolbar">
+                        <input type="text" id="timelineSearch" class="form-control form-control-sm" placeholder="Search timeline..." oninput="filterTimeline(this.value)">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="printLeadTimeline()" title="Print / Save as PDF">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 6 2 18 2 18 9"/>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                                <rect x="6" y="14" width="12" height="8"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="leadTimeline" class="lead-timeline"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="slide-panel-overlay" id="discoveryOverlay" onclick="closeDiscoveryPanel()"></div>
     <div class="slide-panel" id="discoveryPanel" style="--panel-width: 480px;">
         <div class="panel-header">
@@ -433,6 +849,8 @@
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/leads.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-discovery.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/lead-import.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/lead-journey.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="crm" data-title="Sales Assistant"><\/script>');</script>

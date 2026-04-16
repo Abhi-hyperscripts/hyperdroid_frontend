@@ -1,0 +1,477 @@
+/* ===========================================================================
+   CRM — Functional Groups + Teams Setup tabs
+   All colours come from /css/theme.css variables so the UI stays consistent
+   across light + dark modes.
+   =========================================================================== */
+
+/* ─── Shared section-header subtitle (new — existing pages didn't need it) ── */
+.section-header > div {
+    min-width: 0;
+    flex: 1;
+}
+.section-subtitle {
+    margin: 4px 0 0;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.45;
+    max-width: 56ch;
+}
+
+/* ─── Inline hint strip (e.g. "create a functional group first") ────────── */
+.teams-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: var(--color-warning-light);
+    color: var(--text-on-warning-bg);
+    border: 1px solid var(--color-warning);
+    margin-bottom: 18px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+.teams-hint svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--color-warning-dark);
+}
+.teams-hint a {
+    color: var(--brand-primary-dark);
+    text-decoration: underline;
+    font-weight: 600;
+}
+.teams-hint a:hover {
+    color: var(--brand-primary);
+}
+
+/* ─── Functional Groups table — small tweaks ────────────────────────────── */
+.fg-teams-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--bg-card-hover);
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 1px solid var(--border-color);
+}
+.fg-teams-badge--inuse {
+    background: rgba(var(--brand-primary-rgb), 0.08);
+    color: var(--brand-primary-dark);
+    border-color: rgba(var(--brand-primary-rgb), 0.25);
+}
+
+/* ─── Teams grid ─────────────────────────────────────────────────────────── */
+.teams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 14px;
+    margin-top: 4px;
+}
+
+.team-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px 18px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 180px;
+    cursor: pointer;
+}
+.team-card:hover {
+    border-color: rgba(var(--brand-primary-rgb), 0.5);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    transform: translateY(-1px);
+}
+
+.team-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+.team-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.3;
+    word-break: break-word;
+}
+.team-card-code {
+    font-size: 0.72rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.team-card-status {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.team-card-status--active {
+    background: var(--color-success-light);
+    color: var(--color-success-text);
+}
+.team-card-status--draft {
+    background: var(--color-warning-light);
+    color: var(--text-on-warning-bg);
+}
+.team-card-status--archived {
+    background: var(--bg-card-hover);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
+}
+
+.team-card-desc {
+    color: var(--text-secondary);
+    font-size: 0.83rem;
+    line-height: 1.45;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.team-card-fa-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* ─── FA chip (used on team card + picker) ───────────────────────────────── */
+.fa-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(var(--brand-primary-rgb), 0.08);
+    color: var(--brand-primary-dark);
+    border: 1px solid rgba(var(--brand-primary-rgb), 0.2);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.team-card-foot {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color-light);
+    margin-top: auto;
+}
+.team-card-stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+}
+.team-card-stat svg {
+    color: var(--text-muted);
+}
+.team-card-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+}
+.team-card-iconbtn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 4px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.team-card-iconbtn:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+.team-card-iconbtn--danger:hover {
+    color: var(--color-danger);
+    border-color: rgba(239, 68, 68, 0.3);
+    background: var(--color-danger-light);
+}
+
+/* ─── Team modal ─────────────────────────────────────────────────────────── */
+.team-modal {
+    max-width: 680px;
+    width: 92vw;
+}
+.fg-modal {
+    max-width: 520px;
+    width: 92vw;
+}
+
+.team-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+@media (max-width: 640px) {
+    .team-modal-grid { grid-template-columns: 1fr; }
+}
+
+.required-mark {
+    color: var(--color-danger);
+    font-weight: 600;
+    margin-left: 2px;
+}
+
+.form-help-text {
+    margin: 4px 0 0;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.4;
+}
+
+/* Reusable form-control — consistent sizing with searchable-dropdown-trigger */
+.crm-form-group { margin-bottom: 14px; }
+.crm-form-group--narrow { max-width: 200px; }
+.crm-form-group label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+.crm-form-group .form-control {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    font-family: inherit;
+    line-height: 1.4;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.crm-form-group textarea.form-control {
+    min-height: unset;
+    resize: vertical;
+}
+.crm-form-group .form-control:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
+}
+.crm-form-group .form-control::placeholder {
+    color: var(--text-muted);
+}
+
+/* ─── FA chip-picker inside team modal ──────────────────────────────────── */
+.fa-chip-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-input);
+    min-height: 48px;
+    align-content: flex-start;
+}
+.fa-chip-picker:empty::before {
+    content: "No functional groups yet — create one in the Functional Groups tab first.";
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    padding: 4px 2px;
+}
+.fa-chip-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+    user-select: none;
+}
+.fa-chip-option:hover {
+    border-color: rgba(var(--brand-primary-rgb), 0.4);
+    color: var(--text-primary);
+}
+.fa-chip-option.selected {
+    background: rgba(var(--brand-primary-rgb), 0.12);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary-dark);
+}
+.fa-chip-option.selected::before {
+    content: "✓";
+    font-weight: 700;
+}
+
+/* ─── Member/role slots in team modal ───────────────────────────────────── */
+.team-members-section {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+.team-members-heading {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 4px;
+}
+
+.team-role-row {
+    display: grid;
+    grid-template-columns: 170px 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--border-color-light);
+}
+.team-role-row:last-child { border-bottom: none; }
+@media (max-width: 640px) {
+    .team-role-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+}
+
+.team-role-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 4px;
+}
+.team-role-badge {
+    display: inline-flex;
+    align-self: flex-start;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.3;
+}
+.team-role-badge--manager {
+    background: rgba(var(--brand-primary-rgb), 0.1);
+    color: var(--brand-primary-dark);
+    border: 1px solid rgba(var(--brand-primary-rgb), 0.25);
+}
+.team-role-badge--teamlead {
+    background: var(--color-purple-light);
+    color: var(--color-purple-text);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+}
+.team-role-badge--member {
+    background: var(--bg-card-hover);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+.team-role-required {
+    color: var(--color-danger);
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+.team-role-optional {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.team-role-picker {
+    min-width: 0;
+}
+
+/* User pills for TL/member lists */
+.team-role-multi {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.team-role-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    min-width: 0;
+}
+.team-role-user-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.team-role-user-email {
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+}
+.team-role-user-remove {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    flex-shrink: 0;
+}
+.team-role-user-remove:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+
+.team-role-add-btn {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.team-role-add-btn:hover {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb), 0.04);
+}
+
+/* "No manager yet" empty slot */
+.team-role-empty {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-style: italic;
+    padding: 6px 2px;
+}

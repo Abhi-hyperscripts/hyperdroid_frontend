@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     Navigation.init('crm', 'leads');
     loadLeads();
     loadLeadStats();
+    loadSourceFilter();
     initSearchableDropdowns();
 });
 
@@ -59,6 +60,37 @@ async function loadLeadStats() {
         document.getElementById('statConvertedLeads').textContent = stats.converted ?? '-';
     } catch (error) {
         console.error('Failed to load lead stats:', error);
+    }
+}
+
+/**
+ * Load distinct lead sources from API and populate the source filter dropdown
+ */
+async function loadSourceFilter() {
+    try {
+        const sources = await api.request('/crm/leads/sources');
+        const sel = document.getElementById('filterSource');
+        // Keep the "All Sources" option, clear rest
+        const allOpt = sel.querySelector('option[value=""]');
+        sel.innerHTML = '';
+        if (allOpt) sel.appendChild(allOpt);
+        else {
+            const o = document.createElement('option');
+            o.value = ''; o.textContent = 'All Sources';
+            sel.appendChild(o);
+        }
+        (sources || []).forEach(s => {
+            const o = document.createElement('option');
+            o.value = s;
+            o.textContent = s;
+            sel.appendChild(o);
+        });
+        // Re-init the searchable dropdown for this select if it was already converted
+        if (filterSourceDropdown && typeof filterSourceDropdown.rebuild === 'function') {
+            filterSourceDropdown.rebuild();
+        }
+    } catch (e) {
+        console.error('Failed to load source filter:', e);
     }
 }
 
@@ -122,7 +154,7 @@ function renderLeadsTable(leads) {
                     onchange="toggleLeadSelection('${lead.id}', this.checked)"
                     ${selectedLeadIds.has(lead.id) ? 'checked' : ''}>
             </td>
-            <td>
+            <td onclick="openLeadDetailPanel('${lead.id}')" style="cursor:pointer;">
                 <div class="crm-cell-primary">
                     ${escapeHtml(lead.first_name || '')} ${escapeHtml(lead.last_name || '')}${getCustomFieldsBadge(lead.custom_fields)}
                 </div>
@@ -138,7 +170,9 @@ function renderLeadsTable(leads) {
                 <span class="crm-source-badge source-${lead.lead_source || 'manual'}">${formatSource(lead.lead_source)}</span>
             </td>
             <td>
-                <span class="crm-status-badge status-${lead.status || 'new'}">${formatStatus(lead.status)}</span>
+                <span class="crm-status-badge status-${lead.status || 'new'}" onclick="openStatusChangeModal('${lead.id}')" style="cursor:pointer;" title="Click to change status">${formatStatus(lead.status)}</span>
+                ${lead.disposition ? `<span class="crm-disposition-badge disp-${lead.disposition}" title="${formatDisposition(lead.disposition)}">${formatDisposition(lead.disposition)}</span>` : ''}
+                ${lead.next_followup_date ? formatFollowupIndicator(lead.next_followup_date) : ''}
             </td>
             <td class="hide-mobile">
                 <span class="crm-cell-secondary">${escapeHtml(lead.owner_name || '-')}</span>
@@ -148,13 +182,18 @@ function renderLeadsTable(leads) {
             </td>
             <td>
                 <div class="crm-actions">
+                    <button class="crm-action-btn" onclick="openLogActivityModal('${lead.id}')" title="Log Activity">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                    </button>
                     <button class="crm-action-btn" onclick="editLead('${lead.id}')" title="Edit">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                     </button>
-                    ${lead.status !== 'converted' ? `
+                    ${lead.status !== 'won' && lead.status !== 'converted' ? `
                     <button class="crm-action-btn action-convert" onclick="openConvertModal('${lead.id}')" title="Convert to Contact">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
@@ -179,11 +218,58 @@ function renderLeadsTable(leads) {
 function formatStatus(status) {
     const labels = {
         'new': 'New',
+        'assigned': 'Assigned',
         'contacted': 'Contacted',
         'qualified': 'Qualified',
+        'unqualified': 'Unqualified',
+        'follow_up': 'Follow Up',
+        'opportunity': 'Opportunity',
+        'negotiation': 'Negotiation',
+        'won': 'Won',
+        'lost': 'Lost',
         'converted': 'Converted'
     };
     return labels[status] || status || 'New';
+}
+
+function formatFollowupIndicator(dateStr) {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const fuDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const diffDays = Math.round((fuDay - today) / 86400000);
+
+    let cls, label;
+    if (diffDays < 0) {
+        cls = 'followup-overdue';
+        label = `Overdue ${Math.abs(diffDays)}d`;
+    } else if (diffDays === 0) {
+        cls = 'followup-today';
+        label = 'Follow-up today';
+    } else if (diffDays === 1) {
+        cls = 'followup-soon';
+        label = 'Follow-up tomorrow';
+    } else {
+        cls = 'followup-future';
+        label = `Follow-up ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+    }
+    return `<div class="crm-followup-indicator ${cls}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${label}</div>`;
+}
+
+function formatDisposition(disp) {
+    const labels = {
+        'not_responding': 'Not Responding',
+        'not_interested': 'Not Interested',
+        'callback_later': 'Callback Later',
+        'hot_lead': 'Hot Lead',
+        'wrong_number': 'Wrong Number',
+        'voicemail': 'Voicemail',
+        'email_sent': 'Email Sent',
+        'meeting_scheduled': 'Meeting Scheduled',
+        'proposal_sent': 'Proposal Sent',
+        'deal_in_progress': 'Deal In Progress'
+    };
+    return labels[disp] || disp || '';
 }
 
 function formatSource(source) {
@@ -259,8 +345,74 @@ function updateBulkActionsBar() {
 }
 
 async function bulkAssign() {
-    // Placeholder for bulk assignment
-    Toast.info('Bulk assign functionality coming soon');
+    if (selectedLeadIds.size === 0) {
+        Toast.info('Select at least one lead first');
+        return;
+    }
+    try {
+        // Load teams
+        const teams = await api.request('/crm/teams');
+        if (!teams || teams.length === 0) {
+            Toast.error('No teams found. Create a team in Settings first.');
+            return;
+        }
+        // Build a simple picker
+        const items = teams.map(t =>
+            `<div class="assign-team-option" data-team-id="${t.id}" onclick="confirmBulkAssign('${t.id}', '${(t.team_name || '').replace(/'/g, "\\'")}')">
+                <strong>${escHtml(t.team_name)}</strong>
+                <span style="color:var(--text-secondary);font-size:0.8rem;margin-left:8px;">${t.team_code || ''}</span>
+            </div>`
+        ).join('');
+        const html = `<div style="max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">${items}</div>`;
+        // Use a confirm-style dialog
+        const modal = document.createElement('div');
+        modal.className = 'gm-overlay active';
+        modal.id = 'bulkAssignOverlay';
+        modal.innerHTML = `
+            <div class="gm-modal gm-sm">
+                <div class="gm-header">
+                    <div class="gm-header-left">
+                        <div class="gm-title-group">
+                            <h3 class="gm-title">Assign ${selectedLeadIds.size} lead(s) to team</h3>
+                            <p class="gm-subtitle">Pick a team below</p>
+                        </div>
+                    </div>
+                    <button class="gm-close" onclick="document.getElementById('bulkAssignOverlay').remove()">&times;</button>
+                </div>
+                <div class="gm-body">${html}</div>
+                <div class="gm-footer" style="display:flex;justify-content:flex-end;">
+                    <button class="btn btn-outline-secondary" onclick="document.getElementById('bulkAssignOverlay').remove()">Cancel</button>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+    } catch (e) {
+        Toast.error('Failed to load teams');
+        console.error(e);
+    }
+}
+
+function escHtml(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+async function confirmBulkAssign(teamId, teamName) {
+    try {
+        const ids = Array.from(selectedLeadIds);
+        await api.request('/crm/leads/bulk-assign-team', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lead_ids: ids, team_id: teamId })
+        });
+        Toast.success(`${ids.length} lead(s) assigned to ${teamName}`);
+        document.getElementById('bulkAssignOverlay')?.remove();
+        selectedLeadIds.clear();
+        loadLeads();
+    } catch (e) {
+        Toast.error(e.message || 'Assignment failed');
+    }
 }
 
 async function bulkDelete() {
