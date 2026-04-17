@@ -3374,6 +3374,12 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
     max-width: 100%;
 }
 
+.crm-deals-page .crm-stats-grid {
+    max-width: 1760px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .crm-deals-page .kanban-board {
     justify-content: center;
 }
