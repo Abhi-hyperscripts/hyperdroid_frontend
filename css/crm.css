@@ -986,12 +986,19 @@ body.crm-dashboard .crm-container {
     flex-wrap: wrap;
     justify-content: center;
     gap: 12px;
-    margin-bottom: 24px;
+    margin: 0 auto 24px;
+    max-width: 1320px;
 }
 
 .crm-container .quick-actions .action-card {
     flex: 1 1 220px;
     max-width: 320px;
+}
+
+/* Setup hint banner — match the cards row width + centering */
+.crm-container #setupHint {
+    max-width: 1320px;
+    margin: 8px auto 20px;
 }
 
 .crm-container .action-card.action-card--disabled {
@@ -1138,6 +1145,19 @@ body.crm-dashboard .crm-container {
 #cardSettings:hover {
     border-color: var(--gray-500);
 }
+
+/* Dashboard Quick Action cards (current page wiring) */
+#cardContacts .action-icon {
+    background: linear-gradient(135deg, var(--color-purple, #8b5cf6), var(--color-purple-dark, #6d28d9));
+}
+#cardContacts .action-icon svg { color: var(--text-inverse); }
+#cardContacts:hover { border-color: var(--color-purple, #8b5cf6); }
+
+#cardDeals .action-icon {
+    background: linear-gradient(135deg, var(--color-success, #10b981), var(--color-success-dark, #047857));
+}
+#cardDeals .action-icon svg { color: var(--text-inverse); }
+#cardDeals:hover { border-color: var(--color-success, #10b981); }
 
 /* =============================================================
    CRM DASHBOARD - Lead Info Cell
