@@ -609,22 +609,23 @@ async function editDeal(dealId) {
 
         if (dealCurrencyDropdown) dealCurrencyDropdown.setValue(deal.currency || 'USD');
 
-        // Stage: read-only if terminal (Won/Lost)
+        // Stage: look up stage type from loaded dealStages array
         const stageSelect = document.getElementById('dealStage');
         const stageContainer = stageSelect?.parentElement;
-        const isTerminal = deal.stage_type === 'won' || deal.stage_type === 'lost' ||
-            (deal.stage_name && ['won', 'lost', 'closed won', 'closed lost'].includes(deal.stage_name.toLowerCase()));
+        const currentStage = dealStages.find(s => s.id === deal.stage_id);
+        const stageType = (currentStage?.stage_type || '').toLowerCase();
+        const stageName = currentStage?.stage_name || 'Unknown';
+        const isTerminal = stageType === 'won' || stageType === 'lost';
 
         // Remove old readonly element if exists
         const oldStageReadonly = document.getElementById('dealStageReadonly');
         if (oldStageReadonly) oldStageReadonly.remove();
 
         if (isTerminal && stageContainer) {
-            // Create readonly element
             const stageReadonly = document.createElement('div');
             stageReadonly.id = 'dealStageReadonly';
-            stageReadonly.style.cssText = 'padding:6px 0;font-weight:600;font-size:0.9rem;color:' + (deal.stage_type === 'won' ? '#22c55e' : '#ef4444');
-            stageReadonly.textContent = (deal.stage_name || 'Terminal') + ' (final)';
+            stageReadonly.style.cssText = 'padding:6px 0;font-weight:600;font-size:0.9rem;color:' + (stageType === 'won' ? '#22c55e' : '#ef4444');
+            stageReadonly.textContent = stageName + ' (final)';
             stageContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = 'none');
             stageContainer.appendChild(stageReadonly);
         } else {
