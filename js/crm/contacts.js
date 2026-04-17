@@ -92,18 +92,13 @@ async function loadCompanies() {
 }
 
 function populateCompanyDropdown() {
-    const select = document.getElementById('contactCompany');
-    if (!select) return;
+    // Populate datalist for company autocomplete
+    const datalist = document.getElementById('companyAutocomplete');
+    if (!datalist) return;
 
-    // Keep the default option
-    select.innerHTML = '<option value="">-- Select Company --</option>';
-
-    companies.forEach(company => {
-        const option = document.createElement('option');
-        option.value = company.id;
-        option.textContent = company.company_name;
-        select.appendChild(option);
-    });
+    datalist.innerHTML = companies.map(c =>
+        `<option value="${escapeHtml(c.company_name)}">`
+    ).join('');
 
     // Update searchable dropdown
     if (contactCompanyDropdown) {
@@ -248,12 +243,9 @@ function openCreateContactModal() {
     document.getElementById('contactSubmitBtn').textContent = 'Create Contact';
     document.getElementById('contactForm').reset();
     document.getElementById('contactId').value = '';
-    if (contactCompanyDropdown) contactCompanyDropdown.setValue('');
     if (contactSourceDropdown) contactSourceDropdown.setValue('');
-    // Show company dropdown for new contact
-    document.getElementById('contactCompanyReadonly').style.display = 'none';
-    const companyContainer = document.getElementById('contactCompany')?.parentElement;
-    if (companyContainer) companyContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = '');
+    document.getElementById('contactCompanyName').value = '';
+    document.getElementById('contactCompanyId').value = '';
     openModal('contactModal');
 }
 
@@ -273,26 +265,13 @@ function openEditContactModal(id) {
     document.getElementById('contactEmail').value = contact.email || '';
     document.getElementById('contactPhone').value = contact.phone || '';
     document.getElementById('contactMobile').value = contact.mobile || '';
-    document.getElementById('contactCompany').value = contact.company_id || '';
+    // Company: show name in text input
+    const co = companies.find(c => c.id === contact.company_id);
+    document.getElementById('contactCompanyName').value = co?.company_name || '';
+    document.getElementById('contactCompanyId').value = contact.company_id || '';
     document.getElementById('contactJobTitle').value = contact.job_title || '';
     document.getElementById('contactSource').value = contact.contact_source || '';
     if (contactSourceDropdown) contactSourceDropdown.setValue(contact.contact_source || '');
-
-    // Company: readonly if already linked
-    const companyReadonly = document.getElementById('contactCompanyReadonly');
-    const companySelect = document.getElementById('contactCompany');
-    const companyContainer = companySelect?.parentElement;
-
-    if (contact.company_id) {
-        const co = companies.find(c => c.id === contact.company_id);
-        companyReadonly.textContent = co?.company_name || contact.company_id;
-        companyReadonly.style.display = '';
-        if (companyContainer) companyContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = 'none');
-    } else {
-        companyReadonly.style.display = 'none';
-        if (companyContainer) companyContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = '');
-        if (contactCompanyDropdown) contactCompanyDropdown.setValue('');
-    }
 
     openModal('contactModal');
 }
@@ -330,7 +309,30 @@ async function handleContactSubmit(event) {
     submitBtn.innerHTML = '<span class="btn-spinner"></span>Saving...';
 
     try {
-        const companyIdValue = (contactCompanyDropdown ? contactCompanyDropdown.getValue() : document.getElementById('contactCompany').value);
+        // Resolve company: match by name or create new
+        const companyName = document.getElementById('contactCompanyName').value.trim();
+        let companyId = document.getElementById('contactCompanyId').value || null;
+
+        if (companyName) {
+            const match = companies.find(c => c.company_name.toLowerCase() === companyName.toLowerCase());
+            if (match) {
+                companyId = match.id;
+            } else {
+                // Auto-create company
+                try {
+                    const newCo = await api.request('/crm/companies', {
+                        method: 'POST',
+                        body: JSON.stringify({ company_name: companyName })
+                    });
+                    companyId = newCo.id;
+                    companies.push(newCo);
+                    populateCompanyDropdown();
+                    Toast.info(`Company "${companyName}" created`);
+                } catch (e) {
+                    console.error('Failed to create company:', e);
+                }
+            }
+        }
 
         const payload = {
             first_name: document.getElementById('firstName').value.trim(),
@@ -338,7 +340,7 @@ async function handleContactSubmit(event) {
             email: document.getElementById('contactEmail').value.trim() || null,
             phone: document.getElementById('contactPhone').value.trim() || null,
             mobile: document.getElementById('contactMobile').value.trim() || null,
-            company_id: companyIdValue || null,
+            company_id: companyId,
             job_title: document.getElementById('contactJobTitle').value.trim() || null,
             contact_source: (contactSourceDropdown ? contactSourceDropdown.getValue() : document.getElementById('contactSource').value) || null
         };
