@@ -500,17 +500,26 @@ function openNewDealModal() {
     if (dealContactDropdown) dealContactDropdown.setValue('');
     if (dealCompanyDropdown) dealCompanyDropdown.setValue('');
 
-    // Show dropdowns for new deal (not readonly)
-    const contactContainer = document.getElementById('dealContact')?.parentElement;
-    const companyContainer = document.getElementById('dealCompany')?.parentElement;
-    if (contactContainer) {
-        document.getElementById('dealContactReadonly').style.display = 'none';
-        contactContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = '');
+    // Remove stage readonly from previous edit
+    const oldStageReadonly = document.getElementById('dealStageReadonly');
+    if (oldStageReadonly) oldStageReadonly.remove();
+
+    // Show dropdowns for new deal (not readonly) — show SearchableDropdown OR native select, not both
+    function showDropdown(container, readonlyEl) {
+        if (!container) return;
+        if (readonlyEl) readonlyEl.style.display = 'none';
+        const sd = container.querySelector('.searchable-dropdown');
+        if (sd) {
+            sd.style.display = '';
+            container.querySelectorAll('select').forEach(el => el.style.display = 'none');
+        } else {
+            container.querySelectorAll('select').forEach(el => el.style.display = '');
+        }
     }
-    if (companyContainer) {
-        document.getElementById('dealCompanyReadonly').style.display = 'none';
-        companyContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = '');
-    }
+
+    showDropdown(document.getElementById('dealContact')?.parentElement, document.getElementById('dealContactReadonly'));
+    showDropdown(document.getElementById('dealCompany')?.parentElement, document.getElementById('dealCompanyReadonly'));
+    showDropdown(document.getElementById('dealStage')?.parentElement, null);
 
     openModal('dealModal');
 }
@@ -648,11 +657,14 @@ async function editDeal(dealId) {
         }
         function showAllDropdowns(container, readonly) {
             if (!container) return;
-            // Show the searchable-dropdown if it exists, otherwise the select
-            const sd = container.querySelector('.searchable-dropdown');
-            if (sd) { sd.style.display = ''; }
-            else { container.querySelectorAll('select').forEach(el => el.style.display = ''); }
             if (readonly) readonly.style.display = 'none';
+            const sd = container.querySelector('.searchable-dropdown');
+            if (sd) {
+                sd.style.display = '';
+                container.querySelectorAll('select').forEach(el => el.style.display = 'none');
+            } else {
+                container.querySelectorAll('select').forEach(el => el.style.display = '');
+            }
         }
 
         if (deal.contact_id) {
