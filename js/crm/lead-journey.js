@@ -16,7 +16,12 @@
         document.getElementById('wonValueSection').style.display = 'none';
 
         try {
-            const data = await api.request(`/crm/leads/${leadId}/transitions`);
+            // Fetch the lead + transitions in parallel so the modal can show
+            // which lead we're editing (id + name) alongside the status picker.
+            const [lead, data] = await Promise.all([
+                api.request(`/crm/leads/${leadId}`),
+                api.request(`/crm/leads/${leadId}/transitions`)
+            ]);
             const currentLabel = formatStatus(data.current_status);
             document.getElementById('statusCurrentLabel').innerHTML =
                 `Current: <span class="crm-status-badge status-${data.current_status}">${currentLabel}</span>`;
@@ -33,8 +38,12 @@
                 ).join('');
             }
 
-            document.getElementById('statusChangeSubtitle').textContent =
-                `${currentLabel} → ?`;
+            const fullName = [lead?.first_name, lead?.last_name].filter(Boolean).join(' ').trim() || '(no name)';
+            const leadNumber = lead?.lead_number || '';
+            const who = leadNumber ? `${leadNumber} · ${fullName}` : fullName;
+            document.getElementById('statusChangeSubtitle').innerHTML =
+                `<span style="color:var(--text-primary);font-weight:500;">${who}</span>` +
+                `<span style="color:var(--text-muted);margin-left:8px;">${currentLabel} → ?</span>`;
             document.getElementById('statusChangeOverlay').classList.add('active');
         } catch (e) {
             Toast.error(e.message || 'Failed to load transitions');
