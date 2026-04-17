@@ -1429,6 +1429,14 @@ body.crm-dashboard .crm-container {
     background: linear-gradient(135deg, #06b6d4, #0891b2);
 }
 
+.crm-stat-icon.stat-won {
+    background: linear-gradient(135deg, var(--color-success), var(--color-success-dark));
+}
+
+.crm-stat-icon.stat-lost {
+    background: linear-gradient(135deg, var(--color-danger), #b91c1c);
+}
+
 .crm-stat-text {
     display: flex;
     flex-direction: column;
