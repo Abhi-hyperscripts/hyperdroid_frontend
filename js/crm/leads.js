@@ -869,6 +869,7 @@ async function confirmConvertLead() {
 
     try {
         const payload = {
+            create_contact: true, // always create a contact on conversion
             create_deal: document.getElementById('convertCreateDeal').checked,
             deal_name: document.getElementById('convertDealName').value.trim(),
             deal_value: parseFloat(document.getElementById('convertDealValue').value) || 0
@@ -879,10 +880,12 @@ async function confirmConvertLead() {
             body: JSON.stringify(payload)
         });
 
+        const convertedLeadId = convertingLeadId;
         Toast.success('Lead converted successfully');
         closeConvertModal();
         loadLeads();
         loadLeadStats();
+        if (convertedLeadId) openLeadDetailPanel(convertedLeadId);
     } catch (error) {
         console.error('Failed to convert lead:', error);
         Toast.error(error.message || 'Failed to convert lead');
