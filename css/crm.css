@@ -3377,6 +3377,10 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
     max-width: 1600px;
 }
 
+.crm-deals-page .kanban-board {
+    justify-content: center;
+}
+
 /* ── Lead Modal — compact inputs at 32px ── */
 #leadModal .modal-dialog {
     max-width: 1000px;
