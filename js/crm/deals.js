@@ -501,14 +501,16 @@ function openNewDealModal() {
     if (dealCompanyDropdown) dealCompanyDropdown.setValue('');
 
     // Show dropdowns for new deal (not readonly)
-    document.getElementById('dealContactReadonly').style.display = 'none';
-    document.getElementById('dealCompanyReadonly').style.display = 'none';
-    const cs = document.getElementById('dealContact');
-    const csd = cs?.closest('.searchable-dropdown') || cs;
-    if (csd) csd.style.display = '';
-    const cos = document.getElementById('dealCompany');
-    const cosd = cos?.closest('.searchable-dropdown') || cos;
-    if (cosd) cosd.style.display = '';
+    const contactContainer = document.getElementById('dealContact')?.parentElement;
+    const companyContainer = document.getElementById('dealCompany')?.parentElement;
+    if (contactContainer) {
+        document.getElementById('dealContactReadonly').style.display = 'none';
+        contactContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = '');
+    }
+    if (companyContainer) {
+        document.getElementById('dealCompanyReadonly').style.display = 'none';
+        companyContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = '');
+    }
 
     openModal('dealModal');
 }
@@ -611,33 +613,45 @@ async function editDeal(dealId) {
         // Contact & Company: show as read-only text if set, dropdown if not
         const contactReadonly = document.getElementById('dealContactReadonly');
         const contactSelect = document.getElementById('dealContact');
-        const contactDropdown = contactSelect?.closest('.searchable-dropdown') || contactSelect;
+        const contactContainer = contactSelect?.parentElement;
         const companyReadonly = document.getElementById('dealCompanyReadonly');
         const companySelect = document.getElementById('dealCompany');
-        const companyDropdown = companySelect?.closest('.searchable-dropdown') || companySelect;
+        const companyContainer = companySelect?.parentElement;
+
+        function hideAllDropdowns(container, readonly) {
+            if (!container) return;
+            container.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = 'none');
+            if (readonly) readonly.style.display = '';
+        }
+        function showAllDropdowns(container, readonly) {
+            if (!container) return;
+            // Show the searchable-dropdown if it exists, otherwise the select
+            const sd = container.querySelector('.searchable-dropdown');
+            if (sd) { sd.style.display = ''; }
+            else { container.querySelectorAll('select').forEach(el => el.style.display = ''); }
+            if (readonly) readonly.style.display = 'none';
+        }
 
         if (deal.contact_id) {
-            const contactName = deal.contact_name || contactsList.find(c => c.id === deal.contact_id)?.first_name + ' ' + contactsList.find(c => c.id === deal.contact_id)?.last_name || deal.contact_id;
+            const c = contactsList.find(c => c.id === deal.contact_id);
+            const contactName = deal.contact_name || (c ? `${c.first_name || ''} ${c.last_name || ''}`.trim() : deal.contact_id);
             contactReadonly.textContent = contactName;
-            contactReadonly.style.display = '';
-            if (contactDropdown) contactDropdown.style.display = 'none';
+            hideAllDropdowns(contactContainer, contactReadonly);
             contactSelect.value = deal.contact_id;
         } else {
-            contactReadonly.style.display = 'none';
-            if (contactDropdown) contactDropdown.style.display = '';
+            showAllDropdowns(contactContainer, contactReadonly);
             contactSelect.value = '';
             if (dealContactDropdown) dealContactDropdown.setValue('');
         }
 
         if (deal.company_id) {
-            const companyName = deal.company_name || companiesList.find(c => c.id === deal.company_id)?.company_name || deal.company_id;
+            const co = companiesList.find(c => c.id === deal.company_id);
+            const companyName = deal.company_name || co?.company_name || deal.company_id;
             companyReadonly.textContent = companyName;
-            companyReadonly.style.display = '';
-            if (companyDropdown) companyDropdown.style.display = 'none';
+            hideAllDropdowns(companyContainer, companyReadonly);
             companySelect.value = deal.company_id;
         } else {
-            companyReadonly.style.display = 'none';
-            if (companyDropdown) companyDropdown.style.display = '';
+            showAllDropdowns(companyContainer, companyReadonly);
             companySelect.value = '';
             if (dealCompanyDropdown) dealCompanyDropdown.setValue('');
         }
