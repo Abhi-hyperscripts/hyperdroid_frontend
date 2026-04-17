@@ -1957,12 +1957,12 @@ function openWipeModal(mode) {
 
     inputEl.value = '';
     btn.disabled = true;
-    document.getElementById('wipeModal').classList.add('show');
+    document.getElementById('wipeModal').classList.add('active');
     setTimeout(() => inputEl.focus(), 50);
 }
 
 function closeWipeModal() {
-    document.getElementById('wipeModal').classList.remove('show');
+    document.getElementById('wipeModal').classList.remove('active');
     _pendingWipeMode = null;
 }
 
