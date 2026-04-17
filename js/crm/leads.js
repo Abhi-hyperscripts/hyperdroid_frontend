@@ -23,7 +23,7 @@ let leadStatusDropdown = null;
 // ==================== Initialization ====================
 
 document.addEventListener('DOMContentLoaded', () => {
-    Navigation.init('crm', 'leads');
+    Navigation.init('crm', '../');
     loadMyRole();
     loadLeads();
     loadLeadStats();

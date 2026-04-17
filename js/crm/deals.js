@@ -53,7 +53,7 @@ const CURRENCY_SYMBOLS = {
 // ==================== Initialization ====================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    Navigation.init('crm', 'deals');
+    Navigation.init('crm', '../');
     // Resolve role first so render() can hide member-blocked actions.
     await loadMyRole();
     await loadDefaultCurrency();
