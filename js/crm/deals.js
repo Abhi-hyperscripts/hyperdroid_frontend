@@ -871,6 +871,13 @@ async function openDealDetailPanel(dealId) {
     }
 }
 
+function filterDealTimeline(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('#dealTimeline .tl-entry').forEach(el => {
+        el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
 function closeDealDetailPanel() {
     document.getElementById('dealDetailOverlay').classList.remove('active');
     document.getElementById('dealDetailPanel').classList.remove('active');

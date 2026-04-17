@@ -248,10 +248,16 @@
             </button>
         </div>
         <div class="panel-body">
+            <!-- Contact info summary -->
             <div id="contactDetailInfo" class="lead-detail-info"></div>
+
+            <!-- Timeline -->
             <div class="lead-timeline-section">
                 <div class="lead-timeline-header">
-                    <h4>Activity Timeline</h4>
+                    <h4>Full Journey Timeline</h4>
+                    <div class="lead-timeline-toolbar">
+                        <input type="text" class="form-control form-control-sm" placeholder="Search timeline..." oninput="filterContactTimeline(this.value)">
+                    </div>
                 </div>
                 <div id="contactTimeline" class="lead-timeline"></div>
             </div>

@@ -448,6 +448,13 @@ async function openContactDetailPanel(contactId) {
     }
 }
 
+function filterContactTimeline(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('#contactTimeline .tl-entry').forEach(el => {
+        el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
 function closeContactDetailPanel() {
     document.getElementById('contactDetailOverlay').classList.remove('active');
     document.getElementById('contactDetailPanel').classList.remove('active');
