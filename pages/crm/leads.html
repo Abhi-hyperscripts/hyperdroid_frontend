@@ -584,6 +584,37 @@
         </div>
     </div>
 
+    <!-- ═══ Reassign Lead Modal ═══ -->
+    <div class="gm-overlay" id="reassignLeadOverlay">
+        <div class="gm-modal gm-sm">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Reassign Lead</h3>
+                        <p class="gm-subtitle" id="reassignLeadSubtitle">Select a new owner from the team</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeReassignModal()">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div class="mb-3">
+                    <label class="form-label">Lead</label>
+                    <div id="reassignLeadName" style="font-weight:600;font-size:0.9rem;"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Assign to *</label>
+                    <select id="reassignTargetMember" class="form-control" style="height:34px;font-size:0.82rem;">
+                        <option value="">— Select team member —</option>
+                    </select>
+                </div>
+            </div>
+            <div class="gm-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+                <button class="btn btn-outline-secondary" onclick="closeReassignModal()">Cancel</button>
+                <button class="btn btn-primary" id="reassignConfirmBtn" onclick="confirmReassign()">Reassign</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══ Schedule Follow-up Modal ═══ -->
     <div class="gm-overlay" id="scheduleFollowupOverlay">
         <div class="gm-modal gm-sm">

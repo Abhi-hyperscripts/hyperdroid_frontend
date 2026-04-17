@@ -12,6 +12,7 @@ let currentPage = 1;
 let pageSize = 50;
 let totalLeads = 0;
 let myTeamRole = 'member'; // default to most restrictive
+let reassigningLeadId = null;
 
 // Searchable dropdown instances
 let filterStatusDropdown = null;
@@ -242,6 +243,13 @@ function renderLeadsTable(leads) {
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                     </button>
+                    ${canDeleteLead() && (lead.team_id || lead.team_name) ? `<button class="crm-action-btn" onclick="openReassignModal('${lead.id}')" data-tooltip="Reassign to Member">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="8.5" cy="7" r="4"/>
+                            <polyline points="17 11 19 13 23 9"/>
+                        </svg>
+                    </button>` : ''}
                     ${lead.status === 'qualified' ? `
                     <button class="crm-action-btn action-convert" onclick="openConvertModal('${lead.id}')" data-tooltip="Convert to Contact + Deal">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -769,6 +777,61 @@ async function assignLead(leadId, ownerId) {
 }
 
 // ==================== Lead Conversion ====================
+
+// ==================== Reassign Lead ====================
+
+async function openReassignModal(leadId) {
+    reassigningLeadId = leadId;
+    const lead = allLeads.find(l => l.id === leadId);
+    if (!lead) return;
+
+    const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ');
+    document.getElementById('reassignLeadName').textContent = `${name} (${lead.lead_number || ''})`;
+
+    const sel = document.getElementById('reassignTargetMember');
+    sel.innerHTML = '<option value="">Loading...</option>';
+    document.getElementById('reassignLeadOverlay').classList.add('active');
+
+    try {
+        const teamId = lead.team_id;
+        if (!teamId) { Toast.error('Lead has no team'); closeReassignModal(); return; }
+
+        const teamDetail = await api.request(`/crm/teams/${teamId}`);
+        const members = (teamDetail.members || []).filter(m => m.is_active && m.user_id !== lead.owner_user_id);
+
+        sel.innerHTML = '<option value="">— Select team member —</option>' +
+            members.map(m => `<option value="${m.user_id}">${escapeHtml(m.display_name || m.user_id)} (${m.role})</option>`).join('');
+    } catch (e) {
+        sel.innerHTML = '<option value="">Failed to load members</option>';
+    }
+}
+
+function closeReassignModal() {
+    document.getElementById('reassignLeadOverlay').classList.remove('active');
+    reassigningLeadId = null;
+}
+
+async function confirmReassign() {
+    if (!reassigningLeadId) return;
+    const sel = document.getElementById('reassignTargetMember');
+    const newOwnerId = sel.value;
+    if (!newOwnerId) { Toast.warning('Please select a team member'); return; }
+
+    try {
+        await api.request(`/crm/leads/${reassigningLeadId}/assign`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ owner_user_id: newOwnerId })
+        });
+        Toast.success('Lead reassigned successfully');
+        closeReassignModal();
+        loadLeads();
+    } catch (e) {
+        Toast.error(e.message || 'Failed to reassign');
+    }
+}
+
+// ==================== Convert Lead ====================
 
 function openConvertModal(leadId) {
     convertingLeadId = leadId;
