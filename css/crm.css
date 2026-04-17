@@ -3374,8 +3374,12 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
 }
 
 .crm-deals-page .crm-container {
-    max-width: 1600px;
+    max-width: 1500px;
     margin: 0 auto;
+}
+
+.crm-deals-page .kanban-board {
+    justify-content: center;
 }
 
 /* ── Lead Modal — compact inputs at 32px ── */
