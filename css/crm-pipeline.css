@@ -8,7 +8,7 @@
    KANBAN BOARD - Horizontal scrolling container
    ============================================================= */
 .pipeline-kanban {
-    margin-bottom: 0;
+    margin-bottom: 24px;
     flex: 1;
     min-height: 0;
 }
@@ -21,7 +21,7 @@
     padding-bottom: 16px;
     -webkit-overflow-scrolling: touch;
     min-height: 0;
-    height: calc(100vh - 300px);
+    height: calc(100vh - 340px);
 }
 
 /* Custom scrollbar for the kanban board */
