@@ -37,11 +37,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initSearchableDropdowns();
 
-    // Load data
-    await Promise.all([
-        loadContacts(),
-        loadCompanies()
-    ]);
+    // Load companies first (needed for contact table rendering)
+    await loadCompanies();
+    await loadContacts();
 });
 
 function initSearchableDropdowns() {

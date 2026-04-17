@@ -638,7 +638,15 @@ async function editDeal(dealId) {
             stageContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = 'none');
             stageContainer.appendChild(stageReadonly);
         } else {
-            if (stageContainer) stageContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = '');
+            if (stageContainer) {
+                const sd = stageContainer.querySelector('.searchable-dropdown');
+                if (sd) {
+                    sd.style.display = '';
+                    stageContainer.querySelectorAll('select').forEach(el => el.style.display = 'none');
+                } else {
+                    stageContainer.querySelectorAll('select').forEach(el => el.style.display = '');
+                }
+            }
             if (dealStageDropdown) dealStageDropdown.setValue(deal.stage_id || '');
         }
 
