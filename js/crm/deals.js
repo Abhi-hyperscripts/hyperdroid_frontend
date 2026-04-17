@@ -840,22 +840,50 @@ async function openDealDetailPanel(dealId) {
         document.getElementById('dealDetailName').textContent = deal.name || 'Unknown Deal';
 
         const esc = escapeHtml;
-        const field = (label, value, extraHtml) => value ? `<div class="lead-detail-item"><span class="lead-detail-label">${label}</span><span>${extraHtml || esc(String(value))}</span></div>` : '';
+        const field = (label, value, html) => value ? `<div class="lead-detail-item"><span class="lead-detail-label">${label}</span><span>${html || esc(String(value))}</span></div>` : '';
         const currency = deal.value ? `₹${Number(deal.value).toLocaleString()}` : null;
+        const dealName = deal.name || deal.deal_name || 'Untitled Deal';
+        document.getElementById('dealDetailName').textContent = dealName;
 
-        // Stage badge color
+        // Stage badge
         const stageHtml = deal.stage_name ? `<span class="tl-chip" style="background:rgba(168,85,247,0.15);color:#a855f7;font-size:0.82rem;">${esc(deal.stage_name)}</span>` : null;
+
+        // Try to find source lead for richer data
+        let lead = null;
+        try {
+            const leads = await api.request('/crm/leads?pageSize=200');
+            const allLeads = leads.data || leads || [];
+            lead = allLeads.find(l => l.converted_deal_id === dealId);
+        } catch {}
+
+        const teamBadge = lead?.team_name ? `<span class="crm-team-badge">${esc(lead.team_name)}</span>` : null;
+
+        // Parse custom fields from lead
+        let customHtml = '';
+        try {
+            const cf = typeof lead?.custom_fields === 'string' ? JSON.parse(lead.custom_fields || '{}') : (lead?.custom_fields || {});
+            for (const [k, v] of Object.entries(cf)) {
+                if (v) customHtml += field(k.replace(/_/g, ' '), v);
+            }
+        } catch {}
 
         document.getElementById('dealDetailInfo').innerHTML = `
             <div class="lead-detail-grid">
-                ${field('Deal Name', deal.name || deal.deal_name)}
+                ${field('Lead ID', lead?.lead_number, lead?.lead_number ? `<span class="crm-lead-number">${esc(lead.lead_number)}</span>` : null)}
+                ${field('Deal Name', dealName)}
                 ${field('Value', currency)}
                 ${field('Stage', deal.stage_name, stageHtml)}
-                ${field('Contact', deal.contact_name)}
-                ${field('Company', deal.company_name)}
-                ${field('Owner', deal.owner_name || deal.owner_user_id)}
+                ${field('Contact', deal.contact_name || (lead ? `${lead.first_name || ''} ${lead.last_name || ''}`.trim() : null))}
+                ${field('Company', deal.company_name || lead?.company_name)}
+                ${field('Email', lead?.email)}
+                ${field('Phone', lead?.phone)}
+                ${field('Source', lead?.lead_source)}
+                ${field('Team', lead?.team_name, teamBadge)}
+                ${field('Owner', lead?.owner_name || deal.owner_name)}
+                ${field('City', lead?.city)}
+                ${field('Country', lead?.country)}
+                ${customHtml}
                 ${field('Expected Close', deal.expected_close_date ? new Date(deal.expected_close_date).toLocaleDateString() : null)}
-                ${field('Probability', deal.probability ? deal.probability + '%' : null)}
                 ${field('Won Reason', deal.won_reason)}
                 ${field('Lost Reason', deal.lost_reason)}
                 ${deal.notes ? `<div class="lead-detail-item" style="grid-column:1/-1"><span class="lead-detail-label">Notes</span><span>${esc(deal.notes)}</span></div>` : ''}

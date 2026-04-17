@@ -421,21 +421,50 @@ async function openContactDetailPanel(contactId) {
         document.getElementById('contactDetailName').textContent = name;
 
         const esc = s => { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
-        const field = (label, value) => value ? `<div class="lead-detail-item"><span class="lead-detail-label">${label}</span><span>${esc(value)}</span></div>` : '';
+        const field = (label, value, html) => value ? `<div class="lead-detail-item"><span class="lead-detail-label">${label}</span><span>${html || esc(value)}</span></div>` : '';
+
+        // Try to find source lead for richer data
+        let lead = null;
+        try {
+            const leads = await api.request('/crm/leads?pageSize=200');
+            const allLeads = leads.data || leads || [];
+            lead = allLeads.find(l => l.converted_contact_id === contactId);
+        } catch {}
+
+        const src = lead || contact; // use lead data if available, fallback to contact
+        const statusBadge = lead ? `<span class="crm-status-badge status-${lead.status}" style="width:fit-content">${esc(lead.status?.charAt(0).toUpperCase() + lead.status?.slice(1))}</span>` : null;
+        const teamBadge = lead?.team_name ? `<span class="crm-team-badge">${esc(lead.team_name)}</span>` : null;
+
+        // Parse custom fields
+        let customHtml = '';
+        try {
+            const cf = typeof src.custom_fields === 'string' ? JSON.parse(src.custom_fields || '{}') : (src.custom_fields || {});
+            for (const [k, v] of Object.entries(cf)) {
+                if (v) customHtml += field(k.replace(/_/g, ' '), v);
+            }
+        } catch {}
 
         document.getElementById('contactDetailInfo').innerHTML = `
             <div class="lead-detail-grid">
+                ${field('Lead ID', lead?.lead_number, lead?.lead_number ? `<span class="crm-lead-number">${esc(lead.lead_number)}</span>` : null)}
                 ${field('Email', contact.email)}
-                ${field('Phone', contact.phone || contact.mobile)}
-                ${field('Company', contact.company_name)}
-                ${field('Job Title', contact.job_title)}
-                ${field('Source', contact.contact_source)}
-                ${field('City', contact.city)}
-                ${field('State', contact.state)}
-                ${field('Country', contact.country)}
-                ${field('Address', contact.address)}
-                ${field('Website', contact.website)}
-                ${contact.notes ? `<div class="lead-detail-item" style="grid-column:1/-1"><span class="lead-detail-label">Notes</span><span>${esc(contact.notes)}</span></div>` : ''}
+                ${field('Phone', contact.phone || contact.mobile || src.phone)}
+                ${field('Company', contact.company_name || src.company_name)}
+                ${field('Job Title', contact.job_title || src.job_title)}
+                ${field('Source', contact.contact_source || src.lead_source)}
+                ${field('Status', lead?.status, statusBadge)}
+                ${field('City', src.city)}
+                ${field('State', src.state)}
+                ${field('Country', src.country)}
+                ${field('Website', src.website)}
+                ${field('Team', lead?.team_name, teamBadge)}
+                ${field('Owner', lead?.owner_name || src.owner_name)}
+                ${src.notes ? `<div class="lead-detail-item" style="grid-column:1/-1"><span class="lead-detail-label">Notes</span><span>${esc(src.notes)}</span></div>` : ''}
+                ${customHtml}
+                ${field('Next Follow-up', lead?.next_followup_date ? new Date(lead.next_followup_date).toLocaleDateString() : null)}
+                ${field('First Contact', lead?.first_contact_date ? new Date(lead.first_contact_date).toLocaleDateString() : null)}
+                ${field('Last Interaction', lead?.last_interaction_at ? new Date(lead.last_interaction_at).toLocaleDateString() : null)}
+                ${field('Follow-ups', lead?.followup_count > 0 ? String(lead.followup_count) : null)}
                 <div class="lead-detail-item"><span class="lead-detail-label">Created</span><span>${new Date(contact.created_at).toLocaleString()}</span></div>
             </div>
         `;
