@@ -25,6 +25,8 @@
     <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-pipeline.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm-lead-import.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard crm-page">
@@ -280,12 +282,35 @@
         </div>
     </div>
 
+    <!-- ═══ Deal Detail Slide Panel ═══ -->
+    <div class="slide-panel-overlay" id="dealDetailOverlay" onclick="closeDealDetailPanel()"></div>
+    <div class="slide-panel" id="dealDetailPanel" style="--panel-width: 520px;">
+        <div class="panel-header">
+            <h3 class="panel-title" id="dealDetailName">Deal Details</h3>
+            <button class="panel-close-btn" onclick="closeDealDetailPanel()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="dealDetailInfo" class="lead-detail-info"></div>
+            <div class="lead-timeline-section">
+                <div class="lead-timeline-header">
+                    <h4>Deal Timeline</h4>
+                </div>
+                <div id="dealTimeline" class="lead-timeline"></div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/deals.js?v=' + CACHE_VERSION + '"><\/script>');

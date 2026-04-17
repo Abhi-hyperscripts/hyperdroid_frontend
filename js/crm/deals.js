@@ -722,7 +722,7 @@ function handleDealCardTap(event, dealId) {
     // Don't open on drag
     if (event.target.classList.contains('dragging')) return;
 
-    openStagePicker(dealId);
+    openDealDetailPanel(dealId);
 }
 
 function openStagePicker(dealId) {
@@ -824,4 +824,113 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ==================== Deal Detail Slide Panel ====================
+
+async function openDealDetailPanel(dealId) {
+    document.getElementById('dealDetailOverlay').classList.add('active');
+    document.getElementById('dealDetailPanel').classList.add('active');
+    document.getElementById('dealTimeline').innerHTML = '<div class="import-loading">Loading timeline...</div>';
+    document.getElementById('dealDetailInfo').innerHTML = '';
+    document.getElementById('dealDetailName').textContent = 'Deal Details';
+
+    try {
+        const deal = await api.request(`/crm/deals/${dealId}`);
+        document.getElementById('dealDetailName').textContent = deal.name || 'Unknown Deal';
+
+        const esc = escapeHtml;
+        const field = (label, value, extraHtml) => value ? `<div class="lead-detail-item"><span class="lead-detail-label">${label}</span><span>${extraHtml || esc(String(value))}</span></div>` : '';
+        const currency = deal.value ? `₹${Number(deal.value).toLocaleString()}` : null;
+
+        // Stage badge color
+        const stageHtml = deal.stage_name ? `<span class="tl-chip" style="background:rgba(168,85,247,0.15);color:#a855f7;font-size:0.82rem;">${esc(deal.stage_name)}</span>` : null;
+
+        document.getElementById('dealDetailInfo').innerHTML = `
+            <div class="lead-detail-grid">
+                ${field('Deal Name', deal.name || deal.deal_name)}
+                ${field('Value', currency)}
+                ${field('Stage', deal.stage_name, stageHtml)}
+                ${field('Contact', deal.contact_name)}
+                ${field('Company', deal.company_name)}
+                ${field('Owner', deal.owner_name || deal.owner_user_id)}
+                ${field('Expected Close', deal.expected_close_date ? new Date(deal.expected_close_date).toLocaleDateString() : null)}
+                ${field('Probability', deal.probability ? deal.probability + '%' : null)}
+                ${field('Won Reason', deal.won_reason)}
+                ${field('Lost Reason', deal.lost_reason)}
+                ${deal.notes ? `<div class="lead-detail-item" style="grid-column:1/-1"><span class="lead-detail-label">Notes</span><span>${esc(deal.notes)}</span></div>` : ''}
+                <div class="lead-detail-item"><span class="lead-detail-label">Created</span><span>${new Date(deal.created_at).toLocaleString()}</span></div>
+            </div>
+        `;
+
+        // Load timeline
+        const timeline = await api.request(`/crm/deals/${dealId}/timeline`);
+        renderDealTimeline(timeline);
+    } catch (e) {
+        document.getElementById('dealTimeline').innerHTML = `<p style="color:var(--color-error);">${escapeHtml(e.message || 'Failed to load')}</p>`;
+    }
+}
+
+function closeDealDetailPanel() {
+    document.getElementById('dealDetailOverlay').classList.remove('active');
+    document.getElementById('dealDetailPanel').classList.remove('active');
+}
+
+function renderDealTimeline(entries) {
+    const container = document.getElementById('dealTimeline');
+    if (!entries || entries.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;text-align:center;padding:20px;">No activity yet</p>';
+        return;
+    }
+
+    const esc = escapeHtml;
+    const iconMap = {
+        call: '📞', email: '✉️', meeting: '📅', note: '📝', task: '✅',
+        stage: '🏷️', status_change: '🔄', auto_assigned: '🔀', reassigned: '🔀',
+        transferred: '↔️', converted: '🎯', followup: '⏰', transfer: '↔️'
+    };
+
+    function formatTimeAgo(date) {
+        const now = new Date();
+        const diff = Math.floor((now - date) / 1000);
+        if (diff < 60) return 'just now';
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    }
+
+    container.innerHTML = entries.map(e => {
+        const icon = iconMap[e.icon] || iconMap[e.type] || '⏳';
+        const time = formatTimeAgo(new Date(e.timestamp));
+        const desc = e.description ? `<div class="tl-desc">${esc(e.description)}</div>` : '';
+        const typeClass = `tl-${e.type}`;
+        const who = e.performed_by_name || '';
+        const whoLine = who ? `<span class="tl-who">${esc(who)}</span>` : '';
+
+        let chips = '';
+        if (e.meta) {
+            const c = [];
+            if (e.meta.activity_type) c.push(`<span class="tl-chip tl-chip-type">${esc(e.meta.activity_type)}</span>`);
+            if (e.meta.contact_outcome || e.outcome) c.push(`<span class="tl-chip tl-chip-outcome">${esc((e.meta.contact_outcome || e.outcome || '').replace(/_/g, ' '))}</span>`);
+            if (e.meta.call_duration_seconds > 0) c.push(`<span class="tl-chip">Call: ${Math.floor(e.meta.call_duration_seconds/60)}m</span>`);
+            if (e.meta.next_action_date) c.push(`<span class="tl-chip tl-chip-pending">Next: ${new Date(e.meta.next_action_date).toLocaleDateString()}</span>`);
+            if (e.meta.to_stage_name) c.push(`<span class="tl-chip" style="background:rgba(168,85,247,0.15);color:#a855f7;">${esc(e.meta.to_stage_name)}</span>`);
+            if (e.meta.time_in_stage_minutes) c.push(`<span class="tl-chip" style="background:rgba(99,102,241,0.1);color:#818cf8;">${e.meta.time_in_stage_minutes}m in prev stage</span>`);
+            if (c.length) chips = `<div class="tl-chips">${c.join('')}</div>`;
+        }
+
+        return `
+            <div class="tl-entry ${typeClass}">
+                <div class="tl-icon">${icon}</div>
+                <div class="tl-content">
+                    <div class="tl-header">
+                        <span class="tl-title">${esc(e.title)}</span>
+                    </div>
+                    ${chips}
+                    ${desc}
+                    <div class="tl-meta">${whoLine ? `${whoLine} · ` : ''}${time}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
