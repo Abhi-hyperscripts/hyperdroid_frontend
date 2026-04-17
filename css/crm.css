@@ -3375,6 +3375,7 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
 }
 
 .crm-deals-page .crm-stats-grid {
+    width: 100%;
     max-width: 1760px;
     margin-left: auto;
     margin-right: auto;
