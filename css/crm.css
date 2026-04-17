@@ -982,10 +982,16 @@ body.crm-dashboard .crm-container {
    CRM DASHBOARD - Quick Actions
    ============================================================= */
 .crm-container .quick-actions {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 12px;
     margin-bottom: 24px;
+}
+
+.crm-container .quick-actions .action-card {
+    flex: 1 1 220px;
+    max-width: 320px;
 }
 
 .crm-container .action-card {
@@ -1251,8 +1257,9 @@ body.crm-dashboard .crm-container {
         height: 16px;
     }
 
-    .crm-container .quick-actions {
-        grid-template-columns: 1fr;
+    .crm-container .quick-actions .action-card {
+        flex: 1 1 100%;
+        max-width: 100%;
     }
 
     .crm-container .data-table-container {
