@@ -893,12 +893,10 @@ async function confirmConvertLead() {
             body: JSON.stringify(payload)
         });
 
-        const convertedLeadId = convertingLeadId;
         Toast.success('Lead converted successfully');
         closeConvertModal();
         loadLeads();
         loadLeadStats();
-        if (convertedLeadId) openLeadDetailPanel(convertedLeadId);
     } catch (error) {
         console.error('Failed to convert lead:', error);
         Toast.error(error.message || 'Failed to convert lead');
