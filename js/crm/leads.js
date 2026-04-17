@@ -216,7 +216,7 @@ function renderLeadsTable(leads) {
                 <span class="crm-source-badge source-${lead.lead_source || 'manual'}">${formatSource(lead.lead_source)}</span>
             </td>
             <td>
-                <span class="crm-status-badge status-${lead.status || 'new'}" onclick="openStatusChangeModal('${lead.id}')" style="cursor:pointer;" data-tooltip="Click to change status">${formatStatus(lead.status)}</span>
+                ${(lead.team_id || lead.team_name) ? `<span class="crm-status-badge status-${lead.status || 'new'}" onclick="openStatusChangeModal('${lead.id}')" style="cursor:pointer;" data-tooltip="Click to change status">${formatStatus(lead.status)}</span>` : `<span class="crm-status-badge status-new" data-tooltip="Assign to team first">${formatStatus(lead.status)}</span>`}
                 ${lead.disposition ? `<span class="crm-disposition-badge disp-${lead.disposition}" title="${formatDisposition(lead.disposition)}">${formatDisposition(lead.disposition)}</span>` : ''}
                 ${lead.next_followup_date ? formatFollowupIndicator(lead.next_followup_date) : ''}
                 ${lead.has_pending_transfer ? '<span class="crm-transfer-pending-badge" data-tooltip="Transfer/Reassignment pending approval">⇄ Transfer Pending</span>' : ''}
@@ -225,18 +225,18 @@ function renderLeadsTable(leads) {
                 ${lead.teamName || lead.team_name ? `<span class="crm-team-badge ${teamColorClass(lead.teamName || lead.team_name)}">${escapeHtml(lead.teamName || lead.team_name)}</span>` : '<span class="crm-cell-secondary">—</span>'}
             </td>
             <td class="hide-mobile">
-                <span class="crm-cell-secondary">${escapeHtml(lead.ownerName || lead.owner_name || '-')}</span>
+                <span class="crm-cell-secondary">${(lead.team_id || lead.team_name) ? escapeHtml(lead.ownerName || lead.owner_name || '-') : '-'}</span>
             </td>
             <td class="hide-mobile">
                 <span class="crm-cell-secondary">${formatDate(lead.created_at)}</span>
             </td>
             <td>
                 <div class="crm-actions">
-                    <button class="crm-action-btn" onclick="openLogActivityModal('${lead.id}')" data-tooltip="Log Activity">
+                    ${(lead.team_id || lead.team_name) ? `<button class="crm-action-btn" onclick="openLogActivityModal('${lead.id}')" data-tooltip="Log Activity">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
                         </svg>
-                    </button>
+                    </button>` : ''}
                     <button class="crm-action-btn" onclick="editLead('${lead.id}')" data-tooltip="Edit Lead">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
