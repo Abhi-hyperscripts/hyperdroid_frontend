@@ -477,6 +477,62 @@ async function openContactDetailPanel(contactId) {
     }
 }
 
+function printContactTimeline() {
+    printEntityTimeline(
+        document.getElementById('contactDetailName')?.textContent || 'Contact',
+        document.getElementById('contactDetailInfo')?.innerHTML || '',
+        document.getElementById('contactTimeline')?.innerHTML || '',
+        'Contact Report'
+    );
+}
+
+function printEntityTimeline(name, infoHtml, timelineHtml, subtitle) {
+    const logoUrl = window.location.origin + '/assets/logo-name-blue.png';
+    const printWin = window.open('', '_blank');
+    printWin.document.write(`<!DOCTYPE html>
+<html><head>
+<title>${name} — ${subtitle}</title>
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; color: #1a1a2e; max-width: 800px; margin: 0 auto; }
+    .print-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 16px; }
+    .print-header img { height: 32px; }
+    .print-header h1 { font-size: 1.3rem; margin: 0; }
+    .lead-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .lead-detail-item { display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; }
+    .lead-detail-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; }
+    .crm-status-badge, .crm-team-badge, .crm-lead-number { font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: #e5e7eb; display: inline-block; }
+    h2 { font-size: 1.1rem; margin: 20px 0 12px; color: #374151; }
+    .tl-entry { display: flex; gap: 10px; padding: 8px 0; border-left: 2px solid #d1d5db; margin-left: 8px; padding-left: 16px; position: relative; page-break-inside: avoid; }
+    .tl-icon { position: absolute; left: -9px; top: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #fff; border: 2px solid #9ca3af; font-size: 10px; }
+    .tl-title { font-weight: 600; font-size: 0.9rem; }
+    .tl-desc { font-size: 0.82rem; color: #4b5563; margin-top: 2px; }
+    .tl-meta { font-size: 0.75rem; color: #9ca3af; margin-top: 2px; }
+    .tl-who { font-weight: 500; color: #374151; }
+    .tl-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .tl-chip { display: inline-flex; padding: 1px 7px; border-radius: 4px; font-size: 0.68rem; font-weight: 500; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+    .tl-chip-type { background: #ede9fe; color: #7c3aed; text-transform: uppercase; }
+    .tl-chip-outcome { background: #dcfce7; color: #16a34a; }
+    .tl-chip-pending { background: #fef3c7; color: #d97706; }
+    .print-footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 0.7rem; color: #9ca3af; display: flex; justify-content: space-between; }
+    @media print { body { padding: 0; } }
+</style>
+</head><body>
+<div class="print-header">
+    <img src="${logoUrl}" alt="Ragenaizer">
+    <h1>${name} — ${subtitle}</h1>
+</div>
+<div class="lead-detail-grid">${infoHtml}</div>
+<h2>Full Journey Timeline</h2>
+<div>${timelineHtml}</div>
+<div class="print-footer">
+    <span>Generated ${new Date().toLocaleString()}</span>
+    <span>Ragenaizer CRM</span>
+</div>
+</body></html>`);
+    printWin.document.close();
+    setTimeout(() => printWin.print(), 400);
+}
+
 function filterContactTimeline(query) {
     const q = query.toLowerCase();
     document.querySelectorAll('#contactTimeline .tl-entry').forEach(el => {

@@ -297,12 +297,21 @@
             <!-- Deal info summary -->
             <div id="dealDetailInfo" class="lead-detail-info"></div>
 
+            <hr style="border:none;border-top:1px solid var(--border-color);margin:12px 0;">
+
             <!-- Timeline -->
             <div class="lead-timeline-section">
                 <div class="lead-timeline-header">
                     <h4>Full Journey Timeline</h4>
                     <div class="lead-timeline-toolbar">
                         <input type="text" class="form-control form-control-sm" placeholder="Search timeline..." oninput="filterDealTimeline(this.value)">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="printDealTimeline()" data-tooltip="Print Timeline">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 6 2 18 2 18 9"/>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                                <rect x="6" y="14" width="12" height="8"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
                 <div id="dealTimeline" class="lead-timeline"></div>
