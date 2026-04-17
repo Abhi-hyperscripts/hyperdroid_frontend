@@ -3373,7 +3373,8 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
     max-width: 100%;
 }
 
-.crm-deals-page .crm-container {
+.crm-deals-page .crm-container,
+.crm-contacts-page .crm-container {
     max-width: 1600px;
 }
 
