@@ -500,6 +500,16 @@ function openNewDealModal() {
     if (dealContactDropdown) dealContactDropdown.setValue('');
     if (dealCompanyDropdown) dealCompanyDropdown.setValue('');
 
+    // Show dropdowns for new deal (not readonly)
+    document.getElementById('dealContactReadonly').style.display = 'none';
+    document.getElementById('dealCompanyReadonly').style.display = 'none';
+    const cs = document.getElementById('dealContact');
+    const csd = cs?.closest('.searchable-dropdown') || cs;
+    if (csd) csd.style.display = '';
+    const cos = document.getElementById('dealCompany');
+    const cosd = cos?.closest('.searchable-dropdown') || cos;
+    if (cosd) cosd.style.display = '';
+
     openModal('dealModal');
 }
 
@@ -593,14 +603,44 @@ async function editDeal(dealId) {
         document.getElementById('dealCurrency').value = deal.currency || 'USD';
         document.getElementById('dealStage').value = deal.stage_id || '';
         document.getElementById('dealExpectedClose').value = deal.expected_close_date ? deal.expected_close_date.split('T')[0] : '';
-        document.getElementById('dealContact').value = deal.contact_id || '';
-        document.getElementById('dealCompany').value = deal.company_id || '';
         document.getElementById('dealNotes').value = deal.notes || '';
 
         if (dealCurrencyDropdown) dealCurrencyDropdown.setValue(deal.currency || 'USD');
         if (dealStageDropdown) dealStageDropdown.setValue(deal.stage_id || '');
-        if (dealContactDropdown) dealContactDropdown.setValue(deal.contact_id || '');
-        if (dealCompanyDropdown) dealCompanyDropdown.setValue(deal.company_id || '');
+
+        // Contact & Company: show as read-only text if set, dropdown if not
+        const contactReadonly = document.getElementById('dealContactReadonly');
+        const contactSelect = document.getElementById('dealContact');
+        const contactDropdown = contactSelect?.closest('.searchable-dropdown') || contactSelect;
+        const companyReadonly = document.getElementById('dealCompanyReadonly');
+        const companySelect = document.getElementById('dealCompany');
+        const companyDropdown = companySelect?.closest('.searchable-dropdown') || companySelect;
+
+        if (deal.contact_id) {
+            const contactName = deal.contact_name || contactsList.find(c => c.id === deal.contact_id)?.first_name + ' ' + contactsList.find(c => c.id === deal.contact_id)?.last_name || deal.contact_id;
+            contactReadonly.textContent = contactName;
+            contactReadonly.style.display = '';
+            if (contactDropdown) contactDropdown.style.display = 'none';
+            contactSelect.value = deal.contact_id;
+        } else {
+            contactReadonly.style.display = 'none';
+            if (contactDropdown) contactDropdown.style.display = '';
+            contactSelect.value = '';
+            if (dealContactDropdown) dealContactDropdown.setValue('');
+        }
+
+        if (deal.company_id) {
+            const companyName = deal.company_name || companiesList.find(c => c.id === deal.company_id)?.company_name || deal.company_id;
+            companyReadonly.textContent = companyName;
+            companyReadonly.style.display = '';
+            if (companyDropdown) companyDropdown.style.display = 'none';
+            companySelect.value = deal.company_id;
+        } else {
+            companyReadonly.style.display = 'none';
+            if (companyDropdown) companyDropdown.style.display = '';
+            companySelect.value = '';
+            if (dealCompanyDropdown) dealCompanyDropdown.setValue('');
+        }
 
         openModal('dealModal');
     } catch (error) {
