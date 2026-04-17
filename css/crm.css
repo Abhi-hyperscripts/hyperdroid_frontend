@@ -994,6 +994,19 @@ body.crm-dashboard .crm-container {
     max-width: 320px;
 }
 
+.crm-container .action-card.action-card--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: auto;
+}
+
+.crm-container .action-card.action-card--disabled:hover {
+    transform: none;
+    border-color: var(--border-color-light);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-xs);
+}
+
 .crm-container .action-card {
     background: var(--bg-card);
     backdrop-filter: blur(16px) saturate(1.4);

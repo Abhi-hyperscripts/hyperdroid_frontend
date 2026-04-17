@@ -22,15 +22,62 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Hide settings card for non-admin users
     const user = api.getUser();
     const roles = user?.roles || [];
-    if (!roles.includes('CRM_ADMIN') && !roles.includes('SUPERADMIN')) {
+    const isAdmin = roles.includes('CRM_ADMIN') || roles.includes('SUPERADMIN');
+    if (!isAdmin) {
         const settingsCard = document.getElementById('cardSettings');
         if (settingsCard) settingsCard.style.display = 'none';
     }
+
+    // Setup gating — disable action cards until functional area + team + pipeline exist.
+    // Settings card is always enabled (it's how users fix the setup).
+    await applySetupGating(isAdmin);
 
     // Load default currency setting, then dashboard data
     await loadDashboardCurrency();
     await loadDashboard();
 });
+
+async function applySetupGating(isAdmin) {
+    let status;
+    try {
+        status = await api.request('/crm/dashboard/setup-status');
+    } catch (e) {
+        console.warn('setup-status check failed, leaving actions enabled', e);
+        return;
+    }
+    if (status?.is_complete) return;
+
+    const missing = [];
+    if (!status.has_functional_area) missing.push('a functional area');
+    if (!status.has_team)             missing.push('at least one team');
+    if (!status.has_pipeline)         missing.push('a deals pipeline');
+
+    // Gate the three data-entry cards, not Settings
+    ['cardNewLead', 'cardContacts', 'cardDeals'].forEach(id => {
+        const card = document.getElementById(id);
+        if (!card) return;
+        card.classList.add('action-card--disabled');
+        card.removeAttribute('onclick');
+        card.addEventListener('click', () => {
+            const prefix = isAdmin ? 'Finish setup first — missing ' : 'Your admin needs to set up ';
+            Toast.warning(prefix + missing.join(', ') + '.');
+        });
+    });
+
+    // Inline hint under the header
+    const header = document.querySelector('.quick-actions')?.previousElementSibling;
+    if (header && !document.getElementById('setupHint')) {
+        const hint = document.createElement('div');
+        hint.id = 'setupHint';
+        hint.style.cssText = 'margin-top:8px;padding:12px 16px;border-radius:8px;' +
+            'background:rgba(245,158,11,0.08);border:1px solid var(--color-warning);' +
+            'color:var(--text-secondary);font-size:0.9rem;';
+        const who = isAdmin ? 'Go to Settings to add' : 'Ask your admin to set up';
+        hint.innerHTML = `<strong style="color:var(--color-warning);">Setup incomplete —</strong> ` +
+            `${who} ${missing.join(', ')} before creating leads, contacts, or deals.`;
+        header.after(hint);
+    }
+}
 
 /**
  * Load default currency from CRM settings
