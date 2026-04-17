@@ -903,7 +903,7 @@ function printDealTimeline() {
     const name = document.getElementById('dealDetailName')?.textContent || 'Deal';
     const infoHtml = document.getElementById('dealDetailInfo')?.innerHTML || '';
     const timelineHtml = document.getElementById('dealTimeline')?.innerHTML || '';
-    const logoUrl = window.location.origin + '/assets/logo-name-blue.png';
+    const logoUrl = window.location.origin + '/assets/logo-black.png';
 
     const printWin = window.open('', '_blank');
     printWin.document.write(`<!DOCTYPE html>
@@ -911,9 +911,9 @@ function printDealTimeline() {
 <title>${escapeHtml(name)} — Deal Report</title>
 <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; color: #1a1a2e; max-width: 800px; margin: 0 auto; }
-    .print-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 16px; }
-    .print-header img { height: 32px; }
-    .print-header h1 { font-size: 1.3rem; margin: 0; }
+    .print-header { border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; margin-bottom: 16px; }
+    .print-header img { height: 28px; margin-bottom: 8px; }
+    .print-header h1 { font-size: 1.2rem; margin: 0; color: #1a1a2e; }
     .lead-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
     .lead-detail-item { display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; }
     .lead-detail-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; }
@@ -935,8 +935,9 @@ function printDealTimeline() {
 </style>
 </head><body>
 <div class="print-header">
-    <img src="${logoUrl}" alt="Ragenaizer">
-    <h1>${escapeHtml(name)} — Deal Report</h1>
+    <img src="${logoUrl}" alt="Ragenaizer"><br>
+    <h1>${escapeHtml(name)}</h1>
+    <p style="margin:2px 0 0;font-size:0.85rem;color:#6b7280;">Deal Report</p>
 </div>
 <div class="lead-detail-grid">${infoHtml}</div>
 <h2>Full Journey Timeline</h2>
