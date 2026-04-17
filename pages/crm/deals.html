@@ -29,7 +29,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/crm-lead-import.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
-<body class="dashboard crm-page">
+<body class="dashboard crm-page crm-deals-page">
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <nav class="navbar">
         <div class="navbar-brand">
@@ -83,22 +83,51 @@
         </div>
 
         <!-- Pipeline Summary -->
-        <div class="pipeline-summary" id="pipelineSummary">
-            <div class="pipeline-summary-item">
-                <span class="pipeline-summary-label">Total Value</span>
-                <span class="pipeline-summary-value" id="totalPipelineValue">-</span>
+        <div class="crm-stats-grid" id="pipelineSummary">
+            <div class="crm-stat-card">
+                <div class="crm-stat-icon stat-total">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"/>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-value" id="totalPipelineValue">-</div>
+                <div class="crm-stat-label">Total Value</div>
             </div>
-            <div class="pipeline-summary-item">
-                <span class="pipeline-summary-label">Deals</span>
-                <span class="pipeline-summary-value" id="totalDealsCount">-</span>
+            <div class="crm-stat-card">
+                <div class="crm-stat-icon stat-converted">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-value" id="totalDealsCount">-</div>
+                <div class="crm-stat-label">Deals</div>
             </div>
-            <div class="pipeline-summary-item">
-                <span class="pipeline-summary-label">Won</span>
-                <span class="pipeline-summary-value pipeline-won" id="wonDealsValue">-</span>
+            <div class="crm-stat-card">
+                <div class="crm-stat-icon stat-won">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                        <path d="M4 22h16"/>
+                        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-value pipeline-won" id="wonDealsValue">-</div>
+                <div class="crm-stat-label">Won</div>
             </div>
-            <div class="pipeline-summary-item">
-                <span class="pipeline-summary-label">Lost</span>
-                <span class="pipeline-summary-value pipeline-lost" id="lostDealsValue">-</span>
+            <div class="crm-stat-card">
+                <div class="crm-stat-icon stat-lost">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-value pipeline-lost" id="lostDealsValue">-</div>
+                <div class="crm-stat-label">Lost</div>
             </div>
         </div>
 
