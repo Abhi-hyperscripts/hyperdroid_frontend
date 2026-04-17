@@ -86,11 +86,12 @@
                 body: JSON.stringify(body)
             });
             const changedLeadId = _statusChangeLeadId;
+            const panelWasOpen = window._leadDetailId === changedLeadId;
             Toast.success(`Status changed to ${formatStatus(_statusChangeSelected)}`);
             closeStatusChangeModal();
             loadLeads();
             loadLeadStats();
-            if (changedLeadId) openLeadDetailPanel(changedLeadId);
+            if (changedLeadId && panelWasOpen) openLeadDetailPanel(changedLeadId);
         } catch (e) {
             Toast.error(e.message || 'Failed to change status');
         }
@@ -165,10 +166,11 @@
             // The activity already stores next_action + next_action_date, shown in timeline via chips.
 
             const loggedLeadId = _logActivityLeadId;
+            const panelWasOpen = window._leadDetailId === loggedLeadId;
             Toast.success('Activity logged');
             closeLogActivityModal();
             loadLeads();
-            if (loggedLeadId) openLeadDetailPanel(loggedLeadId);
+            if (loggedLeadId && panelWasOpen) openLeadDetailPanel(loggedLeadId);
         } catch (e) {
             Toast.error(e.message || 'Failed to log activity');
         }
@@ -406,10 +408,11 @@
                 body: JSON.stringify({ to_team_id: teamId, reason: reason })
             });
             const transferredLeadId = _transferLeadId;
+            const panelWasOpen = window._leadDetailId === transferredLeadId;
             Toast.success('Transfer request submitted for approval');
             closeTransferRequestModal();
             loadLeads();
-            if (transferredLeadId) openLeadDetailPanel(transferredLeadId);
+            if (transferredLeadId && panelWasOpen) openLeadDetailPanel(transferredLeadId);
         } catch (e) {
             Toast.error(e.message || 'Failed to submit transfer request');
         }

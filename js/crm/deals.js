@@ -22,6 +22,27 @@ let dealStageDropdown = null;
 let dealContactDropdown = null;
 let dealCompanyDropdown = null;
 
+// CRM team role: 'admin' | 'manager' | 'teamlead' | 'member' | 'none'.
+// Members can edit basic fields on owned deals but not value/stage/won/lost/delete.
+let myTeamRole = 'member';
+
+async function loadMyRole() {
+    try {
+        const user = api.getUser();
+        if (user?.roles?.includes('CRM_ADMIN') || user?.roles?.includes('SUPERADMIN')) {
+            myTeamRole = 'admin';
+            return;
+        }
+        const res = await api.request('/crm/leads/my-role');
+        myTeamRole = res?.role || 'member';
+    } catch { myTeamRole = 'member'; }
+}
+
+function isMember() { return myTeamRole === 'member'; }
+function canDeleteDeal() { return ['admin', 'manager', 'teamlead'].includes(myTeamRole); }
+function canChangeDealStage() { return ['admin', 'manager', 'teamlead'].includes(myTeamRole); }
+function canEditDealFinancial() { return ['admin', 'manager', 'teamlead'].includes(myTeamRole); }
+
 // Currency symbols map
 const CURRENCY_SYMBOLS = {
     'USD': '$', 'EUR': '\u20AC', 'GBP': '\u00A3', 'INR': '\u20B9',
@@ -33,6 +54,8 @@ const CURRENCY_SYMBOLS = {
 
 document.addEventListener('DOMContentLoaded', async () => {
     Navigation.init('crm', 'deals');
+    // Resolve role first so render() can hide member-blocked actions.
+    await loadMyRole();
     await loadDefaultCurrency();
     await loadDealStages();
     loadPipeline();
@@ -298,10 +321,14 @@ function renderDealCard(deal, stage) {
     const isWon = stage && stage.stage_type === 'won';
     const isLost = stage && stage.stage_type === 'lost';
 
+    // Members: no drag (would attempt stage change → 403), no won/lost buttons.
+    const draggable = canChangeDealStage();
+    const showQuickActions = !isWon && !isLost && canChangeDealStage();
+
     return `
-        <div class="kanban-deal-card" draggable="true"
+        <div class="kanban-deal-card" ${draggable ? 'draggable="true"' : ''}
              data-deal-id="${deal.id}"
-             ondragstart="handleDragStart(event, '${deal.id}')"
+             ${draggable ? `ondragstart="handleDragStart(event, '${deal.id}')"` : ''}
              onclick="handleDealCardTap(event, '${deal.id}')">
             <div class="deal-card-header">
                 <span class="deal-card-name">${escapeHtml(deal.deal_name || 'Untitled Deal')}</span>
@@ -321,7 +348,7 @@ function renderDealCard(deal, stage) {
             </div>
             ${closeDate ? `<div class="deal-card-date">${closeDate}</div>` : ''}
             <div class="deal-card-footer">
-                ${!isWon && !isLost ? `
+                ${showQuickActions ? `
                     <button class="deal-quick-btn deal-won-btn" onclick="event.stopPropagation(); markDealWon('${deal.id}')" title="Mark as Won">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <polyline points="20 6 9 17 4 12"/>
@@ -460,7 +487,7 @@ function renderListView() {
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                             </svg>
                         </button>
-                        ${!isWon && !isLost ? `
+                        ${!isWon && !isLost && canChangeDealStage() ? `
                         <button class="crm-action-btn action-convert" onclick="markDealWon('${deal.id}')" title="Mark Won">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="20 6 9 17 4 12"/>
@@ -473,12 +500,13 @@ function renderListView() {
                             </svg>
                         </button>
                         ` : ''}
+                        ${canDeleteDeal() ? `
                         <button class="crm-action-btn action-delete" onclick="deleteDeal('${deal.id}')" title="Delete">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                             </svg>
-                        </button>
+                        </button>` : ''}
                     </div>
                 </td>
             </tr>
@@ -564,6 +592,7 @@ async function handleDealSubmit(event) {
     if (submitBtn) submitBtn.disabled = true;
     if (spinner) spinner.style.display = 'inline-block';
 
+    const noteText = document.getElementById('dealNotes').value.trim();
     const formData = {
         deal_name: document.getElementById('dealName').value.trim(),
         deal_value: parseFloat(document.getElementById('dealValue').value) || 0,
@@ -571,11 +600,11 @@ async function handleDealSubmit(event) {
         stage_id: dealStageDropdown ? dealStageDropdown.getValue() : document.getElementById('dealStage').value,
         expected_close_date: document.getElementById('dealExpectedClose').value || null,
         contact_id: (dealContactDropdown ? dealContactDropdown.getValue() : document.getElementById('dealContact').value) || null,
-        company_id: (dealCompanyDropdown ? dealCompanyDropdown.getValue() : document.getElementById('dealCompany').value) || null,
-        notes: document.getElementById('dealNotes').value.trim()
+        company_id: (dealCompanyDropdown ? dealCompanyDropdown.getValue() : document.getElementById('dealCompany').value) || null
     };
 
     try {
+        let dealId = currentEditDealId;
         if (currentEditDealId) {
             await api.request(`/crm/deals/${currentEditDealId}`, {
                 method: 'PUT',
@@ -583,11 +612,21 @@ async function handleDealSubmit(event) {
             });
             Toast.success('Deal updated successfully');
         } else {
-            await api.request('/crm/deals', {
+            const created = await api.request('/crm/deals', {
                 method: 'POST',
                 body: JSON.stringify(formData)
             });
+            dealId = created?.id;
             Toast.success('Deal created successfully');
+        }
+
+        if (noteText && dealId) {
+            try {
+                await api.request('/crm/notes', {
+                    method: 'POST',
+                    body: JSON.stringify({ content: noteText, entity_type: 'deal', entity_id: dealId })
+                });
+            } catch (e) { console.warn('Failed to save note:', e); }
         }
 
         closeDealModal();
@@ -614,9 +653,23 @@ async function editDeal(dealId) {
         document.getElementById('dealCurrency').value = deal.currency || 'USD';
         document.getElementById('dealStage').value = deal.stage_id || '';
         document.getElementById('dealExpectedClose').value = deal.expected_close_date ? deal.expected_close_date.split('T')[0] : '';
-        document.getElementById('dealNotes').value = deal.notes || '';
+        document.getElementById('dealNotes').value = '';
+        document.getElementById('dealNotes').placeholder = 'Add a note about this deal (saved to timeline)';
 
         if (dealCurrencyDropdown) dealCurrencyDropdown.setValue(deal.currency || 'USD');
+
+        // Members: lock financial fields. They can still rename / change close date,
+        // but value, currency, and stage are forecast-critical and require teamlead+.
+        // Backend mirrors this with a 403; the readonly state is purely UX.
+        const lockFinancial = !canEditDealFinancial();
+        const dealValueEl = document.getElementById('dealValue');
+        const dealCurrencyEl = document.getElementById('dealCurrency');
+        if (dealValueEl) {
+            dealValueEl.readOnly = lockFinancial;
+            dealValueEl.title = lockFinancial ? 'Only Team Leads, Managers, or Admins can change deal value' : '';
+        }
+        if (dealCurrencyEl) dealCurrencyEl.disabled = lockFinancial;
+        if (dealCurrencyDropdown && lockFinancial) dealCurrencyDropdown.disable?.();
 
         // Stage: look up stage type from loaded dealStages array
         const stageSelect = document.getElementById('dealStage');
@@ -630,11 +683,14 @@ async function editDeal(dealId) {
         const oldStageReadonly = document.getElementById('dealStageReadonly');
         if (oldStageReadonly) oldStageReadonly.remove();
 
-        if (isTerminal && stageContainer) {
+        // Members: stage shown as read-only text (same treatment as terminal stages).
+        if ((isTerminal || lockFinancial) && stageContainer) {
             const stageReadonly = document.createElement('div');
             stageReadonly.id = 'dealStageReadonly';
-            stageReadonly.style.cssText = 'padding:6px 0;font-weight:600;font-size:0.9rem;color:' + (stageType === 'won' ? '#22c55e' : '#ef4444');
-            stageReadonly.textContent = stageName + ' (final)';
+            const memberLockColor = 'var(--text-secondary)';
+            stageReadonly.style.cssText = 'padding:6px 0;font-weight:600;font-size:0.9rem;color:' +
+                (isTerminal ? (stageType === 'won' ? '#22c55e' : '#ef4444') : memberLockColor);
+            stageReadonly.textContent = stageName + (isTerminal ? ' (final)' : ' (read-only)');
             stageContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = 'none');
             stageContainer.appendChild(stageReadonly);
         } else {

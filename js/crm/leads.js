@@ -170,6 +170,12 @@ function renderLeadsTable(leads) {
     const tbody = document.getElementById('leadsTableBody');
 
     if (!leads || leads.length === 0) {
+        // Members can't create leads — they get assigned. Match the toolbar gating
+        // applied in loadMyRole() so the empty state isn't a dead-end CTA.
+        const isMember = myTeamRole === 'member' || myTeamRole === 'none';
+        const cta = isMember
+            ? `<p style="color:var(--text-secondary);font-size:0.85rem;margin-top:6px;">Leads will appear here once your team lead assigns them to you.</p>`
+            : `<button class="btn btn-sm btn-primary" onclick="openNewLeadModal()">Add your first lead</button>`;
         tbody.innerHTML = `
             <tr>
                 <td colspan="11" class="crm-empty-state">
@@ -181,7 +187,7 @@ function renderLeadsTable(leads) {
                             <line x1="20" y1="8" x2="20" y2="14"/>
                         </svg>
                         <p>No leads found</p>
-                        <button class="btn btn-sm btn-primary" onclick="openNewLeadModal()">Add your first lead</button>
+                        ${cta}
                     </div>
                 </td>
             </tr>
@@ -839,8 +845,7 @@ function openConvertModal(leadId) {
     if (lead) {
         document.getElementById('convertDealName').value = `${lead.first_name || ''} ${lead.last_name || ''} - Deal`.trim();
     }
-    document.getElementById('convertCreateDeal').checked = true;
-    document.getElementById('convertDealFields').style.display = 'block';
+    document.getElementById('convertDealValue').value = '';
     openModal('convertLeadModal');
 }
 
@@ -849,18 +854,25 @@ function closeConvertModal() {
     convertingLeadId = null;
 }
 
-// Toggle deal fields visibility based on checkbox
-document.addEventListener('DOMContentLoaded', () => {
-    const checkbox = document.getElementById('convertCreateDeal');
-    if (checkbox) {
-        checkbox.addEventListener('change', function() {
-            document.getElementById('convertDealFields').style.display = this.checked ? 'block' : 'none';
-        });
-    }
-});
-
 async function confirmConvertLead() {
     if (!convertingLeadId) return;
+
+    const dealName = document.getElementById('convertDealName').value.trim();
+    const dealValueRaw = document.getElementById('convertDealValue').value;
+
+    if (!dealName) {
+        Toast.error('Deal name is required');
+        return;
+    }
+    if (dealValueRaw === '' || dealValueRaw === null) {
+        Toast.error('Deal value is required');
+        return;
+    }
+    const dealValue = parseFloat(dealValueRaw);
+    if (isNaN(dealValue) || dealValue < 0) {
+        Toast.error('Deal value must be a number greater than or equal to 0');
+        return;
+    }
 
     const convertBtn = document.getElementById('convertLeadBtn');
     const spinner = document.getElementById('convertSpinner');
@@ -869,10 +881,10 @@ async function confirmConvertLead() {
 
     try {
         const payload = {
-            create_contact: true, // always create a contact on conversion
-            create_deal: document.getElementById('convertCreateDeal').checked,
-            deal_name: document.getElementById('convertDealName').value.trim(),
-            deal_value: parseFloat(document.getElementById('convertDealValue').value) || 0
+            create_contact: true,
+            create_deal: true,
+            deal_name: dealName,
+            deal_value: dealValue
         };
 
         await api.request(`/crm/leads/${convertingLeadId}/convert`, {

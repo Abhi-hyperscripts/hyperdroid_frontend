@@ -148,6 +148,15 @@
                         </svg>
                         <span class="nav-label">Teams Setup</span>
                     </button>
+                    <!-- Superadmin-only. Hidden by JS in settings.js for non-superadmins. -->
+                    <button class="sidebar-btn" data-tab="danger-zone" id="dangerZoneTabBtn" onclick="switchSettingsTab('danger-zone')" style="display:none; color:var(--color-danger);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <span class="nav-label">Danger Zone</span>
+                    </button>
                 </nav>
             </aside>
 
@@ -418,6 +427,46 @@
                         <h3>No teams yet</h3>
                         <p>Create your first sales team. Pick which functional groups it covers, then add a manager — team leads and members are optional.</p>
                         <button class="btn btn-primary" onclick="openCreateTeamModal()">Create Team</button>
+                    </div>
+                </div>
+
+                <!-- ─── Danger Zone Tab (Superadmin only) ──────────────────── -->
+                <div class="crm-tab-content" id="tab-danger-zone">
+                    <div class="section-header">
+                        <h3 class="section-title" style="color:var(--color-danger);">Danger Zone</h3>
+                        <p style="color:var(--text-secondary); margin-top:4px; font-size:0.9rem;">
+                            Operates only on <strong>your tenant</strong>. Other tenants' data is never touched.
+                        </p>
+                    </div>
+
+                    <div class="danger-card" style="border:1px solid var(--color-danger); border-radius:12px; padding:20px; margin-bottom:16px; background:rgba(239, 68, 68, 0.04);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+                            <div>
+                                <h4 style="margin:0 0 6px 0;">Wipe Lead Data</h4>
+                                <p style="margin:0; color:var(--text-secondary); font-size:0.9rem;">
+                                    Removes all leads, contacts, deals, companies, activities, notes, tasks, and history.
+                                    Keeps teams, members, functional areas, deal stages, lead sources, integrations, settings.
+                                </p>
+                            </div>
+                            <button class="btn" style="background:var(--color-warning); color:#fff; border:none; flex-shrink:0;" onclick="openWipeModal('leads')">
+                                Wipe Lead Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="danger-card" style="border:1px solid var(--color-danger); border-radius:12px; padding:20px; background:rgba(239, 68, 68, 0.04);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+                            <div>
+                                <h4 style="margin:0 0 6px 0;">Wipe All CRM Data</h4>
+                                <p style="margin:0; color:var(--text-secondary); font-size:0.9rem;">
+                                    Removes <strong>everything</strong>: lead data PLUS teams, members, functional areas,
+                                    deal stages, lead sources, integrations, and CRM settings. Use only when seeding a fresh tenant.
+                                </p>
+                            </div>
+                            <button class="btn" style="background:var(--color-danger); color:#fff; border:none; flex-shrink:0;" onclick="openWipeModal('all')">
+                                Wipe All CRM Data
+                            </button>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -1028,6 +1077,29 @@
             <div class="gm-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeTeamModal()">Cancel</button>
                 <button type="button" class="btn btn-primary" id="teamSaveBtn" onclick="saveTeam()">Create Team</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Wipe Confirmation Modal ─────────────────────────────── -->
+    <div class="gm-overlay" id="wipeModal">
+        <div class="gm-modal" style="max-width:520px;">
+            <div class="gm-header">
+                <h3 id="wipeModalTitle" style="color:var(--color-danger);">Confirm Wipe</h3>
+                <button class="gm-close-btn" onclick="closeWipeModal()">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div style="background:rgba(239, 68, 68, 0.08); border:1px solid var(--color-danger); border-radius:8px; padding:16px; margin-bottom:16px;">
+                    <p style="margin:0 0 8px 0;"><strong>Tenant:</strong> <span id="wipeTenantId" style="font-family:monospace; font-size:0.85rem;"></span></p>
+                    <p style="margin:0; font-size:0.9rem;">Operates only on this tenant. Other tenants are never affected.</p>
+                </div>
+                <p id="wipeModalDescription" style="margin-bottom:16px;"></p>
+                <p style="margin-bottom:8px; font-size:0.9rem;">Type <code style="background:var(--bg-tertiary); padding:2px 6px; border-radius:4px;">WIPE</code> to confirm:</p>
+                <input type="text" id="wipeConfirmInput" class="form-control" placeholder="Type WIPE here" autocomplete="off" oninput="onWipeInputChange()">
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeWipeModal()">Cancel</button>
+                <button type="button" class="btn" id="wipeConfirmBtn" disabled style="background:var(--color-danger); color:#fff; border:none;" onclick="confirmWipe()">Wipe Now</button>
             </div>
         </div>
     </div>

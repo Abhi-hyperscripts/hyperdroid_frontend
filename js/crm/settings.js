@@ -52,6 +52,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initSearchableDropdowns();
 
+    // Show "Danger Zone" tab only for SUPERADMIN — CRM_ADMIN doesn't get
+    // the destructive wipe operations because they're a tenant-scoped reset.
+    if (roles.includes('SUPERADMIN')) {
+        const dz = document.getElementById('dangerZoneTabBtn');
+        if (dz) dz.style.display = '';
+    }
+
     // Load initial data
     await loadGeneralSettings();
     await loadDealStages();
@@ -1916,4 +1923,77 @@ function darkenHex(hex, percent) {
     g = Math.max(0, Math.round(g * (1 - percent / 100)));
     b = Math.max(0, Math.round(b * (1 - percent / 100)));
     return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+}
+
+// ─── Danger Zone: tenant wipe handlers ──────────────────────────────────────
+// Both endpoints derive tenant_id from the JWT — we never send it, so a
+// SUPERADMIN can only wipe their own tenant.
+let _pendingWipeMode = null;
+
+function openWipeModal(mode) {
+    _pendingWipeMode = mode;
+    const titleEl = document.getElementById('wipeModalTitle');
+    const descEl = document.getElementById('wipeModalDescription');
+    const tenantEl = document.getElementById('wipeTenantId');
+    const inputEl = document.getElementById('wipeConfirmInput');
+    const btn = document.getElementById('wipeConfirmBtn');
+
+    // Pull tenant_id from the JWT for display only — server uses its own claim.
+    let tenantId = '(unknown)';
+    try {
+        const tok = localStorage.getItem('ragenaizer_authToken') || '';
+        const payload = JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        tenantId = payload.tenant_id || '(unknown)';
+    } catch {}
+    tenantEl.textContent = tenantId;
+
+    if (mode === 'leads') {
+        titleEl.textContent = 'Wipe Lead Data';
+        descEl.innerHTML = 'This will delete <strong>all leads, contacts, deals, companies, activities, notes, tasks, and history</strong> for this tenant. Teams, members, functional areas, deal stages, lead sources, integrations, and settings will be preserved.';
+    } else {
+        titleEl.textContent = 'Wipe All CRM Data';
+        descEl.innerHTML = 'This will delete <strong>EVERYTHING</strong> for this tenant — including teams, members, functional areas, deal stages, lead sources, integrations, and CRM settings. Use only when seeding a fresh tenant.';
+    }
+
+    inputEl.value = '';
+    btn.disabled = true;
+    document.getElementById('wipeModal').classList.add('show');
+    setTimeout(() => inputEl.focus(), 50);
+}
+
+function closeWipeModal() {
+    document.getElementById('wipeModal').classList.remove('show');
+    _pendingWipeMode = null;
+}
+
+function onWipeInputChange() {
+    const val = document.getElementById('wipeConfirmInput').value;
+    document.getElementById('wipeConfirmBtn').disabled = (val !== 'WIPE');
+}
+
+async function confirmWipe() {
+    const mode = _pendingWipeMode;
+    const btn = document.getElementById('wipeConfirmBtn');
+    if (!mode || document.getElementById('wipeConfirmInput').value !== 'WIPE') return;
+
+    const endpoint = mode === 'leads' ? '/crm/crm-admin/wipe-leads' : '/crm/crm-admin/wipe-all';
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Wiping...';
+
+    try {
+        const res = await api.request(endpoint, {
+            method: 'POST',
+            body: JSON.stringify({ confirm: 'WIPE' })
+        });
+        Toast.success(`Wiped — ${res.deleted_rows} rows deleted (${res.scope}).`);
+        closeWipeModal();
+        // Bounce to dashboard so the user sees a fresh state.
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+    } catch (e) {
+        console.error('Wipe failed:', e);
+        Toast.error(e.message || 'Wipe failed');
+        btn.disabled = false;
+        btn.textContent = original;
+    }
 }
