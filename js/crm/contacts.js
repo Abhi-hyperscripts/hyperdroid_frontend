@@ -250,6 +250,10 @@ function openCreateContactModal() {
     document.getElementById('contactId').value = '';
     if (contactCompanyDropdown) contactCompanyDropdown.setValue('');
     if (contactSourceDropdown) contactSourceDropdown.setValue('');
+    // Show company dropdown for new contact
+    document.getElementById('contactCompanyReadonly').style.display = 'none';
+    const companyContainer = document.getElementById('contactCompany')?.parentElement;
+    if (companyContainer) companyContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = '');
     openModal('contactModal');
 }
 
@@ -272,8 +276,23 @@ function openEditContactModal(id) {
     document.getElementById('contactCompany').value = contact.company_id || '';
     document.getElementById('contactJobTitle').value = contact.job_title || '';
     document.getElementById('contactSource').value = contact.contact_source || '';
-    if (contactCompanyDropdown) contactCompanyDropdown.setValue(contact.company_id || '');
     if (contactSourceDropdown) contactSourceDropdown.setValue(contact.contact_source || '');
+
+    // Company: readonly if already linked
+    const companyReadonly = document.getElementById('contactCompanyReadonly');
+    const companySelect = document.getElementById('contactCompany');
+    const companyContainer = companySelect?.parentElement;
+
+    if (contact.company_id) {
+        const co = companies.find(c => c.id === contact.company_id);
+        companyReadonly.textContent = co?.company_name || contact.company_id;
+        companyReadonly.style.display = '';
+        if (companyContainer) companyContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = 'none');
+    } else {
+        companyReadonly.style.display = 'none';
+        if (companyContainer) companyContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = '');
+        if (contactCompanyDropdown) contactCompanyDropdown.setValue('');
+    }
 
     openModal('contactModal');
 }

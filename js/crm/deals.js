@@ -608,7 +608,29 @@ async function editDeal(dealId) {
         document.getElementById('dealNotes').value = deal.notes || '';
 
         if (dealCurrencyDropdown) dealCurrencyDropdown.setValue(deal.currency || 'USD');
-        if (dealStageDropdown) dealStageDropdown.setValue(deal.stage_id || '');
+
+        // Stage: read-only if terminal (Won/Lost)
+        const stageSelect = document.getElementById('dealStage');
+        const stageContainer = stageSelect?.parentElement;
+        const isTerminal = deal.stage_type === 'won' || deal.stage_type === 'lost' ||
+            (deal.stage_name && ['won', 'lost', 'closed won', 'closed lost'].includes(deal.stage_name.toLowerCase()));
+
+        // Remove old readonly element if exists
+        const oldStageReadonly = document.getElementById('dealStageReadonly');
+        if (oldStageReadonly) oldStageReadonly.remove();
+
+        if (isTerminal && stageContainer) {
+            // Create readonly element
+            const stageReadonly = document.createElement('div');
+            stageReadonly.id = 'dealStageReadonly';
+            stageReadonly.style.cssText = 'padding:6px 0;font-weight:600;font-size:0.9rem;color:' + (deal.stage_type === 'won' ? '#22c55e' : '#ef4444');
+            stageReadonly.textContent = (deal.stage_name || 'Terminal') + ' (final)';
+            stageContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = 'none');
+            stageContainer.appendChild(stageReadonly);
+        } else {
+            if (stageContainer) stageContainer.querySelectorAll('select, .searchable-dropdown').forEach(el => el.style.display = '');
+            if (dealStageDropdown) dealStageDropdown.setValue(deal.stage_id || '');
+        }
 
         // Contact & Company: show as read-only text if set, dropdown if not
         const contactReadonly = document.getElementById('dealContactReadonly');
