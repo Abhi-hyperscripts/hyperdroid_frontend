@@ -3369,13 +3369,9 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
 }
 
 /* ── Leads page — full width table ── */
-.crm-leads-page .crm-container {
-    max-width: 100%;
-}
-
+.crm-leads-page .crm-container,
 .crm-deals-page .crm-container {
-    max-width: 1760px;
-    margin: 0 auto;
+    max-width: 100%;
 }
 
 .crm-deals-page .kanban-board {
