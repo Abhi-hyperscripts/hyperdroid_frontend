@@ -3369,20 +3369,8 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
 }
 
 /* ── Leads page — full width table ── */
-.crm-leads-page .crm-container,
-.crm-deals-page .crm-container {
+.crm-leads-page .crm-container {
     max-width: 100%;
-}
-
-.crm-deals-page .crm-stats-grid {
-    width: 100%;
-    max-width: 1760px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-.crm-deals-page .kanban-board {
-    justify-content: center;
 }
 
 /* ── Lead Modal — compact inputs at 32px ── */
