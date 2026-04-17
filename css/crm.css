@@ -443,6 +443,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 16px;
     margin-bottom: 16px;
 }
 
@@ -450,7 +451,8 @@
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin: 0 0 10px 0;
+    margin: 0;
+    white-space: nowrap;
 }
 
 /* ─── Settings Specific: Pipeline Stage Card ──────────────────────────────── */
@@ -1673,30 +1675,8 @@ body.crm-dashboard .crm-container {
     color: #9ca3af;
 }
 
-.crm-status-badge.status-follow_up {
-    background: rgba(249, 115, 22, 0.15);
-    color: #f97316;
-}
-
-.crm-status-badge.status-opportunity {
-    background: rgba(168, 85, 247, 0.15);
-    color: #a855f7;
-}
-
-.crm-status-badge.status-negotiation {
-    background: rgba(236, 72, 153, 0.15);
-    color: #ec4899;
-}
-
-.crm-status-badge.status-won {
-    background: rgba(34, 197, 94, 0.2);
-    color: #22c55e;
-}
-
-.crm-status-badge.status-lost {
-    background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-}
+/* Follow Up, Opportunity, Negotiation, Won, Lost — removed from lead pipeline.
+   These now belong to Deal stages (deal_stages table). */
 
 /* Disposition mini-badge */
 .crm-disposition-badge {

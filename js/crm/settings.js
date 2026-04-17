@@ -33,6 +33,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // Only CRM_ADMIN or SUPERADMIN can access settings
+    const user = api.getUser();
+    const roles = user?.roles || [];
+    if (!roles.includes('CRM_ADMIN') && !roles.includes('SUPERADMIN')) {
+        Toast.error('Access denied — Settings is only available to CRM Admins');
+        window.location.href = 'dashboard.html';
+        return;
+    }
+
     Navigation.init('crm', '../');
 
     // Setup sidebar

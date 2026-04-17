@@ -40,9 +40,17 @@ async function loadMyRole() {
             myTeamRole = res.role || 'member';
         }
     } catch { myTeamRole = 'member'; }
-    // Hide bulk delete for members
-    const bulkDelBtn = document.getElementById('bulkDeleteBtn');
-    if (bulkDelBtn && !canDeleteLead()) bulkDelBtn.style.display = 'none';
+    // Hide admin-only buttons for members
+    if (!canDeleteLead()) {
+        const bulkDelBtn = document.getElementById('bulkDeleteBtn');
+        if (bulkDelBtn) bulkDelBtn.style.display = 'none';
+    }
+    if (myTeamRole === 'member') {
+        ['discoverLeadsBtn', 'importLeadsBtn', 'newLeadBtn', 'pendingTransfersBtn'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+    }
 }
 
 function canDeleteLead() {
@@ -186,7 +194,7 @@ function renderLeadsTable(leads) {
                 <input type="checkbox" class="lead-checkbox" value="${lead.id}"
                     onchange="toggleLeadSelection('${lead.id}', this.checked)"
                     ${selectedLeadIds.has(lead.id) ? 'checked' : ''}
-                    ${(lead.team_id || lead.teamName || lead.team_name) ? 'disabled title="Already assigned to a team"' : ''}>
+                    ${(lead.team_id || lead.teamName || lead.team_name) ? 'disabled data-tooltip="Already assigned to a team"' : ''}>
             </td>
             <td>
                 <span class="crm-lead-number">${escapeHtml(lead.leadNumber || lead.lead_number || '-')}</span>
@@ -207,10 +215,10 @@ function renderLeadsTable(leads) {
                 <span class="crm-source-badge source-${lead.lead_source || 'manual'}">${formatSource(lead.lead_source)}</span>
             </td>
             <td>
-                <span class="crm-status-badge status-${lead.status || 'new'}" onclick="openStatusChangeModal('${lead.id}')" style="cursor:pointer;" title="Click to change status">${formatStatus(lead.status)}</span>
+                <span class="crm-status-badge status-${lead.status || 'new'}" onclick="openStatusChangeModal('${lead.id}')" style="cursor:pointer;" data-tooltip="Click to change status">${formatStatus(lead.status)}</span>
                 ${lead.disposition ? `<span class="crm-disposition-badge disp-${lead.disposition}" title="${formatDisposition(lead.disposition)}">${formatDisposition(lead.disposition)}</span>` : ''}
                 ${lead.next_followup_date ? formatFollowupIndicator(lead.next_followup_date) : ''}
-                ${lead.has_pending_transfer ? '<span class="crm-transfer-pending-badge" title="Transfer/Reassignment pending approval">⇄ Transfer Pending</span>' : ''}
+                ${lead.has_pending_transfer ? '<span class="crm-transfer-pending-badge" data-tooltip="Transfer/Reassignment pending approval">⇄ Transfer Pending</span>' : ''}
             </td>
             <td class="hide-mobile">
                 ${lead.teamName || lead.team_name ? `<span class="crm-team-badge ${teamColorClass(lead.teamName || lead.team_name)}">${escapeHtml(lead.teamName || lead.team_name)}</span>` : '<span class="crm-cell-secondary">—</span>'}
@@ -223,26 +231,26 @@ function renderLeadsTable(leads) {
             </td>
             <td>
                 <div class="crm-actions">
-                    <button class="crm-action-btn" onclick="openLogActivityModal('${lead.id}')" title="Log Activity">
+                    <button class="crm-action-btn" onclick="openLogActivityModal('${lead.id}')" data-tooltip="Log Activity">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
                         </svg>
                     </button>
-                    <button class="crm-action-btn" onclick="editLead('${lead.id}')" title="Edit">
+                    <button class="crm-action-btn" onclick="editLead('${lead.id}')" data-tooltip="Edit Lead">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                     </button>
-                    ${lead.status !== 'won' && lead.status !== 'converted' ? `
-                    <button class="crm-action-btn action-convert" onclick="openConvertModal('${lead.id}')" title="Convert to Contact">
+                    ${lead.status === 'qualified' ? `
+                    <button class="crm-action-btn action-convert" onclick="openConvertModal('${lead.id}')" data-tooltip="Convert to Contact + Deal">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
                             <polyline points="17 6 23 6 23 12"/>
                         </svg>
                     </button>
                     ` : ''}
-                    ${canDeleteLead() ? `<button class="crm-action-btn action-delete" onclick="deleteLead('${lead.id}')" title="Delete">
+                    ${canDeleteLead() ? `<button class="crm-action-btn action-delete" onclick="deleteLead('${lead.id}')" data-tooltip="Delete Lead">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"/>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -263,11 +271,6 @@ function formatStatus(status) {
         'contacted': 'Contacted',
         'qualified': 'Qualified',
         'unqualified': 'Unqualified',
-        'follow_up': 'Follow Up',
-        'opportunity': 'Opportunity',
-        'negotiation': 'Negotiation',
-        'won': 'Won',
-        'lost': 'Lost',
         'converted': 'Converted'
     };
     return labels[status] || status || 'New';

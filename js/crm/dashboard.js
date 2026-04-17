@@ -19,6 +19,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // Hide settings card for non-admin users
+    const user = api.getUser();
+    const roles = user?.roles || [];
+    if (!roles.includes('CRM_ADMIN') && !roles.includes('SUPERADMIN')) {
+        const settingsCard = document.getElementById('cardSettings');
+        if (settingsCard) settingsCard.style.display = 'none';
+    }
+
     // Load default currency setting, then dashboard data
     await loadDashboardCurrency();
     await loadDashboard();

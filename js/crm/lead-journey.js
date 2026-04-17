@@ -85,10 +85,12 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body)
             });
+            const changedLeadId = _statusChangeLeadId;
             Toast.success(`Status changed to ${formatStatus(_statusChangeSelected)}`);
             closeStatusChangeModal();
             loadLeads();
             loadLeadStats();
+            if (changedLeadId) openLeadDetailPanel(changedLeadId);
         } catch (e) {
             Toast.error(e.message || 'Failed to change status');
         }
@@ -162,9 +164,11 @@
             // 3. If next follow-up date set, update the lead's follow-up date (no separate follow-up record)
             // The activity already stores next_action + next_action_date, shown in timeline via chips.
 
+            const loggedLeadId = _logActivityLeadId;
             Toast.success('Activity logged');
             closeLogActivityModal();
             loadLeads();
+            if (loggedLeadId) openLeadDetailPanel(loggedLeadId);
         } catch (e) {
             Toast.error(e.message || 'Failed to log activity');
         }
@@ -401,8 +405,11 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ to_team_id: teamId, reason: reason })
             });
+            const transferredLeadId = _transferLeadId;
             Toast.success('Transfer request submitted for approval');
             closeTransferRequestModal();
+            loadLeads();
+            if (transferredLeadId) openLeadDetailPanel(transferredLeadId);
         } catch (e) {
             Toast.error(e.message || 'Failed to submit transfer request');
         }
@@ -572,6 +579,12 @@
     // Check for pending transfers on page load (show badge for TL/managers)
     async function checkPendingTransfers() {
         try {
+            // Members don't see the transfers button
+            if (typeof myTeamRole !== 'undefined' && myTeamRole === 'member') {
+                document.getElementById('pendingTransfersBtn').style.display = 'none';
+                return;
+            }
+
             const transfers = await api.request('/crm/leads/transfer-requests');
             const count = (transfers || []).length;
             const btn = document.getElementById('pendingTransfersBtn');
@@ -583,11 +596,9 @@
                 badge.textContent = count;
             } else {
                 badge.style.display = 'none';
-                // Still show button for TL/managers so they can check history
                 btn.style.display = '';
             }
         } catch (e) {
-            // Non-team users or errors — hide the button
             document.getElementById('pendingTransfersBtn').style.display = 'none';
         }
     }
