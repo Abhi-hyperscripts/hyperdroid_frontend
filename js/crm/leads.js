@@ -556,6 +556,7 @@ async function confirmBulkAssign(teamId, teamName) {
         Toast.success(`${ids.length} lead(s) assigned to ${teamName}`);
         document.getElementById('bulkAssignOverlay')?.remove();
         selectedLeadIds.clear();
+        updateBulkActionsBar();
         loadLeads();
     } catch (e) {
         Toast.error(e.message || 'Assignment failed');
