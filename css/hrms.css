@@ -7903,14 +7903,30 @@ input:checked + .slider:before {
 
 .bulk-entry-row {
     display: grid;
-    grid-template-columns: 1fr 140px 120px 1fr auto;
-    gap: 12px;
+    grid-template-columns: 2fr 140px 130px 2fr auto;
+    gap: 10px;
     align-items: start;
     padding: 12px;
     background: var(--bg-card);
     border: 1px solid var(--border-color-light);
     border-radius: 6px;
     margin-bottom: 8px;
+}
+
+.bulk-entry-row .bulk-cell {
+    min-width: 0;
+    overflow: visible;
+}
+
+.bulk-entry-row .bulk-cell > * {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.bulk-entry-row .bulk-cell .searchable-dropdown-trigger {
+    min-width: 0 !important;
+    width: 100%;
 }
 
 .bulk-entry-row:last-child {
@@ -23325,6 +23341,13 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
     gap: 6px;
     font-size: 0.85rem;
     cursor: pointer;
+    white-space: nowrap;
+}
+
+.nfc-issue-inline .form-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 /* Deactivate Card Modal */

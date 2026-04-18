@@ -3800,15 +3800,15 @@ function addBulkHolidayRow() {
     const row = document.createElement('div');
     row.className = 'bulk-entry-row';
     row.innerHTML = `
-        <input type="text" class="form-control holiday-name" placeholder="Holiday name *" required oninput="updateBulkHolidayCount()">
-        <input type="date" class="form-control holiday-date" required>
-        <select class="form-control holiday-type">
+        <div class="bulk-cell"><input type="text" class="form-control holiday-name" placeholder="Holiday name *" required oninput="updateBulkHolidayCount()"></div>
+        <div class="bulk-cell"><input type="date" class="form-control holiday-date" required></div>
+        <div class="bulk-cell"><select class="form-control holiday-type">
             <option value="public">Public</option>
             <option value="regional">Regional</option>
             <option value="restricted">Restricted</option>
             <option value="company">Company</option>
-        </select>
-        <input type="text" class="form-control holiday-desc" placeholder="Description (optional)">
+        </select></div>
+        <div class="bulk-cell"><input type="text" class="form-control holiday-desc" placeholder="Description (optional)"></div>
         <button type="button" class="remove-entry-btn" onclick="removeBulkHolidayRow(this)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
