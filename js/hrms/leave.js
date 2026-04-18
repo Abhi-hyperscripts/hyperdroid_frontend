@@ -1173,29 +1173,25 @@ async function loadDepartments() {
             }))
         ];
 
-        // Update SearchableDropdown instances if available
-        if (requestDepartmentDropdown) {
-            requestDepartmentDropdown.setOptions(deptOptions);
-        }
-        if (balanceDepartmentDropdown) {
-            balanceDepartmentDropdown.setOptions(deptOptions);
-        }
-        if (calendarDepartmentDropdown) {
-            calendarDepartmentDropdown.setOptions(deptOptions);
-        }
-
-        // Populate native selects ONLY if they haven't been converted to SearchableDropdown
-        // (check if the element is still a SELECT tag, not a DIV from SearchableDropdown)
-        const selects = ['requestDepartment', 'balanceDepartment', 'calendarDepartment'];
-        selects.forEach(id => {
+        // Populate either the SearchableDropdown instance OR the raw native select — never both.
+        // Writing to the native select after setOptions() triggers the wrapper's MutationObserver
+        // (searchable-dropdown.js) which rebuilds options from the select's bare <option> tags,
+        // clobbering the dedup'd labels with un-suffixed, un-merged data.
+        const dropdownTargets = [
+            { id: 'requestDepartment', instance: requestDepartmentDropdown },
+            { id: 'balanceDepartment', instance: balanceDepartmentDropdown },
+            { id: 'calendarDepartment', instance: calendarDepartmentDropdown }
+        ];
+        dropdownTargets.forEach(({ id, instance }) => {
+            if (instance) {
+                instance.setOptions(deptOptions);
+                return;
+            }
             const element = document.getElementById(id);
-            // Only update if it's still a native SELECT element (not converted)
             if (element && element.tagName === 'SELECT') {
-                element.innerHTML = '<option value="">All Departments</option>';
-                departments.forEach(dept => {
-                    const deptName = dept.department_name || dept.name || 'Unknown';
-                    element.innerHTML += `<option value="${dept.id}">${deptName}</option>`;
-                });
+                element.innerHTML = deptOptions
+                    .map(opt => `<option value="${opt.value}">${opt.label}</option>`)
+                    .join('');
             }
         });
     } catch (error) {
