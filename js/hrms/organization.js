@@ -183,6 +183,12 @@ function initOrganizationSearchableDropdowns() {
         onChange: () => updateDesignationsTable()
     });
 
+    convertAndStore('designationStatusFilter', {
+        placeholder: 'Status',
+        compact: true,
+        onChange: () => updateDesignationsTable()
+    });
+
     // Shift filters - auto-selects first office, persists selection
     convertAndStore('shiftOffice', {
         placeholder: 'Select Office',
@@ -541,13 +547,38 @@ function updateDesignationDepartmentFilter() {
         filteredDepts = departments.filter(d => d.is_active);
     }
 
+    // When "All Offices" is selected, departments from different offices may share
+    // a name (e.g. three "Developerment" rows). Dedupe by (office_id + name) and
+    // suffix the office name so each option is distinguishable.
+    const activeOffices = offices.filter(o => o.is_active);
     const options = [
         { value: '', label: 'All Departments' },
-        ...filteredDepts.map(d => ({ value: d.id, label: d.department_name }))
+        ...buildDeduplicatedDepartmentOptions(filteredDepts, activeOffices, { includeOfficeSuffix: !officeId })
     ];
 
     deptDropdown.setOptions(options);
     deptDropdown.setValue(''); // Reset selection
+}
+
+/**
+ * Build department dropdown options with dedupe (same office + same name → one
+ * option whose value is a comma-joined list of the underlying ids), and an
+ * optional office-name suffix for disambiguation across offices.
+ */
+function buildDeduplicatedDepartmentOptions(depts, officesList, { includeOfficeSuffix = true } = {}) {
+    const groupMap = new Map();
+    for (const d of depts) {
+        const deptName = d.department_name || d.name || '';
+        const dedupeKey = `${d.office_id}_${deptName.toLowerCase()}`;
+        if (groupMap.has(dedupeKey)) {
+            groupMap.get(dedupeKey).ids.push(d.id);
+        } else {
+            const office = includeOfficeSuffix ? officesList.find(o => o.id === d.office_id) : null;
+            const label = office ? `${deptName} (${office.office_name})` : deptName;
+            groupMap.set(dedupeKey, { ids: [d.id], label });
+        }
+    }
+    return Array.from(groupMap.values()).map(g => ({ value: g.ids.join(','), label: g.label }));
 }
 
 /**
@@ -1679,11 +1710,14 @@ function populateDepartmentSelects() {
         }
     }
 
-    // Department filter dropdown - with "All Departments" option
+    // Department filter dropdown - with "All Departments" option.
+    // Same deduplication pattern as the bulk roster dept filter (line ~3976):
+    // departments with the same (office_id + name) are merged into a single
+    // option; office name is appended so users can tell duplicates apart.
     const deptFirstLabel = activeDepts.length === 0 ? 'No Departments' : 'All Departments';
     const deptOptions = [
         { value: '', label: deptFirstLabel },
-        ...activeDepts.map(d => ({ value: d.id, label: d.department_name }))
+        ...buildDeduplicatedDepartmentOptions(activeDepts, activeOffices)
     ];
 
     // Update searchable dropdown if exists, otherwise fallback to select
@@ -1693,10 +1727,9 @@ function populateDepartmentSelects() {
     } else {
         const filterSelect = document.getElementById('designationDepartment');
         if (filterSelect && filterSelect.tagName === 'SELECT') {
-            filterSelect.innerHTML = `<option value="">${deptFirstLabel}</option>`;
-            activeDepts.forEach(dept => {
-                filterSelect.innerHTML += `<option value="${escapeHtml(dept.id)}">${escapeHtml(dept.department_name)}</option>`;
-            });
+            filterSelect.innerHTML = deptOptions
+                .map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`)
+                .join('');
         }
     }
 
@@ -1866,7 +1899,10 @@ function toggleHierarchyNode(nodeId) {
 
 async function loadDesignations() {
     try {
-        const response = await api.request('/hrms/designations');
+        // Fetch ALL designations (active + inactive) and let the status filter
+        // decide what to render. Without includeInactive=true the backend hides
+        // inactive rows, which made it impossible to find or re-activate them.
+        const response = await api.request('/hrms/designations?includeInactive=true');
         allDesignations = Array.isArray(response) ? response : (response?.data || []);
         updateDesignationsTable();
     } catch (error) {
@@ -1878,18 +1914,28 @@ function updateDesignationsTable() {
     const searchTerm = document.getElementById('designationSearch')?.value?.toLowerCase() || '';
     const officeFilter = getSearchableDropdownValue('designationOffice');
     const deptFilter = getSearchableDropdownValue('designationDepartment');
+    const statusFilter = getSearchableDropdownValue('designationStatusFilter') || 'active';
 
     let filtered = allDesignations.filter(d =>
         d.designation_name?.toLowerCase().includes(searchTerm) ||
         d.designation_code?.toLowerCase().includes(searchTerm)
     );
 
+    if (statusFilter === 'active') {
+        filtered = filtered.filter(d => d.is_active !== false);
+    } else if (statusFilter === 'inactive') {
+        filtered = filtered.filter(d => d.is_active === false);
+    }
+
     if (officeFilter) {
         filtered = filtered.filter(d => d.office_id === officeFilter);
     }
 
     if (deptFilter) {
-        filtered = filtered.filter(d => d.department_id === deptFilter);
+        // deptFilter may be a single UUID or a comma-joined list (for merged
+        // same-office duplicates). Split and match against any of the ids.
+        const deptIdSet = new Set(String(deptFilter).split(',').map(s => s.trim()).filter(Boolean));
+        filtered = filtered.filter(d => deptIdSet.has(d.department_id));
     }
 
     // Use pagination if available
