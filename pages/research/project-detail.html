@@ -7965,6 +7965,12 @@
                         <option value="0.95" selected>95%</option>
                         <option value="0.99">99%</option>
                     </select>
+                    <select id="ctSigCompareAcross" title="Compare across — tracker mode. Pick a column variable (e.g. Wave or Year) to only test columns that share every other dimension: Male-2021 vs Male-2023, not Male-2021 vs Female-2023.">
+                        <option value="">Compare: all column pairs</option>
+                    </select>
+                    <button type="button" id="ctSigGroupsBtn" class="gm-btn gm-btn-secondary ct-sig-groups-btn" title="Custom comparison groups — define your own sets of columns to test against each other (SPSS/Q style)">
+                        Groups
+                    </button>
                 </div>
                 <div class="ct-footer-actions">
                     <button class="gm-btn gm-btn-secondary" onclick="ctReset()">Reset</button>

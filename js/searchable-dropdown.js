@@ -460,7 +460,11 @@ const SearchableDropdown = (function() {
                 this.menuEl.style.top = `${top}px`;
                 this.menuEl.style.left = `${rect.left}px`;
                 this.menuEl.style.width = `${rect.width}px`;
-                this.menuEl.style.zIndex = '10050';
+                // Must beat every modal z-index in the app. The research custom-table
+                // modal alone uses 1000001; its code-include popover uses 1000010.
+                // Portaled menu has to sit above both so dropdowns inside those modals
+                // are still interactive.
+                this.menuEl.style.zIndex = '2000000';
                 // The default rule `.searchable-dropdown.open .searchable-dropdown-menu`
                 // no longer applies once we've portaled out of that ancestor,
                 // so reveal the menu explicitly.

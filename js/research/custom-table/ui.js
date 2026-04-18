@@ -58,7 +58,7 @@
         filter: [],
         weight: [],      // same shape as other slots; max 1 group / 1 var
         searchTerm: '',
-        significance: { enabled: false, confidence: 0.95, minBase: 30 },
+        significance: { enabled: false, confidence: 0.95, minBase: 30, compareAcross: '', comparisonGroups: [] },
         // Post-render cell visibility — toggled from the result toolbar.
         // These don't trigger a new query; the table re-renders from the
         // cached structured result.
@@ -283,6 +283,7 @@
         renderPalette();
         renderSlots();
         renderRunButton();
+        renderCompareAcrossOptions();
     }
 
     /**
@@ -657,6 +658,24 @@
                 confidence_level: state.significance.confidence,
                 min_base: state.significance.minBase,
             };
+            // Custom groups take precedence over compare-across — it's a strictly more
+            // expressive representation. Prune against the current flat column count so
+            // stale indexes (from a removed column) silently drop instead of breaking the
+            // request on the backend.
+            const flatCount = flatColumnCount();
+            const cleanedGroups = (state.significance.comparisonGroups || [])
+                .map(g => g.filter(i => Number.isInteger(i) && i >= 0 && i < flatCount))
+                .filter(g => g.length >= 2);
+            if (cleanedGroups.length > 0) {
+                baseRequest.input_params.significance.comparison_groups = cleanedGroups;
+            } else {
+                const colVarNames = new Set();
+                for (const g of (state.columns || []))
+                    for (const v of (g.vars || [])) colVarNames.add(v.name);
+                if (state.significance.compareAcross && colVarNames.has(state.significance.compareAcross)) {
+                    baseRequest.input_params.significance.compare_across = state.significance.compareAcross;
+                }
+            }
         }
 
         // Assemble the atomic unit list: the base table plus one variant per
@@ -1159,6 +1178,190 @@
             placeholder: '95%',
             onChange: (value) => { state.significance.confidence = Number(value); },
         });
+
+        // Compare-across (tracker mode) — options populated from current column vars
+        // so we never hard-code which variable is "the wave". Re-run on every render
+        // because columns mutate as the user drags.
+        renderCompareAcrossOptions();
+    }
+
+    /** Populate #ctSigCompareAcross from the current column variable list. */
+    function renderCompareAcrossOptions() {
+        const sel = document.getElementById('ctSigCompareAcross');
+        if (!sel) return;
+
+        // Collect unique variable names across all column groups.
+        const seen = new Set();
+        const colVars = [];
+        for (const group of (state.columns || [])) {
+            for (const v of (group.vars || [])) {
+                if (seen.has(v.name)) continue;
+                seen.add(v.name);
+                const def = variablesByName[v.name];
+                const label = def?.variableLabel || def?.variable_label || v.name;
+                colVars.push({ name: v.name, label });
+            }
+        }
+
+        // If a previously selected value is no longer a valid column var, drop it.
+        if (state.significance.compareAcross && !seen.has(state.significance.compareAcross)) {
+            state.significance.compareAcross = '';
+        }
+
+        const current = state.significance.compareAcross || '';
+        sel.innerHTML = '';
+        const noneOpt = document.createElement('option');
+        noneOpt.value = '';
+        noneOpt.textContent = 'Compare: all column pairs';
+        sel.appendChild(noneOpt);
+        for (const v of colVars) {
+            const opt = document.createElement('option');
+            opt.value = v.name;
+            opt.textContent = `Compare across: ${v.name}${v.label && v.label !== v.name ? ` (${v.label})` : ''}`;
+            sel.appendChild(opt);
+        }
+        sel.value = current;
+        sel.disabled = colVars.length === 0;
+
+        // Rebind change handler every render so we always see the latest state.
+        sel.onchange = () => { state.significance.compareAcross = sel.value || ''; };
+
+        // Wrap with SearchableDropdown the first time — subsequent renders just update
+        // the native <select>; the auto-searchable MutationObserver re-renders the widget.
+        convertSelectToSearchable('ctSigCompareAcross', {
+            placeholder: 'Compare: all column pairs',
+            onChange: (value) => { state.significance.compareAcross = value || ''; },
+        });
+
+        renderGroupsBtn();
+    }
+
+    // -----------------------------------------------------------------------
+    // Custom comparison groups (SPSS/Q "ABEF / ABC / BDEF" pattern)
+    // -----------------------------------------------------------------------
+
+    /** Compute the flat expanded columns (one entry per rendered column with label). */
+    function flatExpandedColumns() {
+        const groups = state.columns || [];
+        if (groups.length === 0) return [];
+        // Reuse the exported expander — produces {label, expression} per column in order.
+        const CT = window.CustomTable;
+        if (!CT || typeof CT.buildCustomTableRequest !== 'function') return [];
+        const req = CT.buildCustomTableRequest(state, variablesByName, state.fileId, codesCache);
+        return Array.isArray(req?.input_params?.columns) ? req.input_params.columns : [];
+    }
+
+    function flatColumnCount() {
+        return flatExpandedColumns().length;
+    }
+
+    function colLetter(i) {
+        // Matches backend sig letter assignment: A, B, ..., Z, then AA, BB, ...
+        // (>26 columns is unusual for sig tables; backend already breaks there too)
+        return String.fromCharCode('A'.charCodeAt(0) + (i % 26)).repeat(Math.floor(i / 26) + 1);
+    }
+
+    /** Keep the button label in sync ("Groups" / "Groups · N"). Disable when no columns. */
+    function renderGroupsBtn() {
+        const btn = document.getElementById('ctSigGroupsBtn');
+        if (!btn) return;
+        const flat = flatColumnCount();
+        const n = (state.significance.comparisonGroups || []).length;
+        btn.textContent = n > 0 ? `Groups · ${n}` : 'Groups';
+        btn.disabled = flat < 2;
+        btn.onclick = openGroupsPopover;
+    }
+
+    function openGroupsPopover() {
+        closeCodesPopover();
+        const anchor = document.getElementById('ctSigGroupsBtn');
+        if (!anchor) return;
+        const cols = flatExpandedColumns();
+        if (cols.length < 2) return;
+
+        // Work on a local copy so Cancel is a real cancel.
+        let draft = (state.significance.comparisonGroups || []).map(g => [...g]);
+        if (draft.length === 0) draft.push([]);  // start with one empty row
+
+        const pop = document.createElement('div');
+        pop.className = 'ct-codes-popover ct-sig-groups-popover';
+
+        const rect = anchor.getBoundingClientRect();
+        pop.style.position = 'fixed';
+        pop.style.bottom = `${window.innerHeight - rect.top + 6}px`;
+        pop.style.left = `${rect.left}px`;
+        pop.style.minWidth = '360px';
+
+        const render = () => {
+            pop.innerHTML = `
+                <div class="ct-codes-title">Custom comparison groups</div>
+                <div class="ct-codes-sub">Each group is a set of column letters whose pairs will be sig-tested. Columns can appear in multiple groups.</div>
+                <div class="ct-groups-rows"></div>
+                <div class="ct-codes-actions">
+                    <button type="button" class="gm-btn gm-btn-secondary ct-groups-add">+ Add group</button>
+                    <button type="button" class="gm-btn gm-btn-secondary ct-groups-clear">Clear all</button>
+                    <div style="flex:1"></div>
+                    <button type="button" class="gm-btn gm-btn-secondary ct-groups-cancel">Cancel</button>
+                    <button type="button" class="gm-btn gm-btn-primary ct-groups-apply">Apply</button>
+                </div>
+            `;
+
+            const rowsHost = pop.querySelector('.ct-groups-rows');
+            draft.forEach((group, gi) => {
+                const row = document.createElement('div');
+                row.className = 'ct-groups-row';
+                const chipsWrap = document.createElement('div');
+                chipsWrap.className = 'ct-groups-chips';
+                cols.forEach((col, ci) => {
+                    const on = group.includes(ci);
+                    const chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = `ct-groups-chip${on ? ' is-on' : ''}`;
+                    chip.textContent = colLetter(ci);
+                    chip.title = `${colLetter(ci)} — ${col.label || '(column)'}`;
+                    chip.onclick = () => {
+                        if (on) draft[gi] = group.filter(x => x !== ci);
+                        else draft[gi] = [...group, ci].sort((a, b) => a - b);
+                        render();
+                    };
+                    chipsWrap.appendChild(chip);
+                });
+                const rm = document.createElement('button');
+                rm.type = 'button';
+                rm.className = 'ct-groups-row-remove';
+                rm.textContent = '×';
+                rm.title = 'Remove group';
+                rm.onclick = () => { draft.splice(gi, 1); if (draft.length === 0) draft.push([]); render(); };
+                row.appendChild(chipsWrap);
+                row.appendChild(rm);
+                rowsHost.appendChild(row);
+            });
+
+            pop.querySelector('.ct-groups-add').onclick = () => { draft.push([]); render(); };
+            pop.querySelector('.ct-groups-clear').onclick = () => { draft = [[]]; render(); };
+            pop.querySelector('.ct-groups-cancel').onclick = closePop;
+            pop.querySelector('.ct-groups-apply').onclick = () => {
+                state.significance.comparisonGroups = draft
+                    .map(g => Array.from(new Set(g)).sort((a, b) => a - b))
+                    .filter(g => g.length >= 2);
+                closePop();
+                renderGroupsBtn();
+            };
+        };
+
+        const onDocClick = (e) => { if (!pop.contains(e.target) && e.target !== anchor) closePop(); };
+        const onEsc = (e) => { if (e.key === 'Escape') closePop(); };
+        function closePop() {
+            document.removeEventListener('mousedown', onDocClick, true);
+            document.removeEventListener('keydown', onEsc);
+            pop.remove();
+        }
+        document.body.appendChild(pop);
+        render();
+        setTimeout(() => {
+            document.addEventListener('mousedown', onDocClick, true);
+            document.addEventListener('keydown', onEsc);
+        }, 0);
     }
 
     // -----------------------------------------------------------------------

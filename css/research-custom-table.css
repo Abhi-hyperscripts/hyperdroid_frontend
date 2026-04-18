@@ -686,6 +686,60 @@
     border-color: color-mix(in srgb, var(--brand-primary) 50%, transparent);
 }
 
+/* ---- Significance "Groups" button + custom groups popover ---- */
+.ct-sig-groups-btn {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+.ct-sig-groups-popover .ct-groups-rows {
+    display: flex; flex-direction: column; gap: 6px;
+    margin-top: 6px; margin-bottom: 8px;
+    max-height: 280px; overflow-y: auto;
+}
+.ct-sig-groups-popover .ct-groups-row {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--bg-elevated, rgba(255,255,255,0.03));
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px;
+}
+.ct-sig-groups-popover .ct-groups-chips {
+    display: flex; flex-wrap: wrap; gap: 4px; flex: 1;
+}
+.ct-sig-groups-popover .ct-groups-chip {
+    min-width: 28px; height: 26px;
+    padding: 0 6px;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+}
+.ct-sig-groups-popover .ct-groups-chip:hover {
+    border-color: color-mix(in srgb, var(--brand-primary) 50%, transparent);
+    color: var(--text-primary);
+}
+.ct-sig-groups-popover .ct-groups-chip.is-on {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: var(--text-inverse, #fff);
+}
+.ct-sig-groups-popover .ct-groups-row-remove {
+    width: 24px; height: 24px;
+    border: none; background: transparent;
+    color: var(--text-muted, var(--text-secondary));
+    cursor: pointer; font-size: 16px;
+    border-radius: 4px;
+}
+.ct-sig-groups-popover .ct-groups-row-remove:hover {
+    background: var(--bg-elevated, rgba(255,255,255,0.05));
+    color: var(--color-error);
+}
+.ct-sig-groups-popover .ct-codes-actions { display: flex; gap: 6px; align-items: center; }
+
 /* ---- Code include/exclude popover (A8.3) ---- */
 .ct-codes-popover {
     /* !important because styles.css has a blanket `body.dashboard > *` rule

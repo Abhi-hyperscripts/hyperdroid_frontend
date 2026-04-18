@@ -70,8 +70,12 @@
      */
     function expandVariable(variableName, variablesByName, codesCache, includedCodes) {
         const def = variablesByName[variableName];
+        // Always backtick-quote the identifier so non-ASCII names (Cyrillic, Arabic, CJK, ...)
+        // survive ClickHouse's tokenizer — raw `ЗАЕТОСТ = 1` is a SYNTAX_ERROR there. The
+        // backend's fast-path regex already accepts the optional backticks.
+        const qn = `\`${variableName}\``;
         if (!def) {
-            return [{ label: variableName, expression: `${variableName} IS NOT NULL` }];
+            return [{ label: variableName, expression: `${qn} IS NOT NULL` }];
         }
 
         const stringType = isStringType(def);
@@ -87,15 +91,17 @@
         const fetched = codesCache?.get?.(variableName.toUpperCase());
         if (Array.isArray(fetched) && fetched.length > 0) {
             return fetched
-                // Drop zero-count orphan codes ONLY when the user hasn't
-                // explicitly selected a subset. When `includeAll` is false
-                // the user picked codes via the popover — respect that
-                // choice even if some selected codes have zero rows (they
-                // deserve a column that renders as all-zero).
-                .filter(e => includeAll ? (e.count || 0) > 0 : keep(e.code))
+                // When the user hasn't picked a subset, keep every *labeled* code
+                // even if no respondent picked it (e.g. "Non-binary" with count=0 in
+                // the sample — user still expects it as a row rendering all-zero).
+                // Only drop truly orphan codes: zero-count AND no label, which are
+                // rogue values that show up in data with no meaning.
+                // When `includeAll` is false the user picked codes via the popover —
+                // always respect that choice.
+                .filter(e => includeAll ? ((e.count || 0) > 0 || !!e.label) : keep(e.code))
                 .map(e => ({
                     label: e.label ? `${e.code} - ${e.label}` : `${variableName} (code ${e.code})`,
-                    expression: `${variableName} = ${literalFor(e.code)}`,
+                    expression: `${qn} = ${literalFor(e.code)}`,
                 }));
         }
 
@@ -106,14 +112,14 @@
                 .filter(([code]) => keep(code))
                 .map(([code, label]) => ({
                     label: label ? `${code} - ${label}` : `${variableName} (code ${code})`,
-                    expression: `${variableName} = ${literalFor(code)}`,
+                    expression: `${qn} = ${literalFor(code)}`,
                 }));
         }
 
         // No labels at all: single bucket covering all non-null rows.
         return [{
             label: def.variableLabel || def.variable_label || variableName,
-            expression: `${variableName} IS NOT NULL`,
+            expression: `${qn} IS NOT NULL`,
         }];
     }
 
@@ -213,7 +219,7 @@
                     // Section header matches all non-null rows of every var
                     // in the group so the count reflects the group base.
                     const headerExpr = group.vars
-                        .map(v => `${v.name} IS NOT NULL`)
+                        .map(v => `\`${v.name}\` IS NOT NULL`)
                         .join(' AND ') || '1=1';
                     rows.push({ label: `— ${groupLabel} —`, expression: headerExpr });
                     for (const e of expanded) {
