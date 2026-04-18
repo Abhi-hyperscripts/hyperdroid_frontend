@@ -3779,6 +3779,11 @@ async function deleteRoster(id) {
 
 let bulkHolidayRowCount = 0;
 let allEmployeesForBulkRoster = [];
+// Selection state that survives dept-filter re-renders. Previously the checkbox
+// list was wiped and rebuilt whenever the filter changed, losing selections
+// made under a prior department — so you could never pick people from more
+// than one department in a single bulk-assign.
+let bulkRosterSelectedIds = new Set();
 
 function showBulkHolidayModal() {
     const currentYear = new Date().getFullYear();
@@ -4058,6 +4063,10 @@ async function showBulkRosterModal() {
     document.getElementById('bulkRosterStartDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('bulkRosterEndDate').value = '';
 
+    // Fresh modal → start with no selections. The Set persists across
+    // dept-filter changes within this modal session.
+    bulkRosterSelectedIds = new Set();
+
     // Load employees
     await loadBulkRosterEmployees();
     updateBulkRosterCount();
@@ -4081,22 +4090,38 @@ function renderBulkRosterEmployees() {
     const container = document.getElementById('bulkRosterEmployees');
     const deptFilter = getSearchableDropdownValue('bulkRosterDepartmentFilter');
 
+    // Drop stale selections for employees that no longer exist in the list.
+    const validIds = new Set(allEmployeesForBulkRoster.map(e => e.id));
+    for (const id of bulkRosterSelectedIds) {
+        if (!validIds.has(id)) bulkRosterSelectedIds.delete(id);
+    }
+
     container.innerHTML = '';
     allEmployeesForBulkRoster.forEach(emp => {
         const deptMatch = !deptFilter || deptFilter.split(',').includes(emp.department_id);
         const deptName = departments.find(d => d.id === emp.department_id)?.department_name || 'No Dept';
+        const isChecked = bulkRosterSelectedIds.has(emp.id);
 
         const item = document.createElement('label');
         item.className = `employee-checkbox-item${deptMatch ? '' : ' hidden'}`;
         item.innerHTML = `
-            <input type="checkbox" value="${emp.id}" onchange="updateBulkRosterCount()">
+            <input type="checkbox" value="${escapeHtml(emp.id)}" ${isChecked ? 'checked' : ''} onchange="toggleBulkRosterEmployee('${escapeHtml(emp.id)}', this.checked)">
             <span class="employee-checkbox-label">
-                ${emp.first_name || emp.employee_code || 'Unknown'} ${emp.last_name || ''}
-                <span class="employee-checkbox-dept">${deptName}</span>
+                ${escapeHtml(emp.first_name || emp.employee_code || 'Unknown')} ${escapeHtml(emp.last_name || '')}
+                <span class="employee-checkbox-dept">${escapeHtml(deptName)}</span>
             </span>
         `;
         container.appendChild(item);
     });
+}
+
+function toggleBulkRosterEmployee(employeeId, checked) {
+    if (checked) {
+        bulkRosterSelectedIds.add(employeeId);
+    } else {
+        bulkRosterSelectedIds.delete(employeeId);
+    }
+    updateBulkRosterCount();
 }
 
 function filterBulkRosterEmployees() {
@@ -4105,20 +4130,30 @@ function filterBulkRosterEmployees() {
 }
 
 function selectAllBulkRosterEmployees() {
+    // Only Select-All within the currently-filtered (visible) set — matches
+    // the Deselect-All scope and avoids silently opting-in hidden employees.
     const checkboxes = document.querySelectorAll('#bulkRosterEmployees .employee-checkbox-item:not(.hidden) input[type="checkbox"]');
-    checkboxes.forEach(cb => cb.checked = true);
+    checkboxes.forEach(cb => {
+        cb.checked = true;
+        bulkRosterSelectedIds.add(cb.value);
+    });
     updateBulkRosterCount();
 }
 
 function deselectAllBulkRosterEmployees() {
-    const checkboxes = document.querySelectorAll('#bulkRosterEmployees input[type="checkbox"]');
-    checkboxes.forEach(cb => cb.checked = false);
+    // Only deselect the currently-visible set, so changing the dept filter
+    // and hitting Deselect-All doesn't blow away selections from other depts.
+    const checkboxes = document.querySelectorAll('#bulkRosterEmployees .employee-checkbox-item:not(.hidden) input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        cb.checked = false;
+        bulkRosterSelectedIds.delete(cb.value);
+    });
     updateBulkRosterCount();
 }
 
 function updateBulkRosterCount() {
-    const checked = document.querySelectorAll('#bulkRosterEmployees input[type="checkbox"]:checked').length;
-    document.getElementById('bulkRosterCount').textContent = `${checked} employee(s) selected`;
+    // Count from the Set so hidden-but-selected employees still count.
+    document.getElementById('bulkRosterCount').textContent = `${bulkRosterSelectedIds.size} employee(s) selected`;
 }
 
 async function saveBulkRosters() {
@@ -4137,9 +4172,9 @@ async function saveBulkRosters() {
         return;
     }
 
-    const selectedEmployees = Array.from(
-        document.querySelectorAll('#bulkRosterEmployees input[type="checkbox"]:checked')
-    ).map(cb => cb.value);
+    // Pull from the Set, not the DOM: hidden (dept-filtered) checkboxes still
+    // represent real selections we want to submit.
+    const selectedEmployees = Array.from(bulkRosterSelectedIds);
 
     if (selectedEmployees.length === 0) {
         showToast('Please select at least one employee', 'error');
