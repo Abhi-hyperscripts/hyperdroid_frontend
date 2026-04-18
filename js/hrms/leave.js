@@ -28,6 +28,7 @@ let leaveTypeModalDropdownsInitialized = false;
 // SearchableDropdown instances - Country dropdowns
 let leaveTypeCountryFilterDropdown = null;
 let leaveTypeModalCountryDropdown = null;
+let leaveTypeStatusFilterDropdown = null;
 
 // Employee search dropdown state (virtual scrolling)
 let filteredEmployees = [];
@@ -508,7 +509,7 @@ async function loadLeaveTypes() {
     try {
         // Load both leave types and countries in parallel
         const [leaveTypesResponse, countriesResponse] = await Promise.all([
-            api.request('/hrms/leave-types'),
+            api.request('/hrms/leave-types?includeInactive=true'),
             api.request('/hrms/countries').catch(err => {
                 console.warn('Could not load countries:', err);
                 return { data: [] };
@@ -527,6 +528,15 @@ async function loadLeaveTypes() {
 
         // Initialize country filter dropdown
         initLeaveTypeCountryFilterDropdown(countryOptions);
+
+        // Initialize status filter dropdown
+        if (document.getElementById('leaveTypeStatusFilter') && !leaveTypeStatusFilterDropdown) {
+            leaveTypeStatusFilterDropdown = convertSelectToSearchable('leaveTypeStatusFilter', {
+                compact: true,
+                placeholder: 'Status',
+                onChange: () => updateLeaveTypesTable()
+            });
+        }
 
         // Initialize modal country dropdown
         initLeaveTypeModalCountryDropdown(countryOptions);
@@ -1055,6 +1065,15 @@ function updateLeaveTypesTable() {
     if (countryFilter) {
         filtered = filtered.filter(t => t.country_id === countryFilter);
     }
+
+    // Apply status filter
+    const statusFilter = leaveTypeStatusFilterDropdown ? leaveTypeStatusFilterDropdown.getValue() : (document.getElementById('leaveTypeStatusFilter')?.value || 'active');
+    if (statusFilter === 'active') {
+        filtered = filtered.filter(t => t.is_active !== false);
+    } else if (statusFilter === 'inactive') {
+        filtered = filtered.filter(t => t.is_active === false);
+    }
+    // else: 'all' — no filter
 
     // Use pagination if available
     if (typeof createTablePagination !== 'undefined') {

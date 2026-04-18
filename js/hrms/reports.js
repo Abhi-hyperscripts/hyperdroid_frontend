@@ -43,7 +43,7 @@ const reportConfig = {
     'daily-attendance': {
         title: 'Daily Attendance Report',
         endpoint: '/hrms/reports/daily-attendance',
-        columns: ['Date', 'Total Employees', 'Present', 'Absent', 'On Leave', 'Attendance Rate'],
+        columns: ['Date', 'Office', 'Department', 'Total Employees', 'Present', 'Absent', 'On Leave', 'Attendance Rate'],
         dataExtractor: null
     },
     'monthly-attendance': {
