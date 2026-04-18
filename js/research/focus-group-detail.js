@@ -510,13 +510,27 @@ function openAnalyticsModal() {
     const allRows = overlay.querySelectorAll('.analytics-session-row');
     if (allRows.length) allRows[allRows.length - 1].style.borderBottom = 'none';
 
-    runBtn.onclick = () => {
+    runBtn.onclick = async () => {
         const ids = rowCbs().filter(c => c.checked).map(c => c.dataset.id);
-        // Backend wiring pending — log the selection so we can verify the UI
-        // captures the right IDs, and show a confirmation toast.
-        console.log('[Run Analytics] Selected session IDs:', ids);
-        Toast.info(`Analytics queued for ${ids.length} session${ids.length === 1 ? '' : 's'} (backend wiring pending)`);
-        close();
+        if (ids.length === 0) return;
+        runBtn.disabled = true;
+        runBtn.textContent = 'Queuing…';
+        try {
+            const resp = await api.request(`/research/focus-group/projects/${projectId}/reports`, {
+                method: 'POST',
+                body: JSON.stringify({ session_ids: ids, options: {} }),
+            });
+            if (!resp || !resp.job_id) {
+                throw new Error('Backend did not return a job_id');
+            }
+            close();
+            Toast.success(`Analytics queued for ${ids.length} session${ids.length === 1 ? '' : 's'}`);
+            window.location.href = `fgd-report.html?job_id=${encodeURIComponent(resp.job_id)}`;
+        } catch (e) {
+            runBtn.disabled = false;
+            runBtn.textContent = 'Run';
+            Toast.error('Failed to queue analytics: ' + e.message);
+        }
     };
 }
 
