@@ -43,24 +43,31 @@ async function loadProjects() {
         }
 
         grid.innerHTML = `
-            <div style="background:var(--bg-secondary); border:1px solid var(--border-primary); border-radius:12px; overflow:hidden;">
-                <table class="projects-table" style="width:100%; border-collapse:collapse; font-size:14px;">
+            <div class="projects-table-container">
+                <table class="projects-table">
                     <thead>
                         <tr>
-                            <th style="text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-primary); color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">Name</th>
-                            <th style="text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-primary); color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">Description</th>
-                            <th style="text-align:left; padding:12px 16px; border-bottom:2px solid var(--border-primary); color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">Created</th>
-                            <th style="text-align:right; padding:12px 16px; border-bottom:2px solid var(--border-primary); color:var(--text-secondary); font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">Actions</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Created</th>
+                            <th style="text-align:right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${projects.map(p => `
-                            <tr style="cursor:pointer;" onclick="openProject('${p.id}')">
-                                <td style="padding:12px 16px; border-bottom:1px solid var(--border-primary); font-weight:500; color:var(--text-primary);">${escapeHtml(p.name)}</td>
-                                <td style="padding:12px 16px; border-bottom:1px solid var(--border-primary); color:var(--text-secondary);">${escapeHtml(p.description || '-')}</td>
-                                <td style="padding:12px 16px; border-bottom:1px solid var(--border-primary); color:var(--text-secondary); white-space:nowrap;">${new Date(p.created_at).toLocaleDateString()}</td>
-                                <td style="padding:12px 16px; border-bottom:1px solid var(--border-primary); text-align:right;">
-                                    <button class="research-btn" style="font-size:12px; padding:4px 10px;" onclick="event.stopPropagation(); deleteProject('${p.id}', '${escapeHtml(p.name)}')">Delete</button>
+                            <tr class="projects-table-row" onclick="openProject('${p.id}')">
+                                <td><span class="projects-table-name">${escapeHtml(p.name)}</span></td>
+                                <td><span class="projects-table-desc">${escapeHtml(p.description || '-')}</span></td>
+                                <td class="projects-table-date">${new Date(p.created_at).toLocaleDateString()}</td>
+                                <td onclick="event.stopPropagation()">
+                                    <div class="projects-table-actions">
+                                        <button class="action-btn" onclick="openProject('${p.id}')" title="Open">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                        </button>
+                                        <button class="action-btn danger" onclick="deleteProject('${p.id}', '${escapeHtml(p.name)}')" title="Delete">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         `).join('')}

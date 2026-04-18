@@ -74,7 +74,9 @@ async function loadRecordings() {
 
 function renderRecordings() {
     const container = document.getElementById('recordingsList');
+    const analyticsBtn = document.getElementById('runAnalyticsBtn');
     if (!recordings || recordings.length === 0) {
+        if (analyticsBtn) analyticsBtn.style.display = 'none';
         container.innerHTML = `
             <div class="fg-empty">
                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
@@ -85,6 +87,7 @@ function renderRecordings() {
             </div>`;
         return;
     }
+    if (analyticsBtn) analyticsBtn.style.display = 'inline-flex';
 
     container.innerHTML = recordings.map(r => {
         const statusBadge = getStatusBadge(r);
@@ -110,6 +113,7 @@ function renderRecordings() {
                     <span>${esc(r.fileName)}</span>
                     <span>${(r.createdAt || r.created_at) ? new Date(r.createdAt || r.created_at).toLocaleDateString() : ''}</span>
                     <button class="fg-btn" onclick="event.stopPropagation(); renameRecording('${r.id}')">Rename</button>
+                    <button class="fg-btn" onclick="event.stopPropagation(); moveRecording('${r.id}')" title="Move this session to another focus-group project">Move</button>
                     <button class="fg-btn fg-btn-danger" onclick="event.stopPropagation(); deleteRecording('${r.id}')">Delete</button>
                 </div>
             </div>
@@ -397,6 +401,226 @@ async function deleteRecording(id) {
         await loadRecordings();
         Toast.success('Recording deleted');
     } catch (e) { Toast.error('Delete failed: ' + e.message); }
+}
+
+/**
+ * Opens a picker to select one or more sessions (recordings) to run analytics on.
+ * Backend wiring pending — submit currently just collects the selected IDs.
+ */
+function openAnalyticsModal() {
+    const done = (recordings || []).filter(r => r.status === 'done');
+    if (done.length === 0) {
+        Toast.error('No completed sessions to analyze. Wait for transcription to finish.');
+        return;
+    }
+
+    const showSearch = done.length > 8;
+    const overlay = document.createElement('div');
+    overlay.className = 'gm-overlay active';
+    overlay.style.zIndex = 2000000;
+    overlay.innerHTML = `
+      <div class="gm-modal" style="max-width:600px;">
+        <div class="gm-header">
+          <h3>Run Analytics</h3>
+          <button class="gm-close" type="button" aria-label="Close">&times;</button>
+        </div>
+        <div class="gm-body">
+          <p style="margin:0 0 10px 0; color:var(--text-secondary); font-size:13px;">
+            Select the sessions to include. Analytics will run across all selected sessions combined.
+          </p>
+          ${showSearch ? `
+          <input type="text" id="analyticsSearch" placeholder="Search sessions…"
+            style="width:100%; padding:7px 10px; margin-bottom:8px; border:1px solid var(--border-primary); border-radius:6px; background:var(--bg-tertiary); color:var(--text-primary); font-size:13px;" />
+          ` : ''}
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; border-radius:6px 6px 0 0; background:var(--bg-tertiary); border:1px solid var(--border-primary); border-bottom:none;">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; font-weight:500;">
+              <input type="checkbox" id="analyticsSelectAll" />
+              <span>Select all</span>
+            </label>
+            <span id="analyticsSelectedCount" style="font-size:11px; color:var(--text-secondary);">0 of ${done.length} selected</span>
+          </div>
+          <div id="analyticsSessionList" style="max-height:55vh; overflow-y:auto; border:1px solid var(--border-primary); border-radius:0 0 6px 6px;">
+            ${done.map(r => {
+                const spk = r.speakerCount || r.speaker_count || 0;
+                const utt = r.utteranceCount || r.utterance_count || 0;
+                const dur = r.audioDurationSeconds || r.audio_duration_seconds;
+                const meta = `${spk} spk · ${utt} utt · ${formatDuration(dur)}`;
+                return `
+                <label class="analytics-session-row" data-title="${esc(r.title).toLowerCase()}"
+                  style="display:flex; align-items:center; gap:8px; padding:5px 10px; cursor:pointer; border-bottom:1px solid var(--border-primary); font-size:12px;">
+                  <input type="checkbox" class="analytics-session-cb" data-id="${r.id}" style="margin:0;" />
+                  <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-primary); font-weight:500;">${esc(r.title)}</span>
+                  <span style="color:var(--text-secondary); font-size:11px; white-space:nowrap; font-variant-numeric:tabular-nums;">${meta}</span>
+                </label>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="gm-footer">
+          <button class="gm-btn gm-btn-secondary" data-action="cancel" type="button">Cancel</button>
+          <button class="gm-btn gm-btn-primary" data-action="run" type="button" disabled>Run</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const close = () => overlay.remove();
+    overlay.querySelector('.gm-close').onclick = close;
+    overlay.querySelector('[data-action="cancel"]').onclick = close;
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+    const selectAll = overlay.querySelector('#analyticsSelectAll');
+    const rowCbs = () => Array.from(overlay.querySelectorAll('.analytics-session-cb'));
+    const visibleRowCbs = () =>
+        Array.from(overlay.querySelectorAll('.analytics-session-row'))
+            .filter(row => row.style.display !== 'none')
+            .map(row => row.querySelector('.analytics-session-cb'));
+    const countEl = overlay.querySelector('#analyticsSelectedCount');
+    const runBtn = overlay.querySelector('[data-action="run"]');
+
+    const refresh = () => {
+        const cbs = rowCbs();
+        const checked = cbs.filter(c => c.checked);
+        countEl.textContent = `${checked.length} of ${cbs.length} selected`;
+        runBtn.disabled = checked.length === 0;
+        // Tri-state reflects the VISIBLE subset so it still works while searching.
+        const vis = visibleRowCbs();
+        const visChecked = vis.filter(c => c.checked);
+        selectAll.checked = vis.length > 0 && visChecked.length === vis.length;
+        selectAll.indeterminate = visChecked.length > 0 && visChecked.length < vis.length;
+    };
+
+    selectAll.addEventListener('change', () => {
+        // Select/deselect only the currently visible rows (respects search filter).
+        visibleRowCbs().forEach(cb => { cb.checked = selectAll.checked; });
+        refresh();
+    });
+    rowCbs().forEach(cb => cb.addEventListener('change', refresh));
+
+    const searchInput = overlay.querySelector('#analyticsSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            const q = searchInput.value.trim().toLowerCase();
+            overlay.querySelectorAll('.analytics-session-row').forEach(row => {
+                row.style.display = !q || row.dataset.title.includes(q) ? '' : 'none';
+            });
+            refresh();
+        });
+    }
+
+    // Drop the trailing divider on the last visible row for a cleaner edge.
+    const allRows = overlay.querySelectorAll('.analytics-session-row');
+    if (allRows.length) allRows[allRows.length - 1].style.borderBottom = 'none';
+
+    runBtn.onclick = () => {
+        const ids = rowCbs().filter(c => c.checked).map(c => c.dataset.id);
+        // Backend wiring pending — log the selection so we can verify the UI
+        // captures the right IDs, and show a confirmation toast.
+        console.log('[Run Analytics] Selected session IDs:', ids);
+        Toast.info(`Analytics queued for ${ids.length} session${ids.length === 1 ? '' : 's'} (backend wiring pending)`);
+        close();
+    };
+}
+
+/**
+ * Move a session (recording) to a different focus-group project in the same tenant.
+ * Used to undo the common "one session per project" mistake — consolidates multiple
+ * accidental projects into one study with multiple sessions.
+ */
+async function moveRecording(id) {
+    const rec = recordings.find(r => r.id === id);
+    if (!rec) return;
+
+    let projects;
+    try {
+        const resp = await api.request('/research/projects?project_type=focus-group&pageSize=200');
+        projects = (resp?.data || resp?.projects || resp || [])
+            .filter(p => p.id !== projectId);
+    } catch (e) {
+        Toast.error('Failed to load projects: ' + e.message);
+        return;
+    }
+    if (projects.length === 0) {
+        Toast.error('No other focus-group projects to move into. Create one first.');
+        return;
+    }
+
+    // Build a picker overlay. Kept inline (reuses gm-overlay styles) so we don't
+    // need a dedicated static modal block in the HTML.
+    const overlay = document.createElement('div');
+    overlay.className = 'gm-overlay active';
+    overlay.style.zIndex = 2000000;
+    overlay.innerHTML = `
+      <div class="gm-modal" style="max-width:480px;">
+        <div class="gm-header">
+          <h3>Move session</h3>
+          <button class="gm-close" type="button" aria-label="Close">&times;</button>
+        </div>
+        <div class="gm-body">
+          <p style="margin:0 0 12px 0; color:var(--text-secondary); font-size:13px;">
+            Moving <strong>${esc(rec.title)}</strong> — pick the destination project.
+          </p>
+          <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:4px;">Destination project</label>
+          <div id="moveRecTargetDd" style="width:100%;"></div>
+        </div>
+        <div class="gm-footer">
+          <button class="gm-btn gm-btn-secondary" data-action="cancel" type="button">Cancel</button>
+          <button class="gm-btn gm-btn-primary" data-action="move" type="button" disabled>Move</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    // Wire close handlers FIRST. If the dropdown constructor throws (missing
+    // script, cache race, etc.), we still want the user to be able to dismiss
+    // the modal — otherwise they're stuck with a half-rendered overlay.
+    let targetId = null;
+    const moveBtn = overlay.querySelector('[data-action="move"]');
+    const close = () => overlay.remove();
+    overlay.querySelector('.gm-close').onclick = close;
+    overlay.querySelector('[data-action="cancel"]').onclick = close;
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+    // Platform convention: never native <select>. Always SearchableDropdown so the
+    // brand theme applies and the list is filterable even with many projects.
+    if (typeof SearchableDropdown === 'undefined') {
+        Toast.error('Dropdown component missing. Hard-refresh the page (Cmd+Shift+R).');
+        overlay.querySelector('#moveRecTargetDd').innerHTML =
+            '<div style="padding:8px; color:var(--color-error); font-size:13px;">SearchableDropdown not loaded — refresh.</div>';
+    } else {
+        try {
+            // eslint-disable-next-line no-new
+            new SearchableDropdown(overlay.querySelector('#moveRecTargetDd'), {
+                options: projects.map(p => ({ value: p.id, label: p.name, description: p.description || '' })),
+                placeholder: 'Select project…',
+                onChange: (val) => { targetId = val; moveBtn.disabled = !val; },
+            });
+        } catch (err) {
+            console.error('[moveRecording] SearchableDropdown init failed:', err);
+            Toast.error('Dropdown failed to render. See console.');
+        }
+    }
+
+    moveBtn.onclick = async () => {
+        if (!targetId) return;
+        try {
+            const resp = await api.request(`/research/focus-group/recordings/${id}/move`, {
+                method: 'PATCH',
+                body: JSON.stringify({ target_project_id: targetId })
+            });
+            close();
+            stopPolling(id);
+            Toast.success('Session moved');
+            // Backend auto-deletes the source project if it's now empty — if that
+            // happened, this page is looking at a deleted project, so bounce back
+            // to the project list instead of trying to reload a 404.
+            if (resp && resp.source_project_deleted) {
+                Toast.info('Source project was empty and has been deleted');
+                setTimeout(() => { window.location.href = 'focus-groups.html'; }, 600);
+            } else {
+                await loadRecordings();
+            }
+        } catch (e) {
+            Toast.error('Move failed: ' + e.message);
+        }
+    };
 }
 
 async function renameRecording(id) {
