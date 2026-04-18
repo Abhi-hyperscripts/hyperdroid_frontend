@@ -167,6 +167,24 @@ body.pms-dashboard .stat-label {
 }
 
 /* =============================================================
+   QUICK ACTIONS GRID - Match stats card sizing
+   ============================================================= */
+body.pms-dashboard .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 0 0 24px;
+    max-width: none;
+    justify-content: stretch;
+}
+
+body.pms-dashboard .quick-actions .action-card {
+    padding: 16px 20px;
+    max-width: none;
+    flex: none;
+}
+
+/* =============================================================
    QUICK ACTION CARD ICON VARIANTS - PMS specific
    ============================================================= */
 

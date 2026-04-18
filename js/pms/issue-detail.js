@@ -122,14 +122,15 @@ async function loadIssueDetail() {
         loadProjectMembers();
         document.title = `${getIssueRef()} - ${issue.title} | Ragenaizer`;
 
-        // Show edit button only when status is 'reported'
+        // Show edit button when status is 'reported' or 'reopened'
         const editBtn = document.getElementById('editIssueBtn');
-        if (editBtn) editBtn.style.display = issue.status === 'reported' ? '' : 'none';
+        const isEditable = issue.status === 'reported' || issue.status === 'reopened';
+        if (editBtn) editBtn.style.display = isEditable ? '' : 'none';
 
-        // Load and show attachments — upload/delete only when reported
+        // Load and show attachments — upload/delete only when editable
         loadAttachments();
         const attachBtn = document.getElementById('attachUploadBtn');
-        if (attachBtn) attachBtn.style.display = issue.status === 'reported' ? '' : 'none';
+        if (attachBtn) attachBtn.style.display = isEditable ? '' : 'none';
     } catch (e) {
         console.error('[IssueDetail] Failed to load issue:', e);
         // Parse error into a human-readable message with details
@@ -816,7 +817,7 @@ function renderAttachments() {
                     <button onclick="downloadAttachment('${a.id}','${escapeHtml(a.file_name)}')" title="Download">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     </button>
-                    ${issue.status === 'reported' ? `<button class="delete-btn" onclick="deleteAttachment('${a.id}','${escapeHtml(a.file_name)}')" title="Delete">
+                    ${(issue.status === 'reported' || issue.status === 'reopened') ? `<button class="delete-btn" onclick="deleteAttachment('${a.id}','${escapeHtml(a.file_name)}')" title="Delete">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14H7L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                     </button>` : ''}
                 </div>
@@ -929,8 +930,8 @@ let isEditMode = false;
 let editQuills = {};
 
 function toggleEditMode() {
-    if (issue.status !== 'reported') {
-        Toast.error('Issues can only be edited while in Reported status');
+    if (issue.status !== 'reported' && issue.status !== 'reopened') {
+        Toast.error('Issues can only be edited while in Reported or Reopened status');
         return;
     }
     if (isEditMode) {
