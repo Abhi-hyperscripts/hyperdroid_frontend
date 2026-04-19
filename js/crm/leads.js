@@ -474,6 +474,23 @@ function updateBulkActionsBar() {
     }
 }
 
+// Hand selected leads off to the campaigns modal by stashing them in
+// sessionStorage and bouncing through the settings page. email-campaigns.js
+// picks them up on the other side and pre-populates the Lead IDs textarea.
+function bulkSendCampaign() {
+    if (selectedLeadIds.size === 0) {
+        Toast.info('Select at least one lead first');
+        return;
+    }
+    try {
+        sessionStorage.setItem(
+            'crm.campaign.prefillLeadIds',
+            JSON.stringify(Array.from(selectedLeadIds))
+        );
+    } catch (_) { /* quota / disabled — modal will still open empty */ }
+    window.location.href = 'settings.html?tab=campaigns&prefill=1';
+}
+
 async function bulkAssign() {
     if (selectedLeadIds.size === 0) {
         Toast.info('Select at least one lead first');

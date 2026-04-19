@@ -225,9 +225,44 @@
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    // Auto-open the New Campaign modal when the Leads page sends us here
+    // with ?tab=campaigns&prefill=1. Selected lead IDs travel via
+    // sessionStorage so the URL stays short + doesn't leak IDs into history.
+    async function handlePrefill() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('tab') !== 'campaigns' || params.get('prefill') !== '1') return;
+
+        if (typeof window.switchSettingsTab === 'function') window.switchSettingsTab('campaigns');
+        // Give the tab-switch + API loads (templates + mailboxes) a moment
+        // to finish before popping the modal — otherwise the dropdowns are
+        // empty when it opens.
+        await new Promise(r => setTimeout(r, 400));
+
+        let ids = [];
+        try {
+            const raw = sessionStorage.getItem('crm.campaign.prefillLeadIds');
+            if (raw) ids = JSON.parse(raw) || [];
+            sessionStorage.removeItem('crm.campaign.prefillLeadIds');
+        } catch (_) { /* malformed → ignore, open modal empty */ }
+
+        if (typeof window.openCampaignModal === 'function') window.openCampaignModal(ids);
+
+        // Strip the query params so a refresh doesn't re-fire the modal.
+        const clean = window.location.pathname + '#campaigns';
+        window.history.replaceState({}, '', clean);
+    }
+
     function initIfActive() {
         const tab = document.getElementById('tab-campaigns');
-        if (tab && tab.classList.contains('active')) window.loadCampaignsTab();
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('tab') === 'campaigns') {
+            // Explicit deep link — load the tab even if not currently active
+            // so handlePrefill() has templates+mailboxes ready when it fires.
+            if (typeof window.switchSettingsTab === 'function') window.switchSettingsTab('campaigns');
+            handlePrefill();
+        } else if (tab && tab.classList.contains('active')) {
+            window.loadCampaignsTab();
+        }
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initIfActive);
     else initIfActive();
