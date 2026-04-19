@@ -143,9 +143,27 @@ function showDone(job) {
 
     host.appendChild(renderCoverSlide(rj, audit, quoteMap));
     host.appendChild(renderTocStrip(rj.themes));
+
+    // Cross-session rollup — only rendered when backend emitted it
+    // (2+ sessions, skip flag false). renderCrossSessionSlide handles
+    // null gracefully.
+    const cs = renderCrossSessionSlide(rj);
+    if (cs) host.appendChild(cs);
+
     for (const theme of rj.themes) {
         host.appendChild(renderThemeSlide(theme, quoteMap));
     }
+
+    // Sentiment map (theme × session heatmap) — only meaningful when
+    // themes have per_session data. If all single-session data is
+    // identical to aggregate, renderer still produces a useful matrix.
+    const sm = renderSentimentMap(rj);
+    if (sm) host.appendChild(sm);
+
+    // Speaker dynamics per session. Always rendered when present.
+    const dyn = renderSpeakerDynamics(rj);
+    if (dyn) host.appendChild(dyn);
+
     host.appendChild(renderVerbatimGallery(rj, quoteMap));
     host.appendChild(renderAppendix(rj, audit, job));
 }
@@ -338,6 +356,215 @@ function renderQuoteCard(q) {
             el('span', { text: q.session_title || q.session_id || '' }),
         ),
     );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Cross-session rollup slide (null for single-session).
+// ─────────────────────────────────────────────────────────────────────
+
+function renderCrossSessionSlide(rj) {
+    const cs = rj.cross_session;
+    if (!cs) return null; // backend returned null — single-session, nothing to show
+
+    const children = [
+        el('div', { className: 'slide-title-kicker', text: 'CROSS-SESSION' }),
+        el('h1', { className: 'slide-title', text: 'Across the room' }),
+    ];
+
+    // Universals
+    if ((cs.universals || []).length > 0) {
+        const ul = el('div', { className: 'badge-row', style: { marginBottom: '8px' } });
+        for (const tid of cs.universals) {
+            ul.appendChild(el('a', {
+                className: 'badge universal',
+                href: '#' + tid,
+                text: tid + ' — universal',
+                title: 'Mentioned in every session',
+            }));
+        }
+        children.push(el('div', {},
+            el('div', { className: 'tensions-hdr', text: 'UNIVERSALS' }),
+            el('p', { className: 'prev-line', text: 'Themes every session raised, without exception.' }),
+            ul,
+        ));
+    }
+
+    // Divergences
+    if ((cs.divergences || []).length > 0) {
+        const wrap = el('div', { style: { marginTop: '18px' } });
+        wrap.appendChild(el('div', { className: 'tensions-hdr', text: 'DIVERGENCES' }));
+        wrap.appendChild(el('p', { className: 'prev-line', text: 'Themes that were notably stronger in some sessions than others.' }));
+        for (const d of cs.divergences) {
+            const card = el('div', { className: 'quote-card' });
+            card.appendChild(el('div', { className: 'qtext', text: stripQuoteIds(d.pattern || '') }));
+            const meta = el('div', { className: 'qmeta' },
+                el('a', { className: 'badge', href: '#' + d.theme_id, text: d.theme_id }),
+            );
+            for (const sid of (d.dominant_session_ids || [])) {
+                const title = (rj.study_metadata?.session_titles || []).find(s => s.session_id === sid)?.title || sid;
+                meta.appendChild(el('span', { className: 'badge neutral', text: 'dominant in ' + title }));
+            }
+            card.appendChild(meta);
+            wrap.appendChild(card);
+        }
+        children.push(wrap);
+    }
+
+    // Per-session narratives
+    if ((cs.session_narratives || []).length > 0) {
+        const wrap = el('div', { style: { marginTop: '18px' } });
+        wrap.appendChild(el('div', { className: 'tensions-hdr', text: 'SESSION CHARACTER' }));
+        for (const n of cs.session_narratives) {
+            const title = n.session_title || (rj.study_metadata?.session_titles || []).find(s => s.session_id === n.session_id)?.title || n.session_id;
+            wrap.appendChild(el('div', { className: 'quote-card' },
+                el('div', { className: 'qtext', text: stripQuoteIds(n.narrative || '') }),
+                el('div', { className: 'qmeta' },
+                    el('span', { text: title }),
+                ),
+            ));
+        }
+        children.push(wrap);
+    }
+
+    return panel(...children);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Sentiment map — theme × session mini-heatmap using per-theme per_session.
+// ─────────────────────────────────────────────────────────────────────
+
+function renderSentimentMap(rj) {
+    const themes = (rj.themes || []).filter(t => (t.per_session || []).length > 0);
+    if (themes.length === 0) return null;
+    const sessions = rj.study_metadata?.session_titles || [];
+    if (sessions.length === 0) return null;
+
+    const tbl = document.createElement('table');
+    tbl.style.width = '100%';
+    tbl.style.borderCollapse = 'collapse';
+    tbl.style.fontSize = '12px';
+
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    headRow.appendChild(thElem('THEME'));
+    for (const s of sessions) headRow.appendChild(thElem(s.title || s.session_id.substring(0, 8)));
+    thead.appendChild(headRow);
+    tbl.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    for (const t of themes) {
+        const bySession = new Map();
+        for (const ps of t.per_session) bySession.set(ps.session_id, ps);
+        const tr = document.createElement('tr');
+        const labelCell = tdElem('');
+        labelCell.appendChild(el('a', { className: 'badge', href: '#' + t.theme_id, text: t.theme_id }));
+        labelCell.appendChild(document.createTextNode(' '));
+        labelCell.appendChild(el('span', { text: t.name || '' }));
+        tr.appendChild(labelCell);
+        for (const s of sessions) {
+            const cell = tdElem('');
+            const ps = bySession.get(s.session_id);
+            if (!ps) {
+                cell.appendChild(el('span', { className: 'empty-note', text: '—' }));
+            } else {
+                const bar = el('div', { className: 'sentiment-bar', style: { margin: 0, width: '100%', minWidth: '80px' } });
+                const add = (cls, v) => { if (v > 0) bar.appendChild(el('span', { className: cls, style: { width: (v * 100) + '%' } })); };
+                const sb = ps.sentiment_breakdown || {};
+                add('pos', sb.positive || 0);
+                add('mix', sb.mixed || 0);
+                add('neu', sb.neutral || 0);
+                add('neg', sb.negative || 0);
+                cell.appendChild(bar);
+                cell.appendChild(el('div', {
+                    className: 'prev-line',
+                    style: { marginTop: '4px' },
+                    text: `${ps.speakers}/${ps.total_speakers} spk`,
+                }));
+            }
+            tr.appendChild(cell);
+        }
+        tbody.appendChild(tr);
+    }
+    tbl.appendChild(tbody);
+
+    return panel(
+        el('div', { className: 'slide-title-kicker', text: 'SENTIMENT MAP' }),
+        el('h1', { className: 'slide-title', text: 'Theme × session sentiment' }),
+        el('p', { className: 'prev-line', text: 'Share of positive / neutral / negative / mixed assignments per theme per session.' }),
+        tbl,
+    );
+}
+
+function thElem(text) {
+    const th = document.createElement('th');
+    th.textContent = text;
+    th.style.textAlign = 'left';
+    th.style.padding = '8px';
+    th.style.borderBottom = '1px solid var(--border-primary)';
+    th.style.color = 'var(--text-secondary)';
+    th.style.fontWeight = '600';
+    th.style.fontSize = '11px';
+    th.style.textTransform = 'uppercase';
+    th.style.letterSpacing = '0.5px';
+    return th;
+}
+function tdElem(text) {
+    const td = document.createElement('td');
+    td.textContent = text;
+    td.style.padding = '10px 8px';
+    td.style.borderBottom = '1px solid rgba(var(--brand-primary-rgb), 0.08)';
+    td.style.verticalAlign = 'top';
+    return td;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Speaker dynamics per session — talk-time bars + dominance + silent voices.
+// ─────────────────────────────────────────────────────────────────────
+
+function renderSpeakerDynamics(rj) {
+    const dyn = rj.speaker_dynamics || [];
+    if (dyn.length === 0) return null;
+
+    const children = [
+        el('div', { className: 'slide-title-kicker', text: 'SPEAKER DYNAMICS' }),
+        el('h1', { className: 'slide-title', text: 'Who spoke, and how much' }),
+    ];
+
+    for (const d of dyn) {
+        const speakers = Object.keys(d.talk_time_pct || {}).sort((a, b) =>
+            (d.talk_time_pct[b] || 0) - (d.talk_time_pct[a] || 0));
+        const wrap = el('div', { style: { marginBottom: '20px' } });
+        wrap.appendChild(el('div', { className: 'slide-h2', text: d.session_title || d.session_id }));
+        wrap.appendChild(el('div', { className: 'prev-line',
+            text: `${d.participant_count} participants · ${formatTotalTime(d.total_talk_time_sec)} total · dominance ${Math.round((d.dominance_index || 0) * 100)}%`,
+        }));
+        for (const spk of speakers) {
+            const pct = d.talk_time_pct[spk] || 0;
+            const turns = d.turn_count?.[spk] || 0;
+            const bar = el('div', { className: 'sentiment-bar', style: { margin: '4px 0' } });
+            bar.appendChild(el('span', { className: 'pos', style: { width: (pct * 100) + '%' } }));
+            const row = el('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px' } },
+                el('span', { style: { width: '90px', flexShrink: '0' }, text: spk + (d.silent_voices?.includes(spk) ? ' ·quiet' : '') }),
+                el('div', { style: { flex: '1', minWidth: '120px' } }, bar),
+                el('span', { className: 'qtime', style: { width: '120px', textAlign: 'right', color: 'var(--text-secondary)' },
+                    text: `${Math.round(pct * 100)}% · ${turns} turns` }),
+            );
+            wrap.appendChild(row);
+        }
+        if ((d.silent_voices || []).length > 0) {
+            wrap.appendChild(el('div', { className: 'prev-line', style: { marginTop: '8px' },
+                text: `Silent voices (<5% talk-time): ${d.silent_voices.join(', ')}` }));
+        }
+        children.push(wrap);
+    }
+
+    return panel(...children);
+}
+
+function formatTotalTime(sec) {
+    const m = Math.floor((sec || 0) / 60);
+    const s = Math.round((sec || 0) % 60);
+    return `${m}m ${s}s`;
 }
 
 // ─────────────────────────────────────────────────────────────────────
