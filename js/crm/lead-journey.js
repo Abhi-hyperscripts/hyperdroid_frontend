@@ -325,6 +325,28 @@
                 if (from && to) chips.push(`<span class="tl-chip">${esc(from)} → ${esc(to)}</span>`);
                 if (chips.length) detailChips = `<div class="tl-chips">${chips.join('')}</div>`;
             }
+            if (e.type && e.type.startsWith('email_') && e.meta) {
+                const chips = [];
+                // Subject is the key signal on email rows — it's already the
+                // description, but pinning the recipient on every row makes
+                // cross-reading the timeline easier.
+                if (e.meta.to_email) {
+                    chips.push(`<span class="tl-chip">${esc(e.meta.to_email)}</span>`);
+                }
+                if (e.meta.campaign_id) {
+                    chips.push(`<span class="tl-chip tl-chip-type">campaign</span>`);
+                }
+                if (e.type === 'email_clicked' && e.meta.click_url) {
+                    // Don't escape as an href in case the URL is garbage —
+                    // just show it as text. The description already has it
+                    // rendered, so this is redundant for now; kept for future
+                    // multi-url display.
+                }
+                if (e.type === 'email_replied' && e.meta.from_address) {
+                    chips.push(`<span class="tl-chip">from ${esc(e.meta.from_address)}</span>`);
+                }
+                if (chips.length) detailChips = `<div class="tl-chips">${chips.join('')}</div>`;
+            }
 
             return `
                 <div class="tl-entry ${typeClass}">
@@ -351,6 +373,12 @@
             status: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>',
             followup: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
             transfer: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><line x1="21" y1="3" x2="14" y2="10"/><polyline points="9 21 3 21 3 15"/><line x1="3" y1="21" x2="10" y2="14"/></svg>',
+            'email-sent':         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+            'email-opened':       '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+            'email-clicked':      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11.5a3.5 3.5 0 1 0 5.9-2.5"/><path d="M14 7l5 5-5 5"/><path d="M5 12h14"/></svg>',
+            'email-replied':      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>',
+            'email-bounced':      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+            'email-unsubscribed': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>',
         };
         return icons[type] || icons.note;
     }

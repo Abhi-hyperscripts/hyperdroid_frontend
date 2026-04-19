@@ -799,6 +799,15 @@
     color: #3b82f6;
 }
 
+/* Email engagement — distinct colour per lifecycle step. Reuses the same
+   brand-palette hues as status badges so the two views read consistently. */
+.tl-entry.tl-email_sent         .tl-icon { border-color: var(--text-secondary); color: var(--text-secondary); }
+.tl-entry.tl-email_opened       .tl-icon { border-color: #0ea5e9; color: #0ea5e9; }
+.tl-entry.tl-email_clicked      .tl-icon { border-color: #6366f1; color: #6366f1; }
+.tl-entry.tl-email_replied      .tl-icon { border-color: #10b981; color: #10b981; }
+.tl-entry.tl-email_bounced      .tl-icon { border-color: var(--color-danger); color: var(--color-danger); }
+.tl-entry.tl-email_unsubscribed .tl-icon { border-color: #f59e0b; color: #f59e0b; }
+
 .tl-content {
     flex: 1;
     min-width: 0;
