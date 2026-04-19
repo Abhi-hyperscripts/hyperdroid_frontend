@@ -93,7 +93,7 @@ class API {
             return CONFIG.authApiBaseUrl;
         }
         // Services, Users, Admin, and Tenants endpoints go to Authentication service (admin APIs)
-        if (endpoint.startsWith('/services') || endpoint.startsWith('/users') || endpoint.startsWith('/admin/') || endpoint.startsWith('/tenants') || endpoint.startsWith('/tenant-api-keys') || endpoint.startsWith('/tenant-settings') || endpoint.startsWith('/tenant-profile')) {
+        if (endpoint.startsWith('/services') || endpoint.startsWith('/users') || endpoint.startsWith('/admin/') || endpoint.startsWith('/tenants') || endpoint.startsWith('/tenant-api-keys') || endpoint.startsWith('/tenant-settings') || endpoint.startsWith('/tenant-profile') || endpoint.startsWith('/tenant-oauth-apps') || endpoint.startsWith('/mailboxes')) {
             return CONFIG.authApiBaseUrl;
         }
         // Drive endpoints go directly to Drive service (independent microservice)
@@ -113,7 +113,7 @@ class API {
             return CONFIG.researchApiBaseUrl;
         }
         // CRM endpoints go to CRM service (independent microservice)
-        if (endpoint.startsWith('/crm/')) {
+        if (endpoint.startsWith('/crm/') || endpoint.startsWith('/mailbox-send/')) {
             return CONFIG.crmApiBaseUrl;
         }
         // PMS endpoints go to PMS service (independent microservice)

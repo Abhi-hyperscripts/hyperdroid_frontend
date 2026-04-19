@@ -9,12 +9,45 @@ let currentJsonData = null;
 let pollTimers = {};
 let recordingResults = {};
 
+// Latest `done` report for this project, if any. Populated on load;
+// drives the "View Dashboard" button visibility + click target.
+let latestReportJobId = null;
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (!projectId) { window.location.href = 'focus-groups.html'; return; }
     await loadProject();
     await loadRecordings();
+    await refreshLatestReport();
     setupDragDrop();
+    // Reattach the progress panel to any in-flight analytics run so
+    // the user picks up live progress after navigating back to this page.
+    FgdProgressPanel.resumeIfRunning();
 });
+
+async function refreshLatestReport() {
+    const btn = document.getElementById('viewDashboardBtn');
+    if (!btn) return;
+    try {
+        const resp = await api.request(`/research/focus-group/projects/${projectId}/reports?limit=5`);
+        const reports = (resp?.reports) || [];
+        const done = reports.find(r => r.status === 'done');
+        if (done) {
+            latestReportJobId = done.job_id;
+            btn.style.display = 'inline-flex';  // must match the .research-btn flex layout
+        } else {
+            latestReportJobId = null;
+            btn.style.display = 'none';
+        }
+    } catch (e) {
+        // Non-fatal — button just stays hidden if the endpoint errors.
+        console.warn('[focus-group-detail] report list failed:', e.message);
+    }
+}
+
+function openLatestDashboard() {
+    if (!latestReportJobId) return;
+    window.location.href = `fgd-report.html?job_id=${encodeURIComponent(latestReportJobId)}`;
+}
 
 async function loadProject() {
     try {
@@ -525,7 +558,10 @@ function openAnalyticsModal() {
             }
             close();
             Toast.success(`Analytics queued for ${ids.length} session${ids.length === 1 ? '' : 's'}`);
-            window.location.href = `fgd-report.html?job_id=${encodeURIComponent(resp.job_id)}`;
+            // Show the floating progress panel + subscribe to SignalR
+            // instead of redirecting. User stays on the detail page and
+            // can navigate freely while the pipeline runs.
+            FgdProgressPanel.start(resp.job_id);
         } catch (e) {
             runBtn.disabled = false;
             runBtn.textContent = 'Run';
@@ -533,6 +569,209 @@ function openAnalyticsModal() {
         }
     };
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// FLOATING PROGRESS PANEL
+// ═══════════════════════════════════════════════════════════════════════
+// Non-blocking corner panel that mirrors the .file-progress-panel pattern
+// from project-detail.html. Subscribes to ResearchHub's FgdReportProgress
+// SignalR event and falls back to polling /reports/:job_id if the hub
+// connection fails. Panel is shown on Run-Analytics click, and also
+// auto-resumes on page load if an in-progress job exists for the project.
+const FgdProgressPanel = (() => {
+    const STAGE_LABEL = {
+        queued: 'Queued',
+        chunking: 'Preparing chunks',
+        coding: 'Coding utterances',
+        synthesizing: 'Building codeframe',
+        recoding: 'Mapping to themes',
+        writing: 'Writing theme summaries',
+        rollup: 'Comparing sessions',
+        summarizing: 'Writing executive summary',
+        done: 'Complete',
+        failed: 'Failed',
+        cancelled: 'Cancelled',
+    };
+
+    let currentJobId = null;
+    let conn = null;
+    let pollTimer = null;
+    let startedAt = 0;
+    let elapsedTimer = null;
+
+    function els() {
+        return {
+            panel:   document.getElementById('fgdProgressPanel'),
+            title:   document.getElementById('fgdProgressTitle'),
+            stage:   document.getElementById('fgdProgressStage'),
+            msg:     document.getElementById('fgdProgressMsg'),
+            fill:    document.getElementById('fgdProgressFill'),
+            pct:     document.getElementById('fgdProgressPct'),
+            elapsed: document.getElementById('fgdProgressElapsed'),
+            actions: document.getElementById('fgdProgressActions'),
+            viewBtn: document.getElementById('fgdProgressViewBtn'),
+        };
+    }
+
+    function show() {
+        const { panel } = els();
+        if (panel) {
+            panel.style.display = '';
+            panel.classList.remove('minimized');
+        }
+    }
+    function close() {
+        const { panel } = els();
+        if (panel) panel.style.display = 'none';
+        teardown();
+    }
+    function toggle() {
+        const { panel } = els();
+        if (panel) panel.classList.toggle('minimized');
+    }
+
+    function render(evt) {
+        const e = els();
+        const stage = evt.stage || evt.status || 'queued';
+        const pct = Math.max(0, Math.min(100, evt.progress ?? 0));
+        const label = STAGE_LABEL[stage] || stage;
+        e.stage.textContent = label;
+        e.msg.textContent = evt.message || '';
+        e.fill.style.width = pct + '%';
+        e.pct.textContent = pct + '%';
+        e.fill.classList.toggle('done',   stage === 'done');
+        e.fill.classList.toggle('failed', stage === 'failed' || stage === 'cancelled');
+        if (stage === 'done') {
+            e.title.textContent = 'Analytics complete';
+            e.actions.style.display = '';
+            e.viewBtn.onclick = () => {
+                window.location.href = `fgd-report.html?job_id=${encodeURIComponent(currentJobId)}`;
+            };
+            teardown();
+            // Refresh the "View Dashboard" header button in place
+            if (typeof refreshLatestReport === 'function') refreshLatestReport();
+        } else if (stage === 'failed' || stage === 'cancelled') {
+            e.title.textContent = stage === 'failed' ? 'Analytics failed' : 'Analytics cancelled';
+            teardown();
+        } else {
+            e.title.textContent = 'Analytics running';
+        }
+    }
+
+    function startElapsed() {
+        stopElapsed();
+        startedAt = Date.now();
+        const tick = () => {
+            const sec = Math.floor((Date.now() - startedAt) / 1000);
+            const m = Math.floor(sec / 60), s = sec % 60;
+            const el = els().elapsed;
+            if (el) el.textContent = (m > 0 ? `${m}m ${s}s` : `${s}s`) + ' elapsed';
+        };
+        tick();
+        elapsedTimer = setInterval(tick, 1000);
+    }
+    function stopElapsed() {
+        if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+    }
+
+    async function connectHub() {
+        if (typeof signalR === 'undefined') return false;
+        const base = (CONFIG.researchApiBaseUrl || '').replace(/\/api$/, '');
+        if (!base) return false;
+        try {
+            conn = new signalR.HubConnectionBuilder()
+                .withUrl(`${base}/hubs/research`, {
+                    accessTokenFactory: () => (api.getToken ? api.getToken() : ''),
+                })
+                .withAutomaticReconnect()
+                .configureLogging(signalR.LogLevel.Warning)
+                .build();
+            conn.on('FgdReportProgress', (evt) => {
+                if (!evt || evt.jobId !== currentJobId) return;
+                render(evt);
+            });
+            await conn.start();
+            await conn.invoke('JoinFgdReportProgress', currentJobId);
+            return true;
+        } catch (err) {
+            console.warn('[fgd-progress] SignalR connect failed, falling back to polling', err);
+            conn = null;
+            return false;
+        }
+    }
+
+    async function pollOnce() {
+        try {
+            const job = await api.request(`/research/focus-group/reports/${currentJobId}`);
+            if (!job) return;
+            render({
+                jobId: currentJobId,
+                stage: job.current_stage || job.status,
+                progress: job.progress || 0,
+                message: job.progress_message || '',
+            });
+            if (['done', 'failed', 'cancelled'].includes(job.status)) {
+                if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+            }
+        } catch (err) {
+            console.warn('[fgd-progress] poll failed', err.message);
+        }
+    }
+
+    function teardown() {
+        stopElapsed();
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        if (conn) { conn.stop().catch(() => {}); conn = null; }
+    }
+
+    // Detect the Ragenaizer Copilot FAB (same pattern across research pages)
+    // and lift the panel above it so they don't overlap in the corner.
+    function applyCopilotClearance() {
+        const hasWidget = !!document.getElementById('ragenaizer-chat-widget');
+        document.body.classList.toggle('has-copilot-fab', hasWidget);
+    }
+
+    async function start(jobId) {
+        currentJobId = jobId;
+        applyCopilotClearance();
+        show();
+        render({ stage: 'queued', progress: 0, message: 'Waiting for pipeline…' });
+        startElapsed();
+        const ok = await connectHub();
+        // Always poll as fallback — SignalR may disconnect silently.
+        await pollOnce();
+        if (!ok) {
+            pollTimer = setInterval(pollOnce, 3000);
+        } else {
+            // Belt-and-suspenders: low-frequency poll even when SignalR
+            // is healthy, so stale messages get corrected.
+            pollTimer = setInterval(pollOnce, 8000);
+        }
+    }
+
+    // Re-apply copilot clearance when the widget mounts (it may load
+    // after the panel if the embed script is slow on this page).
+    const copilotObserver = new MutationObserver(() => applyCopilotClearance());
+    copilotObserver.observe(document.body, { childList: true });
+
+    // Resume on page load if any job is still running for this project.
+    async function resumeIfRunning() {
+        try {
+            const resp = await api.request(`/research/focus-group/projects/${projectId}/reports?limit=5`);
+            const reports = (resp?.reports) || [];
+            const running = reports.find(r => !['done', 'failed', 'cancelled'].includes(r.status));
+            if (running) await start(running.job_id);
+        } catch (err) {
+            // Non-fatal — panel stays closed if list endpoint errors.
+        }
+    }
+
+    return { start, close, toggle, resumeIfRunning };
+})();
+
+// Expose the button handlers to inline onclick attributes in the HTML.
+window.toggleFgdProgressPanel = () => FgdProgressPanel.toggle();
+window.closeFgdProgressPanel  = () => FgdProgressPanel.close();
 
 /**
  * Move a session (recording) to a different focus-group project in the same tenant.

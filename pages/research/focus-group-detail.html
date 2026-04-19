@@ -155,6 +155,149 @@
                 <p id="projectDescription"></p>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
+                <!-- Shown only when at least one completed FGD report exists
+                     for this project. Links straight into the latest dashboard.
+                     Success-tinted to signal the report is ready; distinct
+                     from the primary-blue "Run Analytics" / "Upload Audio"
+                     actions. -->
+                <button id="viewDashboardBtn" class="research-btn fgd-view-dashboard-btn" onclick="openLatestDashboard()" style="display:none;" title="Open the latest analytics dashboard for this project">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/>
+                        <rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>
+                    </svg>
+                    View Dashboard
+                </button>
+                <style>
+                    /* View Dashboard — success accent with glassy fill so it
+                       reads as a "ready/available" action against the primary
+                       blue Upload/Run buttons. Works in both themes via
+                       --color-success. */
+                    /* Keep `display` free of !important so JS (style.display = 'none')
+                       can hide the button before we know if a report exists. */
+                    .fgd-view-dashboard-btn {
+                        align-items: center; gap: 6px;
+                        background: rgba(16, 185, 129, 0.12) !important;
+                        color: var(--color-success) !important;
+                        border: 1px solid rgba(16, 185, 129, 0.4) !important;
+                        font-weight: 600 !important;
+                        transition: all 0.15s;
+                    }
+                    .fgd-view-dashboard-btn:hover {
+                        background: rgba(16, 185, 129, 0.22) !important;
+                        border-color: var(--color-success) !important;
+                        transform: translateY(-1px);
+                    }
+                    [data-theme="dark"] .fgd-view-dashboard-btn {
+                        background: rgba(16, 185, 129, 0.15) !important;
+                    }
+
+                    /* ── Floating non-blocking progress panel ─────────────
+                       !important on position is intentional: generic page
+                       layouts (research.css, styles.css) assign
+                       position:relative to a wide net of elements and win
+                       on specificity here. Panel MUST float over content. */
+                    .fgd-progress-panel {
+                        position: fixed !important;
+                        bottom: 24px !important;
+                        right: 24px !important;
+                        left: auto !important;
+                        top: auto !important;
+                        width: 340px;
+                        background:
+                            linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.04) 45%, transparent 100%),
+                            var(--bg-card, var(--bg-secondary));
+                        backdrop-filter: blur(20px) saturate(1.3);
+                        -webkit-backdrop-filter: blur(20px) saturate(1.3);
+                        border: 1px solid var(--border-primary) !important;
+                        border-radius: 14px;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 8px 28px rgba(0, 0, 0, 0.15);
+                        z-index: 1000;
+                        overflow: hidden;
+                        transition: transform 0.25s ease, opacity 0.25s ease;
+                    }
+                    /* Lift the panel above the copilot FAB (a 56px button
+                       at right:24px, bottom:24px) when it's on the page.
+                       Set via JS when #ragenaizer-chat-widget is detected. */
+                    body.has-copilot-fab .fgd-progress-panel {
+                        bottom: 96px !important;
+                    }
+                    [data-theme="dark"] .fgd-progress-panel {
+                        background:
+                            linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(255, 255, 255, 0.02) 45%, transparent 100%),
+                            rgba(30, 41, 59, 0.95);
+                        border: 1px solid rgba(var(--brand-primary-rgb), 0.45) !important;
+                        box-shadow:
+                            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                            0 0 0 1px rgba(var(--brand-primary-rgb), 0.15),
+                            0 12px 32px rgba(0, 0, 0, 0.5);
+                    }
+                    .fgd-progress-panel.minimized .fgd-progress-body { display: none; }
+                    .fgd-progress-header {
+                        display: flex; align-items: center; justify-content: space-between;
+                        padding: 10px 14px;
+                        border-bottom: 1px solid var(--border-primary);
+                        font-size: 12px; font-weight: 700;
+                        color: var(--text-primary);
+                        text-transform: uppercase; letter-spacing: 0.6px;
+                    }
+                    .fgd-progress-header-actions { display: flex; gap: 4px; }
+                    .fgd-progress-header-actions button {
+                        background: transparent;
+                        border: 1px solid var(--border-primary);
+                        color: var(--text-secondary);
+                        cursor: pointer;
+                        padding: 0 8px; min-width: 26px; height: 22px;
+                        border-radius: 6px;
+                        font-size: 14px; line-height: 1;
+                        transition: color 0.15s, border-color 0.15s;
+                    }
+                    .fgd-progress-header-actions button:hover {
+                        color: var(--text-primary);
+                        border-color: var(--brand-primary);
+                    }
+                    .fgd-progress-body { padding: 14px 16px 16px; }
+                    .fgd-progress-stage {
+                        font-size: 14px; font-weight: 600;
+                        color: var(--text-primary);
+                        margin-bottom: 4px;
+                    }
+                    .fgd-progress-msg {
+                        font-size: 12px;
+                        color: var(--text-secondary);
+                        margin-bottom: 12px;
+                        line-height: 1.4;
+                        min-height: 17px;
+                    }
+                    .fgd-progress-bar {
+                        height: 6px;
+                        background: var(--bg-tertiary);
+                        border-radius: 3px;
+                        overflow: hidden;
+                    }
+                    [data-theme="dark"] .fgd-progress-bar { background: rgba(255, 255, 255, 0.06); }
+                    .fgd-progress-fill {
+                        height: 100%;
+                        background: linear-gradient(90deg, var(--brand-primary), var(--brand-primary-hover, var(--brand-primary)));
+                        border-radius: 3px;
+                        transition: width 0.3s ease;
+                    }
+                    .fgd-progress-fill.done { background: var(--color-success); }
+                    .fgd-progress-fill.failed { background: var(--color-error); }
+                    .fgd-progress-footer {
+                        display: flex; justify-content: space-between;
+                        font-size: 11px; color: var(--text-secondary);
+                        margin-top: 8px;
+                        font-variant-numeric: tabular-nums;
+                    }
+                    .fgd-progress-pct { font-weight: 700; color: var(--text-primary); }
+                    .fgd-progress-actions {
+                        margin-top: 14px;
+                        display: flex; justify-content: flex-end;
+                    }
+                    .fgd-progress-actions .research-btn {
+                        font-size: 12px; padding: 6px 14px;
+                    }
+                </style>
                 <button id="runAnalyticsBtn" class="research-btn btn-primary" onclick="openAnalyticsModal()" style="display:none;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 6-6"/>
@@ -249,11 +392,37 @@
         </div>
     </div>
 
+    <!-- Floating non-blocking progress panel shown while FGD analytics runs -->
+    <div id="fgdProgressPanel" class="fgd-progress-panel" style="display:none;">
+        <div class="fgd-progress-header">
+            <span id="fgdProgressTitle">Analytics running</span>
+            <div class="fgd-progress-header-actions">
+                <button type="button" onclick="toggleFgdProgressPanel()" title="Minimize" aria-label="Minimize">_</button>
+                <button type="button" onclick="closeFgdProgressPanel()" title="Close" aria-label="Close">×</button>
+            </div>
+        </div>
+        <div id="fgdProgressBody" class="fgd-progress-body">
+            <div id="fgdProgressStage" class="fgd-progress-stage">Queued</div>
+            <div id="fgdProgressMsg" class="fgd-progress-msg">Waiting for pipeline…</div>
+            <div class="fgd-progress-bar">
+                <div id="fgdProgressFill" class="fgd-progress-fill" style="width:0%;"></div>
+            </div>
+            <div id="fgdProgressFooter" class="fgd-progress-footer">
+                <span id="fgdProgressPct" class="fgd-progress-pct">0%</span>
+                <span id="fgdProgressElapsed" class="fgd-progress-elapsed"></span>
+            </div>
+            <div id="fgdProgressActions" class="fgd-progress-actions" style="display:none;">
+                <button type="button" id="fgdProgressViewBtn" class="research-btn research-btn-primary">View dashboard</button>
+            </div>
+        </div>
+    </div>
+
     <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>document.write('<script src="../../js/research/focus-group-detail.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {

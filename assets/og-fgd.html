@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { width: 1200px; height: 630px; font-family: 'Inter', -apple-system, sans-serif; overflow: hidden; }
+        .og-card {
+            width: 1200px; height: 630px;
+            background: linear-gradient(145deg, #0a0806 0%, #1a1208 35%, #12100a 65%, #0a0806 100%);
+            position: relative; display: flex; align-items: center; overflow: hidden;
+        }
+        /* Gold glow effects */
+        .glow-1 {
+            position: absolute; width: 700px; height: 700px; top: -250px; right: 0;
+            background: radial-gradient(circle, rgba(234, 179, 8, 0.18) 0%, transparent 65%);
+            filter: blur(40px);
+        }
+        .glow-2 {
+            position: absolute; width: 500px; height: 500px; bottom: -150px; left: 60px;
+            background: radial-gradient(circle, rgba(217, 119, 6, 0.14) 0%, transparent 65%);
+            filter: blur(30px);
+        }
+        .glow-3 {
+            position: absolute; width: 400px; height: 400px; top: 35%; right: 20%;
+            background: radial-gradient(circle, rgba(250, 204, 21, 0.07) 0%, transparent 70%);
+            filter: blur(60px);
+        }
+        .grid-pattern {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(234, 179, 8, 0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(234, 179, 8, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        .accent-line {
+            position: absolute; left: 70px; top: 55px; bottom: 55px; width: 3px;
+            background: linear-gradient(180deg, transparent 0%, #eab308 30%, #d97706 70%, transparent 100%);
+            border-radius: 2px; opacity: 0.55;
+        }
+        .bottom-accent {
+            position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent 0%, #eab308 30%, #d97706 70%, transparent 100%);
+            opacity: 0.55;
+        }
+        .left { position: relative; z-index: 10; padding: 60px 30px 60px 95px; flex: 1; min-width: 0; }
+        .right { position: relative; z-index: 10; width: 420px; padding-right: 55px; }
+        .logo { margin-bottom: 26px; }
+        .logo img { height: 34px; filter: brightness(0) invert(1); }
+        .badge {
+            display: inline-block; padding: 7px 16px;
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%);
+            border: 1px solid rgba(234, 179, 8, 0.4); border-radius: 100px;
+            font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase;
+            letter-spacing: 0.15em; margin-bottom: 22px;
+        }
+        /* HERO TITLE — Focus Group Insight, big */
+        .title {
+            font-size: 74px; font-weight: 800; color: #ffffff; line-height: 1.02;
+            margin-bottom: 22px; letter-spacing: -0.025em;
+        }
+        .title .highlight {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            font-size: 17px; color: rgba(255,255,255,0.5); font-weight: 400; line-height: 1.5;
+            margin-bottom: 22px;
+        }
+        .subtitle strong { color: rgba(255,255,255,0.75); font-weight: 600; }
+        .bullets { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+        .bullets li {
+            font-size: 14px; color: rgba(255,255,255,0.82); font-weight: 500;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .bullet-dot {
+            width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+        }
+        .bullet-dot.gold  { background: #fbbf24; box-shadow: 0 0 8px rgba(251, 191, 36, 0.5); }
+        .bullet-dot.amber { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
+        .bullets li .desc { color: rgba(255,255,255,0.42); font-weight: 400; }
+
+        /* Right-side value-prop wow tiles — marketing-deck framing */
+        .preview { display: flex; flex-direction: column; gap: 10px; }
+        .wow-tile {
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.08) 0%, rgba(217, 119, 6, 0.04) 100%);
+            border: 1px solid rgba(234, 179, 8, 0.22);
+            border-radius: 14px; padding: 14px 18px;
+            display: flex; align-items: center; gap: 18px;
+            position: relative; overflow: hidden;
+        }
+        .wow-tile::after {
+            content: ''; position: absolute; inset: 0;
+            background: radial-gradient(circle at top right, rgba(251, 191, 36, 0.08), transparent 55%);
+            pointer-events: none;
+        }
+        .wow-num {
+            font-size: 40px; font-weight: 800; line-height: 1;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            min-width: 78px; text-align: left;
+            letter-spacing: -0.02em;
+        }
+        .wow-suffix { font-size: 26px; margin-left: 2px; }
+        .wow-body { min-width: 0; flex: 1; }
+        .wow-title {
+            font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 2px;
+            letter-spacing: -0.01em;
+        }
+        .wow-desc {
+            font-size: 12px; color: rgba(255,255,255,0.55); font-weight: 400; line-height: 1.35;
+        }
+        /* Leftover from earlier — kept for legacy but not used now */
+        .cap-tile {
+            background: rgba(234, 179, 8, 0.06); border: 1px solid rgba(234, 179, 8, 0.16);
+            border-radius: 14px; padding: 18px 20px;
+            display: flex; align-items: center; gap: 14px;
+        }
+        .cap-icon {
+            width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(217, 119, 6, 0.18));
+            border: 1px solid rgba(251, 191, 36, 0.35);
+            color: #fbbf24;
+        }
+        .cap-icon svg { width: 22px; height: 22px; }
+        .cap-body { min-width: 0; flex: 1; }
+        .cap-title {
+            font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 2px;
+            letter-spacing: -0.01em;
+        }
+        .cap-desc {
+            font-size: 12px; color: rgba(255,255,255,0.55); font-weight: 400; line-height: 1.35;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="og-card">
+        <div class="grid-pattern"></div>
+        <div class="glow-1"></div>
+        <div class="glow-2"></div>
+        <div class="glow-3"></div>
+        <div class="accent-line"></div>
+        <div class="bottom-accent"></div>
+
+        <div class="left">
+            <div class="logo"><img src="brand_logo.png" alt="Ragenaizer"></div>
+            <div class="badge">Qualitative Research</div>
+            <h1 class="title">Focus Group<br><span class="highlight">Insight</span></h1>
+            <p class="subtitle"><strong>Every voice heard. Every theme named. Every nuance mapped.</strong><br>The depth of a senior analyst &mdash; on every session, every time.</p>
+            <ul class="bullets">
+                <li><span class="bullet-dot gold"></span><strong>Multi-layer analysis</strong> <span class="desc">&mdash; themes, sub-themes, quotes, sentiment &amp; tensions</span></li>
+                <li><span class="bullet-dot amber"></span><strong>Verbatim-anchored</strong> <span class="desc">&mdash; every claim traceable to the exact transcript line</span></li>
+                <li><span class="bullet-dot gold"></span><strong>Cross-session synthesis</strong> <span class="desc">&mdash; universals, divergences &amp; narrative arcs</span></li>
+            </ul>
+        </div>
+
+        <div class="right">
+            <div class="preview">
+                <div class="wow-tile">
+                    <div class="wow-num">8<span class="wow-suffix">-layer</span></div>
+                    <div class="wow-body">
+                        <div class="wow-title">Analytical depth</div>
+                        <div class="wow-desc">Themes &middot; sub-themes &middot; verbatim &middot; sentiment &middot; dynamics</div>
+                    </div>
+                </div>
+                <div class="wow-tile">
+                    <div class="wow-num">100<span class="wow-suffix">%</span></div>
+                    <div class="wow-body">
+                        <div class="wow-title">Verbatim fidelity</div>
+                        <div class="wow-desc">Every quote linked to session, speaker &amp; timestamp</div>
+                    </div>
+                </div>
+                <div class="wow-tile">
+                    <div class="wow-num">0</div>
+                    <div class="wow-body">
+                        <div class="wow-title">Voices missed</div>
+                        <div class="wow-desc">Silent-voice detection flags under-heard participants</div>
+                    </div>
+                </div>
+                <div class="wow-tile">
+                    <div class="wow-num">1</div>
+                    <div class="wow-body">
+                        <div class="wow-title">Click to deliverable</div>
+                        <div class="wow-desc">Exec-ready PPT with full chart suite, branded</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

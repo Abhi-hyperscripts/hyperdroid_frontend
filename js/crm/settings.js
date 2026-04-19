@@ -120,6 +120,7 @@ const settingsTabNames = {
     'general': 'General',
     'pipeline': 'Pipeline',
     'integrations': 'Integrations',
+    'mailboxes': 'Mailboxes',
     'lead-sources': 'Lead Sources',
     'functional-groups': 'Functional Groups',
     'teams': 'Teams Setup'
@@ -238,6 +239,8 @@ function switchSettingsTab(tabName) {
         loadFunctionalGroups();
     } else if (tabName === 'teams' && typeof loadTeamsTab === 'function') {
         loadTeamsTab();
+    } else if (tabName === 'mailboxes' && typeof loadMailboxesTab === 'function') {
+        loadMailboxesTab();
     }
 }
 
