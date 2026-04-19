@@ -6,10 +6,17 @@
 // ==================== State ====================
 let allLeads = [];
 let selectedLeadIds = new Set();
+// Cross-page cache: when a user selects a lead on page 1, navigates to
+// page 2, then clicks Send Campaign, we still need the original lead's
+// name / email / company. allLeads gets replaced on each loadLeads() call
+// so we mirror every row we've rendered into this Map keyed by lead.id.
+// Entries are only evicted when the user explicitly clears their selection.
+let selectedLeadsData = new Map();
 let currentEditLeadId = null;
 let convertingLeadId = null;
 let currentPage = 1;
 let pageSize = 50;
+const PAGE_SIZE_OPTIONS = [10, 50, 100, 500, 1000, 5000];
 let totalLeads = 0;
 let myTeamRole = 'member'; // default to most restrictive
 let reassigningLeadId = null;
@@ -75,6 +82,9 @@ async function loadLeads(page) {
         const response = await api.request(endpoint);
         allLeads = response.data || [];
         totalLeads = response.total || allLeads.length;
+        // Cache every row we touch so bulk actions retain rich lead data
+        // even if the user paginates away before acting on their selection.
+        for (const l of allLeads) selectedLeadsData.set(l.id, l);
         renderLeadsTable(allLeads);
         renderPagination();
     } catch (error) {
@@ -195,13 +205,19 @@ function renderLeadsTable(leads) {
         return;
     }
 
-    tbody.innerHTML = leads.map(lead => `
-        <tr data-lead-id="${lead.id}">
+    tbody.innerHTML = leads.map(lead => {
+        const isAssigned = !!(lead.team_id || lead.teamName || lead.team_name);
+        const rowClass = isAssigned ? ' class="crm-lead-assigned"' : '';
+        const cbTooltip = isAssigned
+            ? 'title="Already assigned to a team — bulk-assign will skip, but the lead can still be included in campaigns or exports."'
+            : '';
+        return `
+        <tr data-lead-id="${lead.id}"${rowClass}>
             <td class="td-checkbox">
                 <input type="checkbox" class="lead-checkbox" value="${lead.id}"
                     onchange="toggleLeadSelection('${lead.id}', this.checked)"
                     ${selectedLeadIds.has(lead.id) ? 'checked' : ''}
-                    ${(lead.team_id || lead.teamName || lead.team_name) ? 'disabled data-tooltip="Already assigned to a team"' : ''}>
+                    ${cbTooltip}>
             </td>
             <td>
                 <span class="crm-lead-number">${escapeHtml(lead.leadNumber || lead.lead_number || '-')}</span>
@@ -273,7 +289,8 @@ function renderLeadsTable(leads) {
                 </div>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // ==================== Status & Source Formatting ====================
@@ -356,9 +373,23 @@ function renderPagination() {
         if (table) table.after(container);
     }
 
+    // Row-count selector: always shown so users with >50 leads can switch
+    // to 500/1000/5000 per page without re-importing or paging 100 times.
+    const sizeOptions = PAGE_SIZE_OPTIONS.map(n =>
+        `<option value="${n}"${n === pageSize ? ' selected' : ''}>${n}</option>`
+    ).join('');
+    const sizeSelector = `
+        <label class="crm-pagesize">Rows
+            <select onchange="changePageSize(this.value)" class="form-control crm-pagesize-select">
+                ${sizeOptions}
+            </select>
+        </label>`;
+
     const totalPages = Math.ceil(totalLeads / pageSize);
     if (totalPages <= 1) {
-        container.innerHTML = `<span class="crm-pagination-info">Showing ${totalLeads} lead${totalLeads !== 1 ? 's' : ''}</span>`;
+        container.innerHTML = `
+            <span class="crm-pagination-info">Showing ${totalLeads} lead${totalLeads !== 1 ? 's' : ''}</span>
+            ${sizeSelector}`;
         return;
     }
 
@@ -393,8 +424,19 @@ function renderPagination() {
     container.innerHTML = `
         <span class="crm-pagination-info">${start}–${end} of ${totalLeads}</span>
         <div class="crm-pagination-buttons">${buttons}</div>
+        ${sizeSelector}
     `;
 }
+
+// Switching page size always jumps back to page 1 — otherwise the current
+// offset might point past the end of the result set after shrinking.
+window.changePageSize = function (n) {
+    const next = Number(n) || 50;
+    if (!PAGE_SIZE_OPTIONS.includes(next)) return;
+    pageSize = next;
+    currentPage = 1;
+    loadLeads();
+};
 
 function formatDate(dateStr) {
     if (!dateStr) return '-';
@@ -484,12 +526,12 @@ function bulkSendCampaign() {
         Toast.info('Select at least one lead first');
         return;
     }
-    // Not all selected leads may be in the current page's allLeads array
-    // (pagination / filters). For those we only have the UUID — the modal
-    // still handles them, just without the rich display.
-    const byId = new Map(allLeads.map(l => [l.id, l]));
+    // selectedLeadsData is our cross-page cache: it holds every lead row
+    // we've ever rendered this session, so selections survive pagination.
+    // Fall back to allLeads, then to a bare-id payload if the lead was
+    // selected on a page we haven't re-visited since a filter change.
     const payload = Array.from(selectedLeadIds).map(id => {
-        const l = byId.get(id);
+        const l = selectedLeadsData.get(id) || allLeads.find(x => x.id === id);
         if (!l) return { id };
         return {
             id,

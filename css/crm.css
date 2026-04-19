@@ -2058,6 +2058,31 @@ body.crm-dashboard .crm-container {
     padding: 0 4px;
 }
 
+/* Rows / page selector — sits alongside the existing page number buttons. */
+.crm-pagesize {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    margin-left: 12px;
+}
+.crm-pagesize-select {
+    width: auto;
+    padding: 4px 24px 4px 8px;
+    font-size: 0.82rem;
+    height: auto;
+}
+
+/* Soft-gray team-assigned rows — signals "bulk-assign will skip this" but
+   the checkbox is still interactive so the lead can be included in other
+   bulk actions (send campaign, export, delete).
+   Not a block on selection — just a visual hint. */
+.crm-lead-assigned .crm-cell-primary,
+.crm-lead-assigned .crm-cell-secondary {
+    opacity: 0.78;
+}
+
 /* =============================================================
    CRM - Responsive: Table & Filters
    ============================================================= */
