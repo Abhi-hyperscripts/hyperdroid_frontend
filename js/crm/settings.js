@@ -241,6 +241,10 @@ function switchSettingsTab(tabName) {
         loadTeamsTab();
     } else if (tabName === 'mailboxes' && typeof loadMailboxesTab === 'function') {
         loadMailboxesTab();
+    } else if (tabName === 'templates' && typeof loadTemplatesTab === 'function') {
+        loadTemplatesTab();
+    } else if (tabName === 'campaigns' && typeof loadCampaignsTab === 'function') {
+        loadCampaignsTab();
     }
 }
 

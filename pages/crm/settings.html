@@ -249,6 +249,22 @@
                         </svg>
                         <span class="nav-label">Mailboxes</span>
                     </button>
+                    <button class="sidebar-btn" data-tab="templates" onclick="switchSettingsTab('templates')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                        <span class="nav-label">Templates</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="campaigns" onclick="switchSettingsTab('campaigns')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span class="nav-label">Campaigns</span>
+                    </button>
                     <button class="sidebar-btn" data-tab="lead-sources" onclick="switchSettingsTab('lead-sources')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -520,6 +536,93 @@
                         </svg>
                         <h3>No mailboxes connected yet</h3>
                         <p>Connect a mailbox to start sending campaigns and tracking replies.</p>
+                    </div>
+                </div>
+
+                <!-- ─── Templates Tab ─────────────────────────────────────────────── -->
+                <div class="crm-tab-content" id="tab-templates">
+                    <div class="section-header">
+                        <div>
+                            <h3 class="section-title">Email Templates</h3>
+                            <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 0;">
+                                Reusable subject + body. Use <code>{{first_name}}</code>, <code>{{company}}</code>, etc. — substituted per-lead at send time.
+                            </p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="openTemplateModal()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                New Template
+                            </button>
+                        </div>
+                    </div>
+                    <div class="crm-table-wrapper data-table-container" id="templatesTableWrapper">
+                        <table class="crm-table data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th class="hide-mobile">Subject</th>
+                                    <th class="hide-mobile">Variables</th>
+                                    <th>Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="templatesTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="templatesEmpty" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <h3>No templates yet</h3>
+                        <p>Create a template with your subject and message body. You can use per-lead variables like <code>{{first_name}}</code>.</p>
+                    </div>
+                </div>
+
+                <!-- ─── Campaigns Tab ─────────────────────────────────────────────── -->
+                <div class="crm-tab-content" id="tab-campaigns">
+                    <div class="section-header">
+                        <div>
+                            <h3 class="section-title">Email Campaigns</h3>
+                            <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 0;">
+                                Bulk outreach to selected leads. Each campaign is tied to one template + one mailbox; the executor respects per-mailbox rate caps.
+                            </p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-primary" onclick="openCampaignModal()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                New Campaign
+                            </button>
+                        </div>
+                    </div>
+                    <div class="crm-table-wrapper data-table-container" id="campaignsTableWrapper">
+                        <table class="crm-table data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                    <th class="hide-mobile">Sent</th>
+                                    <th class="hide-mobile">Engagement</th>
+                                    <th class="hide-mobile">Progress</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="campaignsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="campaignsEmpty" style="display: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <h3>No campaigns yet</h3>
+                        <p>Create a campaign to send your template to a list of leads. Open rates, click rates and replies are tracked automatically.</p>
                     </div>
                 </div>
 
@@ -1473,6 +1576,99 @@
         </div>
     </div>
 
+    <!-- ─── Template create/edit modal ─────────────────────────────────────── -->
+    <div class="gm-overlay" id="templateModal">
+        <div class="gm-modal" style="max-width: 720px;">
+            <div class="gm-header">
+                <h3 id="templateModalTitle">New template</h3>
+                <button class="gm-close" onclick="closeTemplateModal()">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div class="crm-alert crm-alert-error" id="tmplModalError" style="display:none;"></div>
+                <div class="crm-form-group">
+                    <label for="tmplName">Name</label>
+                    <input type="text" class="form-control" id="tmplName" placeholder="Cold outreach v1">
+                </div>
+                <div class="crm-form-group">
+                    <label for="tmplSubject">Subject</label>
+                    <input type="text" class="form-control" id="tmplSubject" placeholder="Hi {{first_name}}, quick note about {{company}}">
+                </div>
+                <div class="crm-form-group">
+                    <label for="tmplBodyHtml">Body (HTML) <span class="muted">— variables auto-escape</span></label>
+                    <textarea class="form-control" id="tmplBodyHtml" rows="10" spellcheck="false" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem;"></textarea>
+                </div>
+                <div class="crm-form-group">
+                    <label for="tmplBodyText">Body (plain text) <span class="muted">— optional fallback</span></label>
+                    <textarea class="form-control" id="tmplBodyText" rows="5" spellcheck="false" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem;"></textarea>
+                </div>
+                <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.8rem;">
+                    Available per-lead variables: <code>first_name</code>, <code>last_name</code>, <code>full_name</code>, <code>company</code>, <code>job_title</code>, <code>city</code>, <code>country</code>, <code>email</code>. Use <code>{{name|default:"friend"}}</code> for fallbacks.
+                </p>
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeTemplateModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveTemplate()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Template preview modal ─────────────────────────────────────────── -->
+    <div class="gm-overlay" id="templatePreviewModal">
+        <div class="gm-modal" style="max-width: 720px;">
+            <div class="gm-header">
+                <h3>Preview (with sample data)</h3>
+                <button class="gm-close" onclick="closeTemplatePreview()">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div class="crm-form-group">
+                    <label>Subject</label>
+                    <div class="preview-subject" id="tmplPreviewSubject" style="padding: 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px;"></div>
+                </div>
+                <div class="crm-form-group">
+                    <label>Body</label>
+                    <iframe id="tmplPreviewFrame" style="width: 100%; height: 380px; border: 1px solid var(--border-color); border-radius: 6px; background: #fff;" sandbox=""></iframe>
+                </div>
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeTemplatePreview()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Campaign create modal ──────────────────────────────────────────── -->
+    <div class="gm-overlay" id="campaignModal">
+        <div class="gm-modal" style="max-width: 640px;">
+            <div class="gm-header">
+                <h3>New campaign</h3>
+                <button class="gm-close" onclick="closeCampaignModal()">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div class="crm-alert crm-alert-error" id="campModalError" style="display:none;"></div>
+                <div class="crm-form-group">
+                    <label for="campName">Name</label>
+                    <input type="text" class="form-control" id="campName" placeholder="Q2 ESOMAR outreach">
+                </div>
+                <div class="crm-form-group">
+                    <label for="campTemplate">Template</label>
+                    <select class="form-control" id="campTemplate"></select>
+                </div>
+                <div class="crm-form-group">
+                    <label for="campMailbox">Mailbox</label>
+                    <select class="form-control" id="campMailbox"></select>
+                </div>
+                <div class="crm-form-group">
+                    <label for="campLeadIds">Lead IDs</label>
+                    <textarea class="form-control" id="campLeadIds" rows="6" spellcheck="false" placeholder="One UUID per line" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem;"></textarea>
+                    <p class="form-help-text" id="campLeadCount" style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 4px;"></p>
+                </div>
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeCampaignModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveCampaign()">Create &amp; start</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
@@ -1484,6 +1680,8 @@
         document.write('<script src="../../js/crm/settings.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/teams-setup.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/mailboxes.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/email-templates.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/email-campaigns.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="crm" data-title="Sales Assistant"><\/script>');</script>

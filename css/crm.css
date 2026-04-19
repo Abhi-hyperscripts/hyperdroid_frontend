@@ -3410,4 +3410,48 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
     margin-bottom: 8px !important;
 }
 
+/* ─── Email templates + campaigns (settings tabs) ───────────────────────── */
+
+.tmpl-chip {
+    display: inline-block;
+    padding: 1px 8px;
+    margin: 0 2px 2px 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.progress-mini {
+    display: inline-block;
+    width: 80px;
+    height: 6px;
+    background: var(--bg-card);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+.progress-mini-bar {
+    height: 100%;
+    background: var(--brand-primary);
+    transition: width 0.3s ease;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+.status-badge.status-draft      { background: var(--bg-card);       color: var(--text-secondary); border: 1px solid var(--border-color); }
+.status-badge.status-running    { background: rgba(37,99,235,.12);  color: var(--brand-primary); }
+.status-badge.status-paused     { background: rgba(234,179,8,.15);  color: #a16207; }
+.status-badge.status-completed  { background: rgba(22,163,74,.12);  color: #15803d; }
+.status-badge.status-failed     { background: rgba(220,38,38,.10);  color: var(--color-danger); }
+
 /* Responsive — slide-panel.css handles mobile bottom sheet */

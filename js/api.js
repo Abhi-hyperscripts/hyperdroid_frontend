@@ -113,7 +113,10 @@ class API {
             return CONFIG.researchApiBaseUrl;
         }
         // CRM endpoints go to CRM service (independent microservice)
-        if (endpoint.startsWith('/crm/') || endpoint.startsWith('/mailbox-send/')) {
+        if (endpoint.startsWith('/crm/')
+            || endpoint.startsWith('/mailbox-send/')
+            || endpoint.startsWith('/email-templates')
+            || endpoint.startsWith('/email-campaigns')) {
             return CONFIG.crmApiBaseUrl;
         }
         // PMS endpoints go to PMS service (independent microservice)
