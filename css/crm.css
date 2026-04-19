@@ -2069,6 +2069,15 @@ body.crm-dashboard .crm-container {
     font-size: 0.78rem;
     margin-right: auto;
 }
+/* SearchableDropdown auto-wraps the native <select>. Its dropup panel
+   otherwise inherits the trigger's 67px width — too cramped to read the
+   numbers. Give the menu a comfortable min-width and let the options
+   themselves take the full column. */
+.crm-pagesize .searchable-dropdown-container { width: 96px !important; }
+.crm-pagesize .searchable-dropdown-menu {
+    min-width: 140px;
+    width: 140px;
+}
 .crm-pagesize-select {
     width: auto;
     padding: 4px 24px 4px 8px;
