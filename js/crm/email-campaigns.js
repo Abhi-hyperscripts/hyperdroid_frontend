@@ -14,9 +14,10 @@
     let campaigns = [];
     let templates = [];
     let mailboxes = [];
-    // When the user initiates a campaign from the leads page we stash their
-    // selection here so the modal pre-populates.
-    let preselectedLeadIds = [];
+    // Rich pre-selection from the Leads page: [{id, leadNumber, firstName,
+    // lastName, email, companyName}, ...]. Falls back to a plain list of
+    // UUIDs when the caller doesn't have the richer payload.
+    let preselectedLeads = [];
 
     window.loadCampaignsTab = async function () {
         await Promise.all([
@@ -107,8 +108,12 @@
 
     // ─── Create modal ──────────────────────────────────────────────────────
 
-    window.openCampaignModal = function (preselectedIds) {
-        preselectedLeadIds = Array.isArray(preselectedIds) ? preselectedIds.slice() : [];
+    // Accepts either ['<uuid>', ...] (legacy) or [{id, leadNumber, firstName,
+    // lastName, email, companyName}, ...]. Both normalise into preselectedLeads.
+    window.openCampaignModal = function (preselection) {
+        preselectedLeads = (preselection || []).map(l =>
+            typeof l === 'string' ? { id: l } : l
+        );
 
         // Populate selects
         const tSel = document.getElementById('campTemplate');
@@ -121,13 +126,85 @@
             ).join('');
 
         document.getElementById('campName').value = '';
-        document.getElementById('campLeadIds').value = preselectedLeadIds.join('\n');
-        document.getElementById('campLeadCount').textContent = preselectedLeadIds.length
-            ? `${preselectedLeadIds.length} lead(s) pre-selected from Leads page.`
-            : 'Paste one lead UUID per line, or launch from the Leads page to pre-fill.';
+        renderCampaignLeadList();
         document.getElementById('campModalError').style.display = 'none';
 
         showModal('campaignModal');
+    };
+
+    // Compact selected-leads list. Shows first N rows with name + email +
+    // LD-XXXX, collapses the rest behind a count chip. For 1000 leads we
+    // never DOM-render more than DISPLAY_LIMIT rows so the modal stays fast.
+    const DISPLAY_LIMIT = 50;
+    let campLeadSearchQuery = '';
+    function bindCampLeadSearch() {
+        const box = document.getElementById('campLeadSearch');
+        if (!box || box._bound) return;
+        box._bound = true;
+        box.addEventListener('input', e => {
+            campLeadSearchQuery = e.target.value.trim().toLowerCase();
+            renderCampaignLeadList();
+        });
+    }
+    function filterPreselected() {
+        if (!campLeadSearchQuery) return preselectedLeads;
+        const q = campLeadSearchQuery;
+        return preselectedLeads.filter(l => {
+            const hay = [
+                l.leadNumber, l.firstName, l.lastName, l.email, l.companyName
+            ].filter(Boolean).join(' ').toLowerCase();
+            return hay.includes(q);
+        });
+    }
+    function renderCampaignLeadList() {
+        const summary = document.getElementById('campLeadSummary');
+        const listEl = document.getElementById('campLeadList');
+        const emptyEl = document.getElementById('campLeadEmpty');
+        const searchEl = document.getElementById('campLeadSearch');
+        if (!summary || !listEl || !emptyEl) return;
+
+        bindCampLeadSearch();
+
+        const n = preselectedLeads.length;
+        emptyEl.style.display = n === 0 ? 'block' : 'none';
+        listEl.style.display = n === 0 ? 'none' : 'block';
+        if (searchEl) searchEl.style.display = n > DISPLAY_LIMIT ? 'block' : 'none';
+
+        if (n === 0) {
+            summary.textContent = 'No leads selected.';
+            listEl.innerHTML = '';
+            return;
+        }
+
+        const filtered = filterPreselected();
+        summary.textContent = campLeadSearchQuery
+            ? `${filtered.length} of ${n} match “${campLeadSearchQuery}”`
+            : `${n} lead${n === 1 ? '' : 's'} selected`;
+
+        const visible = filtered.slice(0, DISPLAY_LIMIT);
+        const rest = Math.max(0, filtered.length - DISPLAY_LIMIT);
+        listEl.innerHTML = visible.map(l => {
+            // Every row emits all 5 grid cells — missing fields become a muted
+            // dash so columns stay aligned even when email / company / lead
+            // number are absent.
+            const nm = [l.firstName, l.lastName].filter(Boolean).join(' ') || '(unnamed)';
+            return `<div class="camp-lead-row" data-id="${escapeHtml(l.id)}">
+                <span class="camp-lead-number">${escapeHtml(l.leadNumber || '—')}</span>
+                <span class="camp-lead-name" title="${escapeHtml(nm)}">${escapeHtml(nm)}</span>
+                <span class="camp-lead-email ${l.email ? '' : 'muted'}" title="${escapeHtml(l.email || '')}">${escapeHtml(l.email || '(no email)')}</span>
+                <span class="camp-lead-company" title="${escapeHtml(l.companyName || '')}">${escapeHtml(l.companyName || '')}</span>
+                <button class="camp-lead-remove" title="Remove" onclick="removePreselectedLead('${escapeHtml(l.id)}')">&times;</button>
+            </div>`;
+        }).join('') + (rest > 0
+            ? `<div class="camp-lead-more">…and <strong>${rest}</strong> more</div>`
+            : '');
+    }
+
+    // Let the user drop a lead from the selection before creating the
+    // campaign — useful when they bulk-selected 1000 but want to exclude 2.
+    window.removePreselectedLead = function (id) {
+        preselectedLeads = preselectedLeads.filter(l => l.id !== id);
+        renderCampaignLeadList();
     };
 
     window.closeCampaignModal = function () {
@@ -138,15 +215,14 @@
         const name = document.getElementById('campName').value.trim();
         const templateId = document.getElementById('campTemplate').value;
         const mailboxId = document.getElementById('campMailbox').value;
-        const leadIds = document.getElementById('campLeadIds').value
-            .split(/[\s,]+/)
-            .map(s => s.trim())
+        const leadIds = preselectedLeads
+            .map(l => l.id)
             .filter(s => /^[0-9a-f-]{36}$/i.test(s));
 
         if (!name) return showCampError('Name is required.');
         if (!templateId) return showCampError('Pick a template.');
         if (!mailboxId) return showCampError('Pick a mailbox.');
-        if (leadIds.length === 0) return showCampError('At least one valid lead UUID required.');
+        if (leadIds.length === 0) return showCampError('Select at least one lead from the Leads page.');
         if (leadIds.length > 10000) return showCampError('Max 10,000 leads per campaign.');
 
         let campaignId;
@@ -238,14 +314,23 @@
         // empty when it opens.
         await new Promise(r => setTimeout(r, 400));
 
-        let ids = [];
+        let preselection = [];
         try {
-            const raw = sessionStorage.getItem('crm.campaign.prefillLeadIds');
-            if (raw) ids = JSON.parse(raw) || [];
-            sessionStorage.removeItem('crm.campaign.prefillLeadIds');
+            // New rich payload (name + email + lead number + UUID)
+            const rich = sessionStorage.getItem('crm.campaign.prefillLeads');
+            if (rich) {
+                preselection = JSON.parse(rich) || [];
+                sessionStorage.removeItem('crm.campaign.prefillLeads');
+            } else {
+                // Legacy UUID-only payload — kept for backwards compatibility
+                // during rolling deploys.
+                const raw = sessionStorage.getItem('crm.campaign.prefillLeadIds');
+                if (raw) preselection = JSON.parse(raw) || [];
+                sessionStorage.removeItem('crm.campaign.prefillLeadIds');
+            }
         } catch (_) { /* malformed → ignore, open modal empty */ }
 
-        if (typeof window.openCampaignModal === 'function') window.openCampaignModal(ids);
+        if (typeof window.openCampaignModal === 'function') window.openCampaignModal(preselection);
 
         // Strip the query params so a refresh doesn't re-fire the modal.
         const clean = window.location.pathname + '#campaigns';

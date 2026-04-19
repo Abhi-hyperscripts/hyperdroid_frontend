@@ -3448,6 +3448,67 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
     font-weight: 500;
     text-transform: capitalize;
 }
+/* ─── Campaign modal — recipient list ─────────────────────────────────── */
+
+.camp-lead-summary {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+.camp-lead-empty {
+    padding: 12px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+}
+.camp-lead-empty a { color: var(--brand-primary); text-decoration: underline; }
+
+.camp-lead-list {
+    max-height: 240px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-card);
+}
+.camp-lead-row {
+    display: grid;
+    grid-template-columns: 58px minmax(100px, 1.4fr) minmax(0, 2fr) minmax(0, 1.2fr) 18px;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.camp-lead-row:last-child { border-bottom: none; }
+.camp-lead-number {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.72rem;
+    color: var(--brand-primary);
+}
+.camp-lead-name { font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.camp-lead-email { color: var(--text-secondary); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.76rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.camp-lead-company { color: var(--text-secondary); font-size: 0.75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.camp-lead-remove {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 0 4px;
+    line-height: 1;
+}
+.camp-lead-remove:hover { color: var(--color-danger); }
+.camp-lead-more {
+    padding: 10px;
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+}
+
 .status-badge.status-draft      { background: var(--bg-card);       color: var(--text-secondary); border: 1px solid var(--border-color); }
 .status-badge.status-running    { background: rgba(37,99,235,.12);  color: var(--brand-primary); }
 .status-badge.status-paused     { background: rgba(234,179,8,.15);  color: #a16207; }

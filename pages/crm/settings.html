@@ -1637,7 +1637,7 @@
 
     <!-- ─── Campaign create modal ──────────────────────────────────────────── -->
     <div class="gm-overlay" id="campaignModal">
-        <div class="gm-modal" style="max-width: 640px;">
+        <div class="gm-modal" style="max-width: 960px; width: 92vw;">
             <div class="gm-header">
                 <h3>New campaign</h3>
                 <button class="gm-close" onclick="closeCampaignModal()">&times;</button>
@@ -1657,9 +1657,13 @@
                     <select class="form-control" id="campMailbox"></select>
                 </div>
                 <div class="crm-form-group">
-                    <label for="campLeadIds">Lead IDs</label>
-                    <textarea class="form-control" id="campLeadIds" rows="6" spellcheck="false" placeholder="One UUID per line" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem;"></textarea>
-                    <p class="form-help-text" id="campLeadCount" style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 4px;"></p>
+                    <label>Recipients</label>
+                    <div class="camp-lead-summary" id="campLeadSummary">No leads selected.</div>
+                    <input type="search" id="campLeadSearch" class="form-control" placeholder="Filter by name, email, company, or LD-number…" style="display:none; margin-bottom:6px;">
+                    <div class="camp-lead-list" id="campLeadList" style="display:none;"></div>
+                    <div class="camp-lead-empty" id="campLeadEmpty">
+                        Open the <a href="leads.html">Leads page</a>, select the leads you want to email, and click <strong>Send Campaign</strong>.
+                    </div>
                 </div>
             </div>
             <div class="gm-footer">

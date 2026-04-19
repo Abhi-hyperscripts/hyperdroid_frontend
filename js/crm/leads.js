@@ -476,18 +476,33 @@ function updateBulkActionsBar() {
 
 // Hand selected leads off to the campaigns modal by stashing them in
 // sessionStorage and bouncing through the settings page. email-campaigns.js
-// picks them up on the other side and pre-populates the Lead IDs textarea.
+// picks them up on the other side and pre-populates the selection.
+// We serialise name + email + lead-number alongside the UUID so the modal
+// can show a human-readable list instead of raw GUIDs.
 function bulkSendCampaign() {
     if (selectedLeadIds.size === 0) {
         Toast.info('Select at least one lead first');
         return;
     }
+    // Not all selected leads may be in the current page's allLeads array
+    // (pagination / filters). For those we only have the UUID — the modal
+    // still handles them, just without the rich display.
+    const byId = new Map(allLeads.map(l => [l.id, l]));
+    const payload = Array.from(selectedLeadIds).map(id => {
+        const l = byId.get(id);
+        if (!l) return { id };
+        return {
+            id,
+            leadNumber: l.leadNumber || l.lead_number || null,
+            firstName: l.firstName || l.first_name || null,
+            lastName: l.lastName || l.last_name || null,
+            email: l.email || null,
+            companyName: l.companyName || l.company_name || null,
+        };
+    });
     try {
-        sessionStorage.setItem(
-            'crm.campaign.prefillLeadIds',
-            JSON.stringify(Array.from(selectedLeadIds))
-        );
-    } catch (_) { /* quota / disabled — modal will still open empty */ }
+        sessionStorage.setItem('crm.campaign.prefillLeads', JSON.stringify(payload));
+    } catch (_) { /* quota / disabled — modal handles empty */ }
     window.location.href = 'settings.html?tab=campaigns&prefill=1';
 }
 
