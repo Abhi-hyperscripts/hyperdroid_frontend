@@ -144,8 +144,15 @@ class API {
     }
 
     async request(endpoint, options = {}) {
+        // Public endpoints never carry auth — avoid the token-refresh /
+        // logout / redirect-to-login path so unauthenticated share links
+        // work for any viewer.
+        const isPublicEndpoint = /\/reports\/public\//.test(endpoint)
+            || /\/share\/public\//.test(endpoint)
+            || options._public === true;
+
         // Check if token needs refresh before making request (except for auth endpoints)
-        if (!endpoint.startsWith('/auth/') && this.token && isAccessTokenExpired()) {
+        if (!isPublicEndpoint && !endpoint.startsWith('/auth/') && this.token && isAccessTokenExpired()) {
             console.log('[API] Access token expired, attempting refresh...');
             const refreshed = await this._refreshTokenIfNeeded();
             if (!refreshed) {
@@ -192,7 +199,9 @@ class API {
         const isFormData = options.body instanceof FormData;
         const headers = {
             ...(!isFormData && { 'Content-Type': 'application/json' }),
-            ...(this.token && { 'Authorization': `Bearer ${this.token}` })
+            // Skip Authorization header on public endpoints so stale / expired
+            // tokens don't trigger a 401 on routes that don't need auth.
+            ...(!isPublicEndpoint && this.token && { 'Authorization': `Bearer ${this.token}` })
         };
 
         const config = {
@@ -224,7 +233,8 @@ class API {
 
             if (!response.ok) {
                 // If we get 401 and it's not a refresh request, try to refresh token
-                if (response.status === 401 && !endpoint.includes('/auth/refresh') && !endpoint.includes('/auth/login')) {
+                // (skip for public endpoints — 401 there just means "not available" for anonymous viewers)
+                if (response.status === 401 && !isPublicEndpoint && !endpoint.includes('/auth/refresh') && !endpoint.includes('/auth/login')) {
                     console.log('[API] Got 401, attempting token refresh...');
                     const refreshed = await this._refreshTokenIfNeeded();
                     if (refreshed) {

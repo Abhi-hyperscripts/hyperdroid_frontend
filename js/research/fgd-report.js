@@ -1618,12 +1618,27 @@ function sentimentPptColor(s, C) {
 // LOAD + SUBSCRIBE
 // ═══════════════════════════════════════════════════════════════════════
 
+// Public-share mode: when the viewer isn't logged in (or hits a 401 on
+// the authenticated endpoint) we fall back to the public read-only
+// endpoint. The 128-bit job_id GUID acts as the share token — same
+// model as Google Docs "anyone with link can view".
+const isPublicView = !(api && api.isAuthenticated && api.isAuthenticated());
+
 async function loadJob() {
     try {
-        const job = await api.request(`/research/focus-group/reports/${jobId}`);
+        const path = isPublicView
+            ? `/research/focus-group/reports/public/${jobId}`
+            : `/research/focus-group/reports/${jobId}`;
+        const job = await api.request(path);
         setStage(job.status || job.current_stage || 'processing', job.progress || 0, stageMessage(job));
+        // Back button — authenticated users go to the project page;
+        // public viewers just go back in browser history.
         document.getElementById('backBtn').onclick = () => {
-            window.location.href = `focus-group-detail.html?id=${encodeURIComponent(job.project_id)}`;
+            if (!isPublicView && job.project_id) {
+                window.location.href = `focus-group-detail.html?id=${encodeURIComponent(job.project_id)}`;
+            } else {
+                window.history.length > 1 ? window.history.back() : (window.location.href = '/');
+            }
         };
         if (job.status === 'failed' || job.status === 'cancelled') {
             showError(job.error_message || 'Report failed with no error message.');
@@ -1632,8 +1647,20 @@ async function loadJob() {
         }
         return job;
     } catch (e) {
+        // If the authenticated fetch 401'd, retry as public — covers the
+        // case where a user is logged in but shared across tenants.
+        if (!isPublicView && /\b401\b/.test(e.message || '')) {
+            try {
+                const job = await api.request(`/research/focus-group/reports/public/${jobId}`);
+                if (job && job.status === 'done') {
+                    setStage('done', 100, 'Complete');
+                    buildDashboard(job);
+                    return job;
+                }
+            } catch (_) { /* fall through to error path */ }
+        }
         setStage('failed', 0, 'Unable to load report');
-        showError(e.message || 'Request failed');
+        showError('This report is not available. It may still be processing, or the link is invalid.');
         return null;
     }
 }
