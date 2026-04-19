@@ -164,6 +164,10 @@ function showDone(job) {
     const dyn = renderSpeakerDynamics(rj);
     if (dyn) host.appendChild(dyn);
 
+    // Moderator gaps — only when backend emitted non-empty data.
+    const mg = renderModeratorGaps(rj);
+    if (mg) host.appendChild(mg);
+
     host.appendChild(renderVerbatimGallery(rj, quoteMap));
     host.appendChild(renderAppendix(rj, audit, job));
 }
@@ -565,6 +569,65 @@ function formatTotalTime(sec) {
     const m = Math.floor((sec || 0) / 60);
     const s = Math.round((sec || 0) % 60);
     return `${m}m ${s}s`;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Moderator gaps — themes probed insufficiently + missed signals.
+// Null when backend skipped the stage (e.g., stage errored out non-fatally).
+// ─────────────────────────────────────────────────────────────────────
+
+function renderModeratorGaps(rj) {
+    const mg = rj.moderator_gaps;
+    if (!mg) return null;
+    if ((mg.gaps || []).length === 0 && (mg.missed_signals || []).length === 0) return null;
+
+    const children = [
+        el('div', { className: 'slide-title-kicker', text: 'MODERATOR GAPS' }),
+        el('h1', { className: 'slide-title', text: 'What to probe next time' }),
+        el('p', { className: 'prev-line', text: 'Themes that surfaced but weren\'t probed, and single-speaker signals worth following up.' }),
+    ];
+
+    if ((mg.gaps || []).length > 0) {
+        const wrap = el('div', { style: { marginTop: '14px' } });
+        wrap.appendChild(el('div', { className: 'tensions-hdr', text: 'UNDER-PROBED THEMES' }));
+        for (const g of mg.gaps) {
+            const card = el('div', { className: 'quote-card', style: { borderLeftColor: 'var(--color-warning)' } });
+            card.appendChild(el('div', { className: 'qmeta', style: { marginTop: '0', marginBottom: '6px' } },
+                el('a', { className: 'badge', href: '#' + g.theme_id, text: g.theme_id }),
+            ));
+            card.appendChild(el('div', { className: 'qtext', text: stripQuoteIds(g.why_gap || '') }));
+            card.appendChild(el('div', {
+                className: 'qmeta',
+                style: { marginTop: '8px', color: 'var(--brand-primary)', fontStyle: 'italic' },
+                text: '→ ' + (g.suggested_follow_up || ''),
+            }));
+            wrap.appendChild(card);
+        }
+        children.push(wrap);
+    }
+
+    if ((mg.missed_signals || []).length > 0) {
+        const wrap = el('div', { style: { marginTop: '18px' } });
+        wrap.appendChild(el('div', { className: 'tensions-hdr', text: 'MISSED SIGNALS' }));
+        for (const m of mg.missed_signals) {
+            const card = el('div', { className: 'quote-card', style: { borderLeftColor: 'var(--color-warning)' } });
+            card.appendChild(el('div', { className: 'qtext', text: stripQuoteIds(m.description || '') }));
+            const meta = el('div', { className: 'qmeta', style: { marginTop: '6px' } });
+            if (m.related_theme_id) {
+                meta.appendChild(el('a', { className: 'badge', href: '#' + m.related_theme_id, text: m.related_theme_id }));
+            }
+            card.appendChild(meta);
+            card.appendChild(el('div', {
+                className: 'qmeta',
+                style: { marginTop: '6px', color: 'var(--brand-primary)', fontStyle: 'italic' },
+                text: '→ ' + (m.suggested_follow_up || ''),
+            }));
+            wrap.appendChild(card);
+        }
+        children.push(wrap);
+    }
+
+    return panel(...children);
 }
 
 // ─────────────────────────────────────────────────────────────────────
