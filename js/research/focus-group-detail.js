@@ -702,7 +702,10 @@ const FgdProgressPanel = (() => {
 
     async function pollOnce() {
         try {
-            const job = await api.request(`/research/focus-group/reports/${currentJobId}`);
+            // _skipSpinner: poll runs every few seconds; we already have
+            // the progress panel as the visible status — the global
+            // button spinner flashing every tick is UI noise.
+            const job = await api.request(`/research/focus-group/reports/${currentJobId}`, { _skipSpinner: true });
             if (!job) return;
             render({
                 jobId: currentJobId,
