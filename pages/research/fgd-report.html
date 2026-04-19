@@ -74,6 +74,168 @@
             white-space: pre-wrap;
             word-break: break-word;
         }
+
+        /* ─────────────────────────────────────────────────────────────
+           Slide-style report layout.
+           Rule (FGD_REPORT_PLAN.md §6b): one finding per slide, bold.
+           Every value comes from report_json — no renderer computes
+           anything. If a number is missing, the JSON is the bug, not
+           the renderer.
+           ───────────────────────────────────────────────────────────── */
+        .slide-title-kicker { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary); margin-bottom: 6px; }
+        .slide-title { font-size: 26px; font-weight: 700; color: var(--text-primary); margin: 0 0 22px 0; line-height: 1.15; }
+        .slide-h2 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 0 0 12px 0; }
+        .slide-body { font-size: 14px; color: var(--text-primary); line-height: 1.55; }
+
+        /* Cover slide pull-quote */
+        .pull-quote {
+            border-left: 3px solid var(--brand-primary);
+            padding: 10px 16px;
+            margin: 18px 0 4px 0;
+            background: rgba(var(--brand-primary-rgb), 0.06);
+            border-radius: 0 10px 10px 0;
+            font-style: italic;
+            font-size: 17px;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+        .pull-quote-attr { font-style: normal; font-size: 12px; color: var(--text-secondary); margin-top: 8px; display: block; }
+
+        /* Bullet list for exec summary */
+        ul.exec-bullets { margin: 0; padding-left: 0; list-style: none; }
+        ul.exec-bullets li {
+            padding: 10px 0 10px 28px;
+            position: relative;
+            border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.10);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        ul.exec-bullets li:last-child { border-bottom: none; }
+        ul.exec-bullets li::before {
+            content: "";
+            position: absolute;
+            left: 6px; top: 18px;
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: var(--brand-primary);
+            box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.18);
+        }
+        ul.exec-bullets li .bullet-themes {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        /* Theme & sentiment badges */
+        .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+        .badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 11px; font-weight: 600;
+            padding: 4px 10px; border-radius: 16px;
+            background: rgba(var(--brand-primary-rgb), 0.12);
+            color: var(--brand-primary);
+            letter-spacing: 0.3px;
+        }
+        .badge.neutral { background: var(--bg-tertiary); color: var(--text-secondary); }
+        .badge.pos { background: rgba(16,185,129,0.15); color: var(--color-success); }
+        .badge.neg { background: rgba(239,68,68,0.15); color: var(--color-error); }
+        .badge.split { background: rgba(245,158,11,0.15); color: var(--color-warning); }
+        .badge.universal { background: rgba(16,185,129,0.15); color: var(--color-success); }
+        .badge.majority { background: rgba(99,102,241,0.15); color: var(--brand-primary); }
+        .badge.minority { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+        /* Study-metadata tiles on cover */
+        .metric-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 0 0 18px 0; }
+        .metric {
+            background: var(--bg-tertiary);
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+        .metric-val { font-size: 22px; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+        .metric-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-secondary); margin-top: 2px; }
+
+        /* Quotes inside a theme slide */
+        .theme-quotes { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+        .quote-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-primary);
+            border-left: 3px solid var(--brand-primary);
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+        .quote-card .qtext { font-size: 13px; line-height: 1.55; color: var(--text-primary); }
+        .quote-card .qmeta { font-size: 11px; color: var(--text-secondary); margin-top: 6px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .quote-card .qmeta .qtime { font-variant-numeric: tabular-nums; }
+
+        /* Tensions */
+        .tensions { margin-top: 14px; }
+        .tensions-hdr { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-secondary); margin-bottom: 6px; }
+        .tensions ul { margin: 0; padding-left: 18px; }
+        .tensions li { font-size: 13px; line-height: 1.5; color: var(--text-primary); margin-bottom: 4px; }
+
+        /* Prevalence inline readout */
+        .prev-line { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+
+        /* Sentiment breakdown bar */
+        .sentiment-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--bg-tertiary); margin-top: 10px; }
+        .sentiment-bar > span { display: block; }
+        .sentiment-bar .pos { background: var(--color-success); }
+        .sentiment-bar .neg { background: var(--color-error); }
+        .sentiment-bar .neu { background: var(--text-secondary); opacity: 0.4; }
+        .sentiment-bar .mix { background: var(--color-warning); }
+        .sentiment-legend { font-size: 11px; color: var(--text-secondary); margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+        /* Verbatim gallery filter bar */
+        .gallery-filters {
+            display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+            margin-bottom: 14px; padding: 10px;
+            background: var(--bg-tertiary); border-radius: 10px;
+            border: 1px solid var(--border-primary);
+        }
+        .gallery-filters select, .gallery-filters input {
+            background: var(--bg-secondary); color: var(--text-primary);
+            border: 1px solid var(--border-primary); border-radius: 6px;
+            padding: 6px 10px; font-size: 13px;
+        }
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+
+        /* Appendix */
+        .codeframe-tree { font-size: 13px; line-height: 1.6; color: var(--text-primary); }
+        .codeframe-tree .cf-theme { margin-bottom: 10px; }
+        .codeframe-tree .cf-id { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 12px; color: var(--brand-primary); font-weight: 600; }
+        .codeframe-tree .cf-name { font-weight: 600; }
+        .codeframe-tree .cf-def { color: var(--text-secondary); font-size: 12px; }
+        .codeframe-tree .cf-labels { margin-top: 4px; font-size: 11px; color: var(--text-secondary); }
+
+        /* Audit pill */
+        .audit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; font-size: 12px; }
+        .audit-grid .k { color: var(--text-secondary); }
+        .audit-grid .v { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+        /* Theme TOC nav */
+        .theme-toc {
+            position: sticky; top: 12px; z-index: 5;
+            display: flex; flex-wrap: wrap; gap: 6px;
+            padding: 10px 12px; margin-bottom: 20px;
+            background: rgba(var(--brand-primary-rgb), 0.06);
+            border: 1px solid rgba(var(--brand-primary-rgb), 0.15);
+            border-radius: 10px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .theme-toc a {
+            font-size: 11px; padding: 4px 10px; border-radius: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-primary);
+            color: var(--text-primary); text-decoration: none;
+            font-weight: 500; white-space: nowrap;
+        }
+        .theme-toc a:hover { background: rgba(var(--brand-primary-rgb), 0.12); border-color: var(--brand-primary); }
+
+        .empty-note { font-size: 13px; color: var(--text-secondary); font-style: italic; }
     </style>
 </head>
 <body class="dashboard research-page">
@@ -112,10 +274,10 @@
             </div>
         </div>
 
-        <div class="report-panel" id="reportRenderPanel" style="display:none; margin-top:20px;">
-            <div class="done-banner">Report ready. Full slide-style renderer ships in Sprint 5 — raw JSON shown below for now.</div>
-            <pre class="report-dump" id="reportJsonDump"></pre>
-        </div>
+        <!-- Populated once status=done. Each child is a .report-panel (slide).
+             Renderer uses createElement + textContent exclusively — no
+             innerHTML on transcript-derived data. See fgd-report.js. -->
+        <div id="reportContent" style="display:none; margin-top:20px;"></div>
     </div>
 
     <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
