@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function refreshLatestReport() {
     const btn = document.getElementById('viewDashboardBtn');
+    const spssBtn = document.getElementById('exportSpssBtn');
     if (!btn) return;
     try {
         const resp = await api.request(`/research/focus-group/projects/${projectId}/reports?limit=5`);
@@ -34,9 +35,11 @@ async function refreshLatestReport() {
         if (done) {
             latestReportJobId = done.job_id;
             btn.style.display = 'inline-flex';  // must match the .research-btn flex layout
+            if (spssBtn) spssBtn.style.display = 'inline-flex';
         } else {
             latestReportJobId = null;
             btn.style.display = 'none';
+            if (spssBtn) spssBtn.style.display = 'none';
         }
     } catch (e) {
         // Non-fatal — button just stays hidden if the endpoint errors.
@@ -47,6 +50,40 @@ async function refreshLatestReport() {
 function openLatestDashboard() {
     if (!latestReportJobId) return;
     window.location.href = `fgd-report.html?job_id=${encodeURIComponent(latestReportJobId)}`;
+}
+
+// Download the latest done report as SPSS .sav. Internal/researcher
+// tool — streams the response as a blob so the browser presents a
+// native download dialog.
+async function exportLatestSpss() {
+    if (!latestReportJobId) return;
+    const btn = document.getElementById('exportSpssBtn');
+    const origLabel = btn ? btn.innerHTML : null;
+    try {
+        if (btn) { btn.disabled = true; btn.textContent = 'Exporting…'; }
+        const base = (CONFIG.researchApiBaseUrl || '').replace(/\/$/, '');
+        const url = `${base}/focus-group/reports/${encodeURIComponent(latestReportJobId)}/export.sav`;
+        // api client exposes .token directly (getToken() method doesn't exist).
+        const token = (api && typeof api.token === 'string') ? api.token : '';
+        const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!resp.ok) throw new Error(`Export failed (${resp.status})`);
+        const blob = await resp.blob();
+        // Use Content-Disposition filename if the server provided one;
+        // otherwise fall back to the job_id-derived name.
+        const cd = resp.headers.get('content-disposition') || '';
+        const m = /filename\*?=(?:UTF-8''|")?([^";]+)/i.exec(cd);
+        const fname = m ? decodeURIComponent(m[1].replace(/"/g, '')) : `fgd_report_${String(latestReportJobId).slice(0,8)}.sav`;
+        const objUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objUrl; a.download = fname; a.style.display = 'none';
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(objUrl);
+        Toast.success('SPSS file downloaded');
+    } catch (e) {
+        Toast.error('SPSS export failed: ' + e.message);
+    } finally {
+        if (btn) { btn.disabled = false; if (origLabel) btn.innerHTML = origLabel; }
+    }
 }
 
 async function loadProject() {

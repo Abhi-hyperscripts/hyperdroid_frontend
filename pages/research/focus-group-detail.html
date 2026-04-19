@@ -167,6 +167,17 @@
                     </svg>
                     View Dashboard
                 </button>
+                <!-- Internal: SPSS export. Only visible when a 'done' report exists.
+                     Ships the coded-utterance wide table (themes + sub-themes as
+                     binary flag columns) so researchers can run stats in SPSS/R. -->
+                <button id="exportSpssBtn" class="research-btn fgd-export-spss-btn" onclick="exportLatestSpss()" style="display:none;" title="Download coded utterances as SPSS .sav">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export SPSS
+                </button>
                 <style>
                     /* View Dashboard — success accent with glassy fill so it
                        reads as a "ready/available" action against the primary
@@ -190,6 +201,26 @@
                     [data-theme="dark"] .fgd-view-dashboard-btn {
                         background: rgba(16, 185, 129, 0.15) !important;
                     }
+
+                    /* Export SPSS — solid slate button. Distinct from primary
+                       blue (Run Analytics / Upload Audio) and success green
+                       (View Dashboard) so the three action colors read clearly
+                       against each other. */
+                    .fgd-export-spss-btn {
+                        align-items: center; gap: 6px;
+                        background: #334155 !important;
+                        color: #ffffff !important;
+                        border: 1px solid #334155 !important;
+                        font-weight: 600 !important;
+                        transition: all 0.15s;
+                    }
+                    .fgd-export-spss-btn:hover {
+                        background: #1e293b !important;
+                        border-color: #1e293b !important;
+                        transform: translateY(-1px);
+                        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
+                    }
+                    .fgd-export-spss-btn svg { stroke: #ffffff !important; }
 
                     /* ── Floating non-blocking progress panel ─────────────
                        !important on position is intentional: generic page
