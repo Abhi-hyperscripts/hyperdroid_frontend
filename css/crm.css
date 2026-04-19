@@ -2058,14 +2058,16 @@ body.crm-dashboard .crm-container {
     padding: 0 4px;
 }
 
-/* Rows / page selector — sits alongside the existing page number buttons. */
+/* Rows / page selector — left-aligned so the native dropdown opens toward
+   the right (clear space) instead of getting clipped by the copilot widget
+   in the bottom-right corner. */
 .crm-pagesize {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     color: var(--text-secondary);
     font-size: 0.78rem;
-    margin-left: 12px;
+    margin-right: auto;
 }
 .crm-pagesize-select {
     width: auto;

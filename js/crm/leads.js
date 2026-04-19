@@ -388,8 +388,8 @@ function renderPagination() {
     const totalPages = Math.ceil(totalLeads / pageSize);
     if (totalPages <= 1) {
         container.innerHTML = `
-            <span class="crm-pagination-info">Showing ${totalLeads} lead${totalLeads !== 1 ? 's' : ''}</span>
-            ${sizeSelector}`;
+            ${sizeSelector}
+            <span class="crm-pagination-info">Showing ${totalLeads} lead${totalLeads !== 1 ? 's' : ''}</span>`;
         return;
     }
 
@@ -422,9 +422,9 @@ function renderPagination() {
     buttons += `<button class="crm-page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="loadLeads(${currentPage + 1})">›</button>`;
 
     container.innerHTML = `
+        ${sizeSelector}
         <span class="crm-pagination-info">${start}–${end} of ${totalLeads}</span>
         <div class="crm-pagination-buttons">${buttons}</div>
-        ${sizeSelector}
     `;
 }
 
