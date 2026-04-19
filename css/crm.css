@@ -2061,13 +2061,32 @@ body.crm-dashboard .crm-container {
 /* Rows / page selector — left-aligned so the native dropdown opens toward
    the right (clear space) instead of getting clipped by the copilot widget
    in the bottom-right corner. */
+/* Three-column layout so the info + page buttons sit in the middle with
+   equal free space on either side (Rows selector at left, empty spacer
+   at right to keep the copilot widget from overlapping anything live). */
+.crm-pagination {
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+}
+.crm-pagination-center {
+    display: flex;
+    align-items: center;
+    justify-self: center;
+    gap: 12px;
+}
+.crm-pagination-spacer {
+    /* Grid cell reserves width equal to the Rows selector so the middle
+       group stays visually centered across the full bar. */
+    display: block;
+}
 .crm-pagesize {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     color: var(--text-secondary);
     font-size: 0.78rem;
-    margin-right: auto;
+    justify-self: start;
 }
 /* SearchableDropdown auto-wraps the native <select>. Its dropup panel
    otherwise inherits the trigger's 67px width — too cramped to read the

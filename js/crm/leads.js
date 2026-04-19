@@ -389,7 +389,10 @@ function renderPagination() {
     if (totalPages <= 1) {
         container.innerHTML = `
             ${sizeSelector}
-            <span class="crm-pagination-info">Showing ${totalLeads} lead${totalLeads !== 1 ? 's' : ''}</span>`;
+            <div class="crm-pagination-center">
+                <span class="crm-pagination-info">Showing ${totalLeads} lead${totalLeads !== 1 ? 's' : ''}</span>
+            </div>
+            <span class="crm-pagination-spacer"></span>`;
         return;
     }
 
@@ -423,8 +426,11 @@ function renderPagination() {
 
     container.innerHTML = `
         ${sizeSelector}
-        <span class="crm-pagination-info">${start}–${end} of ${totalLeads}</span>
-        <div class="crm-pagination-buttons">${buttons}</div>
+        <div class="crm-pagination-center">
+            <span class="crm-pagination-info">${start}–${end} of ${totalLeads}</span>
+            <div class="crm-pagination-buttons">${buttons}</div>
+        </div>
+        <span class="crm-pagination-spacer"></span>
     `;
 }
 
