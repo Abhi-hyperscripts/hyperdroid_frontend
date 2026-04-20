@@ -144,6 +144,72 @@
             border-color: var(--brand-primary);
             color: var(--brand-primary);
         }
+
+        /* Expandable "What does this do?" educational block */
+        .mailbox-help {
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .mailbox-help > summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            user-select: none;
+        }
+        .mailbox-help > summary::-webkit-details-marker { display: none; }
+        .mailbox-help > summary:hover { background: var(--bg-card); }
+        .mailbox-help > summary .chev {
+            margin-left: auto;
+            transition: transform 150ms ease;
+            color: var(--text-secondary);
+        }
+        .mailbox-help[open] > summary .chev { transform: rotate(180deg); }
+        .mailbox-help > summary .help-icon {
+            width: 18px; height: 18px;
+            flex: 0 0 18px;
+            color: var(--brand-primary);
+        }
+        .mailbox-help-body {
+            padding: 4px 16px 14px 16px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.55;
+        }
+        .mailbox-help-body p { margin: 10px 0 8px; color: var(--text-primary); }
+        .mailbox-help-body ul { margin: 6px 0 10px; padding-left: 20px; }
+        .mailbox-help-body li { margin-bottom: 4px; }
+        .mailbox-help-body strong { color: var(--text-primary); }
+
+        /* Horizontal divider between the two mailbox sub-sections */
+        .mailbox-section-divider {
+            border: 0;
+            border-top: 1px solid var(--border-color);
+            margin: 32px 0;
+        }
+
+        /* Right-align action buttons inside every CRM settings section-header.
+           Overrides crm-teams-setup.css which sets flex:1 on every direct div
+           child of .section-header — that rule stretches .header-actions and
+           leaves the button hugging the left of the stretched column, so the
+           Add/New/Connect buttons end up mid-row instead of at the right edge. */
+        .crm-settings-container .section-header { align-items: flex-start !important; }
+        .crm-settings-container .section-header > .header-actions {
+            flex: 0 0 auto !important;
+            margin-left: auto;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
     </style>
 </head>
 <body class="dashboard crm-page">
@@ -451,6 +517,29 @@
                     </div>
 
                     <!-- ─── A. OAuth Apps (BYOC) ─────────────────────────────────── -->
+                    <details class="mailbox-help">
+                        <summary>
+                            <svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            What are OAuth Apps &mdash; and do I need one?
+                            <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </summary>
+                        <div class="mailbox-help-body">
+                            <p>An <strong>admin-only, one-time setup</strong> that lets your team connect Gmail or Microsoft 365 mailboxes with a single click.</p>
+                            <ul>
+                                <li>You register your <strong>own</strong> OAuth app in Google Cloud / Azure once &mdash; you control the credentials, not us.</li>
+                                <li>After that, every user on your tenant can sign in to their Gmail / Outlook mailbox through your app &mdash; no Google/Microsoft publisher verification required.</li>
+                                <li>You only need this if your team uses <strong>Gmail or Microsoft 365</strong>. If everyone is on IMAP providers (GoDaddy, Hostinger, Zoho, Zoho Mail, custom SMTP), you can safely skip this section.</li>
+                                <li>Nothing is sent yet &mdash; OAuth Apps just make the "Connect Mailbox" button work for Gmail/Outlook below.</li>
+                            </ul>
+                        </div>
+                    </details>
+
                     <div class="section-header">
                         <div>
                             <h3 class="section-title">OAuth Apps</h3>
@@ -495,7 +584,37 @@
                     </div>
 
                     <!-- ─── B. Connected Mailboxes ──────────────────────────────────── -->
-                    <div class="section-header" style="margin-top: 32px;">
+                    <hr class="mailbox-section-divider" />
+
+                    <details class="mailbox-help">
+                        <summary>
+                            <svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            What are Connected Mailboxes &mdash; and how do they differ from OAuth Apps?
+                            <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                        </summary>
+                        <div class="mailbox-help-body">
+                            <p>The <strong>actual email accounts</strong> your CRM uses to send outreach and receive replies &mdash; one row per user.</p>
+                            <ul>
+                                <li>Each user clicks <strong>Connect Mailbox</strong> and links their own address (e.g. <em>john@company.com</em>). Campaigns go out from that address; replies are routed back into the CRM inbox.</li>
+                                <li>Two ways to connect:
+                                    <ul>
+                                        <li><strong>OAuth (Gmail / Microsoft 365)</strong> &mdash; one-click login, requires an OAuth App above.</li>
+                                        <li><strong>IMAP + SMTP</strong> &mdash; works for any provider (GoDaddy, Hostinger, Zoho, custom). No OAuth App needed.</li>
+                                    </ul>
+                                </li>
+                                <li>A mailbox can be <strong>personal</strong> (only you send from it) or <strong>tenant-shared</strong> (team-wide, e.g. <em>sales@company.com</em>).</li>
+                                <li><strong>TL;DR:</strong> OAuth Apps above = admin infrastructure (set up once). Connected Mailboxes here = the per-user accounts that actually send and receive mail.</li>
+                            </ul>
+                        </div>
+                    </details>
+
+                    <div class="section-header">
                         <div>
                             <h3 class="section-title">Connected Mailboxes</h3>
                             <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 0;">
