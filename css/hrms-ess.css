@@ -1714,6 +1714,13 @@ body:has(.ess-layout) .navbar {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 8px;
+    /* Reserve room for two lines so single-line labels don't shift
+       the big number up and break row alignment across cards. RAG-80. */
+    min-height: 2.4em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
 }
 
 .ess-leave-value {
