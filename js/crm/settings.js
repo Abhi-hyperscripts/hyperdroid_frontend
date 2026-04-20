@@ -59,10 +59,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (dz) dz.style.display = '';
     }
 
+    // If the user was bounced here by CrmSetupGuard because the tenant
+    // hasn't configured functional groups + teams yet, surface a banner so
+    // they understand why they landed here instead of the page they
+    // pasted into the URL bar.
+    maybeShowSetupBanner();
+
     // Load initial data
     await loadGeneralSettings();
     await loadDealStages();
+
+    // Deep-link tab switch. Campaigns has its own prefill logic so skip it
+    // here; the other tabs just need the sidebar button re-clicked.
+    const urlTab = new URLSearchParams(window.location.search).get('tab');
+    const KNOWN_TABS = ['general','pipeline','integrations','mailboxes','templates','campaigns','lead-sources','functional-groups','teams','danger-zone'];
+    if (urlTab && urlTab !== 'campaigns' && KNOWN_TABS.includes(urlTab)) {
+        switchSettingsTab(urlTab);
+    }
 });
+
+function maybeShowSetupBanner() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('setup') !== '1') return;
+    // Inject a top-of-page notice. Uses the existing crm-alert styling so
+    // it stays on-theme, and auto-removes itself if the admin navigates to
+    // any other tab (they've seen the message).
+    const host = document.querySelector('.crm-settings-content') || document.body;
+    if (!host || document.getElementById('crmSetupBanner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'crmSetupBanner';
+    banner.className = 'crm-alert crm-alert-warning';
+    banner.style.cssText = 'margin:0 0 16px; display:flex; align-items:center; gap:10px;';
+    banner.innerHTML = `
+        <strong>Finish CRM setup first.</strong>
+        Configure functional groups and at least one team before managing leads, deals, or campaigns.
+        <button type="button" class="btn btn-sm btn-link" style="margin-left:auto;" onclick="document.getElementById('crmSetupBanner').remove()">Dismiss</button>
+    `;
+    host.prepend(banner);
+}
 
 function initSearchableDropdowns() {
     if (typeof convertSelectToSearchable !== 'function') return;

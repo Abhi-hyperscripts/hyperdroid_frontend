@@ -29,8 +29,15 @@ let leadStatusDropdown = null;
 
 // ==================== Initialization ====================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     Navigation.init('crm', '../');
+    // Nothing on this page works without functional groups + teams
+    // configured for the tenant. Probe first; if the tenant isn't ready,
+    // the guard redirects to Settings and we bail out of init so we don't
+    // fire a bunch of doomed requests behind the redirect.
+    if (window.CrmSetupGuard && await window.CrmSetupGuard.ensureConfigured()) {
+        return;
+    }
     loadMyRole();
     loadLeads();
     loadLeadStats();
