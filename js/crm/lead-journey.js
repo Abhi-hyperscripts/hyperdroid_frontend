@@ -271,7 +271,14 @@
         container.innerHTML = entries.map(e => {
             const icon = getTimelineIcon(e.icon || e.type);
             const time = formatTimeAgo(new Date(e.timestamp));
-            const desc = e.description ? `<div class="tl-desc">${esc(e.description)}</div>` : '';
+            // For email replies the description is the actual recipient's
+            // message — preserve line breaks so "Thanks,\nAbhi" doesn't
+            // collapse into a single run-on sentence. Everything else stays
+            // compact (one-line activity titles, status changes, etc.).
+            const preserveBreaks = e.type === 'email_replied' || e.type === 'note';
+            const desc = e.description
+                ? `<div class="tl-desc${preserveBreaks ? ' tl-desc-pre' : ''}">${esc(e.description)}</div>`
+                : '';
             const outcome = e.outcome ? `<span class="tl-outcome">${esc(e.outcome)}</span>` : '';
             const typeClass = `tl-${e.type}`;
             const whoName = e.performed_by_name || '';

@@ -1483,13 +1483,21 @@ body.crm-dashboard .crm-container {
 }
 
 .crm-filter-group .form-select,
-.crm-filter-group .form-control {
+.crm-filter-group .form-control,
+.crm-filter-group .searchable-dropdown-trigger,
+/* Override the compact variant's own 38px floor — leads filter bar
+   needs every field at a uniform 32px for visual alignment. */
+.crm-filter-group .searchable-dropdown--compact .searchable-dropdown-trigger {
     font-size: 0.85rem;
-    height: 38px;
+    height: 32px;
+    min-height: 32px;
     border-color: var(--border-color);
     background-color: var(--bg-input);
     color: var(--text-primary);
     border-radius: 4px;
+    padding-top: 0;
+    padding-bottom: 0;
+    box-sizing: border-box;
 }
 
 .crm-filter-group .form-select:focus,
@@ -1502,6 +1510,31 @@ body.crm-dashboard .crm-container {
     flex: 1;
     min-width: 200px;
 }
+
+/* Keep every filter-group the same 160px trigger width so labels line up
+   vertically. The SearchableDropdown menu is free to open wider than its
+   trigger (option labels like "In campaign (sent)" need the room). */
+.crm-filter-bar .crm-filter-group { min-width: 160px; }
+.crm-filter-bar .crm-filter-group .searchable-dropdown-container { width: 100% !important; }
+.crm-filter-bar .searchable-dropdown-menu { min-width: 220px; }
+
+/* Email engagement chip in the leads table cell — single row, compact. */
+.crm-email-engagement {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 500;
+}
+.crm-email-engagement.stage-sent        { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-color); }
+.crm-email-engagement.stage-opened      { background: rgba(14,165,233,.15); color: #0ea5e9; }
+.crm-email-engagement.stage-clicked     { background: rgba(99,102,241,.15); color: #6366f1; }
+.crm-email-engagement.stage-replied     { background: rgba(16,185,129,.18); color: #10b981; }
+.crm-email-engagement.stage-bounced     { background: rgba(220,38,38,.15); color: var(--color-danger); }
+.crm-email-engagement.stage-unsubscribed{ background: rgba(245,158,11,.15); color: #f59e0b; }
+.crm-email-engagement .chip-icon { font-size: 0.85rem; line-height: 1; }
 
 /* =============================================================
    CRM - Bulk Actions Bar

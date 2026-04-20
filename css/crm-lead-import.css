@@ -842,6 +842,14 @@
     line-height: 1.4;
     word-break: break-word;
 }
+/* Preserve line breaks for email replies + notes — the raw body has
+   intentional paragraph breaks ("Sorry, I'm not interested\n\nThanks,\n
+   Abhi\nMobile: …") that would collapse into one run-on sentence
+   otherwise. pre-wrap keeps newlines but still wraps long lines. */
+.tl-desc.tl-desc-pre {
+    white-space: pre-wrap;
+    font-family: inherit;
+}
 
 .tl-meta {
     font-size: 0.7rem;

@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadLeads();
     loadLeadStats();
     loadSourceFilter();
+    loadCampaignFilter();
     initSearchableDropdowns();
 });
 
@@ -155,12 +156,34 @@ function buildFilterParams() {
     const status = filterStatusDropdown ? filterStatusDropdown.getValue() : document.getElementById('filterStatus').value;
     const source = filterSourceDropdown ? filterSourceDropdown.getValue() : document.getElementById('filterSource').value;
     const search = document.getElementById('filterSearch').value.trim();
+    const emailStatusEl = document.getElementById('filterEmailStatus');
+    const emailStatus = emailStatusEl ? emailStatusEl.value : '';
+    const campaignEl = document.getElementById('filterCampaign');
+    const campaignId = campaignEl ? campaignEl.value : '';
 
     if (status) params.set('status', status);
     if (source) params.set('source', source);
     if (search) params.set('search', search);
+    if (emailStatus) params.set('emailStatus', emailStatus);
+    if (campaignId) params.set('campaignId', campaignId);
 
     return params;
+}
+
+// Populate the Campaign filter with the tenant's campaigns. Called once
+// on page load; cheap enough that we don't bother caching. Fails soft if
+// the API is down — filter just stays with a single "All campaigns" option.
+async function loadCampaignFilter() {
+    const sel = document.getElementById('filterCampaign');
+    if (!sel) return;
+    try {
+        const resp = await api.request('/email-campaigns');
+        const items = (resp && resp.items) || [];
+        // Newest first — matches campaigns list ordering.
+        items.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        sel.innerHTML = '<option value="">All campaigns</option>' +
+            items.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${c.status})</option>`).join('');
+    } catch (_) { /* silent fallback */ }
 }
 
 /**
@@ -244,6 +267,9 @@ function renderLeadsTable(leads) {
                 ${lead.has_pending_transfer ? '<span class="crm-transfer-pending-badge" data-tooltip="Transfer/Reassignment pending approval">⇄ Transfer Pending</span>' : ''}
             </td>
             <td class="hide-mobile">
+                ${renderEmailEngagement(lead)}
+            </td>
+            <td class="hide-mobile">
                 ${lead.teamName || lead.team_name ? `<span class="crm-team-badge ${teamColorClass(lead.teamName || lead.team_name)}">${escapeHtml(lead.teamName || lead.team_name)}</span>` : '<span class="crm-cell-secondary">—</span>'}
             </td>
             <td class="hide-mobile">
@@ -294,6 +320,27 @@ function renderLeadsTable(leads) {
 }
 
 // ==================== Status & Source Formatting ====================
+
+// Pick the FURTHEST engagement stage a lead has reached — replies imply
+// clicks imply opens imply sent. Suppressed / bounced are terminal, shown
+// even if the lead also had earlier positive signals, because it's the
+// most important state to know about for future campaigns.
+function renderEmailEngagement(l) {
+    const sent = l.emailSentCount ?? l.email_sent_count ?? 0;
+    const opened = l.emailOpenedCount ?? l.email_opened_count ?? 0;
+    const clicked = l.emailClickedCount ?? l.email_clicked_count ?? 0;
+    const replied = l.emailRepliedCount ?? l.email_replied_count ?? 0;
+    const bounced = l.emailBouncedCount ?? l.email_bounced_count ?? 0;
+    const suppressed = l.isEmailSuppressed ?? l.is_email_suppressed ?? false;
+
+    if (suppressed)   return `<span class="crm-email-engagement stage-unsubscribed"><span class="chip-icon">🚫</span> Unsubscribed</span>`;
+    if (bounced > 0)  return `<span class="crm-email-engagement stage-bounced"><span class="chip-icon">⚠</span> Bounced</span>`;
+    if (replied > 0)  return `<span class="crm-email-engagement stage-replied"><span class="chip-icon">✉</span> Replied${replied > 1 ? ` ×${replied}` : ''}</span>`;
+    if (clicked > 0)  return `<span class="crm-email-engagement stage-clicked"><span class="chip-icon">👆</span> Clicked</span>`;
+    if (opened > 0)   return `<span class="crm-email-engagement stage-opened"><span class="chip-icon">👁</span> Opened</span>`;
+    if (sent > 0)     return `<span class="crm-email-engagement stage-sent"><span class="chip-icon">📤</span> Sent${sent > 1 ? ` ×${sent}` : ''}</span>`;
+    return `<span class="crm-cell-secondary">—</span>`;
+}
 
 function formatStatus(status) {
     const labels = {
