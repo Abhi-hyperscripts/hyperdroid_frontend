@@ -239,8 +239,10 @@
         }
 
         // Ask whether to start immediately
-        const startNow = confirm(
-            `Campaign created with ${leadIds.length} lead(s). Start sending now?`
+        const startNow = await showConfirm(
+            `Campaign created with ${leadIds.length} lead(s). Start sending now?`,
+            'Start campaign?',
+            'info'
         );
         if (startNow) {
             try {
@@ -248,10 +250,16 @@
                     method: 'POST',
                     body: JSON.stringify(leadIds),
                 });
-                alert(`Started: ${startResp.queued} queued, ${startResp.skipped_suppressed} suppressed, ${startResp.skipped_no_email} without email.`);
+                Toast.success(
+                    `Started — ${startResp.queued} queued` +
+                    (startResp.skipped_suppressed ? `, ${startResp.skipped_suppressed} suppressed` : '') +
+                    (startResp.skipped_no_email ? `, ${startResp.skipped_no_email} without email` : '')
+                );
             } catch (e) {
-                alert('Created but failed to start: ' + (e.message || e));
+                Toast.error('Created but failed to start: ' + (e.message || e));
             }
+        } else {
+            Toast.success('Draft campaign saved');
         }
 
         hideModal('campaignModal');
@@ -263,21 +271,29 @@
     window.pauseCampaign = async function (id) {
         try {
             await api.request(`/email-campaigns/${id}/pause`, { method: 'POST' });
+            Toast.success('Campaign paused');
             await loadCampaigns();
-        } catch (e) { alert('Pause failed: ' + (e.message || e)); }
+        } catch (e) { Toast.error('Pause failed: ' + (e.message || e)); }
     };
     window.resumeCampaign = async function (id) {
         try {
             await api.request(`/email-campaigns/${id}/resume`, { method: 'POST' });
+            Toast.success('Campaign resumed');
             await loadCampaigns();
-        } catch (e) { alert('Resume failed: ' + (e.message || e)); }
+        } catch (e) { Toast.error('Resume failed: ' + (e.message || e)); }
     };
     window.cancelCampaign = async function (id) {
-        if (!confirm('Cancel this campaign? Remaining queued sends will not be delivered.')) return;
+        const ok = await showConfirm(
+            'Cancel this campaign? Remaining queued sends will not be delivered.',
+            'Cancel campaign',
+            'warning'
+        );
+        if (!ok) return;
         try {
             await api.request(`/email-campaigns/${id}/cancel`, { method: 'POST' });
+            Toast.success('Campaign cancelled');
             await loadCampaigns();
-        } catch (e) { alert('Cancel failed: ' + (e.message || e)); }
+        } catch (e) { Toast.error('Cancel failed: ' + (e.message || e)); }
     };
 
     // ─── helpers ───────────────────────────────────────────────────────────

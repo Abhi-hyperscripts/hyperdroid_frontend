@@ -66,7 +66,7 @@
                 const resp = await api.request(`/email-templates/${id}`);
                 if (resp && resp.template) t = resp.template;
             } catch (e) {
-                alert('Failed to load template: ' + (e.message || e));
+                Toast.error('Failed to load template: ' + (e.message || e));
                 return;
             }
         }
@@ -118,12 +118,18 @@
     };
 
     window.deleteTemplate = async function (id) {
-        if (!confirm('Deactivate this template? Existing campaigns keep working; you just won\'t see it in the picker.')) return;
+        const ok = await showConfirm(
+            'Deactivate this template? Existing campaigns keep working; you just won\'t see it in the picker.',
+            'Deactivate template',
+            'warning'
+        );
+        if (!ok) return;
         try {
             await api.request(`/email-templates/${id}`, { method: 'DELETE' });
+            Toast.success('Template deactivated');
             await loadTemplatesTab();
         } catch (e) {
-            alert('Delete failed: ' + (e.message || e));
+            Toast.error('Delete failed: ' + (e.message || e));
         }
     };
 
@@ -155,7 +161,7 @@
             frame.srcdoc = resp.body_html || `<pre>${escapeHtml(resp.body_text || '(empty)')}</pre>`;
             showModal('templatePreviewModal');
         } catch (e) {
-            alert('Preview failed: ' + (e.message || e));
+            Toast.error('Preview failed: ' + (e.message || e));
         }
     };
 

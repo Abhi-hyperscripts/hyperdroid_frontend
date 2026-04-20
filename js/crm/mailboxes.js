@@ -250,7 +250,12 @@
     };
 
     window.deleteOAuthApp = async function (id, label) {
-        if (!confirm(`Remove ${label} OAuth app? Existing mailboxes using it will stop working.`)) return;
+        const ok = await showConfirm(
+            `Remove ${label} OAuth app? Existing mailboxes using it will stop working.`,
+            'Remove OAuth app',
+            'warning'
+        );
+        if (!ok) return;
         try {
             const resp = await api.request(`/tenant-oauth-apps/${id}`, { method: 'DELETE' });
             if (resp && resp.success) {
@@ -501,7 +506,12 @@
     // ─── Delete mailbox ────────────────────────────────────────────────────
 
     window.deleteMailbox = async function (id, email) {
-        if (!confirm(`Disconnect ${email}? Active campaigns using this mailbox will pause.`)) return;
+        const ok = await showConfirm(
+            `Disconnect ${email}? Active campaigns using this mailbox will pause.`,
+            'Disconnect mailbox',
+            'warning'
+        );
+        if (!ok) return;
         try {
             const resp = await api.request(`/mailboxes/${id}`, { method: 'DELETE' });
             if (resp && resp.success) {
