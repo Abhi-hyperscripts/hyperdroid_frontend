@@ -355,6 +355,22 @@
                 if (chips.length) detailChips = `<div class="tl-chips">${chips.join('')}</div>`;
             }
 
+            // Reply CTA — only on replied events that carry the routing info
+            // we need to send back via the same mailbox with proper threading.
+            let replyBtn = '';
+            if (e.type === 'email_replied' && e.meta && e.meta.mailbox_id && e.meta.from_address) {
+                const meta = e.meta;
+                const payload = {
+                    mailboxId: meta.mailbox_id,
+                    toEmail: meta.from_address,
+                    subject: meta.subject || '',
+                    inReplyTo: meta.reply_message_id || '',
+                    replySnippet: e.description || '',
+                };
+                const payloadAttr = esc(JSON.stringify(payload));
+                replyBtn = `<div class="tl-actions"><button class="btn btn-sm btn-outline-primary tl-reply-btn" data-reply='${payloadAttr}' onclick="openReplyModalFromBtn(this)">Reply</button></div>`;
+            }
+
             return `
                 <div class="tl-entry ${typeClass}">
                     <div class="tl-icon">${icon}</div>
@@ -364,6 +380,7 @@
                         </div>
                         ${detailChips}
                         ${desc}
+                        ${replyBtn}
                         <div class="tl-meta">${whoLine ? `${whoLine} · ` : ''}${time}</div>
                     </div>
                 </div>
@@ -773,6 +790,136 @@
         setTimeout(() => { printWin.print(); }, 300);
     }
 
+    // ─── Reply composer ─────────────────────────────────────────────────
+    //
+    // Opens a modal pre-filled from a timeline reply row. Sends via the same
+    // mailbox that received the reply and sets In-Reply-To on the outbound so
+    // the thread stays threaded in the recipient's client. The send carries
+    // lead_id so the row appears on this lead's timeline automatically (no
+    // manual timeline merge needed — GetEmailTimelineForLeadAsync already
+    // picks up email_sends WHERE lead_id = lead).
+
+    let _replyCtx = null;
+
+    function openReplyModalFromBtn(btn) {
+        try {
+            const payload = JSON.parse(btn.getAttribute('data-reply'));
+            openReplyModal(payload);
+        } catch (e) {
+            Toast.error('Failed to open reply composer');
+        }
+    }
+
+    function openReplyModal(ctx) {
+        _replyCtx = ctx;
+        const modal = document.getElementById('replyEmailModal');
+        if (!modal) {
+            buildReplyModal();
+        }
+        const subj = ctx.subject && ctx.subject.toLowerCase().startsWith('re:')
+            ? ctx.subject
+            : (ctx.subject ? `Re: ${ctx.subject}` : '');
+        document.getElementById('replyToEmail').value = ctx.toEmail || '';
+        document.getElementById('replySubject').value = subj;
+        document.getElementById('replyBody').value = '';
+        const quote = ctx.replySnippet
+            ? `\n\n-----\nOn earlier reply, ${ctx.toEmail} wrote:\n> ${ctx.replySnippet.replace(/\n/g, '\n> ')}`
+            : '';
+        document.getElementById('replyQuotedPreview').textContent = quote.trim();
+        document.getElementById('replyEmailModal').classList.add('active');
+        setTimeout(() => document.getElementById('replyBody').focus(), 50);
+    }
+
+    function closeReplyModal() {
+        const modal = document.getElementById('replyEmailModal');
+        if (modal) modal.classList.remove('active');
+        _replyCtx = null;
+    }
+
+    function buildReplyModal() {
+        // Reuse the glassmorphic-modal + gm-overlay style used across CRM
+        // settings modals. Built lazily on first open so this file doesn't
+        // inflate the HTML templates of every page that includes it.
+        const overlay = document.createElement('div');
+        overlay.id = 'replyEmailModal';
+        overlay.className = 'gm-overlay';
+        overlay.innerHTML = `
+            <div class="gm-modal" style="max-width:640px;width:92vw;">
+                <div class="gm-header">
+                    <h3>Reply</h3>
+                    <button class="gm-close" onclick="closeReplyModal()">&times;</button>
+                </div>
+                <div class="gm-body">
+                    <div class="crm-alert crm-alert-error" id="replyModalError" style="display:none;"></div>
+                    <div class="crm-form-group">
+                        <label for="replyToEmail">To</label>
+                        <input type="email" class="form-control" id="replyToEmail" readonly>
+                    </div>
+                    <div class="crm-form-group">
+                        <label for="replySubject">Subject</label>
+                        <input type="text" class="form-control" id="replySubject">
+                    </div>
+                    <div class="crm-form-group">
+                        <label for="replyBody">Message</label>
+                        <textarea class="form-control" id="replyBody" rows="8" placeholder="Type your reply…"></textarea>
+                    </div>
+                    <pre id="replyQuotedPreview" style="font-size:0.75rem;color:var(--text-secondary);white-space:pre-wrap;margin:0;max-height:120px;overflow:auto;"></pre>
+                </div>
+                <div class="gm-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeReplyModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="replySendBtn" onclick="submitReply()">Send</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+    }
+
+    async function submitReply() {
+        if (!_replyCtx) return;
+        const btn = document.getElementById('replySendBtn');
+        const errEl = document.getElementById('replyModalError');
+        errEl.style.display = 'none';
+
+        const subject = document.getElementById('replySubject').value.trim();
+        const body = document.getElementById('replyBody').value.trim();
+        if (!body) {
+            errEl.textContent = 'Message body is required.';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        // Stitch the user's new message with a quoted snippet of the prior
+        // reply so recipients can see context even in mail clients that
+        // don't collapse threads.
+        const quote = _replyCtx.replySnippet
+            ? `\n\n-----\n> ${String(_replyCtx.replySnippet).replace(/\n/g, '\n> ')}`
+            : '';
+
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+        try {
+            const leadId = window._leadDetailId;
+            await api.request(`/mailbox-send/${_replyCtx.mailboxId}/send`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    to_email: _replyCtx.toEmail,
+                    subject: subject || 'Re:',
+                    body_text: body + quote,
+                    in_reply_to: _replyCtx.inReplyTo || undefined,
+                    lead_id: leadId || undefined,
+                }),
+            });
+            Toast.success('Reply sent');
+            closeReplyModal();
+            if (leadId) openLeadDetailPanel(leadId); // refresh timeline
+        } catch (e) {
+            errEl.textContent = (e && e.message) ? e.message : 'Send failed';
+            errEl.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Send';
+        }
+    }
+
     // ─── Expose to window ───────────────────────────────────────────────
 
     window.openLeadDetailPanel = openLeadDetailPanel;
@@ -796,4 +943,8 @@
     window.openLogActivityModal = openLogActivityModal;
     window.closeLogActivityModal = closeLogActivityModal;
     window.submitLogActivity = submitLogActivity;
+    window.openReplyModalFromBtn = openReplyModalFromBtn;
+    window.openReplyModal = openReplyModal;
+    window.closeReplyModal = closeReplyModal;
+    window.submitReply = submitReply;
 })();
