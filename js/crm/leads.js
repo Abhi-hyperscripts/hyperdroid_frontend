@@ -598,7 +598,10 @@ function bulkSendCampaign() {
     try {
         sessionStorage.setItem('crm.campaign.prefillLeads', JSON.stringify(payload));
     } catch (_) { /* quota / disabled — modal handles empty */ }
-    window.location.href = 'settings.html?tab=campaigns&prefill=1';
+    // Append a cachebust param so the browser doesn't serve a stale copy of
+    // settings.html — otherwise the modal HTML the user sees lags the JS by a
+    // cycle and `openCampaignModal` blows up on missing elements.
+    window.location.href = 'settings.html?tab=campaigns&prefill=1&t=' + Date.now();
 }
 
 async function bulkAssign() {

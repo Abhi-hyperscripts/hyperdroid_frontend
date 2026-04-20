@@ -94,6 +94,9 @@
 
     function renderCampaignActions(c) {
         const btns = [];
+        if (c.status === 'draft') {
+            btns.push(`<button class="btn btn-sm btn-primary" onclick="startCampaign('${c.id}')">Start</button>`);
+        }
         if (c.status === 'running') {
             btns.push(`<button class="btn btn-sm btn-outline-secondary" onclick="pauseCampaign('${c.id}')">Pause</button>`);
         }
@@ -107,6 +110,12 @@
     }
 
     // ─── Create modal ──────────────────────────────────────────────────────
+
+    // Current modal mode: 'existing' = append to a campaign the user picks from
+    // the dropdown; 'new' = current create-from-scratch flow. Defaults to
+    // 'existing' when any draft/running/paused campaigns exist, so the common
+    // case (re-using an active outreach) is one click instead of three.
+    let campaignMode = 'new';
 
     // Accepts either ['<uuid>', ...] (legacy) or [{id, leadNumber, firstName,
     // lastName, email, companyName}, ...]. Both normalise into preselectedLeads.
@@ -125,11 +134,68 @@
                 `<option value="${m.id}">${escapeHtml(m.emailAddress)} (${m.connectionType})</option>`
             ).join('');
 
+        // Existing-campaign picker: only campaigns still accepting new leads
+        // (draft / running / paused). Completed or failed campaigns can't grow.
+        const appendable = campaigns.filter(c =>
+            c.status === 'draft' || c.status === 'running' || c.status === 'paused'
+        );
+        const eSel = document.getElementById('campExisting');
+        if (appendable.length === 0) {
+            eSel.innerHTML = '<option value="">No open campaigns — create a new one</option>';
+        } else {
+            eSel.innerHTML = '<option value="">— pick a campaign —</option>' +
+                appendable.map(c =>
+                    `<option value="${c.id}">${escapeHtml(c.name)} (${c.status} · ${c.sent_count || 0}/${c.total_leads || 0})</option>`
+                ).join('');
+        }
+        const existingBtn = document.getElementById('campModeExistingBtn');
+        if (existingBtn) existingBtn.disabled = appendable.length === 0;
+
         document.getElementById('campName').value = '';
         renderCampaignLeadList();
         document.getElementById('campModalError').style.display = 'none';
 
+        // Default to 'existing' only when the user arrived with leads already
+        // picked (bulk-select from Leads page) AND there's a campaign to attach
+        // them to. Clicking "+ New Campaign" from the list should still start on
+        // the create-new tab — that's what the button's name promises.
+        const defaultMode = (preselectedLeads.length > 0 && appendable.length > 0)
+            ? 'existing' : 'new';
+        setCampaignMode(defaultMode);
+
         showModal('campaignModal');
+    };
+
+    window.setCampaignMode = function (mode) {
+        campaignMode = mode === 'existing' ? 'existing' : 'new';
+        const existingBtn = document.getElementById('campModeExistingBtn');
+        const newBtn = document.getElementById('campModeNewBtn');
+        if (existingBtn) {
+            existingBtn.classList.toggle('active', campaignMode === 'existing');
+            existingBtn.setAttribute('aria-selected', campaignMode === 'existing');
+        }
+        if (newBtn) {
+            newBtn.classList.toggle('active', campaignMode === 'new');
+            newBtn.setAttribute('aria-selected', campaignMode === 'new');
+        }
+        const show = (id, visible) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = visible ? '' : 'none';
+        };
+        show('campExistingGroup', campaignMode === 'existing');
+        show('campNameGroup', campaignMode === 'new');
+        show('campTemplateGroup', campaignMode === 'new');
+        show('campMailboxGroup', campaignMode === 'new');
+
+        const btn = document.getElementById('campSaveBtn');
+        if (btn) btn.textContent = campaignMode === 'existing' ? 'Add leads to campaign' : 'Create & start';
+
+        const hint = document.getElementById('campExistingHint');
+        if (hint) {
+            hint.textContent = campaignMode === 'existing'
+                ? 'Draft campaigns stay as drafts — start them manually. Running campaigns pick up new leads automatically.'
+                : '';
+        }
     };
 
     // Compact selected-leads list. Shows first N rows with name + email +
@@ -212,18 +278,63 @@
     };
 
     window.saveCampaign = async function () {
-        const name = document.getElementById('campName').value.trim();
-        const templateId = document.getElementById('campTemplate').value;
-        const mailboxId = document.getElementById('campMailbox').value;
         const leadIds = preselectedLeads
             .map(l => l.id)
             .filter(s => /^[0-9a-f-]{36}$/i.test(s));
+        if (leadIds.length === 0) return showCampError('Select at least one lead from the Leads page.');
+        if (leadIds.length > 10000) return showCampError('Max 10,000 leads per campaign.');
+
+        if (campaignMode === 'existing') {
+            const existingId = document.getElementById('campExisting').value;
+            if (!existingId) return showCampError('Pick a campaign to add these leads to.');
+            const existingCampaign = campaigns.find(c => c.id === existingId);
+            try {
+                const resp = await api.request(`/email-campaigns/${existingId}/append-leads`, {
+                    method: 'POST',
+                    body: JSON.stringify(leadIds),
+                });
+                Toast.success(
+                    `Added — ${resp.queued} queued` +
+                    (resp.skipped_suppressed ? `, ${resp.skipped_suppressed} suppressed` : '') +
+                    (resp.skipped_no_email ? `, ${resp.skipped_no_email} without email` : '')
+                );
+                // If the target campaign is still a draft, the executor won't
+                // touch it until the user flips it to running. Offer to start
+                // right here instead of forcing a second round-trip to the
+                // campaigns list just to click "Start".
+                if (existingCampaign && existingCampaign.status === 'draft' && resp.queued > 0) {
+                    const startNow = await showConfirm(
+                        `${resp.queued} lead(s) queued on draft campaign "${existingCampaign.name}". Start sending now?`,
+                        'Start campaign?',
+                        'info'
+                    );
+                    if (startNow) {
+                        try {
+                            await api.request(`/email-campaigns/${existingId}/start`, {
+                                method: 'POST',
+                                body: JSON.stringify([]),
+                            });
+                            Toast.success('Campaign started — sending will begin shortly');
+                        } catch (e) {
+                            Toast.error('Start failed: ' + (e.message || e));
+                        }
+                    }
+                }
+            } catch (e) {
+                return showCampError(e.message || String(e));
+            }
+            hideModal('campaignModal');
+            await loadCampaigns();
+            return;
+        }
+
+        const name = document.getElementById('campName').value.trim();
+        const templateId = document.getElementById('campTemplate').value;
+        const mailboxId = document.getElementById('campMailbox').value;
 
         if (!name) return showCampError('Name is required.');
         if (!templateId) return showCampError('Pick a template.');
         if (!mailboxId) return showCampError('Pick a mailbox.');
-        if (leadIds.length === 0) return showCampError('Select at least one lead from the Leads page.');
-        if (leadIds.length > 10000) return showCampError('Max 10,000 leads per campaign.');
 
         let campaignId;
         try {
@@ -267,6 +378,28 @@
     };
 
     // ─── Transitions ───────────────────────────────────────────────────────
+
+    // Flip a draft campaign to running without re-queuing the leads it
+    // already holds. The append-leads flow pre-queues sends, so /start with
+    // an empty body just needs to transition state.
+    window.startCampaign = async function (id) {
+        const ok = await showConfirm(
+            'Start sending emails for this campaign? Queued recipients will begin receiving emails immediately, respecting per-mailbox rate caps.',
+            'Start campaign',
+            'info'
+        );
+        if (!ok) return;
+        try {
+            const resp = await api.request(`/email-campaigns/${id}/start`, {
+                method: 'POST',
+                body: JSON.stringify([]),
+            });
+            Toast.success('Campaign started — sending will begin shortly');
+            await loadCampaigns();
+        } catch (e) {
+            Toast.error('Start failed: ' + (e.message || e));
+        }
+    };
 
     window.pauseCampaign = async function (id) {
         try {

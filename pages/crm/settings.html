@@ -1644,15 +1644,24 @@
             </div>
             <div class="gm-body">
                 <div class="crm-alert crm-alert-error" id="campModalError" style="display:none;"></div>
-                <div class="crm-form-group">
+                <div class="camp-mode-toggle" id="campModeToggle" role="tablist">
+                    <button type="button" class="camp-mode-btn active" id="campModeExistingBtn" role="tab" aria-selected="true" onclick="setCampaignMode('existing')">Add to existing campaign</button>
+                    <button type="button" class="camp-mode-btn" id="campModeNewBtn" role="tab" aria-selected="false" onclick="setCampaignMode('new')">Create new campaign</button>
+                </div>
+                <div class="crm-form-group" id="campExistingGroup">
+                    <label for="campExisting">Campaign</label>
+                    <select class="form-control" id="campExisting"></select>
+                    <div class="form-hint" id="campExistingHint"></div>
+                </div>
+                <div class="crm-form-group" id="campNameGroup">
                     <label for="campName">Name</label>
                     <input type="text" class="form-control" id="campName" placeholder="Q2 ESOMAR outreach">
                 </div>
-                <div class="crm-form-group">
+                <div class="crm-form-group" id="campTemplateGroup">
                     <label for="campTemplate">Template</label>
                     <select class="form-control" id="campTemplate"></select>
                 </div>
-                <div class="crm-form-group">
+                <div class="crm-form-group" id="campMailboxGroup">
                     <label for="campMailbox">Mailbox</label>
                     <select class="form-control" id="campMailbox"></select>
                 </div>
@@ -1668,7 +1677,7 @@
             </div>
             <div class="gm-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeCampaignModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveCampaign()">Create &amp; start</button>
+                <button type="button" class="btn btn-primary" id="campSaveBtn" onclick="saveCampaign()">Create &amp; start</button>
             </div>
         </div>
     </div>
