@@ -800,6 +800,33 @@
     // picks up email_sends WHERE lead_id = lead).
 
     let _replyCtx = null;
+    let _replyQuill = null;
+    let _replyAttachments = []; // [{name, size, type, base64}]
+    const REPLY_MAX_ATTACH_COUNT = 20;
+    const REPLY_MAX_PER_FILE = 10 * 1024 * 1024;   // 10 MB — matches MailboxController cap
+    const REPLY_MAX_TOTAL = 20 * 1024 * 1024;      // 20 MB total — matches MailboxController cap
+    // Mirrors the server-side ForbiddenExtensions set so we fail fast with a
+    // clear message before wasting a round-trip.
+    const REPLY_FORBIDDEN_EXT = new Set([
+        '.ade','.adp','.apk','.appx','.appxbundle','.bat','.cab','.chm','.cmd','.com',
+        '.cpl','.dll','.dmg','.ex','.ex_','.exe','.hta','.ins','.isp','.iso','.jar',
+        '.js','.jse','.lib','.lnk','.mde','.msc','.msi','.msix','.msixbundle','.msp',
+        '.mst','.nsh','.pif','.ps1','.scr','.sct','.shb','.sys','.vb','.vbe','.vbs',
+        '.vxd','.wsc','.wsf','.wsh'
+    ]);
+
+    // "Abhi Anand" <abhi@example.com>  →  { email: 'abhi@example.com', name: 'Abhi Anand' }
+    // abhi@example.com                  →  { email: 'abhi@example.com', name: null }
+    // Handles the RFC 5322 name-addr form our reply poller stores. Backend
+    // validation is strict (bare email only), so we strip the display part
+    // before submitting.
+    function parseEmailAddress(raw) {
+        if (!raw) return { email: '', name: null };
+        const s = String(raw).trim();
+        const m = s.match(/^\s*(?:"?([^"<>]*?)"?\s*)?<\s*([^<>\s]+)\s*>\s*$/);
+        if (m) return { email: (m[2] || '').trim(), name: (m[1] || '').trim() || null };
+        return { email: s, name: null };
+    }
 
     function openReplyModalFromBtn(btn) {
         try {
@@ -812,58 +839,99 @@
 
     function openReplyModal(ctx) {
         _replyCtx = ctx;
-        const modal = document.getElementById('replyEmailModal');
-        if (!modal) {
+        _replyAttachments = [];
+        const parsed = parseEmailAddress(ctx.toEmail);
+        ctx._toEmailPure = parsed.email;
+        ctx._toName = parsed.name;
+
+        if (!document.getElementById('replyEmailModal')) {
             buildReplyModal();
         }
+
         const subj = ctx.subject && ctx.subject.toLowerCase().startsWith('re:')
             ? ctx.subject
             : (ctx.subject ? `Re: ${ctx.subject}` : '');
-        document.getElementById('replyToEmail').value = ctx.toEmail || '';
+        const displayTo = parsed.name
+            ? `${parsed.name} <${parsed.email}>`
+            : parsed.email;
+        document.getElementById('replyToEmail').value = displayTo;
         document.getElementById('replySubject').value = subj;
-        document.getElementById('replyBody').value = '';
-        const quote = ctx.replySnippet
-            ? `\n\n-----\nOn earlier reply, ${ctx.toEmail} wrote:\n> ${ctx.replySnippet.replace(/\n/g, '\n> ')}`
-            : '';
-        document.getElementById('replyQuotedPreview').textContent = quote.trim();
+
+        // Rich-text editor — lazy-init once, then clear between opens so we
+        // don't leak the previous draft. Quill is already loaded at page level
+        // (same version PMS/News use), so this is a cheap handoff.
+        const editorHost = document.getElementById('replyBodyEditor');
+        if (!_replyQuill) {
+            _replyQuill = new Quill(editorHost, {
+                theme: 'snow',
+                placeholder: 'Type your reply…',
+                modules: {
+                    toolbar: [
+                        [{ header: [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ list: 'ordered' }, { list: 'bullet' }],
+                        [{ color: [] }, { background: [] }],
+                        ['link', 'blockquote', 'code-block'],
+                        ['clean']
+                    ]
+                }
+            });
+        }
+        _replyQuill.setContents([]);
+
+        renderReplyAttachments();
+        renderReplyQuotedPreview(ctx);
+        document.getElementById('replyModalError').style.display = 'none';
         document.getElementById('replyEmailModal').classList.add('active');
-        setTimeout(() => document.getElementById('replyBody').focus(), 50);
+        setTimeout(() => _replyQuill && _replyQuill.focus(), 80);
     }
 
     function closeReplyModal() {
         const modal = document.getElementById('replyEmailModal');
         if (modal) modal.classList.remove('active');
         _replyCtx = null;
+        _replyAttachments = [];
     }
 
     function buildReplyModal() {
-        // Reuse the glassmorphic-modal + gm-overlay style used across CRM
-        // settings modals. Built lazily on first open so this file doesn't
-        // inflate the HTML templates of every page that includes it.
         const overlay = document.createElement('div');
         overlay.id = 'replyEmailModal';
         overlay.className = 'gm-overlay';
         overlay.innerHTML = `
-            <div class="gm-modal" style="max-width:640px;width:92vw;">
+            <div class="gm-modal reply-modal">
                 <div class="gm-header">
                     <h3>Reply</h3>
                     <button class="gm-close" onclick="closeReplyModal()">&times;</button>
                 </div>
-                <div class="gm-body">
+                <div class="gm-body reply-modal-body">
                     <div class="crm-alert crm-alert-error" id="replyModalError" style="display:none;"></div>
                     <div class="crm-form-group">
                         <label for="replyToEmail">To</label>
-                        <input type="email" class="form-control" id="replyToEmail" readonly>
+                        <input type="text" class="form-control" id="replyToEmail" readonly>
                     </div>
                     <div class="crm-form-group">
                         <label for="replySubject">Subject</label>
                         <input type="text" class="form-control" id="replySubject">
                     </div>
                     <div class="crm-form-group">
-                        <label for="replyBody">Message</label>
-                        <textarea class="form-control" id="replyBody" rows="8" placeholder="Type your reply…"></textarea>
+                        <label>Message</label>
+                        <div id="replyBodyEditor" class="reply-editor"></div>
                     </div>
-                    <pre id="replyQuotedPreview" style="font-size:0.75rem;color:var(--text-secondary);white-space:pre-wrap;margin:0;max-height:120px;overflow:auto;"></pre>
+                    <div class="crm-form-group">
+                        <label>Attachments <span class="reply-attach-hint">(max 20 files, 10 MB each, 20 MB total)</span></label>
+                        <div class="reply-attach-row">
+                            <label class="btn btn-sm btn-secondary reply-attach-btn">
+                                <input type="file" id="replyAttachInput" multiple style="display:none;" onchange="onReplyAttachChange(event)">
+                                + Add files
+                            </label>
+                            <span id="replyAttachSummary" class="reply-attach-summary"></span>
+                        </div>
+                        <div id="replyAttachList" class="reply-attach-list"></div>
+                    </div>
+                    <details class="reply-quoted-details">
+                        <summary>Show quoted original</summary>
+                        <pre id="replyQuotedPreview" class="reply-quoted-pre"></pre>
+                    </details>
                 </div>
                 <div class="gm-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeReplyModal()">Cancel</button>
@@ -873,6 +941,105 @@
         document.body.appendChild(overlay);
     }
 
+    function renderReplyQuotedPreview(ctx) {
+        const pre = document.getElementById('replyQuotedPreview');
+        if (!pre) return;
+        if (!ctx.replySnippet) {
+            pre.textContent = '';
+            return;
+        }
+        const who = ctx._toName
+            ? `${ctx._toName} <${ctx._toEmailPure}>`
+            : ctx._toEmailPure;
+        pre.textContent = `On earlier reply, ${who} wrote:\n> ${String(ctx.replySnippet).replace(/\n/g, '\n> ')}`;
+    }
+
+    function onReplyAttachChange(ev) {
+        const files = Array.from(ev.target.files || []);
+        const errs = [];
+        const totalExisting = _replyAttachments.reduce((n, a) => n + a.size, 0);
+        let runningTotal = totalExisting;
+
+        // Promise per-file so base64 encoding happens off the main thread
+        const promises = [];
+        for (const f of files) {
+            if (_replyAttachments.length + promises.length >= REPLY_MAX_ATTACH_COUNT) {
+                errs.push(`Max ${REPLY_MAX_ATTACH_COUNT} files total`);
+                break;
+            }
+            const extMatch = f.name.match(/\.[^./\\]+$/);
+            const ext = extMatch ? extMatch[0].toLowerCase() : '';
+            if (REPLY_FORBIDDEN_EXT.has(ext)) {
+                errs.push(`"${f.name}": extension ${ext} is blocked by Gmail/M365`);
+                continue;
+            }
+            if (f.size > REPLY_MAX_PER_FILE) {
+                errs.push(`"${f.name}": ${(f.size/1024/1024).toFixed(1)} MB exceeds 10 MB per-file cap`);
+                continue;
+            }
+            runningTotal += f.size;
+            if (runningTotal > REPLY_MAX_TOTAL) {
+                errs.push(`"${f.name}": would exceed 20 MB total cap`);
+                runningTotal -= f.size;
+                continue;
+            }
+            promises.push(new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    // FileReader.result is a data: URL; strip the prefix.
+                    const dataUrl = String(reader.result || '');
+                    const comma = dataUrl.indexOf(',');
+                    const base64 = comma >= 0 ? dataUrl.substring(comma + 1) : '';
+                    resolve({ name: f.name, size: f.size, type: f.type || 'application/octet-stream', base64 });
+                };
+                reader.onerror = () => reject(reader.error || new Error('read failed'));
+                reader.readAsDataURL(f);
+            }));
+        }
+
+        // Reset the input so the same file can be re-selected after removal
+        ev.target.value = '';
+
+        Promise.all(promises).then(list => {
+            _replyAttachments.push(...list);
+            renderReplyAttachments();
+            if (errs.length) {
+                const el = document.getElementById('replyModalError');
+                el.textContent = errs.join(' · ');
+                el.style.display = 'block';
+            }
+        }).catch(err => {
+            const el = document.getElementById('replyModalError');
+            el.textContent = 'Attachment read failed: ' + (err.message || err);
+            el.style.display = 'block';
+        });
+    }
+
+    function removeReplyAttachment(idx) {
+        _replyAttachments.splice(idx, 1);
+        renderReplyAttachments();
+    }
+
+    function renderReplyAttachments() {
+        const list = document.getElementById('replyAttachList');
+        const summary = document.getElementById('replyAttachSummary');
+        if (!list || !summary) return;
+        if (_replyAttachments.length === 0) {
+            list.innerHTML = '';
+            summary.textContent = 'No files attached';
+            return;
+        }
+        const total = _replyAttachments.reduce((n, a) => n + a.size, 0);
+        summary.textContent = `${_replyAttachments.length} file${_replyAttachments.length === 1 ? '' : 's'} · ${(total/1024/1024).toFixed(2)} MB`;
+        list.innerHTML = _replyAttachments.map((a, i) => `
+            <div class="reply-attach-item">
+                <span class="reply-attach-name" title="${esc(a.name)}">${esc(a.name)}</span>
+                <span class="reply-attach-size">${(a.size/1024).toFixed(0)} KB</span>
+                <button class="reply-attach-remove" onclick="removeReplyAttachment(${i})" title="Remove">&times;</button>
+            </div>
+        `).join('');
+    }
+
     async function submitReply() {
         if (!_replyCtx) return;
         const btn = document.getElementById('replySendBtn');
@@ -880,32 +1047,59 @@
         errEl.style.display = 'none';
 
         const subject = document.getElementById('replySubject').value.trim();
-        const body = document.getElementById('replyBody').value.trim();
-        if (!body) {
+        const toEmail = _replyCtx._toEmailPure;
+        if (!toEmail) {
+            errEl.textContent = 'Recipient email is missing.';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        // Extract both HTML and plain text from Quill. Backend sends as
+        // multipart/alternative so recipient clients that can't render HTML
+        // still see something readable.
+        const bodyHtml = _replyQuill ? _replyQuill.root.innerHTML : '';
+        const bodyText = _replyQuill ? _replyQuill.getText().trim() : '';
+        if (!bodyText) {
             errEl.textContent = 'Message body is required.';
             errEl.style.display = 'block';
             return;
         }
 
-        // Stitch the user's new message with a quoted snippet of the prior
-        // reply so recipients can see context even in mail clients that
-        // don't collapse threads.
-        const quote = _replyCtx.replySnippet
-            ? `\n\n-----\n> ${String(_replyCtx.replySnippet).replace(/\n/g, '\n> ')}`
-            : '';
+        // Stitch quoted original so recipients have context in clients that
+        // don't collapse threads. We add to the HTML via <blockquote>, and to
+        // the text body with the classic "> " prefix.
+        let finalHtml = bodyHtml;
+        let finalText = bodyText;
+        if (_replyCtx.replySnippet) {
+            const who = _replyCtx._toName
+                ? `${_replyCtx._toName} &lt;${esc(_replyCtx._toEmailPure)}&gt;`
+                : esc(_replyCtx._toEmailPure);
+            const snippetEscHtml = esc(_replyCtx.replySnippet).replace(/\n/g, '<br>');
+            finalHtml += `<br><hr><p style="color:#6b7280;font-size:0.9em;">On earlier reply, ${who} wrote:</p><blockquote style="border-left:3px solid #e5e7eb;padding-left:10px;color:#6b7280;">${snippetEscHtml}</blockquote>`;
+            const quoteTxt = String(_replyCtx.replySnippet).replace(/\n/g, '\n> ');
+            finalText += `\n\n-----\n> ${quoteTxt}`;
+        }
 
         btn.disabled = true;
         btn.textContent = 'Sending…';
         try {
             const leadId = window._leadDetailId;
+            const attachments = _replyAttachments.map(a => ({
+                file_name: a.name,
+                mime_type: a.type || 'application/octet-stream',
+                content_base64: a.base64
+            }));
             await api.request(`/mailbox-send/${_replyCtx.mailboxId}/send`, {
                 method: 'POST',
                 body: JSON.stringify({
-                    to_email: _replyCtx.toEmail,
+                    to_email: toEmail,
+                    to_name: _replyCtx._toName || undefined,
                     subject: subject || 'Re:',
-                    body_text: body + quote,
+                    body_html: finalHtml,
+                    body_text: finalText,
                     in_reply_to: _replyCtx.inReplyTo || undefined,
                     lead_id: leadId || undefined,
+                    attachments: attachments.length ? attachments : undefined,
                 }),
             });
             Toast.success('Reply sent');
@@ -947,4 +1141,6 @@
     window.openReplyModal = openReplyModal;
     window.closeReplyModal = closeReplyModal;
     window.submitReply = submitReply;
+    window.onReplyAttachChange = onReplyAttachChange;
+    window.removeReplyAttachment = removeReplyAttachment;
 })();

@@ -42,6 +42,12 @@
         if (select.multiple) return false;
         if (select.size && Number(select.size) > 1) return false;
         if (select.closest('.searchable-dropdown')) return false;
+        // Quill rich-text toolbar builds its own <select>s for header / font /
+        // size / color / align. Converting them kills the editor. Same story
+        // for any future 3rd-party toolbar that marks itself with a known
+        // class — we whitelist a couple of common ones here.
+        if (select.closest('.ql-toolbar')) return false;
+        if (select.closest('[data-rich-toolbar]')) return false;
         // Hidden selects we leave alone — usually they're driven by some other
         // widget already, or not meant to be user-facing.
         if (select.type === 'hidden') return false;
