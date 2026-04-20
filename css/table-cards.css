@@ -11,7 +11,12 @@
  * .data-table-container > .data-table markup.
  */
 
-@media (max-width: 768px) {
+/* screen-only: without the `screen` media-type the browser applies
+   this rule to print media too (A4 portrait is < 768 CSS-px on most
+   printers), breaking Reports & Analytics print output — every row
+   renders as a stacked label/value list instead of a table.
+   Bug: RAG-71. */
+@media screen and (max-width: 768px) {
 
     /* ── Container reset ── */
     .data-table-container {

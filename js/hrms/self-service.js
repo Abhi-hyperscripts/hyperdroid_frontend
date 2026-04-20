@@ -3223,14 +3223,25 @@ async function showApplyLeaveModal() {
  * Calculate leave days using backend API (considers weekends, holidays, shift rosters)
  */
 async function calculateLeaveDays() {
-    const fromDate = document.getElementById('fromDate')?.value;
-    const toDate = document.getElementById('toDate')?.value;
+    const fromEl = document.getElementById('fromDate');
+    const toEl = document.getElementById('toDate');
+    const fromDate = fromEl?.value;
+    let toDate = toEl?.value;
     const halfDay = (halfDayDropdown ? halfDayDropdown.getValue() : document.getElementById('halfDay')?.value) || '';
     const leaveDaysEl = document.getElementById('leaveDays');
 
     if (!fromDate || !toDate || !leaveDaysEl) {
         if (leaveDaysEl) leaveDaysEl.value = '0';
         return;
+    }
+
+    // Half-day is single-day by definition. If the user picks first/second
+    // half while a multi-day range is set, snap To-Date to From-Date so
+    // the form always stays internally consistent and matches backend
+    // validation (which rejects half_day with start != end — RAG-78).
+    if (halfDay && (halfDay === 'first_half' || halfDay === 'second_half') && fromDate !== toDate) {
+        if (toEl) toEl.value = fromDate;
+        toDate = fromDate;
     }
 
     const from = new Date(fromDate);
@@ -3318,6 +3329,17 @@ async function submitLeaveApplication() {
             return;
         }
 
+        // Half-day is single-day only. If the user picked first/second
+        // half but left a multi-day range, block early with a clear
+        // message instead of letting the backend return "Data validation
+        // failed" (RAG-78). calculateLeaveDays() auto-snaps To-Date so
+        // this usually never fires, but it's a defence in depth.
+        const isHalfPicked = halfDay === 'first_half' || halfDay === 'second_half';
+        if (isHalfPicked && fromDate !== toDate) {
+            showToast('Half-day leave must start and end on the same date.', 'error');
+            return;
+        }
+
         // v3.0.55: Fixed field names to match backend (start_date, end_date)
         await api.request('/hrms/leave/requests', {
             method: 'POST',
@@ -3326,8 +3348,8 @@ async function submitLeaveApplication() {
                 start_date: fromDate,
                 end_date: toDate,
                 reason,
-                is_half_day: halfDay === 'first_half' || halfDay === 'second_half' ? true : false,
-                half_day_type: halfDay || null
+                is_half_day: isHalfPicked && fromDate === toDate,
+                half_day_type: isHalfPicked ? halfDay : null
             })
         });
 

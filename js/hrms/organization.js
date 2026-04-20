@@ -3248,6 +3248,24 @@ async function saveOffice() {
         const countryId = document.getElementById('officeCountryId').value;
         const stateId = document.getElementById('officeStateId').value;
 
+        // Mandatory: country + state (backend BusinessLayer_Offices.cs:40-47
+        // throws on missing values. Pre-check here gives a clear field-level
+        // message instead of a generic backend error. RAG-75.)
+        if (!countryId) {
+            hideLoading();
+            showToast('Country is required.', 'error');
+            const trigger = document.getElementById('countryTrigger');
+            if (trigger) trigger.focus();
+            return;
+        }
+        if (!stateId) {
+            hideLoading();
+            showToast('State is required for regional tax calculations (PT, LWF, etc.).', 'error');
+            const trigger = document.getElementById('stateTrigger');
+            if (trigger) trigger.focus();
+            return;
+        }
+
         // Geofence validation: if enabled, lat/long/radius are required
         const enableGeofence = document.getElementById('officeEnableGeofence').checked;
         if (enableGeofence) {

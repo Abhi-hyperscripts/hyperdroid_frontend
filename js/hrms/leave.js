@@ -2407,23 +2407,136 @@ function renderTeamCalendar(year, month) {
         const leavesOnDay = getLeaveEntriesForDate(dateStr);
         const isWeekend = new Date(year, month - 1, day).getDay() === 0 || new Date(year, month - 1, day).getDay() === 6;
 
+        // Escape user data for safe embedding in HTML attribute values.
+        // Without this a single quote or angle bracket in a name would
+        // break the title attribute and open an XSS surface. RAG-76.
+        const makeTitle = (l) => escapeHtml(`${l.employee_name || 'Unknown'}: ${l.leave_type_name || 'Leave'} (${(l.status || 'pending').toLowerCase()})`);
+
         gridHtml += `
             <div class="calendar-day ${isWeekend ? 'weekend' : ''} ${leavesOnDay.length > 0 ? 'has-leaves' : ''}">
                 <div class="day-number">${day}</div>
                 <div class="day-leaves">
                     ${leavesOnDay.slice(0, 3).map(l => `
-                        <div class="leave-entry ${l.status?.toLowerCase()}" title="${l.employee_name}: ${l.leave_type_name}">
-                            <span class="leave-employee">${getInitials(l.employee_name)}</span>
+                        <div class="leave-entry ${(l.status || '').toLowerCase()}" title="${makeTitle(l)}">
+                            <span class="leave-employee">${escapeHtml(getInitials(l.employee_name))}</span>
                         </div>
                     `).join('')}
-                    ${leavesOnDay.length > 3 ? `<div class="leave-entry more">+${leavesOnDay.length - 3}</div>` : ''}
+                    ${leavesOnDay.length > 3 ? `<div class="leave-entry more" data-calendar-date="${dateStr}" role="button" tabindex="0" title="Show all ${leavesOnDay.length} employees on leave">+${leavesOnDay.length - 3}</div>` : ''}
                 </div>
             </div>
         `;
     }
 
     gridHtml += '</div>';
-    document.getElementById('calendarGrid').innerHTML = gridHtml;
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = gridHtml;
+
+    // Wire the +N overflow badges so clicking (or Enter/Space on keyboard)
+    // opens a popover listing every employee on leave that day. RAG-76:
+    // previously the badge was visual-only and the user had no way to see
+    // the overflow list.
+    grid.querySelectorAll('.leave-entry.more').forEach(el => {
+        const handler = (e) => {
+            e.stopPropagation();
+            showTeamCalendarDayPopover(el, el.dataset.calendarDate);
+        };
+        el.addEventListener('click', handler);
+        el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handler(e); }
+        });
+    });
+}
+
+// Popover that lists every leave entry for a given calendar day.
+// Used by the +N overflow badge on Team Calendar (RAG-76). Single
+// reusable element positioned under the clicked badge; closes on
+// outside-click or Escape.
+let _teamCalendarPopoverEl = null;
+function showTeamCalendarDayPopover(anchor, dateStr) {
+    if (!dateStr) return;
+    const leaves = getLeaveEntriesForDate(dateStr);
+    if (leaves.length === 0) return;
+
+    // Lazily create the popover container once, then reuse.
+    if (!_teamCalendarPopoverEl) {
+        _teamCalendarPopoverEl = document.createElement('div');
+        _teamCalendarPopoverEl.className = 'team-calendar-day-popover';
+        document.body.appendChild(_teamCalendarPopoverEl);
+
+        // Global close handlers — attached once.
+        document.addEventListener('click', (e) => {
+            if (_teamCalendarPopoverEl &&
+                _teamCalendarPopoverEl.style.display !== 'none' &&
+                !_teamCalendarPopoverEl.contains(e.target) &&
+                !e.target.closest?.('.leave-entry.more')) {
+                hideTeamCalendarDayPopover();
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') hideTeamCalendarDayPopover();
+        });
+    }
+
+    const dateObj = new Date(dateStr);
+    const headerLabel = dateObj.toLocaleDateString(undefined, {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    const rowsHtml = leaves.map(l => {
+        const status = (l.status || 'pending').toLowerCase();
+        const initials = escapeHtml(getInitials(l.employee_name));
+        const name = escapeHtml(l.employee_name || 'Unknown');
+        const type = escapeHtml(l.leave_type_name || 'Leave');
+        const period = (l.start_date && l.end_date && l.start_date !== l.end_date)
+            ? ` · ${escapeHtml(l.start_date)} → ${escapeHtml(l.end_date)}`
+            : '';
+        return `
+            <li class="tcal-popover-row">
+                <span class="tcal-popover-avatar ${status}">${initials}</span>
+                <span class="tcal-popover-body">
+                    <span class="tcal-popover-name">${name}</span>
+                    <span class="tcal-popover-meta">${type}<span class="tcal-popover-status ${status}">${escapeHtml(status)}</span>${period}</span>
+                </span>
+            </li>`;
+    }).join('');
+
+    _teamCalendarPopoverEl.innerHTML = `
+        <div class="tcal-popover-header">
+            <strong>${escapeHtml(headerLabel)}</strong>
+            <span class="tcal-popover-count">${leaves.length} on leave</span>
+            <button type="button" class="tcal-popover-close" aria-label="Close">&times;</button>
+        </div>
+        <ul class="tcal-popover-list">${rowsHtml}</ul>`;
+
+    _teamCalendarPopoverEl.querySelector('.tcal-popover-close').onclick = hideTeamCalendarDayPopover;
+
+    // Position: anchor under the clicked badge, clamped to viewport.
+    // Uses position: fixed (viewport-relative), so no scroll offset math.
+    // Inline setProperty with !important because body.dashboard > :not(...) in
+    // styles.css globally forces position: relative on direct body children.
+    const rect = anchor.getBoundingClientRect();
+    const popover = _teamCalendarPopoverEl;
+    popover.style.setProperty('position', 'fixed', 'important');
+    popover.style.display = 'flex';
+    popover.style.visibility = 'hidden';
+    requestAnimationFrame(() => {
+        const pw = popover.offsetWidth;
+        const ph = popover.offsetHeight;
+        let left = rect.left;
+        let top  = rect.bottom + 6;
+        if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+        if (left < 8) left = 8;
+        if (top + ph > window.innerHeight - 8 && rect.top - ph - 6 > 0) {
+            top = rect.top - ph - 6;
+        }
+        popover.style.left = `${left}px`;
+        popover.style.top  = `${top}px`;
+        popover.style.visibility = 'visible';
+    });
+}
+
+function hideTeamCalendarDayPopover() {
+    if (_teamCalendarPopoverEl) _teamCalendarPopoverEl.style.display = 'none';
 }
 
 function getLeaveEntriesForDate(dateStr) {
