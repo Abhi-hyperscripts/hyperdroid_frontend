@@ -62,16 +62,10 @@ body.email-page .email-shell {
     body.email-page .email-settings {
         margin-top: 12px;
     }
-    /* The drawer rail is position:fixed and needs to anchor to the navbar
-       bottom, but since navbar is no longer fixed, the drawer should pin
-       to the top of the viewport INSIDE the shell. Reset `top` so it
-       spans the shell area only (navbar stays above in flow). */
-    body.email-page .email-rail {
-        top: 0 !important;
-    }
-    .email-rail-backdrop {
-        top: 0 !important;
-    }
+    /* Drawer stays anchored below the navbar. Even on mobile where the
+       navbar is position:relative (in flow), `position: fixed` children
+       are still positioned relative to the viewport — so `top: 0` would
+       drop the drawer on top of the navbar. Keep it at navbar height. */
 }
 
 /* ---------- Left rail: mailbox + folder tree ---------------------------- */
