@@ -2181,10 +2181,27 @@ body.crm-dashboard .crm-container {
 
     .crm-filter-bar {
         flex-direction: column;
+        /* Desktop aligns to flex-end (labels baseline); on mobile that would
+           push every stacked child to the right gutter. Reset to stretch so
+           filter groups fill the column width. */
+        align-items: stretch;
     }
 
-    .crm-filter-group {
-        min-width: 100%;
+    /* Win specificity against `.crm-filter-bar .crm-filter-group { min-width: 160px }`
+       which otherwise keeps groups narrow and lets align-items: flex-end push them right. */
+    .crm-filter-bar .crm-filter-group {
+        min-width: 0;
+        width: 100%;
+    }
+
+    /* The Report-Issue wrapper uses inline align-self: flex-end for desktop;
+       stretch it and make the button full-width on mobile so it doesn't pin right. */
+    .crm-filter-bar > div[style*="align-self"] {
+        align-self: stretch !important;
+        margin-left: 0 !important;
+    }
+    .crm-filter-bar > div[style*="align-self"] .btn {
+        width: 100%;
     }
 
     .crm-table-wrapper {
