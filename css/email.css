@@ -44,10 +44,34 @@ body.email-page .email-shell {
     grid-template-columns: var(--email-rail-w) var(--email-list-w) 1fr;
     gap: 0;
     height: calc(100vh - var(--email-navbar-h));
+    /* Desktop navbar is position:fixed so we need to clear its footprint
+       with margin-top. On mobile (<=768px) styles.css switches the navbar
+       to position:relative — it takes flow space there, so the margin-top
+       override below zeroes this out to prevent a double-gap. */
     margin-top: var(--email-navbar-h);
     overflow: hidden;
     background: var(--bg-body);
     border-top: 1px solid var(--email-divider);
+}
+
+/* Mobile: navbar is position:relative (taken from flow), so no margin-top */
+@media (max-width: 768px) {
+    body.email-page .email-shell {
+        margin-top: 0;
+    }
+    body.email-page .email-settings {
+        margin-top: 12px;
+    }
+    /* The drawer rail is position:fixed and needs to anchor to the navbar
+       bottom, but since navbar is no longer fixed, the drawer should pin
+       to the top of the viewport INSIDE the shell. Reset `top` so it
+       spans the shell area only (navbar stays above in flow). */
+    body.email-page .email-rail {
+        top: 0 !important;
+    }
+    .email-rail-backdrop {
+        top: 0 !important;
+    }
 }
 
 /* ---------- Left rail: mailbox + folder tree ---------------------------- */
