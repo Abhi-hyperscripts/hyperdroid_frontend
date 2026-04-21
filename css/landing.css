@@ -2870,17 +2870,27 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .landing-footer {
-    padding: 48px 60px;
+    padding: 40px 60px 28px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.footer-top {
+    display: flex;
+    align-items: flex-start;
     justify-content: space-between;
+    gap: 40px;
+    width: 100%;
+    flex-wrap: wrap;
 }
 
 .footer-brand {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-shrink: 0;
 }
 
 .footer-logo {
@@ -2897,9 +2907,26 @@
     letter-spacing: 0.02em;
 }
 
+.footer-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: flex-end;
+    flex: 1;
+    min-width: 0;
+}
+
 .footer-links {
     display: flex;
-    gap: 32px;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    justify-content: flex-end;
+}
+
+.footer-links-utility {
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    width: 100%;
 }
 
 .footer-link {
@@ -2907,6 +2934,11 @@
     text-decoration: none;
     font-size: var(--font-size-sm);
     transition: var(--transition-colors);
+}
+
+.footer-links-utility .footer-link {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: var(--font-size-xs, 12px);
 }
 
 .footer-link:hover {
@@ -2917,6 +2949,9 @@
     font-size: var(--font-size-sm);
     color: rgba(255, 255, 255, 0.4);
     margin: 0;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    text-align: center;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -3316,24 +3351,33 @@
     }
 
     .landing-footer {
+        padding: 32px 24px 20px;
+    }
+
+    .footer-top {
         flex-direction: column;
+        align-items: center;
         gap: 24px;
-        text-align: center;
-        padding: 32px 24px;
     }
 
     .footer-brand {
         flex-direction: column;
         gap: 4px;
+        align-items: center;
     }
 
     .pronunciation-guide {
         margin-left: 0;
     }
 
+    .footer-nav {
+        align-items: center;
+        width: 100%;
+    }
+
     .footer-links {
-        flex-wrap: wrap;
         justify-content: center;
+        gap: 8px 20px;
     }
 }
 

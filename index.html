@@ -5,8 +5,8 @@
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ragenaizer — One Platform for Every Business Tool | Video, Email, Chat, Drive, CRM, HR & Accounts in One Login</title>
-    <meta name="description" content="Stop paying 10 vendors for 1 business. Ragenaizer replaces your scattered SaaS stack — meetings, email, chat, drive, CRM, HR, accounts and projects — under one login, one subscription, one invoice. Runs on your servers or ours. No vendor lock-in.">
+    <title>Ragenaizer — One Platform for Every Business Tool | Meetings, Email, Chat, Drive, CRM, HR & Accounts Under One Login</title>
+    <meta name="description" content="Your business runs on 10 apps. None of them talk to each other. Ragenaizer replaces the scattered SaaS stack — meetings, email, chat, drive, CRM, HR, accounts, projects — with one platform where everything actually connects. Smaller software bill, shorter vendor list, fewer renewal headaches. No vendor lock-in.">
 
     <!-- SEO Meta Tags -->
     <meta name="keywords" content="all-in-one business software, unified workspace platform, enterprise collaboration software, video conferencing software, zoom alternative, microsoft teams alternative, team messaging app, business chat software, cloud storage for business, secure file sharing, HRMS software, payroll software, automated payroll processing, attendance tracking software, leave management system, project management software, time tracking software, client billing software, timesheet management, remote team collaboration tools, digital workplace solution, work from home software, best video conferencing for remote teams, HRMS with payroll software, employee self-service portal, statutory compliance software">
@@ -19,8 +19,8 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Ragenaizer">
     <meta property="og:url" content="https://ragenaizer.com/">
-    <meta property="og:title" content="Stop paying 10 vendors for 1 business | Ragenaizer">
-    <meta property="og:description" content="One platform for every tool your team runs on. Meetings, email, chat, drive, CRM, HR, accounts, projects — one login, one bill. Self-hosted or cloud. No vendor lock-in.">
+    <meta property="og:title" content="Your business runs on 10 apps. None of them talk to each other. | Ragenaizer">
+    <meta property="og:description" content="Meetings, email, chat, drive, CRM, HR, accounts, projects — every tool your team opens every day, in one platform where everything actually connects. One login, one subscription, one invoice.">
     <meta property="og:image" content="https://ragenaizer.com/assets/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -29,8 +29,8 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@ragenaizer">
-    <meta name="twitter:title" content="Stop paying 10 vendors for 1 business — Ragenaizer">
-    <meta name="twitter:description" content="Every tool your team runs on, in one platform. One login, one bill. Runs on your servers or ours. No vendor lock-in, ever.">
+    <meta name="twitter:title" content="Your business runs on 10 apps. None of them talk to each other. — Ragenaizer">
+    <meta name="twitter:description" content="Every tool your team opens every day, in one platform where everything actually connects. One login, one subscription, one invoice. No vendor lock-in, ever.">
     <meta name="twitter:image" content="https://ragenaizer.com/assets/og-image.png">
 
     <!-- Additional SEO -->
@@ -166,9 +166,9 @@
             position: relative;
             z-index: 10;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 80px;
-            max-width: 1400px;
+            grid-template-columns: minmax(420px, 540px) 1fr;
+            gap: 48px;
+            max-width: 1500px;
             width: 100%;
             align-items: center;
             box-sizing: border-box;
@@ -307,7 +307,8 @@
         /* App window container */
         .hero-app-window {
             position: relative;
-            width: 620px;
+            width: 100%;
+            max-width: 880px;
             background: linear-gradient(135deg, rgba(15, 20, 35, 0.95) 0%, rgba(10, 15, 28, 0.98) 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
@@ -362,7 +363,7 @@
         /* App layout - sidebar + main */
         .app-layout {
             display: flex;
-            min-height: 340px;
+            min-height: 280px;
         }
 
         /* Sidebar */
@@ -440,22 +441,22 @@
             margin: 8px 0;
         }
 
-        /* Main content area */
+        /* Main content area - 5 cols x 2 rows fits all 10 product cards */
         .app-main {
             flex: 1;
-            padding: 16px 20px 16px 16px;
+            padding: 12px 14px;
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 6px;
         }
 
         /* Product preview cards */
         .preview-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 12px;
-            padding: 12px;
+            border-radius: 8px;
+            padding: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
@@ -554,29 +555,30 @@
         .preview-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
+            gap: 6px;
+            margin-bottom: 8px;
         }
 
         .preview-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(255, 255, 255, 0.05);
+            flex-shrink: 0;
         }
 
         .preview-icon svg {
-            width: 18px;
-            height: 18px;
+            width: 12px;
+            height: 12px;
             color: var(--accent);
         }
 
         .preview-title {
             font-family: 'Electrolize', sans-serif;
-            font-size: 13px;
+            font-size: 10px;
             font-weight: 400;
             color: #ffffff;
             text-transform: uppercase;
@@ -588,12 +590,12 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
             min-width: 0;
         }
 
         .preview-bar {
-            height: 6px;
+            height: 5px;
             background: rgba(255, 255, 255, 0.08);
             border-radius: 3px;
         }
@@ -743,10 +745,23 @@
         }
 
         /* Responsive */
+        @media (max-width: 1280px) {
+            /* Still 5 cols, just a tighter window */
+            .home-hero-inner {
+                grid-template-columns: minmax(380px, 460px) 1fr;
+                gap: 36px;
+            }
+
+            .hero-app-window {
+                max-width: 740px;
+            }
+        }
+
         @media (max-width: 1024px) {
+            /* Stack hero: text first, visual below. Drop to 4 cols × 3 rows. */
             .home-hero-inner {
                 grid-template-columns: 1fr;
-                gap: 60px;
+                gap: 56px;
                 text-align: center;
             }
 
@@ -772,16 +787,17 @@
             }
 
             .hero-app-window {
-                width: 520px;
+                width: 100%;
+                max-width: 820px;
                 margin: 0 auto;
             }
 
             .app-layout {
-                min-height: 300px;
+                min-height: 340px;
             }
 
             .app-main {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(4, 1fr);
                 grid-template-rows: repeat(3, 1fr);
             }
 
@@ -795,6 +811,22 @@
             }
         }
 
+        @media (max-width: 768px) {
+            /* 3 cols × 4 rows (last 2 cells empty is fine) */
+            .hero-app-window {
+                max-width: 580px;
+            }
+
+            .app-main {
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+            }
+
+            .app-layout {
+                min-height: 380px;
+            }
+        }
+
         @media (max-width: 600px) {
             .home-hero {
                 padding: 100px 24px 60px;
@@ -802,48 +834,56 @@
 
             .hero-app-window {
                 width: 100%;
-                max-width: 360px;
+                max-width: 420px;
             }
 
             .app-sidebar {
-                width: 50px;
-                padding: 12px 0;
+                width: 48px;
+                padding: 10px 0;
             }
 
             .sidebar-item {
-                width: 36px;
-                height: 36px;
+                width: 32px;
+                height: 32px;
             }
 
             .sidebar-item svg {
-                width: 18px;
-                height: 18px;
+                width: 16px;
+                height: 16px;
             }
 
             .app-main {
-                padding: 12px;
-                gap: 8px;
+                padding: 10px;
+                gap: 6px;
+                /* 2 cols × 5 rows — exactly 10 cards */
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(5, 1fr);
             }
 
             .preview-card {
-                padding: 12px;
+                padding: 8px;
             }
 
             .preview-header {
-                margin-bottom: 8px;
+                margin-bottom: 6px;
             }
 
             .preview-icon {
-                width: 28px;
-                height: 28px;
+                width: 22px;
+                height: 22px;
+            }
+
+            .preview-icon svg {
+                width: 12px;
+                height: 12px;
             }
 
             .preview-title {
-                font-size: 12px;
+                font-size: 10px;
             }
 
             .app-layout {
-                min-height: 260px;
+                min-height: 440px;
             }
 
             .home-trust {
@@ -1902,14 +1942,14 @@
             <div class="home-hero-text">
                 <div class="home-badge">The Business OS</div>
                 <h1 class="home-title">
-                    Stop paying 10 vendors<br>
-                    <span class="gradient-text">for 1 business.</span>
+                    Your business runs on 10 apps.<br>
+                    <span class="gradient-text">None of them talk to each other.</span>
                 </h1>
                 <p class="home-subtitle" style="font-size: 18px; color: var(--text-secondary); margin-bottom: 20px; max-width: 560px; line-height: 1.5;">
-                    One platform for every tool your team runs on — with your data on your servers if you want it there.
+                    Meetings, email, chat, drive, CRM, HR, accounts, projects — every tool your team opens every day, in one platform where everything actually connects.
                 </p>
                 <p class="home-description">
-                    Meetings, email, chat, drive, CRM, HR, accounts, projects — all under one login, one subscription, one invoice. Replace the scattered SaaS stack you pay for today with a single platform that runs on your servers or ours. No vendor lock-in, ever.
+                    One login. One subscription. One invoice. Smaller software bill, shorter vendor list, fewer renewal headaches. No vendor lock-in, ever.
                 </p>
                 <div class="home-cta">
                     <a href="pages/pricing.html" class="btn-primary">Start Free Trial</a>
@@ -2787,25 +2827,32 @@
 
     <!-- Footer -->
     <footer class="landing-footer">
-        <div class="footer-brand">
-            <img src="assets/brand_logo.png" alt="Ragenaizer" class="footer-logo" id="footerLogo" style="cursor: pointer;">
-            <span class="pronunciation-guide">(ray-gen-izer)</span>
-        </div>
-        <div class="footer-links">
-            <a href="pages/vision.html" class="footer-link">Vision</a>
-            <a href="pages/chat.html" class="footer-link">Chat</a>
-            <a href="pages/email.html" class="footer-link">Email</a>
-            <a href="pages/drive.html" class="footer-link">Drive</a>
-            <a href="pages/hrms.html" class="footer-link">HRMS</a>
-            <a href="pages/research.html" class="footer-link">Research</a>
-            <a href="pages/crm.html" class="footer-link">CRM</a>
-            <a href="pages/pms.html" class="footer-link">PMS</a>
-            <a href="pages/accounts.html" class="footer-link">Accounts</a>
-            <a href="pages/lms.html" class="footer-link">LMS</a>
-            <a href="pages/login.html" class="footer-link">Sign In</a>
-            <a href="pages/terms.html" class="footer-link">Terms</a>
-            <a href="pages/privacy.html" class="footer-link">Privacy</a>
-            <a href="pages/refund.html" class="footer-link">Refund Policy</a>
+        <div class="footer-top">
+            <div class="footer-brand">
+                <img src="assets/brand_logo.png" alt="Ragenaizer" class="footer-logo" id="footerLogo" style="cursor: pointer;">
+                <span class="pronunciation-guide">(ray-gen-izer)</span>
+            </div>
+            <div class="footer-nav">
+                <div class="footer-links footer-links-products">
+                    <a href="pages/vision.html" class="footer-link">Vision</a>
+                    <a href="pages/chat.html" class="footer-link">Chat</a>
+                    <a href="pages/email.html" class="footer-link">Email</a>
+                    <a href="pages/drive.html" class="footer-link">Drive</a>
+                    <a href="pages/hrms.html" class="footer-link">HRMS</a>
+                    <a href="pages/research.html" class="footer-link">Research</a>
+                    <a href="pages/crm.html" class="footer-link">CRM</a>
+                    <a href="pages/pms.html" class="footer-link">PMS</a>
+                    <a href="pages/accounts.html" class="footer-link">Accounts</a>
+                    <a href="pages/lms.html" class="footer-link">LMS</a>
+                </div>
+                <div class="footer-links footer-links-utility">
+                    <a href="pages/login.html" class="footer-link">Sign In</a>
+                    <a href="pages/pricing.html" class="footer-link">Pricing</a>
+                    <a href="pages/terms.html" class="footer-link">Terms</a>
+                    <a href="pages/privacy.html" class="footer-link">Privacy</a>
+                    <a href="pages/refund.html" class="footer-link">Refund Policy</a>
+                </div>
+            </div>
         </div>
         <p class="footer-copy">&copy; 2026 Ragenaizer. All rights reserved.</p>
     </footer>

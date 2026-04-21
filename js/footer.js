@@ -9,25 +9,32 @@ const FooterComponent = {
     getHTML: function() {
         return `
     <footer class="landing-footer">
-        <div class="footer-brand">
-            <img src="/assets/brand_logo.png" alt="Ragenaizer" class="footer-logo" id="footerLogo" style="cursor: pointer;">
-            <span class="pronunciation-guide">(ray-gen-izer)</span>
-        </div>
-        <div class="footer-links">
-            <a href="/pages/vision.html" class="footer-link">Vision</a>
-            <a href="/pages/chat.html" class="footer-link">Chat</a>
-            <a href="/pages/email.html" class="footer-link">Email</a>
-            <a href="/pages/drive.html" class="footer-link">Drive</a>
-            <a href="/pages/hrms.html" class="footer-link">HRMS</a>
-            <a href="/pages/research.html" class="footer-link">Research</a>
-            <a href="/pages/crm.html" class="footer-link">CRM</a>
-            <a href="/pages/pms.html" class="footer-link">PMS</a>
-            <a href="/pages/accounts.html" class="footer-link">Accounts</a>
-            <a href="/pages/lms.html" class="footer-link">LMS</a>
-            <a href="/pages/login.html" class="footer-link">Sign In</a>
-            <a href="/pages/terms.html" class="footer-link">Terms</a>
-            <a href="/pages/privacy.html" class="footer-link">Privacy</a>
-            <a href="/pages/refund.html" class="footer-link">Refund Policy</a>
+        <div class="footer-top">
+            <div class="footer-brand">
+                <img src="/assets/brand_logo.png" alt="Ragenaizer" class="footer-logo" id="footerLogo" style="cursor: pointer;">
+                <span class="pronunciation-guide">(ray-gen-izer)</span>
+            </div>
+            <div class="footer-nav">
+                <div class="footer-links footer-links-products">
+                    <a href="/pages/vision.html" class="footer-link">Vision</a>
+                    <a href="/pages/chat.html" class="footer-link">Chat</a>
+                    <a href="/pages/email.html" class="footer-link">Email</a>
+                    <a href="/pages/drive.html" class="footer-link">Drive</a>
+                    <a href="/pages/hrms.html" class="footer-link">HRMS</a>
+                    <a href="/pages/research.html" class="footer-link">Research</a>
+                    <a href="/pages/crm.html" class="footer-link">CRM</a>
+                    <a href="/pages/pms.html" class="footer-link">PMS</a>
+                    <a href="/pages/accounts.html" class="footer-link">Accounts</a>
+                    <a href="/pages/lms.html" class="footer-link">LMS</a>
+                </div>
+                <div class="footer-links footer-links-utility">
+                    <a href="/pages/login.html" class="footer-link">Sign In</a>
+                    <a href="/pages/pricing.html" class="footer-link">Pricing</a>
+                    <a href="/pages/terms.html" class="footer-link">Terms</a>
+                    <a href="/pages/privacy.html" class="footer-link">Privacy</a>
+                    <a href="/pages/refund.html" class="footer-link">Refund Policy</a>
+                </div>
+            </div>
         </div>
         <p class="footer-copy">&copy; ${new Date().getFullYear()} Ragenaizer. All rights reserved.</p>
     </footer>`;
