@@ -10,6 +10,8 @@
  */
 
 // ==================== State ====================
+const PAGE_SIZE = 30;
+
 const State = {
     mailboxes: [],
     accountCollapse: {},            // mailbox_id → bool
@@ -18,6 +20,9 @@ const State = {
     selectedFolderId: null,
     selectedFolderType: 'inbox',
     messages: [],
+    totalCount: 0,                  // total on server
+    hasMore: false,                 // more pages remain
+    isLoadingMore: false,           // guard against duplicate fetches
     selectedMessageId: null,
     searchQuery: '',
     filter: 'focused',              // focused | other — Outlook UX
@@ -26,6 +31,10 @@ const State = {
     replyingTo: null,
     recipients: { to: [], cc: [], bcc: [] },
 };
+
+// Lives outside State so we can disconnect/reconnect the observer on each
+// render without serialization noise.
+let loadMoreObserver = null;
 
 // ==================== Bootstrap ====================
 
@@ -230,6 +239,8 @@ function renderAccountTree() {
         folders.forEach(f => {
             const row = document.createElement('div');
             row.className = 'email-folder-row';
+            row.dataset.mailboxId = mbx.id;
+            row.dataset.folderId = f.id;
             if (f.id === State.selectedFolderId && mbx.id === State.selectedMailboxId) {
                 row.classList.add('active');
             }
@@ -262,25 +273,58 @@ function selectFolder(mailboxId, folderId, folderType, folderName) {
     renderAccountTree();
     loadMessages();
 
+    // INBOX is kept live via IMAP IDLE. Other folders (Sent/Drafts/Trash/Junk/
+    // Archive) only sync on the 25-min IDLE reconnect cycle, so trigger a
+    // one-shot fetch in the background and reload if new messages landed.
+    if (folderType && folderType !== 'inbox') {
+        syncFolderInBackground(mailboxId, folderId);
+    }
+
     // Close the mobile drawer + go back to list view on phone
     const shell = document.getElementById('emailShell');
     shell.classList.remove('show-rail');
     shell.classList.remove('show-read');
 }
 
+async function syncFolderInBackground(mailboxId, folderId) {
+    try {
+        const resp = await api.request(
+            `/email/mailboxes/${mailboxId}/folders/${folderId}/sync`,
+            { method: 'POST', _skipSpinner: true }
+        );
+        // Only reload if we're still viewing the same folder and new messages arrived.
+        if ((resp?.inserted || 0) > 0
+            && State.selectedMailboxId === mailboxId
+            && State.selectedFolderId === folderId) {
+            loadMessages();
+        }
+    } catch (err) {
+        // Non-fatal — stale cached messages are still shown.
+        console.warn('Folder sync failed', err);
+    }
+}
+
 // ==================== Messages ====================
 
 async function loadMessages() {
     if (!State.selectedMailboxId || !State.selectedFolderId) return;
+
+    // Reset pagination state whenever we load a new folder/search.
+    State.messages = [];
+    State.totalCount = 0;
+    State.hasMore = false;
+    State.isLoadingMore = false;
+    if (loadMoreObserver) { loadMoreObserver.disconnect(); loadMoreObserver = null; }
+
     const rows = document.getElementById('emailRows');
-    rows.innerHTML = skeletonRows(8);
+    rows.innerHTML = skeletonRows(6);
 
     try {
-        const url = `/email/messages?mailbox_id=${State.selectedMailboxId}&folder_id=${State.selectedFolderId}&limit=100&offset=0`;
-        const resp = await api.request(url);
+        const resp = await fetchMessagesPage(0, PAGE_SIZE);
         State.messages = Array.isArray(resp?.items) ? resp.items : [];
-        document.getElementById('folderCount').textContent =
-            State.messages.length ? `${State.messages.length} of ${resp.total || State.messages.length}` : '';
+        State.totalCount = resp?.total || State.messages.length;
+        State.hasMore = State.messages.length < State.totalCount;
+        updateFolderCount();
         renderMessages();
     } catch (err) {
         console.error('loadMessages failed', err);
@@ -288,9 +332,51 @@ async function loadMessages() {
     }
 }
 
+async function loadMoreMessages() {
+    if (State.isLoadingMore || !State.hasMore) return;
+    State.isLoadingMore = true;
+    try {
+        const resp = await fetchMessagesPage(State.messages.length, PAGE_SIZE);
+        const items = Array.isArray(resp?.items) ? resp.items : [];
+        if (items.length > 0) State.messages = State.messages.concat(items);
+        State.totalCount = resp?.total || State.totalCount;
+        State.hasMore = State.messages.length < State.totalCount && items.length > 0;
+        updateFolderCount();
+        renderMessages();
+    } catch (err) {
+        console.error('loadMoreMessages failed', err);
+        // Disable further attempts this session so we don't hammer on failure.
+        State.hasMore = false;
+    } finally {
+        State.isLoadingMore = false;
+    }
+}
+
+async function fetchMessagesPage(offset, limit) {
+    const url = `/email/messages?mailbox_id=${State.selectedMailboxId}`
+        + `&folder_id=${State.selectedFolderId}`
+        + `&limit=${limit}&offset=${offset}`;
+    // _skipSpinner: the list already shows its own skeleton (initial) or streams
+    // in silently (lazy scroll) — the global full-screen overlay would block UI
+    // for no reason and make the list feel sluggish on every scroll page.
+    return await api.request(url, { _skipSpinner: true });
+}
+
+function updateFolderCount() {
+    const el = document.getElementById('folderCount');
+    if (!el) return;
+    el.textContent = State.totalCount
+        ? `${State.messages.length} of ${State.totalCount}`
+        : '';
+}
+
 function refreshMessages() {
     Toast.info('Refreshing…');
     loadMessages();
+    if (State.selectedFolderType && State.selectedFolderType !== 'inbox'
+        && State.selectedMailboxId && State.selectedFolderId) {
+        syncFolderInBackground(State.selectedMailboxId, State.selectedFolderId);
+    }
 }
 
 function skeletonRows(n) {
@@ -360,11 +446,55 @@ function renderMessages() {
             html += renderRow(m);
         }
     }
+
+    // Sentinel at the bottom — triggers the next page via IntersectionObserver
+    // when it enters view. Only emitted while the server has more messages AND
+    // the user isn't filtering client-side (search / Other tab), because those
+    // can hide every row we load until a match lands and would fire the
+    // observer in a tight loop.
+    const serverSideList = !q && State.filter === 'focused';
+    if (State.hasMore && serverSideList) {
+        html += `
+            <div class="email-load-more" id="emailLoadMore">
+                <div class="email-skel-row" style="opacity:0.55;">
+                    <div class="skel-avatar"></div>
+                    <div class="skel-lines">
+                        <div class="skel-line w-60"></div>
+                        <div class="skel-line w-80"></div>
+                    </div>
+                </div>
+            </div>`;
+    }
+
     container.innerHTML = html;
 
     container.querySelectorAll('.email-row').forEach(row => {
         row.addEventListener('click', () => openMessage(row.dataset.messageId));
     });
+
+    attachLoadMoreObserver(container);
+}
+
+function attachLoadMoreObserver(container) {
+    if (loadMoreObserver) { loadMoreObserver.disconnect(); loadMoreObserver = null; }
+    const sentinel = document.getElementById('emailLoadMore');
+    if (!sentinel) return;
+
+    loadMoreObserver = new IntersectionObserver(entries => {
+        for (const e of entries) {
+            if (e.isIntersecting) {
+                loadMoreMessages();
+                break;
+            }
+        }
+    }, {
+        root: container,
+        // Pre-fetch: start loading ~400px before the sentinel scrolls into view
+        // so the next page is ready by the time the user gets there.
+        rootMargin: '400px 0px',
+        threshold: 0,
+    });
+    loadMoreObserver.observe(sentinel);
 }
 
 function renderRow(m) {
@@ -439,18 +569,19 @@ async function openMessage(messageId) {
 
     try {
         const [msg, attachments] = await Promise.all([
-            api.request(`/email/messages/${messageId}`),
-            api.request(`/email/messages/${messageId}/attachments`).catch(() => []),
+            api.request(`/email/messages/${messageId}`, { _skipSpinner: true }),
+            api.request(`/email/messages/${messageId}/attachments`, { _skipSpinner: true }).catch(() => []),
         ]);
         renderMessage(msg, attachments || []);
 
         if (!msg.is_read) {
-            api.request(`/email/messages/${messageId}/mark-read?read=true`, { method: 'POST' })
+            api.request(`/email/messages/${messageId}/mark-read?read=true`, { method: 'POST', _skipSpinner: true })
                 .then(() => {
                     const row = document.querySelector(`.email-row[data-message-id="${messageId}"]`);
                     if (row) row.classList.remove('unread');
                     const local = State.messages.find(m => m.id === messageId);
                     if (local) local.is_read = true;
+                    adjustFolderUnreadCount(State.selectedMailboxId, State.selectedFolderId, -1);
                 })
                 .catch(err => console.warn('mark-read failed', err));
         }
@@ -638,7 +769,7 @@ async function downloadAttachment(attId, filename) {
 
 async function showHeaders(messageId) {
     try {
-        const headers = await api.request(`/email/messages/${messageId}/headers`);
+        const headers = await api.request(`/email/messages/${messageId}/headers`, { _skipSpinner: true });
         const overlay = document.createElement('div');
         overlay.className = 'email-modal-overlay active';
         overlay.innerHTML = `
@@ -670,14 +801,50 @@ function formatHeaders(h) {
 
 async function toggleRead(messageId, isRead) {
     try {
-        await api.request(`/email/messages/${messageId}/mark-read?read=${isRead}`, { method: 'POST' });
-        Toast.success(isRead ? 'Marked as read' : 'Marked as unread');
         const local = State.messages.find(m => m.id === messageId);
+        const wasRead = !!local?.is_read;
+        await api.request(`/email/messages/${messageId}/mark-read?read=${isRead}`, { method: 'POST', _skipSpinner: true });
+        Toast.success(isRead ? 'Marked as read' : 'Marked as unread');
         if (local) local.is_read = isRead;
         const row = document.querySelector(`.email-row[data-message-id="${messageId}"]`);
         if (row) row.classList.toggle('unread', !isRead);
+        if (wasRead !== isRead) {
+            adjustFolderUnreadCount(State.selectedMailboxId, State.selectedFolderId, isRead ? -1 : +1);
+        }
     } catch (err) {
         Toast.error(`Failed: ${err.message}`);
+    }
+}
+
+/**
+ * Keep the sidebar unread badge in sync with reality as the user reads/flags
+ * messages. Server STATUS updates only land on the 25-min reconnect cycle, so
+ * without this optimistic update the badge lags behind visible state.
+ */
+function adjustFolderUnreadCount(mailboxId, folderId, delta) {
+    if (!mailboxId || !folderId || !delta) return;
+    const folders = State.foldersByMailbox[mailboxId];
+    if (!folders) return;
+    const folder = folders.find(f => f.id === folderId);
+    if (!folder) return;
+    folder.unread_count = Math.max(0, (folder.unread_count || 0) + delta);
+
+    // Patch the DOM in place — rerendering the whole tree would collapse accounts
+    // and lose scroll position. Look up the row via data attributes.
+    const row = document.querySelector(
+        `.email-folder-row[data-mailbox-id="${mailboxId}"][data-folder-id="${folderId}"]`
+    );
+    if (!row) return;
+    let badge = row.querySelector('.folder-count');
+    if (folder.unread_count > 0) {
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'folder-count';
+            row.appendChild(badge);
+        }
+        badge.textContent = folder.unread_count;
+    } else if (badge) {
+        badge.remove();
     }
 }
 

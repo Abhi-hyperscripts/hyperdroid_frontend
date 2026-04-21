@@ -395,6 +395,13 @@ body.email-page .email-list {
     padding: 0 0 8px;
 }
 
+.email-load-more {
+    padding: 4px 0 12px;
+}
+.email-load-more .email-skel-row {
+    border-bottom: none;
+}
+
 .email-date-separator {
     padding: 10px 16px 4px;
     font-size: 11px;
