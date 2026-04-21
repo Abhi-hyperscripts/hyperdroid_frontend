@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     wireComposeModal();
     wireKeyboardShortcuts();
+    wireMobileNav();
 
     // Re-parent the compose modal to <body> so no ancestor with transform/
     // filter/overflow can reposition it. Without this, styles.css's
@@ -66,6 +67,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await loadMailboxes();
 });
+
+// ==================== Mobile nav ====================
+
+function wireMobileNav() {
+    const shell = document.getElementById('emailShell');
+    const backdrop = document.getElementById('railBackdrop');
+
+    // Rail drawer toggle (menu button on list header)
+    const openRail = document.getElementById('btnOpenRail');
+    if (openRail) openRail.addEventListener('click', () => shell.classList.add('show-rail'));
+    if (backdrop) backdrop.addEventListener('click', () => shell.classList.remove('show-rail'));
+
+    // Close rail when a folder is picked (handled inside selectFolder below).
+
+    // New-email shortcut in mobile header
+    const compM = document.getElementById('btnComposeMobile');
+    if (compM) compM.addEventListener('click', () => openCompose('new'));
+}
+
+function isPhoneView() {
+    return window.matchMedia('(max-width: 720px)').matches;
+}
 
 // ==================== Keyboard shortcuts ====================
 
@@ -230,11 +253,19 @@ function selectFolder(mailboxId, folderId, folderType, folderName) {
     localStorage.setItem('email_last_mailbox', mailboxId);
     document.getElementById('composeFrom').value = mailboxId;
 
-    document.getElementById('folderTitle').textContent = prettyFolderName(folderName, folderType);
+    const pretty = prettyFolderName(folderName, folderType);
+    document.getElementById('folderTitle').textContent = pretty;
+    const mobileTitle = document.getElementById('mobileListTitle');
+    if (mobileTitle) mobileTitle.textContent = pretty;
     State.selectedMessageId = null;
     renderEmptyRead();
     renderAccountTree();
     loadMessages();
+
+    // Close the mobile drawer + go back to list view on phone
+    const shell = document.getElementById('emailShell');
+    shell.classList.remove('show-rail');
+    shell.classList.remove('show-read');
 }
 
 // ==================== Messages ====================
@@ -397,6 +428,9 @@ async function openMessage(messageId) {
         r.classList.toggle('active', r.dataset.messageId === messageId);
     });
 
+    // On phone, swap to the reading pane (single-pane layout)
+    document.getElementById('emailShell').classList.add('show-read');
+
     const readEmpty = document.getElementById('readEmpty');
     const readWrap = document.getElementById('readWrap');
     readEmpty.style.display = 'none';
@@ -450,6 +484,13 @@ function renderMessage(msg, attachments) {
     const realAttachments = attachments.filter(a => !a.is_inline);
 
     wrap.innerHTML = `
+        <!-- Phone-only back bar: returns the shell to list view -->
+        <div class="email-mobile-header">
+            <button id="btnBackToList" title="Back to list" aria-label="Back to list">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <span class="title">${escapeHtml(msg.subject || '(no subject)')}</span>
+        </div>
         <div class="email-read-toolbar">
             <button id="btnReply" class="primary" title="Reply (r)">
                 <svg viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
@@ -494,6 +535,12 @@ function renderMessage(msg, attachments) {
         </div>
     `;
 
+    const backBtn = wrap.querySelector('#btnBackToList');
+    if (backBtn) backBtn.addEventListener('click', () => {
+        document.getElementById('emailShell').classList.remove('show-read');
+        State.selectedMessageId = null;
+        document.querySelectorAll('.email-row').forEach(r => r.classList.remove('active'));
+    });
     wrap.querySelector('#btnReply').addEventListener('click', () => openCompose('reply', msg));
     wrap.querySelector('#btnReplyAll').addEventListener('click', () => openCompose('reply-all', msg));
     wrap.querySelector('#btnForward').addEventListener('click', () => openCompose('forward', msg));

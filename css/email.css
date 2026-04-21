@@ -1452,6 +1452,71 @@ body.email-page .email-read {
     border-radius: var(--border-radius-sm);
 }
 
+/* ---------- Mobile header bars (hidden on desktop) --------------------- */
+
+.email-mobile-header {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--email-divider);
+    background: var(--bg-card);
+    min-height: 48px;
+    flex-shrink: 0;
+}
+
+.email-mobile-header button {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.email-mobile-header button:hover,
+.email-mobile-header button:active {
+    background: var(--email-row-hover);
+}
+
+.email-mobile-header button svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+}
+
+.email-mobile-header .title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+/* Backdrop that appears behind the drawer rail on tablet/phone */
+.email-rail-backdrop {
+    display: none;
+    position: fixed;
+    top: var(--email-navbar-h);
+    left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 40;
+}
+
+.email-shell.show-rail .email-rail-backdrop {
+    display: block;
+}
+
 /* ---------- Responsive ------------------------------------------------- */
 
 @media (max-width: 1180px) {
@@ -1461,11 +1526,139 @@ body.email-page .email-read {
     }
 }
 
-@media (max-width: 960px) {
-    .email-shell {
-        grid-template-columns: 1fr;
+/* Tablet: rail becomes a slide-out drawer; list + reading stay side-by-side */
+@media (max-width: 1024px) {
+    body.email-page .email-shell {
+        grid-template-columns: var(--email-list-w) 1fr;
     }
-    .email-rail, .email-list { display: none; }
-    .email-shell.show-rail .email-rail { display: flex; }
-    .email-shell.show-list .email-list { display: flex; }
+    body.email-page .email-rail {
+        position: fixed;
+        top: var(--email-navbar-h);
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        z-index: 50;
+        transform: translateX(-100%);
+        transition: transform 0.22s ease;
+        box-shadow: var(--shadow-xl);
+        border-right: 1px solid var(--border-color);
+    }
+    body.email-page .email-shell.show-rail .email-rail {
+        transform: translateX(0);
+    }
+    body.email-page .email-list .email-mobile-header {
+        display: flex;
+    }
+}
+
+/* Phone: single-pane — show one of {list | reading} at a time */
+@media (max-width: 720px) {
+    :root {
+        --email-navbar-h: 56px;
+    }
+    body.email-page .email-shell {
+        grid-template-columns: 1fr;
+        height: calc(100vh - var(--email-navbar-h));
+    }
+    body.email-page .email-rail {
+        width: 88vw;
+        max-width: 320px;
+    }
+    body.email-page .email-list { display: flex; }
+    body.email-page .email-read { display: none; }
+    body.email-page .email-shell.show-read .email-list { display: none; }
+    body.email-page .email-shell.show-read .email-read { display: flex; }
+
+    body.email-page .email-mobile-header { display: flex; }
+    body.email-page .email-read .email-mobile-header { display: flex; }
+
+    /* Tighten spacing on phone */
+    body.email-page .email-list-top { padding: 6px 12px 4px; }
+    body.email-page .email-list-title h3 { font-size: 15px; }
+    body.email-page .email-row { padding: 12px 14px; min-height: 64px; }
+    body.email-page .email-folder-row { min-height: 44px; }
+
+    body.email-page .email-read-body-wrap { padding: 16px 16px 32px; }
+    body.email-page .email-read-subject { font-size: 18px; margin-bottom: 14px; }
+    body.email-page .email-read-meta { gap: 10px; padding-bottom: 12px; margin-bottom: 16px; }
+    body.email-page .email-read-meta .read-date { font-size: 11px; }
+
+    /* Toolbar: icons only, horizontally scrollable if overflow */
+    body.email-page .email-read-toolbar {
+        padding: 6px 8px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    body.email-page .email-read-toolbar button {
+        flex-shrink: 0;
+        padding: 9px 10px;
+        font-size: 0;  /* hide text, keep SVG */
+    }
+    body.email-page .email-read-toolbar button svg {
+        width: 18px; height: 18px;
+        margin: 0;
+    }
+
+    /* Compose modal fills the whole screen — feels native */
+    .email-modal-overlay .email-modal {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100vh;
+        max-height: 100vh !important;
+        border-radius: 0;
+        border: none;
+    }
+    .email-modal-overlay {
+        align-items: stretch !important;
+        justify-content: stretch !important;
+    }
+    .email-compose-body-wrap textarea { min-height: 40vh; }
+
+    /* Settings: stack cards vertically */
+    body.email-page .email-mailbox-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    body.email-page .email-mailbox-card .mbx-actions {
+        width: 100%;
+        margin-top: 8px;
+    }
+    body.email-page .email-mailbox-card .mbx-actions button {
+        flex: 1;
+    }
+    body.email-page .email-mailbox-card .mbx-status {
+        align-self: flex-start;
+    }
+    body.email-page .email-settings {
+        margin-top: calc(var(--email-navbar-h) + 12px);
+        padding: 0 14px;
+    }
+    body.email-page .email-settings-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    body.email-page .email-settings-add {
+        justify-content: center;
+    }
+
+    /* Folder counts / chevrons: keep alignment tight */
+    body.email-page .email-filter-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Hide the page-level scroll lock so mobile soft-keyboard doesn't
+       fight the layout. The list/read panes already scroll internally. */
+}
+
+/* Touch-specific affordances: bigger tap targets across coarse pointers */
+@media (pointer: coarse) {
+    .email-folder-row,
+    .email-row {
+        min-height: 44px;
+    }
+    .email-read-toolbar button {
+        min-height: 40px;
+    }
 }
