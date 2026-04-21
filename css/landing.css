@@ -2971,6 +2971,14 @@
     --hero-accent: #a855f7;
 }
 
+/* Email - Gold/Bronze (premium, differentiated from the blue/purple family) */
+.landing-email {
+    --hero-color-1: rgba(212, 162, 76, 0.45);   /* antique gold */
+    --hero-color-2: rgba(169, 113, 66, 0.35);   /* bronze */
+    --hero-color-3: rgba(120, 53, 15, 0.25);    /* deep brown */
+    --hero-accent: #d4a24c;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    COMPARE PAGE — Shared styles for /pages/compare/ragenaizer-vs-*.html
    Each page sets brand colors via CSS vars on its body class

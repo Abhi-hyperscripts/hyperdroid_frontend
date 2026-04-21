@@ -35,6 +35,7 @@ const NavbarComponent = {
                 <div class="nav-dropdown-menu">
                     <a href="/pages/vision.html" class="nav-dropdown-item" data-nav="vision">Vision <span>Video Conferencing</span></a>
                     <a href="/pages/chat.html" class="nav-dropdown-item" data-nav="chat">Chat <span>Team Messaging</span></a>
+                    <a href="/pages/email.html" class="nav-dropdown-item" data-nav="email">Email <span>Unified Inbox</span></a>
                     <a href="/pages/drive.html" class="nav-dropdown-item" data-nav="drive">Drive <span>Cloud Storage</span></a>
                     <a href="/pages/hrms.html" class="nav-dropdown-item" data-nav="hrms">HRMS <span>HR & Payroll</span></a>
                     <a href="/pages/research.html" class="nav-dropdown-item" data-nav="research">Research <span>AI Analytics</span></a>
@@ -56,6 +57,7 @@ const NavbarComponent = {
                 <div class="nav-dropdown-menu">
                     <a href="/pages/features/video-conferencing.html" class="nav-dropdown-item" data-nav="video-conferencing">Video Conferencing <span>HD meetings & screen share</span></a>
                     <a href="/pages/features/team-chat.html" class="nav-dropdown-item" data-nav="team-chat">Team Chat <span>Real-time messaging</span></a>
+                    <a href="/pages/email.html" class="nav-dropdown-item" data-nav="email-unified">Unified Email Inbox <span>Any provider, one workspace</span></a>
                     <a href="/pages/features/cloud-storage.html" class="nav-dropdown-item" data-nav="cloud-storage">Cloud Storage <span>5GB files, secure sharing</span></a>
                     <a href="/pages/features/hrms-payroll.html" class="nav-dropdown-item" data-nav="hrms-payroll">HRMS & Payroll <span>Automated compliance</span></a>
                     <a href="/pages/research.html" class="nav-dropdown-item" data-nav="ai-research">AI Research <span>Agentic SPSS analytics</span></a>
@@ -294,6 +296,7 @@ const NavbarComponent = {
             <div class="nav-mobile-section">Products</div>
             <a href="/pages/vision.html" class="nav-mobile-link" data-nav="vision">Vision <span>Video Conferencing</span></a>
             <a href="/pages/chat.html" class="nav-mobile-link" data-nav="chat">Chat <span>Team Messaging</span></a>
+            <a href="/pages/email.html" class="nav-mobile-link" data-nav="email">Email <span>Unified Inbox</span></a>
             <a href="/pages/drive.html" class="nav-mobile-link" data-nav="drive">Drive <span>Cloud Storage</span></a>
             <a href="/pages/hrms.html" class="nav-mobile-link" data-nav="hrms">HRMS <span>HR & Payroll</span></a>
             <a href="/pages/research.html" class="nav-mobile-link" data-nav="research">Research <span>AI Analytics</span></a>

@@ -426,6 +426,7 @@
 
         .sidebar-item.vision { --item-color: #60a5fa; --item-bg: rgba(59, 130, 246, 0.15); }
         .sidebar-item.chat { --item-color: #a78bfa; --item-bg: rgba(139, 92, 246, 0.15); }
+        .sidebar-item.email { --item-color: #d4a24c; --item-bg: rgba(212, 162, 76, 0.15); }
         .sidebar-item.drive { --item-color: #34d399; --item-bg: rgba(16, 185, 129, 0.15); }
         .sidebar-item.hrms { --item-color: #fbbf24; --item-bg: rgba(245, 158, 11, 0.15); }
         .sidebar-item.research { --item-color: #22d3ee; --item-bg: rgba(6, 182, 212, 0.15); }
@@ -472,6 +473,7 @@
 
         .preview-card.vision { --card-border: rgba(59, 130, 246, 0.3); --accent: #60a5fa; }
         .preview-card.chat { --card-border: rgba(139, 92, 246, 0.3); --accent: #a78bfa; }
+        .preview-card.email { --card-border: rgba(212, 162, 76, 0.35); --accent: #d4a24c; }
         .preview-card.drive { --card-border: rgba(16, 185, 129, 0.3); --accent: #34d399; }
         .preview-card.hrms { --card-border: rgba(245, 158, 11, 0.3); --accent: #fbbf24; }
         .preview-card.research { --card-border: rgba(6, 182, 212, 0.3); --accent: #22d3ee; }
@@ -1134,6 +1136,15 @@
             --icon-bg: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.05));
             --icon-border: rgba(139, 92, 246, 0.3);
             --icon-color: #a78bfa;
+        }
+
+        .product-card.email {
+            --card-gradient: linear-gradient(135deg, rgba(212, 162, 76, 0.10) 0%, transparent 60%);
+            --card-border: rgba(212, 162, 76, 0.35);
+            --card-shadow: rgba(212, 162, 76, 0.18);
+            --icon-bg: linear-gradient(135deg, rgba(212, 162, 76, 0.25), rgba(169, 113, 66, 0.08));
+            --icon-border: rgba(212, 162, 76, 0.35);
+            --icon-color: #d4a24c;
         }
 
         .product-card.drive {
@@ -1932,6 +1943,12 @@
                                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                                 </svg>
                             </a>
+                            <a href="pages/email.html" class="sidebar-item email">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                    <polyline points="22,6 12,13 2,6"/>
+                                </svg>
+                            </a>
                             <a href="pages/drive.html" class="sidebar-item drive">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -2015,6 +2032,24 @@
                                     <div class="chat-bubble received"><div class="chat-bubble-bar" style="width: 70%;"></div></div>
                                     <div class="chat-bubble sent"><div class="chat-bubble-bar" style="width: 50%;"></div></div>
                                     <div class="chat-bubble received"><div class="chat-bubble-bar" style="width: 85%;"></div></div>
+                                </div>
+                            </a>
+
+                            <!-- Email preview -->
+                            <a href="pages/email.html" class="preview-card email">
+                                <div class="preview-header">
+                                    <div class="preview-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                            <polyline points="22,6 12,13 2,6"/>
+                                        </svg>
+                                    </div>
+                                    <span class="preview-title">Email</span>
+                                </div>
+                                <div class="preview-content">
+                                    <div class="file-row"><div class="file-icon"></div><div class="file-name" style="width: 65%;"></div></div>
+                                    <div class="file-row"><div class="file-icon"></div><div class="file-name" style="width: 80%;"></div></div>
+                                    <div class="file-row"><div class="file-icon"></div><div class="file-name" style="width: 55%;"></div></div>
                                 </div>
                             </a>
 
@@ -2472,6 +2507,33 @@
                 </div>
             </a>
 
+            <!-- Email -->
+            <a href="pages/email.html" class="product-card email">
+                <div class="product-card-content">
+                    <div class="product-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                    </div>
+                    <h3>Email</h3>
+                    <div class="product-tagline">Unified Inbox</div>
+                    <p>Every mailbox your business owns — in one workspace that already runs your CRM, projects and meetings. Keep the email provider you already have.</p>
+                    <div class="product-features">
+                        <span>Any Provider</span>
+                        <span>Shared Inboxes</span>
+                        <span>No Lock-In</span>
+                        <span>Self-Hostable</span>
+                    </div>
+                    <div class="product-link">
+                        Learn more
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </div>
+            </a>
+
             <!-- Drive -->
             <a href="pages/drive.html" class="product-card drive">
                 <div class="product-card-content">
@@ -2729,6 +2791,7 @@
         <div class="footer-links">
             <a href="pages/vision.html" class="footer-link">Vision</a>
             <a href="pages/chat.html" class="footer-link">Chat</a>
+            <a href="pages/email.html" class="footer-link">Email</a>
             <a href="pages/drive.html" class="footer-link">Drive</a>
             <a href="pages/hrms.html" class="footer-link">HRMS</a>
             <a href="pages/research.html" class="footer-link">Research</a>

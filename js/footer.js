@@ -16,6 +16,7 @@ const FooterComponent = {
         <div class="footer-links">
             <a href="/pages/vision.html" class="footer-link">Vision</a>
             <a href="/pages/chat.html" class="footer-link">Chat</a>
+            <a href="/pages/email.html" class="footer-link">Email</a>
             <a href="/pages/drive.html" class="footer-link">Drive</a>
             <a href="/pages/hrms.html" class="footer-link">HRMS</a>
             <a href="/pages/research.html" class="footer-link">Research</a>
