@@ -22,6 +22,15 @@ body.email-page {
     background: var(--bg-body) !important;
 }
 
+/* Only the inbox page locks the viewport — settings is a normal scrollable
+   page. Scope via the `:has(.email-shell)` parent selector so we don't
+   accidentally trap scroll on /settings. */
+html:has(body.email-page .email-shell),
+body.email-page:has(.email-shell) {
+    height: 100vh;
+    overflow: hidden;
+}
+
 /* The body has class `dashboard` (global nav/navbar rules) as well as
    `email-page` — the global `.dashboard` wrapper applies a gradient
    background that bleeds through unless we explicitly paint our panes.
