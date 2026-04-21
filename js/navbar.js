@@ -98,14 +98,15 @@ const NavbarComponent = {
                     <!-- Communication -->
                     <div class="nav-submenu" data-nav="compare-communication">
                         <div class="nav-submenu-trigger">
-                            Communication <span>Video & Chat</span>
+                            Communication <span>Video, Chat & Email</span>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
                         <div class="nav-submenu-content">
                             <a href="/pages/compare/ragenaizer-vs-zoom.html" class="nav-dropdown-item" data-nav="vs-zoom">vs Zoom <span>Video</span></a>
                             <a href="/pages/compare/ragenaizer-vs-slack.html" class="nav-dropdown-item" data-nav="vs-slack">vs Slack <span>Chat</span></a>
                             <a href="/pages/compare/ragenaizer-vs-teams.html" class="nav-dropdown-item" data-nav="vs-teams">vs Microsoft Teams</a>
-                            <a href="/pages/compare/ragenaizer-vs-google-workspace.html" class="nav-dropdown-item" data-nav="vs-google">vs Google Workspace</a>
+                            <a href="/pages/compare/ragenaizer-vs-gmail.html" class="nav-dropdown-item" data-nav="vs-gmail">vs Gmail / Google Workspace Email <span>1/4 the cost</span></a>
+                            <a href="/pages/compare/ragenaizer-vs-google-workspace.html" class="nav-dropdown-item" data-nav="vs-google">vs Google Workspace <span>Full platform</span></a>
                         </div>
                     </div>
                     <!-- Cloud Storage -->
