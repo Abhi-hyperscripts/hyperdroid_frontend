@@ -19,6 +19,7 @@ const Navigation = {
         lms: 'LMS_USER',
         procurement: 'PROCUREMENT_USER',
         accounts: 'ACCOUNTS_USER',
+        email: 'EMAILSERVICE_USER',
         admin: 'SUPERADMIN'
     },
 
@@ -61,6 +62,16 @@ const Navigation = {
             </svg>`,
             href: 'chat/chat.html',
             requiresRole: 'CHAT_USER'
+        },
+        {
+            id: 'email',
+            label: 'Email',
+            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+            </svg>`,
+            href: 'email/inbox.html',
+            requiresRole: 'EMAILSERVICE_USER'
         },
         {
             id: 'hrms',

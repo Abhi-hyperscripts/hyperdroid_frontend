@@ -135,6 +135,14 @@ class API {
         if (endpoint.startsWith('/accounts/')) {
             return CONFIG.accountsApiBaseUrl;
         }
+        // Email endpoints go to EmailService (independent microservice).
+        // NOTE: must come before the catch-all /mailboxes → Auth rule above
+        // is already matched — we keep the /email/ prefix for ALL email
+        // calls (including /email/mailboxes) so they don't collide with
+        // Auth's legacy /api/mailboxes endpoint.
+        if (endpoint.startsWith('/email/')) {
+            return CONFIG.emailApiBaseUrl;
+        }
         // Notification endpoints go to Notification service
         if (endpoint.startsWith('/notifications/')) {
             return CONFIG.notificationApiBaseUrl;
@@ -194,6 +202,11 @@ class API {
         // For LMS endpoints, strip /lms prefix since baseUrl already has /api
         if (endpoint.startsWith('/lms/')) {
             actualEndpoint = endpoint.substring(4); // Remove '/lms' prefix, keep the rest
+        }
+        // For Email endpoints, strip /email prefix since baseUrl already has /api
+        // e.g. /email/mailboxes → /mailboxes → {emailApiBaseUrl}/mailboxes → /api/mailboxes
+        if (endpoint.startsWith('/email/')) {
+            actualEndpoint = endpoint.substring(6); // Remove '/email' prefix, keep the rest
         }
         const url = `${baseUrl}${actualEndpoint}`;
         const isFormData = options.body instanceof FormData;

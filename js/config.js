@@ -20,7 +20,8 @@ const ENVIRONMENTS = {
         news: 'https://localhost:5120',
         procurement: 'https://localhost:5124',
         lms: 'https://localhost:5126',
-        accounts: 'https://localhost:5122'
+        accounts: 'https://localhost:5122',
+        email: 'https://localhost:5128'
     },
     production: {
         auth: 'https://auth.ragenaizer.com',
@@ -35,7 +36,8 @@ const ENVIRONMENTS = {
         news: 'https://news.ragenaizer.com',
         procurement: 'https://procurement.ragenaizer.com',
         lms: 'https://lms.ragenaizer.com',
-        accounts: 'https://accounts.ragenaizer.com'
+        accounts: 'https://accounts.ragenaizer.com',
+        email: 'https://email.ragenaizer.com'
     }
 };
 
@@ -122,6 +124,10 @@ const CONFIG = {
 
     get accountsApiBaseUrl() {
         return `${this.endpoints.accounts}/api`;
+    },
+
+    get emailApiBaseUrl() {
+        return `${this.endpoints.email}/api`;
     },
 
     // Legacy alias for backwards compatibility
