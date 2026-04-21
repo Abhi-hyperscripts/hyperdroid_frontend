@@ -205,7 +205,7 @@ async function testConnection() {
     res.style.background = 'var(--color-info-light)'; res.style.color = 'var(--color-info-dark)';
     res.textContent = 'Testing connection…';
     try {
-        const out = await api.request('/email/mailboxes/test-connect', { method: 'POST', body: JSON.stringify(form) });
+        const out = await api.request('/email/mailboxes/test-connect', { method: 'POST', body: JSON.stringify(form), _skipSpinner: true });
         const parts = [];
         parts.push(`IMAP: ${out.imap_ok ? '✓' : '✗ ' + (out.imap_error || '')}`);
         parts.push(`SMTP: ${out.smtp_ok ? '✓' : '✗ ' + (out.smtp_error || '')}`);
@@ -226,7 +226,7 @@ async function testConnection() {
 async function testExistingMailbox(id) {
     Toast.info('Testing…');
     try {
-        const out = await api.request(`/email/mailboxes/${id}/test`, { method: 'POST' });
+        const out = await api.request(`/email/mailboxes/${id}/test`, { method: 'POST', _skipSpinner: true });
         if (out.imap_ok && out.smtp_ok) Toast.success('Connection OK.');
         else Toast.error(`IMAP: ${out.imap_ok ? 'OK' : out.imap_error} / SMTP: ${out.smtp_ok ? 'OK' : out.smtp_error}`);
         await loadMailboxes();
@@ -252,10 +252,10 @@ async function saveMailbox() {
             };
             if (document.getElementById('mbxImapPass').value) payload.imap_password = form.imap_password;
             if (document.getElementById('mbxSmtpPass').value) payload.smtp_password = form.smtp_password;
-            await api.request(`/email/mailboxes/${S.editingId}`, { method: 'PUT', body: JSON.stringify(payload) });
+            await api.request(`/email/mailboxes/${S.editingId}`, { method: 'PUT', body: JSON.stringify(payload), _skipSpinner: true });
             Toast.success('Mailbox updated.');
         } else {
-            await api.request('/email/mailboxes', { method: 'POST', body: JSON.stringify(form) });
+            await api.request('/email/mailboxes', { method: 'POST', body: JSON.stringify(form), _skipSpinner: true });
             Toast.success('Mailbox connected.');
         }
         closeMailboxModal();
