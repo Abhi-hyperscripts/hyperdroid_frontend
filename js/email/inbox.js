@@ -55,6 +55,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     wireComposeModal();
     wireKeyboardShortcuts();
 
+    // Re-parent the compose modal to <body> so no ancestor with transform/
+    // filter/overflow can reposition it. Without this, styles.css's
+    // `main { position: relative }` rule can trap the overlay inside the
+    // scroll container and drop it below the visible viewport.
+    const overlay = document.getElementById('composeOverlay');
+    if (overlay && overlay.parentElement !== document.body) {
+        document.body.appendChild(overlay);
+    }
+
     await loadMailboxes();
 });
 

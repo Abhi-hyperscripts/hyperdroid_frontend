@@ -19,6 +19,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e.key === 'Escape' && document.getElementById('mailboxModal').classList.contains('active')) closeMailboxModal();
     });
 
+    // Re-parent the modal to <body> so no ancestor (e.g. main.email-settings
+    // which styles.css positions relative) can drop the overlay below the
+    // visible viewport.
+    const overlay = document.getElementById('mailboxModal');
+    if (overlay && overlay.parentElement !== document.body) {
+        document.body.appendChild(overlay);
+    }
+
     await loadMailboxes();
 });
 

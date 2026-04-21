@@ -872,19 +872,28 @@ body.email-page .email-read {
 
 /* ---------- Compose modal ---------------------------------------------- */
 
+/* Position + inset + z-index carry !important because the global
+   styles.css assigns `position: relative` to `main` / `section` wrappers
+   with high specificity, which would otherwise trap our overlay inside
+   a scroll container and drop it below the fold. */
 .email-modal-overlay {
-    position: fixed;
-    inset: 0;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw;
+    height: 100vh;
     background: var(--bg-modal-overlay);
-    z-index: 9999;
+    z-index: 9999 !important;
     display: none;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(2px);
+    overflow: auto;
 }
 
 .email-modal-overlay.active {
-    display: flex;
+    display: flex !important;
     animation: email-fade 0.15s ease;
 }
 
