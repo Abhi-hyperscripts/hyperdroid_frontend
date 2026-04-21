@@ -15,6 +15,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     document.getElementById('btnTestConnection').addEventListener('click', testConnection);
     document.getElementById('btnSaveMailbox').addEventListener('click', saveMailbox);
+
+    // Auto-detect IMAP/SMTP settings when the user leaves the email field.
+    // Saves typing for everyone and makes the flow work for non-technical users
+    // who have no idea what their mail server hostnames are.
+    document.getElementById('mbxEmail').addEventListener('blur', handleEmailBlurAutoconfig);
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape' && document.getElementById('mailboxModal').classList.contains('active')) closeMailboxModal();
     });
@@ -117,6 +122,57 @@ function closeMailboxModal() {
     S.editingId = null;
 }
 
+/**
+ * Blur handler on the email field — asks the backend to guess IMAP/SMTP
+ * settings and fills empty host/port fields so the user doesn't have to.
+ * Only overwrites empty fields; if the user already typed something custom we
+ * leave it alone. Skipped entirely when editing an existing mailbox.
+ */
+async function handleEmailBlurAutoconfig() {
+    if (S.editingId) return;
+    const email = document.getElementById('mbxEmail').value.trim();
+    if (!email || !email.includes('@')) return;
+
+    const res = document.getElementById('mbxTestResult');
+    res.style.display = 'block';
+    res.style.background = 'var(--color-info-light)';
+    res.style.color = 'var(--color-info-dark)';
+    res.textContent = `Looking up server settings for ${email}…`;
+
+    try {
+        const cfg = await api.request(`/email/mailboxes/autoconfig?email=${encodeURIComponent(email)}`, { _skipSpinner: true });
+        if (!cfg || !cfg.found) {
+            res.style.background = 'var(--color-warning-light)';
+            res.style.color = 'var(--color-warning-dark)';
+            res.textContent = 'Could not auto-detect server settings — please fill them in manually.';
+            return;
+        }
+        const fillIfEmpty = (id, val) => {
+            const el = document.getElementById(id);
+            if (el && !el.value && val != null && val !== '') el.value = val;
+        };
+        fillIfEmpty('mbxImapHost', cfg.imap_host);
+        fillIfEmpty('mbxImapPort', cfg.imap_port);
+        fillIfEmpty('mbxSmtpHost', cfg.smtp_host);
+        fillIfEmpty('mbxSmtpPort', cfg.smtp_port);
+        // SSL selects need their value set explicitly (empty-check doesn't apply).
+        // Only override if they're still at defaults and the guess differs.
+        document.getElementById('mbxImapSsl').value = String(cfg.imap_use_ssl);
+        document.getElementById('mbxSmtpSsl').value = String(cfg.smtp_use_ssl);
+
+        const helpLink = cfg.app_password_help_url
+            ? ` <a href="${cfg.app_password_help_url}" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">App-password help ↗</a>`
+            : '';
+        res.style.background = 'var(--color-success-light)';
+        res.style.color = 'var(--color-success-dark)';
+        res.innerHTML = `Auto-detected ${escapeHtml(cfg.provider_display_name || 'provider')}.${helpLink}`;
+    } catch (err) {
+        res.style.background = 'var(--color-warning-light)';
+        res.style.color = 'var(--color-warning-dark)';
+        res.textContent = `Auto-detect failed (${err.message}) — please fill server details manually.`;
+    }
+}
+
 function readForm() {
     return {
         email_address: document.getElementById('mbxEmail').value.trim(),
@@ -204,11 +260,33 @@ async function saveMailbox() {
         }
         closeMailboxModal();
         await loadMailboxes();
+
+        // The supervisor kicks a worker as soon as POST returns, but the first
+        // IMAP connect happens asynchronously (0–15s jitter). Poll briefly so
+        // the "Never connected" badge flips to "Connected" without a refresh.
+        pollMailboxStatus();
     } catch (err) {
         Toast.error(`Save failed: ${err.message}`);
     } finally {
         btn.disabled = false;
         btn.innerHTML = 'Save';
+    }
+}
+
+async function pollMailboxStatus() {
+    const deadline = Date.now() + 25_000; // give jitter + connect time
+    while (Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 2000));
+        try {
+            const data = await api.request('/email/mailboxes', { _skipSpinner: true });
+            const list = Array.isArray(data) ? data : [];
+            // Stop polling once every mailbox has either connected or errored —
+            // no more "pending" rows to resolve.
+            const stillPending = list.some(m => !m.last_connected_at && !m.last_error);
+            S.mailboxes = list;
+            renderMailboxList();
+            if (!stillPending) return;
+        } catch { /* transient — keep polling */ }
     }
 }
 

@@ -75,7 +75,61 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     await loadMailboxes();
+    connectEmailHub();
 });
+
+// ==================== SignalR live push ====================
+
+let _emailHub = null;
+
+async function connectEmailHub() {
+    if (typeof signalR === 'undefined' || !CONFIG.emailSignalRHubUrl) return;
+    try {
+        _emailHub = new signalR.HubConnectionBuilder()
+            .withUrl(CONFIG.emailSignalRHubUrl, {
+                accessTokenFactory: () => localStorage.getItem('ragenaizer_authToken') || '',
+            })
+            .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+            .build();
+
+        _emailHub.on('MessageReceived', onHubMessageReceived);
+        await _emailHub.start();
+        console.log('[EmailHub] connected');
+    } catch (err) {
+        console.warn('[EmailHub] connect failed — falling back to manual refresh', err);
+    }
+}
+
+/**
+ * Server push: a new message landed in one of the user's mailboxes. If they're
+ * currently viewing that mailbox + inbox, slide the list down and append (or
+ * just reload the first page). Always nudge the unread badge up regardless of
+ * the active folder so the account tree reflects reality.
+ */
+function onHubMessageReceived(payload) {
+    if (!payload) return;
+    const { mailbox_id, folder_id, folder_type, from_name, from_address, subject } = payload;
+
+    // Toast so the user notices even if the browser tab isn't focused on the
+    // message list. Clicking reloads — cheap for now; a deeper impl would jump
+    // straight to the message.
+    try {
+        Toast.info(`New mail from ${from_name || from_address || '(unknown)'}: ${subject || '(no subject)'}`);
+    } catch { /* Toast might not be loaded on settings page */ }
+
+    // Bump the folder's unread count in the sidebar. Works even if the user is
+    // not viewing that mailbox right now.
+    if (mailbox_id && folder_id) {
+        adjustFolderUnreadCount(mailbox_id, folder_id, +1);
+    }
+
+    // If the viewed folder matches, reload its first page so the new row
+    // appears at top without a click. If not, the user will see the bump in
+    // the sidebar badge and load when they switch.
+    if (State.selectedMailboxId === mailbox_id && State.selectedFolderId === folder_id) {
+        loadMessages();
+    }
+}
 
 // ==================== Mobile nav ====================
 

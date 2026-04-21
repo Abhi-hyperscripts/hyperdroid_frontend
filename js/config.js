@@ -147,6 +147,10 @@ const CONFIG = {
         return `${this.endpoints.chat}/hubs/chat`;
     },
 
+    get emailSignalRHubUrl() {
+        return `${this.endpoints.email}/hubs/email`;
+    },
+
     get hrmsSignalRHubUrl() {
         return `${this.endpoints.hrms}/hubs/hrms`;
     },
