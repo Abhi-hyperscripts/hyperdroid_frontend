@@ -291,7 +291,10 @@ async function pollMailboxStatus() {
 }
 
 async function deleteMailbox(mbx) {
-    if (!confirm(`Disconnect "${mbx.email_address}"? IMAP IDLE stops and all cached messages are removed.`)) return;
+    const ok = await Confirm.danger(
+        `Disconnect "${mbx.email_address}"? IMAP IDLE stops and all cached messages are removed.`,
+        'Disconnect mailbox');
+    if (!ok) return;
     try {
         await api.request(`/email/mailboxes/${mbx.id}`, { method: 'DELETE' });
         Toast.success('Mailbox disconnected.');

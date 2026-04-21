@@ -903,12 +903,20 @@ function adjustFolderUnreadCount(mailboxId, folderId, delta) {
 }
 
 async function deleteMessage(messageId) {
-    if (!confirm('Delete this message? (currently removes from local view only — backend DELETE endpoint pending)')) return;
-    State.messages = State.messages.filter(m => m.id !== messageId);
-    State.selectedMessageId = null;
-    renderMessages();
-    renderEmptyRead();
-    Toast.info('Removed from local view');
+    const ok = await Confirm.danger(
+        'Delete this message? It will be moved to Trash on your mail server (or permanently expunged if the server has no Trash folder).',
+        'Delete message');
+    if (!ok) return;
+    try {
+        const res = await api.request(`/email/messages/${messageId}`, { method: 'DELETE' });
+        State.messages = State.messages.filter(m => m.id !== messageId);
+        State.selectedMessageId = null;
+        renderMessages();
+        renderEmptyRead();
+        Toast.success(res?.outcome === 'expunged' ? 'Permanently deleted.' : 'Moved to Trash.');
+    } catch (err) {
+        Toast.error(`Delete failed: ${err.message}`);
+    }
 }
 
 // ==================== Compose ====================
