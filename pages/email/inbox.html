@@ -48,9 +48,18 @@
             </div>
 
             <div class="email-accounts" id="accountsTree">
-                <!-- populated by inbox.js -->
-                <div class="email-empty" style="padding: 32px 20px;">
-                    <div>Loading mailboxes…</div>
+                <!-- Skeleton placeholder — replaced by renderAccountTree() once
+                     mailboxes + folders load. Matches the shape of the
+                     account header + folder rows so the reveal feels smooth. -->
+                <div class="email-skel-account">
+                    <div class="skel-header">
+                        <div class="skel-pulse skel-chev"></div>
+                        <div class="skel-pulse skel-name"></div>
+                    </div>
+                    <div class="skel-folder"><div class="skel-pulse skel-icon"></div><div class="skel-pulse skel-label w-60"></div></div>
+                    <div class="skel-folder"><div class="skel-pulse skel-icon"></div><div class="skel-pulse skel-label w-40"></div></div>
+                    <div class="skel-folder"><div class="skel-pulse skel-icon"></div><div class="skel-pulse skel-label w-70"></div></div>
+                    <div class="skel-folder"><div class="skel-pulse skel-icon"></div><div class="skel-pulse skel-label w-50"></div></div>
                 </div>
             </div>
 
