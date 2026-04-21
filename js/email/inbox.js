@@ -346,8 +346,13 @@ async function syncFolderInBackground(mailboxId, folderId) {
             `/email/mailboxes/${mailboxId}/folders/${folderId}/sync`,
             { method: 'POST', _skipSpinner: true }
         );
-        // Only reload if we're still viewing the same folder and new messages arrived.
-        if ((resp?.inserted || 0) > 0
+        // Reload if the folder changed state AND we're still viewing it.
+        // `inserted` → new arrivals we didn't have yet.
+        // `pruned`   → rows reconcile deleted (user removed the message on
+        //              another client). Without this we'd keep rendering the
+        //              stale list until the user navigates away and back.
+        const changed = (resp?.inserted || 0) + (resp?.pruned || 0) > 0;
+        if (changed
             && State.selectedMailboxId === mailboxId
             && State.selectedFolderId === folderId) {
             loadMessages();
