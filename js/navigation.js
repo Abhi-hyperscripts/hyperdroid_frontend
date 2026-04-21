@@ -262,6 +262,7 @@ const Navigation = {
         'vision': 'Vision',
         'drive': 'Drive',
         'chat': 'Chat',
+        'email': 'EmailService',
         'hrms': 'HRMS',
         'crm': 'CRM',
         'research': 'Research',
@@ -1000,6 +1001,9 @@ async function loadNavigation() {
         basePath = '../';
     } else if (path.includes('/chat/')) {
         currentPageId = 'chat';
+        basePath = '../';
+    } else if (path.includes('/email/')) {
+        currentPageId = 'email';
         basePath = '../';
     } else if (path.includes('/research/')) {
         currentPageId = 'research';

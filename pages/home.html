@@ -137,6 +137,37 @@
                 </div>
             </div>
 
+            <!-- Email Card -->
+            <div class="bento-card email" onclick="navigateToModule('email')" id="emailCard">
+                <div class="card-border"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <div class="app-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                        </div>
+                        <div class="app-status" id="emailStatus">
+                            <span class="status-indicator"></span>
+                            <span>Checking...</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3>Email</h3>
+                        <p>IMAP/SMTP mailboxes with IDLE push, unified inbox, and real-time notifications</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="app-action">
+                            Launch
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <!-- HRMS Card -->
             <div class="bento-card hrms" onclick="navigateToModule('hrms')" id="hrmsCard">
                 <div class="card-border"></div>
@@ -493,6 +524,7 @@
                 'visionCard': 'VISION_USER',
                 'driveCard': 'DRIVE_USER',
                 'chatCard': 'CHAT_USER',
+                'emailCard': 'EMAILSERVICE_USER',
                 'hrmsCard': 'HRMS_USER',
                 'crmCard': 'CRM_USER',
                 'researchCard': 'RESEARCH_USER',
@@ -509,6 +541,7 @@
                 'visionCard': 'Vision',
                 'driveCard': 'Drive',
                 'chatCard': 'Chat',
+                'emailCard': 'EmailService',
                 'hrmsCard': 'HRMS',
                 'crmCard': 'CRM',
                 'researchCard': 'Research',
@@ -527,7 +560,7 @@
             }
 
             const cardToModule = {
-                'visionCard': 'vision', 'driveCard': 'drive', 'chatCard': 'chat',
+                'visionCard': 'vision', 'driveCard': 'drive', 'chatCard': 'chat', 'emailCard': 'email',
                 'hrmsCard': 'hrms', 'crmCard': 'crm', 'researchCard': 'research',
                 'pmsCard': 'pms', 'procurementCard': 'procurement', 'lmsCard': 'lms', 'accountsCard': 'accounts', 'newsCard': 'news', 'adminCard': 'admin'
             };
@@ -578,6 +611,7 @@
             checkServiceHealth('vision', CONFIG.endpoints.vision);
             checkServiceHealth('drive', CONFIG.endpoints.drive);
             checkServiceHealth('chat', CONFIG.endpoints.chat);
+            checkServiceHealth('email', CONFIG.endpoints.email);
             checkServiceHealth('hrms', CONFIG.endpoints.hrms);
             checkServiceHealth('crm', CONFIG.endpoints.crm);
             checkServiceHealth('research', CONFIG.endpoints.research);
@@ -623,6 +657,9 @@
                     break;
                 case 'chat':
                     window.location.href = 'chat/chat.html';
+                    break;
+                case 'email':
+                    window.location.href = 'email/inbox.html';
                     break;
                 case 'hrms':
                     window.location.href = 'hrms/dashboard.html';

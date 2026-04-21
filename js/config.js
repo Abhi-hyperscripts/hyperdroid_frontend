@@ -37,7 +37,7 @@ const ENVIRONMENTS = {
         procurement: 'https://procurement.ragenaizer.com',
         lms: 'https://lms.ragenaizer.com',
         accounts: 'https://accounts.ragenaizer.com',
-        email: 'https://email.ragenaizer.com'
+        email: 'https://emails.ragenaizer.com'
     }
 };
 
