@@ -1272,60 +1272,106 @@ body.email-page .email-read {
     flex: 1;
 }
 
+/* Compose rows — pill-style inputs matching the rest of the glass UI.
+   Each row is a labeled card: label on the left, bordered rounded
+   input/field on the right. Focus lights up the border with the
+   brand primary so the user sees clear affordance. */
 .email-compose-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--email-divider);
+    gap: 14px;
+    padding: 8px 0;
+    border-bottom: none;  /* chrome-less — the input itself shows borders */
 }
 
 .email-compose-row label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    min-width: 48px;
+    letter-spacing: 0.06em;
+    min-width: 56px;
     flex-shrink: 0;
+    text-align: right;
 }
 
-.email-compose-row .from-select {
+.email-compose-row .from-select,
+.email-compose-row input.line-input {
     flex: 1;
-    background: transparent;
-    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color-light);
+    border-radius: 10px;
+    padding: 9px 12px;
     font-size: 14px;
     color: var(--text-primary);
     outline: none;
-    cursor: pointer;
-    padding: 4px 0;
     font-family: inherit;
+    transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
 }
+
+[data-theme="dark"] .email-compose-row .from-select,
+[data-theme="dark"] .email-compose-row input.line-input {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.email-compose-row .from-select { cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 34px;
+}
+
+.email-compose-row .from-select:focus,
+.email-compose-row input.line-input:focus,
+.email-compose-row input.line-input:focus-visible {
+    border-color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb), 0.06);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
+}
+
+.email-compose-row input.line-input::placeholder { color: var(--text-muted); }
 
 .email-compose-row .cc-toggle {
     background: transparent;
-    border: none;
+    border: 1px solid var(--border-color-light);
     color: var(--brand-primary);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    padding: 4px 6px;
-    border-radius: var(--border-radius-xs);
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: background 0.12s, border-color 0.12s;
 }
 
 .email-compose-row .cc-toggle:hover {
-    background: var(--email-row-hover);
+    background: rgba(var(--brand-primary-rgb), 0.1);
+    border-color: rgba(var(--brand-primary-rgb), 0.4);
 }
 
-/* recipient-chip input */
+/* recipient-chip input — wrap the chips in the same rounded field
+   the other compose inputs use so TO/CC/BCC visually match. */
 .chip-field {
     flex: 1;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 4px;
-    min-height: 28px;
-    padding: 2px 0;
+    gap: 5px;
+    min-height: 40px;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color-light);
+    border-radius: 10px;
+    transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+
+[data-theme="dark"] .chip-field {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.chip-field:focus-within {
+    border-color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb), 0.06);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15);
 }
 
 .recipient-chip {
@@ -1378,24 +1424,19 @@ body.email-page .email-read {
     background: transparent;
     font-size: 14px;
     color: var(--text-primary);
-    outline: none;
+    outline: none !important;       /* override any global :focus outline */
+    box-shadow: none !important;     /* override any global :focus ring */
     font-family: inherit;
+}
+
+.chip-field input.chip-input:focus,
+.chip-field input.chip-input:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
 }
 
 .chip-field input.chip-input::placeholder { color: var(--text-muted); }
-
-.email-compose-row input.line-input {
-    flex: 1;
-    border: none;
-    background: transparent;
-    padding: 6px 0;
-    font-size: 14px;
-    color: var(--text-primary);
-    outline: none;
-    font-family: inherit;
-}
-
-.email-compose-row input.line-input::placeholder { color: var(--text-muted); }
 
 .email-compose-body-wrap {
     padding: 14px 0;
