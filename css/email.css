@@ -1116,16 +1116,18 @@ body.email-page .email-read {
     bottom: 0 !important;
     width: 100vw;
     height: 100vh;
-    /* Glassy backdrop — blurs the page behind like CRM/HRMS modals.
-       rgba overlay sits ON TOP of the blur so text stays legible. */
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    /* Light dim so the page's gradient + content stay visible through
+       the modal — what makes the glass feel glassy. Bigger blur on the
+       backdrop keeps the behind-content recognizable but out of focus. */
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     z-index: 9999 !important;
     display: none;
     align-items: center;
     justify-content: center;
     overflow: auto;
+    padding: 80px 20px 20px 20px;  /* same gutter as canonical modals */
 }
 
 .email-modal-overlay.active {
@@ -1135,24 +1137,100 @@ body.email-page .email-read {
 
 @keyframes email-fade { from { opacity: 0; } to { opacity: 1; } }
 
+/* Compose modal — same glassmorphic surface as the Create-folder modal
+   and every HRMS/CRM modal. Rules mirror glassmorphic-modal.css's
+   .modal-content rule but stay scoped to .email-modal so the existing
+   children (chip fields, compose rows, attach chips) pick up the new
+   glassy background without touching the HTML structure. */
 .email-modal {
-    background: var(--glass-bg);
-    backdrop-filter: blur(24px) saturate(1.4);
-    -webkit-backdrop-filter: blur(24px) saturate(1.4);
     width: 760px;
-    max-width: 95vw;
-    max-height: 92vh;
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-2xl);
+    max-width: 100%;
+    max-height: calc(100vh - 100px);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid var(--border-color-light);
 }
 
 [data-theme="dark"] .email-modal {
-    background: rgba(20, 30, 48, 0.82);
-    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.58);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+/* ---------- Quill rich-text editor inside the compose modal ---------- */
+/* Quill.snow.css ships with Bootstrap-era gray colors that fight the
+   glass bg. Scope overrides to .email-rte-host so only our editor gets
+   the theme-aware palette — everything else using Quill keeps its own
+   skin. */
+.email-rte-host {
+    min-height: 440px;
+    display: flex;
+    flex-direction: column;
+}
+
+.email-rte-host .ql-toolbar.ql-snow {
+    border: 1px solid var(--border-color-light);
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+}
+
+.email-rte-host .ql-container.ql-snow {
+    border: 1px solid var(--border-color-light);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14px;
+    flex: 1;
+    min-height: 400px;
+}
+
+.email-rte-host .ql-editor {
+    min-height: 400px;
+    color: var(--text-primary);
+}
+
+.email-rte-host .ql-editor.ql-blank::before {
+    color: var(--text-tertiary);
+    font-style: normal;
+}
+
+[data-theme="dark"] .email-rte-host .ql-toolbar.ql-snow .ql-stroke {
+    stroke: var(--text-secondary);
+}
+
+[data-theme="dark"] .email-rte-host .ql-toolbar.ql-snow .ql-fill,
+[data-theme="dark"] .email-rte-host .ql-toolbar.ql-snow .ql-stroke.ql-fill {
+    fill: var(--text-secondary);
+}
+
+[data-theme="dark"] .email-rte-host .ql-toolbar.ql-snow .ql-picker,
+[data-theme="dark"] .email-rte-host .ql-toolbar.ql-snow .ql-picker-label,
+[data-theme="dark"] .email-rte-host .ql-toolbar.ql-snow .ql-picker-options {
+    color: var(--text-secondary);
+    background: var(--bg-card);
+    border-color: var(--border-color-light);
+}
+
+[data-theme="dark"] .email-rte-host .ql-snow .ql-picker-options {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+}
+
+.email-rte-host .ql-toolbar.ql-snow .ql-formats button:hover .ql-stroke,
+.email-rte-host .ql-toolbar.ql-snow button.ql-active .ql-stroke {
+    stroke: var(--brand-primary);
+}
+
+.email-rte-host .ql-toolbar.ql-snow .ql-formats button:hover .ql-fill,
+.email-rte-host .ql-toolbar.ql-snow button.ql-active .ql-fill {
+    fill: var(--brand-primary);
 }
 
 .email-modal-header {

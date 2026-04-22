@@ -15,6 +15,9 @@
     <script src="/js/sw-update.js"></script>
     <script src="/js/pwa-install-prompt.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Quill rich-text editor — same version CRM / PMS / News use -->
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
@@ -184,7 +187,12 @@
                 </div>
                 <div class="email-compose-chips" id="composeAttachChips"></div>
                 <div class="email-compose-body-wrap">
-                    <textarea id="composeBody" placeholder="Write your message…"></textarea>
+                    <!-- Quill rich-text host. The <textarea id="composeBody">
+                         stays as a fallback target that the editor's contents
+                         get serialized into on send, so existing code paths
+                         that read composeBody.value keep working. -->
+                    <div id="composeBodyEditor" class="email-rte-host"></div>
+                    <textarea id="composeBody" style="display:none;"></textarea>
                 </div>
             </div>
             <div class="email-modal-footer">

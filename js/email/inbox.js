@@ -38,6 +38,10 @@ const State = {
 // render without serialization noise.
 let loadMoreObserver = null;
 
+// Quill rich-text editor instance for the compose modal. Lazy-init on
+// first openCompose() so the page paint isn't delayed by editor setup.
+let _composeQuill = null;
+
 // ==================== Bootstrap ====================
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1467,6 +1471,29 @@ function openCompose(mode, replyTo) {
     document.getElementById('composeBccRow').style.display = 'none';
     document.getElementById('composeAttachChips').innerHTML = '';
 
+    // Lazy-init Quill on first open — same config CRM uses for parity.
+    // Subsequent opens just clear the contents so drafts don't leak.
+    const editorHost = document.getElementById('composeBodyEditor');
+    if (editorHost && typeof Quill !== 'undefined') {
+        if (!_composeQuill) {
+            _composeQuill = new Quill(editorHost, {
+                theme: 'snow',
+                placeholder: 'Write your message…',
+                modules: {
+                    toolbar: [
+                        [{ header: [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ list: 'ordered' }, { list: 'bullet' }],
+                        [{ color: [] }, { background: [] }],
+                        ['link', 'blockquote', 'code-block'],
+                        ['clean']
+                    ]
+                }
+            });
+        }
+        _composeQuill.setContents([]);
+    }
+
     if (State.selectedMailboxId) composeFrom.value = State.selectedMailboxId;
 
     if (mode === 'new') {
@@ -1501,6 +1528,14 @@ function openCompose(mode, replyTo) {
         const quoted = (replyTo.body_text || stripHtml(replyTo.body_html || '') || '')
             .split('\n').map(l => '> ' + l).join('\n');
         body.value = `\n\n\nOn ${qDate}, ${fromName} wrote:\n${quoted}`;
+        // Seed Quill with the quoted preamble so rich-text replies keep
+        // the "> Original message" context visible while the user types
+        // above it. Three empty paragraphs at the top so the caret starts
+        // with room to breathe.
+        if (_composeQuill) {
+            const preamble = `<p><br></p><p><br></p><p><br></p><p>On ${formatFullDate(replyTo.received_at || replyTo.sent_at || replyTo.created_at)}, ${escapeHtml(fromName)} wrote:</p><blockquote>${escapeHtml(quoted).replace(/\n/g, '<br>')}</blockquote>`;
+            _composeQuill.root.innerHTML = preamble;
+        }
     }
 
     renderChips('to'); renderChips('cc'); renderChips('bcc');
@@ -1577,11 +1612,20 @@ async function sendCompose() {
     const bcc = [...State.recipients.bcc];
     if (to.length === 0) return Toast.error('At least one recipient required.');
 
+    // Pull both HTML (from Quill) and plain text for the multipart message.
+    // Backend's MimeKit BodyBuilder needs both — recipients on text-only
+    // clients (e.g. Mutt) still see a readable version.
+    const bodyHtml = _composeQuill ? _composeQuill.root.innerHTML : '';
+    const bodyText = _composeQuill
+        ? _composeQuill.getText().replace(/\n+$/, '')
+        : document.getElementById('composeBody').value;
+
     const payload = {
         mailbox_id: mailboxId,
         to,
         subject: document.getElementById('composeSubject').value.trim(),
-        body_text: document.getElementById('composeBody').value,
+        body_text: bodyText,
+        body_html: bodyHtml,
         idempotency_key: 'frontend-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10),
     };
     if (cc.length) payload.cc = cc;
