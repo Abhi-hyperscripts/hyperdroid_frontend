@@ -441,15 +441,21 @@ function renderAccountTree() {
                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
                    </button>`
                 : '<span class="folder-chev-placeholder"></span>';
+            // ⋯ menu only on custom folders — system folders (Inbox/Sent/
+            // Drafts/Trash/Junk) can't be renamed or deleted on most IMAP
+            // servers, so no menu for them.
+            const moreBtnHtml = f.folder_type === 'custom'
+                ? `<button class="folder-more-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Folder options" title="Folder options" data-folder-id="${f.id}">
+                       <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                   </button>`
+                : '';
             row.innerHTML = `
                 ${chevronHtml}
                 ${folderIconSVG(f.folder_type)}
                 <span class="folder-name">${escapeHtml(prettyFolderName(f.folder_name, f.folder_type))}</span>
                 ${f.unread_count > 0 ? `<span class="folder-count">${f.unread_count}</span>` : ''}
+                ${moreBtnHtml}
             `;
-            // Chevron click toggles collapse WITHOUT selecting the folder,
-            // matching Hostinger / Gmail webmail behaviour where the name
-            // is the navigation target and the chevron is purely a toggle.
             const chev = row.querySelector('.folder-chev');
             if (chev) {
                 chev.addEventListener('click', (e) => {
@@ -457,6 +463,19 @@ function renderAccountTree() {
                     State.folderCollapse[f.id] = !State.folderCollapse[f.id];
                     persistFolderCollapse();
                     renderAccountTree();
+                });
+            }
+            const moreBtn = row.querySelector('.folder-more-btn');
+            if (moreBtn) {
+                moreBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Toggle: clicking again closes, clicking another row opens fresh
+                    const menu = document.getElementById('folderMenu');
+                    if (menu && menu.classList.contains('open') && menu.dataset.trigger === f.id) {
+                        closeFolderMenu();
+                    } else {
+                        openFolderMenu(mbx.id, f.id, moreBtn);
+                    }
                 });
             }
             row.addEventListener('click', () => selectFolder(mbx.id, f.id, f.folder_type, f.folder_name));
@@ -1094,29 +1113,29 @@ async function deleteMessage(messageId) {
     }
 }
 
-// ==================== New folder (IMAP CREATE) ====================
+// ==================== Folder management (create / rename / delete) ====================
+//
+// All three operations hit IMAP first, then update our DB. Failure modes
+// propagate back as the mail server's actual error text via our API client.
+// UI uses the canonical glassmorphic .modal-* classes so these popovers
+// look identical to HRMS/CRM modals.
 
 const NewFolderState = { mailboxId: null };
+const RenameFolderState = { mailboxId: null, folderId: null };
 
-function openNewFolderModal(mailboxId) {
+function openNewFolderModal(mailboxId, preselectedParentId = null) {
     NewFolderState.mailboxId = mailboxId;
     const overlay = document.getElementById('newFolderOverlay');
     const nameInput = document.getElementById('newFolderName');
     const parentSelect = document.getElementById('newFolderParent');
     const errorEl = document.getElementById('newFolderError');
 
-    // Reset state
     nameInput.value = '';
     errorEl.style.display = 'none';
     errorEl.textContent = '';
 
-    // Populate the parent dropdown with the current mailbox's custom folders.
-    // Options are rendered in tree order (same path-based sort loadFolders
-    // applies) with indentation matching how they appear in the sidebar, so
-    // the user can tell parents from children.
     parentSelect.innerHTML = '<option value="">No parent folder (top level)</option>';
-    const folders = (State.foldersByMailbox[mailboxId] || [])
-        .filter(f => f.folder_type === 'custom');
+    const folders = (State.foldersByMailbox[mailboxId] || []).filter(f => f.folder_type === 'custom');
     const depths = computeFolderDepths(folders);
     folders.forEach(f => {
         const opt = document.createElement('option');
@@ -1125,6 +1144,7 @@ function openNewFolderModal(mailboxId) {
         opt.textContent = `${indent}${f.folder_name}`;
         parentSelect.appendChild(opt);
     });
+    if (preselectedParentId) parentSelect.value = preselectedParentId;
 
     overlay.classList.add('active');
     setTimeout(() => nameInput.focus(), 50);
@@ -1142,12 +1162,7 @@ async function submitNewFolder() {
     const createBtn = document.getElementById('newFolderCreate');
     errorEl.style.display = 'none';
 
-    if (!name) {
-        errorEl.textContent = 'Folder name is required';
-        errorEl.style.display = 'block';
-        return;
-    }
-    // Match the backend's validation so we fail fast without a round-trip.
+    if (!name) { errorEl.textContent = 'Folder name is required'; errorEl.style.display = 'block'; return; }
     if (/[\/\\\."]/.test(name)) {
         errorEl.textContent = "Folder name can't contain / \\ . or quote characters";
         errorEl.style.display = 'block';
@@ -1167,8 +1182,6 @@ async function submitNewFolder() {
         });
         Toast.success(`Created "${name}" on your mail server.`);
         closeNewFolderModal();
-        // Refresh folder list so the new row (with the server-chosen path)
-        // shows in the sidebar immediately.
         await loadFolders(mailboxId);
         renderAccountTree();
     } catch (err) {
@@ -1180,22 +1193,183 @@ async function submitNewFolder() {
     }
 }
 
+function openRenameFolderModal(mailboxId, folderId) {
+    const folder = (State.foldersByMailbox[mailboxId] || []).find(f => f.id === folderId);
+    if (!folder) return;
+    RenameFolderState.mailboxId = mailboxId;
+    RenameFolderState.folderId = folderId;
+
+    const overlay = document.getElementById('renameFolderOverlay');
+    const nameInput = document.getElementById('renameFolderName');
+    const errorEl = document.getElementById('renameFolderError');
+
+    nameInput.value = folder.folder_name;
+    errorEl.style.display = 'none';
+    errorEl.textContent = '';
+
+    overlay.classList.add('active');
+    setTimeout(() => { nameInput.focus(); nameInput.select(); }, 50);
+}
+
+function closeRenameFolderModal() {
+    document.getElementById('renameFolderOverlay').classList.remove('active');
+    RenameFolderState.mailboxId = null;
+    RenameFolderState.folderId = null;
+}
+
+async function submitRenameFolder() {
+    const name = (document.getElementById('renameFolderName').value || '').trim();
+    const errorEl = document.getElementById('renameFolderError');
+    const saveBtn = document.getElementById('renameFolderSubmit');
+    errorEl.style.display = 'none';
+
+    if (!name) { errorEl.textContent = 'Folder name is required'; errorEl.style.display = 'block'; return; }
+    if (/[\/\\\."]/.test(name)) {
+        errorEl.textContent = "Folder name can't contain / \\ . or quote characters";
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    const { mailboxId, folderId } = RenameFolderState;
+    if (!mailboxId || !folderId) return;
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+    try {
+        await api.request(`/email/mailboxes/${mailboxId}/folders/${folderId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ name }),
+            _skipSpinner: true,
+        });
+        Toast.success(`Renamed to "${name}".`);
+        closeRenameFolderModal();
+        await loadFolders(mailboxId);
+        renderAccountTree();
+    } catch (err) {
+        errorEl.textContent = err.message || 'Could not rename folder. The mail server may have rejected it.';
+        errorEl.style.display = 'block';
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+    }
+}
+
+async function handleDeleteFolder(mailboxId, folderId) {
+    const folder = (State.foldersByMailbox[mailboxId] || []).find(f => f.id === folderId);
+    if (!folder) return;
+    const ok = await Confirm.danger(
+        `Delete "${folder.folder_name}" and any sub-folders it contains? Messages inside will stay visible but lose their folder assignment.`,
+        'Delete folder'
+    );
+    if (!ok) return;
+    try {
+        await api.request(`/email/mailboxes/${mailboxId}/folders/${folderId}`, {
+            method: 'DELETE',
+            _skipSpinner: true,
+        });
+        Toast.success(`Deleted "${folder.folder_name}".`);
+        // If the deleted folder was selected, bounce the view back to inbox.
+        if (State.selectedFolderId === folderId) {
+            const inbox = (State.foldersByMailbox[mailboxId] || []).find(f => f.folder_type === 'inbox');
+            if (inbox) selectFolder(mailboxId, inbox.id, 'inbox', inbox.folder_name);
+        }
+        await loadFolders(mailboxId);
+        renderAccountTree();
+    } catch (err) {
+        Toast.error(err.message || 'Could not delete folder.');
+    }
+}
+
+// ---- Folder context menu ----------------------------------------
+
+const FolderMenuState = { mailboxId: null, folderId: null };
+
+function openFolderMenu(mailboxId, folderId, triggerBtn) {
+    FolderMenuState.mailboxId = mailboxId;
+    FolderMenuState.folderId = folderId;
+
+    const menu = document.getElementById('folderMenu');
+    const rect = triggerBtn.getBoundingClientRect();
+
+    // Position: aligned to the ⋯ button, slightly below. Clamp to viewport.
+    menu.style.top = `${rect.bottom + 4}px`;
+    menu.style.left = `${Math.min(rect.left, window.innerWidth - 230)}px`;
+    menu.classList.add('open');
+    triggerBtn.setAttribute('aria-expanded', 'true');
+    menu.dataset.trigger = triggerBtn.dataset.folderId;
+}
+
+function closeFolderMenu() {
+    const menu = document.getElementById('folderMenu');
+    if (!menu) return;
+    menu.classList.remove('open');
+    FolderMenuState.mailboxId = null;
+    FolderMenuState.folderId = null;
+    // Reset every ⋯ button's aria-expanded
+    document.querySelectorAll('.folder-more-btn[aria-expanded="true"]')
+        .forEach(b => b.setAttribute('aria-expanded', 'false'));
+}
+
+function wireFolderMenu() {
+    const menu = document.getElementById('folderMenu');
+    if (!menu) return;
+    // Route item clicks to the three actions.
+    menu.querySelectorAll('.folder-menu-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const action = btn.dataset.action;
+            const { mailboxId, folderId } = FolderMenuState;
+            closeFolderMenu();
+            if (!mailboxId || !folderId) return;
+            if (action === 'new-child') openNewFolderModal(mailboxId, folderId);
+            else if (action === 'rename') openRenameFolderModal(mailboxId, folderId);
+            else if (action === 'delete') handleDeleteFolder(mailboxId, folderId);
+        });
+    });
+    // Close on outside click / Escape.
+    document.addEventListener('click', (e) => {
+        if (!menu.classList.contains('open')) return;
+        if (e.target.closest('.folder-menu') || e.target.closest('.folder-more-btn')) return;
+        closeFolderMenu();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && menu.classList.contains('open')) closeFolderMenu();
+    });
+    // Close on scroll (the popup is anchored to its trigger — scrolling
+    // would leave it dangling).
+    document.addEventListener('scroll', () => {
+        if (menu.classList.contains('open')) closeFolderMenu();
+    }, { capture: true, passive: true });
+}
+
 function wireNewFolderModal() {
     const overlay = document.getElementById('newFolderOverlay');
     if (!overlay) return;
     document.getElementById('newFolderClose').addEventListener('click', closeNewFolderModal);
     document.getElementById('newFolderCancel').addEventListener('click', closeNewFolderModal);
     document.getElementById('newFolderCreate').addEventListener('click', submitNewFolder);
-    overlay.addEventListener('click', e => {
-        if (e.target.id === 'newFolderOverlay') closeNewFolderModal();
-    });
+    document.getElementById('newFolderBackdrop')?.addEventListener('click', closeNewFolderModal);
     document.getElementById('newFolderName').addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); submitNewFolder(); }
         if (e.key === 'Escape') { e.preventDefault(); closeNewFolderModal(); }
     });
-    // Re-parent to body (same reason as compose modal) so no ancestor
-    // transform/overflow traps it.
+    // Rename modal
+    const renameOverlay = document.getElementById('renameFolderOverlay');
+    if (renameOverlay) {
+        document.getElementById('renameFolderClose').addEventListener('click', closeRenameFolderModal);
+        document.getElementById('renameFolderCancel').addEventListener('click', closeRenameFolderModal);
+        document.getElementById('renameFolderSubmit').addEventListener('click', submitRenameFolder);
+        document.getElementById('renameFolderBackdrop')?.addEventListener('click', closeRenameFolderModal);
+        document.getElementById('renameFolderName').addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); submitRenameFolder(); }
+            if (e.key === 'Escape') { e.preventDefault(); closeRenameFolderModal(); }
+        });
+    }
+    // Re-parent overlays to <body> so no ancestor transform traps them.
     if (overlay.parentElement !== document.body) document.body.appendChild(overlay);
+    if (renameOverlay && renameOverlay.parentElement !== document.body) document.body.appendChild(renameOverlay);
+    const menu = document.getElementById('folderMenu');
+    if (menu && menu.parentElement !== document.body) document.body.appendChild(menu);
+    wireFolderMenu();
 }
 
 // ==================== Compose ====================
