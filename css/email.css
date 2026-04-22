@@ -539,11 +539,35 @@ body.email-page .email-list {
     position: sticky;
     top: 0;
     z-index: 2;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.12s;
+}
+
+.email-date-separator:hover {
+    color: var(--text-primary);
 }
 
 .email-date-separator .chev {
     width: 9px; height: 9px;
     fill: none; stroke: currentColor; stroke-width: 2.5;
+    transition: transform 0.18s;
+}
+
+.email-date-separator.collapsed .chev {
+    transform: rotate(-90deg);
+}
+
+.email-date-count {
+    margin-left: auto;
+    padding: 1px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    background: var(--email-row-hover);
+    border-radius: 9px;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .email-row {
@@ -1094,7 +1118,11 @@ body.email-page .email-read {
     bottom: 0 !important;
     width: 100vw;
     height: 100vh;
-    background: var(--bg-modal-overlay);
+    /* Glassy backdrop — blurs the page behind like CRM/HRMS modals.
+       rgba overlay sits ON TOP of the blur so text stays legible. */
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     z-index: 9999 !important;
     display: none;
     align-items: center;
@@ -1110,7 +1138,9 @@ body.email-page .email-read {
 @keyframes email-fade { from { opacity: 0; } to { opacity: 1; } }
 
 .email-modal {
-    background: var(--bg-card);
+    background: var(--glass-bg);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
     width: 760px;
     max-width: 95vw;
     max-height: 92vh;
@@ -1119,7 +1149,12 @@ body.email-page .email-read {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color-light);
+}
+
+[data-theme="dark"] .email-modal {
+    background: rgba(20, 30, 48, 0.82);
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .email-modal-header {
@@ -1346,12 +1381,126 @@ body.email-page .email-read {
 
 .email-modal-footer {
     padding: 12px 18px;
-    border-top: 1px solid var(--email-divider);
+    border-top: 1px solid var(--border-color-light);
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     gap: 10px;
-    background: var(--bg-card);
+    /* Match the modal's glass — solid bg broke the frosted effect */
+    background: transparent;
+}
+
+.email-modal-footer .footer-left { margin-right: auto; }
+
+/* Smaller modal variant (used by Create-folder) */
+.email-modal.email-modal-sm {
+    width: 480px;
+}
+
+/* Self-contained form primitives for email modals — the global
+   .form-control / .btn-primary rules carry a lot of dashboard
+   baggage that doesn't compose well with our glass bg, so we style
+   locally and keep the look consistent with the rest of the email
+   UI. */
+.email-modal-hint {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin: 0 0 16px;
+    line-height: 1.5;
+}
+
+.email-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.email-field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.email-field-error {
+    color: var(--color-danger, #ef4444);
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+.email-input {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.4;
+    transition: border-color 0.12s, background 0.12s;
+    appearance: none;
+}
+
+[data-theme="dark"] .email-input {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.email-input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb), 0.06);
+}
+
+select.email-input {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 32px;
+}
+
+.email-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: inherit;
+    line-height: 1.2;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, color 0.12s, opacity 0.12s;
+}
+
+.email-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.email-btn-primary {
+    background: var(--brand-primary);
+    color: #fff;
+}
+
+.email-btn-primary:hover:not(:disabled) {
+    background: var(--brand-primary-hover, var(--brand-primary));
+    filter: brightness(1.08);
+}
+
+.email-btn-ghost {
+    background: transparent;
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+.email-btn-ghost:hover:not(:disabled) {
+    background: var(--email-row-hover);
+    color: var(--text-primary);
 }
 
 .email-modal-footer .footer-left {

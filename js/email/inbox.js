@@ -16,6 +16,7 @@ const State = {
     mailboxes: [],
     accountCollapse: {},            // mailbox_id → bool
     folderCollapse: {},             // folder_id → bool (true == collapsed, hide descendants)
+    dateGroupCollapse: {},          // date-bucket label → bool (true == collapsed)
     selectedMailboxId: null,
     foldersByMailbox: {},           // mailbox_id → [folder]
     selectedFolderId: null,
@@ -46,6 +47,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     Navigation.init('email', '../');
     loadFolderCollapse();
+    try {
+        const raw = localStorage.getItem('email_date_group_collapse');
+        if (raw) State.dateGroupCollapse = JSON.parse(raw) || {};
+    } catch { /* ignore */ }
 
     document.getElementById('btnCompose').addEventListener('click', () => openCompose('new'));
     document.getElementById('btnRefresh').addEventListener('click', refreshMessages);
@@ -647,13 +652,15 @@ function renderMessages() {
     const buckets = groupByDate(list);
     let html = '';
     for (const [label, items] of buckets) {
+        const collapsed = !!State.dateGroupCollapse[label];
         html += `
-            <div class="email-date-separator">
+            <div class="email-date-separator ${collapsed ? 'collapsed' : ''}" data-bucket="${escapeHtml(label)}" role="button" aria-expanded="${!collapsed}" title="${collapsed ? 'Expand' : 'Collapse'} ${label}">
                 <svg class="chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
                 ${label}
+                <span class="email-date-count">${items.length}</span>
             </div>`;
-        for (const m of items) {
-            html += renderRow(m);
+        if (!collapsed) {
+            for (const m of items) html += renderRow(m);
         }
     }
 
@@ -680,6 +687,18 @@ function renderMessages() {
 
     container.querySelectorAll('.email-row').forEach(row => {
         row.addEventListener('click', () => openMessage(row.dataset.messageId));
+    });
+
+    // Date-bucket collapse/expand — click the separator to fold the group.
+    container.querySelectorAll('.email-date-separator').forEach(sep => {
+        sep.addEventListener('click', () => {
+            const label = sep.dataset.bucket;
+            if (!label) return;
+            State.dateGroupCollapse[label] = !State.dateGroupCollapse[label];
+            try { localStorage.setItem('email_date_group_collapse', JSON.stringify(State.dateGroupCollapse)); }
+            catch { /* quota / private mode — non-fatal */ }
+            renderMessages();
+        });
     });
 
     attachLoadMoreObserver(container);
