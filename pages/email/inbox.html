@@ -139,7 +139,41 @@
                         </button>
                     </div>
                 </div>
-                <input type="search" class="email-list-search" id="listSearch" placeholder="Search mail…">
+                <div class="email-list-search-wrap">
+                    <input type="search" class="email-list-search" id="listSearch" placeholder="Search mail…">
+                    <button type="button" class="email-search-help-btn" id="searchHelpBtn" aria-label="Search tips" tabindex="0">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+                    </button>
+                    <!--
+                        Popover that surfaces on hover/focus of the ? icon. Explains the
+                        websearch_to_tsquery syntax our backend supports. Click an
+                        example to insert it into the search box.
+                    -->
+                    <div class="email-search-help-popover" id="searchHelpPopover" role="tooltip" hidden>
+                        <div class="search-help-title">Search tips</div>
+                        <div class="search-help-row">
+                            <button class="search-help-example" type="button" data-example="kantar">kantar</button>
+                            <span class="search-help-desc">Finds the word anywhere — subject, sender, body.</span>
+                        </div>
+                        <div class="search-help-row">
+                            <button class="search-help-example" type="button" data-example='"dry run"'>"dry run"</button>
+                            <span class="search-help-desc">Quotes match an exact phrase.</span>
+                        </div>
+                        <div class="search-help-row">
+                            <button class="search-help-example" type="button" data-example="meeting -kantar">meeting -kantar</button>
+                            <span class="search-help-desc">Minus excludes a word.</span>
+                        </div>
+                        <div class="search-help-row">
+                            <button class="search-help-example" type="button" data-example="zoom OR teams">zoom OR teams</button>
+                            <span class="search-help-desc">OR between words matches either.</span>
+                        </div>
+                        <div class="search-help-row">
+                            <button class="search-help-example" type="button" data-example='"invoice" -paid'>"invoice" -paid</button>
+                            <span class="search-help-desc">Mix and match — phrases and exclusions together.</span>
+                        </div>
+                        <div class="search-help-note">Ranks subject matches above sender, and sender above body — so the most relevant hit lands on top.</div>
+                    </div>
+                </div>
             </div>
             <!--
                 Bulk-action toolbar — hidden until at least one checkbox is

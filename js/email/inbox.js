@@ -667,6 +667,7 @@ let _searchTimer = null;
 function wireSearchInput() {
     const input = document.getElementById('listSearch');
     if (!input) return;
+    wireSearchHelpPopover();
     input.addEventListener('input', (e) => {
         const raw = e.target.value || '';
         State.searchQuery = raw;
@@ -683,6 +684,46 @@ function wireSearchInput() {
         // debounce.
         const delay = trimmed.length < 2 ? 500 : 250;
         _searchTimer = setTimeout(() => { loadMessages(); }, delay);
+    });
+}
+
+/**
+ * Info-icon popover inside the search box. Shows on hover + keyboard focus,
+ * stays open while the cursor is over the popover itself (so the user can
+ * click an example to insert it). Short close delay on mouse-leave prevents
+ * flicker when crossing the 6px gap between icon and popover.
+ */
+function wireSearchHelpPopover() {
+    const btn = document.getElementById('searchHelpBtn');
+    const pop = document.getElementById('searchHelpPopover');
+    const input = document.getElementById('listSearch');
+    if (!btn || !pop || !input) return;
+
+    let closeTimer = null;
+    const open = () => { if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; } pop.hidden = false; };
+    const scheduleClose = () => { if (closeTimer) clearTimeout(closeTimer); closeTimer = setTimeout(() => { pop.hidden = true; }, 150); };
+
+    btn.addEventListener('mouseenter', open);
+    btn.addEventListener('focus', open);
+    btn.addEventListener('mouseleave', scheduleClose);
+    btn.addEventListener('blur', scheduleClose);
+    pop.addEventListener('mouseenter', open);
+    pop.addEventListener('mouseleave', scheduleClose);
+
+    // Click an example chip → insert into the search box and trigger the
+    // normal input flow. Keeps the popover open so the user can try others.
+    pop.querySelectorAll('.search-help-example').forEach(el => {
+        el.addEventListener('click', () => {
+            const ex = el.dataset.example || el.textContent;
+            input.value = ex;
+            input.focus();
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+    });
+
+    // Dismiss on Escape when popover is open.
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !pop.hidden) { pop.hidden = true; btn.blur(); }
     });
 }
 
