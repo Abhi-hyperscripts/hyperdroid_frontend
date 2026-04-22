@@ -26,6 +26,9 @@ const State = {
     hasMore: false,                 // more pages remain
     isLoadingMore: false,           // guard against duplicate fetches
     selectedMessageId: null,
+    // Set of message IDs the user has ticked for bulk operations. Cleared on
+    // folder-change, refresh, and explicit Cancel.
+    selectedMessageIds: new Set(),
     searchQuery: '',
     filter: 'focused',              // focused | other — Outlook UX
     composeMode: null,              // null | 'new' | 'reply' | 'reply-all' | 'forward'
@@ -78,6 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     wireScheduleMeetingModal();
     wireKeyboardShortcuts();
     wireMobileNav();
+    wireBulkBar();
 
     // Re-parent the compose modal to <body> so no ancestor with transform/
     // filter/overflow can reposition it. Without this, styles.css's
@@ -495,6 +499,26 @@ function renderAccountTree() {
                 });
             }
             row.addEventListener('click', () => selectFolder(mbx.id, f.id, f.folder_type, f.folder_name));
+
+            // Drag-and-drop target — messages can be dropped here to move.
+            row.addEventListener('dragover', (e) => {
+                if (!e.dataTransfer?.types.includes('application/x-email-ids')) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                row.classList.add('drag-over');
+            });
+            row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+            row.addEventListener('drop', (e) => {
+                row.classList.remove('drag-over');
+                const raw = e.dataTransfer?.getData('application/x-email-ids');
+                if (!raw) return;
+                e.preventDefault();
+                let ids;
+                try { ids = JSON.parse(raw); } catch { return; }
+                if (!Array.isArray(ids) || ids.length === 0) return;
+                performBulkMove(ids, mbx.id, f.id, prettyFolderName(f.folder_name, f.folder_type));
+            });
+
             foldersEl.appendChild(row);
         });
         accountEl.appendChild(foldersEl);
@@ -514,6 +538,7 @@ function selectFolder(mailboxId, folderId, folderType, folderName) {
     const mobileTitle = document.getElementById('mobileListTitle');
     if (mobileTitle) mobileTitle.textContent = pretty;
     State.selectedMessageId = null;
+    clearBulkSelection();
     renderEmptyRead();
     renderAccountTree();
     loadMessages();
@@ -721,7 +746,39 @@ function renderMessages() {
     container.innerHTML = html;
 
     container.querySelectorAll('.email-row').forEach(row => {
+        // Click the checkbox → toggle selection; click the row elsewhere →
+        // open the message. stopPropagation on the checkbox so it doesn't
+        // double as an "open message" click.
+        const cb = row.querySelector('.row-checkbox');
+        if (cb) {
+            cb.addEventListener('click', (e) => e.stopPropagation());
+            cb.addEventListener('change', (e) => {
+                toggleMessageSelection(row.dataset.messageId, e.target.checked);
+            });
+        }
         row.addEventListener('click', () => openMessage(row.dataset.messageId));
+
+        // Drag-and-drop: user drags message row onto a folder in the sidebar.
+        row.addEventListener('dragstart', (e) => {
+            // If the row the user grabbed isn't in the selection, treat the
+            // drag as a single-message move. Otherwise move everything in the
+            // current selection set (Gmail-style multi-drag).
+            const id = row.dataset.messageId;
+            if (!State.selectedMessageIds.has(id)) {
+                State.selectedMessageIds.clear();
+                State.selectedMessageIds.add(id);
+                renderBulkBar();
+            }
+            row.classList.add('dragging');
+            const ids = Array.from(State.selectedMessageIds);
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('application/x-email-ids', JSON.stringify(ids));
+            e.dataTransfer.setData('text/plain', ids.join(','));
+        });
+        row.addEventListener('dragend', () => {
+            row.classList.remove('dragging');
+            document.querySelectorAll('.email-folder-row.drag-over').forEach(f => f.classList.remove('drag-over'));
+        });
     });
 
     // Date-bucket collapse/expand — click the separator to fold the group.
@@ -767,9 +824,11 @@ function renderRow(m) {
     const avatarClass = 'ah-' + (hashStr(senderName) % 8);
     const isUnread = !m.is_read;
     const isActive = m.id === State.selectedMessageId;
+    const isSelected = State.selectedMessageIds.has(m.id);
     const date = m.received_at || m.sent_at || m.created_at;
     return `
-        <div class="email-row ${isUnread ? 'unread' : ''} ${isActive ? 'active' : ''}" data-message-id="${m.id}">
+        <div class="email-row ${isUnread ? 'unread' : ''} ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}" data-message-id="${m.id}" draggable="true">
+            <input type="checkbox" class="row-checkbox" aria-label="Select message" ${isSelected ? 'checked' : ''}>
             <div class="avatar ${avatarClass}">${escapeHtml(initials)}</div>
             <div class="row-top">
                 <span class="row-sender">${escapeHtml(senderName)}</span>
@@ -2040,6 +2099,218 @@ function wireComposeSplitMenu() {
     // Escape key closes the menu for keyboard users.
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && !menu.hidden) closeMenu();
+    });
+}
+
+// ==================== Bulk selection + bulk actions ====================
+
+function wireBulkBar() {
+    const selectAll = document.getElementById('emailBulkSelectAll');
+    if (selectAll) selectAll.addEventListener('change', (e) => {
+        if (e.target.checked) selectAllVisible();
+        else clearBulkSelection();
+    });
+    // Hostinger-style always-visible select-all in the filter row — same
+    // behavior, just a second entry point.
+    const selectAllTop = document.getElementById('emailSelectAllTop');
+    if (selectAllTop) selectAllTop.addEventListener('change', (e) => {
+        if (e.target.checked) selectAllVisible();
+        else clearBulkSelection();
+    });
+    const clearBtn = document.getElementById('emailBulkClear');
+    if (clearBtn) clearBtn.addEventListener('click', () => clearBulkSelection());
+    const markReadBtn = document.getElementById('emailBulkMarkRead');
+    if (markReadBtn) markReadBtn.addEventListener('click', () => bulkMarkRead(true));
+    const markUnreadBtn = document.getElementById('emailBulkMarkUnread');
+    if (markUnreadBtn) markUnreadBtn.addEventListener('click', () => bulkMarkRead(false));
+    const delBtn = document.getElementById('emailBulkDelete');
+    if (delBtn) delBtn.addEventListener('click', bulkDelete);
+    const moveBtn = document.getElementById('emailBulkMove');
+    if (moveBtn) moveBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openMoveMenu(moveBtn);
+    });
+
+    // Close the move menu on outside click / Escape.
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('emailMoveMenu');
+        if (menu && !menu.hidden && !menu.contains(e.target) && !e.target.closest('#emailBulkMove')) {
+            menu.hidden = true;
+        }
+    });
+    document.addEventListener('keydown', (e) => {
+        const menu = document.getElementById('emailMoveMenu');
+        if (e.key === 'Escape' && menu && !menu.hidden) menu.hidden = true;
+    });
+}
+
+function toggleMessageSelection(messageId, checked) {
+    if (!messageId) return;
+    if (checked) State.selectedMessageIds.add(messageId);
+    else State.selectedMessageIds.delete(messageId);
+    const row = document.querySelector(`.email-row[data-message-id="${messageId}"]`);
+    if (row) row.classList.toggle('selected', checked);
+    renderBulkBar();
+}
+
+function selectAllVisible() {
+    State.selectedMessageIds.clear();
+    document.querySelectorAll('#emailRows .email-row').forEach(row => {
+        const id = row.dataset.messageId;
+        if (!id) return;
+        State.selectedMessageIds.add(id);
+        row.classList.add('selected');
+        const cb = row.querySelector('.row-checkbox');
+        if (cb) cb.checked = true;
+    });
+    renderBulkBar();
+}
+
+function clearBulkSelection() {
+    State.selectedMessageIds.clear();
+    document.querySelectorAll('.email-row.selected').forEach(r => r.classList.remove('selected'));
+    document.querySelectorAll('.email-row .row-checkbox:checked').forEach(cb => cb.checked = false);
+    const selectAll = document.getElementById('emailBulkSelectAll');
+    if (selectAll) selectAll.checked = false;
+    renderBulkBar();
+}
+
+function renderBulkBar() {
+    const n = State.selectedMessageIds.size;
+    const bar = document.getElementById('emailBulkBar');
+    const list = document.getElementById('emailList');
+    if (!bar || !list) return;
+    if (n > 0) {
+        bar.hidden = false;
+        list.classList.add('has-selection');
+    } else {
+        bar.hidden = true;
+        list.classList.remove('has-selection');
+    }
+    const count = document.getElementById('emailBulkCount');
+    if (count) count.textContent = `${n} selected`;
+    // Sync both select-all checkboxes (bulk-bar one + always-visible top one)
+    // to reflect full/partial/empty selection state.
+    const visible = document.querySelectorAll('#emailRows .email-row').length;
+    const full = n > 0 && n === visible;
+    const partial = n > 0 && n < visible;
+    for (const selectAll of [document.getElementById('emailBulkSelectAll'), document.getElementById('emailSelectAllTop')]) {
+        if (!selectAll) continue;
+        selectAll.checked = full;
+        selectAll.indeterminate = partial;
+    }
+}
+
+async function bulkMarkRead(isRead) {
+    const ids = Array.from(State.selectedMessageIds);
+    if (ids.length === 0) return;
+    try {
+        await api.request('/email/messages/bulk/mark-read', {
+            method: 'POST',
+            body: JSON.stringify({ message_ids: ids, read: isRead }),
+        });
+        // Optimistic UI: flip local flags and badges so the change is instant.
+        for (const id of ids) {
+            const m = State.messages.find(x => x.id === id);
+            if (!m) continue;
+            if (m.is_read === isRead) continue;
+            m.is_read = isRead;
+            adjustFolderUnreadCount(State.selectedMailboxId, State.selectedFolderId, isRead ? -1 : +1);
+        }
+        clearBulkSelection();
+        renderMessages();
+        Toast.success(`Marked ${ids.length} as ${isRead ? 'read' : 'unread'}`);
+    } catch (err) {
+        Toast.error(`Failed: ${err.message || err}`);
+    }
+}
+
+async function bulkDelete() {
+    const ids = Array.from(State.selectedMessageIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} message${ids.length === 1 ? '' : 's'}?`)) return;
+    try {
+        const resp = await api.request('/email/messages/bulk/delete', {
+            method: 'POST',
+            body: JSON.stringify({ message_ids: ids }),
+        });
+        const deleted = resp?.deleted || 0;
+        // Drop the deleted rows locally.
+        State.messages = State.messages.filter(m => !ids.includes(m.id));
+        clearBulkSelection();
+        renderMessages();
+        Toast.success(`${deleted} deleted`);
+    } catch (err) {
+        Toast.error(`Delete failed: ${err.message || err}`);
+    }
+}
+
+async function performBulkMove(messageIds, mailboxId, targetFolderId, folderLabel) {
+    if (!Array.isArray(messageIds) || messageIds.length === 0) return;
+    try {
+        const resp = await api.request('/email/messages/bulk/move', {
+            method: 'POST',
+            body: JSON.stringify({ message_ids: messageIds, target_folder_id: targetFolderId }),
+        });
+        const moved = resp?.moved || 0;
+        // Drop the moved rows from the CURRENT folder view and clear selection.
+        State.messages = State.messages.filter(m => !messageIds.includes(m.id));
+        clearBulkSelection();
+        renderMessages();
+        Toast.success(`Moved ${moved} to ${folderLabel || 'folder'}`);
+        // Ask the target folder to refresh its count badge on the next poll.
+        if (mailboxId && targetFolderId)
+            syncFolderInBackground(mailboxId, targetFolderId);
+    } catch (err) {
+        Toast.error(`Move failed: ${err.message || err}`);
+    }
+}
+
+function openMoveMenu(trigger) {
+    const menu = document.getElementById('emailMoveMenu');
+    if (!menu) return;
+    // Re-parent to <body> so ancestor overflow/transform can't clip the flyout
+    // behind the reading pane. `position: fixed` in CSS handles positioning
+    // against the viewport.
+    if (menu.parentElement !== document.body) {
+        document.body.appendChild(menu);
+    }
+    const mailboxId = State.selectedMailboxId;
+    if (!mailboxId) return;
+    const folders = State.foldersByMailbox[mailboxId] || [];
+    // Exclude the current folder from the target list — moving into the same
+    // folder is a no-op and we shouldn't clutter the menu with it.
+    const targets = folders.filter(f => f.id !== State.selectedFolderId);
+    if (targets.length === 0) {
+        Toast.info('No other folder to move to');
+        return;
+    }
+
+    let html = '<div class="email-move-menu-group">Move to</div>';
+    for (const f of targets) {
+        const label = prettyFolderName(f.folder_name, f.folder_type);
+        html += `
+            <button type="button" class="email-move-menu-item" data-folder-id="${f.id}" role="menuitem">
+                ${folderIconSVG(f.folder_type)}
+                <span>${escapeHtml(label)}</span>
+            </button>`;
+    }
+    menu.innerHTML = html;
+
+    // Position just below the Move button.
+    const rect = trigger.getBoundingClientRect();
+    menu.style.top = `${rect.bottom + 4}px`;
+    menu.style.left = `${Math.max(8, rect.right - 260)}px`;
+    menu.hidden = false;
+
+    menu.querySelectorAll('.email-move-menu-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const fid = btn.dataset.folderId;
+            const label = btn.querySelector('span')?.textContent;
+            menu.hidden = true;
+            const ids = Array.from(State.selectedMessageIds);
+            performBulkMove(ids, mailboxId, fid, label);
+        });
     });
 }
 

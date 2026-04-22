@@ -128,6 +128,9 @@
                     <span class="email-list-title-count" id="folderCount"></span>
                 </div>
                 <div class="email-filter-tabs">
+                    <label class="email-select-all-label" title="Select all visible messages">
+                        <input type="checkbox" id="emailSelectAllTop" aria-label="Select all visible messages">
+                    </label>
                     <button class="email-filter-tab active" data-filter="focused">Focused</button>
                     <button class="email-filter-tab" data-filter="other">Other</button>
                     <div class="email-toolbar-icons">
@@ -138,6 +141,41 @@
                 </div>
                 <input type="search" class="email-list-search" id="listSearch" placeholder="Search mail…">
             </div>
+            <!--
+                Bulk-action toolbar — hidden until at least one checkbox is
+                ticked. Shows count + Delete / Mark read / Mark unread / Move-to.
+                Move-to opens a small flyout menu with the folder tree.
+            -->
+            <div class="email-bulk-bar" id="emailBulkBar" hidden>
+                <label class="email-bulk-check">
+                    <input type="checkbox" id="emailBulkSelectAll" aria-label="Select all visible messages">
+                    <span class="email-bulk-count" id="emailBulkCount">0 selected</span>
+                </label>
+                <div class="email-bulk-actions">
+                    <button type="button" class="email-bulk-btn" id="emailBulkMarkRead" data-tooltip="Mark as read">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><polyline points="4 8 12 14 20 8"/></svg>
+                        <span>Read</span>
+                    </button>
+                    <button type="button" class="email-bulk-btn" id="emailBulkMarkUnread" data-tooltip="Mark as unread">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M4 8l8 6 8-6"/><circle cx="19" cy="5" r="3" fill="currentColor" stroke="none"/></svg>
+                        <span>Unread</span>
+                    </button>
+                    <button type="button" class="email-bulk-btn" id="emailBulkMove" data-tooltip="Move to folder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                        <span>Move</span>
+                    </button>
+                    <button type="button" class="email-bulk-btn danger" id="emailBulkDelete" data-tooltip="Delete">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+                        <span>Delete</span>
+                    </button>
+                    <button type="button" class="email-bulk-btn" id="emailBulkClear" data-tooltip="Clear selection">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        <span>Cancel</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Flyout picker that opens when Move is clicked. Populated at open-time with current folder tree. -->
+            <div class="email-move-menu" id="emailMoveMenu" hidden role="menu" aria-label="Move to folder"></div>
             <div class="email-rows" id="emailRows">
                 <!-- Skeleton while loading -->
                 <div class="email-skel-row">
