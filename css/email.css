@@ -282,10 +282,48 @@ body.email-page .email-rail {
     font-size: 13px;
     color: var(--text-primary);
     cursor: pointer;
-    gap: 10px;
+    gap: 6px;
     user-select: none;
     border-left: 2px solid transparent;
     transition: background 0.1s, border-color 0.1s;
+}
+
+/* Chevron toggle for folders with children — collapses/expands the
+   subtree. Sits to the left of the folder icon inside the row's padding
+   so the icon + name column stay visually aligned across siblings. */
+.folder-chev,
+.folder-chev-placeholder {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: -16px;  /* reach into the row's padding-left */
+}
+
+.folder-chev {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border-radius: 3px;
+    transition: transform 0.15s, color 0.15s, background 0.15s;
+}
+
+.folder-chev:hover {
+    color: var(--brand-primary);
+    background: var(--email-row-hover);
+}
+
+.folder-chev svg {
+    width: 11px;
+    height: 11px;
+}
+
+.folder-chev.collapsed {
+    transform: rotate(-90deg);
 }
 
 .email-folder-row:hover {

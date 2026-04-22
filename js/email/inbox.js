@@ -15,6 +15,7 @@ const PAGE_SIZE = 30;
 const State = {
     mailboxes: [],
     accountCollapse: {},            // mailbox_id → bool
+    folderCollapse: {},             // folder_id → bool (true == collapsed, hide descendants)
     selectedMailboxId: null,
     foldersByMailbox: {},           // mailbox_id → [folder]
     selectedFolderId: null,
@@ -44,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     Navigation.init('email', '../');
+    loadFolderCollapse();
 
     document.getElementById('btnCompose').addEventListener('click', () => openCompose('new'));
     document.getElementById('btnRefresh').addEventListener('click', refreshMessages);
@@ -317,6 +319,63 @@ function computeFolderDepths(folders) {
     return map;
 }
 
+/**
+ * Returns a lookup table of which folders have child folders — used to
+ * decide whether to render a chevron toggle in the sidebar. Keyed by
+ * folder id -> true.
+ */
+function computeFoldersWithChildren(folders) {
+    const customs = folders.filter(f => f.folder_type === 'custom');
+    if (customs.length === 0) return {};
+    const delim = customs.some(f => (f.folder_path || '').includes('/')) ? '/' : '.';
+    const result = {};
+    for (const f of customs) {
+        const prefix = (f.folder_path || '') + delim;
+        if (customs.some(o => o.id !== f.id && (o.folder_path || '').startsWith(prefix))) {
+            result[f.id] = true;
+        }
+    }
+    return result;
+}
+
+/**
+ * Returns a Set of folder ids that should be HIDDEN because at least one
+ * ancestor folder is currently collapsed. Walks the path chain for each
+ * custom folder and checks the collapse state of every parent-in-tree.
+ */
+function computeHiddenFolderIds(folders) {
+    const customs = folders.filter(f => f.folder_type === 'custom');
+    if (customs.length === 0) return new Set();
+    const delim = customs.some(f => (f.folder_path || '').includes('/')) ? '/' : '.';
+    const byPath = new Map();
+    customs.forEach(f => byPath.set(f.folder_path, f));
+    const hidden = new Set();
+    for (const f of customs) {
+        let path = f.folder_path || '';
+        while (true) {
+            const idx = path.lastIndexOf(delim);
+            if (idx === -1) break;
+            path = path.substring(0, idx);
+            const parent = byPath.get(path);
+            if (!parent) break;
+            if (State.folderCollapse[parent.id]) { hidden.add(f.id); break; }
+        }
+    }
+    return hidden;
+}
+
+function persistFolderCollapse() {
+    try { localStorage.setItem('email_folder_collapse', JSON.stringify(State.folderCollapse)); }
+    catch { /* quota / private mode — fine */ }
+}
+
+function loadFolderCollapse() {
+    try {
+        const raw = localStorage.getItem('email_folder_collapse');
+        if (raw) State.folderCollapse = JSON.parse(raw) || {};
+    } catch { /* ignore */ }
+}
+
 function renderAccountTree() {
     const tree = document.getElementById('accountsTree');
     tree.innerHTML = '';
@@ -353,26 +412,48 @@ function renderAccountTree() {
         const foldersEl = document.createElement('div');
         foldersEl.className = 'email-folders';
         const depths = computeFolderDepths(folders);
+        const hasChildren = computeFoldersWithChildren(folders);
+        const hiddenIds = computeHiddenFolderIds(folders);
         folders.forEach(f => {
+            if (hiddenIds.has(f.id)) return;  // any ancestor is collapsed
             const row = document.createElement('div');
             row.className = 'email-folder-row';
             row.dataset.mailboxId = mbx.id;
             row.dataset.folderId = f.id;
             const depth = depths[f.id] || 0;
             // Always stamp paddingLeft so depth 1 clears the 30px base the
-            // CSS rule sets. Without this, a depth-1 row computed at 24px
-            // would actually shift LEFT of its parent. 14px per level gives
-            // clean visual stepping that lines up with the folder icon of
-            // the row above.
+            // CSS rule sets. 14px per level gives clean stepping that lines
+            // up with the folder icon of the row above. Chevron gets a
+            // -20px nudge so it sits just to the LEFT of the folder icon
+            // instead of pushing the whole row right by another 20px.
             row.style.paddingLeft = `${30 + depth * 14}px`;
             if (f.id === State.selectedFolderId && mbx.id === State.selectedMailboxId) {
                 row.classList.add('active');
             }
+            const isCollapsed = !!State.folderCollapse[f.id];
+            const chevronHtml = hasChildren[f.id]
+                ? `<button class="folder-chev ${isCollapsed ? 'collapsed' : ''}" aria-label="${isCollapsed ? 'Expand' : 'Collapse'}" title="${isCollapsed ? 'Expand' : 'Collapse'}">
+                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>
+                   </button>`
+                : '<span class="folder-chev-placeholder"></span>';
             row.innerHTML = `
+                ${chevronHtml}
                 ${folderIconSVG(f.folder_type)}
                 <span class="folder-name">${escapeHtml(prettyFolderName(f.folder_name, f.folder_type))}</span>
                 ${f.unread_count > 0 ? `<span class="folder-count">${f.unread_count}</span>` : ''}
             `;
+            // Chevron click toggles collapse WITHOUT selecting the folder,
+            // matching Hostinger / Gmail webmail behaviour where the name
+            // is the navigation target and the chevron is purely a toggle.
+            const chev = row.querySelector('.folder-chev');
+            if (chev) {
+                chev.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    State.folderCollapse[f.id] = !State.folderCollapse[f.id];
+                    persistFolderCollapse();
+                    renderAccountTree();
+                });
+            }
             row.addEventListener('click', () => selectFolder(mbx.id, f.id, f.folder_type, f.folder_name));
             foldersEl.appendChild(row);
         });
