@@ -403,20 +403,30 @@ function renderAccountTree() {
         header.innerHTML = `
             <svg class="chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
             <span class="email-account-name">${escapeHtml(mbx.email_address)}</span>
+            <button class="email-sync-folders-btn" title="Sync folders from server" aria-label="Sync folders from server">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+            </button>
             <button class="email-new-folder-btn" title="Create folder" aria-label="Create folder">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
         `;
         header.addEventListener('click', (e) => {
-            // Ignore clicks on the + button — it has its own handler that
-            // opens the Create-folder modal.
-            if (e.target.closest('.email-new-folder-btn')) return;
+            // Ignore clicks on the action buttons — they have their own handlers.
+            if (e.target.closest('.email-new-folder-btn') || e.target.closest('.email-sync-folders-btn')) return;
             State.accountCollapse[mbx.id] = !collapsed;
             renderAccountTree();
         });
         header.querySelector('.email-new-folder-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             openNewFolderModal(mbx.id);
+        });
+        header.querySelector('.email-sync-folders-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleSyncFolders(mbx.id, e.currentTarget);
         });
         accountEl.appendChild(header);
 
@@ -1259,6 +1269,24 @@ async function submitRenameFolder() {
     } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Save';
+    }
+}
+
+async function handleSyncFolders(mailboxId, btn) {
+    // Tags the button as spinning, re-runs the same refresh+render path that
+    // fires on initial load (POST /folders/refresh re-lists against IMAP and
+    // prunes our DB against the server's truth). Safe to double-click — the
+    // spin class is re-set each time, and the endpoint is idempotent.
+    if (btn && btn.classList.contains('is-syncing')) return;
+    if (btn) btn.classList.add('is-syncing');
+    try {
+        await loadFolders(mailboxId);
+        renderAccountTree();
+        if (window.Toast) Toast.success('Folder tree synced with server');
+    } catch (err) {
+        if (window.Toast) Toast.error(err?.message || 'Could not sync folders');
+    } finally {
+        if (btn) btn.classList.remove('is-syncing');
     }
 }
 
