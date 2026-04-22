@@ -359,11 +359,12 @@ function renderAccountTree() {
             row.dataset.mailboxId = mbx.id;
             row.dataset.folderId = f.id;
             const depth = depths[f.id] || 0;
-            if (depth > 0) {
-                // 14px per nesting level — lines up visually with the
-                // folder icon of the parent above.
-                row.style.paddingLeft = `${10 + depth * 14}px`;
-            }
+            // Always stamp paddingLeft so depth 1 clears the 30px base the
+            // CSS rule sets. Without this, a depth-1 row computed at 24px
+            // would actually shift LEFT of its parent. 14px per level gives
+            // clean visual stepping that lines up with the folder icon of
+            // the row above.
+            row.style.paddingLeft = `${30 + depth * 14}px`;
             if (f.id === State.selectedFolderId && mbx.id === State.selectedMailboxId) {
                 row.classList.add('active');
             }
