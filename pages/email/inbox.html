@@ -202,6 +202,36 @@
         </div>
     </div>
 
+    <!-- ===================== New-folder modal =========================== -->
+    <div class="email-modal-overlay" id="newFolderOverlay">
+        <div class="email-modal" style="max-width: 460px;">
+            <div class="email-modal-header">
+                <h3>Create folder</h3>
+                <button class="email-modal-close" id="newFolderClose" title="Close (Esc)">&times;</button>
+            </div>
+            <div class="email-modal-body">
+                <p style="color: var(--text-secondary); font-size: 13px; margin: 0 0 16px;">
+                    Folders live on your mail server. This will create the folder on IMAP and sync it here.
+                </p>
+                <div class="email-compose-row" style="flex-direction: column; align-items: stretch;">
+                    <label style="margin-bottom: 6px;">Name</label>
+                    <input type="text" class="form-control" id="newFolderName" placeholder="e.g. Projects, Invoices, Clients" autocomplete="off" style="width: 100%;">
+                </div>
+                <div class="email-compose-row" style="flex-direction: column; align-items: stretch; margin-top: 12px;">
+                    <label style="margin-bottom: 6px;">Location</label>
+                    <select class="form-control" id="newFolderParent" style="width: 100%;">
+                        <option value="">No parent folder (top level)</option>
+                    </select>
+                </div>
+                <div id="newFolderError" style="display:none; margin-top: 12px; color: var(--color-error, #ef4444); font-size: 13px;"></div>
+            </div>
+            <div class="email-modal-footer">
+                <button class="btn-secondary" id="newFolderCancel">Cancel</button>
+                <button class="btn-primary" id="newFolderCreate">Create folder</button>
+            </div>
+        </div>
+    </div>
+
     <!-- SignalR for live inbox push -->
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
 

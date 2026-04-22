@@ -230,6 +230,41 @@ body.email-page .email-rail {
     white-space: nowrap;
 }
 
+/* "+" button on each mailbox row in the rail — opens the Create-folder
+   modal scoped to that mailbox. Hidden until the row is hovered so it
+   doesn't clutter the UI. */
+.email-new-folder-btn {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+
+.email-account-header:hover .email-new-folder-btn,
+.email-new-folder-btn:focus-visible {
+    opacity: 1;
+}
+
+.email-new-folder-btn:hover {
+    background: var(--email-row-hover);
+    color: var(--brand-primary);
+}
+
+.email-new-folder-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
 .email-folders {
     padding: 0 0 6px;
     display: flex;

@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     wireComposeModal();
+    wireNewFolderModal();
     wireKeyboardShortcuts();
     wireMobileNav();
 
@@ -248,14 +249,34 @@ async function loadMailboxes() {
 
 async function loadFolders(mailboxId) {
     try {
-        const folders = await api.request(`/email/mailboxes/${mailboxId}/folders`);
+        // Ask the server to re-run IMAP folder discovery before we list — this
+        // picks up any folders the user created (or deleted) on webmail /
+        // another client since our last 25-min IDLE reconnect cycle. The
+        // endpoint returns the refreshed folder list directly so we don't
+        // need a second GET.
+        let folders;
+        try {
+            folders = await api.request(`/email/mailboxes/${mailboxId}/folders/refresh`, {
+                method: 'POST',
+                _skipSpinner: true
+            });
+        } catch (refreshErr) {
+            // Refresh is best-effort — if the IMAP call fails we still want
+            // to show whatever folders we already have in the DB.
+            console.warn('Folder refresh failed, falling back to cached list', refreshErr);
+            folders = await api.request(`/email/mailboxes/${mailboxId}/folders`);
+        }
         const list = Array.isArray(folders) ? folders : [];
-        // Canonical order for standard folders, then custom alphabetical
+        // Canonical order for standard folders; custom folders sorted by path
+        // so nested children appear right after their parent (tree order).
         const order = ['inbox', 'sent', 'drafts', 'archive', 'junk', 'trash', 'custom'];
         list.sort((a, b) => {
             const ai = order.indexOf(a.folder_type);
             const bi = order.indexOf(b.folder_type);
             if (ai !== bi) return ai - bi;
+            if (a.folder_type === 'custom') {
+                return (a.folder_path || '').localeCompare(b.folder_path || '');
+            }
             return (a.folder_name || '').localeCompare(b.folder_name || '');
         });
         State.foldersByMailbox[mailboxId] = list;
@@ -263,6 +284,37 @@ async function loadFolders(mailboxId) {
         console.warn(`loadFolders(${mailboxId}) failed`, err);
         State.foldersByMailbox[mailboxId] = [];
     }
+}
+
+/**
+ * Compute per-folder nesting depth so we can indent custom folders under
+ * their parent in the sidebar. IMAP servers use either `.` (Cyrus/Dovecot,
+ * which is what Hostinger runs) or `/` (Gmail-style) as the path delimiter;
+ * we sniff whichever shows up in the current folder set and derive depth
+ * from how many ancestor paths exist in the same custom-folder list.
+ * Returns a map keyed by folder id -> integer depth (0 for top-level).
+ */
+function computeFolderDepths(folders) {
+    const customs = folders.filter(f => f.folder_type === 'custom');
+    if (customs.length === 0) return {};
+    // Sniff delimiter: prefer `/` if any custom path uses it, else `.`
+    const delim = customs.some(f => (f.folder_path || '').includes('/')) ? '/' : '.';
+    const paths = new Set(customs.map(f => f.folder_path));
+    const depthOf = (f) => {
+        let depth = 0;
+        let path = f.folder_path || '';
+        while (true) {
+            const idx = path.lastIndexOf(delim);
+            if (idx === -1) break;
+            path = path.substring(0, idx);
+            if (paths.has(path)) depth++;
+            else break;
+        }
+        return depth;
+    };
+    const map = {};
+    customs.forEach(f => { map[f.id] = depthOf(f); });
+    return map;
 }
 
 function renderAccountTree() {
@@ -281,20 +333,37 @@ function renderAccountTree() {
         header.innerHTML = `
             <svg class="chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
             <span class="email-account-name">${escapeHtml(mbx.email_address)}</span>
+            <button class="email-new-folder-btn" title="Create folder" aria-label="Create folder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
         `;
-        header.addEventListener('click', () => {
+        header.addEventListener('click', (e) => {
+            // Ignore clicks on the + button — it has its own handler that
+            // opens the Create-folder modal.
+            if (e.target.closest('.email-new-folder-btn')) return;
             State.accountCollapse[mbx.id] = !collapsed;
             renderAccountTree();
+        });
+        header.querySelector('.email-new-folder-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openNewFolderModal(mbx.id);
         });
         accountEl.appendChild(header);
 
         const foldersEl = document.createElement('div');
         foldersEl.className = 'email-folders';
+        const depths = computeFolderDepths(folders);
         folders.forEach(f => {
             const row = document.createElement('div');
             row.className = 'email-folder-row';
             row.dataset.mailboxId = mbx.id;
             row.dataset.folderId = f.id;
+            const depth = depths[f.id] || 0;
+            if (depth > 0) {
+                // 14px per nesting level — lines up visually with the
+                // folder icon of the parent above.
+                row.style.paddingLeft = `${10 + depth * 14}px`;
+            }
             if (f.id === State.selectedFolderId && mbx.id === State.selectedMailboxId) {
                 row.classList.add('active');
             }
@@ -922,6 +991,110 @@ async function deleteMessage(messageId) {
     } catch (err) {
         Toast.error(`Delete failed: ${err.message}`);
     }
+}
+
+// ==================== New folder (IMAP CREATE) ====================
+
+const NewFolderState = { mailboxId: null };
+
+function openNewFolderModal(mailboxId) {
+    NewFolderState.mailboxId = mailboxId;
+    const overlay = document.getElementById('newFolderOverlay');
+    const nameInput = document.getElementById('newFolderName');
+    const parentSelect = document.getElementById('newFolderParent');
+    const errorEl = document.getElementById('newFolderError');
+
+    // Reset state
+    nameInput.value = '';
+    errorEl.style.display = 'none';
+    errorEl.textContent = '';
+
+    // Populate the parent dropdown with the current mailbox's custom folders.
+    // Options are rendered in tree order (same path-based sort loadFolders
+    // applies) with indentation matching how they appear in the sidebar, so
+    // the user can tell parents from children.
+    parentSelect.innerHTML = '<option value="">No parent folder (top level)</option>';
+    const folders = (State.foldersByMailbox[mailboxId] || [])
+        .filter(f => f.folder_type === 'custom');
+    const depths = computeFolderDepths(folders);
+    folders.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.id;
+        const indent = '\u00A0\u00A0'.repeat(depths[f.id] || 0);
+        opt.textContent = `${indent}${f.folder_name}`;
+        parentSelect.appendChild(opt);
+    });
+
+    overlay.classList.add('active');
+    setTimeout(() => nameInput.focus(), 50);
+}
+
+function closeNewFolderModal() {
+    document.getElementById('newFolderOverlay').classList.remove('active');
+    NewFolderState.mailboxId = null;
+}
+
+async function submitNewFolder() {
+    const name = (document.getElementById('newFolderName').value || '').trim();
+    const parentId = document.getElementById('newFolderParent').value || null;
+    const errorEl = document.getElementById('newFolderError');
+    const createBtn = document.getElementById('newFolderCreate');
+    errorEl.style.display = 'none';
+
+    if (!name) {
+        errorEl.textContent = 'Folder name is required';
+        errorEl.style.display = 'block';
+        return;
+    }
+    // Match the backend's validation so we fail fast without a round-trip.
+    if (/[\/\\\."]/.test(name)) {
+        errorEl.textContent = "Folder name can't contain / \\ . or quote characters";
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    const mailboxId = NewFolderState.mailboxId;
+    if (!mailboxId) return;
+
+    createBtn.disabled = true;
+    createBtn.textContent = 'Creating…';
+    try {
+        await api.request(`/email/mailboxes/${mailboxId}/folders`, {
+            method: 'POST',
+            body: JSON.stringify({ name, parent_folder_id: parentId }),
+            _skipSpinner: true,
+        });
+        Toast.success(`Created "${name}" on your mail server.`);
+        closeNewFolderModal();
+        // Refresh folder list so the new row (with the server-chosen path)
+        // shows in the sidebar immediately.
+        await loadFolders(mailboxId);
+        renderAccountTree();
+    } catch (err) {
+        errorEl.textContent = err.message || 'Could not create folder. The mail server may have rejected it.';
+        errorEl.style.display = 'block';
+    } finally {
+        createBtn.disabled = false;
+        createBtn.textContent = 'Create folder';
+    }
+}
+
+function wireNewFolderModal() {
+    const overlay = document.getElementById('newFolderOverlay');
+    if (!overlay) return;
+    document.getElementById('newFolderClose').addEventListener('click', closeNewFolderModal);
+    document.getElementById('newFolderCancel').addEventListener('click', closeNewFolderModal);
+    document.getElementById('newFolderCreate').addEventListener('click', submitNewFolder);
+    overlay.addEventListener('click', e => {
+        if (e.target.id === 'newFolderOverlay') closeNewFolderModal();
+    });
+    document.getElementById('newFolderName').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); submitNewFolder(); }
+        if (e.key === 'Escape') { e.preventDefault(); closeNewFolderModal(); }
+    });
+    // Re-parent to body (same reason as compose modal) so no ancestor
+    // transform/overflow traps it.
+    if (overlay.parentElement !== document.body) document.body.appendChild(overlay);
 }
 
 // ==================== Compose ====================
