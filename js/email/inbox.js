@@ -1124,6 +1124,7 @@ const NewFolderState = { mailboxId: null };
 const RenameFolderState = { mailboxId: null, folderId: null };
 
 function openNewFolderModal(mailboxId, preselectedParentId = null) {
+    closeFolderMenu();  // Always close the context menu when a modal opens
     NewFolderState.mailboxId = mailboxId;
     const overlay = document.getElementById('newFolderOverlay');
     const nameInput = document.getElementById('newFolderName');
@@ -1194,6 +1195,7 @@ async function submitNewFolder() {
 }
 
 function openRenameFolderModal(mailboxId, folderId) {
+    closeFolderMenu();  // Always close the context menu when a modal opens
     const folder = (State.foldersByMailbox[mailboxId] || []).find(f => f.id === folderId);
     if (!folder) return;
     RenameFolderState.mailboxId = mailboxId;
@@ -1325,12 +1327,17 @@ function wireFolderMenu() {
             else if (action === 'delete') handleDeleteFolder(mailboxId, folderId);
         });
     });
-    // Close on outside click / Escape.
-    document.addEventListener('click', (e) => {
+    // Close on outside click / Escape. Using mousedown in the CAPTURE
+    // phase so this fires BEFORE any downstream click handler that calls
+    // stopPropagation (like the "+" button on the mailbox header which
+    // opens the Create-folder modal). Without capture, stopPropagation
+    // prevented the menu from closing when the user clicked other UI.
+    document.addEventListener('mousedown', (e) => {
         if (!menu.classList.contains('open')) return;
-        if (e.target.closest('.folder-menu') || e.target.closest('.folder-more-btn')) return;
+        if (e.target.closest('.folder-menu')) return;
+        if (e.target.closest('.folder-more-btn')) return;
         closeFolderMenu();
-    });
+    }, { capture: true });
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && menu.classList.contains('open')) closeFolderMenu();
     });

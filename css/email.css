@@ -39,29 +39,27 @@ body.email-page::before {
     z-index: 0;
 }
 
+/* Exact gradient intensity CRM/HRMS use — keeps the navbar and content
+   visually continuous. */
 [data-theme="dark"] body.email-page::before {
-    /* Boosted opacity vs CRM because our three floor-to-ceiling panes cover
-       100% of the surface — no card gaps for the gradient to leak through,
-       so we need more intensity to get the same "glow" effect as CRM/PMS. */
     background:
-        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.45) 0%, transparent 55%),
-        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.35) 0%, transparent 50%),
-        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.25) 0%, transparent 50%);
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 45%);
 }
 
-/* Override --glass-bg locally to a more transparent value so the ambient
-   gradient actually reads through the pane blur. Scoped to email-page only
-   so global glass styling (modals, cards elsewhere) is unaffected. */
 body.email-page .email-rail,
 body.email-page .email-list,
 body.email-page .email-read {
     background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(28px) saturate(1.5);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
 }
 
 [data-theme="dark"] body.email-page .email-rail,
 [data-theme="dark"] body.email-page .email-list,
 [data-theme="dark"] body.email-page .email-read {
-    background: rgba(20, 30, 48, 0.55);
+    background: rgba(15, 23, 42, 0.48);
 }
 
 /* Only the inbox page locks the viewport — settings is a normal scrollable
@@ -1392,10 +1390,63 @@ body.email-page .email-read {
 
 .email-modal-footer .footer-left { margin-right: auto; }
 
+/* styles.css has `body.dashboard > *:not(.modal):not(.navbar):not(...)`
+   that force-sets `position: relative; z-index: 1` on any direct body
+   child not in its allow-list. That breaks the canonical .modal-overlay
+   (which needs position: fixed, z-index: 9999) and our .folder-menu
+   popover. Override with body-scoped high-specificity rules so the
+   glassmorphic-modal rules win inside email pages. */
+body.email-page .modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+}
+
+body.email-page .modal-overlay.active {
+    display: flex !important;
+}
+
+body.email-page .folder-menu {
+    position: fixed !important;
+    z-index: 10000 !important;
+}
+
+/* Canonical glassmorphic modal's header has `h3` + close button but the
+   shared CSS stops short of styling .modal-close — every page has been
+   adding its own. Add a subtle, theme-aware style here scoped to the
+   email pages so the × sits as a ghost button instead of the browser's
+   default UA button style. */
+body.email-page .modal-close {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.1s, color 0.1s;
+}
+
+body.email-page .modal-close:hover,
+body.email-page .modal-close:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    outline: none;
+}
+
 /* Folder context menu (⋯ popover). Absolutely positioned from JS.
    Uses theme tokens so it works in light + dark without override. */
 .folder-menu {
-    position: absolute;
+    position: fixed;
     display: none;
     min-width: 210px;
     padding: 6px;
