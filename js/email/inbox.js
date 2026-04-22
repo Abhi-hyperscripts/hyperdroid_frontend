@@ -62,10 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnCompose').addEventListener('click', () => openCompose('new'));
     wireComposeSplitMenu();
     document.getElementById('btnRefresh').addEventListener('click', refreshMessages);
-    document.getElementById('listSearch').addEventListener('input', e => {
-        State.searchQuery = e.target.value.toLowerCase();
-        renderMessages();
-    });
+    wireSearchInput();
 
     document.querySelectorAll('.email-filter-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -628,6 +625,23 @@ async function loadMoreMessages() {
 }
 
 async function fetchMessagesPage(offset, limit) {
+    // When the search box has a query, route to the server-side full-text
+    // search endpoint so results span more than the currently-loaded page
+    // and benefit from Postgres tsvector ranking. Falls back to per-folder
+    // listing when the search box is empty.
+    const q = (State.searchQuery || '').trim();
+    if (q.length > 0) {
+        const params = new URLSearchParams({
+            q,
+            limit: String(limit),
+            offset: String(offset),
+        });
+        // Scope to current mailbox so one account's results don't mix with
+        // another's. Folder scoping is opt-in; most people expect Gmail-style
+        // "search everywhere in this account" when they type.
+        if (State.selectedMailboxId) params.set('mailbox_id', State.selectedMailboxId);
+        return await api.request(`/email/messages/search?${params}`, { _skipSpinner: true });
+    }
     const url = `/email/messages?mailbox_id=${State.selectedMailboxId}`
         + `&folder_id=${State.selectedFolderId}`
         + `&limit=${limit}&offset=${offset}`;
@@ -643,6 +657,33 @@ function updateFolderCount() {
     el.textContent = State.totalCount
         ? `${State.messages.length} of ${State.totalCount}`
         : '';
+}
+
+// Debounced server-side search — hooked up to the #listSearch input. Short
+// inputs (<2 chars) fall back to a no-op list so the user isn't spammed with
+// results after the very first keystroke. Queries clearing to empty restore
+// the normal folder listing.
+let _searchTimer = null;
+function wireSearchInput() {
+    const input = document.getElementById('listSearch');
+    if (!input) return;
+    input.addEventListener('input', (e) => {
+        const raw = e.target.value || '';
+        State.searchQuery = raw;
+        if (_searchTimer) clearTimeout(_searchTimer);
+        const trimmed = raw.trim();
+        // Empty query → reload the current folder list synchronously so the
+        // user never stares at a stale search-hits view after clearing.
+        if (trimmed.length === 0) {
+            loadMessages();
+            return;
+        }
+        // Very short queries are usually typos in progress — wait one extra
+        // beat before hitting the server. 2+ chars fires the normal 250ms
+        // debounce.
+        const delay = trimmed.length < 2 ? 500 : 250;
+        _searchTimer = setTimeout(() => { loadMessages(); }, delay);
+    });
 }
 
 function refreshMessages() {
@@ -674,24 +715,23 @@ function skeletonRows(n) {
 
 function renderMessages() {
     const container = document.getElementById('emailRows');
-    const q = State.searchQuery.trim();
+    const q = (State.searchQuery || '').trim();
     let list = State.messages;
 
-    // Focused vs. Other filter — heuristic: "Other" = Mail Delivery System,
-    // noreply@, notifications@, newsletters, auto-reply, bounces. Good-enough
-    // split matches Outlook's automated-vs-personal dichotomy without a
-    // per-user model. Can evolve into a backend classifier later.
-    list = list.filter(m => {
-        const otherish = isOtherSender(m);
-        return State.filter === 'focused' ? !otherish : otherish;
-    });
-
-    if (q) {
-        list = list.filter(m =>
-            (m.subject || '').toLowerCase().includes(q) ||
-            (m.from_address || '').toLowerCase().includes(q) ||
-            (m.from_name || '').toLowerCase().includes(q) ||
-            (m.snippet || '').toLowerCase().includes(q));
+    // When a query is active, the server already filtered + ranked the list
+    // via the tsvector search endpoint — re-filtering here would drop hits
+    // that tsvector matched via stemming or tokenization the client regex
+    // doesn't understand. Also skip the Focused/Other split on search results
+    // so the user actually sees their query hits regardless of sender.
+    if (!q) {
+        // Focused vs. Other filter — heuristic: "Other" = Mail Delivery System,
+        // noreply@, notifications@, newsletters, auto-reply, bounces. Good-enough
+        // split matches Outlook's automated-vs-personal dichotomy without a
+        // per-user model. Can evolve into a backend classifier later.
+        list = list.filter(m => {
+            const otherish = isOtherSender(m);
+            return State.filter === 'focused' ? !otherish : otherish;
+        });
     }
 
     if (list.length === 0) {
@@ -725,11 +765,10 @@ function renderMessages() {
     }
 
     // Sentinel at the bottom — triggers the next page via IntersectionObserver
-    // when it enters view. Only emitted while the server has more messages AND
-    // the user isn't filtering client-side (search / Other tab), because those
-    // can hide every row we load until a match lands and would fire the
-    // observer in a tight loop.
-    const serverSideList = !q && State.filter === 'focused';
+    // when it enters view. Search pagination is server-side too (tsvector
+    // rank + offset), so infinite scroll works there the same way as normal
+    // listing. Skip only when user is on the Other tab (client-side filter).
+    const serverSideList = q || State.filter === 'focused';
     if (State.hasMore && serverSideList) {
         html += `
             <div class="email-load-more" id="emailLoadMore">
