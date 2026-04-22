@@ -1263,12 +1263,27 @@ async function submitRenameFolder() {
 }
 
 async function handleDeleteFolder(mailboxId, folderId) {
-    const folder = (State.foldersByMailbox[mailboxId] || []).find(f => f.id === folderId);
+    const all = State.foldersByMailbox[mailboxId] || [];
+    const folder = all.find(f => f.id === folderId);
     if (!folder) return;
-    const ok = await Confirm.danger(
-        `Delete "${folder.folder_name}" and any sub-folders it contains? Messages inside will stay visible but lose their folder assignment.`,
-        'Delete folder'
+
+    // Count descendants by folder_path prefix so the confirm message is
+    // truthful. IMAP hierarchy delimiter is '.' for Dovecot/Cyrus and '/'
+    // for Gmail — check both. Uses a proper separator check to avoid
+    // matching siblings whose names start with the folder name.
+    const prefixDot = folder.folder_path + '.';
+    const prefixSlash = folder.folder_path + '/';
+    const descendants = all.filter(f =>
+        f.id !== folderId &&
+        (f.folder_path.startsWith(prefixDot) || f.folder_path.startsWith(prefixSlash))
     );
+    const n = descendants.length;
+
+    const msg = n === 0
+        ? `Delete "${folder.folder_name}" from your mail server? Messages inside stay accessible in the thread list.`
+        : `Delete "${folder.folder_name}" and its ${n} sub-folder${n === 1 ? '' : 's'} from your mail server? Messages inside stay accessible in the thread list.`;
+
+    const ok = await Confirm.danger(msg, 'Delete folder');
     if (!ok) return;
     try {
         await api.request(`/email/mailboxes/${mailboxId}/folders/${folderId}`, {
