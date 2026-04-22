@@ -20,6 +20,48 @@
 
 body.email-page {
     background: var(--bg-body) !important;
+    position: relative;
+}
+
+/* Ambient gradient backdrop — matches CRM/PMS glassy platform look.
+   Fixed so the inbox viewport lock doesn't clip it; pointer-events none so
+   clicks pass through to the panes. Each pane below uses glass-bg + backdrop
+   blur so the gradient bleeds through subtly without hurting text contrast. */
+body.email-page::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.05) 0%, transparent 45%),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.04) 0%, transparent 45%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+[data-theme="dark"] body.email-page::before {
+    /* Boosted opacity vs CRM because our three floor-to-ceiling panes cover
+       100% of the surface — no card gaps for the gradient to leak through,
+       so we need more intensity to get the same "glow" effect as CRM/PMS. */
+    background:
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(var(--brand-primary-rgb), 0.45) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(139, 92, 246, 0.35) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 60% at 60% 80%, rgba(6, 182, 212, 0.25) 0%, transparent 50%);
+}
+
+/* Override --glass-bg locally to a more transparent value so the ambient
+   gradient actually reads through the pane blur. Scoped to email-page only
+   so global glass styling (modals, cards elsewhere) is unaffected. */
+body.email-page .email-rail,
+body.email-page .email-list,
+body.email-page .email-read {
+    background: rgba(255, 255, 255, 0.45);
+}
+
+[data-theme="dark"] body.email-page .email-rail,
+[data-theme="dark"] body.email-page .email-list,
+[data-theme="dark"] body.email-page .email-read {
+    background: rgba(20, 30, 48, 0.55);
 }
 
 /* Only the inbox page locks the viewport — settings is a normal scrollable
@@ -50,8 +92,12 @@ body.email-page .email-shell {
        override below zeroes this out to prevent a double-gap. */
     margin-top: var(--email-navbar-h);
     overflow: hidden;
-    background: var(--bg-body);
-    border-top: 1px solid var(--email-divider);
+    /* Transparent so the body::before gradient bleeds through into each
+       pane's backdrop-filter. */
+    background: transparent;
+    border-top: 1px solid var(--border-color-light);
+    position: relative;
+    z-index: 1;
 }
 
 /* Mobile: navbar is position:relative (taken from flow), so no margin-top */
@@ -71,8 +117,10 @@ body.email-page .email-shell {
 /* ---------- Left rail: mailbox + folder tree ---------------------------- */
 
 body.email-page .email-rail {
-    background: var(--bg-card);
-    border-right: 1px solid var(--email-divider);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border-color-light);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -278,8 +326,10 @@ body.email-page .email-rail {
 /* ---------- Middle: message list --------------------------------------- */
 
 body.email-page .email-list {
-    background: var(--bg-card);
-    border-right: 1px solid var(--email-divider);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border-color-light);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -706,7 +756,9 @@ body.email-page .email-list {
 /* ---------- Right: reading pane ---------------------------------------- */
 
 body.email-page .email-read {
-    background: var(--bg-card);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
