@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Calendar - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/email.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard email-page email-calendar-page">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="/js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <main class="calendar-shell">
+
+        <header class="calendar-toolbar" id="calToolbar">
+            <div class="calendar-toolbar-left">
+                <a class="cal-back" href="inbox.html" title="Back to inbox" aria-label="Back to inbox">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="20" y1="12" x2="4" y2="12"/>
+                        <polyline points="10 18 4 12 10 6"/>
+                    </svg>
+                </a>
+                <button class="cal-btn cal-btn-primary" id="calTodayBtn">Today</button>
+                <button class="cal-nav" id="calPrev" aria-label="Previous">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <button class="cal-nav" id="calNext" aria-label="Next">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                <h2 class="cal-title" id="calTitle">&nbsp;</h2>
+            </div>
+            <div class="calendar-toolbar-right">
+                <div class="cal-view-switch" role="tablist">
+                    <button class="cal-view-btn active" data-view="month" role="tab">Month</button>
+                    <button class="cal-view-btn" data-view="week" role="tab">Week</button>
+                    <button class="cal-view-btn" data-view="day" role="tab">Day</button>
+                </div>
+                <button class="cal-btn cal-btn-primary" id="calNewBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Schedule
+                </button>
+            </div>
+        </header>
+
+        <section class="calendar-main" id="calMain">
+            <div class="calendar-skeleton">Loading…</div>
+        </section>
+
+    </main>
+
+    <!-- ===================== Meeting details panel ==================== -->
+    <div class="modal-overlay" id="meetingDetailOverlay">
+        <div class="modal-backdrop" id="meetingDetailBackdrop"></div>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="meetingDetailTitle">Meeting</h3>
+                    <button class="modal-close" id="meetingDetailClose" title="Close (Esc)" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body" id="meetingDetailBody">
+                    <!-- populated by calendar.js -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="meetingDetailCancel">Close</button>
+                    <a class="btn btn-primary" id="meetingDetailJoin" href="#" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px; vertical-align: -3px;"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        Join meeting
+                    </a>
+                    <button class="btn btn-danger" id="meetingDetailDelete">Cancel meeting</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== Schedule-meeting modal (reused) =========== -->
+    <div class="modal-overlay" id="scheduleMeetingOverlay">
+        <div class="modal-backdrop" id="scheduleMeetingBackdrop"></div>
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Schedule meeting</h3>
+                    <button class="modal-close" id="scheduleMeetingClose" title="Close (Esc)" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p style="color: var(--text-secondary); font-size: 13px; margin: 0 0 16px; line-height: 1.5;">
+                        Creates an open video meeting in Vision with guest access and emails every participant an .ics calendar invite so they can add it to their calendar.
+                    </p>
+
+                    <div class="form-group">
+                        <label for="meetingTitle">Title</label>
+                        <input type="text" id="meetingTitle" class="form-control" placeholder="Quarterly review with Acme" autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="meetingAgenda">Agenda <span style="color: var(--text-secondary); font-weight: 400;">(optional)</span></label>
+                        <textarea id="meetingAgenda" class="form-control" rows="3" placeholder="Topics we want to cover..."></textarea>
+                    </div>
+
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label for="meetingDate">Date</label>
+                            <input type="date" id="meetingDate" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="meetingStartTime">Start</label>
+                            <input type="time" id="meetingStartTime" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="meetingEndTime">End</label>
+                            <input type="time" id="meetingEndTime" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="meetingParticipantsInput">Participants</label>
+                        <div id="meetingParticipantsField" class="chip-field">
+                            <span class="chip-list" id="meetingParticipantsList"></span>
+                            <input type="email" id="meetingParticipantsInput" class="chip-input"
+                                   placeholder="Type an email and press Enter"
+                                   autocomplete="off">
+                        </div>
+                        <small style="color: var(--text-secondary); font-size: 12px;">Separate multiple emails with comma, space, or Enter.</small>
+                    </div>
+
+                    <div id="scheduleMeetingError" class="form-error" style="display:none; color: var(--color-danger, var(--color-error)); font-size: 13px; margin-top: 8px;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="scheduleMeetingCancel">Cancel</button>
+                    <button class="btn btn-primary" id="scheduleMeetingSubmit">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px; vertical-align: -3px;"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+                        Create meeting &amp; send invites
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/email/calendar.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</body>
+</html>

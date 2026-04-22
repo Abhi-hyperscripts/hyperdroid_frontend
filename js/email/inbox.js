@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch { /* ignore */ }
 
     document.getElementById('btnCompose').addEventListener('click', () => openCompose('new'));
+    wireComposeSplitMenu();
     document.getElementById('btnRefresh').addEventListener('click', refreshMessages);
     document.getElementById('listSearch').addEventListener('input', e => {
         State.searchQuery = e.target.value.toLowerCase();
@@ -74,6 +75,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     wireComposeModal();
     wireNewFolderModal();
+    wireScheduleMeetingModal();
     wireKeyboardShortcuts();
     wireMobileNav();
 
@@ -1743,6 +1745,259 @@ function prettyFolderName(name, type) {
         return name;
     }
     return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+/* ------------------------------------------------------------------
+ * Schedule Meeting modal
+ * ------------------------------------------------------------------ */
+const ScheduleState = {
+    participants: [],   // list of email strings
+};
+
+function wireScheduleMeetingModal() {
+    const overlay = document.getElementById('scheduleMeetingOverlay');
+    if (!overlay) return;
+
+    // Re-parent to <body> so the dashboard's position:relative main doesn't
+    // trap the position:fixed overlay (same issue as compose modal).
+    if (overlay.parentElement !== document.body) document.body.appendChild(overlay);
+
+    document.getElementById('scheduleMeetingClose').addEventListener('click', closeScheduleMeetingModal);
+    document.getElementById('scheduleMeetingCancel').addEventListener('click', closeScheduleMeetingModal);
+    document.getElementById('scheduleMeetingBackdrop').addEventListener('click', closeScheduleMeetingModal);
+
+    document.getElementById('scheduleMeetingSubmit').addEventListener('click', submitScheduleMeeting);
+
+    const chipInput = document.getElementById('meetingParticipantsInput');
+    const field = document.getElementById('meetingParticipantsField');
+    field.addEventListener('click', () => chipInput.focus());
+
+    chipInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
+            const v = chipInput.value.trim().replace(/,$/, '');
+            if (v) { e.preventDefault(); addMeetingParticipant(v); chipInput.value = ''; }
+        } else if (e.key === 'Backspace' && !chipInput.value && ScheduleState.participants.length > 0) {
+            ScheduleState.participants.pop();
+            renderMeetingParticipants();
+        }
+    });
+    chipInput.addEventListener('blur', () => {
+        const v = chipInput.value.trim();
+        if (v) { addMeetingParticipant(v); chipInput.value = ''; }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay.classList.contains('active')) closeScheduleMeetingModal();
+    });
+}
+
+function openScheduleMeetingModal() {
+    ScheduleState.participants = [];
+    renderMeetingParticipants();
+
+    document.getElementById('meetingTitle').value = '';
+    document.getElementById('meetingAgenda').value = '';
+    document.getElementById('scheduleMeetingError').style.display = 'none';
+    document.getElementById('scheduleMeetingError').textContent = '';
+
+    // Default date = today, start = nearest next 30-minute slot, end = start + 30.
+    const now = new Date();
+    const roundedMin = Math.ceil((now.getMinutes() + 5) / 30) * 30;
+    const start = new Date(now);
+    start.setMinutes(roundedMin, 0, 0);
+    const end = new Date(start.getTime() + 30 * 60000);
+
+    document.getElementById('meetingDate').value = fmtLocalDate(start);
+    document.getElementById('meetingStartTime').value = fmtLocalTime(start);
+    document.getElementById('meetingEndTime').value = fmtLocalTime(end);
+
+    const overlay = document.getElementById('scheduleMeetingOverlay');
+    overlay.classList.add('active');
+    setTimeout(() => document.getElementById('meetingTitle').focus(), 50);
+}
+
+function closeScheduleMeetingModal() {
+    document.getElementById('scheduleMeetingOverlay').classList.remove('active');
+}
+
+function addMeetingParticipant(raw) {
+    const parts = raw.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean);
+    for (const email of parts) {
+        if (!isValidEmail(email)) {
+            showScheduleMeetingError(`'${email}' is not a valid email address`);
+            continue;
+        }
+        if (ScheduleState.participants.some(p => p.toLowerCase() === email.toLowerCase())) continue;
+        ScheduleState.participants.push(email);
+    }
+    renderMeetingParticipants();
+}
+
+function renderMeetingParticipants() {
+    const wrap = document.getElementById('meetingParticipantsList');
+    wrap.innerHTML = ScheduleState.participants.map((p, i) => `
+        <span class="chip" data-idx="${i}">
+            ${escapeHtml(p)}
+            <button type="button" class="chip-remove" data-idx="${i}" aria-label="Remove">&times;</button>
+        </span>
+    `).join('');
+    wrap.querySelectorAll('.chip-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+            ScheduleState.participants.splice(+btn.dataset.idx, 1);
+            renderMeetingParticipants();
+        });
+    });
+}
+
+function isValidEmail(s) {
+    return /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/.test(s);
+}
+
+function showScheduleMeetingError(msg) {
+    const el = document.getElementById('scheduleMeetingError');
+    el.textContent = msg;
+    el.style.display = '';
+}
+
+function clearScheduleMeetingError() {
+    const el = document.getElementById('scheduleMeetingError');
+    el.textContent = '';
+    el.style.display = 'none';
+}
+
+async function submitScheduleMeeting() {
+    clearScheduleMeetingError();
+
+    const title = document.getElementById('meetingTitle').value.trim();
+    const agenda = document.getElementById('meetingAgenda').value.trim();
+    const dateStr = document.getElementById('meetingDate').value;
+    const startStr = document.getElementById('meetingStartTime').value;
+    const endStr = document.getElementById('meetingEndTime').value;
+
+    // Flush any email still sitting in the chip input.
+    const chipInput = document.getElementById('meetingParticipantsInput');
+    if (chipInput.value.trim()) { addMeetingParticipant(chipInput.value); chipInput.value = ''; }
+
+    if (!title) return showScheduleMeetingError('Title is required');
+    if (!dateStr || !startStr || !endStr) return showScheduleMeetingError('Date, start and end time are required');
+    if (ScheduleState.participants.length === 0) return showScheduleMeetingError('Add at least one participant');
+
+    const start = new Date(`${dateStr}T${startStr}:00`);
+    const end = new Date(`${dateStr}T${endStr}:00`);
+    if (isNaN(start) || isNaN(end)) return showScheduleMeetingError('Invalid date/time');
+    if (end <= start) return showScheduleMeetingError('End time must be after start time');
+
+    const submitBtn = document.getElementById('scheduleMeetingSubmit');
+    submitBtn.disabled = true;
+    const origHtml = submitBtn.innerHTML;
+    submitBtn.innerHTML = 'Creating...';
+
+    try {
+        const body = {
+            title,
+            agenda: agenda || null,
+            start_time: start.toISOString(),
+            end_time: end.toISOString(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            participants: ScheduleState.participants
+        };
+        const res = await api.request('/email/meetings', { method: 'POST', body: JSON.stringify(body) });
+        closeScheduleMeetingModal();
+        if (window.Toast) Toast.success('Meeting scheduled — invites sent');
+        // Jump to the calendar so the user sees the new event.
+        setTimeout(() => { window.location.href = 'calendar.html'; }, 400);
+    } catch (err) {
+        const msg = (err && (err.message || err.error)) || 'Failed to create meeting';
+        showScheduleMeetingError(msg);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = origHtml;
+    }
+}
+
+function fmtLocalDate(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtLocalTime(d) {
+    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+/* ------------------------------------------------------------------
+ * Split-button dropdown (Schedule meeting / My calendar)
+ * The chevron lives next to "+ New email". Clicking it toggles a
+ * menu to the right; clicking outside closes it. Outside-click uses
+ * mousedown capture-phase because the chevron's own click handler
+ * calls stopPropagation to prevent the menu from closing itself on
+ * the same click event.
+ * ------------------------------------------------------------------ */
+function wireComposeSplitMenu() {
+    const chevron = document.getElementById('btnComposeMenu');
+    const menu = document.getElementById('composeMenu');
+    if (!chevron || !menu) return;
+
+    // Re-parent the menu to <body> so it escapes the rail's overflow:hidden.
+    // Without this the dropdown gets clipped by the rail and renders behind
+    // the message-list pane.
+    if (menu.parentElement !== document.body) document.body.appendChild(menu);
+
+    const positionMenu = () => {
+        const rect = chevron.getBoundingClientRect();
+        // Open to the right by default, but fall back to "below" if it would
+        // overflow the viewport horizontally.
+        const menuWidth = Math.max(menu.offsetWidth, 210);
+        const wouldOverflowRight = rect.right + 6 + menuWidth > window.innerWidth;
+        if (wouldOverflowRight) {
+            menu.style.top  = `${rect.bottom + 6}px`;
+            menu.style.left = `${Math.max(8, rect.right - menuWidth)}px`;
+        } else {
+            menu.style.top  = `${rect.top}px`;
+            menu.style.left = `${rect.right + 6}px`;
+        }
+    };
+
+    const openMenu = () => {
+        menu.hidden = false;
+        positionMenu();
+        chevron.setAttribute('aria-expanded', 'true');
+    };
+    const closeMenu = () => {
+        menu.hidden = true;
+        chevron.setAttribute('aria-expanded', 'false');
+    };
+
+    window.addEventListener('resize', () => { if (!menu.hidden) positionMenu(); });
+    window.addEventListener('scroll', () => { if (!menu.hidden) positionMenu(); }, true);
+
+    chevron.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        (chevron.getAttribute('aria-expanded') === 'true') ? closeMenu() : openMenu();
+    });
+
+    menu.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[role="menuitem"]');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        closeMenu();
+        if (action === 'schedule-meeting') {
+            openScheduleMeetingModal();
+        } else if (action === 'my-calendar') {
+            window.location.href = 'calendar.html';
+        }
+    });
+
+    // Close on outside click — capture phase so the chevron's own
+    // stopPropagation doesn't prevent closes from elsewhere.
+    document.addEventListener('mousedown', (e) => {
+        if (menu.hidden) return;
+        if (menu.contains(e.target) || chevron.contains(e.target)) return;
+        closeMenu();
+    }, true);
+
+    // Escape key closes the menu for keyboard users.
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !menu.hidden) closeMenu();
+    });
 }
 
 function folderIconSVG(type) {
