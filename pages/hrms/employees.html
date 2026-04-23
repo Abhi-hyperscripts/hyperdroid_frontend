@@ -31,6 +31,12 @@
         /* .gm-overlay uses display:flex !important. Make [hidden] win. */
         .gm-overlay[hidden] { display: none !important; }
 
+        /* Banking table pagination: rows-per-page on the FAR LEFT,
+           controls in the middle, info on the RIGHT. */
+        #bankingListPagination .pagination-right  { order: 1; justify-content: flex-start; }
+        #bankingListPagination .pagination-center { order: 2; }
+        #bankingListPagination .pagination-left   { order: 3; justify-content: flex-end; }
+
         /* Subtle icon-only action button used in the banking table (reveal/hide).
            Inherits text color explicitly so SVG stroke="currentColor" actually shows. */
         .btn-icon-ghost {

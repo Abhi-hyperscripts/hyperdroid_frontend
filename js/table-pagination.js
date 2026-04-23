@@ -105,7 +105,7 @@ class TablePagination {
                     ${this.showRowsPerPage ? `
                         <div class="pagination-rows-per-page">
                             <span class="pagination-label">${this.labels.rowsPerPage}</span>
-                            <select class="pagination-select">
+                            <select class="pagination-select" data-no-sd="true">
                                 ${this.rowsPerPageOptions.map(opt =>
                                     `<option value="${opt}"${opt === this.rowsPerPage ? ' selected' : ''}>${opt}</option>`
                                 ).join('')}
