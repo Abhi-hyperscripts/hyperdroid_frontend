@@ -8,6 +8,8 @@ window.EmployeeBanking = (function () {
     let selectedFile = null;
     let prefillCount = 0;
     let listRows = [];           // full prefill payload, cached for the table
+    let filteredRows = [];       // after search + status filter
+    let pagination = null;       // TablePagination instance
     const revealed = new Set();  // employee_ids whose sensitive fields are visible
 
     const TEMPLATE_COLUMNS = [
@@ -60,17 +62,32 @@ window.EmployeeBanking = (function () {
         clearBtn?.addEventListener('click', clearFile);
         uploadBtn?.addEventListener('click', doUpload);
 
-        document.getElementById('bankingListSearch')?.addEventListener('input', renderList);
-        document.getElementById('bankingListStatusFilter')?.addEventListener('change', renderList);
+        document.getElementById('bankingListSearch')?.addEventListener('input', applyFilters);
+        document.getElementById('bankingListStatusFilter')?.addEventListener('change', applyFilters);
         document.getElementById('bankingListRefreshBtn')?.addEventListener('click', () => loadList(true));
 
-        // Reveal/hide sensitive fields on row click.
+        // Row actions: reveal toggle + edit button.
         document.getElementById('bankingListBody')?.addEventListener('click', (e) => {
-            const tr = e.target.closest('tr[data-employee-id]');
-            if (!tr) return;
-            const id = tr.dataset.employeeId;
-            if (revealed.has(id)) revealed.delete(id); else revealed.add(id);
-            renderList();
+            const toggleBtn = e.target.closest('button[data-action="toggle-reveal"]');
+            if (toggleBtn) {
+                const id = toggleBtn.dataset.employeeId;
+                if (revealed.has(id)) revealed.delete(id); else revealed.add(id);
+                renderList();
+                return;
+            }
+            const editBtn = e.target.closest('button[data-action="edit-banking"]');
+            if (editBtn) {
+                openEditModal(editBtn.dataset.employeeId);
+                return;
+            }
+        });
+
+        // Edit modal handlers.
+        document.getElementById('bankingEditCloseBtn')?.addEventListener('click', closeEditModal);
+        document.getElementById('bankingEditCancelBtn')?.addEventListener('click', closeEditModal);
+        document.getElementById('bankingEditSaveBtn')?.addEventListener('click', saveEditModal);
+        document.getElementById('bankingEditModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'bankingEditModal') closeEditModal();
         });
     }
 
@@ -78,28 +95,24 @@ window.EmployeeBanking = (function () {
         const body = document.getElementById('bankingListBody');
         if (!body) return;
         if (fromRefresh) {
-            body.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-secondary);">Refreshing…</td></tr>';
+            body.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:var(--text-secondary);">Refreshing…</td></tr>';
         }
         try {
             const res = await api.request('/hrms/employee-banking/prefill');
             listRows = (res && res.rows) || [];
             prefillCount = listRows.length;
-            renderList();
+            applyFilters();
         } catch (err) {
             console.error('[Banking] list load failed', err);
-            body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--color-error, #ef4444);">Failed to load: ${escapeHtml(err?.message || 'unknown error')}</td></tr>`;
+            body.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:24px; color:var(--color-error, #ef4444);">Failed to load: ${escapeHtml(err?.message || 'unknown error')}</td></tr>`;
         }
     }
 
-    function renderList() {
-        const body = document.getElementById('bankingListBody');
-        const stats = document.getElementById('bankingListStats');
-        if (!body) return;
-
+    function applyFilters() {
         const q = (document.getElementById('bankingListSearch')?.value || '').trim().toLowerCase();
         const statusFilter = document.getElementById('bankingListStatusFilter')?.value || '';
 
-        const filtered = listRows.filter((r) => {
+        filteredRows = listRows.filter((r) => {
             const hasBanking = !!r.account_number;
             if (statusFilter === 'configured' && !hasBanking) return false;
             if (statusFilter === 'missing' && hasBanking) return false;
@@ -108,9 +121,11 @@ window.EmployeeBanking = (function () {
                 .some((v) => String(v || '').toLowerCase().includes(q));
         });
 
-        const configured = listRows.filter((r) => !!r.account_number).length;
-        const missing = listRows.length - configured;
+        // Update stat chips (reflect full dataset, not the current filter).
+        const stats = document.getElementById('bankingListStats');
         if (stats) {
+            const configured = listRows.filter((r) => !!r.account_number).length;
+            const missing = listRows.length - configured;
             stats.innerHTML = [
                 statChip('Total', listRows.length, 'stat-total'),
                 statChip('Configured', configured, 'stat-valid'),
@@ -118,27 +133,54 @@ window.EmployeeBanking = (function () {
             ].join('');
         }
 
-        if (filtered.length === 0) {
-            body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-secondary);">
+        // Drive the shared TablePagination component.
+        if (!pagination && typeof createTablePagination !== 'undefined') {
+            pagination = createTablePagination('bankingListPagination', {
+                containerSelector: '#bankingListPagination',
+                data: filteredRows,
+                rowsPerPage: 25,
+                rowsPerPageOptions: [10, 25, 50, 100],
+                onPageChange: (pageData) => renderList(pageData),
+            });
+        } else if (pagination) {
+            pagination.setData(filteredRows);
+        } else {
+            // Fallback when TablePagination isn't loaded.
+            renderList(filteredRows);
+        }
+    }
+
+    function renderList(pageData) {
+        const body = document.getElementById('bankingListBody');
+        if (!body) return;
+
+        const rows = pageData || filteredRows;
+        if (!rows || rows.length === 0) {
+            body.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:24px; color:var(--text-secondary);">
                 ${listRows.length === 0 ? 'No employees to show.' : 'No rows match the current filters.'}
             </td></tr>`;
             return;
         }
 
-        body.innerHTML = filtered.map((r) => {
+        body.innerHTML = rows.map((r) => {
             const hasBanking = !!r.account_number;
             const showSensitive = revealed.has(r.employee_id);
             const statusBadge = hasBanking
-                ? `<span style="color:var(--color-success, #10b981); font-size:0.78rem; font-weight:600; text-transform:uppercase;">Configured</span>`
-                : `<span style="color:var(--text-secondary); font-size:0.78rem; font-weight:600; text-transform:uppercase;">Missing</span>`;
+                ? `<span class="status-badge status-active">Configured</span>`
+                : `<span class="status-badge status-pending">Missing</span>`;
             const acct = hasBanking
                 ? (showSensitive ? escapeHtml(r.account_number) : mask(r.account_number))
                 : '<span style="color:var(--text-secondary);">—</span>';
             const ifsc = hasBanking
                 ? (showSensitive ? escapeHtml(r.ifsc_code) : mask(r.ifsc_code, 3))
                 : '<span style="color:var(--text-secondary);">—</span>';
+            const revealBtn = hasBanking
+                ? `<button type="button" class="btn btn-sm" data-action="toggle-reveal" data-employee-id="${escapeHtml(r.employee_id)}" title="${showSensitive ? 'Hide' : 'Reveal'} account & IFSC" style="padding:4px 8px;">
+                        ${showSensitive ? eyeOffSvg() : eyeSvg()}
+                   </button>`
+                : '';
             return `
-                <tr data-employee-id="${escapeHtml(r.employee_id)}" style="cursor:${hasBanking ? 'pointer' : 'default'};" title="${hasBanking ? 'Click to toggle reveal' : ''}">
+                <tr data-employee-id="${escapeHtml(r.employee_id)}">
                     <td>
                         <div style="font-weight:600;">${escapeHtml(r.full_name || '—')}</div>
                         <div style="color:var(--text-secondary); font-size:0.78rem; font-family:monospace;">${escapeHtml(r.employee_code || '')}</div>
@@ -150,8 +192,97 @@ window.EmployeeBanking = (function () {
                     <td style="font-family:monospace;">${ifsc}</td>
                     <td>${escapeHtml(r.account_type || '—')}</td>
                     <td>${statusBadge}</td>
+                    <td>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            ${revealBtn}
+                            <button type="button" class="btn btn-sm btn-primary" data-action="edit-banking" data-employee-id="${escapeHtml(r.employee_id)}" title="Edit banking" style="padding:4px 10px;">
+                                ${editSvg()} Edit
+                            </button>
+                        </div>
+                    </td>
                 </tr>`;
         }).join('');
+    }
+
+    function eyeSvg() {
+        return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    }
+    function eyeOffSvg() {
+        return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.8 19.8 0 0 1 5.17-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a19.76 19.76 0 0 1-3.17 4.19M1 1l22 22M14.12 14.12a3 3 0 1 1-4.24-4.24"/></svg>';
+    }
+    function editSvg() {
+        return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+    }
+
+    // ── Edit modal ──────────────────────────────────────────────────────
+    function openEditModal(employeeId) {
+        const row = listRows.find((r) => r.employee_id === employeeId);
+        if (!row) return;
+        document.getElementById('bankingEditEmployeeId').value = row.employee_id;
+        document.getElementById('bankingEditEmployeeName').textContent = row.full_name || '—';
+        document.getElementById('bankingEditEmployeeCode').textContent = row.employee_code || '';
+        document.getElementById('bankingEditEmployeeEmail').textContent = row.email || '';
+        document.getElementById('bankingEditHolder').value = row.account_holder_name || '';
+        document.getElementById('bankingEditBank').value = row.bank_name || '';
+        document.getElementById('bankingEditBranch').value = row.branch_name || '';
+        document.getElementById('bankingEditType').value = row.account_type || 'savings';
+        document.getElementById('bankingEditAccount').value = row.account_number || '';
+        document.getElementById('bankingEditIfsc').value = row.ifsc_code || '';
+
+        const modal = document.getElementById('bankingEditModal');
+        modal.hidden = false;
+        modal.classList.add('active');
+        setTimeout(() => document.getElementById('bankingEditHolder').focus(), 50);
+    }
+
+    function closeEditModal() {
+        const modal = document.getElementById('bankingEditModal');
+        modal.classList.remove('active');
+        modal.hidden = true;
+    }
+
+    async function saveEditModal() {
+        const btn = document.getElementById('bankingEditSaveBtn');
+        const id = document.getElementById('bankingEditEmployeeId').value;
+        if (!id) return;
+
+        const payload = {
+            account_holder_name: document.getElementById('bankingEditHolder').value.trim(),
+            bank_name: document.getElementById('bankingEditBank').value.trim(),
+            branch_name: document.getElementById('bankingEditBranch').value.trim() || null,
+            account_type: document.getElementById('bankingEditType').value,
+            account_number: document.getElementById('bankingEditAccount').value.trim(),
+            ifsc_code: document.getElementById('bankingEditIfsc').value.trim().toUpperCase(),
+        };
+
+        const missing = [];
+        if (!payload.account_holder_name) missing.push('Account Holder Name');
+        if (!payload.bank_name) missing.push('Bank Name');
+        if (!payload.account_number) missing.push('Account Number');
+        if (!payload.ifsc_code) missing.push('IFSC Code');
+        if (missing.length) {
+            Toast?.error?.(`Required: ${missing.join(', ')}`);
+            return;
+        }
+
+        const origLabel = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        try {
+            const res = await api.request(`/hrms/employee-banking/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload),
+            });
+            Toast?.success?.(res?.action === 'inserted' ? 'Bank details added' : 'Bank details updated');
+            closeEditModal();
+            await loadList(true);
+        } catch (err) {
+            console.error('[Banking] edit save failed', err);
+            Toast?.error?.(err?.message || 'Failed to save');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = origLabel;
+        }
     }
 
     function statChip(label, n, cls) {
