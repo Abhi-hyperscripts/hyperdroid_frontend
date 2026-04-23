@@ -7,6 +7,8 @@ window.EmployeeBanking = (function () {
     let initialized = false;
     let selectedFile = null;
     let prefillCount = 0;
+    let listRows = [];           // full prefill payload, cached for the table
+    const revealed = new Set();  // employee_ids whose sensitive fields are visible
 
     const TEMPLATE_COLUMNS = [
         { key: 'full_name',           label: 'Name',                 readonly: true  },
@@ -24,6 +26,7 @@ window.EmployeeBanking = (function () {
         if (initialized) return;
         initialized = true;
         wire();
+        loadList();
     }
 
     function wire() {
@@ -56,6 +59,111 @@ window.EmployeeBanking = (function () {
 
         clearBtn?.addEventListener('click', clearFile);
         uploadBtn?.addEventListener('click', doUpload);
+
+        document.getElementById('bankingListSearch')?.addEventListener('input', renderList);
+        document.getElementById('bankingListStatusFilter')?.addEventListener('change', renderList);
+        document.getElementById('bankingListRefreshBtn')?.addEventListener('click', () => loadList(true));
+
+        // Reveal/hide sensitive fields on row click.
+        document.getElementById('bankingListBody')?.addEventListener('click', (e) => {
+            const tr = e.target.closest('tr[data-employee-id]');
+            if (!tr) return;
+            const id = tr.dataset.employeeId;
+            if (revealed.has(id)) revealed.delete(id); else revealed.add(id);
+            renderList();
+        });
+    }
+
+    async function loadList(fromRefresh) {
+        const body = document.getElementById('bankingListBody');
+        if (!body) return;
+        if (fromRefresh) {
+            body.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-secondary);">Refreshing…</td></tr>';
+        }
+        try {
+            const res = await api.request('/hrms/employee-banking/prefill');
+            listRows = (res && res.rows) || [];
+            prefillCount = listRows.length;
+            renderList();
+        } catch (err) {
+            console.error('[Banking] list load failed', err);
+            body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--color-error, #ef4444);">Failed to load: ${escapeHtml(err?.message || 'unknown error')}</td></tr>`;
+        }
+    }
+
+    function renderList() {
+        const body = document.getElementById('bankingListBody');
+        const stats = document.getElementById('bankingListStats');
+        if (!body) return;
+
+        const q = (document.getElementById('bankingListSearch')?.value || '').trim().toLowerCase();
+        const statusFilter = document.getElementById('bankingListStatusFilter')?.value || '';
+
+        const filtered = listRows.filter((r) => {
+            const hasBanking = !!r.account_number;
+            if (statusFilter === 'configured' && !hasBanking) return false;
+            if (statusFilter === 'missing' && hasBanking) return false;
+            if (!q) return true;
+            return [r.full_name, r.employee_code, r.email, r.bank_name]
+                .some((v) => String(v || '').toLowerCase().includes(q));
+        });
+
+        const configured = listRows.filter((r) => !!r.account_number).length;
+        const missing = listRows.length - configured;
+        if (stats) {
+            stats.innerHTML = [
+                statChip('Total', listRows.length, 'stat-total'),
+                statChip('Configured', configured, 'stat-valid'),
+                statChip('Missing', missing, 'stat-error'),
+            ].join('');
+        }
+
+        if (filtered.length === 0) {
+            body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-secondary);">
+                ${listRows.length === 0 ? 'No employees to show.' : 'No rows match the current filters.'}
+            </td></tr>`;
+            return;
+        }
+
+        body.innerHTML = filtered.map((r) => {
+            const hasBanking = !!r.account_number;
+            const showSensitive = revealed.has(r.employee_id);
+            const statusBadge = hasBanking
+                ? `<span style="color:var(--color-success, #10b981); font-size:0.78rem; font-weight:600; text-transform:uppercase;">Configured</span>`
+                : `<span style="color:var(--text-secondary); font-size:0.78rem; font-weight:600; text-transform:uppercase;">Missing</span>`;
+            const acct = hasBanking
+                ? (showSensitive ? escapeHtml(r.account_number) : mask(r.account_number))
+                : '<span style="color:var(--text-secondary);">—</span>';
+            const ifsc = hasBanking
+                ? (showSensitive ? escapeHtml(r.ifsc_code) : mask(r.ifsc_code, 3))
+                : '<span style="color:var(--text-secondary);">—</span>';
+            return `
+                <tr data-employee-id="${escapeHtml(r.employee_id)}" style="cursor:${hasBanking ? 'pointer' : 'default'};" title="${hasBanking ? 'Click to toggle reveal' : ''}">
+                    <td>
+                        <div style="font-weight:600;">${escapeHtml(r.full_name || '—')}</div>
+                        <div style="color:var(--text-secondary); font-size:0.78rem; font-family:monospace;">${escapeHtml(r.employee_code || '')}</div>
+                    </td>
+                    <td style="font-family:monospace; font-size:0.85rem;">${escapeHtml(r.email || '')}</td>
+                    <td>${escapeHtml(r.bank_name || '—')}</td>
+                    <td>${escapeHtml(r.branch_name || '—')}</td>
+                    <td style="font-family:monospace;">${acct}</td>
+                    <td style="font-family:monospace;">${ifsc}</td>
+                    <td>${escapeHtml(r.account_type || '—')}</td>
+                    <td>${statusBadge}</td>
+                </tr>`;
+        }).join('');
+    }
+
+    function statChip(label, n, cls) {
+        return `<div class="stat-item ${cls}"><span class="stat-value">${n}</span><span class="stat-label">${label}</span></div>`;
+    }
+
+    function mask(value, keepLast) {
+        const s = String(value || '');
+        if (!s) return '—';
+        const visible = keepLast == null ? 4 : keepLast;
+        if (s.length <= visible) return '•'.repeat(s.length);
+        return '•'.repeat(Math.min(s.length - visible, 10)) + s.slice(-visible);
     }
 
     async function downloadTemplate() {
@@ -198,6 +306,8 @@ window.EmployeeBanking = (function () {
 
             renderResults(res);
             Toast?.success?.(`Processed ${res.total} rows — ${res.updated} updated, ${res.inserted} inserted`);
+            // Refresh the table below so the new/updated rows show up immediately.
+            if (res.updated > 0 || res.inserted > 0) loadList(true);
         } catch (err) {
             console.error('[Banking] upload failed', err);
             Toast?.error?.(err?.message || 'Upload failed');
