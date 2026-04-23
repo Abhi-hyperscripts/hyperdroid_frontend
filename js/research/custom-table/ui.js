@@ -1326,6 +1326,161 @@
     }
 
     // -----------------------------------------------------------------------
+    // Paste JSON and run — inverse of the Code popup. Lets users replay
+    // a saved custom_table payload without rebuilding the drag-drop state.
+    // -----------------------------------------------------------------------
+
+    /**
+     * Normalize any of the accepted paste shapes into a canonical
+     * execute-batch body: { function_name: "custom_table", variants: [input_params, ...] }.
+     * Accepts:
+     *   A) Full batch shape:   { function_name, variants: [ip, ...] }
+     *   B) Single-block shape: { function_name, input_params: ip }
+     *   C) Raw input_params:   { rows, columns, ... }  (no wrapper)
+     */
+    function normalizePastedPayload(parsed) {
+        if (!parsed || typeof parsed !== 'object') {
+            throw new Error('Not a JSON object.');
+        }
+        if (parsed.function_name && parsed.function_name !== 'custom_table') {
+            throw new Error(`Expected function_name "custom_table", got "${parsed.function_name}".`);
+        }
+
+        let variants;
+        if (Array.isArray(parsed.variants)) {
+            variants = parsed.variants;
+        } else if (parsed.input_params && typeof parsed.input_params === 'object') {
+            variants = [parsed.input_params];
+        } else if (parsed.rows || parsed.columns) {
+            variants = [parsed];
+        } else {
+            throw new Error('JSON must contain `variants[]`, `input_params`, or top-level `rows`/`columns`.');
+        }
+
+        // Inject cell_format: 'object' so renderResult can show Count/%/Sig toggles,
+        // and fall back to the current file_id when the payload omits one.
+        variants = variants.map(ip => ({
+            ...ip,
+            cell_format: ip.cell_format || 'object',
+            file_id: ip.file_id || state.fileId,
+        }));
+        return { function_name: 'custom_table', variants };
+    }
+
+    async function ctRunFromJson(jsonText) {
+        let parsed;
+        try { parsed = JSON.parse(jsonText); }
+        catch (e) { throw new Error('Invalid JSON: ' + e.message); }
+
+        const requestBody = normalizePastedPayload(parsed);
+        if (!requestBody.variants[0].file_id) {
+            throw new Error('No file_id in the JSON and no file is currently selected.');
+        }
+
+        const preview = document.getElementById('ctPreview');
+        preview.innerHTML = `
+            <div class="ct-preview-loading">
+                <div class="spinner"></div>
+                <div>Running pasted JSON…</div>
+            </div>`;
+
+        lastRequestPayload = requestBody;
+        const url = `${CONFIG.researchApiBaseUrl}/projects/${projectId}/functions/execute-batch`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.error || body.message || `Request failed (${res.status})`);
+        const results = body.results || [];
+        if (results.length === 0 || results[0].success === false) {
+            throw new Error(results[0]?.error || 'Query failed.');
+        }
+
+        renderResult(results[0]);
+
+        // Banner tells the user the preview doesn't match the Columns/Rows chips.
+        const bannerHost = document.getElementById('ctPreview');
+        if (bannerHost) {
+            const banner = document.createElement('div');
+            banner.className = 'ct-pasted-banner';
+            banner.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <span>Preview was generated from pasted JSON — the Columns/Rows chips above do not reflect this table.</span>`;
+            bannerHost.insertBefore(banner, bannerHost.firstChild);
+        }
+    }
+
+    function ctShowPasteJson() {
+        const overlay = document.createElement('div');
+        overlay.className = 'gm-overlay ct-paste-overlay active';
+        overlay.innerHTML = `
+            <div class="gm-modal" style="width: 70vw; max-width: none; max-height: calc(100vh - 104px); display:flex; flex-direction:column;">
+                <div class="gm-header" style="padding-bottom: 12px;">
+                    <div class="gm-header-left">
+                        <div class="gm-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+                            </svg>
+                        </div>
+                        <div class="gm-title-group">
+                            <h3 class="gm-title">Paste JSON to run</h3>
+                            <p class="gm-subtitle">Replay a saved custom_table payload without rebuilding the drag-drop state.</p>
+                        </div>
+                    </div>
+                    <button class="gm-close" data-ct-paste-close>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div style="flex:1; min-height:0; overflow:auto; padding: 0 20px 4px;">
+                    <p class="ct-paste-hint">Accepts the full execute-batch shape (<code>{function_name, variants}</code>), a single block (<code>{function_name, input_params}</code>), or raw <code>input_params</code>. <code>file_id</code> falls back to the current file when missing.</p>
+                    <textarea class="ct-paste-textarea" spellcheck="false" placeholder='{&#10;  &quot;function_name&quot;: &quot;custom_table&quot;,&#10;  &quot;input_params&quot;: {&#10;    &quot;rows&quot;: [{&quot;label&quot;: &quot;Male&quot;, &quot;expression&quot;: &quot;Q4 = 1&quot;}],&#10;    &quot;columns&quot;: [{&quot;label&quot;: &quot;UK&quot;, &quot;expression&quot;: &quot;HCOUNTRY = 1&quot;}]&#10;  }&#10;}'></textarea>
+                    <div class="ct-paste-error" style="display:none;"></div>
+                </div>
+                <div class="gm-footer" style="padding: 14px 20px; gap: 10px; display:flex; justify-content:flex-end; flex-shrink:0;">
+                    <button class="gm-btn gm-btn-secondary" data-ct-paste-close>Cancel</button>
+                    <button class="gm-btn gm-btn-primary" data-ct-paste-run>Run</button>
+                </div>
+            </div>`;
+        overlay.style.setProperty('z-index', '1000015', 'important');
+        document.body.appendChild(overlay);
+
+        const textarea = overlay.querySelector('.ct-paste-textarea');
+        const errorBox = overlay.querySelector('.ct-paste-error');
+        const runBtn = overlay.querySelector('[data-ct-paste-run]');
+
+        const close = () => { document.removeEventListener('keydown', onKey); overlay.remove(); };
+        const onKey = (e) => { if (e.key === 'Escape') close(); };
+        document.addEventListener('keydown', onKey);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        overlay.querySelectorAll('[data-ct-paste-close]').forEach(b => b.addEventListener('click', close));
+
+        runBtn.addEventListener('click', async () => {
+            errorBox.style.display = 'none';
+            errorBox.textContent = '';
+            runBtn.disabled = true;
+            const origRunLabel = runBtn.textContent;
+            runBtn.textContent = 'Running…';
+            try {
+                await ctRunFromJson(textarea.value);
+                close();
+            } catch (err) {
+                errorBox.textContent = err.message || String(err);
+                errorBox.style.display = 'block';
+            } finally {
+                runBtn.disabled = false;
+                runBtn.textContent = origRunLabel;
+            }
+        });
+
+        setTimeout(() => textarea.focus(), 0);
+    }
+
+    // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
 
@@ -1800,6 +1955,7 @@
     window.closeAnalyzeDropdown = closeAnalyzeDropdown;
     window.ctExportCsv = ctExportCsv;
     window.ctShowCode = ctShowCode;
+    window.ctShowPasteJson = ctShowPasteJson;
     window.ctSetShow = ctSetShow;
     window.ctReset = ctReset;
     window.ctRun = ctRun;
