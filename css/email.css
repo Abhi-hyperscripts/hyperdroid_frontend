@@ -67,7 +67,12 @@ body.email-page .email-read {
    accidentally trap scroll on /settings. */
 html:has(body.email-page .email-shell),
 body.email-page:has(.email-shell) {
+    /* 100vh on mobile browsers includes the area behind the URL bar +
+       Android system-nav bar, so the bottom rows get hidden. 100dvh
+       tracks the dynamic visible viewport. Kept 100vh as a fallback
+       for very old browsers (pre-Chrome 108 / Safari 15.6). */
     height: 100vh;
+    height: 100dvh;
     overflow: hidden;
 }
 
@@ -84,6 +89,7 @@ body.email-page .email-shell {
     grid-template-columns: var(--email-rail-w) var(--email-list-w) 1fr;
     gap: 0;
     height: calc(100vh - var(--email-navbar-h));
+    height: calc(100dvh - var(--email-navbar-h));
     /* Desktop navbar is position:fixed so we need to clear its footprint
        with margin-top. On mobile (<=768px) styles.css switches the navbar
        to position:relative — it takes flow space there, so the margin-top
@@ -1364,6 +1370,7 @@ body.email-page .email-read {
     bottom: 0 !important;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;  /* mobile: don't run past the dynamic visible viewport */
     /* Light dim so the page's gradient + content stay visible through
        the modal — what makes the glass feel glassy. Bigger blur on the
        backdrop keeps the behind-content recognizable but out of focus. */
@@ -1394,6 +1401,7 @@ body.email-page .email-read {
     width: 760px;
     max-width: 100%;
     max-height: calc(100vh - 100px);
+    max-height: calc(100dvh - 100px);
     background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(24px) saturate(1.5);
     -webkit-backdrop-filter: blur(24px) saturate(1.5);
@@ -2325,6 +2333,7 @@ body.email-page .modal-close:focus-visible {
     body.email-page .email-shell {
         grid-template-columns: 1fr;
         height: calc(100vh - var(--email-navbar-h));
+        height: calc(100dvh - var(--email-navbar-h));
     }
     body.email-page .email-rail {
         width: 88vw;
@@ -2366,14 +2375,66 @@ body.email-page .modal-close:focus-visible {
         margin: 0;
     }
 
-    /* Compose modal fills the whole screen — feels native */
+    /* Compose modal fills the whole screen — feels native. Also zero-out the
+       overlay's outer padding so the overlay can't end up TALLER than the
+       modal (which was causing a bonus vertical scrollbar on top of the
+       internal modal scroll). */
+    .email-modal-overlay {
+        padding: 0 !important;
+        align-items: stretch !important;
+        justify-content: stretch !important;
+        overflow: hidden !important;
+    }
     .email-modal-overlay .email-modal {
         width: 100vw !important;
         max-width: 100vw !important;
-        height: 100vh;
-        max-height: 100vh !important;
+        height: 100dvh;  /* was 100vh — mobile URL/nav bar cuts that off */
+        max-height: 100dvh !important;
         border-radius: 0;
         border: none;
+        /* Give the body + footer of the compose modal a reachable scroll area
+           by making the modal itself the flex column and letting inner
+           sections scroll individually. */
+        display: flex;
+        flex-direction: column;
+    }
+    /* Inside the composer, the form/body should scroll; footer pinned. */
+    .email-modal-overlay .email-modal > .email-modal-header { flex: 0 0 auto; }
+    .email-modal-overlay .email-modal > .email-modal-body,
+    .email-modal-overlay .email-modal .email-compose-body-wrap {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .email-modal-overlay .email-modal > .email-modal-footer { flex: 0 0 auto; }
+
+    /* Compose rows: the old desktop layout was
+         LABEL | chip-field (flex:1) | Cc/Bcc button
+       which crammed the Cc/Bcc button off the right edge at phone widths.
+       Let the row wrap: label sits above the field; field + button share
+       the second line so there's always room. */
+    .email-modal-overlay .email-compose-row {
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: 6px 10px;
+        padding: 6px 0;
+    }
+    .email-modal-overlay .email-compose-row label {
+        min-width: 0;
+        flex: 1 1 100%;
+        text-align: left;
+    }
+    .email-modal-overlay .email-compose-row .from-select,
+    .email-modal-overlay .email-compose-row input.line-input,
+    .email-modal-overlay .email-compose-row .chip-field {
+        flex: 1 1 auto;
+        min-width: 0;  /* let the flex item shrink past its intrinsic width */
+    }
+    .email-modal-overlay .email-compose-row .cc-toggle {
+        flex: 0 0 auto;
+        padding: 6px 8px;
+        font-size: 11px;
     }
     .email-modal-overlay {
         align-items: stretch !important;
@@ -2397,7 +2458,10 @@ body.email-page .modal-close:focus-visible {
         align-self: flex-start;
     }
     body.email-page .email-settings {
-        margin-top: calc(var(--email-navbar-h) + 12px);
+        /* Mobile navbar is position:relative (takes flow), so no extra
+           top margin is needed — previously we added navbar-h + 12px
+           which doubled up and left a big empty band below the navbar. */
+        margin-top: 12px;
         padding: 0 14px;
     }
     body.email-page .email-settings-header {
@@ -2429,6 +2493,54 @@ body.email-page .modal-close:focus-visible {
     }
 }
 
+/* ----------------------------------------------------------------------
+ * Mobile overrides for the legacy .modal-overlay / .modal-dialog system
+ * (used by Schedule Meeting, Meeting Details event modals). Bootstrap's
+ * modal-lg is 800px — on a 400px phone viewport its fixed width pushed
+ * content off the left edge. Scoped to email+calendar pages so we don't
+ * accidentally break modals in other parts of the app.
+ * ------------------------------------------------------------------ */
+@media (max-width: 720px) {
+    body.email-page .modal-overlay,
+    body.email-calendar-page .modal-overlay {
+        padding: 0 !important;
+    }
+    body.email-page .modal-overlay .modal-dialog,
+    body.email-page .modal-overlay .modal-dialog.modal-lg,
+    body.email-page .modal-overlay .modal-dialog.modal-dialog-centered,
+    body.email-calendar-page .modal-overlay .modal-dialog,
+    body.email-calendar-page .modal-overlay .modal-dialog.modal-lg,
+    body.email-calendar-page .modal-overlay .modal-dialog.modal-dialog-centered {
+        width: 100%       !important;
+        max-width: 100vw  !important;
+        margin: 0         !important;
+    }
+    body.email-page .modal-overlay .modal-content,
+    body.email-calendar-page .modal-overlay .modal-content {
+        width: 100%       !important;
+        max-width: 100vw  !important;
+        max-height: 100dvh;
+        border-radius: 0  !important;
+        border: none      !important;
+        box-sizing: border-box;
+    }
+    /* Make sure dialog header/body/footer don't assume a wider parent */
+    body.email-page .modal-overlay .modal-header,
+    body.email-page .modal-overlay .modal-body,
+    body.email-page .modal-overlay .modal-footer,
+    body.email-calendar-page .modal-overlay .modal-header,
+    body.email-calendar-page .modal-overlay .modal-body,
+    body.email-calendar-page .modal-overlay .modal-footer {
+        padding-left: 16px  !important;
+        padding-right: 16px !important;
+    }
+    /* Grid rows inside forms (Date/Start/End) collapse to column on phone */
+    body.email-page .modal-overlay .form-row,
+    body.email-calendar-page .modal-overlay .form-row {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 /* ============================================================================
  * Calendar page — /pages/email/calendar.html
  * Pulls all colors from theme tokens so it tracks light/dark/brand overrides.
@@ -2442,6 +2554,7 @@ body.email-calendar-page {
     display: flex;
     flex-direction: column;
     height: calc(100vh - var(--email-navbar-h));
+    height: calc(100dvh - var(--email-navbar-h));
     padding: 18px;
     gap: 14px;
     max-width: 1400px;
@@ -2454,7 +2567,48 @@ body.email-calendar-page {
         margin-top: 0;
         height: auto;
         min-height: calc(100vh - var(--email-navbar-h));
+        min-height: calc(100dvh - var(--email-navbar-h));
+        padding: 12px;  /* tighter gutter on phone */
+        gap: 10px;
     }
+    /* Toolbar wraps to multi-row on narrow screens. */
+    .calendar-toolbar {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+    .calendar-toolbar-left,
+    .calendar-toolbar-right {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .cal-title {
+        margin-left: 0;
+        font-size: 15px;
+        min-width: 0;
+        flex: 1 1 100%;  /* month/year takes its own row */
+        order: -1;
+    }
+    .cal-btn { padding: 6px 10px; font-size: 12px; }
+    .cal-view-btn { padding: 5px 10px; font-size: 12px; }
+
+    /* Month grid: allow cells to shrink + show shorter weekday labels. */
+    .cal-month-cells { grid-auto-rows: minmax(72px, 1fr); }
+    .cal-day { min-height: 62px; padding: 4px 5px; }
+    .cal-day-num { width: 22px; height: 22px; font-size: 11px; }
+    .cal-weekday { font-size: 9px; letter-spacing: 0.04em; }
+
+    /* Week/day views were hard-sized for desktop — let the agenda side
+       scroll vertically instead of fighting the flex parent. */
+    .calendar-main { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* Extra-tight phones (<=420px): drop the week & day view buttons to
+   labelled icons only so the toolbar fits one row of actions. */
+@media (max-width: 420px) {
+    .cal-view-switch { gap: 0; }
+    .cal-view-btn { padding: 5px 8px; }
+    .cal-btn .cal-btn-label { display: none; }
+    .calendar-toolbar { padding: 8px 10px; }
 }
 
 .calendar-toolbar {
