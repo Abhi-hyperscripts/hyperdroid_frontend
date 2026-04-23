@@ -693,6 +693,31 @@
     font-size: 12px;
     white-space: nowrap;
 }
+
+/* ---- "Code" button + request-JSON popup ---- */
+.ct-code-section + .ct-code-section { margin-top: 14px; }
+.ct-code-section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0;
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--text-secondary);
+}
+.ct-code-section-title { flex: 1; }
+.ct-code-pre {
+    margin: 0;
+    padding: 12px 14px;
+    background: var(--bg-elevated, rgba(0,0,0,0.25));
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    white-space: pre;
+    overflow: auto;
+    max-height: 60vh;
+}
+.ct-code-pre code { background: transparent; padding: 0; font: inherit; color: inherit; }
 /* The sig-groups popover renders title/sub/rows directly under .ct-codes-popover
    (no .ct-codes-header wrapper), so pad the content itself. */
 .ct-sig-groups-popover { padding: 12px 14px; }

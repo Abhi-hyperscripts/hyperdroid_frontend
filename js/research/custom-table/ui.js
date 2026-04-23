@@ -699,6 +699,11 @@
                 <div>Running custom table…</div>
             </div>`;
 
+        const requestBody = {
+            function_name: 'custom_table',
+            variants: batchVariants,
+        };
+        lastRequestPayload = requestBody;
         try {
             const url = `${CONFIG.researchApiBaseUrl}/projects/${projectId}/functions/execute-batch`;
             const res = await fetch(url, {
@@ -707,10 +712,7 @@
                     'Authorization': `Bearer ${getAuthToken()}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    function_name: 'custom_table',
-                    variants: batchVariants,
-                }),
+                body: JSON.stringify(requestBody),
             });
             const body = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(body.error || body.message || `Request failed (${res.status})`);
@@ -830,6 +832,10 @@
      *  can re-render without a new fetch. */
     let lastResult = null;
 
+    /** Last execute-batch payload kept so the "Code" button can show the
+     *  exact JSON that produced the current table. */
+    let lastRequestPayload = null;
+
     function ctSetShow(key, on) {
         if (!(key in state.show)) return;
         state.show[key] = !!on;
@@ -871,6 +877,13 @@
                     <line x1="12" y1="15" x2="12" y2="3"/>
                 </svg>
                 Export CSV
+            </button>
+            <button class="gm-btn gm-btn-secondary ct-code-btn" onclick="ctShowCode()" title="Show the JSON request that produced this table">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 18 22 12 16 6"/>
+                    <polyline points="8 6 2 12 8 18"/>
+                </svg>
+                Code
             </button>`;
         const headerTools = document.getElementById('ctPreviewHeaderTools');
         if (headerTools) headerTools.innerHTML = headerToolsHtml;
@@ -1154,6 +1167,102 @@
             URL.revokeObjectURL(url);
             a.remove();
         }, 100);
+    }
+
+    // -----------------------------------------------------------------------
+    // Show request JSON — same payload works in the Functions tab
+    // -----------------------------------------------------------------------
+
+    function ctShowCode() {
+        if (!lastRequestPayload) {
+            Toast.info('Run a table first, then click Code to see its JSON.');
+            return;
+        }
+        // Functions-tab executes single input_params blocks via /functions/execute.
+        // execute-batch wraps N variants; the base table is variants[0]. Show the
+        // full batch payload so users understand what was actually sent, but also
+        // surface the single-block form for copy-paste into the Functions tab.
+        const batchJson = JSON.stringify(lastRequestPayload, null, 2);
+        const baseInput = lastRequestPayload.variants?.[0] || {};
+        const singleBlockJson = JSON.stringify({
+            function_name: lastRequestPayload.function_name,
+            input_params: baseInput,
+        }, null, 2);
+        const hasVariants = (lastRequestPayload.variants || []).length > 1;
+
+        const overlay = document.createElement('div');
+        overlay.className = 'gm-overlay ct-code-overlay active';
+        overlay.innerHTML = `
+            <div class="gm-modal" style="width: 70vw; max-width: none; max-height: calc(100vh - 104px); display:flex; flex-direction:column;">
+                <div class="gm-header" style="padding-bottom: 12px;">
+                    <div class="gm-header-left">
+                        <div class="gm-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="16 18 22 12 16 6"/>
+                                <polyline points="8 6 2 12 8 18"/>
+                            </svg>
+                        </div>
+                        <div class="gm-title-group">
+                            <h3 class="gm-title">Request JSON</h3>
+                            <p class="gm-subtitle">Same shape the AI copilot and Functions tab use</p>
+                        </div>
+                    </div>
+                    <button class="gm-close" data-ct-code-close>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="ct-code-body" style="flex:1; min-height:0; overflow:auto; padding: 0 20px 16px;">
+                    ${hasVariants ? `
+                        <div class="ct-code-section">
+                            <div class="ct-code-section-head">
+                                <span class="ct-code-section-title">Functions-tab block (base table only)</span>
+                                <button class="gm-btn gm-btn-secondary ct-code-copy" data-copy="single">Copy</button>
+                            </div>
+                            <pre class="ct-code-pre"><code>${escapeHtml(singleBlockJson)}</code></pre>
+                        </div>
+                        <div class="ct-code-section">
+                            <div class="ct-code-section-head">
+                                <span class="ct-code-section-title">Full execute-batch payload (${(lastRequestPayload.variants || []).length} variants, base + per-row-group stats)</span>
+                                <button class="gm-btn gm-btn-secondary ct-code-copy" data-copy="batch">Copy</button>
+                            </div>
+                            <pre class="ct-code-pre"><code>${escapeHtml(batchJson)}</code></pre>
+                        </div>
+                    ` : `
+                        <div class="ct-code-section">
+                            <div class="ct-code-section-head">
+                                <span class="ct-code-section-title">Paste into a Functions-tab block to reproduce</span>
+                                <button class="gm-btn gm-btn-secondary ct-code-copy" data-copy="single">Copy</button>
+                            </div>
+                            <pre class="ct-code-pre"><code>${escapeHtml(singleBlockJson)}</code></pre>
+                        </div>
+                    `}
+                </div>
+            </div>`;
+
+        const close = () => overlay.remove();
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        overlay.querySelector('[data-ct-code-close]').addEventListener('click', close);
+        const onKey = (e) => { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); } };
+        document.addEventListener('keydown', onKey);
+
+        overlay.querySelectorAll('.ct-code-copy').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const text = btn.dataset.copy === 'batch' ? batchJson : singleBlockJson;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    const orig = btn.textContent;
+                    btn.textContent = 'Copied';
+                    setTimeout(() => { btn.textContent = orig; }, 1200);
+                } catch {
+                    Toast.error('Copy failed — select the text manually.');
+                }
+            });
+        });
+
+        // .gm-overlay's base z:10000 carries !important, so setProperty with
+        // priority is needed to stack above the Custom Tables modal (1000001).
+        overlay.style.setProperty('z-index', '1000015', 'important');
+        document.body.appendChild(overlay);
     }
 
     // -----------------------------------------------------------------------
@@ -1630,6 +1739,7 @@
     window.toggleAnalyzeDropdown = toggleAnalyzeDropdown;
     window.closeAnalyzeDropdown = closeAnalyzeDropdown;
     window.ctExportCsv = ctExportCsv;
+    window.ctShowCode = ctShowCode;
     window.ctSetShow = ctSetShow;
     window.ctReset = ctReset;
     window.ctRun = ctRun;
