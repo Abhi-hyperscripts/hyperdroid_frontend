@@ -25,6 +25,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Apply RBAC visibility
     applyDashboardRBAC();
 
+    // Show admin link only for SUPERADMIN
+    const adminLink = document.getElementById('hrmsAdminLink');
+    if (adminLink && hrmsRoles.isSuperAdmin()) {
+        adminLink.style.display = 'inline-flex';
+    }
+
     // Start clock
     updateClock();
     setInterval(updateClock, 1000);
