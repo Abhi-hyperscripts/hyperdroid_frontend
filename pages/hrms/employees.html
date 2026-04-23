@@ -154,24 +154,6 @@
                             </button>
                         </div>
                     </div>
-                    <!-- Access Control Section -->
-                    <div class="nav-group" data-group="access">
-                        <div class="nav-group-header">
-                            <span class="nav-group-title">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="2" y="5" width="20" height="14" rx="2"/>
-                                    <line x1="2" y1="10" x2="22" y2="10"/>
-                                </svg>
-                                Access Control
-                            </span>
-                            <span class="chevron">▼</span>
-                        </div>
-                        <div class="nav-group-items">
-                            <button class="sidebar-btn" data-tab="nfcCards" id="nfcCardsTab">
-                                <span class="nav-number">4</span><span class="nav-label">NFC Cards</span>
-                            </button>
-                        </div>
-                    </div>
                     <!-- Compensation Section -->
                     <div class="nav-group" data-group="compensation">
                         <div class="nav-group-header">
@@ -187,7 +169,25 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="employeeBanking" id="employeeBankingTab">
-                                <span class="nav-number">5</span><span class="nav-label">Employee Banking</span>
+                                <span class="nav-number">4</span><span class="nav-label">Employee Banking</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Access Control Section -->
+                    <div class="nav-group" data-group="access">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="2" y="5" width="20" height="14" rx="2"/>
+                                    <line x1="2" y1="10" x2="22" y2="10"/>
+                                </svg>
+                                Access Control
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="nfcCards" id="nfcCardsTab">
+                                <span class="nav-number">5</span><span class="nav-label">NFC Cards</span>
                             </button>
                         </div>
                     </div>
@@ -456,6 +456,9 @@
 
                 <!-- Managers List Tab -->
                 <div class="tab-content" id="managersList">
+                    <!-- Stats row sits ABOVE the main card. -->
+                    <div class="preview-stats-bar" id="managersListStats" style="margin-bottom:16px;"></div>
+
                     <div class="bulk-import-section">
                         <div class="bulk-import-card bulk-import-card-full">
                             <div class="bulk-import-card-header">
@@ -463,7 +466,6 @@
                                     <h3>Managers List</h3>
                                     <p>Every active employee who currently holds a manager-or-above role (HRMS_MANAGER, HRMS_HR_MANAGER, HRMS_ADMIN, HRMS_HR_ADMIN, SUPERADMIN) in this tenant.</p>
                                 </div>
-                                <div class="preview-stats-bar" id="managersListStats"></div>
                             </div>
                             <div class="filters-bar" style="margin: 0 0 12px 0;">
                                 <div class="search-box-modern">
