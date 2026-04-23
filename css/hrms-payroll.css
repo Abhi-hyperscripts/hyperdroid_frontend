@@ -1815,6 +1815,24 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
+/* When auto-searchable-select.js wraps the pagination <select>, keep the
+   wrapper compact so it doesn't blow out .pagination-right's flex slot.
+   The default .searchable-dropdown-trigger has min-width: 200px which
+   inflates pagination bar width and causes horizontal overflow. */
+.pagination-rows-per-page .searchable-dropdown {
+    width: auto;
+}
+.pagination-rows-per-page .searchable-dropdown-trigger {
+    /* Trigger width is also what the portaled options panel inherits via
+       inline style (searchable-dropdown.js sets menuEl.style.width =
+       rect.width). Keep wide enough that "25" and "100" render fully in
+       both the trigger AND the options list. */
+    min-width: 110px;
+    width: 110px;
+    padding: 4px 28px 4px 12px;
+    font-size: 13px;
+}
+
 /* Pagination container placement - add after tables */
 .pagination-container {
     margin-top: -1px; /* Seamless join with table */
