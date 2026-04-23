@@ -1201,11 +1201,18 @@
         // execute-batch wraps N variants; the base table is variants[0]. Show the
         // full batch payload so users understand what was actually sent, but also
         // surface the single-block form for copy-paste into the Functions tab.
+        //
+        // The UI sets cell_format: 'object' so it can toggle Count/%/Sig visibility
+        // client-side, but the Functions tab renderer only understands legacy string
+        // cells — if we left the flag in, it would render raw JSON objects in every
+        // cell. Strip it from the single-block copy so Functions-tab runs look right.
         const batchJson = JSON.stringify(lastRequestPayload, null, 2);
-        const baseInput = lastRequestPayload.variants?.[0] || {};
+        const baseInputRaw = lastRequestPayload.variants?.[0] || {};
+        const baseInputForFunctionsTab = { ...baseInputRaw };
+        delete baseInputForFunctionsTab.cell_format;
         const singleBlockJson = JSON.stringify({
             function_name: lastRequestPayload.function_name,
-            input_params: baseInput,
+            input_params: baseInputForFunctionsTab,
         }, null, 2);
         const hasVariants = (lastRequestPayload.variants || []).length > 1;
 
@@ -1234,14 +1241,14 @@
                     ${hasVariants ? `
                         <div class="ct-code-section">
                             <div class="ct-code-section-head">
-                                <span class="ct-code-section-title">Functions-tab block (base table only)</span>
+                                <span class="ct-code-section-title">Functions-tab block (base table, cell_format stripped for legacy rendering)</span>
                                 <button class="gm-btn gm-btn-secondary ct-code-copy" data-copy="single">Copy</button>
                             </div>
                             <pre class="ct-code-pre"><code>${escapeHtml(singleBlockJson)}</code></pre>
                         </div>
                         <div class="ct-code-section">
                             <div class="ct-code-section-head">
-                                <span class="ct-code-section-title">Full execute-batch payload (${(lastRequestPayload.variants || []).length} variants, base + per-row-group stats)</span>
+                                <span class="ct-code-section-title">Full execute-batch payload (${(lastRequestPayload.variants || []).length} variants, exactly what the UI sent)</span>
                                 <button class="gm-btn gm-btn-secondary ct-code-copy" data-copy="batch">Copy</button>
                             </div>
                             <pre class="ct-code-pre"><code>${escapeHtml(batchJson)}</code></pre>
