@@ -30,6 +30,32 @@
     <style>
         /* .gm-overlay uses display:flex !important. Make [hidden] win. */
         .gm-overlay[hidden] { display: none !important; }
+
+        /* Subtle icon-only action button used in the banking table (reveal/hide).
+           Inherits text color explicitly so SVG stroke="currentColor" actually shows. */
+        .btn-icon-ghost {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border-radius: 6px;
+            background: transparent;
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+            color: var(--text-primary, #e5e7eb);
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .btn-icon-ghost:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: var(--brand-primary, #6366f1);
+            color: var(--brand-primary, #6366f1);
+        }
+        .btn-icon-ghost:focus-visible {
+            outline: 2px solid var(--brand-primary, #6366f1);
+            outline-offset: 1px;
+        }
     </style>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">

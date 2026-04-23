@@ -175,7 +175,7 @@ window.EmployeeBanking = (function () {
                 ? (showSensitive ? escapeHtml(r.ifsc_code) : mask(r.ifsc_code, 3))
                 : '<span style="color:var(--text-secondary);">—</span>';
             const revealBtn = hasBanking
-                ? `<button type="button" class="btn btn-sm" data-action="toggle-reveal" data-employee-id="${escapeHtml(r.employee_id)}" title="${showSensitive ? 'Hide' : 'Reveal'} account & IFSC" style="padding:4px 8px;">
+                ? `<button type="button" class="btn-icon-ghost" data-action="toggle-reveal" data-employee-id="${escapeHtml(r.employee_id)}" title="${showSensitive ? 'Hide' : 'Reveal'} account & IFSC" aria-label="${showSensitive ? 'Hide' : 'Reveal'} sensitive fields">
                         ${showSensitive ? eyeOffSvg() : eyeSvg()}
                    </button>`
                 : '';
@@ -230,6 +230,10 @@ window.EmployeeBanking = (function () {
         document.getElementById('bankingEditIfsc').value = row.ifsc_code || '';
 
         const modal = document.getElementById('bankingEditModal');
+        // Reparent to <body> so position:fixed centers against the viewport,
+        // not an ancestor that has a CSS transform / filter (which creates a
+        // containing block and breaks fixed positioning).
+        if (modal.parentElement !== document.body) document.body.appendChild(modal);
         modal.hidden = false;
         modal.classList.add('active');
         setTimeout(() => document.getElementById('bankingEditHolder').focus(), 50);
