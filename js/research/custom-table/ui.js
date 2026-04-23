@@ -903,7 +903,14 @@
                     <polyline points="8 6 2 12 8 18"/>
                 </svg>
                 Code
-            </button>`;
+            </button>
+            ${window.aiAvailable ? `
+            <button class="gm-btn gm-btn-primary ct-ai-insight-btn" onclick="ctShowAiInsight()" title="AI analysis of this cross-tab">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z"/>
+                </svg>
+                AI Insight
+            </button>` : ''}`;
         const headerTools = document.getElementById('ctPreviewHeaderTools');
         if (headerTools) headerTools.innerHTML = headerToolsHtml;
 
@@ -1323,6 +1330,405 @@
         // priority is needed to stack above the Custom Tables modal (1000001).
         overlay.style.setProperty('z-index', '1000015', 'important');
         document.body.appendChild(overlay);
+    }
+
+    // -----------------------------------------------------------------------
+    // AI Insight — analyzes the current cross-tab and shows a popup with
+    // 1..4 charts + a 3-4 sentence summary. Uses the insights-dashboard
+    // chart shape so the result is portable to PPT export.
+    // -----------------------------------------------------------------------
+
+    let lastAiInsight = null;  // { summary, charts } — cached for Regenerate idempotency display
+
+    /**
+     * Project `lastResult` (what the UI currently renders) into the backend
+     * shape. Tags each row with `kind` (category | stat_*), pulls
+     * count/percent/value/sig per cell. Skips section-header rows (labels
+     * starting with "— ") and the totalling "Base" row stays as kind="base"
+     * so the LLM sees it for context.
+     */
+    function buildAiInsightPayload() {
+        if (!lastResult || !lastResult.rows || !lastResult.columns) return null;
+        const cols = lastResult.columns.slice(1);  // index 0 is the row-label column
+        const colLabels = cols.slice();
+
+        const rows = [];
+        for (const r of lastResult.rows) {
+            const rawLabel = r[lastResult.columns[0]] ?? '';
+            const label = String(rawLabel);
+            if (/^\s*—\s/.test(label)) continue;  // section headers are visual-only
+
+            let kind = 'category';
+            const lower = label.trim().toLowerCase();
+            if (lower === 'base' || lower === 'unweighted base' || lower === 'weighted base' || lower === 'effective base') {
+                kind = 'base';
+            } else if (r._stat_kind) {
+                kind = r._stat_kind;                   // merged variant sets this
+            } else if (/^mean\b/i.test(label)) kind = 'stat_mean';
+            else if (/^median\b/i.test(label)) kind = 'stat_median';
+            else if (/^std\s*dev|^stdev|^standard\s+dev/i.test(label)) kind = 'stat_stdev';
+            else if (/^sum\b/i.test(label)) kind = 'stat_sum';
+
+            const cells = cols.map(c => {
+                const raw = r[c];
+                if (raw && typeof raw === 'object') {
+                    if (raw.suppressed || raw.nan) return {};
+                    const out = {};
+                    if (raw.count != null) out.count = raw.count;
+                    if (raw.percent != null) out.percent = raw.percent;
+                    if (raw.value != null) out.value = raw.value;
+                    if (raw.sig) out.sig = raw.sig;
+                    return out;
+                }
+                if (typeof raw === 'number') return { value: raw };
+                return {};
+            });
+
+            rows.push({ label, kind, stat_target_var: r._stat_target || '', cells });
+        }
+
+        const colVarTitle = (state.columns || []).flatMap(g => g.vars.map(v => v.name)).join(' × ');
+        const rowVarTitle = (state.rows || []).flatMap(g => g.vars.map(v => v.name)).join(' × ');
+
+        // Global base: largest cell under "Base" row if present, else base_n from the result.
+        let baseN = 0;
+        const baseRow = lastResult.rows.find(r => {
+            const l = String(r[lastResult.columns[0]] || '').trim().toLowerCase();
+            return l === 'base' || l === 'unweighted base' || l === 'weighted base';
+        });
+        if (baseRow) {
+            for (const c of cols) {
+                const raw = baseRow[c];
+                const n = (raw && typeof raw === 'object') ? (raw.count ?? raw.value) : (typeof raw === 'number' ? raw : 0);
+                if (n > baseN) baseN = n;
+            }
+        }
+
+        const sigCtx = state.significance?.enabled
+            ? `${Math.round((state.significance.confidence || 0.95) * 100)}% confidence, ${state.significance.compareAcross || 'all pairs'}`
+            : '';
+
+        // ResearchBackend uses snake_case JSON naming — send snake_case fields.
+        return {
+            table_title: '',
+            row_var_title: rowVarTitle,
+            col_var_title: colVarTitle,
+            col_labels: colLabels,
+            rows,
+            base_n: Math.round(baseN),
+            sig_context: sigCtx,
+        };
+    }
+
+    async function callAiInsight(payload) {
+        const url = `${CONFIG.researchApiBaseUrl}/projects/${projectId}/custom-table/ai-insight`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(body.error || body.message || `AI request failed (${res.status})`);
+        return body;  // { summary, charts: [...], inputTokens, outputTokens }
+    }
+
+    /**
+     * Render a chart config (insights-dashboard shape) into a DOM element
+     * using ApexCharts directly. Handles the main chart types; uncommon
+     * types fall back to a bar chart so the popup never shows "chart error".
+     * This is a focused subset of insights.js's full renderer — when we
+     * consolidate insights.js into a shared module later, we swap this out.
+     */
+    function renderAiInsightChart(el, config) {
+        if (typeof ApexCharts === 'undefined') {
+            el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted)">Chart library not loaded</div>';
+            return;
+        }
+        const type = config.chart_type || 'bar';
+        const d = config.data || {};
+        const cats = d.categories || d.labels || [];
+        const labels = d.labels || [];
+        const valSuffix = d.value_suffix || (d.value_format === 'percentage' ? '%' : '');
+        const isDark = (document.documentElement.getAttribute('data-theme') || 'dark') === 'dark';
+        const fg = isDark ? '#e2e8f0' : '#1e293b';
+        const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+        const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#ef4444', '#14b8a6'];
+
+        // Significance-marker ▲▼ decoration applied to data labels.
+        const sigLookup = {};
+        if (Array.isArray(config.significance_markers)) {
+            for (const m of config.significance_markers) {
+                if (m && m.category) sigLookup[`${m.category}|${m.series || ''}`] = m.direction;
+            }
+        }
+
+        const base = {
+            chart: {
+                background: 'transparent',
+                foreColor: fg,
+                toolbar: { show: true, tools: { download: true, selection: false, zoom: false, zoomin: false, zoomout: false, pan: false, reset: false } },
+                fontFamily: 'inherit',
+                animations: { enabled: true, easing: 'easeinout', speed: 400 },
+            },
+            theme: { mode: isDark ? 'dark' : 'light' },
+            grid: { borderColor: gridColor },
+            colors: COLORS,
+            tooltip: { theme: isDark ? 'dark' : 'light', y: { formatter: v => `${(+v).toLocaleString(undefined, { maximumFractionDigits: 2 })}${valSuffix}` } },
+            dataLabels: { enabled: false },
+        };
+
+        let options;
+        const normSeries = Array.isArray(d.series) && typeof d.series[0] === 'number'
+            ? [{ name: config.title || 'Value', data: d.series }]
+            : (d.series || []);
+
+        switch (type) {
+            case 'bar':
+                options = { ...base, chart: { ...base.chart, type: 'bar', height: Math.max(280, cats.length * 28) },
+                    plotOptions: { bar: { horizontal: true, borderRadius: 3 } },
+                    series: normSeries, xaxis: { categories: cats, labels: { formatter: v => `${v}${valSuffix}` } } };
+                break;
+            case 'column':
+                options = { ...base, chart: { ...base.chart, type: 'bar', height: 340 },
+                    plotOptions: { bar: { horizontal: false, borderRadius: 3, columnWidth: '60%' } },
+                    series: normSeries, xaxis: { categories: cats }, yaxis: { labels: { formatter: v => `${v}${valSuffix}` } } };
+                break;
+            case 'line':
+                options = { ...base, chart: { ...base.chart, type: 'line', height: 320 },
+                    stroke: { curve: 'smooth', width: 2 }, markers: { size: 4 },
+                    series: normSeries, xaxis: { categories: cats }, yaxis: { labels: { formatter: v => `${v}${valSuffix}` } } };
+                break;
+            case 'area':
+                options = { ...base, chart: { ...base.chart, type: 'area', height: 320 },
+                    stroke: { curve: 'smooth', width: 2 }, fill: { type: 'gradient', gradient: { opacityFrom: 0.5, opacityTo: 0.1 } },
+                    series: normSeries, xaxis: { categories: cats } };
+                break;
+            case 'stacked_bar':
+                options = { ...base, chart: { ...base.chart, type: 'bar', height: Math.max(280, cats.length * 28), stacked: true },
+                    plotOptions: { bar: { horizontal: true } },
+                    series: normSeries, xaxis: { categories: cats, labels: { formatter: v => `${v}${valSuffix}` } } };
+                break;
+            case 'pie':
+            case 'donut':
+                options = { ...base, chart: { ...base.chart, type, height: 340 },
+                    series: (Array.isArray(d.series) && typeof d.series[0] === 'number') ? d.series : normSeries.map(s => s.data[0] || 0),
+                    labels };
+                break;
+            case 'radar':
+                options = { ...base, chart: { ...base.chart, type: 'radar', height: 420 },
+                    series: normSeries, xaxis: { categories: cats } };
+                break;
+            case 'heatmap':
+                options = { ...base, chart: { ...base.chart, type: 'heatmap', height: Math.max(280, (normSeries.length || 4) * 38) },
+                    series: normSeries, xaxis: { categories: cats } };
+                break;
+            case 'treemap':
+                options = { ...base, chart: { ...base.chart, type: 'treemap', height: 340 },
+                    series: normSeries };
+                break;
+            case 'radialBar':
+            case 'polarArea':
+                options = { ...base, chart: { ...base.chart, type, height: 340 },
+                    series: (Array.isArray(d.series) && typeof d.series[0] === 'number') ? d.series : normSeries.map(s => s.data[0] || 0),
+                    labels };
+                break;
+            case 'gauge':
+                options = { ...base, chart: { ...base.chart, type: 'radialBar', height: 300 },
+                    plotOptions: { radialBar: { hollow: { size: '60%' }, dataLabels: { value: { formatter: v => `${v}${valSuffix}` } } } },
+                    series: (Array.isArray(d.series) && typeof d.series[0] === 'number') ? d.series : [normSeries[0]?.data?.[0] || 0] };
+                break;
+            default:
+                options = { ...base, chart: { ...base.chart, type: 'bar', height: 300 },
+                    plotOptions: { bar: { horizontal: true, borderRadius: 3 } },
+                    series: normSeries, xaxis: { categories: cats } };
+        }
+
+        try {
+            el.innerHTML = '';
+            new ApexCharts(el, options).render().catch(err => {
+                console.warn('Chart render failed:', err);
+                el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">Chart could not render (${type})</div>`;
+            });
+        } catch (err) {
+            console.warn('Chart exception:', err);
+            el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">Chart error</div>`;
+        }
+    }
+
+    async function ctShowAiInsight() {
+        if (!window.aiAvailable) {
+            Toast.info('Configure your tenant AI API key in Settings to enable AI Insight.');
+            return;
+        }
+        if (!lastResult) {
+            Toast.info('Run a table first.');
+            return;
+        }
+        const payload = buildAiInsightPayload();
+        if (!payload || payload.rows.length === 0) {
+            Toast.error('Cannot build request — no rows in the current result.');
+            return;
+        }
+
+        // Open the popup immediately with a spinner, kick off the request.
+        const overlay = document.createElement('div');
+        overlay.className = 'gm-overlay ct-ai-overlay active';
+        overlay.style.setProperty('z-index', '1000015', 'important');
+        overlay.innerHTML = `
+            <div class="gm-modal" style="width: 80vw; max-width: none; max-height: calc(100vh - 104px); display:flex; flex-direction:column;">
+                <div class="gm-header" style="padding-bottom: 12px;">
+                    <div class="gm-header-left">
+                        <div class="gm-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8L12 2z"/>
+                            </svg>
+                        </div>
+                        <div class="gm-title-group">
+                            <h3 class="gm-title">AI Insight</h3>
+                            <p class="gm-subtitle">Summary + recommended charts for this cross-tab.</p>
+                        </div>
+                    </div>
+                    <button class="gm-close" data-ct-ai-close>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="ct-ai-body" style="flex:1; min-height:0; overflow:auto; padding: 0 20px 16px;">
+                    <div class="ct-ai-loading" style="padding: 60px 0; text-align:center;">
+                        <div class="spinner"></div>
+                        <div style="margin-top:10px; color: var(--text-secondary); font-size: 13px;">Analyzing cross-tab…</div>
+                    </div>
+                </div>
+                <div class="gm-footer" style="padding: 14px 20px; gap: 10px; display:flex; justify-content:flex-end; flex-shrink:0;">
+                    <button class="gm-btn gm-btn-secondary" data-ct-ai-copy disabled>Copy summary</button>
+                    <button class="gm-btn gm-btn-secondary" data-ct-ai-ppt disabled>Download PPT</button>
+                    <button class="gm-btn gm-btn-secondary" data-ct-ai-regen disabled>Regenerate</button>
+                    <button class="gm-btn gm-btn-secondary" data-ct-ai-close>Close</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        const body = overlay.querySelector('.ct-ai-body');
+        const copyBtn = overlay.querySelector('[data-ct-ai-copy]');
+        const pptBtn = overlay.querySelector('[data-ct-ai-ppt]');
+        const regenBtn = overlay.querySelector('[data-ct-ai-regen]');
+
+        const close = () => { document.removeEventListener('keydown', onKey); overlay.remove(); };
+        const onKey = (e) => { if (e.key === 'Escape') close(); };
+        document.addEventListener('keydown', onKey);
+        overlay.querySelectorAll('[data-ct-ai-close]').forEach(b => b.addEventListener('click', close));
+
+        const fetchAndRender = async () => {
+            body.innerHTML = `<div class="ct-ai-loading" style="padding: 60px 0; text-align:center;">
+                <div class="spinner"></div>
+                <div style="margin-top:10px; color: var(--text-secondary); font-size: 13px;">Analyzing cross-tab…</div>
+            </div>`;
+            copyBtn.disabled = pptBtn.disabled = regenBtn.disabled = true;
+            try {
+                const result = await callAiInsight(payload);
+                lastAiInsight = result;
+                renderInsightInto(body, result);
+                copyBtn.disabled = false;
+                pptBtn.disabled = (result.charts || []).length === 0;
+                regenBtn.disabled = false;
+            } catch (err) {
+                body.innerHTML = `<div class="ct-ai-error" style="padding: 40px 20px; text-align:center;">
+                    <div style="color: var(--color-error); font-size: 14px; margin-bottom: 8px;">Couldn't generate insight</div>
+                    <div style="color: var(--text-secondary); font-size: 12px;">${escapeHtml(err.message || String(err))}</div>
+                </div>`;
+                regenBtn.disabled = false;
+            }
+        };
+
+        copyBtn.addEventListener('click', async () => {
+            if (!lastAiInsight) return;
+            try {
+                await navigator.clipboard.writeText(lastAiInsight.summary || '');
+                const orig = copyBtn.textContent;
+                copyBtn.textContent = 'Copied';
+                setTimeout(() => { copyBtn.textContent = orig; }, 1200);
+            } catch { Toast.error('Copy failed — select the text manually.'); }
+        });
+
+        regenBtn.addEventListener('click', fetchAndRender);
+        pptBtn.addEventListener('click', () => downloadInsightPpt(lastAiInsight, pptBtn));
+
+        fetchAndRender();
+    }
+
+    function renderInsightInto(container, result) {
+        const charts = Array.isArray(result.charts) ? result.charts : [];
+        container.innerHTML = `
+            <div class="ct-ai-summary" style="padding: 14px 16px; margin-bottom: 16px; background: var(--bg-elevated, rgba(255,255,255,0.03)); border: 1px solid var(--border-color); border-radius: 8px; line-height: 1.55; font-size: 13px; color: var(--text-primary);">
+                ${escapeHtml(result.summary || '')}
+            </div>
+            <div class="ct-ai-charts"></div>`;
+        const chartsHost = container.querySelector('.ct-ai-charts');
+        charts.forEach((c, i) => {
+            const card = document.createElement('div');
+            card.className = 'ct-ai-chart-card';
+            card.style.cssText = 'margin-bottom: 18px; padding: 12px 14px; background: var(--bg-card, rgba(0,0,0,0.15)); border: 1px solid var(--border-color); border-radius: 8px;';
+            card.innerHTML = `
+                <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px;">
+                    <div style="font-weight:600; font-size:13px; color: var(--text-primary);">${escapeHtml(c.title || `Chart ${i + 1}`)}</div>
+                </div>
+                <div class="ct-ai-chart-el" id="ctAiChart-${i}-${Date.now()}"></div>
+                ${c.insight ? `<div style="margin-top:8px; font-size:12px; color: var(--text-secondary); line-height:1.5;">${escapeHtml(c.insight)}</div>` : ''}`;
+            chartsHost.appendChild(card);
+            const el = card.querySelector('.ct-ai-chart-el');
+            setTimeout(() => renderAiInsightChart(el, c), 0);
+        });
+    }
+
+    async function downloadInsightPpt(result, btn) {
+        if (!result || !result.charts) return;
+        const origLabel = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Preparing…';
+        try {
+            // Lazy-load PptxGenJS + insights-ppt.js the first time.
+            if (typeof PptxGenJS === 'undefined') {
+                await loadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.min.js');
+            }
+            if (typeof generateInsightsPPT === 'undefined') {
+                await loadScript('/js/research/insights-ppt.js?v=' + (window.SW_VERSION || Date.now()));
+            }
+
+            const wrapper = {
+                project_name: (document.querySelector('h1, .project-title')?.textContent || 'Custom Table Insight').trim(),
+                sample_size: 0,
+                executive_summary: result.summary || '',
+                kpi_cards: [],
+                tabs: [{
+                    tab_id: 'ai_insight',
+                    tab_label: 'AI Insight',
+                    tab_summary: result.summary || '',
+                    charts: result.charts,
+                }],
+            };
+            generateInsightsPPT(wrapper, {
+                projectName: wrapper.project_name,
+                sampleSize: wrapper.sample_size,
+                fileName: 'custom_table_insight',
+            });
+        } catch (err) {
+            console.error('PPT export failed:', err);
+            Toast.error('PPT export failed — see console.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = origLabel;
+        }
+    }
+
+    function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = () => resolve();
+            s.onerror = () => reject(new Error('Failed to load ' + src));
+            document.head.appendChild(s);
+        });
     }
 
     // -----------------------------------------------------------------------
@@ -1957,6 +2363,7 @@
     window.closeAnalyzeDropdown = closeAnalyzeDropdown;
     window.ctExportCsv = ctExportCsv;
     window.ctShowCode = ctShowCode;
+    window.ctShowAiInsight = ctShowAiInsight;
     window.ctShowPasteJson = ctShowPasteJson;
     window.ctSetShow = ctSetShow;
     window.ctReset = ctReset;

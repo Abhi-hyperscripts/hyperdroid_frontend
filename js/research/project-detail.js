@@ -2966,6 +2966,10 @@ async function checkAiAvailability() {
         aiAvailable = false;
     }
 
+    // Expose to other modules (e.g. Custom Tables AI Insight button) so they
+    // don't each hit /research/ai/status on their own.
+    window.aiAvailable = aiAvailable;
+
     const btn = document.getElementById('aiChatToggleBtn');
     if (btn) {
         btn.style.display = aiAvailable ? 'inline-flex' : 'none';
