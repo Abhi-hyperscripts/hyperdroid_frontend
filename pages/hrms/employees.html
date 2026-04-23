@@ -31,11 +31,14 @@
         /* .gm-overlay uses display:flex !important. Make [hidden] win. */
         .gm-overlay[hidden] { display: none !important; }
 
-        /* Banking table pagination: rows-per-page on the FAR LEFT,
-           controls in the middle, info on the RIGHT. */
-        #bankingListPagination .pagination-right  { order: 1; justify-content: flex-start; }
-        #bankingListPagination .pagination-center { order: 2; }
-        #bankingListPagination .pagination-left   { order: 3; justify-content: flex-end; }
+        /* Banking + Reporting-Manager tables pagination: rows-per-page on the
+           FAR LEFT, controls in the middle, info on the RIGHT. */
+        #bankingListPagination .pagination-right,
+        #mgrListPagination .pagination-right      { order: 1; justify-content: flex-start; }
+        #bankingListPagination .pagination-center,
+        #mgrListPagination .pagination-center     { order: 2; }
+        #bankingListPagination .pagination-left,
+        #mgrListPagination .pagination-left       { order: 3; justify-content: flex-end; }
 
         /* Subtle icon-only action button used in the banking table (reveal/hide).
            Inherits text color explicitly so SVG stroke="currentColor" actually shows. */
@@ -140,6 +143,9 @@
                             <button class="sidebar-btn active" data-tab="directory" id="directoryTab">
                                 <span class="nav-number">1</span><span class="nav-label">Employee Directory</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="reportingManager" id="reportingManagerTab">
+                                <span class="nav-number">2</span><span class="nav-label">Reporting Manager</span>
+                            </button>
                         </div>
                     </div>
                     <!-- Access Control Section -->
@@ -156,7 +162,7 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="nfcCards" id="nfcCardsTab">
-                                <span class="nav-number">2</span><span class="nav-label">NFC Cards</span>
+                                <span class="nav-number">3</span><span class="nav-label">NFC Cards</span>
                             </button>
                         </div>
                     </div>
@@ -175,7 +181,7 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="employeeBanking" id="employeeBankingTab">
-                                <span class="nav-number">3</span><span class="nav-label">Employee Banking</span>
+                                <span class="nav-number">4</span><span class="nav-label">Employee Banking</span>
                             </button>
                         </div>
                     </div>
@@ -270,6 +276,173 @@
                             </tbody>
                         </table>
                         <div id="employeesPagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- Reporting Manager Tab -->
+                <div class="tab-content" id="reportingManager">
+                    <!-- Download + Upload -->
+                    <div class="bulk-import-section">
+                        <div class="bulk-import-card">
+                            <div class="bulk-import-card-header">
+                                <h3>Bulk Reporting Manager Update</h3>
+                                <p>Download a spreadsheet with every employee pre-filled (including their current reporting manager), fill in the new manager's email, and re-upload. Use <code>CLEAR</code> to remove an employee's manager (they'll default to SUPERADMIN). Leaving the cell blank skips the row.</p>
+                            </div>
+
+                            <div class="bulk-import-template-section">
+                                <div class="template-info">
+                                    <div class="template-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <polyline points="14 2 14 8 20 8"/>
+                                        </svg>
+                                    </div>
+                                    <div class="template-text">
+                                        <span class="template-label">Reporting Manager Template</span>
+                                        <span class="template-hint" id="mgrDownloadHint">One row per active employee — current manager pre-filled.</span>
+                                    </div>
+                                </div>
+                                <button class="btn-template-download" id="mgrDownloadBtn" type="button">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7 10 12 15 17 10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                    Download Template
+                                </button>
+                            </div>
+
+                            <div class="bulk-import-dropzone" id="mgrDropZone">
+                                <input type="file" id="mgrFileInput" accept=".xlsx,.xls,.csv" style="display: none;">
+                                <div class="dropzone-icon">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                </div>
+                                <div class="dropzone-text">
+                                    <span class="dropzone-title">Drag &amp; drop your completed file here</span>
+                                    <span class="dropzone-subtitle">or click to browse</span>
+                                </div>
+                                <div class="dropzone-hint">
+                                    <span>Supports</span>
+                                    <span class="file-type">.xlsx</span>
+                                    <span class="file-type">.xls</span>
+                                    <span class="file-type">.csv</span>
+                                    <span class="separator">|</span>
+                                    <span>Max 1000 rows</span>
+                                </div>
+                            </div>
+
+                            <div class="bulk-import-selected-file" id="mgrSelectedFileCard" style="display: none;">
+                                <div class="selected-file-info">
+                                    <div class="selected-file-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <polyline points="14 2 14 8 20 8"/>
+                                        </svg>
+                                    </div>
+                                    <span class="selected-file-name" id="mgrSelectedFile"></span>
+                                </div>
+                                <button class="btn-remove-file" id="mgrClearFileBtn" type="button">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                    Remove
+                                </button>
+                            </div>
+
+                            <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+                                <button type="button" class="btn-template-download" id="mgrUploadBtn" disabled>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    Upload &amp; Process
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Current Reporting Structure -->
+                    <div class="bulk-import-section">
+                        <div class="bulk-import-card bulk-import-card-full">
+                            <div class="bulk-import-card-header">
+                                <div class="header-left">
+                                    <h3>Current Reporting Structure</h3>
+                                    <p>Employees with "SUPERADMIN" as manager have no explicit reporting line (they default to the tenant's SUPERADMIN).</p>
+                                </div>
+                                <div class="preview-stats-bar" id="mgrListStats"></div>
+                            </div>
+                            <div class="filters-bar" style="margin: 0 0 12px 0;">
+                                <div class="search-box-modern">
+                                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"/>
+                                        <path d="m21 21-4.35-4.35"/>
+                                    </svg>
+                                    <input type="text" id="mgrListSearch" placeholder="Search employee or manager by name/email/code…">
+                                </div>
+                                <select class="filter-select" id="mgrListFilter">
+                                    <option value="">All employees</option>
+                                    <option value="has_manager">Has explicit manager</option>
+                                    <option value="reports_superadmin">Reports to SUPERADMIN</option>
+                                </select>
+                                <button type="button" class="btn btn-outline-primary" id="mgrListRefreshBtn" title="Refresh">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="23 4 23 10 17 10"/>
+                                        <polyline points="1 20 1 14 7 14"/>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                    </svg>
+                                    Refresh
+                                </button>
+                            </div>
+                            <div class="data-table-container">
+                                <table class="data-table" id="mgrListTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Employee</th>
+                                            <th>Email</th>
+                                            <th>Current Manager</th>
+                                            <th>Manager Email</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="mgrListBody">
+                                        <tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-secondary);">Loading…</td></tr>
+                                    </tbody>
+                                </table>
+                                <div id="mgrListPagination" class="pagination-container"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="bulk-import-section" id="mgrResultsCard" style="display:none;">
+                        <div class="bulk-import-card bulk-import-card-full">
+                            <div class="bulk-import-card-header">
+                                <div class="header-left">
+                                    <h3>Results</h3>
+                                    <p>Per-row outcome after applying your upload.</p>
+                                </div>
+                                <div class="preview-stats-bar" id="mgrResultsSummary"></div>
+                            </div>
+                            <div class="bulk-import-table-wrapper">
+                                <div class="bulk-import-table-scroll">
+                                    <table class="bulk-import-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="col-row">#</th>
+                                                <th class="col-status">Status</th>
+                                                <th class="col-email">Employee Email</th>
+                                                <th>Details</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="mgrResultsBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1848,6 +2021,7 @@
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/employees.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/employee-banking.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/employee-manager-bulk.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="hrms" data-title="HR Assistant"><\/script>');</script>

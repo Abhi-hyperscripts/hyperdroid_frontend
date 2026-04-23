@@ -4179,6 +4179,7 @@ function setupSidebar() {
     // Tab name mapping for display
     const tabNames = {
         'directory': 'Employee Directory',
+        'reportingManager': 'Reporting Manager',
         'nfcCards': 'NFC Cards',
         'employeeBanking': 'Employee Banking'
     };
@@ -4255,6 +4256,9 @@ function setupSidebar() {
             }
             if (tabId === 'employeeBanking' && typeof EmployeeBanking !== 'undefined') {
                 EmployeeBanking.ensureInit();
+            }
+            if (tabId === 'reportingManager' && typeof EmployeeManagerBulk !== 'undefined') {
+                EmployeeManagerBulk.ensureInit();
             }
         });
     });
