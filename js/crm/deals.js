@@ -23,8 +23,10 @@ let dealContactDropdown = null;
 let dealCompanyDropdown = null;
 
 // CRM team role: 'admin' | 'manager' | 'teamlead' | 'member' | 'none'.
-// Members can edit basic fields on owned deals but not value/stage/won/lost/delete.
+// Members can edit basic fields on owned deals but not value/stage/won/lost/delete
+// UNLESS the tenant-level `allow_member_deal_edits` setting is on.
 let myTeamRole = 'member';
+let allowMemberDealEdits = false;
 
 async function loadMyRole() {
     try {
@@ -38,10 +40,23 @@ async function loadMyRole() {
     } catch { myTeamRole = 'member'; }
 }
 
+async function loadMemberDealEditsFlag() {
+    try {
+        const res = await api.request('/crm/crm-settings/allow_member_deal_edits');
+        allowMemberDealEdits = String(res?.value ?? 'false').toLowerCase() === 'true';
+    } catch { allowMemberDealEdits = false; }
+}
+
 function isMember() { return myTeamRole === 'member'; }
 function canDeleteDeal() { return ['admin', 'manager', 'teamlead'].includes(myTeamRole); }
-function canChangeDealStage() { return ['admin', 'manager', 'teamlead'].includes(myTeamRole); }
-function canEditDealFinancial() { return ['admin', 'manager', 'teamlead'].includes(myTeamRole); }
+function canChangeDealStage() {
+    if (['admin', 'manager', 'teamlead'].includes(myTeamRole)) return true;
+    return myTeamRole === 'member' && allowMemberDealEdits;
+}
+function canEditDealFinancial() {
+    if (['admin', 'manager', 'teamlead'].includes(myTeamRole)) return true;
+    return myTeamRole === 'member' && allowMemberDealEdits;
+}
 
 // Currency symbols map
 const CURRENCY_SYMBOLS = {
@@ -54,8 +69,8 @@ const CURRENCY_SYMBOLS = {
 
 document.addEventListener('DOMContentLoaded', async () => {
     Navigation.init('crm', '../');
-    // Resolve role first so render() can hide member-blocked actions.
-    await loadMyRole();
+    // Resolve role + tenant toggle first so render() can hide member-blocked actions.
+    await Promise.all([loadMyRole(), loadMemberDealEditsFlag()]);
     await loadDefaultCurrency();
     await loadDealStages();
     loadPipeline();

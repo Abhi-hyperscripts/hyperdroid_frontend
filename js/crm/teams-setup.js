@@ -195,6 +195,70 @@
     //  TEAMS SETUP tab
     // ============================================================================
 
+    // ── Allow-Member-Deal-Edits toggle ─────────────────────────────────────
+    const MEMBER_DEAL_EDITS_KEY = 'allow_member_deal_edits';
+    let _memberDealEditsWired = false;
+
+    function setMemberDealEditsLabel(enabled) {
+        const label = document.getElementById('toggleMemberDealEditsLabel');
+        const track = document.getElementById('toggleMemberDealEditsTrack');
+        const knob  = document.getElementById('toggleMemberDealEditsKnob');
+        if (label) label.textContent = enabled ? 'Enabled' : 'Disabled';
+        if (track) track.style.background = enabled
+            ? 'var(--brand-primary, #6366f1)'
+            : 'var(--border-color, #d1d5db)';
+        if (knob)  knob.style.transform = enabled ? 'translateX(18px)' : 'translateX(0)';
+    }
+
+    async function loadMemberDealEditsToggle() {
+        const cb    = document.getElementById('toggleMemberDealEdits');
+        const label = document.getElementById('toggleMemberDealEditsLabel');
+        const hint  = document.getElementById('memberDealEditsHint');
+        if (!cb) return;
+
+        try {
+            const res = await apiGet(`/crm-settings/${MEMBER_DEAL_EDITS_KEY}`);
+            const enabled = String(res?.value ?? 'false').toLowerCase() === 'true';
+            cb.checked = enabled;
+            setMemberDealEditsLabel(enabled);
+
+            // Page is already gated to CRM_ADMIN/SUPERADMIN; enable control.
+            cb.disabled = false;
+            if (hint) hint.style.display = 'none';
+
+            if (!_memberDealEditsWired) {
+                _memberDealEditsWired = true;
+                cb.addEventListener('change', async () => {
+                    const desired = cb.checked;
+                    cb.disabled = true;
+                    if (label) label.textContent = 'Saving…';
+                    try {
+                        await apiPut(`/crm-settings/${MEMBER_DEAL_EDITS_KEY}`, { Value: desired ? 'true' : 'false' });
+                        setMemberDealEditsLabel(desired);
+                        toastOk(desired
+                            ? 'Team members can now move deals and edit deal fields.'
+                            : 'Only Team Leads, Managers, and Admins can move/edit deals now.');
+                    } catch (e) {
+                        // Roll back on failure.
+                        cb.checked = !desired;
+                        setMemberDealEditsLabel(!desired);
+                        toastErr(e, 'Failed to update setting');
+                    } finally {
+                        cb.disabled = false;
+                    }
+                });
+            }
+        } catch (e) {
+            if (label) label.textContent = 'Unavailable';
+            cb.disabled = true;
+            if (hint) {
+                hint.style.display = 'block';
+                hint.textContent = 'Could not load this setting. Check your connection or reload the page.';
+            }
+            console.error('Failed to load member-deal-edits toggle', e);
+        }
+    }
+
     async function loadTeamsTab() {
         const loading = document.getElementById('teamsLoading');
         const grid    = document.getElementById('teamsGrid');
@@ -205,6 +269,9 @@
         grid.style.display = 'none';
         empty.style.display = 'none';
         hint.style.display = 'none';
+
+        // Kick off the Member-Deal-Edits toggle load in parallel (non-blocking).
+        loadMemberDealEditsToggle();
 
         try {
             const [teams, fgs, users] = await Promise.all([

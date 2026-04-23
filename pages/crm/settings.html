@@ -859,6 +859,36 @@
                         </div>
                     </div>
 
+                    <!-- Deal pipeline permissions — tenant-wide toggle -->
+                    <div class="settings-toggle-card" id="memberDealEditsCard" style="
+                        border: 1px solid var(--border-color);
+                        border-radius: 12px;
+                        padding: 16px 18px;
+                        margin-bottom: 16px;
+                        background: var(--bg-card);
+                    ">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap;">
+                            <div style="flex:1; min-width:260px;">
+                                <h4 style="margin:0 0 4px 0; font-size:0.98rem;">Allow team members to move deals and change deal value</h4>
+                                <p style="margin:0; color:var(--text-secondary); font-size:0.85rem; line-height:1.45;">
+                                    <strong>Off (default):</strong> only Team Leads, Managers, and Admins can move deals through pipeline stages, change deal value, reassign owners, or set won/lost reasons.<br>
+                                    <strong>On:</strong> team members can do all of the above on deals they own. Every change is still recorded on the deal's timeline for audit.
+                                </p>
+                            </div>
+                            <label style="flex:0 0 auto; display:inline-flex; align-items:center; gap:10px; cursor:pointer;">
+                                <span style="position:relative; display:inline-block; width:40px; height:22px; flex:0 0 auto;">
+                                    <input type="checkbox" id="toggleMemberDealEdits" disabled style="opacity:0; width:0; height:0; margin:0;">
+                                    <span id="toggleMemberDealEditsTrack" style="position:absolute; inset:0; background:var(--border-color, #d1d5db); border-radius:22px; transition:background .2s;"></span>
+                                    <span id="toggleMemberDealEditsKnob" style="position:absolute; top:2px; left:2px; width:18px; height:18px; background:#fff; border-radius:50%; transition:transform .2s, background .2s; box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
+                                </span>
+                                <span id="toggleMemberDealEditsLabel" style="font-size:0.85rem; color:var(--text-secondary);">Loading…</span>
+                            </label>
+                        </div>
+                        <div id="memberDealEditsHint" style="margin-top:10px; font-size:0.78rem; color:var(--text-secondary); display:none;">
+                            Only CRM admins or SUPERADMINs can change this setting.
+                        </div>
+                    </div>
+
                     <div class="crm-loading" id="teamsLoading" style="display: none;">
                         <div class="crm-loading-spinner"></div>
                     </div>
