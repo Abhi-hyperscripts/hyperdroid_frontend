@@ -693,9 +693,14 @@
     font-size: 12px;
     white-space: nowrap;
 }
+/* The sig-groups popover renders title/sub/rows directly under .ct-codes-popover
+   (no .ct-codes-header wrapper), so pad the content itself. */
+.ct-sig-groups-popover { padding: 12px 14px; }
+.ct-sig-groups-popover .ct-codes-title { padding: 0; }
+.ct-sig-groups-popover .ct-codes-sub { padding: 6px 0 0; }
 .ct-sig-groups-popover .ct-groups-rows {
     display: flex; flex-direction: column; gap: 6px;
-    margin-top: 6px; margin-bottom: 8px;
+    margin-top: 10px; margin-bottom: 10px;
     max-height: 280px; overflow-y: auto;
 }
 .ct-sig-groups-popover .ct-groups-row {

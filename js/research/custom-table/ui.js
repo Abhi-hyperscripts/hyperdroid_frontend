@@ -1297,7 +1297,7 @@
         pop.style.position = 'fixed';
         pop.style.bottom = `${window.innerHeight - rect.top + 6}px`;
         pop.style.left = `${rect.left}px`;
-        pop.style.minWidth = '360px';
+        pop.style.minWidth = '480px';
 
         const render = () => {
             pop.innerHTML = `
