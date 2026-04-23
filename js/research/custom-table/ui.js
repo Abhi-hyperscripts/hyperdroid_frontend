@@ -1192,6 +1192,40 @@
     // Show request JSON — same payload works in the Functions tab
     // -----------------------------------------------------------------------
 
+    /**
+     * Pretty-print JSON so arrays of small objects (rows/columns entries) stay
+     * on one line each — much more scannable than JSON.stringify(v, null, 2)
+     * which explodes every {label, expression} into 4 lines.
+     *
+     * Rules:
+     *   - Objects: one key per line (classic pretty format).
+     *   - Arrays: if the whole array fits in ~LINE_BUDGET chars on one line,
+     *     inline it. Otherwise, each element on its own line, compact.
+     *   - Leaf elements (strings/numbers/small objects) use JSON.stringify.
+     */
+    function formatJsonCompact(v, indent = 2, depth = 0, lineBudget = 100) {
+        const pad = ' '.repeat(depth * indent);
+        const childPad = ' '.repeat((depth + 1) * indent);
+
+        if (v === null || typeof v !== 'object') return JSON.stringify(v);
+
+        if (Array.isArray(v)) {
+            if (v.length === 0) return '[]';
+            const inline = '[' + v.map(x => JSON.stringify(x)).join(', ') + ']';
+            if (inline.length + pad.length <= lineBudget) return inline;
+            // One element per line, each element compact
+            const lines = v.map(x => childPad + JSON.stringify(x));
+            return '[\n' + lines.join(',\n') + '\n' + pad + ']';
+        }
+
+        const keys = Object.keys(v);
+        if (keys.length === 0) return '{}';
+        const lines = keys.map(k =>
+            childPad + JSON.stringify(k) + ': ' + formatJsonCompact(v[k], indent, depth + 1, lineBudget)
+        );
+        return '{\n' + lines.join(',\n') + '\n' + pad + '}';
+    }
+
     function ctShowCode() {
         if (!lastRequestPayload) {
             Toast.info('Run a table first, then click Code to see its JSON.');
@@ -1206,14 +1240,14 @@
         // client-side, but the Functions tab renderer only understands legacy string
         // cells — if we left the flag in, it would render raw JSON objects in every
         // cell. Strip it from the single-block copy so Functions-tab runs look right.
-        const batchJson = JSON.stringify(lastRequestPayload, null, 2);
+        const batchJson = formatJsonCompact(lastRequestPayload);
         const baseInputRaw = lastRequestPayload.variants?.[0] || {};
         const baseInputForFunctionsTab = { ...baseInputRaw };
         delete baseInputForFunctionsTab.cell_format;
-        const singleBlockJson = JSON.stringify({
+        const singleBlockJson = formatJsonCompact({
             function_name: lastRequestPayload.function_name,
             input_params: baseInputForFunctionsTab,
-        }, null, 2);
+        });
         const hasVariants = (lastRequestPayload.variants || []).length > 1;
 
         const overlay = document.createElement('div');
