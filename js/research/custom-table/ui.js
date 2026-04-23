@@ -131,6 +131,10 @@
 
     function closeCustomTableModal() {
         document.getElementById('customTableModal')?.classList.remove('active');
+        // Drop cached result/request so reopening doesn't show stale buttons.
+        // The slot state (rows/columns/filter) intentionally persists — users
+        // often close briefly to inspect a variable and want their layout back.
+        clearLastRunArtifacts();
     }
 
     // -----------------------------------------------------------------------
@@ -614,13 +618,28 @@
     // Reset + Run
     // -----------------------------------------------------------------------
 
+    /** Clear anything tied to the last table run — result cache, request
+     *  payload, preview-header tools (Export CSV / Code buttons), and the
+     *  preview grid itself. Called from ctReset() and closeCustomTableModal()
+     *  so stale state from a previous run doesn't bleed into the next session. */
+    function clearLastRunArtifacts() {
+        lastResult = null;
+        lastRequestPayload = null;
+        const headerTools = document.getElementById('ctPreviewHeaderTools');
+        if (headerTools) headerTools.innerHTML = '';
+        const preview = document.getElementById('ctPreview');
+        if (preview) {
+            preview.innerHTML =
+                `<div class="ct-preview-empty">Drop a variable on Rows or Columns and press Run to see results.</div>`;
+        }
+    }
+
     function ctReset() {
         state.rows = [];
         state.columns = [];
         state.filter = [];
         state.weight = [];
-        document.getElementById('ctPreview').innerHTML =
-            `<div class="ct-preview-empty">Drop a variable on Rows or Columns and press Run to see results.</div>`;
+        clearLastRunArtifacts();
         render();
     }
 
