@@ -1436,126 +1436,18 @@
     }
 
     /**
-     * Render a chart config (insights-dashboard shape) into a DOM element
-     * using ApexCharts directly. Handles the main chart types; uncommon
-     * types fall back to a bar chart so the popup never shows "chart error".
-     * This is a focused subset of insights.js's full renderer — when we
-     * consolidate insights.js into a shared module later, we swap this out.
+     * Render an AI-returned chart via the shared insights-chart-renderer
+     * (js/shared/insights-chart-renderer.js). Same module powers the
+     * Research Insights dashboard and the PPT export path, so the popup
+     * gets identical fidelity — significance ▲▼ arrows, count-aware
+     * tooltips, theme-aware colors, responsive mobile heights.
      */
     function renderAiInsightChart(el, config) {
-        if (typeof ApexCharts === 'undefined') {
-            el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted)">Chart library not loaded</div>';
+        if (!window.InsightsCharts) {
+            el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px;">Chart renderer not loaded</div>';
             return;
         }
-        const type = config.chart_type || 'bar';
-        const d = config.data || {};
-        const cats = d.categories || d.labels || [];
-        const labels = d.labels || [];
-        const valSuffix = d.value_suffix || (d.value_format === 'percentage' ? '%' : '');
-        const isDark = (document.documentElement.getAttribute('data-theme') || 'dark') === 'dark';
-        const fg = isDark ? '#e2e8f0' : '#1e293b';
-        const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-        const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#ef4444', '#14b8a6'];
-
-        // Significance-marker ▲▼ decoration applied to data labels.
-        const sigLookup = {};
-        if (Array.isArray(config.significance_markers)) {
-            for (const m of config.significance_markers) {
-                if (m && m.category) sigLookup[`${m.category}|${m.series || ''}`] = m.direction;
-            }
-        }
-
-        const base = {
-            chart: {
-                background: 'transparent',
-                foreColor: fg,
-                toolbar: { show: true, tools: { download: true, selection: false, zoom: false, zoomin: false, zoomout: false, pan: false, reset: false } },
-                fontFamily: 'inherit',
-                animations: { enabled: true, easing: 'easeinout', speed: 400 },
-            },
-            theme: { mode: isDark ? 'dark' : 'light' },
-            grid: { borderColor: gridColor },
-            colors: COLORS,
-            tooltip: { theme: isDark ? 'dark' : 'light', y: { formatter: v => `${(+v).toLocaleString(undefined, { maximumFractionDigits: 2 })}${valSuffix}` } },
-            dataLabels: { enabled: false },
-        };
-
-        let options;
-        const normSeries = Array.isArray(d.series) && typeof d.series[0] === 'number'
-            ? [{ name: config.title || 'Value', data: d.series }]
-            : (d.series || []);
-
-        switch (type) {
-            case 'bar':
-                options = { ...base, chart: { ...base.chart, type: 'bar', height: Math.max(280, cats.length * 28) },
-                    plotOptions: { bar: { horizontal: true, borderRadius: 3 } },
-                    series: normSeries, xaxis: { categories: cats, labels: { formatter: v => `${v}${valSuffix}` } } };
-                break;
-            case 'column':
-                options = { ...base, chart: { ...base.chart, type: 'bar', height: 340 },
-                    plotOptions: { bar: { horizontal: false, borderRadius: 3, columnWidth: '60%' } },
-                    series: normSeries, xaxis: { categories: cats }, yaxis: { labels: { formatter: v => `${v}${valSuffix}` } } };
-                break;
-            case 'line':
-                options = { ...base, chart: { ...base.chart, type: 'line', height: 320 },
-                    stroke: { curve: 'smooth', width: 2 }, markers: { size: 4 },
-                    series: normSeries, xaxis: { categories: cats }, yaxis: { labels: { formatter: v => `${v}${valSuffix}` } } };
-                break;
-            case 'area':
-                options = { ...base, chart: { ...base.chart, type: 'area', height: 320 },
-                    stroke: { curve: 'smooth', width: 2 }, fill: { type: 'gradient', gradient: { opacityFrom: 0.5, opacityTo: 0.1 } },
-                    series: normSeries, xaxis: { categories: cats } };
-                break;
-            case 'stacked_bar':
-                options = { ...base, chart: { ...base.chart, type: 'bar', height: Math.max(280, cats.length * 28), stacked: true },
-                    plotOptions: { bar: { horizontal: true } },
-                    series: normSeries, xaxis: { categories: cats, labels: { formatter: v => `${v}${valSuffix}` } } };
-                break;
-            case 'pie':
-            case 'donut':
-                options = { ...base, chart: { ...base.chart, type, height: 340 },
-                    series: (Array.isArray(d.series) && typeof d.series[0] === 'number') ? d.series : normSeries.map(s => s.data[0] || 0),
-                    labels };
-                break;
-            case 'radar':
-                options = { ...base, chart: { ...base.chart, type: 'radar', height: 420 },
-                    series: normSeries, xaxis: { categories: cats } };
-                break;
-            case 'heatmap':
-                options = { ...base, chart: { ...base.chart, type: 'heatmap', height: Math.max(280, (normSeries.length || 4) * 38) },
-                    series: normSeries, xaxis: { categories: cats } };
-                break;
-            case 'treemap':
-                options = { ...base, chart: { ...base.chart, type: 'treemap', height: 340 },
-                    series: normSeries };
-                break;
-            case 'radialBar':
-            case 'polarArea':
-                options = { ...base, chart: { ...base.chart, type, height: 340 },
-                    series: (Array.isArray(d.series) && typeof d.series[0] === 'number') ? d.series : normSeries.map(s => s.data[0] || 0),
-                    labels };
-                break;
-            case 'gauge':
-                options = { ...base, chart: { ...base.chart, type: 'radialBar', height: 300 },
-                    plotOptions: { radialBar: { hollow: { size: '60%' }, dataLabels: { value: { formatter: v => `${v}${valSuffix}` } } } },
-                    series: (Array.isArray(d.series) && typeof d.series[0] === 'number') ? d.series : [normSeries[0]?.data?.[0] || 0] };
-                break;
-            default:
-                options = { ...base, chart: { ...base.chart, type: 'bar', height: 300 },
-                    plotOptions: { bar: { horizontal: true, borderRadius: 3 } },
-                    series: normSeries, xaxis: { categories: cats } };
-        }
-
-        try {
-            el.innerHTML = '';
-            new ApexCharts(el, options).render().catch(err => {
-                console.warn('Chart render failed:', err);
-                el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">Chart could not render (${type})</div>`;
-            });
-        } catch (err) {
-            console.warn('Chart exception:', err);
-            el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">Chart error</div>`;
-        }
+        window.InsightsCharts.renderChart(el, config);
     }
 
     async function ctShowAiInsight() {
