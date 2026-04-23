@@ -31,14 +31,17 @@
         /* .gm-overlay uses display:flex !important. Make [hidden] win. */
         .gm-overlay[hidden] { display: none !important; }
 
-        /* Banking + Reporting-Manager tables pagination: rows-per-page on the
-           FAR LEFT, controls in the middle, info on the RIGHT. */
+        /* Banking + Reporting-Manager + Managers-List pagination: rows-per-page
+           on the FAR LEFT, controls in the middle, info on the RIGHT. */
         #bankingListPagination .pagination-right,
-        #mgrListPagination .pagination-right      { order: 1; justify-content: flex-start; }
+        #mgrListPagination .pagination-right,
+        #managersListPagination .pagination-right      { order: 1; justify-content: flex-start; }
         #bankingListPagination .pagination-center,
-        #mgrListPagination .pagination-center     { order: 2; }
+        #mgrListPagination .pagination-center,
+        #managersListPagination .pagination-center     { order: 2; }
         #bankingListPagination .pagination-left,
-        #mgrListPagination .pagination-left       { order: 3; justify-content: flex-end; }
+        #mgrListPagination .pagination-left,
+        #managersListPagination .pagination-left       { order: 3; justify-content: flex-end; }
 
         /* Subtle icon-only action button used in the banking table (reveal/hide).
            Inherits text color explicitly so SVG stroke="currentColor" actually shows. */
@@ -146,6 +149,9 @@
                             <button class="sidebar-btn" data-tab="reportingManager" id="reportingManagerTab">
                                 <span class="nav-number">2</span><span class="nav-label">Reporting Manager</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="managersList" id="managersListTab">
+                                <span class="nav-number">3</span><span class="nav-label">Managers List</span>
+                            </button>
                         </div>
                     </div>
                     <!-- Access Control Section -->
@@ -162,7 +168,7 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="nfcCards" id="nfcCardsTab">
-                                <span class="nav-number">3</span><span class="nav-label">NFC Cards</span>
+                                <span class="nav-number">4</span><span class="nav-label">NFC Cards</span>
                             </button>
                         </div>
                     </div>
@@ -181,7 +187,7 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="employeeBanking" id="employeeBankingTab">
-                                <span class="nav-number">4</span><span class="nav-label">Employee Banking</span>
+                                <span class="nav-number">5</span><span class="nav-label">Employee Banking</span>
                             </button>
                         </div>
                     </div>
@@ -417,6 +423,8 @@
                         </div>
                     </div>
 
+                    <!-- Managers List table is rendered by a separate tab; this
+                         comment is just a marker inside the reportingManager tab. -->
                     <!-- Results -->
                     <div class="bulk-import-section" id="mgrResultsCard" style="display:none;">
                         <div class="bulk-import-card bulk-import-card-full">
@@ -441,6 +449,55 @@
                                         <tbody id="mgrResultsBody"></tbody>
                                     </table>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Managers List Tab -->
+                <div class="tab-content" id="managersList">
+                    <div class="bulk-import-section">
+                        <div class="bulk-import-card bulk-import-card-full">
+                            <div class="bulk-import-card-header">
+                                <div class="header-left">
+                                    <h3>Managers List</h3>
+                                    <p>Every active employee who currently holds a manager-or-above role (HRMS_MANAGER, HRMS_HR_MANAGER, HRMS_ADMIN, HRMS_HR_ADMIN, SUPERADMIN) in this tenant.</p>
+                                </div>
+                                <div class="preview-stats-bar" id="managersListStats"></div>
+                            </div>
+                            <div class="filters-bar" style="margin: 0 0 12px 0;">
+                                <div class="search-box-modern">
+                                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="8"/>
+                                        <path d="m21 21-4.35-4.35"/>
+                                    </svg>
+                                    <input type="text" id="managersListSearch" placeholder="Search by name, email, employee code, department, office, or country…">
+                                </div>
+                                <button type="button" class="btn btn-outline-primary" id="managersListRefreshBtn" title="Refresh">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="23 4 23 10 17 10"/>
+                                        <polyline points="1 20 1 14 7 14"/>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                    </svg>
+                                    Refresh
+                                </button>
+                            </div>
+                            <div class="data-table-container">
+                                <table class="data-table" id="managersListTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Employee</th>
+                                            <th>Department</th>
+                                            <th>Office</th>
+                                            <th>Country</th>
+                                            <th>Roles</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="managersListBody">
+                                        <tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-secondary);">Loading…</td></tr>
+                                    </tbody>
+                                </table>
+                                <div id="managersListPagination" class="pagination-container"></div>
                             </div>
                         </div>
                     </div>
@@ -2022,6 +2079,7 @@
         document.write('<script src="../../js/hrms/employees.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/employee-banking.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/hrms/employee-manager-bulk.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/managers-list.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="hrms" data-title="HR Assistant"><\/script>');</script>

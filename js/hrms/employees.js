@@ -4180,6 +4180,7 @@ function setupSidebar() {
     const tabNames = {
         'directory': 'Employee Directory',
         'reportingManager': 'Reporting Manager',
+        'managersList': 'Managers List',
         'nfcCards': 'NFC Cards',
         'employeeBanking': 'Employee Banking'
     };
@@ -4259,6 +4260,9 @@ function setupSidebar() {
             }
             if (tabId === 'reportingManager' && typeof EmployeeManagerBulk !== 'undefined') {
                 EmployeeManagerBulk.ensureInit();
+            }
+            if (tabId === 'managersList' && typeof ManagersList !== 'undefined') {
+                ManagersList.ensureInit();
             }
         });
     });
