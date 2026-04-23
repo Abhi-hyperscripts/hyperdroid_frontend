@@ -4179,7 +4179,8 @@ function setupSidebar() {
     // Tab name mapping for display
     const tabNames = {
         'directory': 'Employee Directory',
-        'nfcCards': 'NFC Cards'
+        'nfcCards': 'NFC Cards',
+        'employeeBanking': 'Employee Banking'
     };
 
     // Update active tab title
@@ -4251,6 +4252,9 @@ function setupSidebar() {
             // Load data for the tab if needed
             if (tabId === 'nfcCards' && !nfcCardsLoaded) {
                 loadNfcCardsTable();
+            }
+            if (tabId === 'employeeBanking' && typeof EmployeeBanking !== 'undefined') {
+                EmployeeBanking.ensureInit();
             }
         });
     });
