@@ -257,15 +257,19 @@
                     return;
                 }
 
-                if (slotContainsVar(slot, varName)) return;
-
                 // Drop onto an existing group = nest (append to that group's
                 // vars). Drop onto empty space = new group (= stack).
+                // Duplicate rule is group-scoped: reject only if the var is
+                // already in the TARGET group (prevents X × X within one
+                // group), but allow the same var across different groups so
+                // users can build e.g. GENDER×WAVE and AGE×WAVE side by side.
                 const groupEl = e.target.closest('.ct-group');
-                if (groupEl) {
-                    const id = groupEl.dataset.groupId;
-                    const group = state[slot].find(g => g.id === id);
-                    if (group) group.vars.push(newVarEntry(varName));
+                const targetGroup = groupEl
+                    ? state[slot].find(g => g.id === groupEl.dataset.groupId)
+                    : null;
+                if (targetGroup) {
+                    if (targetGroup.vars.some(v => v.name === varName)) return;
+                    targetGroup.vars.push(newVarEntry(varName));
                 } else {
                     state[slot].push({ id: nextGroupId(), vars: [newVarEntry(varName)] });
                 }
@@ -369,15 +373,18 @@
                 // Click-to-assign: first click creates the first Columns group
                 // (single variable). Subsequent clicks stack a new Rows group.
                 // Filter is never added via click — drag it there explicitly.
+                // We only block the click if BOTH columns and rows already
+                // contain this var, since that's where click-to-assign routes.
+                // Allowing var reuse: drag is the canonical way to nest a var
+                // into a specific existing group.
                 const varName = el.dataset.variableName;
-                const placed = slotContainsVar('columns', varName)
-                    || slotContainsVar('rows', varName)
-                    || slotContainsVar('filter', varName);
-                if (placed) return;
-                if (state.columns.length === 0) {
+                if (slotContainsVar('columns', varName) && slotContainsVar('rows', varName)) return;
+                if (!slotContainsVar('columns', varName) && state.columns.length === 0) {
                     state.columns.push({ id: nextGroupId(), vars: [newVarEntry(varName)] });
-                } else {
+                } else if (!slotContainsVar('rows', varName)) {
                     state.rows.push({ id: nextGroupId(), vars: [newVarEntry(varName)] });
+                } else {
+                    state.columns.push({ id: nextGroupId(), vars: [newVarEntry(varName)] });
                 }
                 fetchVariableCodes(varName);
                 render();
