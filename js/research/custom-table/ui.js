@@ -1456,7 +1456,9 @@
         const close = () => { document.removeEventListener('keydown', onKey); overlay.remove(); };
         const onKey = (e) => { if (e.key === 'Escape') close(); };
         document.addEventListener('keydown', onKey);
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        // Deliberately NOT closing on backdrop click — users routinely click
+        // outside the textarea while editing, and losing a pasted payload would
+        // be painful. Close via × / Cancel / Escape.
         overlay.querySelectorAll('[data-ct-paste-close]').forEach(b => b.addEventListener('click', close));
 
         runBtn.addEventListener('click', async () => {
