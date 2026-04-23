@@ -1300,6 +1300,9 @@
         pop.style.minWidth = '480px';
 
         const render = () => {
+            // Preserve scroll position across re-renders. Without this, clicking
+            // any chip in the second group scrolls the user back to the top.
+            const prevScroll = pop.querySelector('.ct-groups-rows')?.scrollTop || 0;
             pop.innerHTML = `
                 <div class="ct-codes-title">Custom comparison groups</div>
                 <div class="ct-codes-sub">Each group is a set of column letters whose pairs will be sig-tested. Columns can appear in multiple groups.</div>
@@ -1347,6 +1350,10 @@
             pop.querySelector('.ct-groups-add').onclick = () => { draft.push([]); render(); };
             pop.querySelector('.ct-groups-clear').onclick = () => { draft = [[]]; render(); };
             pop.querySelector('.ct-groups-cancel').onclick = closePop;
+
+            // Restore scroll after DOM is rebuilt.
+            const rowsAfter = pop.querySelector('.ct-groups-rows');
+            if (rowsAfter) rowsAfter.scrollTop = prevScroll;
             pop.querySelector('.ct-groups-apply').onclick = () => {
                 state.significance.comparisonGroups = draft
                     .map(g => Array.from(new Set(g)).sort((a, b) => a - b))
