@@ -94,8 +94,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Setup sidebar navigation
     setupSidebar();
 
-    await loadFormData();
-    await loadEmployees();
+    // loadFormData and loadEmployees don't depend on each other — run them in
+    // parallel so the table renders ~1s faster on first paint. The employee
+    // payload carries department_name/office_name already (LEFT JOINed server-
+    // side), so the list doesn't need offices/departments to be loaded first.
+    await Promise.all([loadFormData(), loadEmployees()]);
 });
 
 /**
@@ -143,8 +146,10 @@ async function loadFormData() {
         document.getElementById('designationId').innerHTML = '<option value="">Select department first...</option>';
         document.getElementById('shiftId').innerHTML = '<option value="">Select office first...</option>';
 
-        // Load currency info for all countries (for proper currency formatting)
-        await loadCurrencyInfo();
+        // Currency info is only needed for salary formatting in the employee
+        // modal — not for the initial list render. Fire without awaiting so
+        // the filter dropdowns + employee table are ready immediately.
+        loadCurrencyInfo().catch((e) => console.warn('[Currency] background load failed', e));
 
     } catch (error) {
         console.error('Error loading form data:', error);
@@ -373,28 +378,38 @@ async function loadEmployees() {
     }
 }
 
-// Preload photos for all employees (background task)
+// Preload photos for all employees (background task).
+// Runs in parallel with a concurrency cap so it doesn't starve the browser's
+// per-origin connection pool with a serial waterfall of 60+ round-trips.
 async function preloadEmployeePhotos() {
-    for (const emp of employees) {
-        if (!employeePhotoCache[emp.id]) {
-            try {
-                const documents = await api.getEmployeeDocuments(emp.id);
-                const photoDoc = documents.find(d => d.document_type === 'profile_photo');
-                if (photoDoc) {
-                    const downloadUrl = await api.getEmployeeDocumentDownloadUrl(emp.id, photoDoc.id);
-                    const photoUrl = downloadUrl.url || downloadUrl;
-                    employeePhotoCache[emp.id] = photoUrl;
-                    // Update the table cell if it exists
-                    const photoCell = document.getElementById(`emp-photo-${emp.id}`);
-                    if (photoCell) {
-                        photoCell.innerHTML = `<img class="employee-avatar-img" src="${photoUrl}" alt="${emp.first_name}" onerror="this.outerHTML='<div class=\\'employee-avatar\\'>${getInitials(emp.first_name, emp.last_name)}</div>'">`;
-                    }
-                }
-            } catch (e) {
-                // Silent fail - just use initials
+    const CONCURRENCY = 8;
+    const queue = employees.filter((e) => !employeePhotoCache[e.id]);
+
+    async function loadOne(emp) {
+        try {
+            const documents = await api.getEmployeeDocuments(emp.id);
+            const photoDoc = documents.find((d) => d.document_type === 'profile_photo');
+            if (!photoDoc) return;
+            const downloadUrl = await api.getEmployeeDocumentDownloadUrl(emp.id, photoDoc.id);
+            const photoUrl = downloadUrl.url || downloadUrl;
+            employeePhotoCache[emp.id] = photoUrl;
+            const photoCell = document.getElementById(`emp-photo-${emp.id}`);
+            if (photoCell) {
+                photoCell.innerHTML = `<img class="employee-avatar-img" src="${photoUrl}" alt="${emp.first_name}" onerror="this.outerHTML='<div class=\\'employee-avatar\\'>${getInitials(emp.first_name, emp.last_name)}</div>'">`;
             }
+        } catch (e) {
+            // Silent fail — row keeps showing initials.
         }
     }
+
+    // Run up to CONCURRENCY loaders; each pulls the next employee until queue is empty.
+    const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
+        while (queue.length) {
+            const emp = queue.shift();
+            if (emp) await loadOne(emp);
+        }
+    });
+    await Promise.all(workers);
 }
 
 function updateStats() {
