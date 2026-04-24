@@ -2946,7 +2946,11 @@ async function loadGoogleSpreadsheets() {
 }
 
 async function gsSelectSpreadsheet(spreadsheetId, name) {
-    _gsSelectedSpreadsheet = { spreadsheetId, name };
+    // Store as snake_case so every downstream reader uses the same key shape
+    // as the backend response bodies (project convention: SnakeCaseLower JSON).
+    // The ES6 shorthand {spreadsheetId, name} accidentally created a camelCase
+    // key that didn't match the snake_case lookups further down the flow.
+    _gsSelectedSpreadsheet = { spreadsheet_id: spreadsheetId, name };
     document.getElementById('gsStageSpreadsheets').style.display = 'none';
     document.getElementById('gsStageTabs').style.display = 'block';
     document.getElementById('gsModalTitle').textContent = 'Pick a tab';
