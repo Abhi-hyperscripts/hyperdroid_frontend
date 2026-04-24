@@ -2663,6 +2663,7 @@ const GS_CRM_FIELDS = [
     { value: 'phone',          label: 'Phone' },
     { value: 'company_name',   label: 'Company name' },
     { value: 'job_title',      label: 'Job title' },
+    { value: '__custom__',     label: 'Custom field…' },
 ];
 
 let _gsConnections = [];
@@ -3084,23 +3085,38 @@ function renderGsMappingTable() {
                 <td><strong>${letter}</strong></td>
                 <td>${escapeHtml(header)}</td>
                 <td style="color: var(--text-secondary);">${escapeHtml(sample)}</td>
-                <td><div id="gsColDd_${letter}" class="gs-col-map-dd"></div></td>
+                <td>
+                    <div id="gsColDd_${letter}" class="gs-col-map-dd"></div>
+                    <input type="text" class="form-control gs-col-custom-name" data-col="${letter}"
+                        placeholder="Field name (e.g. city)" style="display:none; margin-top:6px;">
+                </td>
             </tr>`;
         rowIdOptions.push({ value: letter, label: `${letter} — ${header}` });
-        rowMeta.push({ letter, guess });
+        rowMeta.push({ letter, guess, header });
         if (guess === 'source_lead_id' && !autoRowId) autoRowId = letter;
     }
     tbody.innerHTML = tableHtml;
 
-    rowMeta.forEach(({ letter, guess }) => {
+    rowMeta.forEach(({ letter, guess, header }) => {
         const container = document.getElementById(`gsColDd_${letter}`);
         if (!container) return;
+        const customInput = document.querySelector(`.gs-col-custom-name[data-col="${letter}"]`);
         const dd = new SearchableDropdown(container, {
             id: `gsColDd_${letter}`,
             options: GS_CRM_FIELDS,
             value: guess,
             placeholder: '— Ignore this column —',
             compact: true,
+            onChange: (val) => {
+                if (!customInput) return;
+                if (val === '__custom__') {
+                    customInput.style.display = '';
+                    if (!customInput.value) customInput.value = (header || '').toLowerCase().trim().replace(/\s+/g, '_');
+                    customInput.focus();
+                } else {
+                    customInput.style.display = 'none';
+                }
+            },
         });
         _gsColDropdowns.set(letter, dd);
     });
@@ -3122,10 +3138,33 @@ async function saveGoogleSheetConnection() {
 
     // Build field_mappings payload from the dropdowns.
     const map = {};
-    _gsColDropdowns.forEach((dd, col) => {
+    const usedCustomNames = new Set();
+    for (const [col, dd] of _gsColDropdowns.entries()) {
         const val = dd.getValue();
-        if (col && val && val !== 'skip') map[col] = val;
-    });
+        if (!col || !val || val === 'skip') continue;
+        if (val === '__custom__') {
+            const input = document.querySelector(`.gs-col-custom-name[data-col="${col}"]`);
+            const name = (input?.value || '').trim().toLowerCase().replace(/\s+/g, '_');
+            if (!name) {
+                Toast.warning(`Enter a name for custom field in column ${col}, or set it to Ignore.`);
+                input?.focus();
+                btn.disabled = false;
+                btn.textContent = original;
+                return;
+            }
+            if (usedCustomNames.has(name)) {
+                Toast.warning(`Custom field name "${name}" is used twice. Each custom field must be unique.`);
+                input?.focus();
+                btn.disabled = false;
+                btn.textContent = original;
+                return;
+            }
+            usedCustomNames.add(name);
+            map[col] = `custom:${name}`;
+        } else {
+            map[col] = val;
+        }
+    }
     const rowIdCol = (_gsRowIdDropdown && _gsRowIdDropdown.getValue()) || null;
     if (rowIdCol) {
         map[rowIdCol] = 'source_lead_id';
@@ -3321,23 +3360,38 @@ function renderGsShareMappingTable() {
                 <td><strong>${letter}</strong></td>
                 <td>${escapeHtml(header)}</td>
                 <td style="color: var(--text-secondary);">${escapeHtml(sample)}</td>
-                <td><div id="gsShareColDd_${letter}" class="gs-col-map-dd"></div></td>
+                <td>
+                    <div id="gsShareColDd_${letter}" class="gs-col-map-dd"></div>
+                    <input type="text" class="form-control gs-share-col-custom-name" data-col="${letter}"
+                        placeholder="Field name (e.g. city)" style="display:none; margin-top:6px;">
+                </td>
             </tr>`;
         rowIdOptions.push({ value: letter, label: `${letter} — ${header}` });
-        rowMeta.push({ letter, guess });
+        rowMeta.push({ letter, guess, header });
         if (guess === 'source_lead_id' && !autoRowId) autoRowId = letter;
     }
     tbody.innerHTML = rows;
 
-    rowMeta.forEach(({ letter, guess }) => {
+    rowMeta.forEach(({ letter, guess, header }) => {
         const container = document.getElementById(`gsShareColDd_${letter}`);
         if (!container) return;
+        const customInput = document.querySelector(`.gs-share-col-custom-name[data-col="${letter}"]`);
         const dd = new SearchableDropdown(container, {
             id: `gsShareColDd_${letter}`,
             options: GS_CRM_FIELDS,
             value: guess,
             placeholder: '— Ignore this column —',
             compact: true,
+            onChange: (val) => {
+                if (!customInput) return;
+                if (val === '__custom__') {
+                    customInput.style.display = '';
+                    if (!customInput.value) customInput.value = (header || '').toLowerCase().trim().replace(/\s+/g, '_');
+                    customInput.focus();
+                } else {
+                    customInput.style.display = 'none';
+                }
+            },
         });
         _gsShareColDropdowns.set(letter, dd);
     });
@@ -3358,10 +3412,33 @@ async function saveGoogleSheetShareConnection() {
     btn.textContent = 'Saving…';
 
     const map = {};
-    _gsShareColDropdowns.forEach((dd, col) => {
+    const usedCustomNames = new Set();
+    for (const [col, dd] of _gsShareColDropdowns.entries()) {
         const val = dd.getValue();
-        if (col && val && val !== 'skip') map[col] = val;
-    });
+        if (!col || !val || val === 'skip') continue;
+        if (val === '__custom__') {
+            const input = document.querySelector(`.gs-share-col-custom-name[data-col="${col}"]`);
+            const name = (input?.value || '').trim().toLowerCase().replace(/\s+/g, '_');
+            if (!name) {
+                Toast.warning(`Enter a name for custom field in column ${col}, or set it to Ignore.`);
+                input?.focus();
+                btn.disabled = false;
+                btn.textContent = orig;
+                return;
+            }
+            if (usedCustomNames.has(name)) {
+                Toast.warning(`Custom field name "${name}" is used twice. Each custom field must be unique.`);
+                input?.focus();
+                btn.disabled = false;
+                btn.textContent = orig;
+                return;
+            }
+            usedCustomNames.add(name);
+            map[col] = `custom:${name}`;
+        } else {
+            map[col] = val;
+        }
+    }
     const rowIdCol = (_gsShareRowIdDropdown && _gsShareRowIdDropdown.getValue()) || null;
     if (rowIdCol) { map[rowIdCol] = 'source_lead_id'; map['_row_id_column'] = rowIdCol; }
     const headerRow = Math.max(1, parseInt(document.getElementById('gsShareHeaderRow').value || '1', 10));
