@@ -2613,6 +2613,18 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
     z-index: 10001;
 }
 
+/* Mapping-table modals in Settings: SearchableDropdown already portals its
+   menu to <body> when it detects a scroll ancestor (see positionMenu), so the
+   generic `.gm-body:has(.searchable-dropdown.open) { overflow: visible }` rule
+   above is unnecessary here and actively harmful — a single stuck `.open`
+   class bursts the 18-row table out of modal bounds. Keep these bodies
+   scroll-contained. */
+body.crm-page #gsSheetPickerModal .gm-body:has(.searchable-dropdown.open),
+body.crm-page #gsShareModal .gm-body:has(.searchable-dropdown.open) {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
 /* ─── Custom Fields Badge ─────────────────────────────────────────────── */
 
 .crm-custom-fields-badge {
