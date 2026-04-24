@@ -142,6 +142,30 @@ function handleOAuthCallback() {
             }, 5000);
         }
 
+        // Google Sheets OAuth callback — same URL, different param set.
+        const googleStatus = params.get('google_status');
+        const googleEmail = params.get('google_email');
+        const googleError = params.get('google_error');
+        if (googleStatus === 'connected') {
+            const el = document.getElementById('gsConnectedAlert');
+            const txt = document.getElementById('gsConnectedAlertText');
+            if (el && txt) {
+                txt.textContent = googleEmail ? `Connected: ${googleEmail}` : 'Google account connected.';
+                el.style.display = 'flex';
+                setTimeout(() => { el.style.display = 'none'; }, 6000);
+            }
+            // Refresh the card + kick the new user straight into picking a sheet.
+            loadGoogleSheetsState().then(() => openGoogleSheetPicker());
+        } else if (googleStatus === 'error') {
+            const el = document.getElementById('gsErrorAlert');
+            const txt = document.getElementById('gsErrorAlertText');
+            if (el && txt) {
+                txt.textContent = `Google connection failed: ${googleError || 'unknown error'}`;
+                el.style.display = 'flex';
+                setTimeout(() => { el.style.display = 'none'; }, 8000);
+            }
+        }
+
         // Clean URL without reloading
         const cleanUrl = window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
@@ -267,6 +291,7 @@ function switchSettingsTab(tabName) {
         loadGeneralSettings();
     } else if (tabName === 'integrations') {
         loadFacebookPages();
+        loadGoogleSheetsState();
     } else if (tabName === 'lead-sources') {
         loadLeadSources();
     } else if (tabName === 'functional-groups' && typeof loadFunctionalGroups === 'function') {
@@ -2614,6 +2639,437 @@ async function confirmWipe() {
     } catch (e) {
         console.error('Wipe failed:', e);
         Toast.error(e.message || 'Wipe failed');
+        btn.disabled = false;
+        btn.textContent = original;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Google Sheets integration
+// Parallels the Facebook flow: card shows connected accounts + connected sheets,
+// modal walks through spreadsheet picker → tab picker → field mapping.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// CRM-field vocabulary offered in the mapping dropdown. Mirrors what the
+// backend's BuildLead recognizes — extending both here and in
+// GoogleSheetsPollingService.BuildLead keeps the two aligned.
+const GS_CRM_FIELDS = [
+    { value: 'skip',           label: '— Ignore this column —' },
+    { value: 'source_lead_id', label: 'Unique row ID (dedup)' },
+    { value: 'first_name',     label: 'First name' },
+    { value: 'last_name',      label: 'Last name' },
+    { value: 'full_name',      label: 'Full name (split on first space)' },
+    { value: 'email',          label: 'Email' },
+    { value: 'phone',          label: 'Phone' },
+    { value: 'company_name',   label: 'Company name' },
+    { value: 'job_title',      label: 'Job title' },
+];
+
+let _gsConnections = [];
+let _gsSelectedConnectionId = null;
+let _gsSelectedSpreadsheet = null;   // { spreadsheetId, name }
+let _gsSelectedTab = null;           // { name, index }
+let _gsHeaders = [];
+let _gsSampleRows = [];
+let _gsSearchTimer = null;
+
+async function loadGoogleSheetsState() {
+    try {
+        const [conns, sheets] = await Promise.all([
+            api.request('/crm/GoogleSheets/connections'),
+            api.request('/crm/GoogleSheets/sheets')
+        ]);
+        _gsConnections = conns || [];
+        renderGoogleSheetsCard(_gsConnections, sheets || []);
+    } catch (e) {
+        console.error('Failed to load Google Sheets state:', e);
+    }
+}
+
+function renderGoogleSheetsCard(connections, sheets) {
+    const statusDot = document.getElementById('gsStatusDot');
+    const statusText = document.getElementById('gsStatusText');
+    const list = document.getElementById('gsConnectionsList');
+    const addBtn = document.getElementById('gsAddSheetBtn');
+    const connectBtn = document.getElementById('gsConnectBtn');
+    if (!statusDot || !list || !addBtn || !connectBtn) return;
+
+    const activeConns = connections.filter(c => c.isActive);
+    if (activeConns.length === 0) {
+        statusDot.classList.remove('connected');
+        statusDot.classList.add('disconnected');
+        statusText.textContent = 'Not connected';
+        list.style.display = 'none';
+        list.innerHTML = '';
+        addBtn.style.display = 'none';
+        connectBtn.innerHTML = connectBtn.innerHTML.includes('Connect Google Account') ? connectBtn.innerHTML : 'Connect Google Account';
+        return;
+    }
+
+    statusDot.classList.remove('disconnected');
+    statusDot.classList.add('connected');
+    statusText.textContent = `Connected (${activeConns.length} account${activeConns.length === 1 ? '' : 's'}, ${sheets.length} sheet${sheets.length === 1 ? '' : 's'})`;
+    addBtn.style.display = 'inline-flex';
+
+    // Group connected sheets by connection for a clean list per account.
+    const byConnection = {};
+    sheets.forEach(s => {
+        (byConnection[s.connectionId] = byConnection[s.connectionId] || []).push(s);
+    });
+
+    const rows = activeConns.map(c => {
+        const sheetsForConn = byConnection[c.id] || [];
+        const sheetRows = sheetsForConn.length === 0
+            ? `<div style="color: var(--text-secondary); padding: 8px 12px; font-size: 0.9em;">No sheets connected yet. Click <strong>+ Add another sheet</strong> to pick one.</div>`
+            : sheetsForConn.map(s => `
+                <div class="gs-sheet-row" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-top: 1px solid var(--border-color);">
+                    <div>
+                        <div style="font-weight:500;">${escapeHtml(s.spreadsheetName || s.sourceName)} <span style="color:var(--text-secondary); font-weight:400;">&rsaquo; ${escapeHtml(s.sheetTabName)}</span></div>
+                        <div style="color:var(--text-secondary); font-size:0.85em;">
+                            ${s.totalLeadsReceived || 0} leads captured
+                            ${s.lastPolledAt ? ` · last sync ${formatRelative(s.lastPolledAt)}` : ''}
+                            ${!s.isActive ? ' · <span style="color: var(--color-warning);">paused</span>' : ''}
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${s.leadSourceId}', ${!s.isActive})">${s.isActive ? 'Pause' : 'Resume'}</button>
+                        <button class="btn btn-sm btn-outline" onclick="disconnectGoogleSheet('${s.leadSourceId}')">Remove</button>
+                    </div>
+                </div>
+            `).join('');
+
+        return `
+            <div class="gs-connection-group" style="border:1px solid var(--border-color); border-radius:6px; margin-bottom:10px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background: var(--bg-muted);">
+                    <div>
+                        <div style="font-weight:500;">${escapeHtml(c.googleEmail)}</div>
+                        <div style="color:var(--text-secondary); font-size:0.85em;">${c.connectedSheetCount || 0} sheet${c.connectedSheetCount === 1 ? '' : 's'} · connected ${formatRelative(c.connectedAt)}</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline" onclick="disconnectGoogleAccount('${c.id}', '${escapeHtml(c.googleEmail)}')">Disconnect account</button>
+                </div>
+                ${sheetRows}
+            </div>
+        `;
+    }).join('');
+
+    list.style.display = 'block';
+    list.innerHTML = rows;
+}
+
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function formatRelative(isoDate) {
+    if (!isoDate) return '';
+    const d = new Date(isoDate);
+    const ms = Date.now() - d.getTime();
+    const s = Math.round(ms / 1000);
+    if (s < 60) return 'just now';
+    const m = Math.round(s / 60);
+    if (m < 60) return `${m}m ago`;
+    const h = Math.round(m / 60);
+    if (h < 24) return `${h}h ago`;
+    const days = Math.round(h / 24);
+    if (days < 30) return `${days}d ago`;
+    return d.toLocaleDateString();
+}
+
+async function connectGoogleSheets() {
+    const btn = document.getElementById('gsConnectBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Opening Google…'; }
+    try {
+        const res = await api.request('/crm/GoogleSheets/auth-url');
+        if (!res || !res.authUrl) throw new Error('No auth URL returned');
+        // Full-page redirect so the callback comes back to THIS page with google_status=...
+        window.location.href = res.authUrl;
+    } catch (e) {
+        console.error('Failed to start Google OAuth:', e);
+        Toast.error(e.message || 'Could not start Google sign-in');
+        if (btn) { btn.disabled = false; btn.textContent = 'Connect Google Account'; }
+    }
+}
+
+async function disconnectGoogleAccount(connectionId, email) {
+    if (!confirm(`Disconnect Google account ${email}? All sheets from this account will stop syncing.`)) return;
+    try {
+        await api.request(`/crm/GoogleSheets/connections/${connectionId}`, { method: 'DELETE' });
+        Toast.success('Google account disconnected.');
+        await loadGoogleSheetsState();
+    } catch (e) {
+        Toast.error(e.message || 'Failed to disconnect Google account');
+    }
+}
+
+async function toggleGoogleSheet(sourceId, makeActive) {
+    try {
+        await api.request(`/crm/GoogleSheets/sheets/${sourceId}/toggle`, {
+            method: 'PUT',
+            body: JSON.stringify({ isActive: !!makeActive })
+        });
+        Toast.success(makeActive ? 'Resumed syncing.' : 'Paused.');
+        await loadGoogleSheetsState();
+    } catch (e) {
+        Toast.error(e.message || 'Failed to toggle sheet');
+    }
+}
+
+async function disconnectGoogleSheet(sourceId) {
+    if (!confirm('Stop syncing this sheet? Existing leads stay in the CRM.')) return;
+    try {
+        await api.request(`/crm/GoogleSheets/sheets/${sourceId}`, { method: 'DELETE' });
+        Toast.success('Sheet disconnected.');
+        await loadGoogleSheetsState();
+    } catch (e) {
+        Toast.error(e.message || 'Failed to disconnect sheet');
+    }
+}
+
+// ─── Picker modal ────────────────────────────────────────────────────────
+
+function openGoogleSheetPicker() {
+    if (_gsConnections.length === 0) {
+        Toast.info('Connect a Google account first.');
+        return;
+    }
+    document.getElementById('gsSheetPickerModal').classList.add('active');
+    document.getElementById('gsModalTitle').textContent = 'Choose a spreadsheet';
+    document.getElementById('gsModalSubtitle').textContent = '';
+    document.getElementById('gsSaveBtn').style.display = 'none';
+
+    // Reset stage visibility
+    document.getElementById('gsStageSpreadsheets').style.display = 'block';
+    document.getElementById('gsStageTabs').style.display = 'none';
+    document.getElementById('gsStageMapping').style.display = 'none';
+
+    // Populate connection picker
+    const sel = document.getElementById('gsConnectionSelect');
+    sel.innerHTML = _gsConnections.filter(c => c.isActive).map(c =>
+        `<option value="${c.id}">${escapeHtml(c.googleEmail)}</option>`
+    ).join('');
+    _gsSelectedConnectionId = sel.value;
+
+    loadGoogleSpreadsheets();
+}
+
+function closeGoogleSheetPicker() {
+    document.getElementById('gsSheetPickerModal').classList.remove('active');
+    _gsSelectedSpreadsheet = null;
+    _gsSelectedTab = null;
+    _gsHeaders = [];
+    _gsSampleRows = [];
+}
+
+function loadGoogleSpreadsheetsDebounced() {
+    clearTimeout(_gsSearchTimer);
+    _gsSearchTimer = setTimeout(loadGoogleSpreadsheets, 300);
+}
+
+async function loadGoogleSpreadsheets() {
+    _gsSelectedConnectionId = document.getElementById('gsConnectionSelect').value;
+    const q = (document.getElementById('gsSheetSearch').value || '').trim();
+    const container = document.getElementById('gsSheetsList');
+    container.innerHTML = '<div style="padding:12px; color: var(--text-secondary);">Loading spreadsheets…</div>';
+    try {
+        const query = q ? `?q=${encodeURIComponent(q)}` : '';
+        const files = await api.request(`/crm/GoogleSheets/connections/${_gsSelectedConnectionId}/spreadsheets${query}`);
+        if (!files || files.length === 0) {
+            container.innerHTML = '<div style="padding:12px; color: var(--text-secondary);">No spreadsheets found. Create one in Google Drive, or refine your search.</div>';
+            return;
+        }
+        container.innerHTML = files.map(f => `
+            <div class="gs-pickable-row" onclick="gsSelectSpreadsheet('${f.spreadsheetId}', this.dataset.name)" data-name="${escapeHtml(f.name)}"
+                 style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:6px; cursor:pointer;">
+                <div>
+                    <div style="font-weight:500;">${escapeHtml(f.name)}</div>
+                    <div style="color:var(--text-secondary); font-size:0.85em;">${f.modifiedTime ? 'Modified ' + formatRelative(f.modifiedTime) : ''}</div>
+                </div>
+                <span style="color: var(--text-secondary);">&rarr;</span>
+            </div>
+        `).join('');
+    } catch (e) {
+        container.innerHTML = `<div style="padding:12px; color: var(--color-error);">Failed to list spreadsheets: ${escapeHtml(e.message || 'error')}</div>`;
+    }
+}
+
+async function gsSelectSpreadsheet(spreadsheetId, name) {
+    _gsSelectedSpreadsheet = { spreadsheetId, name };
+    document.getElementById('gsStageSpreadsheets').style.display = 'none';
+    document.getElementById('gsStageTabs').style.display = 'block';
+    document.getElementById('gsModalTitle').textContent = 'Pick a tab';
+    document.getElementById('gsModalSubtitle').textContent = name;
+    document.getElementById('gsTabsSpreadsheetName').textContent = name;
+
+    const container = document.getElementById('gsTabsList');
+    container.innerHTML = '<div style="padding:12px; color: var(--text-secondary);">Loading tabs…</div>';
+    try {
+        const res = await api.request(`/crm/GoogleSheets/connections/${_gsSelectedConnectionId}/spreadsheets/${encodeURIComponent(spreadsheetId)}/tabs`);
+        const tabs = res.tabs || [];
+        if (tabs.length === 0) {
+            container.innerHTML = '<div style="padding:12px; color: var(--text-secondary);">This spreadsheet has no tabs we can see.</div>';
+            return;
+        }
+        container.innerHTML = tabs.map(t => `
+            <div class="gs-pickable-row" onclick="gsSelectTab('${escapeHtml(t.name)}', ${t.index})"
+                 style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:6px; cursor:pointer;">
+                <div style="font-weight:500;">${escapeHtml(t.name)}</div>
+                <span style="color: var(--text-secondary);">&rarr;</span>
+            </div>
+        `).join('');
+    } catch (e) {
+        container.innerHTML = `<div style="padding:12px; color: var(--color-error);">Failed to list tabs: ${escapeHtml(e.message || 'error')}</div>`;
+    }
+}
+
+function gsGoBackToSpreadsheets() {
+    document.getElementById('gsStageSpreadsheets').style.display = 'block';
+    document.getElementById('gsStageTabs').style.display = 'none';
+    document.getElementById('gsStageMapping').style.display = 'none';
+    document.getElementById('gsModalTitle').textContent = 'Choose a spreadsheet';
+    document.getElementById('gsModalSubtitle').textContent = '';
+    document.getElementById('gsSaveBtn').style.display = 'none';
+}
+
+function gsGoBackToTabs() {
+    document.getElementById('gsStageSpreadsheets').style.display = 'none';
+    document.getElementById('gsStageTabs').style.display = 'block';
+    document.getElementById('gsStageMapping').style.display = 'none';
+    document.getElementById('gsModalTitle').textContent = 'Pick a tab';
+    document.getElementById('gsModalSubtitle').textContent = _gsSelectedSpreadsheet?.name || '';
+    document.getElementById('gsSaveBtn').style.display = 'none';
+}
+
+async function gsSelectTab(tabName, tabIndex) {
+    _gsSelectedTab = { name: tabName, index: tabIndex };
+    document.getElementById('gsStageTabs').style.display = 'none';
+    document.getElementById('gsStageMapping').style.display = 'block';
+    document.getElementById('gsModalTitle').textContent = 'Map columns';
+    document.getElementById('gsModalSubtitle').textContent = `${_gsSelectedSpreadsheet.name} › ${tabName}`;
+    document.getElementById('gsMappingSpreadsheetName').textContent = _gsSelectedSpreadsheet.name;
+    document.getElementById('gsMappingTabName').textContent = tabName;
+    document.getElementById('gsSaveBtn').style.display = 'inline-flex';
+    document.getElementById('gsHeaderRow').value = 1;
+
+    await gsReloadPreview();
+}
+
+async function gsReloadPreview() {
+    const tbody = document.querySelector('#gsMappingTable tbody');
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:12px; color: var(--text-secondary);">Loading preview…</td></tr>';
+    const headerRow = Math.max(1, parseInt(document.getElementById('gsHeaderRow').value || '1', 10));
+    try {
+        const res = await api.request(
+            `/crm/GoogleSheets/connections/${_gsSelectedConnectionId}` +
+            `/spreadsheets/${encodeURIComponent(_gsSelectedSpreadsheet.spreadsheetId)}` +
+            `/tabs/${encodeURIComponent(_gsSelectedTab.name)}` +
+            `/preview?headerRow=${headerRow}`
+        );
+        _gsHeaders = res.headers || [];
+        _gsSampleRows = res.sampleRows || [];
+        renderGsMappingTable();
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4" style="color: var(--color-error); padding:12px;">Failed to load preview: ${escapeHtml(e.message || 'error')}</td></tr>`;
+    }
+}
+
+function gsColLetter(i) {
+    let s = '', n = i + 1;
+    while (n > 0) { n--; s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26); }
+    return s;
+}
+
+function gsGuessMapping(header) {
+    const h = (header || '').toLowerCase().trim();
+    if (!h) return 'skip';
+    // Meta's canonical columns.
+    if (h === 'id') return 'source_lead_id';
+    if (h === 'email') return 'email';
+    if (h === 'phone_number' || h === 'phone') return 'phone';
+    if (h === 'full_name') return 'full_name';
+    if (h === 'first_name') return 'first_name';
+    if (h === 'last_name') return 'last_name';
+    if (h === 'company_name' || h === 'company') return 'company_name';
+    if (h === 'job_title' || h === 'title') return 'job_title';
+    return 'skip';
+}
+
+function renderGsMappingTable() {
+    const tbody = document.querySelector('#gsMappingTable tbody');
+    const width = Math.max(_gsHeaders.length, ...(_gsSampleRows.map(r => r.length) || [0]));
+    if (width === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="padding:12px; color: var(--text-secondary);">No columns found at the chosen header row. Is the header row correct?</td></tr>`;
+        document.getElementById('gsRowIdColumn').innerHTML = '';
+        return;
+    }
+
+    const rowIdSelect = document.getElementById('gsRowIdColumn');
+    const existingRowId = rowIdSelect.value;
+
+    let tableHtml = '';
+    let rowIdOptions = '<option value="">(none — CRM generates one)</option>';
+    let autoRowId = '';
+    for (let i = 0; i < width; i++) {
+        const letter = gsColLetter(i);
+        const header = _gsHeaders[i] || `Column ${letter}`;
+        const sample = (_gsSampleRows[0] && _gsSampleRows[0][i]) || '';
+        const guess = gsGuessMapping(header);
+        const opts = GS_CRM_FIELDS.map(f => `<option value="${f.value}" ${f.value === guess ? 'selected' : ''}>${escapeHtml(f.label)}</option>`).join('');
+        tableHtml += `
+            <tr>
+                <td><strong>${letter}</strong></td>
+                <td>${escapeHtml(header)}</td>
+                <td style="color: var(--text-secondary);">${escapeHtml(sample)}</td>
+                <td><select class="form-control gs-col-map" data-col="${letter}">${opts}</select></td>
+            </tr>`;
+        rowIdOptions += `<option value="${letter}">${letter} — ${escapeHtml(header)}</option>`;
+        if (guess === 'source_lead_id' && !autoRowId) autoRowId = letter;
+    }
+    tbody.innerHTML = tableHtml;
+    rowIdSelect.innerHTML = rowIdOptions;
+    rowIdSelect.value = existingRowId || autoRowId;
+}
+
+async function saveGoogleSheetConnection() {
+    const btn = document.getElementById('gsSaveBtn');
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Saving…';
+
+    // Build field_mappings payload from the dropdowns.
+    const map = {};
+    document.querySelectorAll('.gs-col-map').forEach(el => {
+        const col = el.dataset.col;
+        const val = el.value;
+        if (col && val && val !== 'skip') map[col] = val;
+    });
+    const rowIdCol = document.getElementById('gsRowIdColumn').value || null;
+    if (rowIdCol) {
+        map[rowIdCol] = 'source_lead_id';
+        map['_row_id_column'] = rowIdCol;
+    }
+    const headerRow = Math.max(1, parseInt(document.getElementById('gsHeaderRow').value || '1', 10));
+    map['_header_row'] = headerRow;
+
+    try {
+        await api.request('/crm/GoogleSheets/sheets/connect', {
+            method: 'POST',
+            body: JSON.stringify({
+                connectionId: _gsSelectedConnectionId,
+                spreadsheetId: _gsSelectedSpreadsheet.spreadsheetId,
+                spreadsheetName: _gsSelectedSpreadsheet.name,
+                sheetTabName: _gsSelectedTab.name,
+                fieldMappings: JSON.stringify(map),
+                headerRow: headerRow,
+                autoAssignUserId: null
+            })
+        });
+        Toast.success('Sheet connected. Leads will start flowing within 2 minutes.');
+        closeGoogleSheetPicker();
+        await loadGoogleSheetsState();
+    } catch (e) {
+        Toast.error(e.message || 'Failed to save sheet connection');
+    } finally {
         btn.disabled = false;
         btn.textContent = original;
     }

@@ -527,6 +527,112 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Google Sheets Integration Card -->
+                    <div class="integration-card">
+                        <div class="integration-card-header">
+                            <div class="integration-icon" style="background:#0f9d58; color:#fff;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="4" y="3" width="16" height="18" rx="2"/>
+                                    <line x1="4" y1="9" x2="20" y2="9"/>
+                                    <line x1="4" y1="15" x2="20" y2="15"/>
+                                    <line x1="10" y1="3" x2="10" y2="21"/>
+                                    <line x1="15" y1="3" x2="15" y2="21"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="integration-title">Google Sheets</h4>
+                                <p class="integration-description">Pull leads from any Google Sheet — great for Meta Lead-Ads-to-Sheets, webforms, or manual entry</p>
+                            </div>
+                        </div>
+
+                        <div class="integration-status" id="gsStatus">
+                            <span class="dot disconnected" id="gsStatusDot"></span>
+                            <span id="gsStatusText">Not connected</span>
+                        </div>
+
+                        <!-- Status alerts from OAuth callback -->
+                        <div class="crm-alert crm-alert-success" id="gsConnectedAlert" style="display: none; margin-bottom: 12px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            <span id="gsConnectedAlertText">Google account connected.</span>
+                        </div>
+                        <div class="crm-alert crm-alert-error" id="gsErrorAlert" style="display: none; margin-bottom: 12px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            <span id="gsErrorAlertText">Something went wrong.</span>
+                        </div>
+
+                        <!-- Connected Google accounts + connected sheets -->
+                        <div id="gsConnectionsList" style="display: none; margin-bottom: 16px;"></div>
+
+                        <details class="mailbox-help" style="margin-bottom: 16px;">
+                            <summary>
+                                <svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                How does this work?
+                                <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </summary>
+                            <div class="mailbox-help-body">
+                                <p>We poll your connected Google Sheet every 2 minutes and import new rows as CRM leads. Perfect for the <strong>Meta Ads → Google Sheets → CRM</strong> flow that doesn't need Meta App Review.</p>
+                                <ol style="padding-left: 20px; line-height: 1.6;">
+                                    <li>Click <strong>Connect Google Account</strong> and sign in. We only request read-only access to your sheets.</li>
+                                    <li>Pick the spreadsheet and tab you want to ingest from.</li>
+                                    <li>Map each sheet column to a CRM field (<code>first_name</code>, <code>email</code>, <code>phone</code>, etc.). Unmapped columns land in <code>custom_fields</code>.</li>
+                                    <li>Mark the column that uniquely identifies a row (e.g. Meta's <code>id</code> column) so we don't duplicate leads on retry.</li>
+                                    <li>Save &mdash; new rows start flowing into <strong>Leads</strong> within 2 minutes.</li>
+                                </ol>
+                                <p style="margin-top: 8px; color: var(--text-secondary); font-size: 0.9em;">To set up Meta Lead Ads → Google Sheets, go to Meta Business Suite → Instant Forms → your form → CRM Setup → Google Sheets.</p>
+                            </div>
+                        </details>
+
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" id="gsConnectBtn" onclick="connectGoogleSheets()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                    <path d="M22.54 6.42A2.78 2.78 0 0 0 20.6 4.42C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/>
+                                </svg>
+                                Connect Google Account
+                            </button>
+                            <button class="btn btn-outline" id="gsAddSheetBtn" onclick="openGoogleSheetPicker()" style="display: none;">
+                                + Add another sheet
+                            </button>
+                        </div>
+
+                        <!-- Alternative path notice. Ragenaizer is currently undergoing
+                             Google OAuth verification; until that lands, OAuth sign-in
+                             is restricted to tenants we've added as test users. The
+                             service-account share flow (tenant shares their sheet with
+                             a fixed service-account email) sidesteps verification
+                             entirely — coming shortly as a second connect button. -->
+                        <div style="margin-top: 14px; padding: 12px 14px; border-radius: 8px; background: var(--bg-muted); border: 1px dashed var(--border-color);">
+                            <div style="display:flex; align-items:flex-start; gap:10px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px; color: var(--text-secondary);">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="16" x2="12" y2="12"/>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                </svg>
+                                <div>
+                                    <div style="font-weight:500; margin-bottom:4px;">Coming soon: connect without signing in</div>
+                                    <div style="color: var(--text-secondary); font-size: 0.9em; line-height:1.5;">
+                                        For tenants who'd rather not sign in with Google, we're adding a share-based flow:
+                                        share your Google Sheet with a fixed Ragenaizer service-account email and paste
+                                        the sheet URL. Same polling, same field mapping &mdash; zero OAuth. Use the
+                                        <strong>Connect Google Account</strong> button above for now; we'll surface this
+                                        as an alternative once it ships.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ─── Mailboxes Tab ─────────────────────────────────────────────── -->
@@ -1361,6 +1467,96 @@
                 <button type="button" class="btn btn-primary" id="fbSuValidateBtn" onclick="validateFacebookSystemUserToken()">Validate Token</button>
                 <button type="button" class="btn btn-primary" id="fbSuConnectBtn" style="display: none;" onclick="connectFacebookSelectedPages()">Connect Selected</button>
                 <button type="button" class="btn btn-primary" id="fbSuDoneBtn" style="display: none;" onclick="closeFacebookSystemUserModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Google Sheet Picker Modal ─────────────────────────────────────
+         Three stages in one modal: (1) pick a spreadsheet, (2) pick a tab,
+         (3) map columns to CRM fields + pick the row-id column for dedup. -->
+    <div class="gm-overlay" id="gsSheetPickerModal">
+        <div class="gm-modal" style="max-width: 900px; width: 95vw;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon" style="background:#0f9d58; color:#fff;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="3" width="16" height="18" rx="2"/>
+                            <line x1="4" y1="9" x2="20" y2="9"/>
+                            <line x1="10" y1="3" x2="10" y2="21"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="gm-title" id="gsModalTitle">Choose a spreadsheet</h3>
+                        <p class="gm-subtitle" id="gsModalSubtitle"></p>
+                    </div>
+                </div>
+                <button type="button" class="gm-close" onclick="closeGoogleSheetPicker()" aria-label="Close">&times;</button>
+            </div>
+
+            <div class="gm-body" style="max-height: 70vh; overflow-y: auto;">
+
+                <!-- Stage 1: Spreadsheet list -->
+                <div id="gsStageSpreadsheets">
+                    <div style="display:flex; gap:10px; margin-bottom:12px; align-items:center;">
+                        <label for="gsConnectionSelect" style="flex-shrink:0; font-weight:500;">Google account:</label>
+                        <select id="gsConnectionSelect" class="form-control" style="flex:1;" onchange="loadGoogleSpreadsheets()"></select>
+                    </div>
+                    <input type="text" id="gsSheetSearch" class="form-control" placeholder="Search by spreadsheet name…"
+                           oninput="loadGoogleSpreadsheetsDebounced()" style="margin-bottom:12px;">
+                    <div id="gsSheetsList" style="min-height:200px;"></div>
+                </div>
+
+                <!-- Stage 2: Tab picker -->
+                <div id="gsStageTabs" style="display:none;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                        <button type="button" class="btn btn-link" onclick="gsGoBackToSpreadsheets()" style="padding:4px 8px;">&larr; Back</button>
+                        <strong id="gsTabsSpreadsheetName"></strong>
+                    </div>
+                    <div id="gsTabsList"></div>
+                </div>
+
+                <!-- Stage 3: Field mapping -->
+                <div id="gsStageMapping" style="display:none;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                        <button type="button" class="btn btn-link" onclick="gsGoBackToTabs()" style="padding:4px 8px;">&larr; Back</button>
+                        <strong id="gsMappingSpreadsheetName"></strong>
+                        <span style="color: var(--text-secondary);">&rsaquo;</span>
+                        <strong id="gsMappingTabName"></strong>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
+                        <div>
+                            <label style="display:block; font-weight:500; margin-bottom:4px;">Header row</label>
+                            <input type="number" id="gsHeaderRow" class="form-control" value="1" min="1" onchange="gsReloadPreview()">
+                            <small style="color:var(--text-secondary);">Row containing the column headers.</small>
+                        </div>
+                        <div>
+                            <label style="display:block; font-weight:500; margin-bottom:4px;">Unique-ID column (for dedup)</label>
+                            <select id="gsRowIdColumn" class="form-control"></select>
+                            <small style="color:var(--text-secondary);">Typically Meta's <code>id</code> column.</small>
+                        </div>
+                    </div>
+
+                    <p style="color: var(--text-secondary); margin-bottom:8px;">Map each sheet column to a CRM field. Unmapped columns are saved into <code>custom_fields</code>.</p>
+                    <div style="overflow-x:auto;">
+                        <table id="gsMappingTable" class="crm-table" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th style="width:60px;">Col</th>
+                                    <th>Header</th>
+                                    <th>Sample value</th>
+                                    <th style="width:220px;">CRM field</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gm-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeGoogleSheetPicker()">Cancel</button>
+                <button type="button" class="btn btn-primary" id="gsSaveBtn" style="display:none;" onclick="saveGoogleSheetConnection()">Save &amp; start ingesting</button>
             </div>
         </div>
     </div>
