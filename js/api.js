@@ -3230,10 +3230,10 @@ class API {
      * @param {string} platform - 'web', 'android', or 'ios'
      * @param {string} browser - 'chrome', 'safari', 'firefox', 'samsung', 'edge', 'unknown'
      */
-    async registerDeviceToken(token, platform = 'web', browser = 'unknown', swVersion = 0) {
+    async registerDeviceToken(token, platform = 'web', browser = 'unknown', swVersion = 0, installationId = null) {
         return this.request('/notifications/device-tokens', {
             method: 'POST',
-            body: JSON.stringify({ token, platform, browser, swVersion })
+            body: JSON.stringify({ token, platform, browser, swVersion, installationId })
         });
     }
 

@@ -12,8 +12,30 @@ const _FCM_KEYS = {
     registered: `${STORAGE_PREFIX}fcm_registered`,
     permission: `${STORAGE_PREFIX}fcm_permission`,
     failCount: `${STORAGE_PREFIX}fcm_fail_count`,
-    failTimestamp: `${STORAGE_PREFIX}fcm_fail_timestamp`
+    failTimestamp: `${STORAGE_PREFIX}fcm_fail_timestamp`,
+    installationId: `${STORAGE_PREFIX}fcm_installation_id`
 };
+
+// Stable per-browser-install UUID. Generated once per localStorage scope (i.e.
+// per browser profile per origin) and reused forever after. Sent to the
+// backend on every device-token register so the backend can deactivate prior
+// tokens for the same installation when SW_VERSION bumps rotate the FCM
+// token. Without this, every SW_VERSION bump adds another "active" row that
+// multicast fans out to — user had 11 active tokens for 1 real device before
+// this was added.
+function _getOrCreateInstallationId() {
+    try {
+        let id = localStorage.getItem(_FCM_KEYS.installationId);
+        if (id && id.length >= 16) return id;
+        id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+            ? crypto.randomUUID()
+            : 'inst-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+        localStorage.setItem(_FCM_KEYS.installationId, id);
+        return id;
+    } catch {
+        return null; // localStorage disabled — backend falls back to legacy dedup
+    }
+}
 
 // ==================== Device/Browser Detection ====================
 function _detectPlatform() {
@@ -404,7 +426,8 @@ async function registerTokenWithBackend(fcmToken) {
         const platform = _detectPlatform();
         const browser = _detectBrowser();
         const version = typeof SW_VERSION !== 'undefined' ? SW_VERSION : 0;
-        const result = await api.registerDeviceToken(fcmToken, platform, browser, version);
+        const installationId = _getOrCreateInstallationId();
+        const result = await api.registerDeviceToken(fcmToken, platform, browser, version, installationId);
         console.log('[FCM] Token registered with backend:', result);
     } catch (err) {
         console.error('[FCM] Failed to register token with backend:', err);
