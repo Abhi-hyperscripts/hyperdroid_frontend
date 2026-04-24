@@ -1196,6 +1196,14 @@ function showChatInfo() {
     const leaveBtn = document.getElementById('leaveConversationBtn');
 
     if (isGroup) {
+        // Only admins get the per-member management controls (add / promote /
+        // demote / remove). Their own row never gets them — they use
+        // "Leave conversation" for themselves, and demoting the last admin is
+        // blocked server-side anyway.
+        const myRole = (conv.participants || []).find(p => p.user_id === currentUser.userId)?.role;
+        const iAmAdmin = myRole === 'admin';
+        const adminCount = (conv.participants || []).filter(p => p.role === 'admin' && p.is_active !== false).length;
+
         content.innerHTML = `
             <div style="text-align: center; margin-bottom: 24px;">
                 <div class="chat-header-avatar group" style="width: 80px; height: 80px; font-size: 28px; margin: 0 auto 16px;">
@@ -1205,18 +1213,72 @@ function showChatInfo() {
                 <p class="text-secondary" style="margin: 0;">${conv.participants?.length || 0} members</p>
             </div>
             <div style="margin-bottom: 16px;">
-                <h4 class="text-secondary" style="font-size: 14px; margin-bottom: 12px;">Members</h4>
-                ${(conv.participants || []).map(p => `
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px;">
+                    <h4 class="text-secondary" style="font-size: 14px; margin: 0;">Members</h4>
+                    ${iAmAdmin ? `
+                        <button type="button"
+                                onclick="toggleChatAddMemberUI('${conv.id}')"
+                                style="background: none; border: 1px solid var(--border-color, #d1d5db); color: var(--brand-primary, #3b82f6); padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                            + Add member
+                        </button>
+                    ` : ''}
+                </div>
+                ${iAmAdmin ? `
+                    <div id="chatAddMemberPanel" style="display: none; margin-bottom: 12px; padding: 10px; border: 1px solid var(--border-color, #e5e7eb); border-radius: 8px; background: var(--bg-secondary, #f9fafb);">
+                        <input type="text" id="chatAddMemberInput" placeholder="Search by name or email…"
+                               oninput="searchChatAddMember(this.value, '${conv.id}')"
+                               style="width:100%; padding: 8px 10px; border:1px solid var(--border-color,#d1d5db); border-radius:6px; box-sizing:border-box; font-size:13px;" />
+                        <div id="chatAddMemberResults" style="margin-top: 8px; max-height: 180px; overflow-y: auto;"></div>
+                    </div>
+                ` : ''}
+                ${(conv.participants || []).map(p => {
+                    const isMe = p.user_id === currentUser.userId;
+                    const isTargetAdmin = p.role === 'admin';
+                    const canManage = iAmAdmin && !isMe;
+                    // Can't demote the last admin (server would reject anyway;
+                    // we hide the button so users aren't offered a failing action).
+                    const canDemote = canManage && isTargetAdmin && adminCount > 1;
+                    const canPromote = canManage && !isTargetAdmin;
+                    return `
                     <div style="display: flex; align-items: center; gap: 12px; padding: 8px 0;">
                         <div class="conversation-avatar" style="width: 36px; height: 36px; min-width: 36px; font-size: 13px;">
                             ${getInitials(p.user_name || p.user_email)}
                         </div>
-                        <div>
+                        <div style="flex: 1; min-width: 0;">
                             <div style="font-weight: 500;">${escapeHtml(p.user_name || p.user_email)}</div>
-                            ${p.role === 'admin' ? '<span class="text-secondary" style="font-size: 11px;">Admin</span>' : ''}
+                            ${isTargetAdmin ? '<span class="text-secondary" style="font-size: 11px;">Admin</span>' : ''}
                         </div>
-                    </div>
-                `).join('')}
+                        ${canPromote ? `
+                            <button type="button"
+                                    title="Promote to admin"
+                                    onclick="setChatMemberRole('${conv.id}', '${p.user_id}', 'admin', '${escapeHtml(p.user_name || p.user_email)}')"
+                                    style="background:none; border:1px solid var(--border-color,#d1d5db); color: var(--text-secondary); cursor:pointer; padding:4px 8px; border-radius:6px; font-size:11px;">
+                                Promote
+                            </button>
+                        ` : ''}
+                        ${canDemote ? `
+                            <button type="button"
+                                    title="Demote to member"
+                                    onclick="setChatMemberRole('${conv.id}', '${p.user_id}', 'member', '${escapeHtml(p.user_name || p.user_email)}')"
+                                    style="background:none; border:1px solid var(--border-color,#d1d5db); color: var(--text-secondary); cursor:pointer; padding:4px 8px; border-radius:6px; font-size:11px;">
+                                Demote
+                            </button>
+                        ` : ''}
+                        ${canManage ? `
+                            <button type="button"
+                                    class="chat-member-remove-btn"
+                                    title="Remove from group"
+                                    aria-label="Remove ${escapeHtml(p.user_name || p.user_email)}"
+                                    onclick="removeChatMember('${conv.id}', '${p.user_id}', '${escapeHtml(p.user_name || p.user_email)}')"
+                                    style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 6px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                </svg>
+                            </button>
+                        ` : ''}
+                    </div>`;
+                }).join('')}
             </div>
         `;
         leaveBtn.style.display = 'block';
@@ -1279,6 +1341,157 @@ async function leaveConversation() {
         showToast('Failed to leave conversation', 'error');
     }
 }
+
+// Admin action: remove another member from a group. Hits
+// DELETE /api/chat/conversations/{id}/participants/{userId}. Always
+// confirmed first — removals are easy to do by accident in a crowded
+// member list, and the backend deletes the participant row immediately
+// with no undo.
+async function removeChatMember(conversationId, targetUserId, memberName) {
+    if (!conversationId || !targetUserId) return;
+
+    const confirmed = await Confirm.show({
+        title: 'Remove member',
+        message: `Remove ${memberName || 'this member'} from the group? They'll lose access to all future messages.`,
+        type: 'warning',
+        confirmText: 'Remove',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) return;
+
+    try {
+        await api.removeParticipant(conversationId, targetUserId);
+        showToast(`${memberName || 'Member'} removed`, 'success');
+        await loadConversationDetails(conversationId);
+        showChatInfo();
+    } catch (error) {
+        console.error('Error removing member:', error);
+        showToast('Failed to remove member', 'error');
+    }
+}
+window.removeChatMember = removeChatMember;
+
+// Admin action: change a member's role (promote → admin, demote → member).
+// Server-side the business layer rejects demoting the last admin of the group;
+// the UI hides the Demote button in that case so users don't see a failing action.
+async function setChatMemberRole(conversationId, targetUserId, role, memberName) {
+    if (!conversationId || !targetUserId || !role) return;
+
+    const verb = role === 'admin' ? 'Promote' : 'Demote';
+    const messageVerb = role === 'admin' ? 'promote' : 'demote';
+    const confirmed = await Confirm.show({
+        title: `${verb} member`,
+        message: `${verb === 'Promote' ? 'Promote' : 'Demote'} ${memberName || 'this member'} ${role === 'admin' ? 'to admin' : 'to regular member'}?`,
+        type: role === 'admin' ? 'info' : 'warning',
+        confirmText: verb,
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) return;
+
+    try {
+        await api.updateChatParticipantRole(conversationId, targetUserId, role);
+        showToast(`${memberName || 'Member'} ${role === 'admin' ? 'promoted to admin' : 'demoted to member'}`, 'success');
+        await loadConversationDetails(conversationId);
+        showChatInfo();
+    } catch (error) {
+        console.error(`Error updating participant role:`, error);
+        showToast(`Failed to ${messageVerb} member`, 'error');
+    }
+}
+window.setChatMemberRole = setChatMemberRole;
+
+// Admin action: show/hide the inline "Add member" search panel in the Chat Info
+// modal. Kept inline (vs a separate modal) so the admin can verify the current
+// member list while searching — avoids re-adding someone who's already there.
+function toggleChatAddMemberUI(conversationId) {
+    const panel = document.getElementById('chatAddMemberPanel');
+    const input = document.getElementById('chatAddMemberInput');
+    const results = document.getElementById('chatAddMemberResults');
+    if (!panel) return;
+    const becomingVisible = panel.style.display === 'none';
+    panel.style.display = becomingVisible ? 'block' : 'none';
+    if (becomingVisible) {
+        if (input) { input.value = ''; setTimeout(() => input.focus(), 0); }
+        if (results) results.innerHTML = '';
+    }
+}
+window.toggleChatAddMemberUI = toggleChatAddMemberUI;
+
+// Debounced search-as-you-type for the inline Add-member panel. Hits the
+// same /api/chat/users/search endpoint used by group creation, then filters
+// out members who are already in the conversation so we never offer a
+// duplicate add (which the backend would silently upsert anyway).
+let _chatAddMemberSearchTimeout = null;
+function searchChatAddMember(query, conversationId) {
+    clearTimeout(_chatAddMemberSearchTimeout);
+    const resultsEl = document.getElementById('chatAddMemberResults');
+    if (!resultsEl) return;
+    if (!query || query.length < 2) {
+        resultsEl.innerHTML = '';
+        return;
+    }
+    _chatAddMemberSearchTimeout = setTimeout(async () => {
+        try {
+            const response = await api.searchChatUsers(query);
+            const users = Array.isArray(response) ? response : (response.users || response.data || []);
+            const conv = conversations.find(c => c.id === conversationId);
+            const existing = new Set((conv?.participants || []).map(p => p.user_id));
+            const filtered = users.filter(u => u.user_id !== currentUser.userId && !existing.has(u.user_id));
+            if (filtered.length === 0) {
+                resultsEl.innerHTML = '<div class="text-secondary" style="padding: 8px; font-size: 12px;">No matching users</div>';
+                return;
+            }
+            resultsEl.innerHTML = filtered.map(u => {
+                const name = u.display_name || u.user_name || u.email;
+                return `
+                    <div style="display:flex; align-items:center; gap:10px; padding:6px 4px; cursor:pointer; border-radius:6px;"
+                         onmouseover="this.style.background='var(--bg-hover, rgba(0,0,0,0.04))'"
+                         onmouseout="this.style.background='transparent'"
+                         onclick="addChatMember('${conversationId}', '${u.user_id}', '${escapeHtml(name)}')">
+                        <div class="conversation-avatar" style="width: 30px; height: 30px; min-width: 30px; font-size: 11px;">
+                            ${getInitials(name)}
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-size: 13px; font-weight: 500;">${escapeHtml(name)}</div>
+                            <div class="text-secondary" style="font-size: 11px;">${escapeHtml(u.email || '')}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Error searching for chat member to add:', error);
+            resultsEl.innerHTML = '<div class="text-secondary" style="padding: 8px; font-size: 12px;">Search failed</div>';
+        }
+    }, 300);
+}
+window.searchChatAddMember = searchChatAddMember;
+
+// Admin action: add a user to the group. Called from a result row in the
+// inline add-member panel. Confirms because "added to a group" is a visible
+// action (new member gets a notification, sees all future messages).
+async function addChatMember(conversationId, targetUserId, memberName) {
+    if (!conversationId || !targetUserId) return;
+
+    const confirmed = await Confirm.show({
+        title: 'Add member',
+        message: `Add ${memberName || 'this user'} to the group?`,
+        type: 'info',
+        confirmText: 'Add',
+        cancelText: 'Cancel'
+    });
+    if (!confirmed) return;
+
+    try {
+        await api.addParticipant(conversationId, targetUserId);
+        showToast(`${memberName || 'Member'} added`, 'success');
+        await loadConversationDetails(conversationId);
+        showChatInfo();
+    } catch (error) {
+        console.error('Error adding member:', error);
+        showToast('Failed to add member', 'error');
+    }
+}
+window.addChatMember = addChatMember;
 
 // ============================================
 // Utilities

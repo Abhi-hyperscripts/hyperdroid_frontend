@@ -1411,6 +1411,13 @@ class API {
         });
     }
 
+    async updateChatParticipantRole(conversationId, targetUserId, role) {
+        return this.request(`/chat/conversations/${conversationId}/participants/${targetUserId}/role`, {
+            method: 'PUT',
+            body: JSON.stringify({ role })
+        });
+    }
+
     async removeParticipant(conversationId, targetUserId) {
         return this.request(`/chat/conversations/${conversationId}/participants/${targetUserId}`, {
             method: 'DELETE'
