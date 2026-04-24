@@ -1036,6 +1036,19 @@ async function startFacebookFormMapping(formId, formName, existingSourceId) {
     document.getElementById('fbFormMappingStage').style.display = '';
     document.getElementById('fbMappingSaveBtn').style.display = '';
 
+    // Prefill source-name label. On "Edit Mapping" we try to restore the
+    // tenant's previous label from the existing lead_source row; on fresh
+    // connect, seed with the FB form name.
+    const srcInput = document.getElementById('fbSourceNameInput');
+    if (srcInput) {
+        let prior = '';
+        if (existingSourceId) {
+            const prev = facebookForms.find(f => f.lead_source_id === existingSourceId);
+            prior = prev?.source_name || '';
+        }
+        srcInput.value = (prior || formName || '').slice(0, 200);
+    }
+
     try {
         const [questions, standardFields] = await Promise.all([
             api.request(`/crm/facebook/pages/${encodeURIComponent(_fbCurrentPageId)}/forms/${encodeURIComponent(formId)}/questions`),
@@ -1169,6 +1182,19 @@ async function saveFacebookFormMapping() {
     const errorEl = document.getElementById('fbMappingError');
     errorEl.style.display = 'none';
 
+    // Tenant-chosen label, required on fresh connect so leads from different
+    // FB forms are distinguishable on the Leads page. On Edit Mapping (where
+    // the lead_source row already exists) we skip validation here — the
+    // existing label is preserved by the backend PUT.
+    const srcInput = document.getElementById('fbSourceNameInput');
+    const sourceName = (srcInput?.value || '').trim();
+    if (!existingId && sourceName.length < 2) {
+        errorEl.textContent = 'Give this source a short label (e.g. "Software Dev Q2") so you can filter these leads later.';
+        errorEl.style.display = 'block';
+        srcInput?.focus();
+        return;
+    }
+
     // Collect mappings in the { crm_field: [fb_key, ...] } shape expected by FieldMappingHelper.
     const mappings = {};
     const rows = document.querySelectorAll('.fb-mapping-select');
@@ -1217,7 +1243,8 @@ async function saveFacebookFormMapping() {
                     page_id: pageId,
                     form_id: formId,
                     form_name: formName,
-                    field_mappings: JSON.stringify(mappings)
+                    field_mappings: JSON.stringify(mappings),
+                    source_name: sourceName
                 })
             });
         }
@@ -3012,6 +3039,13 @@ async function gsSelectTab(tabName, tabIndex) {
     document.getElementById('gsSaveBtn').style.display = 'inline-flex';
     document.getElementById('gsHeaderRow').value = 1;
 
+    // Prefill the source-name label so the user can accept or tweak it.
+    // Keeps the field user-editable; backend falls back to "GS · <sheet> · <tab>"
+    // if the user clears it, but client-side we require non-empty.
+    const label = `${_gsSelectedSpreadsheet.name} — ${tabName}`;
+    const labelInput = document.getElementById('gsSourceNameInput');
+    if (labelInput) labelInput.value = label.slice(0, 200);
+
     await gsReloadPreview();
 }
 
@@ -3136,6 +3170,19 @@ async function saveGoogleSheetConnection() {
     const original = btn.textContent;
     btn.textContent = 'Saving…';
 
+    // Require a tenant-chosen label so leads from different sheets are
+    // distinguishable on the Leads page. Backend also validates but we
+    // short-circuit the POST to avoid the round-trip.
+    const labelInput = document.getElementById('gsSourceNameInput');
+    const sourceName = (labelInput?.value || '').trim();
+    if (sourceName.length < 2) {
+        Toast.warning('Give this source a short label (e.g. "Software Dev Q2") so you can filter these leads later.');
+        labelInput?.focus();
+        btn.disabled = false;
+        btn.textContent = original;
+        return;
+    }
+
     // Build field_mappings payload from the dropdowns.
     const map = {};
     const usedCustomNames = new Set();
@@ -3183,7 +3230,8 @@ async function saveGoogleSheetConnection() {
                 sheet_tab_name: _gsSelectedTab.name,
                 field_mappings: JSON.stringify(map),
                 header_row: headerRow,
-                auto_assign_user_id: null
+                auto_assign_user_id: null,
+                source_name: sourceName
             })
         });
         Toast.success('Sheet connected. Leads will start flowing within 2 minutes.');
@@ -3311,6 +3359,12 @@ async function gsShareSelectTab(tabName, tabIndex) {
     document.getElementById('gsShareMappingTab').textContent = tabName;
     document.getElementById('gsShareSaveBtn').style.display = 'inline-flex';
     document.getElementById('gsShareHeaderRow').value = 1;
+
+    // Prefill source-name label (same pattern as OAuth picker).
+    const label = `${_gsShareSpreadsheet.name} — ${tabName}`;
+    const labelInput = document.getElementById('gsShareSourceNameInput');
+    if (labelInput) labelInput.value = label.slice(0, 200);
+
     await gsShareReloadPreview();
 }
 
@@ -3411,6 +3465,16 @@ async function saveGoogleSheetShareConnection() {
     const orig = btn.textContent;
     btn.textContent = 'Saving…';
 
+    const labelInput = document.getElementById('gsShareSourceNameInput');
+    const sourceName = (labelInput?.value || '').trim();
+    if (sourceName.length < 2) {
+        Toast.warning('Give this source a short label (e.g. "Software Dev Q2") so you can filter these leads later.');
+        labelInput?.focus();
+        btn.disabled = false;
+        btn.textContent = orig;
+        return;
+    }
+
     const map = {};
     const usedCustomNames = new Set();
     for (const [col, dd] of _gsShareColDropdowns.entries()) {
@@ -3453,7 +3517,8 @@ async function saveGoogleSheetShareConnection() {
                 sheet_tab_name: _gsShareTab.name,
                 field_mappings: JSON.stringify(map),
                 header_row: headerRow,
-                auto_assign_user_id: null
+                auto_assign_user_id: null,
+                source_name: sourceName
             })
         });
         Toast.success('Sheet connected. Leads will start flowing within 2 minutes.');

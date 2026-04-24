@@ -199,30 +199,57 @@ async function loadLeadStats() {
  * Load distinct lead sources from API and populate the source filter dropdown
  */
 async function loadSourceFilter() {
+    // Prefer the tenant's named lead_source rows — tenants connecting
+    // multiple ad sheets/forms want to slice by specific campaign
+    // ("Software Dev Q2") rather than the coarse source_type string
+    // ("google_sheets"). Each <option value> is a lead_source UUID;
+    // buildFilterParams sends it as `leadSourceId`. Falls back to the
+    // distinct-strings endpoint if /lead-sources is unavailable so the
+    // filter never silently breaks.
+    const sel = document.getElementById('filterSource');
+    if (!sel) return;
+    const allOpt = sel.querySelector('option[value=""]');
+    sel.innerHTML = '';
+    if (allOpt) sel.appendChild(allOpt);
+    else {
+        const o = document.createElement('option');
+        o.value = ''; o.textContent = 'All Sources';
+        sel.appendChild(o);
+    }
+
     try {
-        const sources = await api.request('/crm/leads/sources');
-        const sel = document.getElementById('filterSource');
-        // Keep the "All Sources" option, clear rest
-        const allOpt = sel.querySelector('option[value=""]');
-        sel.innerHTML = '';
-        if (allOpt) sel.appendChild(allOpt);
-        else {
+        // api.js strips the `/crm` prefix and routes to crmApiBaseUrl (which
+        // already includes `/api`), so this hits `<crm>/api/lead-sources`.
+        const resp = await api.request('/crm/lead-sources');
+        const rows = (resp?.items || resp?.data || resp || []);
+        const list = Array.isArray(rows) ? rows : [];
+        // Newest first — same as the Settings card ordering.
+        list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        list.forEach(s => {
+            if (!s?.id || !s?.source_name) return;
             const o = document.createElement('option');
-            o.value = ''; o.textContent = 'All Sources';
-            sel.appendChild(o);
-        }
-        (sources || []).forEach(s => {
-            const o = document.createElement('option');
-            o.value = s;
-            o.textContent = s;
+            o.value = s.id;
+            const type = s.source_type ? ` · ${s.source_type}` : '';
+            o.textContent = `${s.source_name}${type}`;
             sel.appendChild(o);
         });
-        // Re-init the searchable dropdown for this select if it was already converted
-        if (filterSourceDropdown && typeof filterSourceDropdown.rebuild === 'function') {
-            filterSourceDropdown.rebuild();
-        }
     } catch (e) {
-        console.error('Failed to load source filter:', e);
+        // Graceful fallback: the old /leads/sources endpoint returns distinct
+        // source_type strings. Worse filter but keeps the page usable.
+        try {
+            const legacy = await api.request('/crm/leads/sources');
+            (legacy || []).forEach(s => {
+                const o = document.createElement('option');
+                o.value = '__legacy:' + s;
+                o.textContent = s;
+                sel.appendChild(o);
+            });
+        } catch { /* silent */ }
+        console.warn('Using legacy source filter:', e?.message || e);
+    }
+
+    if (filterSourceDropdown && typeof filterSourceDropdown.rebuild === 'function') {
+        filterSourceDropdown.rebuild();
     }
 }
 
@@ -242,7 +269,13 @@ function buildFilterParams() {
     const campaignId = campaignEl ? campaignEl.value : '';
 
     if (status) params.set('status', status);
-    if (source) params.set('source', source);
+    if (source) {
+        // New filter: option values are lead_source UUIDs. Legacy filter
+        // (fallback when /lead-sources is down) prefixes with "__legacy:"
+        // so we can still send the old source= string param.
+        if (source.startsWith('__legacy:')) params.set('source', source.slice('__legacy:'.length));
+        else params.set('leadSourceId', source);
+    }
     if (search) params.set('search', search);
     if (emailStatus) params.set('emailStatus', emailStatus);
     if (campaignId) params.set('campaignId', campaignId);
