@@ -2672,14 +2672,19 @@ let _gsSelectedTab = null;           // { name, index }
 let _gsHeaders = [];
 let _gsSampleRows = [];
 let _gsSearchTimer = null;
+let _gsServiceAccount = { enabled: false, email: null };
 
 async function loadGoogleSheetsState() {
     try {
-        const [conns, sheets] = await Promise.all([
+        // SA info fetched in parallel so the share button visibility flips
+        // in one render pass with the rest of the card.
+        const [conns, sheets, saInfo] = await Promise.all([
             api.request('/crm/GoogleSheets/connections'),
-            api.request('/crm/GoogleSheets/sheets')
+            api.request('/crm/GoogleSheets/sheets'),
+            api.request('/crm/GoogleSheets/service-account/info').catch(() => ({ enabled: false }))
         ]);
         _gsConnections = conns || [];
+        _gsServiceAccount = saInfo || { enabled: false };
         renderGoogleSheetsCard(_gsConnections, sheets || []);
     } catch (e) {
         console.error('Failed to load Google Sheets state:', e);
@@ -2692,10 +2697,19 @@ function renderGoogleSheetsCard(connections, sheets) {
     const list = document.getElementById('gsConnectionsList');
     const addBtn = document.getElementById('gsAddSheetBtn');
     const connectBtn = document.getElementById('gsConnectBtn');
+    const shareBtn = document.getElementById('gsShareBtn');
     if (!statusDot || !list || !addBtn || !connectBtn) return;
 
+    // Share button is always available when the backend has the SA key.
+    // OAuth-first tenants and SA-first tenants co-exist cleanly.
+    if (shareBtn) shareBtn.style.display = _gsServiceAccount?.enabled ? 'inline-flex' : 'none';
+
+    // Count SA-connected sheets separately — they don't belong to any OAuth connection row.
+    const saSheets = sheets.filter(s => !s.connectionId || s.connectionId === '00000000-0000-0000-0000-000000000000');
+    const oauthSheets = sheets.filter(s => !saSheets.includes(s));
     const activeConns = connections.filter(c => c.isActive);
-    if (activeConns.length === 0) {
+
+    if (activeConns.length === 0 && saSheets.length === 0) {
         statusDot.classList.remove('connected');
         statusDot.classList.add('disconnected');
         statusText.textContent = 'Not connected';
@@ -2708,8 +2722,12 @@ function renderGoogleSheetsCard(connections, sheets) {
 
     statusDot.classList.remove('disconnected');
     statusDot.classList.add('connected');
-    statusText.textContent = `Connected (${activeConns.length} account${activeConns.length === 1 ? '' : 's'}, ${sheets.length} sheet${sheets.length === 1 ? '' : 's'})`;
-    addBtn.style.display = 'inline-flex';
+    const parts = [];
+    if (activeConns.length > 0) parts.push(`${activeConns.length} account${activeConns.length === 1 ? '' : 's'}`);
+    if (saSheets.length > 0) parts.push(`${saSheets.length} shared`);
+    parts.push(`${sheets.length} sheet${sheets.length === 1 ? '' : 's'}`);
+    statusText.textContent = 'Connected (' + parts.join(', ') + ')';
+    addBtn.style.display = activeConns.length > 0 ? 'inline-flex' : 'none';
 
     // Group connected sheets by connection for a clean list per account.
     const byConnection = {};
@@ -2752,8 +2770,42 @@ function renderGoogleSheetsCard(connections, sheets) {
         `;
     }).join('');
 
+    // SA-mode sheets (shared with our service account) render as their own group —
+    // no parent "account" row, since there's no per-tenant Google login.
+    let saGroupHtml = '';
+    if (saSheets.length > 0 && _gsServiceAccount?.enabled) {
+        const saSheetRows = saSheets.map(s => `
+            <div class="gs-sheet-row" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-top: 1px solid var(--border-color);">
+                <div>
+                    <div style="font-weight:500;">${escapeHtml(s.spreadsheetName || s.sourceName)} <span style="color:var(--text-secondary); font-weight:400;">&rsaquo; ${escapeHtml(s.sheetTabName)}</span></div>
+                    <div style="color:var(--text-secondary); font-size:0.85em;">
+                        ${s.totalLeadsReceived || 0} leads captured
+                        ${s.lastPolledAt ? ` · last sync ${formatRelative(s.lastPolledAt)}` : ''}
+                        ${!s.isActive ? ' · <span style="color: var(--color-warning);">paused</span>' : ''}
+                    </div>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${s.leadSourceId}', ${!s.isActive})">${s.isActive ? 'Pause' : 'Resume'}</button>
+                    <button class="btn btn-sm btn-outline" onclick="disconnectGoogleSheet('${s.leadSourceId}')">Remove</button>
+                </div>
+            </div>
+        `).join('');
+
+        saGroupHtml = `
+            <div class="gs-connection-group" style="border:1px solid var(--border-color); border-radius:6px; margin-bottom:10px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background: var(--bg-muted);">
+                    <div>
+                        <div style="font-weight:500;">Shared sheets <span style="color:var(--text-secondary); font-weight:400;">(via ${escapeHtml(_gsServiceAccount.email || '')})</span></div>
+                        <div style="color:var(--text-secondary); font-size:0.85em;">${saSheets.length} sheet${saSheets.length === 1 ? '' : 's'} · no Google sign-in</div>
+                    </div>
+                </div>
+                ${saSheetRows}
+            </div>
+        `;
+    }
+
     list.style.display = 'block';
-    list.innerHTML = rows;
+    list.innerHTML = rows + saGroupHtml;
 }
 
 function escapeHtml(s) {
@@ -3072,5 +3124,211 @@ async function saveGoogleSheetConnection() {
     } finally {
         btn.disabled = false;
         btn.textContent = original;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Google Sheets — service-account SHARE flow.
+// Tenant shares their sheet with a fixed SA email and pastes the URL;
+// we verify + ingest. No OAuth, no verification.
+// ═══════════════════════════════════════════════════════════════════════════
+
+let _gsShareSpreadsheet = null;       // { spreadsheetId, name }
+let _gsShareTab = null;               // { name, index }
+let _gsShareHeaders = [];
+let _gsShareSampleRows = [];
+
+function openGoogleSheetShareModal() {
+    if (!_gsServiceAccount?.enabled || !_gsServiceAccount.email) {
+        Toast.error('Service-account flow is not configured on the server.');
+        return;
+    }
+    document.getElementById('gsShareModal').classList.add('active');
+    document.getElementById('gsSaEmailDisplay').value = _gsServiceAccount.email;
+    document.getElementById('gsShareUrlInput').value = '';
+    document.getElementById('gsShareError').style.display = 'none';
+    document.getElementById('gsShareError').textContent = '';
+    document.getElementById('gsShareStage1').style.display = 'block';
+    document.getElementById('gsShareStage2').style.display = 'none';
+    document.getElementById('gsShareStage3').style.display = 'none';
+    document.getElementById('gsShareSaveBtn').style.display = 'none';
+}
+
+function closeGoogleSheetShareModal() {
+    document.getElementById('gsShareModal').classList.remove('active');
+    _gsShareSpreadsheet = null;
+    _gsShareTab = null;
+}
+
+async function copyGsSaEmail() {
+    try {
+        await navigator.clipboard.writeText(_gsServiceAccount.email || '');
+        Toast.success('Copied. Now share your sheet with this email.');
+    } catch {
+        // clipboard API can be blocked — fall back to selecting the input.
+        const el = document.getElementById('gsSaEmailDisplay');
+        if (el) { el.select(); document.execCommand('copy'); Toast.success('Copied.'); }
+    }
+}
+
+function gsShareBack() {
+    document.getElementById('gsShareStage1').style.display = 'block';
+    document.getElementById('gsShareStage2').style.display = 'none';
+    document.getElementById('gsShareStage3').style.display = 'none';
+    document.getElementById('gsShareSaveBtn').style.display = 'none';
+}
+
+function gsShareBackToTabs() {
+    document.getElementById('gsShareStage1').style.display = 'none';
+    document.getElementById('gsShareStage2').style.display = 'block';
+    document.getElementById('gsShareStage3').style.display = 'none';
+    document.getElementById('gsShareSaveBtn').style.display = 'none';
+}
+
+async function verifyGoogleSheetShared() {
+    const btn = document.getElementById('gsShareVerifyBtn');
+    const errEl = document.getElementById('gsShareError');
+    const url = (document.getElementById('gsShareUrlInput').value || '').trim();
+    if (!url) {
+        errEl.textContent = 'Paste the sheet URL first.';
+        errEl.style.display = 'flex';
+        return;
+    }
+    btn.disabled = true;
+    const orig = btn.textContent;
+    btn.textContent = 'Verifying…';
+    errEl.style.display = 'none';
+    try {
+        const res = await api.request('/crm/GoogleSheets/service-account/verify-sheet', {
+            method: 'POST',
+            body: JSON.stringify({ sheetUrl: url })
+        });
+        if (!res.accessible) {
+            errEl.textContent = res.error || 'Sheet not accessible. Share it with ' + (res.shareWithEmail || _gsServiceAccount.email) + ' and retry.';
+            errEl.style.display = 'flex';
+            return;
+        }
+        _gsShareSpreadsheet = { spreadsheetId: res.spreadsheetId, name: res.spreadsheetName || 'Untitled' };
+        document.getElementById('gsShareSheetName').textContent = _gsShareSpreadsheet.name;
+        // Render tab list
+        const tabs = res.tabs || [];
+        const list = document.getElementById('gsShareTabsList');
+        list.innerHTML = tabs.map(t => `
+            <div class="gs-pickable-row" onclick="gsShareSelectTab('${escapeHtml(t.name)}', ${t.index})"
+                 style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:6px; cursor:pointer;">
+                <div style="font-weight:500;">${escapeHtml(t.name)}</div>
+                <span style="color: var(--text-secondary);">&rarr;</span>
+            </div>
+        `).join('');
+        document.getElementById('gsShareStage1').style.display = 'none';
+        document.getElementById('gsShareStage2').style.display = 'block';
+    } catch (e) {
+        errEl.textContent = e.message || 'Verification failed.';
+        errEl.style.display = 'flex';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+    }
+}
+
+async function gsShareSelectTab(tabName, tabIndex) {
+    _gsShareTab = { name: tabName, index: tabIndex };
+    document.getElementById('gsShareStage2').style.display = 'none';
+    document.getElementById('gsShareStage3').style.display = 'block';
+    document.getElementById('gsShareMappingName').textContent = _gsShareSpreadsheet.name;
+    document.getElementById('gsShareMappingTab').textContent = tabName;
+    document.getElementById('gsShareSaveBtn').style.display = 'inline-flex';
+    document.getElementById('gsShareHeaderRow').value = 1;
+    await gsShareReloadPreview();
+}
+
+async function gsShareReloadPreview() {
+    const tbody = document.querySelector('#gsShareMappingTable tbody');
+    tbody.innerHTML = '<tr><td colspan="4" style="padding:12px; color: var(--text-secondary);">Loading preview…</td></tr>';
+    const headerRow = Math.max(1, parseInt(document.getElementById('gsShareHeaderRow').value || '1', 10));
+    try {
+        const res = await api.request(
+            `/crm/GoogleSheets/service-account/spreadsheets/${encodeURIComponent(_gsShareSpreadsheet.spreadsheetId)}` +
+            `/tabs/${encodeURIComponent(_gsShareTab.name)}/preview?headerRow=${headerRow}`
+        );
+        _gsShareHeaders = res.headers || [];
+        _gsShareSampleRows = res.sampleRows || [];
+        renderGsShareMappingTable();
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4" style="color: var(--color-error); padding:12px;">Failed to load preview: ${escapeHtml(e.message || 'error')}</td></tr>`;
+    }
+}
+
+function renderGsShareMappingTable() {
+    const tbody = document.querySelector('#gsShareMappingTable tbody');
+    const width = Math.max(_gsShareHeaders.length, ...(_gsShareSampleRows.map(r => r.length) || [0]));
+    if (width === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="padding:12px; color: var(--text-secondary);">No columns at the chosen header row.</td></tr>';
+        document.getElementById('gsShareRowIdCol').innerHTML = '';
+        return;
+    }
+    const rowIdSelect = document.getElementById('gsShareRowIdCol');
+    const existing = rowIdSelect.value;
+    let rows = '';
+    let rowIdOpts = '<option value="">(none — CRM generates one)</option>';
+    let autoRowId = '';
+    for (let i = 0; i < width; i++) {
+        const letter = gsColLetter(i);
+        const header = _gsShareHeaders[i] || `Column ${letter}`;
+        const sample = (_gsShareSampleRows[0] && _gsShareSampleRows[0][i]) || '';
+        const guess = gsGuessMapping(header);
+        const opts = GS_CRM_FIELDS.map(f => `<option value="${f.value}" ${f.value === guess ? 'selected' : ''}>${escapeHtml(f.label)}</option>`).join('');
+        rows += `
+            <tr>
+                <td><strong>${letter}</strong></td>
+                <td>${escapeHtml(header)}</td>
+                <td style="color: var(--text-secondary);">${escapeHtml(sample)}</td>
+                <td><select class="form-control gs-share-col-map" data-col="${letter}">${opts}</select></td>
+            </tr>`;
+        rowIdOpts += `<option value="${letter}">${letter} — ${escapeHtml(header)}</option>`;
+        if (guess === 'source_lead_id' && !autoRowId) autoRowId = letter;
+    }
+    tbody.innerHTML = rows;
+    rowIdSelect.innerHTML = rowIdOpts;
+    rowIdSelect.value = existing || autoRowId;
+}
+
+async function saveGoogleSheetShareConnection() {
+    const btn = document.getElementById('gsShareSaveBtn');
+    btn.disabled = true;
+    const orig = btn.textContent;
+    btn.textContent = 'Saving…';
+
+    const map = {};
+    document.querySelectorAll('.gs-share-col-map').forEach(el => {
+        const col = el.dataset.col;
+        const val = el.value;
+        if (col && val && val !== 'skip') map[col] = val;
+    });
+    const rowIdCol = document.getElementById('gsShareRowIdCol').value || null;
+    if (rowIdCol) { map[rowIdCol] = 'source_lead_id'; map['_row_id_column'] = rowIdCol; }
+    const headerRow = Math.max(1, parseInt(document.getElementById('gsShareHeaderRow').value || '1', 10));
+    map['_header_row'] = headerRow;
+
+    try {
+        await api.request('/crm/GoogleSheets/service-account/connect', {
+            method: 'POST',
+            body: JSON.stringify({
+                spreadsheetId: _gsShareSpreadsheet.spreadsheetId,
+                spreadsheetName: _gsShareSpreadsheet.name,
+                sheetTabName: _gsShareTab.name,
+                fieldMappings: JSON.stringify(map),
+                headerRow: headerRow,
+                autoAssignUserId: null
+            })
+        });
+        Toast.success('Sheet connected. Leads will start flowing within 2 minutes.');
+        closeGoogleSheetShareModal();
+        await loadGoogleSheetsState();
+    } catch (e) {
+        Toast.error(e.message || 'Failed to save.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
     }
 }
