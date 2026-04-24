@@ -51,11 +51,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Subscribes to the tenant-scoped CRM SignalR hub so newly-ingested leads
 // (Facebook webhooks, Google Sheets polling, webform POSTs, AI discovery)
-// appear without a manual refresh. We re-fetch rather than splice locally
-// because filters, search, pagination, ownership rules, and stats all need
-// to stay consistent — a client-side merge would drift from them.
+// appear without a manual refresh.
+//
+// We deliberately DO NOT auto-refresh the table. A user might be mid-edit
+// in the slide panel, have the convert modal open, or have a partial bulk
+// selection — any of that would be wiped by loadLeads(). Instead, we buffer
+// new-lead events into a counter and surface a click-to-refresh banner
+// (same pattern as Gmail/Twitter). User refreshes when they're ready.
 let _leadsHubConnection = null;
-let _leadsRefreshScheduled = false;
+let _pendingNewLeadCount = 0;
 
 async function setupLeadsRealtime() {
     if (typeof signalR === 'undefined') return;
@@ -73,19 +77,8 @@ async function setupLeadsRealtime() {
         .build();
 
     _leadsHubConnection.on('NewLeadReceived', (lead) => {
-        // Coalesce bursts (e.g. Google Sheets poll drops 10 new rows at once)
-        // into a single refresh so the table doesn't re-render per event.
-        if (_leadsRefreshScheduled) return;
-        _leadsRefreshScheduled = true;
-        setTimeout(() => {
-            _leadsRefreshScheduled = false;
-            loadLeads();
-            loadLeadStats();
-        }, 800);
-        try {
-            const name = `${lead?.first_name || ''} ${lead?.last_name || ''}`.trim() || 'a lead';
-            if (typeof Toast !== 'undefined') Toast.success(`New lead: ${name}`);
-        } catch {}
+        _pendingNewLeadCount++;
+        renderPendingLeadsBanner(lead);
     });
 
     try {
@@ -94,6 +87,32 @@ async function setupLeadsRealtime() {
         // Transient on page load or if hub is down; withAutomaticReconnect handles retries.
         console.warn('Leads SignalR: failed to connect', e?.message || e);
     }
+}
+
+function renderPendingLeadsBanner(sampleLead) {
+    const banner = document.getElementById('leadsRealtimeBanner');
+    const text = document.getElementById('leadsRealtimeBannerText');
+    if (!banner || !text) return;
+    const n = _pendingNewLeadCount;
+    if (n === 1) {
+        const name = `${sampleLead?.first_name || ''} ${sampleLead?.last_name || ''}`.trim();
+        text.textContent = name
+            ? `New lead: ${name} — click to refresh`
+            : `1 new lead — click to refresh`;
+    } else {
+        text.textContent = `${n} new leads — click to refresh`;
+    }
+    banner.hidden = false;
+}
+
+// Invoked when the user clicks the banner. Safe because it's their opt-in.
+// Bound from HTML onclick=, so it must be a plain (non-module) function.
+function applyPendingLeads() {
+    _pendingNewLeadCount = 0;
+    const banner = document.getElementById('leadsRealtimeBanner');
+    if (banner) banner.hidden = true;
+    loadLeads();
+    loadLeadStats();
 }
 
 async function loadMyRole() {

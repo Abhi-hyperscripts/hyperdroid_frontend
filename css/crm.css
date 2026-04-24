@@ -3662,6 +3662,51 @@ body.crm-page #gsShareModal .gm-body:has(.searchable-dropdown.open) {
     border-top: 1px solid var(--border-color);
 }
 
+/* ─── Realtime new-lead banner on the Leads page ─────────────────────────
+   Non-destructive SignalR pattern: when NewLeadReceived arrives, surface a
+   click-to-refresh pill so users mid-edit don't lose state. */
+.crm-realtime-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 12px;
+    padding: 9px 16px;
+    background: var(--brand-primary);
+    color: var(--text-inverse, #fff);
+    border: none;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    animation: crm-realtime-banner-in 0.2s ease;
+}
+.crm-realtime-banner:hover {
+    background: var(--brand-primary-hover, var(--brand-primary));
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+}
+.crm-realtime-banner:active { transform: translateY(0); }
+.crm-realtime-banner[hidden] { display: none; }
+.crm-realtime-banner-dot {
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6);
+    animation: crm-realtime-pulse 1.4s ease-out infinite;
+}
+@keyframes crm-realtime-banner-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes crm-realtime-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55); }
+    70%  { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
+
 .status-badge.status-draft      { background: var(--bg-card);       color: var(--text-secondary); border: 1px solid var(--border-color); }
 .status-badge.status-running    { background: rgba(37,99,235,.12);  color: var(--brand-primary); }
 .status-badge.status-paused     { background: rgba(234,179,8,.15);  color: #a16207; }

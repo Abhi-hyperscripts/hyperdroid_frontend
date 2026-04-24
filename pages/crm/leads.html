@@ -195,6 +195,14 @@
             <button class="btn btn-sm btn-outline-danger" id="bulkDeleteBtn" onclick="bulkDelete()">Delete</button>
         </div>
 
+        <!-- Real-time: new-lead banner (hidden until NewLeadReceived arrives). -->
+        <button type="button" id="leadsRealtimeBanner" class="crm-realtime-banner" hidden
+            onclick="applyPendingLeads()"
+            aria-live="polite">
+            <span class="crm-realtime-banner-dot"></span>
+            <span id="leadsRealtimeBannerText">1 new lead — click to refresh</span>
+        </button>
+
         <!-- Leads Table -->
         <div class="crm-table-wrapper data-table-container">
             <table class="crm-table data-table" id="leadsTable">
