@@ -2705,9 +2705,9 @@ function renderGoogleSheetsCard(connections, sheets) {
     if (shareBtn) shareBtn.style.display = _gsServiceAccount?.enabled ? 'inline-flex' : 'none';
 
     // Count SA-connected sheets separately — they don't belong to any OAuth connection row.
-    const saSheets = sheets.filter(s => !s.connectionId || s.connectionId === '00000000-0000-0000-0000-000000000000');
+    const saSheets = sheets.filter(s => !s.connection_id || s.connection_id === '00000000-0000-0000-0000-000000000000');
     const oauthSheets = sheets.filter(s => !saSheets.includes(s));
-    const activeConns = connections.filter(c => c.isActive);
+    const activeConns = connections.filter(c => c.is_active);
 
     if (activeConns.length === 0 && saSheets.length === 0) {
         statusDot.classList.remove('connected');
@@ -2732,7 +2732,7 @@ function renderGoogleSheetsCard(connections, sheets) {
     // Group connected sheets by connection for a clean list per account.
     const byConnection = {};
     sheets.forEach(s => {
-        (byConnection[s.connectionId] = byConnection[s.connectionId] || []).push(s);
+        (byConnection[s.connection_id] = byConnection[s.connection_id] || []).push(s);
     });
 
     const rows = activeConns.map(c => {
@@ -2742,16 +2742,16 @@ function renderGoogleSheetsCard(connections, sheets) {
             : sheetsForConn.map(s => `
                 <div class="gs-sheet-row" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-top: 1px solid var(--border-color);">
                     <div>
-                        <div style="font-weight:500;">${escapeHtml(s.spreadsheetName || s.sourceName)} <span style="color:var(--text-secondary); font-weight:400;">&rsaquo; ${escapeHtml(s.sheetTabName)}</span></div>
+                        <div style="font-weight:500;">${escapeHtml(s.spreadsheet_name || s.source_name)} <span style="color:var(--text-secondary); font-weight:400;">&rsaquo; ${escapeHtml(s.sheet_tab_name)}</span></div>
                         <div style="color:var(--text-secondary); font-size:0.85em;">
-                            ${s.totalLeadsReceived || 0} leads captured
-                            ${s.lastPolledAt ? ` · last sync ${formatRelative(s.lastPolledAt)}` : ''}
-                            ${!s.isActive ? ' · <span style="color: var(--color-warning);">paused</span>' : ''}
+                            ${s.total_leads_received || 0} leads captured
+                            ${s.last_polled_at ? ` · last sync ${formatRelative(s.last_polled_at)}` : ''}
+                            ${!s.is_active ? ' · <span style="color: var(--color-warning);">paused</span>' : ''}
                         </div>
                     </div>
                     <div style="display:flex; gap:6px;">
-                        <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${s.leadSourceId}', ${!s.isActive})">${s.isActive ? 'Pause' : 'Resume'}</button>
-                        <button class="btn btn-sm btn-outline" onclick="disconnectGoogleSheet('${s.leadSourceId}')">Remove</button>
+                        <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${s.lead_source_id}', ${!s.is_active})">${s.is_active ? 'Pause' : 'Resume'}</button>
+                        <button class="btn btn-sm btn-outline" onclick="disconnectGoogleSheet('${s.lead_source_id}')">Remove</button>
                     </div>
                 </div>
             `).join('');
@@ -2760,10 +2760,10 @@ function renderGoogleSheetsCard(connections, sheets) {
             <div class="gs-connection-group" style="border:1px solid var(--border-color); border-radius:6px; margin-bottom:10px;">
                 <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background: var(--bg-muted);">
                     <div>
-                        <div style="font-weight:500;">${escapeHtml(c.googleEmail)}</div>
-                        <div style="color:var(--text-secondary); font-size:0.85em;">${c.connectedSheetCount || 0} sheet${c.connectedSheetCount === 1 ? '' : 's'} · connected ${formatRelative(c.connectedAt)}</div>
+                        <div style="font-weight:500;">${escapeHtml(c.google_email)}</div>
+                        <div style="color:var(--text-secondary); font-size:0.85em;">${c.connected_sheet_count || 0} sheet${c.connected_sheet_count === 1 ? '' : 's'} · connected ${formatRelative(c.connected_at)}</div>
                     </div>
-                    <button class="btn btn-sm btn-outline" onclick="disconnectGoogleAccount('${c.id}', '${escapeHtml(c.googleEmail)}')">Disconnect account</button>
+                    <button class="btn btn-sm btn-outline" onclick="disconnectGoogleAccount('${c.id}', '${escapeHtml(c.google_email)}')">Disconnect account</button>
                 </div>
                 ${sheetRows}
             </div>
@@ -2777,16 +2777,16 @@ function renderGoogleSheetsCard(connections, sheets) {
         const saSheetRows = saSheets.map(s => `
             <div class="gs-sheet-row" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-top: 1px solid var(--border-color);">
                 <div>
-                    <div style="font-weight:500;">${escapeHtml(s.spreadsheetName || s.sourceName)} <span style="color:var(--text-secondary); font-weight:400;">&rsaquo; ${escapeHtml(s.sheetTabName)}</span></div>
+                    <div style="font-weight:500;">${escapeHtml(s.spreadsheet_name || s.source_name)} <span style="color:var(--text-secondary); font-weight:400;">&rsaquo; ${escapeHtml(s.sheet_tab_name)}</span></div>
                     <div style="color:var(--text-secondary); font-size:0.85em;">
-                        ${s.totalLeadsReceived || 0} leads captured
-                        ${s.lastPolledAt ? ` · last sync ${formatRelative(s.lastPolledAt)}` : ''}
-                        ${!s.isActive ? ' · <span style="color: var(--color-warning);">paused</span>' : ''}
+                        ${s.total_leads_received || 0} leads captured
+                        ${s.last_polled_at ? ` · last sync ${formatRelative(s.last_polled_at)}` : ''}
+                        ${!s.is_active ? ' · <span style="color: var(--color-warning);">paused</span>' : ''}
                     </div>
                 </div>
                 <div style="display:flex; gap:6px;">
-                    <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${s.leadSourceId}', ${!s.isActive})">${s.isActive ? 'Pause' : 'Resume'}</button>
-                    <button class="btn btn-sm btn-outline" onclick="disconnectGoogleSheet('${s.leadSourceId}')">Remove</button>
+                    <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${s.lead_source_id}', ${!s.is_active})">${s.is_active ? 'Pause' : 'Resume'}</button>
+                    <button class="btn btn-sm btn-outline" onclick="disconnectGoogleSheet('${s.lead_source_id}')">Remove</button>
                 </div>
             </div>
         `).join('');
@@ -2833,9 +2833,9 @@ async function connectGoogleSheets() {
     if (btn) { btn.disabled = true; btn.textContent = 'Opening Google…'; }
     try {
         const res = await api.request('/crm/GoogleSheets/auth-url');
-        if (!res || !res.authUrl) throw new Error('No auth URL returned');
+        if (!res || !res.auth_url) throw new Error('No auth URL returned');
         // Full-page redirect so the callback comes back to THIS page with google_status=...
-        window.location.href = res.authUrl;
+        window.location.href = res.auth_url;
     } catch (e) {
         console.error('Failed to start Google OAuth:', e);
         Toast.error(e.message || 'Could not start Google sign-in');
@@ -2858,7 +2858,7 @@ async function toggleGoogleSheet(sourceId, makeActive) {
     try {
         await api.request(`/crm/GoogleSheets/sheets/${sourceId}/toggle`, {
             method: 'PUT',
-            body: JSON.stringify({ isActive: !!makeActive })
+            body: JSON.stringify({ is_active: !!makeActive })
         });
         Toast.success(makeActive ? 'Resumed syncing.' : 'Paused.');
         await loadGoogleSheetsState();
@@ -2897,8 +2897,8 @@ function openGoogleSheetPicker() {
 
     // Populate connection picker
     const sel = document.getElementById('gsConnectionSelect');
-    sel.innerHTML = _gsConnections.filter(c => c.isActive).map(c =>
-        `<option value="${c.id}">${escapeHtml(c.googleEmail)}</option>`
+    sel.innerHTML = _gsConnections.filter(c => c.is_active).map(c =>
+        `<option value="${c.id}">${escapeHtml(c.google_email)}</option>`
     ).join('');
     _gsSelectedConnectionId = sel.value;
 
@@ -2931,11 +2931,11 @@ async function loadGoogleSpreadsheets() {
             return;
         }
         container.innerHTML = files.map(f => `
-            <div class="gs-pickable-row" onclick="gsSelectSpreadsheet('${f.spreadsheetId}', this.dataset.name)" data-name="${escapeHtml(f.name)}"
+            <div class="gs-pickable-row" onclick="gsSelectSpreadsheet('${f.spreadsheet_id}', this.dataset.name)" data-name="${escapeHtml(f.name)}"
                  style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:6px; cursor:pointer;">
                 <div>
                     <div style="font-weight:500;">${escapeHtml(f.name)}</div>
-                    <div style="color:var(--text-secondary); font-size:0.85em;">${f.modifiedTime ? 'Modified ' + formatRelative(f.modifiedTime) : ''}</div>
+                    <div style="color:var(--text-secondary); font-size:0.85em;">${f.modified_time ? 'Modified ' + formatRelative(f.modified_time) : ''}</div>
                 </div>
                 <span style="color: var(--text-secondary);">&rarr;</span>
             </div>
@@ -3013,12 +3013,12 @@ async function gsReloadPreview() {
     try {
         const res = await api.request(
             `/crm/GoogleSheets/connections/${_gsSelectedConnectionId}` +
-            `/spreadsheets/${encodeURIComponent(_gsSelectedSpreadsheet.spreadsheetId)}` +
+            `/spreadsheets/${encodeURIComponent(_gsSelectedSpreadsheet.spreadsheet_id)}` +
             `/tabs/${encodeURIComponent(_gsSelectedTab.name)}` +
             `/preview?headerRow=${headerRow}`
         );
         _gsHeaders = res.headers || [];
-        _gsSampleRows = res.sampleRows || [];
+        _gsSampleRows = res.sample_rows || [];
         renderGsMappingTable();
     } catch (e) {
         tbody.innerHTML = `<tr><td colspan="4" style="color: var(--color-error); padding:12px;">Failed to load preview: ${escapeHtml(e.message || 'error')}</td></tr>`;
@@ -3107,13 +3107,13 @@ async function saveGoogleSheetConnection() {
         await api.request('/crm/GoogleSheets/sheets/connect', {
             method: 'POST',
             body: JSON.stringify({
-                connectionId: _gsSelectedConnectionId,
-                spreadsheetId: _gsSelectedSpreadsheet.spreadsheetId,
-                spreadsheetName: _gsSelectedSpreadsheet.name,
-                sheetTabName: _gsSelectedTab.name,
-                fieldMappings: JSON.stringify(map),
-                headerRow: headerRow,
-                autoAssignUserId: null
+                connection_id: _gsSelectedConnectionId,
+                spreadsheet_id: _gsSelectedSpreadsheet.spreadsheet_id,
+                spreadsheet_name: _gsSelectedSpreadsheet.name,
+                sheet_tab_name: _gsSelectedTab.name,
+                field_mappings: JSON.stringify(map),
+                header_row: headerRow,
+                auto_assign_user_id: null
             })
         });
         Toast.success('Sheet connected. Leads will start flowing within 2 minutes.');
@@ -3201,14 +3201,14 @@ async function verifyGoogleSheetShared() {
     try {
         const res = await api.request('/crm/GoogleSheets/service-account/verify-sheet', {
             method: 'POST',
-            body: JSON.stringify({ sheetUrl: url })
+            body: JSON.stringify({ sheet_url: url })
         });
         if (!res.accessible) {
-            errEl.textContent = res.error || 'Sheet not accessible. Share it with ' + (res.shareWithEmail || _gsServiceAccount.email) + ' and retry.';
+            errEl.textContent = res.error || 'Sheet not accessible. Share it with ' + (res.share_with_email || _gsServiceAccount.email) + ' and retry.';
             errEl.style.display = 'flex';
             return;
         }
-        _gsShareSpreadsheet = { spreadsheetId: res.spreadsheetId, name: res.spreadsheetName || 'Untitled' };
+        _gsShareSpreadsheet = { spreadsheet_id: res.spreadsheet_id, name: res.spreadsheet_name || 'Untitled' };
         document.getElementById('gsShareSheetName').textContent = _gsShareSpreadsheet.name;
         // Render tab list
         const tabs = res.tabs || [];
@@ -3248,11 +3248,11 @@ async function gsShareReloadPreview() {
     const headerRow = Math.max(1, parseInt(document.getElementById('gsShareHeaderRow').value || '1', 10));
     try {
         const res = await api.request(
-            `/crm/GoogleSheets/service-account/spreadsheets/${encodeURIComponent(_gsShareSpreadsheet.spreadsheetId)}` +
+            `/crm/GoogleSheets/service-account/spreadsheets/${encodeURIComponent(_gsShareSpreadsheet.spreadsheet_id)}` +
             `/tabs/${encodeURIComponent(_gsShareTab.name)}/preview?headerRow=${headerRow}`
         );
         _gsShareHeaders = res.headers || [];
-        _gsShareSampleRows = res.sampleRows || [];
+        _gsShareSampleRows = res.sample_rows || [];
         renderGsShareMappingTable();
     } catch (e) {
         tbody.innerHTML = `<tr><td colspan="4" style="color: var(--color-error); padding:12px;">Failed to load preview: ${escapeHtml(e.message || 'error')}</td></tr>`;
@@ -3314,12 +3314,12 @@ async function saveGoogleSheetShareConnection() {
         await api.request('/crm/GoogleSheets/service-account/connect', {
             method: 'POST',
             body: JSON.stringify({
-                spreadsheetId: _gsShareSpreadsheet.spreadsheetId,
-                spreadsheetName: _gsShareSpreadsheet.name,
-                sheetTabName: _gsShareTab.name,
-                fieldMappings: JSON.stringify(map),
-                headerRow: headerRow,
-                autoAssignUserId: null
+                spreadsheet_id: _gsShareSpreadsheet.spreadsheet_id,
+                spreadsheet_name: _gsShareSpreadsheet.name,
+                sheet_tab_name: _gsShareTab.name,
+                field_mappings: JSON.stringify(map),
+                header_row: headerRow,
+                auto_assign_user_id: null
             })
         });
         Toast.success('Sheet connected. Leads will start flowing within 2 minutes.');
