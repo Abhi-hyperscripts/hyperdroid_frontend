@@ -2671,6 +2671,10 @@ let _gsSelectedSpreadsheet = null;   // { spreadsheetId, name }
 let _gsSelectedTab = null;           // { name, index }
 let _gsHeaders = [];
 let _gsSampleRows = [];
+// SearchableDropdown instances for the OAuth mapping table. Tracked so we can
+// read values on save and dispose them cleanly when the table re-renders.
+let _gsColDropdowns = new Map();     // col letter -> SearchableDropdown
+let _gsRowIdDropdown = null;
 let _gsSearchTimer = null;
 let _gsServiceAccount = { enabled: false, email: null };
 
@@ -3052,38 +3056,62 @@ function gsGuessMapping(header) {
 
 function renderGsMappingTable() {
     const tbody = document.querySelector('#gsMappingTable tbody');
+    const rowIdContainer = document.getElementById('gsRowIdColumnDd');
     const width = Math.max(_gsHeaders.length, ...(_gsSampleRows.map(r => r.length) || [0]));
+
+    // Capture the prior row-ID selection so a header-row tweak doesn't reset it.
+    const existingRowId = _gsRowIdDropdown ? _gsRowIdDropdown.getValue() : '';
+    _gsColDropdowns.clear();
+    _gsRowIdDropdown = null;
+
     if (width === 0) {
         tbody.innerHTML = `<tr><td colspan="4" style="padding:12px; color: var(--text-secondary);">No columns found at the chosen header row. Is the header row correct?</td></tr>`;
-        document.getElementById('gsRowIdColumn').innerHTML = '';
+        rowIdContainer.innerHTML = '';
         return;
     }
 
-    const rowIdSelect = document.getElementById('gsRowIdColumn');
-    const existingRowId = rowIdSelect.value;
-
     let tableHtml = '';
-    let rowIdOptions = '<option value="">(none — CRM generates one)</option>';
+    const rowIdOptions = [{ value: '', label: '(none — CRM generates one)' }];
+    const rowMeta = [];
     let autoRowId = '';
     for (let i = 0; i < width; i++) {
         const letter = gsColLetter(i);
         const header = _gsHeaders[i] || `Column ${letter}`;
         const sample = (_gsSampleRows[0] && _gsSampleRows[0][i]) || '';
         const guess = gsGuessMapping(header);
-        const opts = GS_CRM_FIELDS.map(f => `<option value="${f.value}" ${f.value === guess ? 'selected' : ''}>${escapeHtml(f.label)}</option>`).join('');
         tableHtml += `
             <tr>
                 <td><strong>${letter}</strong></td>
                 <td>${escapeHtml(header)}</td>
                 <td style="color: var(--text-secondary);">${escapeHtml(sample)}</td>
-                <td><select class="form-control gs-col-map" data-col="${letter}">${opts}</select></td>
+                <td><div id="gsColDd_${letter}" class="gs-col-map-dd"></div></td>
             </tr>`;
-        rowIdOptions += `<option value="${letter}">${letter} — ${escapeHtml(header)}</option>`;
+        rowIdOptions.push({ value: letter, label: `${letter} — ${header}` });
+        rowMeta.push({ letter, guess });
         if (guess === 'source_lead_id' && !autoRowId) autoRowId = letter;
     }
     tbody.innerHTML = tableHtml;
-    rowIdSelect.innerHTML = rowIdOptions;
-    rowIdSelect.value = existingRowId || autoRowId;
+
+    rowMeta.forEach(({ letter, guess }) => {
+        const container = document.getElementById(`gsColDd_${letter}`);
+        if (!container) return;
+        const dd = new SearchableDropdown(container, {
+            id: `gsColDd_${letter}`,
+            options: GS_CRM_FIELDS,
+            value: guess,
+            placeholder: '— Ignore this column —',
+            compact: true,
+        });
+        _gsColDropdowns.set(letter, dd);
+    });
+
+    _gsRowIdDropdown = new SearchableDropdown(rowIdContainer, {
+        id: 'gsRowIdColumnDd',
+        options: rowIdOptions,
+        value: existingRowId || autoRowId || '',
+        placeholder: '(none — CRM generates one)',
+        compact: true,
+    });
 }
 
 async function saveGoogleSheetConnection() {
@@ -3094,12 +3122,11 @@ async function saveGoogleSheetConnection() {
 
     // Build field_mappings payload from the dropdowns.
     const map = {};
-    document.querySelectorAll('.gs-col-map').forEach(el => {
-        const col = el.dataset.col;
-        const val = el.value;
+    _gsColDropdowns.forEach((dd, col) => {
+        const val = dd.getValue();
         if (col && val && val !== 'skip') map[col] = val;
     });
-    const rowIdCol = document.getElementById('gsRowIdColumn').value || null;
+    const rowIdCol = (_gsRowIdDropdown && _gsRowIdDropdown.getValue()) || null;
     if (rowIdCol) {
         map[rowIdCol] = 'source_lead_id';
         map['_row_id_column'] = rowIdCol;
@@ -3141,6 +3168,8 @@ let _gsShareSpreadsheet = null;       // { spreadsheetId, name }
 let _gsShareTab = null;               // { name, index }
 let _gsShareHeaders = [];
 let _gsShareSampleRows = [];
+let _gsShareColDropdowns = new Map(); // col letter -> SearchableDropdown
+let _gsShareRowIdDropdown = null;
 
 function openGoogleSheetShareModal() {
     if (!_gsServiceAccount?.enabled || !_gsServiceAccount.email) {
@@ -3265,36 +3294,61 @@ async function gsShareReloadPreview() {
 
 function renderGsShareMappingTable() {
     const tbody = document.querySelector('#gsShareMappingTable tbody');
+    const rowIdContainer = document.getElementById('gsShareRowIdColDd');
     const width = Math.max(_gsShareHeaders.length, ...(_gsShareSampleRows.map(r => r.length) || [0]));
+
+    const existing = _gsShareRowIdDropdown ? _gsShareRowIdDropdown.getValue() : '';
+    _gsShareColDropdowns.clear();
+    _gsShareRowIdDropdown = null;
+
     if (width === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="padding:12px; color: var(--text-secondary);">No columns at the chosen header row.</td></tr>';
-        document.getElementById('gsShareRowIdCol').innerHTML = '';
+        rowIdContainer.innerHTML = '';
         return;
     }
-    const rowIdSelect = document.getElementById('gsShareRowIdCol');
-    const existing = rowIdSelect.value;
+
     let rows = '';
-    let rowIdOpts = '<option value="">(none — CRM generates one)</option>';
+    const rowIdOptions = [{ value: '', label: '(none — CRM generates one)' }];
+    const rowMeta = [];
     let autoRowId = '';
     for (let i = 0; i < width; i++) {
         const letter = gsColLetter(i);
         const header = _gsShareHeaders[i] || `Column ${letter}`;
         const sample = (_gsShareSampleRows[0] && _gsShareSampleRows[0][i]) || '';
         const guess = gsGuessMapping(header);
-        const opts = GS_CRM_FIELDS.map(f => `<option value="${f.value}" ${f.value === guess ? 'selected' : ''}>${escapeHtml(f.label)}</option>`).join('');
         rows += `
             <tr>
                 <td><strong>${letter}</strong></td>
                 <td>${escapeHtml(header)}</td>
                 <td style="color: var(--text-secondary);">${escapeHtml(sample)}</td>
-                <td><select class="form-control gs-share-col-map" data-col="${letter}">${opts}</select></td>
+                <td><div id="gsShareColDd_${letter}" class="gs-col-map-dd"></div></td>
             </tr>`;
-        rowIdOpts += `<option value="${letter}">${letter} — ${escapeHtml(header)}</option>`;
+        rowIdOptions.push({ value: letter, label: `${letter} — ${header}` });
+        rowMeta.push({ letter, guess });
         if (guess === 'source_lead_id' && !autoRowId) autoRowId = letter;
     }
     tbody.innerHTML = rows;
-    rowIdSelect.innerHTML = rowIdOpts;
-    rowIdSelect.value = existing || autoRowId;
+
+    rowMeta.forEach(({ letter, guess }) => {
+        const container = document.getElementById(`gsShareColDd_${letter}`);
+        if (!container) return;
+        const dd = new SearchableDropdown(container, {
+            id: `gsShareColDd_${letter}`,
+            options: GS_CRM_FIELDS,
+            value: guess,
+            placeholder: '— Ignore this column —',
+            compact: true,
+        });
+        _gsShareColDropdowns.set(letter, dd);
+    });
+
+    _gsShareRowIdDropdown = new SearchableDropdown(rowIdContainer, {
+        id: 'gsShareRowIdColDd',
+        options: rowIdOptions,
+        value: existing || autoRowId || '',
+        placeholder: '(none — CRM generates one)',
+        compact: true,
+    });
 }
 
 async function saveGoogleSheetShareConnection() {
@@ -3304,12 +3358,11 @@ async function saveGoogleSheetShareConnection() {
     btn.textContent = 'Saving…';
 
     const map = {};
-    document.querySelectorAll('.gs-share-col-map').forEach(el => {
-        const col = el.dataset.col;
-        const val = el.value;
+    _gsShareColDropdowns.forEach((dd, col) => {
+        const val = dd.getValue();
         if (col && val && val !== 'skip') map[col] = val;
     });
-    const rowIdCol = document.getElementById('gsShareRowIdCol').value || null;
+    const rowIdCol = (_gsShareRowIdDropdown && _gsShareRowIdDropdown.getValue()) || null;
     if (rowIdCol) { map[rowIdCol] = 'source_lead_id'; map['_row_id_column'] = rowIdCol; }
     const headerRow = Math.max(1, parseInt(document.getElementById('gsShareHeaderRow').value || '1', 10));
     map['_header_row'] = headerRow;
