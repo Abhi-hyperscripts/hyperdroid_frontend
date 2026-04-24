@@ -1231,6 +1231,7 @@ function showChatInfo() {
                         <div id="chatAddMemberResults" style="margin-top: 8px; max-height: 180px; overflow-y: auto;"></div>
                     </div>
                 ` : ''}
+                <div id="chatMembersList" style="max-height: 360px; overflow-y: auto; padding-right: 4px;">
                 ${(conv.participants || []).map(p => {
                     const isMe = p.user_id === currentUser.userId;
                     const isTargetAdmin = p.role === 'admin';
@@ -1279,6 +1280,7 @@ function showChatInfo() {
                         ` : ''}
                     </div>`;
                 }).join('')}
+                </div>
             </div>
         `;
         leaveBtn.style.display = 'block';
