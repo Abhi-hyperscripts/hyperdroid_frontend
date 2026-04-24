@@ -44,7 +44,57 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadSourceFilter();
     loadCampaignFilter();
     initSearchableDropdowns();
+    setupLeadsRealtime();
 });
+
+// ==================== Real-time updates ====================
+
+// Subscribes to the tenant-scoped CRM SignalR hub so newly-ingested leads
+// (Facebook webhooks, Google Sheets polling, webform POSTs, AI discovery)
+// appear without a manual refresh. We re-fetch rather than splice locally
+// because filters, search, pagination, ownership rules, and stats all need
+// to stay consistent — a client-side merge would drift from them.
+let _leadsHubConnection = null;
+let _leadsRefreshScheduled = false;
+
+async function setupLeadsRealtime() {
+    if (typeof signalR === 'undefined') return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    const hubUrl = (typeof CONFIG !== 'undefined' && CONFIG.crmSignalRHubUrl)
+        ? CONFIG.crmSignalRHubUrl
+        : null;
+    if (!hubUrl) return;
+
+    _leadsHubConnection = new signalR.HubConnectionBuilder()
+        .withUrl(hubUrl, { accessTokenFactory: () => token })
+        .withAutomaticReconnect()
+        .configureLogging(signalR.LogLevel.Warning)
+        .build();
+
+    _leadsHubConnection.on('NewLeadReceived', (lead) => {
+        // Coalesce bursts (e.g. Google Sheets poll drops 10 new rows at once)
+        // into a single refresh so the table doesn't re-render per event.
+        if (_leadsRefreshScheduled) return;
+        _leadsRefreshScheduled = true;
+        setTimeout(() => {
+            _leadsRefreshScheduled = false;
+            loadLeads();
+            loadLeadStats();
+        }, 800);
+        try {
+            const name = `${lead?.first_name || ''} ${lead?.last_name || ''}`.trim() || 'a lead';
+            if (typeof Toast !== 'undefined') Toast.success(`New lead: ${name}`);
+        } catch {}
+    });
+
+    try {
+        await _leadsHubConnection.start();
+    } catch (e) {
+        // Transient on page load or if hub is down; withAutomaticReconnect handles retries.
+        console.warn('Leads SignalR: failed to connect', e?.message || e);
+    }
+}
 
 async function loadMyRole() {
     try {
