@@ -77,12 +77,15 @@ async function setupLeadsRealtime() {
         .build();
 
     _leadsHubConnection.on('NewLeadReceived', (lead) => {
+        console.log('[Leads SignalR] NewLeadReceived', lead);
         _pendingNewLeadCount++;
         renderPendingLeadsBanner(lead);
     });
 
     try {
         await _leadsHubConnection.start();
+        console.log('[Leads SignalR] connected', _leadsHubConnection.state);
+        window._leadsHub = _leadsHubConnection; // expose for devtools inspection
     } catch (e) {
         // Transient on page load or if hub is down; withAutomaticReconnect handles retries.
         console.warn('Leads SignalR: failed to connect', e?.message || e);
