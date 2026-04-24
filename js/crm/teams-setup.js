@@ -433,15 +433,15 @@
 
     function getAvailableUsersExcluding(excludeIds) {
         const exclude = new Set(excludeIds);
-        // Only active users. For EDIT mode, users already on THIS team are
-        // candidates (you're just shuffling roles); users on OTHER teams are
-        // not (backend 409). For CREATE mode, any user not already on any
-        // team is candidate.
+        // Only active users, and not already assigned to a slot in THIS modal.
+        // Multi-team is allowed now: a user can be on multiple teams (the
+        // client use-case is the same sales team working 3–4 campaigns; each
+        // campaign lives in its own team so the manager gets a per-campaign
+        // dashboard). The DB still enforces "no duplicate (team, user)" so
+        // editing this team can't accidentally double-add someone.
         return _users.filter(u => {
             if (!u.is_active) return false;
             if (exclude.has(u.user_id)) return false;
-            // If user is on another team (not this one), exclude.
-            if (u.team_id && u.team_id !== _teamModal.teamId) return false;
             return true;
         });
     }

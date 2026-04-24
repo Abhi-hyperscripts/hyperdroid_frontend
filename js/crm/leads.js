@@ -43,9 +43,120 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadLeadStats();
     loadSourceFilter();
     loadCampaignFilter();
+    loadMyTeamsFilter();
     initSearchableDropdowns();
     setupLeadsRealtime();
 });
+
+// ==================== Team + Owner filters (multi-team support) =============
+// Populates the "Team" filter with every team the caller is a member of
+// (or every team in the tenant if they're CRM admin). Only shown when the
+// user is on 2+ teams — no point cluttering the bar for single-team users.
+// The "Owner" filter is populated from the selected team's members so a
+// manager can isolate one salesperson's pipeline (use case: someone leaves,
+// manager needs to bulk-reassign all their leads to another team member).
+let filterTeamDropdown = null;
+let filterOwnerDropdown = null;
+let _myTeamsCache = []; // [{ team_id, team_name, role, is_admin }]
+let _teamMembersCache = {}; // { team_id: [{ user_id, user_name, role }] }
+
+async function loadMyTeamsFilter() {
+    const sel = document.getElementById('filterTeam');
+    const group = document.getElementById('filterTeamGroup');
+    if (!sel || !group) return;
+    try {
+        const teams = await api.request('/crm/leads/my-teams');
+        const list = Array.isArray(teams) ? teams : [];
+        _myTeamsCache = list;
+        const allOpt = sel.querySelector('option[value=""]');
+        sel.innerHTML = '';
+        if (allOpt) sel.appendChild(allOpt);
+        else {
+            const o = document.createElement('option');
+            o.value = ''; o.textContent = 'All my teams';
+            sel.appendChild(o);
+        }
+        list.forEach(t => {
+            if (!t?.team_id || !t?.team_name) return;
+            const o = document.createElement('option');
+            o.value = t.team_id;
+            o.textContent = t.role && t.role !== 'admin'
+                ? `${t.team_name} (${t.role})`
+                : t.team_name;
+            sel.appendChild(o);
+        });
+        // Hide the team filter if the user is only on one team (or none) —
+        // keeps the filter bar lean for single-team tenants.
+        if (list.length >= 2) group.style.display = '';
+        if (filterTeamDropdown && typeof filterTeamDropdown.rebuild === 'function') {
+            filterTeamDropdown.rebuild();
+        }
+        // Owner filter: only shown to admins/managers/teamleads because
+        // regular members can only see their own leads regardless.
+        await refreshOwnerFilter();
+    } catch (e) {
+        console.warn('Failed to load team filter:', e?.message || e);
+    }
+}
+
+// Reacts to the team dropdown changing: re-populates the Owner filter
+// with the selected team's members, then re-fetches leads.
+async function onTeamFilterChanged() {
+    await refreshOwnerFilter();
+    applyFilters();
+}
+
+async function refreshOwnerFilter() {
+    const ownerSel = document.getElementById('filterOwner');
+    const ownerGroup = document.getElementById('filterOwnerGroup');
+    const teamSel = document.getElementById('filterTeam');
+    if (!ownerSel || !ownerGroup || !teamSel) return;
+
+    const selectedTeamId = teamSel.value;
+    const userIsPrivileged = _myTeamsCache.some(t => t.role === 'admin' || t.role === 'manager' || t.role === 'teamlead');
+    if (!userIsPrivileged) {
+        ownerGroup.style.display = 'none';
+        return;
+    }
+
+    // Build the member set from the selected team (or all user's teams).
+    // Dedupe by user_id: the same salesperson on 2 teams should only show once.
+    const memberMap = new Map();
+    const teamsToScan = selectedTeamId
+        ? _myTeamsCache.filter(t => t.team_id === selectedTeamId)
+        : _myTeamsCache;
+    for (const t of teamsToScan) {
+        if (!_teamMembersCache[t.team_id]) {
+            try {
+                const team = await api.request(`/crm/teams/${t.team_id}`);
+                _teamMembersCache[t.team_id] = (team?.members || team?.Members || []).filter(m => m.is_active !== false);
+            } catch { _teamMembersCache[t.team_id] = []; }
+        }
+        for (const m of _teamMembersCache[t.team_id]) {
+            if (m.user_id && !memberMap.has(m.user_id)) {
+                const name = m.user_name || m.display_name || m.email || m.user_id;
+                memberMap.set(m.user_id, { userId: m.user_id, name, role: m.role });
+            }
+        }
+    }
+
+    // Rebuild the dropdown, preserving the current selection if still valid.
+    const current = ownerSel.value;
+    ownerSel.innerHTML = '<option value="">Any owner</option><option value="__unassigned__">Unassigned</option>';
+    for (const m of memberMap.values()) {
+        const o = document.createElement('option');
+        o.value = m.userId;
+        o.textContent = m.role && m.role !== 'member' ? `${m.name} (${m.role})` : m.name;
+        ownerSel.appendChild(o);
+    }
+    // Reselect the prior choice if it's still in the list; otherwise clear.
+    if ([...ownerSel.options].some(o => o.value === current)) ownerSel.value = current;
+    else ownerSel.value = '';
+    ownerGroup.style.display = '';
+    if (filterOwnerDropdown && typeof filterOwnerDropdown.rebuild === 'function') {
+        filterOwnerDropdown.rebuild();
+    }
+}
 
 // ==================== Real-time updates ====================
 
@@ -279,6 +390,22 @@ function buildFilterParams() {
     if (search) params.set('search', search);
     if (emailStatus) params.set('emailStatus', emailStatus);
     if (campaignId) params.set('campaignId', campaignId);
+
+    // Multi-team scope: when the user has picked a specific team, backend
+    // narrows leads to that team (manager/TL sees all, member sees own).
+    const teamEl = document.getElementById('filterTeam');
+    if (teamEl && teamEl.value) params.set('teamId', teamEl.value);
+
+    // Owner filter: privileged caller (admin/manager/TL) can narrow to one
+    // specific salesperson's leads — used to isolate a departing member's
+    // pipeline before bulk-reassign.
+    const ownerEl = document.getElementById('filterOwner');
+    if (ownerEl && ownerEl.value) {
+        // "Unassigned" sentinel → backend gets a special value that matches
+        // owner_user_id IS NULL. For now we just skip sending — admin caller
+        // would need a dedicated flag. Document as a later polish.
+        if (ownerEl.value !== '__unassigned__') params.set('ownerUserId', ownerEl.value);
+    }
 
     return params;
 }

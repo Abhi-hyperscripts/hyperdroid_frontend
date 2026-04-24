@@ -156,6 +156,19 @@
                     <option value="lost">Lost</option>
                 </select>
             </div>
+            <div class="crm-filter-group" id="filterTeamGroup" style="display:none;">
+                <label for="filterTeam">Team</label>
+                <select id="filterTeam" class="form-select form-select-sm" onchange="onTeamFilterChanged()">
+                    <option value="">All my teams</option>
+                </select>
+            </div>
+            <div class="crm-filter-group" id="filterOwnerGroup" style="display:none;">
+                <label for="filterOwner">Owner</label>
+                <select id="filterOwner" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">Any owner</option>
+                    <option value="__unassigned__">Unassigned</option>
+                </select>
+            </div>
             <div class="crm-filter-group">
                 <label for="filterSource">Source</label>
                 <select id="filterSource" class="form-select form-select-sm" onchange="applyFilters()">
