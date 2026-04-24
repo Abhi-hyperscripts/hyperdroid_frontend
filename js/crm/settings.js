@@ -610,15 +610,33 @@ async function saveGeneralSettings() {
 // ═══════════════════════════════════════════════════════════════════════════
 //  FACEBOOK INTEGRATION
 // ═══════════════════════════════════════════════════════════════════════════
+//  Two connection paths:
+//    1. System User token (primary) — tenant generates in their own Business
+//       Manager, pastes it. Bypasses Meta's App Review requirement.
+//    2. OAuth Login (legacy/future) — disabled in UI until Meta approves
+//       leads_retrieval for our app.
+//
+//  Once a page is connected, tenant picks which lead forms to ingest and
+//  maps each form's questions to CRM fields using the same mapping pattern
+//  as the CSV importer. Leads land in the standard `leads` table and flow
+//  through every downstream CRM workflow (auto-assignment, pipelines, etc).
+
+let facebookForms = [];               // { leadSourceId, pageId, formId, sourceName, fieldMappings, ... }
+let _fbStandardFields = null;          // { field_key: "Display Name" } — lazy-loaded from /leads/import/fields
 
 async function loadFacebookPages() {
     try {
-        const result = await api.request('/crm/facebook/pages');
-        facebookPages = result || [];
+        const [pages, forms] = await Promise.all([
+            api.request('/crm/facebook/pages').catch(() => []),
+            api.request('/crm/facebook/forms').catch(() => [])
+        ]);
+        facebookPages = pages || [];
+        facebookForms = forms || [];
         renderFacebookPages();
     } catch (error) {
         console.error('Error loading Facebook pages:', error);
         facebookPages = [];
+        facebookForms = [];
         renderFacebookPages();
     }
 }
@@ -632,23 +650,15 @@ function renderFacebookPages() {
 
     if (activePages.length > 0) {
         statusDot.className = 'dot connected';
-        statusText.textContent = `${activePages.length} page${activePages.length > 1 ? 's' : ''} connected`;
+        const formsCount = facebookForms.filter(f => f.is_active).length;
+        statusText.textContent = `${activePages.length} page${activePages.length > 1 ? 's' : ''} · ${formsCount} form${formsCount !== 1 ? 's' : ''}`;
         pagesList.style.display = 'block';
 
-        pagesList.innerHTML = activePages.map(page => `
-            <li>
-                <div class="page-info">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: #1877f2;">
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                    </svg>
-                    <span>${escapeHtml(page.page_name)}</span>
-                    <span class="lead-count">${page.total_leads_received} lead${page.total_leads_received !== 1 ? 's' : ''}</span>
-                </div>
-                <button class="btn btn-outline" style="padding: 4px 12px; font-size: 0.75rem;" onclick="disconnectFacebookPage('${escapeHtml(page.page_id)}')">
-                    Disconnect
-                </button>
-            </li>
-        `).join('');
+        pagesList.innerHTML = activePages.map(page => {
+            const pageForms = facebookForms.filter(f => f.page_id === page.page_id);
+            return renderFacebookPageCard(page, pageForms);
+        }).join('');
+        bindFacebookPagesListHandlers();
     } else {
         statusDot.className = 'dot disconnected';
         statusText.textContent = 'Not connected';
@@ -657,7 +667,579 @@ function renderFacebookPages() {
     }
 }
 
+function renderFacebookPageCard(page, forms) {
+    const tokenSourceBadge = page.token_source === 'system_user'
+        ? '<span style="font-size: 0.7em; padding: 2px 6px; background: var(--brand-primary); color: #fff; border-radius: 4px; margin-left: 6px;">System User</span>'
+        : '<span style="font-size: 0.7em; padding: 2px 6px; background: var(--bg-tertiary); color: var(--text-secondary); border-radius: 4px; margin-left: 6px;">OAuth</span>';
+
+    const formsHtml = forms.length > 0
+        ? `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color-light);">
+              ${forms.map(f => renderFacebookFormRow(f)).join('')}
+           </div>`
+        : `<div style="margin-top: 10px; padding: 8px 12px; background: var(--bg-tertiary); border-radius: 6px; font-size: 0.85em; color: var(--text-secondary);">
+              No forms connected yet. Click <strong>Manage Forms</strong> to add one.
+           </div>`;
+
+    // Never interpolate page_id / page_name into an onclick string — escapeHtml only covers
+    // HTML entities (&<>"), not JS-string escaping, so a page name with a single-quote would
+    // break out. Use data-* attributes + event delegation (bindFacebookPagesListHandlers).
+    return `
+        <div class="connected-page-card" data-fb-page-id="${escapeHtml(page.page_id)}" data-fb-page-name="${escapeHtml(page.page_name)}"
+             style="padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 10px; background: var(--bg-card);">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: #1877f2; flex-shrink: 0;">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+                <span style="font-weight: 600;">${escapeHtml(page.page_name)}</span>
+                ${tokenSourceBadge}
+                <span style="font-size: 0.8em; color: var(--text-secondary);">${page.total_leads_received} lead${page.total_leads_received !== 1 ? 's' : ''}</span>
+                <div style="margin-left: auto; display: flex; gap: 6px;">
+                    <button type="button" class="btn btn-outline" data-fb-action="manage-forms" style="padding: 4px 10px; font-size: 0.75rem;">
+                        Manage Forms
+                    </button>
+                    <button type="button" class="btn btn-outline" data-fb-action="disconnect-page" style="padding: 4px 10px; font-size: 0.75rem;">
+                        Disconnect
+                    </button>
+                </div>
+            </div>
+            ${formsHtml}
+        </div>
+    `;
+}
+
+function renderFacebookFormRow(form) {
+    const stateBadge = form.is_active
+        ? '<span style="font-size: 0.7em; padding: 2px 6px; background: var(--color-success); color: #fff; border-radius: 4px;">Polling</span>'
+        : '<span style="font-size: 0.7em; padding: 2px 6px; background: var(--bg-tertiary); color: var(--text-secondary); border-radius: 4px;">Paused</span>';
+
+    // Event delegation picks up data-fb-form-action; leadSourceId lives in data-fb-source-id.
+    return `
+        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0;"
+             data-fb-source-id="${escapeHtml(form.lead_source_id || '')}" data-fb-active="${form.is_active ? '1' : '0'}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-secondary); flex-shrink: 0;">
+                <polyline points="9 11 12 14 22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+            <span style="font-size: 0.9em;">${escapeHtml(form.source_name || 'Unnamed form')}</span>
+            ${stateBadge}
+            <span style="font-size: 0.8em; color: var(--text-secondary);">${form.total_leads_received || 0} leads</span>
+            <div style="margin-left: auto; display: flex; gap: 4px;">
+                <button type="button" class="btn btn-outline" data-fb-form-action="toggle" style="padding: 2px 8px; font-size: 0.7rem;">
+                    ${form.is_active ? 'Pause' : 'Resume'}
+                </button>
+                <button type="button" class="btn btn-outline" data-fb-form-action="remove" style="padding: 2px 8px; font-size: 0.7rem;">
+                    Remove
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// One-time delegation setup. Every click inside #fbPagesList is routed here.
+// Avoids re-binding after every render and prevents onclick-string interpolation bugs.
+let _fbPagesListBound = false;
+function bindFacebookPagesListHandlers() {
+    if (_fbPagesListBound) return;
+    const container = document.getElementById('fbPagesList');
+    if (!container) return;
+    container.addEventListener('click', (ev) => {
+        const pageBtn = ev.target.closest('[data-fb-action]');
+        if (pageBtn) {
+            const card = pageBtn.closest('[data-fb-page-id]');
+            if (!card) return;
+            const pageId = card.getAttribute('data-fb-page-id');
+            const pageName = card.getAttribute('data-fb-page-name');
+            const action = pageBtn.getAttribute('data-fb-action');
+            if (action === 'manage-forms') openFacebookFormModal(pageId, pageName);
+            else if (action === 'disconnect-page') disconnectFacebookPage(pageId);
+            return;
+        }
+        const formBtn = ev.target.closest('[data-fb-form-action]');
+        if (formBtn) {
+            const row = formBtn.closest('[data-fb-source-id]');
+            if (!row) return;
+            const sourceId = row.getAttribute('data-fb-source-id');
+            const isActive = row.getAttribute('data-fb-active') === '1';
+            const action = formBtn.getAttribute('data-fb-form-action');
+            if (action === 'toggle') toggleFacebookFormSource(sourceId, !isActive);
+            else if (action === 'remove') disconnectFacebookFormSource(sourceId);
+        }
+    });
+    _fbPagesListBound = true;
+}
+
+// ─── System User Token Modal (3-stage wizard) ───────────────────────────────
+
+function openFacebookSystemUserModal() {
+    document.getElementById('fbSuTokenInput').value = '';
+    document.getElementById('fbSuTokenError').style.display = 'none';
+    document.getElementById('fbSuScopeWarning').style.display = 'none';
+    document.getElementById('fbSuStageToken').style.display = '';
+    document.getElementById('fbSuStagePages').style.display = 'none';
+    document.getElementById('fbSuStageConfirm').style.display = 'none';
+    document.getElementById('fbSuValidateBtn').style.display = '';
+    document.getElementById('fbSuConnectBtn').style.display = 'none';
+    document.getElementById('fbSuDoneBtn').style.display = 'none';
+    openModal('fbSystemUserModal');
+}
+
+function closeFacebookSystemUserModal() {
+    closeModal('fbSystemUserModal');
+    // Refresh the pages list so the new connection appears
+    loadFacebookPages();
+}
+
+async function validateFacebookSystemUserToken() {
+    const token = document.getElementById('fbSuTokenInput').value.trim();
+    const errorEl = document.getElementById('fbSuTokenError');
+    errorEl.style.display = 'none';
+
+    if (!token) {
+        errorEl.textContent = 'Paste your System User token first.';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    const btn = document.getElementById('fbSuValidateBtn');
+    btn.disabled = true;
+    const originalLabel = btn.textContent;
+    btn.textContent = 'Validating…';
+
+    try {
+        const result = await api.request('/crm/facebook/system-user/validate', {
+            method: 'POST',
+            body: JSON.stringify({ token })
+        });
+
+        if (!result.valid) {
+            errorEl.textContent = result.error || 'Token rejected by Facebook.';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        // Success: flip to stage 2 with page picker
+        const info = result;
+        const subtitle = `Signed in as ${escapeHtml(info.fb_user_name || 'Facebook user')}`;
+        document.getElementById('fbSuTokenInfo').innerHTML = ` ${subtitle}. Granted: <code>${(info.granted_scopes || []).join(', ') || '—'}</code>`;
+
+        // Warn if leads_retrieval missing
+        const scopeWarning = document.getElementById('fbSuScopeWarning');
+        if (!(info.granted_scopes || []).some(s => s.toLowerCase() === 'leads_retrieval')) {
+            scopeWarning.textContent = 'This token does not include leads_retrieval. Leads will not pull until you regenerate the token with that scope selected.';
+            scopeWarning.style.display = 'block';
+        }
+
+        const pagesList = document.getElementById('fbSuPagesList');
+        if (!info.pages || info.pages.length === 0) {
+            pagesList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No Pages are assigned to this System User.<br>Assign a Page in <strong>Business Settings → System Users → Add Assets</strong> and try again.</div>';
+        } else {
+            pagesList.innerHTML = info.pages.map((p, idx) => `
+                <label style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border-color-light); cursor: pointer;" ${p.already_connected ? 'data-connected="1"' : ''}>
+                    <input type="checkbox" class="fb-su-page-check" data-page-id="${escapeHtml(p.page_id)}" ${p.already_connected ? 'checked disabled' : (idx === 0 ? 'checked' : '')}>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600;">${escapeHtml(p.page_name)}</div>
+                        <div style="font-size: 0.8em; color: var(--text-secondary);">
+                            ${escapeHtml(p.category || 'Page')} · ID ${escapeHtml(p.page_id)}
+                            ${p.already_connected ? ' · <span style="color: var(--color-success);">Already connected</span>' : ''}
+                        </div>
+                    </div>
+                </label>
+            `).join('');
+        }
+
+        // Stash the token so the connect step has it (NOT storing in window to avoid leaks beyond this modal)
+        document.getElementById('fbSuTokenInput').dataset.validatedToken = token;
+        document.getElementById('fbSuTokenInput').dataset.fbUserName = info.fb_user_name || '';
+
+        document.getElementById('fbSuStageToken').style.display = 'none';
+        document.getElementById('fbSuStagePages').style.display = '';
+        document.getElementById('fbSuValidateBtn').style.display = 'none';
+        document.getElementById('fbSuConnectBtn').style.display = '';
+    } catch (err) {
+        console.error('Token validation error', err);
+        errorEl.textContent = err.message || 'Validation failed. Check your network + token.';
+        errorEl.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+    }
+}
+
+async function connectFacebookSelectedPages() {
+    const token = document.getElementById('fbSuTokenInput').dataset.validatedToken;
+    const fbUserName = document.getElementById('fbSuTokenInput').dataset.fbUserName || null;
+    if (!token) {
+        Toast.error('Token missing. Start over.');
+        return;
+    }
+
+    const pageIds = [...document.querySelectorAll('.fb-su-page-check:not([disabled])')]
+        .filter(cb => cb.checked)
+        .map(cb => cb.dataset.pageId);
+
+    if (pageIds.length === 0) {
+        Toast.warning('Select at least one page to connect.');
+        return;
+    }
+
+    const btn = document.getElementById('fbSuConnectBtn');
+    btn.disabled = true;
+    const label = btn.textContent;
+    btn.textContent = 'Connecting…';
+
+    try {
+        const result = await api.request('/crm/facebook/system-user/connect', {
+            method: 'POST',
+            body: JSON.stringify({ token, page_ids: pageIds, fb_user_name: fbUserName })
+        });
+
+        const connected = result.connected || [];
+        const failures = result.failures || [];
+        const summary = `${connected.length} page${connected.length !== 1 ? 's' : ''} connected${failures.length ? `, ${failures.length} failed` : ''}.`;
+        document.getElementById('fbSuConfirmSummary').textContent = summary;
+
+        document.getElementById('fbSuStagePages').style.display = 'none';
+        document.getElementById('fbSuStageConfirm').style.display = '';
+        document.getElementById('fbSuConnectBtn').style.display = 'none';
+        document.getElementById('fbSuDoneBtn').style.display = '';
+
+        // Clear the stashed token from DOM
+        const ta = document.getElementById('fbSuTokenInput');
+        ta.value = '';
+        delete ta.dataset.validatedToken;
+
+        Toast.success('Facebook connected');
+    } catch (err) {
+        console.error('Connect error', err);
+        Toast.error(err.message || 'Failed to connect');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+    }
+}
+
+// ─── Form Picker + Mapping Modal ────────────────────────────────────────────
+
+let _fbCurrentPageId = null;
+let _fbCurrentPageName = null;
+let _fbCurrentFormQuestions = [];
+
+async function openFacebookFormModal(pageId, pageName) {
+    _fbCurrentPageId = pageId;
+    _fbCurrentPageName = pageName;
+    document.getElementById('fbFormModalTitle').textContent = 'Manage Forms';
+    document.getElementById('fbFormModalSubtitle').textContent = pageName;
+    document.getElementById('fbFormPickerStage').style.display = '';
+    document.getElementById('fbFormMappingStage').style.display = 'none';
+    document.getElementById('fbMappingSaveBtn').style.display = 'none';
+    document.getElementById('fbFormList').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Loading forms from Facebook…</div>';
+
+    openModal('fbFormModal');
+
+    try {
+        const forms = await api.request(`/crm/facebook/pages/${encodeURIComponent(pageId)}/forms`);
+        renderFacebookFormList(forms || []);
+    } catch (err) {
+        document.getElementById('fbFormList').innerHTML = `<div style="padding: 20px; color: var(--color-error);">Failed to load forms: ${escapeHtml(err.message || 'unknown error')}</div>`;
+    }
+}
+
+function closeFacebookFormModal() {
+    closeModal('fbFormModal');
+    loadFacebookPages();
+}
+
+function backToFacebookFormList() {
+    document.getElementById('fbFormMappingStage').style.display = 'none';
+    document.getElementById('fbFormPickerStage').style.display = '';
+    document.getElementById('fbMappingSaveBtn').style.display = 'none';
+}
+
+let _fbFormListBound = false;
+function bindFacebookFormListHandlers() {
+    if (_fbFormListBound) return;
+    const container = document.getElementById('fbFormList');
+    if (!container) return;
+    container.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('[data-fb-form-connect]');
+        if (!btn) return;
+        const row = btn.closest('[data-fb-form-id]');
+        if (!row) return;
+        const formId = row.getAttribute('data-fb-form-id');
+        const formName = row.getAttribute('data-fb-form-name');
+        const sourceId = row.getAttribute('data-fb-source-id') || '';
+        startFacebookFormMapping(formId, formName, sourceId);
+    });
+    _fbFormListBound = true;
+}
+
+function renderFacebookFormList(forms) {
+    const list = document.getElementById('fbFormList');
+    if (forms.length === 0) {
+        list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No lead forms found on this page.</div>';
+        return;
+    }
+    list.innerHTML = forms.map(f => `
+        <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border-color-light);"
+             data-fb-form-id="${escapeHtml(f.form_id)}"
+             data-fb-form-name="${escapeHtml(f.form_name || 'Untitled form')}"
+             data-fb-source-id="${escapeHtml(f.lead_source_id || '')}">
+            <div style="flex: 1;">
+                <div style="font-weight: 600;">${escapeHtml(f.form_name || 'Untitled form')}</div>
+                <div style="font-size: 0.8em; color: var(--text-secondary);">
+                    Form ID: ${escapeHtml(f.form_id)} · Status: ${escapeHtml(f.status || 'unknown')}
+                    ${f.already_connected ? ' · <span style="color: var(--color-success);">Mapped</span>' : ''}
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" data-fb-form-connect="1" style="padding: 6px 12px; font-size: 0.85em;">
+                ${f.already_connected ? 'Edit Mapping' : 'Connect & Map'}
+            </button>
+        </div>
+    `).join('');
+    bindFacebookFormListHandlers();
+}
+
+async function startFacebookFormMapping(formId, formName, existingSourceId) {
+    document.getElementById('fbMappingPageId').value = _fbCurrentPageId;
+    document.getElementById('fbMappingFormId').value = formId;
+    document.getElementById('fbMappingFormName').value = formName;
+    document.getElementById('fbMappingExistingSourceId').value = existingSourceId || '';
+    document.getElementById('fbMappingFormLabel').textContent = formName;
+    document.getElementById('fbMappingError').style.display = 'none';
+    document.getElementById('fbMappingBody').innerHTML = '<tr><td colspan="3" style="padding: 20px; text-align: center; color: var(--text-secondary);">Loading form questions from Facebook…</td></tr>';
+    document.getElementById('fbFormPickerStage').style.display = 'none';
+    document.getElementById('fbFormMappingStage').style.display = '';
+    document.getElementById('fbMappingSaveBtn').style.display = '';
+
+    try {
+        const [questions, standardFields] = await Promise.all([
+            api.request(`/crm/facebook/pages/${encodeURIComponent(_fbCurrentPageId)}/forms/${encodeURIComponent(formId)}/questions`),
+            loadStandardLeadFields()
+        ]);
+        _fbCurrentFormQuestions = questions || [];
+
+        // If editing, reconstruct existing mapping from lead_sources.field_mappings
+        let existingMapping = null;
+        if (existingSourceId) {
+            const existing = facebookForms.find(f => f.lead_source_id === existingSourceId);
+            if (existing && existing.field_mappings) {
+                try { existingMapping = typeof existing.field_mappings === 'string' ? JSON.parse(existing.field_mappings) : existing.field_mappings; }
+                catch { existingMapping = null; }
+            }
+        }
+
+        renderFacebookMappingTable(_fbCurrentFormQuestions, standardFields, existingMapping);
+    } catch (err) {
+        document.getElementById('fbMappingBody').innerHTML = `<tr><td colspan="3" style="padding: 20px; color: var(--color-error);">Failed to load questions: ${escapeHtml(err.message || 'unknown error')}</td></tr>`;
+    }
+}
+
+function renderFacebookMappingTable(questions, standardFields, existingMapping) {
+    // The backend stores mappings in the shape { crm_field: [fb_key, fb_key, ...] } so that
+    // FieldMappingHelper can look up questions by alias. We reverse it to pre-populate the
+    // table which is keyed by fb question key → crm_field.
+    const reverse = {};
+    if (existingMapping) {
+        for (const [crmField, aliases] of Object.entries(existingMapping)) {
+            const list = Array.isArray(aliases) ? aliases : [aliases];
+            for (const a of list) {
+                if (typeof a === 'string') reverse[a.toLowerCase()] = crmField;
+            }
+        }
+    }
+
+    const fieldOptions = Object.entries(standardFields).map(([key, label]) =>
+        `<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`
+    ).join('');
+
+    const tbody = document.getElementById('fbMappingBody');
+    if (!questions || questions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="padding: 20px; text-align: center; color: var(--text-secondary);">This form has no questions returned by Facebook.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = questions.map((q, i) => {
+        const guessed = reverse[q.key.toLowerCase()] || guessFacebookMapping(q.key);
+        const isCustom = guessed && !standardFields[guessed] && guessed !== '__skip__';
+        const selected = isCustom ? '__custom__' : (guessed || '__skip__');
+
+        return `
+            <tr style="border-bottom: 1px solid var(--border-color-light);">
+                <td style="padding: 10px 12px;">
+                    <div style="font-weight: 600; font-size: 0.9em;">${escapeHtml(q.label || q.key)}</div>
+                    <div style="font-size: 0.75em; color: var(--text-secondary); font-family: ui-monospace, monospace;">${escapeHtml(q.key)}</div>
+                </td>
+                <td style="padding: 10px 12px;">
+                    <select class="form-control fb-mapping-select" data-fb-key="${escapeHtml(q.key)}" onchange="onFacebookMappingChange(this, ${i})">
+                        <option value="__skip__" ${selected === '__skip__' ? 'selected' : ''}>— Skip —</option>
+                        ${fieldOptions.replace(new RegExp(`value="${selected}"`), `value="${selected}" selected`)}
+                        <option value="__custom__" ${selected === '__custom__' ? 'selected' : ''}>Custom field…</option>
+                    </select>
+                </td>
+                <td style="padding: 10px 12px;">
+                    <input type="text" class="form-control fb-mapping-custom" data-index="${i}"
+                           placeholder="custom_field_name"
+                           value="${isCustom ? escapeHtml(guessed) : ''}"
+                           style="${selected === '__custom__' ? '' : 'display: none;'}">
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function onFacebookMappingChange(selectEl, idx) {
+    const customInput = document.querySelector(`.fb-mapping-custom[data-index="${idx}"]`);
+    if (!customInput) return;
+    if (selectEl.value === '__custom__') {
+        customInput.style.display = '';
+        customInput.focus();
+    } else {
+        customInput.style.display = 'none';
+        customInput.value = '';
+    }
+}
+
+function guessFacebookMapping(fbKey) {
+    // Facebook lead form field keys are lowercase with underscores — match by stripping separators.
+    const k = fbKey.toLowerCase().replace(/[\s_\-]+/g, '');
+    const map = {
+        'firstname': 'first_name', 'fname': 'first_name', 'givenname': 'first_name',
+        'lastname': 'last_name', 'lname': 'last_name', 'surname': 'last_name', 'familyname': 'last_name',
+        'fullname': 'full_name', 'name': 'full_name',
+        'email': 'email', 'emailaddress': 'email', 'workemail': 'email',
+        'phone': 'phone', 'phonenumber': 'phone', 'mobile': 'phone', 'mobileno': 'phone', 'mobilenumber': 'phone',
+        'companyname': 'company_name', 'company': 'company_name', 'organization': 'company_name',
+        'jobtitle': 'job_title', 'title': 'job_title', 'designation': 'job_title',
+        'city': 'city', 'state': 'state', 'country': 'country', 'address': 'address',
+        'pincode': 'pincode', 'zipcode': 'pincode', 'postalcode': 'pincode', 'zip': 'pincode',
+        'budget': 'estimated_value', 'estimatedvalue': 'estimated_value',
+        'notes': 'notes', 'comments': 'notes', 'message': 'notes',
+        'website': 'website'
+    };
+    return map[k] || null;
+}
+
+async function loadStandardLeadFields() {
+    if (_fbStandardFields) return _fbStandardFields;
+    try {
+        _fbStandardFields = await api.request('/crm/leads/import/fields') || {};
+    } catch (err) {
+        // Fallback to a hand-picked subset so the UI still works if the endpoint is down.
+        _fbStandardFields = {
+            first_name: 'First Name', last_name: 'Last Name', full_name: 'Full Name',
+            email: 'Email', phone: 'Phone', company_name: 'Company',
+            job_title: 'Job Title', city: 'City', state: 'State', country: 'Country',
+            address: 'Address', pincode: 'Pincode', notes: 'Notes', estimated_value: 'Estimated Value',
+            website: 'Website'
+        };
+    }
+    return _fbStandardFields;
+}
+
+async function saveFacebookFormMapping() {
+    const pageId = document.getElementById('fbMappingPageId').value;
+    const formId = document.getElementById('fbMappingFormId').value;
+    const formName = document.getElementById('fbMappingFormName').value;
+    const existingId = document.getElementById('fbMappingExistingSourceId').value;
+    const errorEl = document.getElementById('fbMappingError');
+    errorEl.style.display = 'none';
+
+    // Collect mappings in the { crm_field: [fb_key, ...] } shape expected by FieldMappingHelper.
+    const mappings = {};
+    const rows = document.querySelectorAll('.fb-mapping-select');
+    for (let i = 0; i < rows.length; i++) {
+        const sel = rows[i];
+        const fbKey = sel.dataset.fbKey;
+        const val = sel.value;
+
+        let target = null;
+        if (val === '__skip__') continue;
+        if (val === '__custom__') {
+            const customInput = document.querySelector(`.fb-mapping-custom[data-index="${i}"]`);
+            const raw = customInput ? customInput.value.trim() : '';
+            if (!raw) {
+                errorEl.textContent = `Enter a name for the custom field on "${fbKey}" or skip it.`;
+                errorEl.style.display = 'block';
+                customInput?.focus();
+                return;
+            }
+            target = raw.toLowerCase().replace(/\s+/g, '_');
+        } else {
+            target = val;
+        }
+
+        if (!mappings[target]) mappings[target] = [];
+        if (!mappings[target].includes(fbKey.toLowerCase())) {
+            mappings[target].push(fbKey.toLowerCase());
+        }
+    }
+
+    const btn = document.getElementById('fbMappingSaveBtn');
+    btn.disabled = true;
+    const label = btn.textContent;
+    btn.textContent = 'Saving…';
+
+    try {
+        if (existingId) {
+            await api.request(`/crm/facebook/forms/${existingId}/mapping`, {
+                method: 'PUT',
+                body: JSON.stringify({ field_mappings: JSON.stringify(mappings) })
+            });
+        } else {
+            await api.request('/crm/facebook/forms/connect', {
+                method: 'POST',
+                body: JSON.stringify({
+                    page_id: pageId,
+                    form_id: formId,
+                    form_name: formName,
+                    field_mappings: JSON.stringify(mappings)
+                })
+            });
+        }
+
+        Toast.success('Form mapping saved');
+        await loadFacebookPages();
+        backToFacebookFormList();
+        // Refresh the picker state (the saved form now shows as "connected")
+        const forms = await api.request(`/crm/facebook/pages/${encodeURIComponent(pageId)}/forms`).catch(() => []);
+        renderFacebookFormList(forms || []);
+    } catch (err) {
+        errorEl.textContent = err.message || 'Failed to save mapping.';
+        errorEl.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+    }
+}
+
+async function toggleFacebookFormSource(sourceId, makeActive) {
+    try {
+        await api.request(`/crm/facebook/forms/${sourceId}/toggle`, {
+            method: 'PUT',
+            body: JSON.stringify({ is_active: !!makeActive })
+        });
+        Toast.success(makeActive ? 'Polling resumed' : 'Polling paused');
+        await loadFacebookPages();
+    } catch (err) {
+        Toast.error(err.message || 'Failed to toggle form');
+    }
+}
+
+async function disconnectFacebookFormSource(sourceId) {
+    const confirmed = await showConfirm('Remove this form? Past leads stay in the CRM. New leads from this form will stop being captured.', 'Remove form', 'danger');
+    if (!confirmed) return;
+    try {
+        await api.request(`/crm/facebook/forms/${sourceId}`, { method: 'DELETE' });
+        Toast.success('Form disconnected');
+        await loadFacebookPages();
+    } catch (err) {
+        Toast.error(err.message || 'Failed to remove form');
+    }
+}
+
 async function connectFacebook() {
+    // OAuth path — kept for when Meta approves leads_retrieval. UI currently disables
+    // the button with a tooltip, so this only runs if someone flips `disabled` by hand.
     try {
         const result = await api.request('/crm/facebook/auth-url');
         if (result && result.auth_url) {
@@ -672,13 +1254,11 @@ async function connectFacebook() {
 }
 
 async function disconnectFacebookPage(pageId) {
-    const confirmed = await showConfirm('Are you sure you want to disconnect this Facebook page? New leads will no longer be captured.', 'Disconnect Facebook', 'danger');
+    const confirmed = await showConfirm('Disconnect this Facebook page? All forms under this page will stop pulling leads. Past leads stay in the CRM.', 'Disconnect Facebook', 'danger');
     if (!confirmed) return;
 
     try {
-        await api.request(`/crm/facebook/disconnect/${pageId}`, {
-            method: 'POST'
-        });
+        await api.request(`/crm/facebook/disconnect/${pageId}`, { method: 'POST' });
         Toast.success('Facebook page disconnected');
         await loadFacebookPages();
     } catch (error) {

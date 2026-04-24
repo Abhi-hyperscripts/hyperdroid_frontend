@@ -32,6 +32,7 @@ const FooterComponent = {
                     <a href="/pages/pricing.html" class="footer-link">Pricing</a>
                     <a href="/pages/terms.html" class="footer-link">Terms</a>
                     <a href="/pages/privacy.html" class="footer-link">Privacy</a>
+                    <a href="/pages/data-deletion.html" class="footer-link">Data Deletion</a>
                     <a href="/pages/refund.html" class="footer-link">Refund Policy</a>
                 </div>
             </div>
