@@ -63,29 +63,30 @@ let _pendingNewLeadCount = 0;
 
 async function setupLeadsRealtime() {
     if (typeof signalR === 'undefined') return;
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    // Use the project-standard token accessor (config.js → getAuthToken()),
+    // NOT localStorage.getItem('token') — this repo stores the JWT under a
+    // tenant-prefixed key (`<slug>_authToken`), so the naive lookup returns
+    // null and the hub negotiate returns 401.
+    const tokenFn = typeof getAuthToken === 'function' ? getAuthToken : () => null;
+    if (!tokenFn()) return;
     const hubUrl = (typeof CONFIG !== 'undefined' && CONFIG.crmSignalRHubUrl)
         ? CONFIG.crmSignalRHubUrl
         : null;
     if (!hubUrl) return;
 
     _leadsHubConnection = new signalR.HubConnectionBuilder()
-        .withUrl(hubUrl, { accessTokenFactory: () => token })
+        .withUrl(hubUrl, { accessTokenFactory: tokenFn })
         .withAutomaticReconnect()
         .configureLogging(signalR.LogLevel.Warning)
         .build();
 
     _leadsHubConnection.on('NewLeadReceived', (lead) => {
-        console.log('[Leads SignalR] NewLeadReceived', lead);
         _pendingNewLeadCount++;
         renderPendingLeadsBanner(lead);
     });
 
     try {
         await _leadsHubConnection.start();
-        console.log('[Leads SignalR] connected', _leadsHubConnection.state);
-        window._leadsHub = _leadsHubConnection; // expose for devtools inspection
     } catch (e) {
         // Transient on page load or if hub is down; withAutomaticReconnect handles retries.
         console.warn('Leads SignalR: failed to connect', e?.message || e);
