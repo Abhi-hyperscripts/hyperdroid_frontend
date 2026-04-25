@@ -567,8 +567,178 @@
                             <span id="gsErrorAlertText">Something went wrong.</span>
                         </div>
 
-                        <!-- Connected Google accounts + connected sheets -->
-                        <div id="gsConnectionsList" style="display: none; margin-bottom: 16px;"></div>
+                        <!-- Connected sheets — filter toolbar + compact table.
+                             Built to scale: as more sheets land, search + filters
+                             keep the list usable without DOM growth. Hidden until
+                             at least one connection or shared sheet exists. -->
+                        <div id="gsConnectionsWrap" style="display: none; margin-bottom: 16px;">
+                            <div class="gs-toolbar">
+                                <div class="gs-status-pills" id="gsStatusPills" role="tablist" aria-label="Filter by sync status">
+                                    <button type="button" class="gs-pill active" data-status="all">All <span class="gs-pill-count" id="gsCountAll">0</span></button>
+                                    <button type="button" class="gs-pill" data-status="active">Active <span class="gs-pill-count" id="gsCountActive">0</span></button>
+                                    <button type="button" class="gs-pill" data-status="paused">Paused <span class="gs-pill-count" id="gsCountPaused">0</span></button>
+                                    <button type="button" class="gs-pill" data-status="stale">Stale <span class="gs-pill-count" id="gsCountStale">0</span></button>
+                                </div>
+                                <div class="gs-toolbar-right">
+                                    <div class="gs-account-filter" id="gsAccountFilter"></div>
+                                    <input type="search" id="gsSearchInput" class="form-control gs-search-input"
+                                           placeholder="Search sheets or sources…" autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="crm-table-wrapper">
+                                <table class="crm-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Sheet</th>
+                                            <th>Source / Form</th>
+                                            <th>Account</th>
+                                            <th>Status</th>
+                                            <th style="text-align:right;">Leads</th>
+                                            <th>Last sync</th>
+                                            <th style="text-align:right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="gsSheetsTableBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="crm-pagination" id="gsPagination" style="display:none;">
+                                <div class="crm-pagination-info" id="gsPaginationInfo"></div>
+                                <div class="crm-pagination-center crm-pagination-buttons" id="gsPaginationButtons"></div>
+                                <div class="crm-pagination-spacer"></div>
+                            </div>
+                        </div>
+
+                        <style>
+                            /* Scoped styles for the Google Sheets connections list.
+                               Brand vars only — no hardcoded colors. */
+                            .gs-toolbar {
+                                display: flex;
+                                align-items: center;
+                                justify-content: space-between;
+                                gap: 12px;
+                                margin-bottom: 12px;
+                                flex-wrap: wrap;
+                            }
+                            .gs-toolbar-right {
+                                display: flex;
+                                align-items: center;
+                                gap: 8px;
+                                flex: 1;
+                                justify-content: flex-end;
+                                min-width: 240px;
+                            }
+                            .gs-account-filter { min-width: 200px; max-width: 260px; }
+                            .gs-account-filter .searchable-dropdown-container { width: 100%; }
+                            .gs-search-input { width: 220px; height: 36px; font-size: 0.85rem; }
+                            .gs-status-pills {
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 4px;
+                                padding: 3px;
+                                background: var(--bg-card);
+                                border: 1px solid var(--border-color);
+                                border-radius: 8px;
+                            }
+                            .gs-pill {
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 6px;
+                                padding: 6px 12px;
+                                border: none;
+                                background: transparent;
+                                color: var(--text-secondary);
+                                font-size: 0.8rem;
+                                font-weight: 500;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                transition: background 0.15s, color 0.15s;
+                            }
+                            .gs-pill:hover { color: var(--text-primary); }
+                            .gs-pill.active {
+                                background: var(--brand-primary);
+                                color: var(--text-inverse);
+                            }
+                            .gs-pill-count {
+                                display: inline-flex;
+                                align-items: center;
+                                justify-content: center;
+                                min-width: 20px;
+                                height: 18px;
+                                padding: 0 6px;
+                                font-size: 0.7rem;
+                                font-weight: 600;
+                                border-radius: 9px;
+                                background: rgba(var(--brand-primary-rgb), 0.08);
+                                color: var(--text-secondary);
+                            }
+                            .gs-pill.active .gs-pill-count {
+                                background: rgba(255,255,255,0.22);
+                                color: var(--text-inverse);
+                            }
+                            .gs-status-badge {
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 6px;
+                                padding: 3px 10px;
+                                border-radius: 12px;
+                                font-size: 0.7rem;
+                                font-weight: 600;
+                                text-transform: uppercase;
+                                letter-spacing: 0.3px;
+                            }
+                            .gs-status-badge::before {
+                                content: '';
+                                width: 6px;
+                                height: 6px;
+                                border-radius: 50%;
+                                background: currentColor;
+                            }
+                            .gs-status-badge.gs-status-active {
+                                background: rgba(22,163,74,0.12);
+                                color: #15803d;
+                            }
+                            .gs-status-badge.gs-status-paused {
+                                background: rgba(234,179,8,0.15);
+                                color: #a16207;
+                            }
+                            .gs-status-badge.gs-status-stale {
+                                background: rgba(234,88,12,0.12);
+                                color: #c2410c;
+                            }
+                            .gs-account-cell {
+                                font-size: 0.78rem;
+                                color: var(--text-secondary);
+                                max-width: 180px;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                                white-space: nowrap;
+                            }
+                            .gs-account-cell .gs-account-tag {
+                                display: inline-block;
+                                padding: 2px 6px;
+                                font-size: 0.65rem;
+                                border-radius: 4px;
+                                background: rgba(var(--brand-primary-rgb), 0.1);
+                                color: var(--brand-primary);
+                                margin-right: 6px;
+                                font-weight: 600;
+                                text-transform: uppercase;
+                                letter-spacing: 0.3px;
+                            }
+                            .gs-empty-row td {
+                                text-align: center;
+                                padding: 32px 16px;
+                                color: var(--text-secondary);
+                                font-size: 0.85rem;
+                            }
+                            .gs-actions-cell {
+                                text-align: right;
+                                white-space: nowrap;
+                            }
+                            .gs-actions-cell .btn {
+                                margin-left: 4px;
+                            }
+                        </style>
 
                         <details class="mailbox-help" style="margin-bottom: 16px;">
                             <summary>

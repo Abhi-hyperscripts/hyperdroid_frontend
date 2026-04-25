@@ -2723,33 +2723,69 @@ async function loadGoogleSheetsState() {
     }
 }
 
+// ─── Google Sheets connections — compact table view ─────────────────────
+// State for the filter/search/pagination toolbar. Kept in module scope so
+// pill clicks, search input, and account dropdown can all mutate it without
+// touching the underlying connection/sheet caches.
+const _gsList = {
+    accountFilter: 'all',  // 'all' | connection_id | 'sa'
+    statusFilter: 'all',   // 'all' | 'active' | 'paused' | 'stale'
+    search: '',
+    page: 1,
+    pageSize: 10,
+    accountDropdown: null, // SearchableDropdown instance for account filter
+    rows: [],              // flattened, normalized rows ready to render
+};
+const GS_STALE_HOURS = 24;
+const GS_SA_CONNECTION_ID = '00000000-0000-0000-0000-000000000000';
+
+function gsClassifyStatus(sheet) {
+    if (!sheet.is_active) return 'paused';
+    if (!sheet.last_polled_at) return 'active'; // pending first sync — treat as active, not stale
+    const ageHours = (Date.now() - new Date(sheet.last_polled_at).getTime()) / 3600000;
+    if (ageHours > GS_STALE_HOURS) return 'stale';
+    return 'active';
+}
+
+function gsBuildRows(connections, sheets) {
+    const accountByConn = new Map();
+    connections.forEach(c => accountByConn.set(c.id, c.google_email));
+    return sheets.map(s => {
+        const isSa = !s.connection_id || s.connection_id === GS_SA_CONNECTION_ID;
+        return {
+            lead_source_id: s.lead_source_id,
+            connection_id: isSa ? 'sa' : s.connection_id,
+            spreadsheet_name: s.spreadsheet_name || s.source_name || '(untitled sheet)',
+            sheet_tab_name: s.sheet_tab_name || '',
+            source_name: s.source_name || '',
+            account_label: isSa ? 'Shared (no sign-in)' : (accountByConn.get(s.connection_id) || '—'),
+            account_is_sa: isSa,
+            is_active: !!s.is_active,
+            last_polled_at: s.last_polled_at,
+            total_leads_received: s.total_leads_received || 0,
+            status: gsClassifyStatus(s),
+        };
+    });
+}
+
 function renderGoogleSheetsCard(connections, sheets) {
     const statusDot = document.getElementById('gsStatusDot');
     const statusText = document.getElementById('gsStatusText');
-    const list = document.getElementById('gsConnectionsList');
-    const addBtn = document.getElementById('gsAddSheetBtn');
-    // gsConnectBtn was commented out (2026-04-25) — share-flow only.
-    // Keep the lookup but don't gate the function on it being present.
-    const connectBtn = document.getElementById('gsConnectBtn');
+    const wrap = document.getElementById('gsConnectionsWrap');
     const shareBtn = document.getElementById('gsShareBtn');
-    if (!statusDot || !list || !addBtn) return;
+    if (!statusDot || !wrap) return;
 
-    // Share button is always available when the backend has the SA key.
     if (shareBtn) shareBtn.style.display = _gsServiceAccount?.enabled ? 'inline-flex' : 'none';
 
-    // Count SA-connected sheets separately — they don't belong to any OAuth connection row.
-    const saSheets = sheets.filter(s => !s.connection_id || s.connection_id === '00000000-0000-0000-0000-000000000000');
-    const oauthSheets = sheets.filter(s => !saSheets.includes(s));
     const activeConns = connections.filter(c => c.is_active);
+    const saSheets = sheets.filter(s => !s.connection_id || s.connection_id === GS_SA_CONNECTION_ID);
 
     if (activeConns.length === 0 && saSheets.length === 0) {
         statusDot.classList.remove('connected');
         statusDot.classList.add('disconnected');
         statusText.textContent = 'Not connected';
-        list.style.display = 'none';
-        list.innerHTML = '';
-        addBtn.style.display = 'none';
-        if (connectBtn) connectBtn.innerHTML = connectBtn.innerHTML.includes('Connect Google Account') ? connectBtn.innerHTML : 'Connect Google Account';
+        wrap.style.display = 'none';
+        _gsList.rows = [];
         return;
     }
 
@@ -2760,85 +2796,184 @@ function renderGoogleSheetsCard(connections, sheets) {
     if (saSheets.length > 0) parts.push(`${saSheets.length} shared`);
     parts.push(`${sheets.length} sheet${sheets.length === 1 ? '' : 's'}`);
     statusText.textContent = 'Connected (' + parts.join(', ') + ')';
-    addBtn.style.display = activeConns.length > 0 ? 'inline-flex' : 'none';
 
-    // Group connected sheets by connection for a clean list per account.
-    const byConnection = {};
-    sheets.forEach(s => {
-        (byConnection[s.connection_id] = byConnection[s.connection_id] || []).push(s);
+    _gsList.rows = gsBuildRows(connections, sheets);
+    wrap.style.display = 'block';
+    gsRenderAccountFilter(activeConns, saSheets.length > 0);
+    gsWireToolbarOnce();
+    gsRenderTable();
+}
+
+function gsRenderAccountFilter(activeConns, hasSa) {
+    const container = document.getElementById('gsAccountFilter');
+    if (!container) return;
+    const opts = [{ value: 'all', label: `All accounts (${activeConns.length + (hasSa ? 1 : 0)})` }];
+    activeConns.forEach(c => opts.push({ value: c.id, label: c.google_email }));
+    if (hasSa) opts.push({ value: 'sa', label: 'Shared sheets (no sign-in)' });
+
+    // Rebuild from scratch so the option set stays in sync as accounts come
+    // and go. We can't call SearchableDropdown.destroy() because its destroy
+    // removes the host container itself from the DOM — we need the same
+    // #gsAccountFilter div around for the next mount.
+    container.innerHTML = '';
+    _gsList.accountDropdown = null;
+    _gsList.accountDropdown = new SearchableDropdown(container, {
+        options: opts,
+        placeholder: 'All accounts',
+        searchPlaceholder: 'Search accounts…',
+        compact: true,
+        onChange: (val) => {
+            _gsList.accountFilter = val || 'all';
+            _gsList.page = 1;
+            gsRenderTable();
+        }
+    });
+    if (_gsList.accountDropdown.setValue) _gsList.accountDropdown.setValue(_gsList.accountFilter);
+}
+
+let _gsToolbarWired = false;
+function gsWireToolbarOnce() {
+    if (_gsToolbarWired) return;
+    _gsToolbarWired = true;
+
+    document.querySelectorAll('#gsStatusPills .gs-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('#gsStatusPills .gs-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            _gsList.statusFilter = btn.getAttribute('data-status');
+            _gsList.page = 1;
+            gsRenderTable();
+        });
     });
 
-    const rows = activeConns.map(c => {
-        const sheetsForConn = byConnection[c.id] || [];
-        const sheetRows = sheetsForConn.length === 0
-            ? `<div style="color: var(--text-secondary); padding: 8px 12px; font-size: 0.9em;">No sheets connected yet. Click <strong>+ Add another sheet</strong> to pick one.</div>`
-            : sheetsForConn.map(s => `
-                <div class="gs-sheet-row" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-top: 1px solid var(--border-color);">
-                    <div>
-                        <div style="font-weight:500;">${escapeHtml(s.spreadsheet_name || s.source_name)} <span style="color:var(--text-secondary); font-weight:400;">&rsaquo; ${escapeHtml(s.sheet_tab_name)}</span></div>
-                        <div style="color:var(--text-secondary); font-size:0.85em;">
-                            ${s.total_leads_received || 0} leads captured
-                            ${s.last_polled_at ? ` · last sync ${formatRelative(s.last_polled_at)}` : ''}
-                            ${!s.is_active ? ' · <span style="color: var(--color-warning);">paused</span>' : ''}
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:6px;">
-                        <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${s.lead_source_id}', ${!s.is_active})">${s.is_active ? 'Pause' : 'Resume'}</button>
-                        <button class="btn btn-sm btn-outline" onclick="disconnectGoogleSheet('${s.lead_source_id}')">Remove</button>
-                    </div>
-                </div>
-            `).join('');
+    const search = document.getElementById('gsSearchInput');
+    if (search) {
+        let t = null;
+        search.addEventListener('input', () => {
+            clearTimeout(t);
+            t = setTimeout(() => {
+                _gsList.search = (search.value || '').trim().toLowerCase();
+                _gsList.page = 1;
+                gsRenderTable();
+            }, 200);
+        });
+    }
+}
 
-        return `
-            <div class="gs-connection-group" style="border:1px solid var(--border-color); border-radius:6px; margin-bottom:10px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background: var(--bg-muted);">
-                    <div>
-                        <div style="font-weight:500;">${escapeHtml(c.google_email)}</div>
-                        <div style="color:var(--text-secondary); font-size:0.85em;">${c.connected_sheet_count || 0} sheet${c.connected_sheet_count === 1 ? '' : 's'} · connected ${formatRelative(c.connected_at)}</div>
-                    </div>
-                    <button class="btn btn-sm btn-outline" onclick="disconnectGoogleAccount('${c.id}', '${escapeHtml(c.google_email)}')">Disconnect account</button>
-                </div>
-                ${sheetRows}
-            </div>
-        `;
-    }).join('');
+function gsApplyFilters(rows) {
+    return rows.filter(r => {
+        if (_gsList.accountFilter !== 'all' && r.connection_id !== _gsList.accountFilter) return false;
+        if (_gsList.statusFilter !== 'all' && r.status !== _gsList.statusFilter) return false;
+        if (_gsList.search) {
+            const hay = `${r.spreadsheet_name} ${r.sheet_tab_name} ${r.source_name} ${r.account_label}`.toLowerCase();
+            if (!hay.includes(_gsList.search)) return false;
+        }
+        return true;
+    });
+}
 
-    // SA-mode sheets (shared with our service account) render as their own group —
-    // no parent "account" row, since there's no per-tenant Google login.
-    let saGroupHtml = '';
-    if (saSheets.length > 0 && _gsServiceAccount?.enabled) {
-        const saSheetRows = saSheets.map(s => `
-            <div class="gs-sheet-row" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-top: 1px solid var(--border-color);">
-                <div>
-                    <div style="font-weight:500;">${escapeHtml(s.spreadsheet_name || s.source_name)} <span style="color:var(--text-secondary); font-weight:400;">&rsaquo; ${escapeHtml(s.sheet_tab_name)}</span></div>
-                    <div style="color:var(--text-secondary); font-size:0.85em;">
-                        ${s.total_leads_received || 0} leads captured
-                        ${s.last_polled_at ? ` · last sync ${formatRelative(s.last_polled_at)}` : ''}
-                        ${!s.is_active ? ' · <span style="color: var(--color-warning);">paused</span>' : ''}
-                    </div>
-                </div>
-                <div style="display:flex; gap:6px;">
-                    <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${s.lead_source_id}', ${!s.is_active})">${s.is_active ? 'Pause' : 'Resume'}</button>
-                    <button class="btn btn-sm btn-outline" onclick="disconnectGoogleSheet('${s.lead_source_id}')">Remove</button>
-                </div>
-            </div>
-        `).join('');
+function gsRenderTable() {
+    const tbody = document.getElementById('gsSheetsTableBody');
+    if (!tbody) return;
 
-        saGroupHtml = `
-            <div class="gs-connection-group" style="border:1px solid var(--border-color); border-radius:6px; margin-bottom:10px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background: var(--bg-muted);">
-                    <div>
-                        <div style="font-weight:500;">Shared sheets <span style="color:var(--text-secondary); font-weight:400;">(via ${escapeHtml(_gsServiceAccount.email || '')})</span></div>
-                        <div style="color:var(--text-secondary); font-size:0.85em;">${saSheets.length} sheet${saSheets.length === 1 ? '' : 's'} · no Google sign-in</div>
-                    </div>
-                </div>
-                ${saSheetRows}
-            </div>
-        `;
+    // Update pill counts (always against the unfiltered set so users can see the total).
+    const counts = { all: _gsList.rows.length, active: 0, paused: 0, stale: 0 };
+    _gsList.rows.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+    const set = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
+    set('gsCountAll', counts.all);
+    set('gsCountActive', counts.active);
+    set('gsCountPaused', counts.paused);
+    set('gsCountStale', counts.stale);
+
+    const filtered = gsApplyFilters(_gsList.rows);
+    const totalPages = Math.max(1, Math.ceil(filtered.length / _gsList.pageSize));
+    if (_gsList.page > totalPages) _gsList.page = totalPages;
+    const start = (_gsList.page - 1) * _gsList.pageSize;
+    const pageRows = filtered.slice(start, start + _gsList.pageSize);
+
+    if (filtered.length === 0) {
+        const msg = _gsList.rows.length === 0
+            ? 'No sheets connected yet. Click <strong>Connect via sheet share</strong> above to add one.'
+            : 'No sheets match the current filters.';
+        tbody.innerHTML = `<tr class="gs-empty-row"><td colspan="7">${msg}</td></tr>`;
+    } else {
+        tbody.innerHTML = pageRows.map(r => {
+            const statusLabel = r.status.charAt(0).toUpperCase() + r.status.slice(1);
+            const lastSync = r.last_polled_at ? formatRelative(r.last_polled_at) : 'Pending';
+            const accountTag = r.account_is_sa ? '<span class="gs-account-tag">SA</span>' : '';
+            const toggleLabel = r.is_active ? 'Pause' : 'Resume';
+            return `
+                <tr data-source-id="${escapeHtml(r.lead_source_id)}">
+                    <td>
+                        <div class="crm-cell-primary">${escapeHtml(r.spreadsheet_name)}</div>
+                        <div class="crm-cell-secondary">&rsaquo; ${escapeHtml(r.sheet_tab_name || '—')}</div>
+                    </td>
+                    <td>${escapeHtml(r.source_name || '—')}</td>
+                    <td><div class="gs-account-cell" title="${escapeHtml(r.account_label)}">${accountTag}${escapeHtml(r.account_label)}</div></td>
+                    <td><span class="gs-status-badge gs-status-${r.status}">${statusLabel}</span></td>
+                    <td style="text-align:right;">${r.total_leads_received.toLocaleString()}</td>
+                    <td>${escapeHtml(lastSync)}</td>
+                    <td class="gs-actions-cell">
+                        <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${escapeHtml(r.lead_source_id)}', ${!r.is_active})">${toggleLabel}</button>
+                        <button class="btn btn-sm btn-outline" onclick="disconnectGoogleSheet('${escapeHtml(r.lead_source_id)}')">Remove</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
-    list.style.display = 'block';
-    list.innerHTML = rows + saGroupHtml;
+    gsRenderPagination(filtered.length, totalPages);
+}
+
+function gsRenderPagination(filteredCount, totalPages) {
+    const wrap = document.getElementById('gsPagination');
+    const info = document.getElementById('gsPaginationInfo');
+    const buttons = document.getElementById('gsPaginationButtons');
+    if (!wrap || !info || !buttons) return;
+
+    if (filteredCount <= _gsList.pageSize) {
+        // CSS rule on .crm-pagination has `display: grid !important` so an
+        // inline style can't hide it without also using !important.
+        wrap.style.setProperty('display', 'none', 'important');
+        info.textContent = '';
+        buttons.innerHTML = '';
+        return;
+    }
+    wrap.style.setProperty('display', 'grid', 'important');
+
+    const start = (_gsList.page - 1) * _gsList.pageSize + 1;
+    const end = Math.min(_gsList.page * _gsList.pageSize, filteredCount);
+    info.textContent = `Showing ${start}–${end} of ${filteredCount}`;
+
+    const btn = (label, page, opts = {}) => {
+        const disabled = opts.disabled ? 'disabled' : '';
+        const active = opts.active ? 'active' : '';
+        return `<button class="crm-page-btn ${active}" ${disabled} data-page="${page}">${label}</button>`;
+    };
+    const parts = [btn('‹', _gsList.page - 1, { disabled: _gsList.page === 1 })];
+    // Compact numeric range — show first, last, and a window around current.
+    const window = 1;
+    const pages = new Set([1, totalPages, _gsList.page]);
+    for (let i = _gsList.page - window; i <= _gsList.page + window; i++) {
+        if (i > 1 && i < totalPages) pages.add(i);
+    }
+    const sorted = Array.from(pages).sort((a, b) => a - b);
+    let prev = 0;
+    sorted.forEach(p => {
+        if (p - prev > 1) parts.push('<span class="crm-page-ellipsis">…</span>');
+        parts.push(btn(String(p), p, { active: p === _gsList.page }));
+        prev = p;
+    });
+    parts.push(btn('›', _gsList.page + 1, { disabled: _gsList.page === totalPages }));
+    buttons.innerHTML = parts.join('');
+    buttons.querySelectorAll('button[data-page]').forEach(b => {
+        b.addEventListener('click', () => {
+            const p = parseInt(b.getAttribute('data-page'), 10);
+            if (!Number.isFinite(p) || p < 1 || p > totalPages) return;
+            _gsList.page = p;
+            gsRenderTable();
+        });
+    });
 }
 
 function escapeHtml(s) {
@@ -2877,7 +3012,12 @@ async function connectGoogleSheets() {
 }
 
 async function disconnectGoogleAccount(connectionId, email) {
-    if (!confirm(`Disconnect Google account ${email}? All sheets from this account will stop syncing.`)) return;
+    const ok = await showConfirm(
+        `Disconnect Google account ${email}? All sheets from this account will stop syncing.`,
+        'Disconnect Google account',
+        'danger'
+    );
+    if (!ok) return;
     try {
         await api.request(`/crm/GoogleSheets/connections/${connectionId}`, { method: 'DELETE' });
         Toast.success('Google account disconnected.');
@@ -2901,7 +3041,12 @@ async function toggleGoogleSheet(sourceId, makeActive) {
 }
 
 async function disconnectGoogleSheet(sourceId) {
-    if (!confirm('Stop syncing this sheet? Existing leads stay in the CRM.')) return;
+    const ok = await showConfirm(
+        'Stop syncing this sheet? Existing leads stay in the CRM.',
+        'Disconnect sheet',
+        'danger'
+    );
+    if (!ok) return;
     try {
         await api.request(`/crm/GoogleSheets/sheets/${sourceId}`, { method: 'DELETE' });
         Toast.success('Sheet disconnected.');
