@@ -2,6 +2,10 @@
 // Get meeting ID from URL
 const urlParams = new URLSearchParams(window.location.search);
 const meetingId = urlParams.get('id');
+// forceGuest=1 — set when lobby bounces a logged-in user here because their
+// account doesn't have access (typically a cross-tenant guest link). Skip the
+// choice screen and put them straight on the guest form.
+const forceGuest = urlParams.get('forceGuest') === '1';
 
 // Redirect if no meeting ID
 if (!meetingId) {
@@ -21,7 +25,7 @@ const isAuthenticated = api.isAuthenticated();
 const authenticatedUser = api.getUser();
 
 // Show appropriate UI based on authentication status
-if (isAuthenticated && authenticatedUser) {
+if (isAuthenticated && authenticatedUser && !forceGuest) {
     // Show choice screen for authenticated users
     document.getElementById('guestJoinCard').style.display = 'none';
     document.getElementById('authenticatedChoice').style.display = 'block';
@@ -42,9 +46,19 @@ if (isAuthenticated && authenticatedUser) {
         document.getElementById('guestJoinCard').style.display = 'block';
     });
 } else {
-    // Show guest form for non-authenticated users
+    // Show guest form for non-authenticated users (or for authenticated users
+    // who were bounced here with forceGuest=1 because their account can't
+    // access this meeting — typical for cross-tenant guest links).
     document.getElementById('authenticatedChoice').style.display = 'none';
     document.getElementById('guestJoinCard').style.display = 'block';
+    if (forceGuest && isAuthenticated && authenticatedUser) {
+        // Pre-fill the name from their authenticated profile so they don't have
+        // to retype it. They're still a guest in this meeting's tenant.
+        const fn = document.getElementById('firstName');
+        const ln = document.getElementById('lastName');
+        if (fn && !fn.value) fn.value = authenticatedUser.firstName || '';
+        if (ln && !ln.value) ln.value = authenticatedUser.lastName || '';
+    }
 }
 
 // Handle guest join form submission

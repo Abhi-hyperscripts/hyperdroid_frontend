@@ -49,57 +49,22 @@ async function initializeLobby() {
         const meetingName = meetingData.meeting_name || meetingData.name || 'this meeting';
         document.getElementById('meetingTitle').textContent = `Ready to join "${meetingName}"?`;
 
-        // For authenticated users, check if they are allowed to join (for participant-controlled meetings)
+        // For authenticated users, check if they are allowed to join (for participant-controlled meetings).
+        // The link could have arrived via guest-join (cross-tenant scenario) — when access fails we
+        // bounce back to guest-join with forceGuest=1 instead of dropping the user on their own
+        // dashboard, which is a confusing dead-end for someone who was just trying to join a meeting.
         if (!isGuest) {
             try {
                 const accessCheck = await api.checkMeetingAccess(meetingId);
                 if (!accessCheck.canJoin) {
-                    // User is not allowed - show elegant error page
-                    document.getElementById('deviceTestingSection').style.display = 'none';
-                    document.getElementById('waitingLobbySection').style.display = 'block';
-
-                    // Hide spinner and participants list
-                    document.querySelector('.spinner').style.display = 'none';
-                    document.querySelector('.participants-list').style.display = 'none';
-
-                    // Update icon to lock
-                    const lobbyIcon = document.querySelector('.lobby-icon');
-                    lobbyIcon.textContent = '🔒';
-                    lobbyIcon.style.fontSize = '64px';
-
-                    // Update title
-                    document.querySelector('.lobby-title').textContent = 'Access Denied';
-                    document.querySelector('.lobby-title').style.color = 'var(--text-primary)';
-
-                    // Update subtitle with elegant message
-                    const subtitle = document.querySelector('.lobby-subtitle');
-                    subtitle.textContent = 'You do not have permission to join this meeting';
-                    subtitle.style.color = 'var(--text-secondary)';
-                    subtitle.style.marginBottom = '24px';
-
-                    // Update status message with elegant styling
-                    const statusDiv = document.querySelector('.lobby-status');
-                    statusDiv.className = 'lobby-status lobby-status-error';
-                    statusDiv.innerHTML = `
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="8" x2="12" y2="12"/>
-                            <line x1="12" y1="16" x2="12.01" y2="16"/>
-                        </svg>
-                        ${accessCheck.message || 'Please contact the meeting host for access'}
-                    `;
-
-                    // Update actions with elegant button
-                    const actionsDiv = document.querySelector('.lobby-actions');
-                    actionsDiv.innerHTML = `
-                        <button onclick="leaveLobby()" class="btn btn-elegant-primary">Return to Dashboard</button>
-                    `;
-                    return; // Stop here, don't proceed
+                    Toast.info('You don\'t have access to this meeting in your account — opening guest entry.');
+                    window.location.href = `guest-join.html?id=${meetingId}&forceGuest=1`;
+                    return;
                 }
             } catch (error) {
                 console.error('Error checking meeting access:', error);
-                Toast.error('Failed to verify meeting access: ' + error.message);
-                window.location.href = 'dashboard.html';
+                Toast.info('Routing you to guest entry for this meeting.');
+                window.location.href = `guest-join.html?id=${meetingId}&forceGuest=1`;
                 return;
             }
         }
