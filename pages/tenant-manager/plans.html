@@ -1018,6 +1018,7 @@
             const planId = document.getElementById('planId').value;
             const serviceConfigs = collectPlanServiceConfigs();
 
+            const isTrial = document.getElementById('isTrial').checked;
             const planData = {
                 planName: document.getElementById('planName').value.trim(),
                 displayName: document.getElementById('planDisplayName').value.trim(),
@@ -1027,8 +1028,11 @@
                 maxSeats: parseInt(document.getElementById('maxSeats').value),
                 billingCycle: document.getElementById('billingCycle').value,
                 gstPercent: parseFloat(document.getElementById('gstPercent').value) || 0,
-                isTrial: document.getElementById('isTrial').checked,
-                trialDays: document.getElementById('isTrial').checked ? parseInt(document.getElementById('trialDays').value) || 14 : null,
+                isTrial: isTrial,
+                // Backend trialDays is a non-nullable int, so we send 0 when not a
+                // trial plan rather than null (which fails JSON deserialization
+                // and cascades to a generic "request field is required" 400).
+                trialDays: isTrial ? (parseInt(document.getElementById('trialDays').value) || 14) : 0,
                 validityDays: parseInt(document.getElementById('validityDays').value) || 365,
                 serviceConfigs: serviceConfigs,
                 isHighlight: document.getElementById('isHighlight').checked,
