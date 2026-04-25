@@ -2728,12 +2728,13 @@ function renderGoogleSheetsCard(connections, sheets) {
     const statusText = document.getElementById('gsStatusText');
     const list = document.getElementById('gsConnectionsList');
     const addBtn = document.getElementById('gsAddSheetBtn');
+    // gsConnectBtn was commented out (2026-04-25) — share-flow only.
+    // Keep the lookup but don't gate the function on it being present.
     const connectBtn = document.getElementById('gsConnectBtn');
     const shareBtn = document.getElementById('gsShareBtn');
-    if (!statusDot || !list || !addBtn || !connectBtn) return;
+    if (!statusDot || !list || !addBtn) return;
 
     // Share button is always available when the backend has the SA key.
-    // OAuth-first tenants and SA-first tenants co-exist cleanly.
     if (shareBtn) shareBtn.style.display = _gsServiceAccount?.enabled ? 'inline-flex' : 'none';
 
     // Count SA-connected sheets separately — they don't belong to any OAuth connection row.
@@ -2748,7 +2749,7 @@ function renderGoogleSheetsCard(connections, sheets) {
         list.style.display = 'none';
         list.innerHTML = '';
         addBtn.style.display = 'none';
-        connectBtn.innerHTML = connectBtn.innerHTML.includes('Connect Google Account') ? connectBtn.innerHTML : 'Connect Google Account';
+        if (connectBtn) connectBtn.innerHTML = connectBtn.innerHTML.includes('Connect Google Account') ? connectBtn.innerHTML : 'Connect Google Account';
         return;
     }
 

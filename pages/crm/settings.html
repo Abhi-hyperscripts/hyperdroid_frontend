@@ -585,9 +585,9 @@
                             <div class="mailbox-help-body">
                                 <p>We poll your connected Google Sheet every 2 minutes and import new rows as CRM leads. Perfect for the <strong>Meta Ads → Google Sheets → CRM</strong> flow that doesn't need Meta App Review.</p>
                                 <ol style="padding-left: 20px; line-height: 1.6;">
-                                    <li>Click <strong>Connect Google Account</strong> and sign in. We only request read-only access to your sheets.</li>
-                                    <li>Pick the spreadsheet and tab you want to ingest from.</li>
-                                    <li>Map each sheet column to a CRM field (<code>first_name</code>, <code>email</code>, <code>phone</code>, etc.). Unmapped columns land in <code>custom_fields</code>.</li>
+                                    <li>Click <strong>Connect via sheet share</strong>.</li>
+                                    <li>Copy the service-account email we show you and share your sheet with it as <strong>Viewer</strong>.</li>
+                                    <li>Paste the sheet URL, pick the tab, and map columns to CRM fields (<code>first_name</code>, <code>email</code>, <code>phone</code>, etc.). Unmapped columns land in <code>custom_fields</code>.</li>
                                     <li>Mark the column that uniquely identifies a row (e.g. Meta's <code>id</code> column) so we don't duplicate leads on retry.</li>
                                     <li>Save &mdash; new rows start flowing into <strong>Leads</strong> within 2 minutes.</li>
                                 </ol>
@@ -596,17 +596,27 @@
                         </details>
 
                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <!--
+                                OAuth "Connect Google Account" button hidden 2026-04-25.
+                                Reason: drive.readonly is now Google's RESTRICTED tier
+                                (CASA Tier-2 audit, $4-8k). spreadsheets.readonly alone
+                                still needs sensitive-scope verification. The
+                                service-account share-flow below covers the same use
+                                case without any user-consent OAuth, so we skip the
+                                whole verification dance. Backend OAuth code stays in
+                                the repo so we can re-enable later if needed.
                             <button class="btn btn-primary" id="gsConnectBtn" onclick="connectGoogleSheets()">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
                                     <path d="M22.54 6.42A2.78 2.78 0 0 0 20.6 4.42C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/>
                                 </svg>
                                 Connect Google Account
                             </button>
-                            <!-- Share-based alternative: tenant shares the sheet with our
-                                 service-account email and pastes the URL. No OAuth, no
-                                 verification dance. Visible only when the backend reports
-                                 the SA is configured (see loadGoogleSheetsState). -->
-                            <button class="btn btn-outline" id="gsShareBtn" onclick="openGoogleSheetShareModal()" style="display: none;">
+                            -->
+                            <!-- Share-based flow: tenant shares the sheet with our
+                                 service-account email and pastes the URL. No OAuth,
+                                 no verification. Promoted to btn-primary so it's the
+                                 obvious entrance now that OAuth is hidden. -->
+                            <button class="btn btn-primary" id="gsShareBtn" onclick="openGoogleSheetShareModal()" style="display: none;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
                                     <circle cx="18" cy="5" r="3"/>
                                     <circle cx="6" cy="12" r="3"/>
@@ -616,9 +626,16 @@
                                 </svg>
                                 Connect via sheet share
                             </button>
+                            <!--
+                                "+ Add another sheet" hidden 2026-04-25 along with the
+                                OAuth button. It calls openGoogleSheetPicker which is
+                                an OAuth-only flow. Adding more sheets in the share
+                                model = click "Connect via sheet share" again.
                             <button class="btn btn-outline" id="gsAddSheetBtn" onclick="openGoogleSheetPicker()" style="display: none;">
                                 + Add another sheet
                             </button>
+                            -->
+                            <span id="gsAddSheetBtn" style="display:none;" hidden aria-hidden="true"></span>
                         </div>
                     </div>
                 </div>
