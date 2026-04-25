@@ -56,6 +56,14 @@
                 <div class="crm-header-row">
                     <h1>Leads</h1>
                     <div style="display:flex;gap:8px;align-items:center;">
+                        <a href="reassign-queue.html" id="reassignQueueBtn" class="btn btn-outline-secondary" style="display:none;border-color:rgba(239,68,68,0.4);color:var(--color-error,#ef4444);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                                <path d="M22 11l-3-3m0 0l-3 3m3-3v8"/>
+                            </svg>
+                            Reassign Queue
+                            <span id="reassignQueueBadge" class="transfer-badge" style="background:var(--color-error,#ef4444);color:#fff;margin-left:4px;">0</span>
+                        </a>
                         <button class="btn btn-outline-primary" id="discoverLeadsBtn" onclick="openDiscoveryPanel()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="11" cy="11" r="8"></circle>

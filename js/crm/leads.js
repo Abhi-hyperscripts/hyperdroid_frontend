@@ -44,9 +44,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadSourceFilter();
     loadCampaignFilter();
     loadMyTeamsFilter();
+    loadReassignQueueBadge();
     initSearchableDropdowns();
     setupLeadsRealtime();
 });
+
+// Polls the reassign-queue count endpoint. The button + badge stay hidden
+// when count is 0 (regular tenants never see them) and pop in red the
+// moment a lead's owner gets deactivated. Backend rejects non-managers
+// with 403, so the regular-member case naturally results in count=0
+// without leaking that the endpoint exists.
+async function loadReassignQueueBadge() {
+    const btn = document.getElementById('reassignQueueBtn');
+    const badge = document.getElementById('reassignQueueBadge');
+    if (!btn || !badge) return;
+    try {
+        const res = await api.request('/crm/leads/reassign-queue/count');
+        const count = (res && typeof res.count === 'number') ? res.count : 0;
+        if (count > 0) {
+            badge.textContent = count;
+            btn.style.display = '';
+        } else {
+            btn.style.display = 'none';
+        }
+    } catch {
+        // 403 (non-manager) or transient — stay hidden.
+        btn.style.display = 'none';
+    }
+}
 
 // ==================== Team + Owner filters (multi-team support) =============
 // Populates the "Team" filter with every team the caller is a member of
@@ -513,7 +538,7 @@ function renderLeadsTable(leads) {
                 ${lead.teamName || lead.team_name ? `<span class="crm-team-badge ${teamColorClass(lead.teamName || lead.team_name)}">${escapeHtml(lead.teamName || lead.team_name)}</span>` : '<span class="crm-cell-secondary">—</span>'}
             </td>
             <td class="hide-mobile">
-                <span class="crm-cell-secondary">${(lead.team_id || lead.team_name) ? escapeHtml(lead.ownerName || lead.owner_name || '-') : '-'}</span>
+                ${renderOwnerCell(lead)}
             </td>
             <td class="hide-mobile">
                 <span class="crm-cell-secondary">${formatDate(lead.created_at)}</span>
@@ -565,6 +590,26 @@ function renderLeadsTable(leads) {
 // clicks imply opens imply sent. Suppressed / bounced are terminal, shown
 // even if the lead also had earlier positive signals, because it's the
 // most important state to know about for future campaigns.
+// Owner column: name + an "inactive" pill when the backend marks
+// owner_is_inactive (Auth user is no longer active). The pill is the cue
+// for managers to head to the Reassign Queue.
+function renderOwnerCell(lead) {
+    const hasTeam = lead.team_id || lead.team_name;
+    if (!hasTeam) return '<span class="crm-cell-secondary">-</span>';
+    const ownerName = lead.ownerName || lead.owner_name;
+    const inactive = lead.ownerIsInactive || lead.owner_is_inactive;
+    const nameSpan = `<span class="crm-cell-secondary">${escapeHtml(ownerName || '-')}</span>`;
+    if (!inactive || !ownerName) return nameSpan;
+    return `<div style="display:flex;flex-direction:column;gap:2px;">
+        ${nameSpan}
+        <span title="This user has been deactivated. Reassign in the Reassign Queue."
+              style="display:inline-flex;align-items:center;gap:4px;padding:1px 6px;background:rgba(239,68,68,0.1);color:var(--color-error,#ef4444);border-radius:9999px;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;align-self:flex-start;">
+            <span style="width:5px;height:5px;background:currentColor;border-radius:50%;"></span>
+            inactive
+        </span>
+    </div>`;
+}
+
 function renderEmailEngagement(l) {
     const sent = l.emailSentCount ?? l.email_sent_count ?? 0;
     const opened = l.emailOpenedCount ?? l.email_opened_count ?? 0;
