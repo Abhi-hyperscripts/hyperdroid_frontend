@@ -35,7 +35,12 @@
             selectedFaIds: new Set(),
             manager: null,               // { user_id, email, display_name }
             teamleads: [],               // [{...}, ...]
-            members: []                  // [{...}, ...]
+            members: [],                 // [{...}, ...]
+            // Map<userId, { replacementUserId: string|null, unassign: bool }>
+            // Captured when the user clicks × on a member who owns open
+            // leads — used by syncMembersDiff to attach reassign params to
+            // the eventual DELETE call.
+            pendingRemovals: new Map()
         };
     }
 
@@ -597,7 +602,10 @@
         });
     }
 
-    function _removeManager() {
+    async function _removeManager() {
+        if (!_teamModal.manager) return;
+        const ok = await _gateRemoval(_teamModal.manager);
+        if (!ok) return;
         _teamModal.manager = null;
         renderManagerSlot();
     }
@@ -625,10 +633,157 @@
         }, true);  // multi = true
     }
 
-    function _removeRoleUser(roleKey, index) {
+    async function _removeRoleUser(roleKey, index) {
         const list = (roleKey === 'teamlead') ? _teamModal.teamleads : _teamModal.members;
+        const target = list[index];
+        if (!target) return;
+        const ok = await _gateRemoval(target);
+        if (!ok) return;
         list.splice(index, 1);
         if (roleKey === 'teamlead') renderTeamleadSlots(); else renderMemberSlots();
+    }
+
+    // Gate a member-remove click: if the user owns open leads on this team,
+    // pop the reassign-or-unassign modal. Returns true when the caller may
+    // proceed with the local splice (either the user had no leads, or the
+    // operator made a reassignment plan that's been recorded in
+    // _teamModal.pendingRemovals). Returns false when the operator cancels.
+    async function _gateRemoval(userObj) {
+        // Only edit-mode and only for users who were on the team server-side.
+        // Unsaved adds (user added in this session, not yet POSTed) can't have
+        // leads, so skip the API roundtrip.
+        if (_teamModal.mode !== 'edit' || !_teamModal.teamId) return true;
+        const original = _teamModal.original;
+        const wasOriginalMember = original && (original.members || [])
+            .some(m => m.user_id === userObj.user_id && m.is_active !== false);
+        if (!wasOriginalMember) return true;
+
+        let res;
+        try {
+            res = await apiGet(`/teams/${_teamModal.teamId}/members/${userObj.user_id}/open-leads-count`);
+        } catch (e) {
+            console.warn('open-leads-count check failed', e);
+            return confirm('Could not verify open leads. Remove anyway?');
+        }
+        const count = (res && typeof res.count === 'number') ? res.count : 0;
+        if (count === 0) return true;
+
+        // Build the picker pool: every other current team member (still in
+        // the modal's working set), excluding the user being removed and
+        // anyone else queued for removal in this session.
+        const pool = [];
+        if (_teamModal.manager && _teamModal.manager.user_id !== userObj.user_id
+            && !_teamModal.pendingRemovals.has(_teamModal.manager.user_id)) {
+            pool.push({ ..._teamModal.manager, role: 'manager' });
+        }
+        for (const u of _teamModal.teamleads) {
+            if (u.user_id !== userObj.user_id && !_teamModal.pendingRemovals.has(u.user_id))
+                pool.push({ ...u, role: 'teamlead' });
+        }
+        for (const u of _teamModal.members) {
+            if (u.user_id !== userObj.user_id && !_teamModal.pendingRemovals.has(u.user_id))
+                pool.push({ ...u, role: 'member' });
+        }
+
+        const plan = await openReassignModal(userObj, count, pool);
+        if (!plan) return false;
+        _teamModal.pendingRemovals.set(userObj.user_id, plan);
+        return true;
+    }
+
+    // Returns a Promise<{replacementUserId: string|null, unassign: bool} | null>.
+    // null = operator cancelled.
+    function openReassignModal(userObj, count, pool) {
+        return new Promise(resolve => {
+            const id = '_reassignOverlay';
+            const existing = document.getElementById(id);
+            if (existing) existing.remove();
+
+            const userName = esc(userObj.display_name || userObj.email || userObj.user_id);
+            // Compact single-row item: name on left, role badge pill on right,
+            // 36px tall — 20 members fit comfortably in the scrollable region.
+            const poolItemStyle =
+                'display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;'
+                + 'padding:7px 12px;min-height:36px;'
+                + 'background:var(--bg-card,#fff);border:1px solid var(--border-color,#e5e7eb);'
+                + 'border-radius:8px;cursor:pointer;text-align:left;'
+                + 'transition:border-color .12s,background-color .12s;';
+            const poolNameStyle = 'flex:1;min-width:0;font-weight:500;color:var(--text-primary,#0f172a);font-size:13px;'
+                + 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+            // Role rendered as a small pill so it visually scans as metadata,
+            // not a competing primary action.
+            const poolRoleStyle = 'flex:0 0 auto;font-size:10px;letter-spacing:.04em;color:var(--text-secondary,#64748b);'
+                + 'text-transform:uppercase;background:var(--bg-secondary,#f1f5f9);padding:2px 7px;border-radius:9999px;';
+            const poolHtml = pool.map(u => {
+                const label = esc(u.display_name || u.email || u.user_id);
+                const role = esc(u.role);
+                return `<button type="button" class="reassign-pool-item" data-user-id="${esc(u.user_id)}" style="${poolItemStyle}"
+                    onmouseover="this.style.borderColor='var(--brand-primary,#3b82f6)';this.style.background='var(--bg-hover,#f8fafc)'"
+                    onmouseout="this.style.borderColor='var(--border-color,#e5e7eb)';this.style.background='var(--bg-card,#fff)'">
+                    <span style="${poolNameStyle}" title="${label}">${label}</span>
+                    <span style="${poolRoleStyle}">${role}</span>
+                </button>`;
+            }).join('');
+
+            const unassignBtnStyle =
+                'width:100%;padding:9px 12px;min-height:36px;background:var(--bg-secondary,#f8fafc);'
+                + 'border:1px dashed var(--border-color,#e5e7eb);border-radius:8px;cursor:pointer;'
+                + 'font-size:13px;color:var(--text-primary,#0f172a);'
+                + 'transition:border-color .12s,background-color .12s;';
+
+            // Scroll the pool box; cap height so 20-member teams get a tidy
+            // scrollbar instead of the modal growing past the viewport.
+            const poolBoxStyle =
+                'display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;'
+                + 'margin-bottom:12px;padding-right:4px;';
+
+            const overlay = document.createElement('div');
+            overlay.id = id;
+            overlay.className = 'gm-overlay active';
+            overlay.innerHTML = `
+                <div class="gm-modal" style="max-width:480px;">
+                    <div class="gm-header">
+                        <div>
+                            <h3 class="gm-title">Reassign open leads</h3>
+                            <p class="gm-subtitle">${userName} owns <strong>${count}</strong> open lead${count===1?'':'s'} on this team. Pick a replacement, or leave the leads unassigned.</p>
+                        </div>
+                        <button type="button" class="gm-close" aria-label="Close">&times;</button>
+                    </div>
+                    <div class="gm-body">
+                        <div style="${poolBoxStyle}">
+                            ${pool.length ? poolHtml : '<div style="color:var(--text-secondary,#64748b);font-style:italic;padding:8px 0;font-size:13px;">No other team members available — use "Leave unassigned" below.</div>'}
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;color:var(--text-secondary,#64748b);font-size:11px;margin:6px 0 10px;text-transform:uppercase;letter-spacing:.05em;">
+                            <span style="flex:1;height:1px;background:var(--border-color,#e5e7eb);"></span>
+                            <span>or</span>
+                            <span style="flex:1;height:1px;background:var(--border-color,#e5e7eb);"></span>
+                        </div>
+                        <button type="button" id="_reassignUnassignBtn" style="${unassignBtnStyle}"
+                            onmouseover="this.style.borderColor='var(--brand-primary,#3b82f6)';this.style.background='var(--bg-hover,#eef2ff)'"
+                            onmouseout="this.style.borderColor='var(--border-color,#e5e7eb)';this.style.background='var(--bg-secondary,#f8fafc)'">
+                            Leave unassigned (manager will reassign later)
+                        </button>
+                    </div>
+                    <div class="gm-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+                        <button type="button" id="_reassignCancelBtn" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+
+            const finish = (plan) => { overlay.remove(); resolve(plan); };
+
+            overlay.querySelector('.gm-close').onclick = () => finish(null);
+            overlay.querySelector('#_reassignCancelBtn').onclick = () => finish(null);
+            overlay.onclick = e => { if (e.target === overlay) finish(null); };
+            overlay.querySelector('#_reassignUnassignBtn').onclick =
+                () => finish({ replacementUserId: null, unassign: true });
+            overlay.querySelectorAll('.reassign-pool-item').forEach(btn => {
+                btn.onclick = () => finish({
+                    replacementUserId: btn.getAttribute('data-user-id'),
+                    unassign: false
+                });
+            });
+        });
     }
 
     // ─── Save team ─────────────────────────────────────────────────────────
@@ -695,9 +850,18 @@
         // 1. Users in original but NOT in desired → remove
         //    (Do removes BEFORE role changes/adds so we free up slots like
         //    "only one manager per team".)
+        //    If the user owned open leads, _gateRemoval has already captured a
+        //    plan in pendingRemovals; pass it as query params so the backend
+        //    can reassign + remove atomically.
         for (const [userId, m] of origById) {
             if (!desiredById.has(userId)) {
-                await apiDelete(`/teams/${teamId}/members/${userId}`);
+                const plan = _teamModal.pendingRemovals.get(userId);
+                let path = `/teams/${teamId}/members/${userId}`;
+                if (plan) {
+                    if (plan.unassign) path += '?unassign=true';
+                    else if (plan.replacementUserId) path += `?replacement_user_id=${encodeURIComponent(plan.replacementUserId)}`;
+                }
+                await apiDelete(path);
             }
         }
 
