@@ -35,7 +35,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load default currency setting, then dashboard data
     await loadDashboardCurrency();
     await loadDashboard();
+
+    // Live updates: when an inbound webhook (Google Sheets polling, Facebook
+    // ingest, manual /webform POST) creates a new lead, the CRM tenant hub
+    // emits NewLeadReceived. Mirror the leads.js pattern but refetch the
+    // whole dashboard instead of buffering — the dashboard cards/charts are
+    // aggregates, not a per-row table, so a single refetch is the cheapest
+    // way to keep numbers correct.
+    setupDashboardRealtime();
 });
+
+let _dashboardHubConnection = null;
+let _dashboardRefreshTimer = null;
+
+async function setupDashboardRealtime() {
+    if (typeof signalR === 'undefined') return;
+    const tokenFn = typeof getAuthToken === 'function' ? getAuthToken : () => null;
+    if (!tokenFn()) return;
+    const hubUrl = (typeof CONFIG !== 'undefined' && CONFIG.crmSignalRHubUrl)
+        ? CONFIG.crmSignalRHubUrl
+        : null;
+    if (!hubUrl) return;
+
+    _dashboardHubConnection = new signalR.HubConnectionBuilder()
+        .withUrl(hubUrl, { accessTokenFactory: tokenFn })
+        .withAutomaticReconnect()
+        .configureLogging(signalR.LogLevel.Warning)
+        .build();
+
+    // Debounced refetch — a polling cycle that ingests 30 leads will fire
+    // 30 events in tight succession; collapse them into one reload.
+    const scheduleRefresh = () => {
+        if (_dashboardRefreshTimer) return;
+        _dashboardRefreshTimer = setTimeout(() => {
+            _dashboardRefreshTimer = null;
+            loadDashboard().catch(e => console.warn('dashboard refresh failed:', e?.message || e));
+        }, 800);
+    };
+
+    _dashboardHubConnection.on('NewLeadReceived', () => scheduleRefresh());
+
+    try {
+        await _dashboardHubConnection.start();
+    } catch (e) {
+        // Transient on page load. withAutomaticReconnect handles retries.
+        console.warn('Dashboard SignalR: failed to connect', e?.message || e);
+    }
+}
 
 async function applySetupGating(isAdmin) {
     let status;
