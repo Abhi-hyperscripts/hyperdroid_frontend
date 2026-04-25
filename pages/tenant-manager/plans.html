@@ -999,11 +999,14 @@
                 document.getElementById('minSeats').value = plan.minSeats || 1;
                 document.getElementById('maxSeats').value = plan.maxSeats != null ? plan.maxSeats : -1;
                 document.getElementById('billingCycle').value = plan.billingCycle || 'annual';
-                document.getElementById('gstPercent').value = plan.gstPercent != null ? plan.gstPercent : 18;
+                // API returns `gstPercentage` and `highlight`; the form field
+                // ids use `gstPercent` and `isHighlight`. Read both spellings
+                // so the modal pre-fills correctly regardless of casing.
+                document.getElementById('gstPercent').value = (plan.gstPercentage != null ? plan.gstPercentage : (plan.gstPercent != null ? plan.gstPercent : 18));
                 document.getElementById('isTrial').checked = plan.isTrial || false;
                 document.getElementById('trialDays').value = plan.trialDays || 14;
                 document.getElementById('validityDays').value = plan.validityDays || 365;
-                document.getElementById('isHighlight').checked = plan.isHighlight || false;
+                document.getElementById('isHighlight').checked = !!(plan.highlight ?? plan.isHighlight);
                 document.getElementById('displayOrder').value = plan.displayOrder || 0;
                 document.getElementById('razorpayPlanId').value = plan.razorpayPlanId || '';
                 toggleTrialFields();
@@ -1035,6 +1038,10 @@
                 trialDays: isTrial ? (parseInt(document.getElementById('trialDays').value) || 14) : 0,
                 validityDays: parseInt(document.getElementById('validityDays').value) || 365,
                 serviceConfigs: serviceConfigs,
+                // The public /api/plans/public endpoint reads `highlight`;
+                // older save paths used `isHighlight`. Send both so the canonical
+                // column updates and existing back-end code keeps working.
+                highlight: document.getElementById('isHighlight').checked,
                 isHighlight: document.getElementById('isHighlight').checked,
                 displayOrder: parseInt(document.getElementById('displayOrder').value) || 0,
                 razorpayPlanId: document.getElementById('razorpayPlanId').value.trim() || null
