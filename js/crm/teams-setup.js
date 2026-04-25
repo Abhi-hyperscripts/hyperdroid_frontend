@@ -103,10 +103,12 @@
             loading.style.display = 'none';
             if (_functionalGroups.length === 0) {
                 empty.style.display = 'block';
+                if (typeof refreshSetupProgress === 'function') refreshSetupProgress();
                 return;
             }
             renderFunctionalGroupsTable(_functionalGroups, usage);
             table.style.display = 'block';
+            if (typeof refreshSetupProgress === 'function') refreshSetupProgress();
         } catch (e) {
             loading.style.display = 'none';
             toastErr(e, 'Failed to load functional groups');
@@ -303,11 +305,13 @@
 
             if (_teams.length === 0) {
                 empty.style.display = 'block';
+                if (typeof refreshSetupProgress === 'function') refreshSetupProgress();
                 return;
             }
 
             renderTeamsGrid(_teams);
             grid.style.display = 'grid';
+            if (typeof refreshSetupProgress === 'function') refreshSetupProgress();
         } catch (e) {
             loading.style.display = 'none';
             toastErr(e, 'Failed to load teams');

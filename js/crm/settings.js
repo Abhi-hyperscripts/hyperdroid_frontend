@@ -69,6 +69,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadGeneralSettings();
     await loadDealStages();
 
+    // Build the 3-step setup-progress strip (Pipeline → FG → Teams) and
+    // apply locked-tab state so superadmins can't fast-forward to
+    // Integrations/Mailboxes/etc. before the prereqs are configured.
+    await refreshSetupProgress();
+
     // Deep-link tab switch. Campaigns has its own prefill logic so skip it
     // here; the other tabs just need the sidebar button re-clicked.
     const urlTab = new URLSearchParams(window.location.search).get('tab');
@@ -77,6 +82,133 @@ document.addEventListener('DOMContentLoaded', async () => {
         switchSettingsTab(urlTab);
     }
 });
+
+// ─── 3-step setup progress (Pipeline → Functional Groups → Teams) ─────────
+//
+// Tenant superadmins must configure these in order. The sidebar tabs for
+// dependent steps are locked until prerequisites are satisfied; settings
+// content for everything past Teams (Integrations, Mailboxes, Templates,
+// Campaigns, Lead Sources) is also gated until all three are done.
+//
+// Source-of-truth probe: counts on /crm/deal-stages,
+// /crm/functional-areas, /crm/teams. These are the same lists the
+// per-tab loaders fetch, so this is a cheap pre-check.
+//
+// Backend MUST also enforce these prerequisites (see Setup status endpoint
+// + per-controller validation) so a hand-crafted curl can't bypass the UI.
+
+const SETUP_TABS_PIPELINE_DONE_REQUIRED = ['functional-groups'];
+const SETUP_TABS_FG_DONE_REQUIRED = ['teams'];
+const SETUP_TABS_ALL_DONE_REQUIRED = ['integrations', 'mailboxes', 'templates', 'campaigns', 'lead-sources'];
+
+async function fetchSetupStatus() {
+    try {
+        const [stages, fgs, teams] = await Promise.all([
+            api.request('/crm/deal-stages').catch(() => []),
+            api.request('/crm/functional-areas').catch(() => []),
+            api.request('/crm/teams').catch(() => []),
+        ]);
+        const stagesArr = Array.isArray(stages) ? stages : (stages?.items || []);
+        const fgArr = Array.isArray(fgs) ? fgs : (fgs?.items || []);
+        const teamArr = Array.isArray(teams) ? teams : (teams?.items || []);
+        return {
+            hasPipeline: stagesArr.length > 0,
+            hasFunctionalGroups: fgArr.length > 0,
+            hasTeams: teamArr.length > 0,
+        };
+    } catch (e) {
+        console.warn('[setup-progress] probe failed:', e);
+        // Fail open so a network blip doesn't lock the whole settings page.
+        return { hasPipeline: true, hasFunctionalGroups: true, hasTeams: true, _failed: true };
+    }
+}
+
+window._crmSetupStatus = null;
+
+async function refreshSetupProgress() {
+    const status = await fetchSetupStatus();
+    window._crmSetupStatus = status;
+    renderSetupProgress(status);
+    applySetupTabLocks(status);
+}
+
+function renderSetupProgress(status) {
+    const host = document.getElementById('crmSetupProgress');
+    if (!host) return;
+
+    const allDone = status.hasPipeline && status.hasFunctionalGroups && status.hasTeams;
+    if (allDone || status._failed) {
+        host.style.display = 'none';
+        host.innerHTML = '';
+        return;
+    }
+
+    // Determine which step is "current" — the first one not yet done.
+    const currentTab = !status.hasPipeline ? 'pipeline'
+                     : !status.hasFunctionalGroups ? 'functional-groups'
+                     : 'teams';
+
+    const step = (num, tab, label, done) => {
+        const cls = done ? 'is-done' : (tab === currentTab ? 'is-current' : '');
+        const mark = done ? '✓' : num;
+        return `
+            <div class="crm-setup-step ${cls}" onclick="switchSettingsTab('${tab}')" role="button" tabindex="0">
+                <span class="step-num">${mark}</span>
+                <span>${label}</span>
+            </div>`;
+    };
+    const arrow = '<span class="crm-setup-step-arrow">›</span>';
+
+    host.innerHTML = `
+        <div class="crm-setup-progress-header">
+            <div>
+                <div class="crm-setup-progress-title">Finish CRM setup before going live</div>
+                <div class="crm-setup-progress-subtitle">Configure your pipeline, then functional groups, then teams. Integrations and other settings unlock once these are done.</div>
+            </div>
+        </div>
+        <div class="crm-setup-steps">
+            ${step(1, 'pipeline', 'Pipeline', status.hasPipeline)}
+            ${arrow}
+            ${step(2, 'functional-groups', 'Functional Groups', status.hasFunctionalGroups)}
+            ${arrow}
+            ${step(3, 'teams', 'Teams', status.hasTeams)}
+        </div>
+    `;
+    host.style.display = '';
+}
+
+function applySetupTabLocks(status) {
+    const lockedTabs = new Set();
+    if (!status.hasPipeline) {
+        SETUP_TABS_PIPELINE_DONE_REQUIRED.forEach(t => lockedTabs.add(t));
+    }
+    if (!status.hasFunctionalGroups) {
+        SETUP_TABS_FG_DONE_REQUIRED.forEach(t => lockedTabs.add(t));
+    }
+    const allPrereqs = status.hasPipeline && status.hasFunctionalGroups && status.hasTeams;
+    if (!allPrereqs) {
+        SETUP_TABS_ALL_DONE_REQUIRED.forEach(t => lockedTabs.add(t));
+    }
+
+    document.querySelectorAll('#settingsSidebar .sidebar-btn').forEach(btn => {
+        const tab = btn.dataset.tab;
+        if (!tab) return;
+        if (lockedTabs.has(tab)) {
+            btn.classList.add('is-locked');
+            btn.dataset.lockReason = lockReasonFor(tab, status);
+        } else {
+            btn.classList.remove('is-locked');
+            delete btn.dataset.lockReason;
+        }
+    });
+}
+
+function lockReasonFor(tab, status) {
+    if (!status.hasPipeline) return 'Configure your Pipeline first.';
+    if (!status.hasFunctionalGroups) return 'Configure Functional Groups first.';
+    if (!status.hasTeams) return 'Configure Teams first.';
+    return '';
+}
 
 function maybeShowSetupBanner() {
     const params = new URLSearchParams(window.location.search);
@@ -265,6 +397,21 @@ function toggleSettingsSidebar() {
 // ─── Tab Switching ──────────────────────────────────────────────────────────
 
 function switchSettingsTab(tabName) {
+    // Block locked tabs — surfaced via setup-progress (Pipeline → FG → Teams).
+    // The progress strip already explains why; this is the safety net for
+    // direct sidebar clicks. The General tab is always allowed so the user
+    // never gets fully stuck.
+    const targetBtn = document.querySelector(`#settingsSidebar .sidebar-btn[data-tab="${tabName}"]`);
+    if (targetBtn && targetBtn.classList.contains('is-locked')) {
+        const reason = targetBtn.dataset.lockReason || 'Finish the previous setup step first.';
+        if (typeof Toast !== 'undefined' && Toast.warning) {
+            Toast.warning(reason);
+        } else {
+            console.warn('[settings] tab locked:', tabName, reason);
+        }
+        return;
+    }
+
     // Update sidebar buttons
     document.querySelectorAll('#settingsSidebar .sidebar-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tabName);
@@ -329,6 +476,9 @@ async function loadDealStages() {
         renderStages();
     } finally {
         showPipelineLoading(false);
+        // After any pipeline mutation (load includes the post-save reload),
+        // re-evaluate the setup progress strip + tab locks.
+        if (typeof refreshSetupProgress === 'function') refreshSetupProgress();
     }
 }
 

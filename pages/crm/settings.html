@@ -145,6 +145,23 @@
             color: var(--brand-primary);
         }
 
+        /* Generic btn-outline for any modal in CRM Settings — the shared
+           definition lives in hrms.css which CRM doesn't load, so the
+           Copy button on the Google Sheets share modal (and any future
+           btn-outline use here) renders invisible in dark mode without
+           this. Theme-aware text + border, transparent bg. */
+        .btn-outline {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color-strong);
+            font-weight: 500;
+        }
+        .btn-outline:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+        }
+
         /* Expandable "What does this do?" educational block */
         .mailbox-help {
             background: var(--bg-card-hover);
@@ -275,6 +292,104 @@
             </div>
         </div>
 
+        <style>
+            .crm-setup-progress {
+                margin: 0 0 16px;
+                padding: 14px 18px;
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-radius: 10px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .crm-setup-progress-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+            }
+            .crm-setup-progress-title {
+                font-weight: 600;
+                color: var(--text-primary);
+                font-size: 14px;
+            }
+            .crm-setup-progress-subtitle {
+                font-size: 12px;
+                color: var(--text-secondary);
+            }
+            .crm-setup-steps {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+            .crm-setup-step {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 12px;
+                border-radius: 8px;
+                background: var(--bg-secondary);
+                border: 1px solid var(--border-color);
+                cursor: pointer;
+                transition: background 0.12s, border-color 0.12s;
+                font-size: 13px;
+                color: var(--text-primary);
+            }
+            .crm-setup-step:hover { background: var(--bg-hover); }
+            .crm-setup-step.is-done {
+                background: color-mix(in srgb, var(--color-success) 12%, transparent);
+                border-color: color-mix(in srgb, var(--color-success) 35%, transparent);
+                color: var(--text-primary);
+            }
+            .crm-setup-step.is-current {
+                background: color-mix(in srgb, var(--brand-primary) 12%, transparent);
+                border-color: var(--brand-primary);
+            }
+            .crm-setup-step .step-num {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 22px;
+                height: 22px;
+                border-radius: 50%;
+                background: var(--bg-tertiary);
+                color: var(--text-secondary);
+                font-size: 12px;
+                font-weight: 600;
+            }
+            .crm-setup-step.is-done .step-num {
+                background: var(--color-success);
+                color: var(--text-inverse, #fff);
+            }
+            .crm-setup-step.is-current .step-num {
+                background: var(--brand-primary);
+                color: var(--text-inverse, #fff);
+            }
+            .crm-setup-step-arrow {
+                display: flex;
+                align-items: center;
+                color: var(--text-muted);
+                font-size: 14px;
+                line-height: 1;
+            }
+
+            /* Locked sidebar tabs — disabled but visible so users see what's
+               coming. Dim the label, show a lock glyph, and block clicks. */
+            .sidebar-btn.is-locked {
+                opacity: 0.55;
+                cursor: not-allowed;
+                position: relative;
+            }
+            .sidebar-btn.is-locked::after {
+                content: "🔒";
+                position: absolute;
+                right: 12px;
+                font-size: 11px;
+                line-height: 1;
+            }
+        </style>
+
         <!-- Sidebar overlay for mobile -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -298,6 +413,24 @@
                             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                         </svg>
                         <span class="nav-label">Pipeline</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="functional-groups" onclick="switchSettingsTab('functional-groups')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7" rx="1"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1"/>
+                            <rect x="14" y="14" width="7" height="7" rx="1"/>
+                        </svg>
+                        <span class="nav-label">Functional Groups</span>
+                    </button>
+                    <button class="sidebar-btn" data-tab="teams" onclick="switchSettingsTab('teams')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        <span class="nav-label">Teams Setup</span>
                     </button>
                     <button class="sidebar-btn" data-tab="integrations" onclick="switchSettingsTab('integrations')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -337,24 +470,6 @@
                         </svg>
                         <span class="nav-label">Lead Sources</span>
                     </button>
-                    <button class="sidebar-btn" data-tab="functional-groups" onclick="switchSettingsTab('functional-groups')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="7" height="7" rx="1"/>
-                            <rect x="14" y="3" width="7" height="7" rx="1"/>
-                            <rect x="3" y="14" width="7" height="7" rx="1"/>
-                            <rect x="14" y="14" width="7" height="7" rx="1"/>
-                        </svg>
-                        <span class="nav-label">Functional Groups</span>
-                    </button>
-                    <button class="sidebar-btn" data-tab="teams" onclick="switchSettingsTab('teams')">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </svg>
-                        <span class="nav-label">Teams Setup</span>
-                    </button>
                     <!-- Superadmin-only. Hidden by JS in settings.js for non-superadmins. -->
                     <button class="sidebar-btn" data-tab="danger-zone" id="dangerZoneTabBtn" onclick="switchSettingsTab('danger-zone')" style="display:none; color:var(--color-danger);">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -368,6 +483,14 @@
             </aside>
 
             <main class="crm-settings-content">
+                <!-- Setup progress strip — populated by settings.js
+                     (refreshSetupProgress). Shows the 3-step initial-setup
+                     checklist (Pipeline → Functional Groups → Teams) and
+                     locks dependent tabs until each prerequisite is met.
+                     Lives inside the main column so it inherits the sidebar
+                     offset and doesn't overlap with the sidebar nav. -->
+                <div id="crmSetupProgress" class="crm-setup-progress" style="display:none;"></div>
+
                 <!-- ─── General Tab ───────────────────────────────────────────────── -->
                 <div class="crm-tab-content active" id="tab-general">
                     <div class="section-header">
@@ -1746,7 +1869,10 @@
          Three stages: (1) show SA email + instructions, (2) tenant pastes
          sheet URL → we verify readability, list tabs, (3) field mapping. -->
     <div class="gm-overlay" id="gsShareModal">
-        <div class="gm-modal" style="max-width: 820px; width: 95vw;">
+        <!-- Wider modal — the mapping stage (COL / HEADER / SAMPLE VALUE /
+             CRM FIELD) needs horizontal room. 1200px on desktop, 95vw on
+             narrower screens. -->
+        <div class="gm-modal" style="max-width: 1200px; width: 95vw;">
             <div class="gm-header">
                 <div class="gm-header-left">
                     <div class="gm-icon" style="background:#0f9d58; color:#fff;">
