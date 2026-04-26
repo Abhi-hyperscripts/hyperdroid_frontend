@@ -123,6 +123,7 @@
                     <td>${status}</td>
                     <td class="hide-mobile" title="${m.connectionType === 'imap_smtp' ? 'IMAP IDLE support' : 'Uses push notifications'}">${idle}</td>
                     <td>
+                        <button class="btn btn-sm btn-outline" onclick="openMailboxSyncLogs('${m.id}', '${escapeHtml(m.emailAddress)}')">Logs</button>
                         <button class="btn btn-sm btn-outline" onclick="deleteMailbox('${m.id}', '${escapeHtml(m.emailAddress)}')">
                             Disconnect
                         </button>
@@ -524,6 +525,93 @@
             Toast.error(e.message || 'Disconnect failed');
         }
     };
+
+    // ─── Sync logs modal ───────────────────────────────────────────────────
+    //
+    // Drives the "Logs" button on each connected mailbox row. Hits
+    // /api/mailbox-send/{id}/sync-logs which only returns meaningful events
+    // — empty IDLE/poll heartbeats are deliberately not recorded so the
+    // table stays light at scale. Use the mailbox's lastConnectedAt for
+    // "is it alive?" instead.
+    let _mbSyncLogsCurrentMailboxId = null;
+    let _mbSyncLogsCurrentEmail = null;
+
+    window.openMailboxSyncLogs = function (mailboxId, email) {
+        _mbSyncLogsCurrentMailboxId = mailboxId;
+        _mbSyncLogsCurrentEmail = email;
+        const subtitle = document.getElementById('mailboxSyncLogsSubtitle');
+        if (subtitle) subtitle.textContent = email;
+        const overlay = document.getElementById('mailboxSyncLogsModal');
+        if (overlay) overlay.classList.add('active');
+        refreshMailboxSyncLogs();
+    };
+
+    window.closeMailboxSyncLogs = function () {
+        const overlay = document.getElementById('mailboxSyncLogsModal');
+        if (overlay) overlay.classList.remove('active');
+        _mbSyncLogsCurrentMailboxId = null;
+        _mbSyncLogsCurrentEmail = null;
+    };
+
+    window.refreshMailboxSyncLogs = async function () {
+        if (!_mbSyncLogsCurrentMailboxId) return;
+        const loading = document.getElementById('mailboxSyncLogsLoading');
+        const empty = document.getElementById('mailboxSyncLogsEmpty');
+        const wrap = document.getElementById('mailboxSyncLogsTableWrap');
+        const tbody = document.getElementById('mailboxSyncLogsTableBody');
+
+        loading.style.display = 'block';
+        empty.style.display = 'none';
+        wrap.style.display = 'none';
+
+        try {
+            const resp = await api.request(`/crm/mailbox-send/${_mbSyncLogsCurrentMailboxId}/sync-logs?limit=100`);
+            const items = (resp && resp.items) || [];
+            loading.style.display = 'none';
+            if (items.length === 0) {
+                empty.style.display = 'block';
+                tbody.innerHTML = '';
+                return;
+            }
+            wrap.style.display = 'block';
+            tbody.innerHTML = items.map(r => {
+                const started = r.startedAt ? new Date(r.startedAt).toLocaleString() : '—';
+                const outcome = r.outcome || '—';
+                const outcomeClass = outcomeBadgeClass(outcome);
+                const dur = (r.durationMs ?? 0) > 0 ? `${r.durationMs} ms` : '—';
+                return `
+                    <tr>
+                        <td>${escapeHtml(started)}</td>
+                        <td>${escapeHtml(r.source || '—')}</td>
+                        <td><span class="crm-badge ${outcomeClass}">${escapeHtml(outcome)}</span></td>
+                        <td style="text-align:right;">${r.repliesFound ?? 0}</td>
+                        <td style="text-align:right;">${r.bouncesFound ?? 0}</td>
+                        <td style="text-align:right;">${escapeHtml(dur)}</td>
+                        <td><small style="color:var(--text-secondary);">${escapeHtml(truncate(r.errorMessage || '', 200))}</small></td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (e) {
+            loading.style.display = 'none';
+            Toast.error(e.message || 'Failed to load mailbox sync logs');
+        }
+    };
+
+    function outcomeBadgeClass(outcome) {
+        switch ((outcome || '').toLowerCase()) {
+            case 'replies_found':
+            case 'bounces_found':
+                return 'crm-badge-active';
+            case 'auth_failed':
+            case 'error':
+            case 'connect_failed':
+                return 'crm-badge-inactive';
+            case 'timeout':
+                return 'crm-badge-pending';
+            default:
+                return '';
+        }
+    }
 
     // ─── Utilities ─────────────────────────────────────────────────────────
 

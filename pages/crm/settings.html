@@ -2756,6 +2756,55 @@
         </div>
     </div>
 
+    <!-- Mailbox sync history modal — opened by the Logs button on each
+         connected mailbox row. Reads /api/mailbox-send/{id}/sync-logs and
+         renders the latest 50 events. Only meaningful events get rows
+         server-side (replies/bounces found, auth_failed, timeout, error)
+         so the table stays light. -->
+    <div class="gm-overlay" id="mailboxSyncLogsModal">
+        <div class="gm-modal" style="max-width: 1100px; width: 95vw;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon" style="background: var(--brand-primary); color: var(--text-inverse);">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="gm-title">Mailbox sync history</h3>
+                        <p class="gm-subtitle" id="mailboxSyncLogsSubtitle">—</p>
+                    </div>
+                </div>
+                <button type="button" class="gm-close" onclick="closeMailboxSyncLogs()" aria-label="Close">&times;</button>
+            </div>
+            <div class="gm-body" style="-webkit-overflow-scrolling: touch;">
+                <div id="mailboxSyncLogsLoading" class="crm-loading" style="display:none;"><div class="crm-loading-spinner"></div><p>Loading…</p></div>
+                <div id="mailboxSyncLogsEmpty" style="display:none; padding: 24px; text-align: center; color: var(--text-secondary);">
+                    No events yet. Idle ticks (mailbox connected, no new replies) aren't recorded —
+                    only meaningful events (replies, bounces, auth failures, errors) appear here.
+                </div>
+                <div id="mailboxSyncLogsTableWrap" class="crm-table-wrapper" style="display:none;">
+                    <table class="crm-table data-table">
+                        <thead>
+                            <tr>
+                                <th>Started</th>
+                                <th>Source</th>
+                                <th>Outcome</th>
+                                <th style="text-align:right;">Replies</th>
+                                <th style="text-align:right;">Bounces</th>
+                                <th style="text-align:right;">Duration</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mailboxSyncLogsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeMailboxSyncLogs()">Close</button>
+                <button type="button" class="btn btn-outline" onclick="refreshMailboxSyncLogs()">Refresh</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
