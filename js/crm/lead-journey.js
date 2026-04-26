@@ -269,6 +269,17 @@
     async function refreshHelpButtonForLead(leadId) {
         const btn = document.getElementById('leadDetailNeedHelpBtn');
         if (!btn) return;
+        // Only members and team-leads have anyone to escalate TO. Admins/
+        // SUPERADMINs and managers sit at (or above) the top of the team
+        // and the affordance would be dead UX for them — hide the button.
+        // myTeamRole is set by leads.js loadMyRole() and re-exported on
+        // window so this module can read it without a circular dep.
+        const role = window.myTeamRole || 'member';
+        if (role === 'admin' || role === 'manager') {
+            btn.style.display = 'none';
+            return;
+        }
+        btn.style.display = '';
         try {
             const me = (typeof api?.getUser === 'function' && api.getUser()?.userId) || null;
             const list = await api.request(`/crm/leads/${leadId}/help-requests`);

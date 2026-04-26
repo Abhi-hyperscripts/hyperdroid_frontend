@@ -295,6 +295,10 @@ async function loadMyRole() {
             myTeamRole = res.role || 'member';
         }
     } catch { myTeamRole = 'member'; }
+    // Other modules (e.g. lead-journey.js help-request flow) read this to
+    // decide whether to show role-gated affordances. Re-export on each load
+    // so the value reflects the current login.
+    window.myTeamRole = myTeamRole;
     // Hide admin-only buttons for members
     if (!canDeleteLead()) {
         const bulkDelBtn = document.getElementById('bulkDeleteBtn');
