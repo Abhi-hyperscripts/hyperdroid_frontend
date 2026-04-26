@@ -2166,6 +2166,25 @@ body.crm-dashboard .crm-container {
         justify-content: space-between;
     }
 
+    /* The action-button row in CRM page headers is sometimes a class
+       (.crm-header-actions) and sometimes an inline-styled div (legacy).
+       Either way, on mobile let the buttons wrap and each take the
+       remaining inline space so nothing clips off the right edge of
+       the viewport. */
+    .crm-header-row > div[style*="display:flex"],
+    .crm-header-row > div[style*="display: flex"],
+    .crm-header-row .crm-header-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    .crm-header-row > div[style*="display:flex"] > .btn,
+    .crm-header-row > div[style*="display: flex"] > .btn,
+    .crm-header-row .crm-header-actions > .btn {
+        flex: 1 1 auto;
+        min-width: 0;
+        justify-content: center;
+    }
+
     .crm-stats-grid {
         grid-template-columns: 1fr 1fr;
         gap: 8px;

@@ -26,6 +26,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-teams-setup.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <style>
         /* Mailbox modal provider picker + help boxes — theme-aware */
@@ -709,7 +710,7 @@
                                 </div>
                             </div>
                             <div class="crm-table-wrapper">
-                                <table class="crm-table">
+                                <table class="crm-table data-table">
                                     <thead>
                                         <tr>
                                             <th>Sheet</th>
@@ -753,6 +754,55 @@
                             .gs-account-filter { min-width: 200px; max-width: 260px; }
                             .gs-account-filter .searchable-dropdown-container { width: 100%; }
                             .gs-search-input { width: 220px; height: 36px; font-size: 0.85rem; }
+
+                            /* Mobile: the toolbar's two flex children overflow a 390px
+                               viewport — pills want ~280px and the filter + search
+                               combo wants ~340px. Stack them, let each take the full
+                               width, and let the pill row scroll horizontally if it
+                               still doesn't fit. */
+                            @media screen and (max-width: 768px) {
+                                .gs-toolbar {
+                                    flex-direction: column;
+                                    align-items: stretch;
+                                    gap: 8px;
+                                }
+                                .gs-toolbar-right {
+                                    flex-direction: column;
+                                    align-items: stretch;
+                                    width: 100%;
+                                    min-width: 0;
+                                    justify-content: flex-start;
+                                }
+                                .gs-account-filter,
+                                .gs-search-input {
+                                    width: 100%;
+                                    min-width: 0;
+                                    max-width: none;
+                                    box-sizing: border-box;
+                                }
+                                /* Pill row on mobile: flex-wrap to two lines if
+                                   needed (better than horizontal scroll for a
+                                   discoverable filter), each pill fluid so the
+                                   row spans the full card width and never
+                                   clips. */
+                                .gs-status-pills {
+                                    display: flex;
+                                    flex-wrap: wrap;
+                                    width: 100%;
+                                    box-sizing: border-box;
+                                    gap: 4px;
+                                }
+                                .gs-pill {
+                                    flex: 0 0 auto;
+                                    justify-content: center;
+                                    padding: 6px 10px;
+                                    font-size: 0.78rem;
+                                    gap: 4px;
+                                }
+                                .gs-pill-count {
+                                    flex-shrink: 0;
+                                }
+                            }
                             .gs-status-pills {
                                 display: inline-flex;
                                 align-items: center;
@@ -870,6 +920,23 @@
                             }
                             .gs-actions-cell .btn {
                                 margin-left: 4px;
+                            }
+                            /* Mobile: stop white-space:nowrap forcing the buttons
+                               off the card edge once table-cards.css has folded
+                               each row into a stacked card. flex-wrap lets the
+                               4 actions stack across two lines on narrow phones. */
+                            @media screen and (max-width: 768px) {
+                                .gs-actions-cell {
+                                    white-space: normal;
+                                    display: flex;
+                                    flex-wrap: wrap;
+                                    gap: 6px;
+                                    justify-content: flex-end;
+                                    width: 100%;
+                                }
+                                .gs-actions-cell .btn {
+                                    margin-left: 0;
+                                }
                             }
                         </style>
 
@@ -2662,11 +2729,11 @@
                 </div>
                 <button type="button" class="gm-close" onclick="closeGoogleSheetSyncLogs()" aria-label="Close">&times;</button>
             </div>
-            <div class="gm-body" style="max-height: 70vh; overflow-y: auto;">
+            <div class="gm-body" style="-webkit-overflow-scrolling: touch;">
                 <div id="gsSyncLogsLoading" class="crm-loading" style="display:none;"><div class="crm-loading-spinner"></div><p>Loading…</p></div>
                 <div id="gsSyncLogsEmpty" style="display:none; padding: 24px; text-align: center; color: var(--text-secondary);">No syncs yet — the next 2-minute tick will populate this list.</div>
                 <div id="gsSyncLogsTableWrap" class="crm-table-wrapper" style="display:none;">
-                    <table class="crm-table">
+                    <table class="crm-table data-table">
                         <thead>
                             <tr>
                                 <th>Started</th>
@@ -2702,6 +2769,7 @@
         document.write('<script src="../../js/crm/mailboxes.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/email-templates.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/email-campaigns.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="crm" data-title="Sales Assistant"><\/script>');</script>

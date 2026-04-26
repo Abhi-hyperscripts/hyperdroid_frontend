@@ -472,7 +472,7 @@ function renderAgentPerformance(agents) {
         return;
     }
     container.innerHTML = `
-        <table class="agent-table">
+        <table class="agent-table data-table">
             <thead><tr>
                 <th>Agent</th><th>Total</th><th>Won</th><th>Lost</th><th>Active</th><th>Conv %</th>
             </tr></thead>

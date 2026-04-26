@@ -18,9 +18,17 @@
    Bug: RAG-71. */
 @media screen and (max-width: 768px) {
 
-    /* ── Container reset ── */
-    .data-table-container {
+    /* ── Container reset ──
+       Two wrapper conventions exist in the codebase:
+         .data-table-container (HRMS, Reports) and
+         .crm-table-wrapper (every CRM page).
+       The CRM wrapper sets overflow:hidden which CLIPS the stacked
+       card rows on mobile (each card has margin-bottom and the column
+       grows past the wrapper's natural height). Reset both. */
+    .data-table-container,
+    .crm-table-wrapper {
         overflow-x: visible;
+        overflow-y: visible;
         background: none;
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
