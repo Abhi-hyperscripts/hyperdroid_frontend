@@ -2868,8 +2868,59 @@ async function loadGoogleSheetsState() {
         _gsConnections = conns || [];
         _gsServiceAccount = saInfo || { enabled: false };
         renderGoogleSheetsCard(_gsConnections, sheets || []);
+        // Lazy-start the realtime hub once data is on screen so the user
+        // never sees stale "last sync" timestamps.
+        setupGoogleSheetsRealtime();
     } catch (e) {
         console.error('Failed to load Google Sheets state:', e);
+    }
+}
+
+// ─── SignalR live updates for the Integrations tab ────────────────────
+//
+// The Hangfire poller fires CrmEvents.GoogleSheetSynced on every tick per
+// source. We listen so the connected-sheets table refreshes its "Last sync"
+// column in real time, and the Logs modal refreshes if it's open for the
+// affected source. Without this, the user has to keep clicking Refresh.
+let _gsHubConnection = null;
+function setupGoogleSheetsRealtime() {
+    if (_gsHubConnection) return; // already wired
+    if (typeof signalR === 'undefined') return;
+    if (!api.isAuthenticated || !api.isAuthenticated()) return;
+    const hubUrl = (typeof CONFIG !== 'undefined' && CONFIG.crmSignalRHubUrl) ? CONFIG.crmSignalRHubUrl : null;
+    if (!hubUrl) return;
+
+    try {
+        _gsHubConnection = new signalR.HubConnectionBuilder()
+            .withUrl(hubUrl, { accessTokenFactory: () => api.token || '' })
+            .withAutomaticReconnect()
+            .configureLogging(signalR.LogLevel.Warning)
+            .build();
+
+        _gsHubConnection.on('GoogleSheetSynced', (payload) => {
+            // Debounce: a tick processing 30 leads will fan out 30 NewLeadReceived
+            // events, but only ONE GoogleSheetSynced per source. Still throttle
+            // to coalesce bursts when many sources finish back-to-back.
+            if (window._gsHubRefreshTimer) return;
+            window._gsHubRefreshTimer = setTimeout(() => {
+                window._gsHubRefreshTimer = null;
+                loadGoogleSheetsState().catch(e => console.warn('GS realtime refresh failed:', e));
+                // If the Logs modal is open for the source that just finished,
+                // refresh it too — same trick the dashboard uses.
+                if (_gsSyncLogsCurrentSourceId && payload?.leadSourceId === _gsSyncLogsCurrentSourceId) {
+                    refreshGoogleSheetSyncLogs();
+                }
+            }, 600);
+        });
+
+        _gsHubConnection.start().catch(e => {
+            // Transient connection failures don't matter — withAutomaticReconnect
+            // handles it. The 2-min Hangfire cadence is the worst-case fallback.
+            console.warn('GS hub: failed to connect', e?.message || e);
+        });
+    } catch (e) {
+        console.warn('GS hub setup failed:', e?.message || e);
+        _gsHubConnection = null;
     }
 }
 
