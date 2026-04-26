@@ -1587,7 +1587,13 @@ body.crm-dashboard .crm-container {
     -webkit-backdrop-filter: blur(20px);
     border-radius: 12px;
     border: 1px solid var(--border-color-light);
-    overflow: hidden;
+    /* Allow horizontal scroll on tablet/medium-width screens (768-1200px)
+       so the last columns aren't silently clipped. table-cards.css folds
+       rows into cards at ≤768px, so this only kicks in on desktop sizes
+       wide enough to keep the table layout but not wide enough to fit
+       every column at once. */
+    overflow-x: auto;
+    overflow-y: hidden;
     box-shadow: var(--shadow-sm);
 }
 

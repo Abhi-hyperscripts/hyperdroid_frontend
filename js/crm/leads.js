@@ -317,11 +317,18 @@ async function loadLeads(page) {
 }
 
 /**
- * Load lead statistics
+ * Load lead statistics. Mirrors the same filter set the leads list sends so
+ * the KPI cards (Total / New / Qualified / Converted) stay in sync with the
+ * filtered table — previously cards stayed frozen at tenant-wide totals
+ * regardless of which filter was applied.
  */
 async function loadLeadStats() {
     try {
-        const stats = await api.request('/crm/leads/stats');
+        const params = buildFilterParams();
+        // pageSize/page are list-only — strip from the stats query.
+        params.delete('page'); params.delete('pageSize');
+        const qs = params.toString();
+        const stats = await api.request('/crm/leads/stats' + (qs ? '?' + qs : ''));
         document.getElementById('statTotalLeads').textContent = stats.total_leads ?? '-';
         document.getElementById('statNewLeads').textContent = stats.new_leads ?? '-';
         document.getElementById('statQualifiedLeads').textContent = stats.qualified ?? '-';
@@ -467,6 +474,9 @@ async function loadCampaignFilter() {
 function applyFilters() {
     currentPage = 1;
     loadLeads();
+    // Stats card mirrors the filtered list — kick a fresh stats load on every
+    // filter change so KPIs reflect whatever the user is currently looking at.
+    loadLeadStats();
 }
 
 // ==================== Table Rendering ====================
