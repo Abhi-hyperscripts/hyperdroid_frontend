@@ -828,6 +828,16 @@
                                 background: rgba(234,88,12,0.12);
                                 color: #c2410c;
                             }
+                            /* Sync-log outcome badges (used in the Logs modal). */
+                            .gs-status-badge.gs-sync-success { background: rgba(22,163,74,0.12); color: #15803d; }
+                            .gs-status-badge.gs-sync-no_change { background: rgba(100,116,139,0.15); color: #475569; }
+                            .gs-status-badge.gs-sync-timeout { background: rgba(234,179,8,0.15); color: #a16207; }
+                            .gs-status-badge.gs-sync-internal_error,
+                            .gs-status-badge.gs-sync-sheet_read_failed,
+                            .gs-status-badge.gs-sync-token_unavailable,
+                            .gs-status-badge.gs-sync-malformed_id,
+                            .gs-status-badge.gs-sync-inactive_connection,
+                            .gs-status-badge.gs-sync-sa_not_configured { background: rgba(239,68,68,0.12); color: #b91c1c; }
                             .gs-account-cell {
                                 font-size: 0.78rem;
                                 color: var(--text-secondary);
@@ -2630,6 +2640,51 @@
             <div class="gm-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeCampaignModal()">Cancel</button>
                 <button type="button" class="btn btn-primary" id="campSaveBtn" onclick="saveCampaign()">Create &amp; start</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Sheets sync-history modal — opened by the "Logs" action button
+         on each connected sheet row. Renders the latest 50 sync-log entries
+         from /api/GoogleSheets/sources/{id}/sync-logs so admins can answer
+         "did the sync run today?" without grepping container logs. -->
+    <div class="gm-overlay" id="gsSyncLogsModal">
+        <div class="gm-modal" style="max-width: 1100px; width: 95vw;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon" style="background: var(--brand-primary); color: var(--text-inverse);">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14 2 14 8 20 8"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="gm-title">Sync history</h3>
+                        <p class="gm-subtitle" id="gsSyncLogsSubtitle">—</p>
+                    </div>
+                </div>
+                <button type="button" class="gm-close" onclick="closeGoogleSheetSyncLogs()" aria-label="Close">&times;</button>
+            </div>
+            <div class="gm-body" style="max-height: 70vh; overflow-y: auto;">
+                <div id="gsSyncLogsLoading" class="crm-loading" style="display:none;"><div class="crm-loading-spinner"></div><p>Loading…</p></div>
+                <div id="gsSyncLogsEmpty" style="display:none; padding: 24px; text-align: center; color: var(--text-secondary);">No syncs yet — the next 2-minute tick will populate this list.</div>
+                <div id="gsSyncLogsTableWrap" class="crm-table-wrapper" style="display:none;">
+                    <table class="crm-table">
+                        <thead>
+                            <tr>
+                                <th>Started</th>
+                                <th>Outcome</th>
+                                <th style="text-align:right;">Rows read</th>
+                                <th style="text-align:right;">Leads created</th>
+                                <th>Cursor</th>
+                                <th style="text-align:right;">Duration</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gsSyncLogsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeGoogleSheetSyncLogs()">Close</button>
+                <button type="button" class="btn btn-outline" onclick="refreshGoogleSheetSyncLogs()">Refresh</button>
             </div>
         </div>
     </div>

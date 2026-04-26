@@ -3064,6 +3064,7 @@ function gsRenderTable() {
                     <td style="text-align:right;">${r.total_leads_received.toLocaleString()}</td>
                     <td>${escapeHtml(lastSync)}</td>
                     <td class="gs-actions-cell">
+                        <button class="btn btn-sm btn-outline" onclick="openGoogleSheetSyncLogs('${escapeHtml(r.lead_source_id)}', '${escapeHtml(r.spreadsheet_name)}', '${escapeHtml(r.sheet_tab_name || '')}')">Logs</button>
                         <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${escapeHtml(r.lead_source_id)}', ${!r.is_active})">${toggleLabel}</button>
                         <button class="btn btn-sm btn-outline" onclick="disconnectGoogleSheet('${escapeHtml(r.lead_source_id)}')">Remove</button>
                     </td>
@@ -3203,6 +3204,82 @@ async function disconnectGoogleSheet(sourceId) {
         await loadGoogleSheetsState();
     } catch (e) {
         Toast.error(e.message || 'Failed to disconnect sheet');
+    }
+}
+
+// ─── Sync logs modal (per-source audit trail) ─────────────────────────────
+//
+// The Logs action button on each connected sheet calls openGoogleSheetSyncLogs
+// to surface the latest 50 google_sheet_sync_log entries from the backend.
+// Lets admins answer "did the sync run today?" without grepping logs.
+let _gsSyncLogsCurrentSourceId = null;
+
+function openGoogleSheetSyncLogs(sourceId, spreadsheetName, sheetTabName) {
+    _gsSyncLogsCurrentSourceId = sourceId;
+    const subtitle = document.getElementById('gsSyncLogsSubtitle');
+    if (subtitle) {
+        subtitle.textContent = sheetTabName
+            ? `${spreadsheetName} › ${sheetTabName}`
+            : spreadsheetName;
+    }
+    const modal = document.getElementById('gsSyncLogsModal');
+    if (modal) modal.classList.add('active');
+    refreshGoogleSheetSyncLogs();
+}
+
+function closeGoogleSheetSyncLogs() {
+    const modal = document.getElementById('gsSyncLogsModal');
+    if (modal) modal.classList.remove('active');
+    _gsSyncLogsCurrentSourceId = null;
+}
+
+async function refreshGoogleSheetSyncLogs() {
+    const sourceId = _gsSyncLogsCurrentSourceId;
+    if (!sourceId) return;
+
+    const loadingEl = document.getElementById('gsSyncLogsLoading');
+    const emptyEl = document.getElementById('gsSyncLogsEmpty');
+    const wrapEl = document.getElementById('gsSyncLogsTableWrap');
+    const tbody = document.getElementById('gsSyncLogsTableBody');
+
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (wrapEl) wrapEl.style.display = 'none';
+    if (tbody) tbody.innerHTML = '';
+
+    try {
+        const data = await api.request(`/crm/GoogleSheets/sources/${sourceId}/sync-logs?limit=100`);
+        const items = (data && data.items) || [];
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (items.length === 0) {
+            if (emptyEl) emptyEl.style.display = 'block';
+            return;
+        }
+        if (wrapEl) wrapEl.style.display = 'block';
+        tbody.innerHTML = items.map(it => {
+            const start = it.started_at ? new Date(it.started_at).toLocaleString() : '—';
+            const outcome = it.outcome || 'in-flight';
+            const outcomeBadge = `<span class="gs-status-badge gs-sync-${outcome}">${escapeHtml(outcome)}</span>`;
+            const cursor = (it.last_read_row_before ?? '—') + ' → ' + (it.last_read_row_after ?? '—');
+            const dur = it.duration_ms != null ? `${it.duration_ms} ms` : '—';
+            const note = it.error_message ? escapeHtml(it.error_message) : '';
+            return `
+                <tr>
+                    <td>${escapeHtml(start)}</td>
+                    <td>${outcomeBadge}</td>
+                    <td style="text-align:right;">${(it.rows_read ?? 0).toLocaleString()}</td>
+                    <td style="text-align:right;">${(it.leads_created ?? 0).toLocaleString()}</td>
+                    <td>${escapeHtml(cursor)}</td>
+                    <td style="text-align:right;">${escapeHtml(dur)}</td>
+                    <td style="max-width:380px; word-break: break-word; color: var(--text-secondary);">${note}</td>
+                </tr>`;
+        }).join('');
+    } catch (e) {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (emptyEl) {
+            emptyEl.style.display = 'block';
+            emptyEl.textContent = 'Failed to load sync history: ' + (e.message || 'unknown error');
+        }
     }
 }
 
