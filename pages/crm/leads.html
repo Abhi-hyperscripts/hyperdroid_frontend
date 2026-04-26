@@ -170,6 +170,11 @@
                     <option value="unqualified">Unqualified</option>
                     <option value="converted">Converted</option>
                     <option value="follow_up_scheduled">Follow up scheduled</option>
+                    <!-- Pseudo-status: shows leads where the current user is
+                         involved in an open help request (either as requester
+                         or recipient). Translated to ?hasHelp=me on the API
+                         call (same shape as follow_up_scheduled → hasFollowup). -->
+                    <option value="help_requested">Help requested</option>
                 </select>
             </div>
             <div class="crm-filter-group" id="filterTeamGroup" style="display:none;">
@@ -230,6 +235,15 @@
             aria-live="polite">
             <span class="crm-realtime-banner-dot"></span>
             <span id="leadsRealtimeBannerText">1 new lead — click to refresh</span>
+        </button>
+
+        <!-- Help-request banner: shown to managers/TLs who have open requests
+             from teammates waiting for action. Click to open the inbox. -->
+        <button type="button" id="helpInboxBanner" class="crm-realtime-banner crm-help-banner" hidden
+            onclick="openHelpInboxModal()"
+            aria-live="polite">
+            <span class="crm-realtime-banner-dot" style="background:var(--color-warning, #f59e0b);"></span>
+            <span id="helpInboxBannerText">1 help request waiting for you</span>
         </button>
 
         <!-- Leads Table -->
@@ -616,6 +630,79 @@
         </div>
     </div>
 
+    <!-- ═══ Help Request Modal (raise) ═══ -->
+    <div class="gm-overlay" id="helpRequestOverlay">
+        <div class="gm-modal gm-sm">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Need help on this lead</h3>
+                        <p class="gm-subtitle">Pick a manager or team lead and tell them what you need. They'll get a push + a banner on their dashboard.</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeHelpRequestModal()">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div>
+                    <label class="form-label">Send to *</label>
+                    <select id="helpRecipientSelect" class="form-select form-select-sm">
+                        <option value="">Loading…</option>
+                    </select>
+                    <div id="helpRecipientHint" class="form-text" style="font-size:11px;color:var(--text-secondary);"></div>
+                </div>
+                <div style="margin-top:10px;">
+                    <label class="form-label">What do you need help with? *</label>
+                    <textarea id="helpReasonInput" class="form-control" rows="3" placeholder="e.g. Lead is asking for a discount above my threshold — need approval before I quote."></textarea>
+                </div>
+            </div>
+            <div class="gm-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+                <button class="btn btn-outline-secondary" onclick="closeHelpRequestModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitHelpRequest()" id="helpRequestSubmitBtn">Send help request</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Help Inbox Modal (recipient view) ═══ -->
+    <div class="gm-overlay" id="helpInboxOverlay">
+        <div class="gm-modal gm-md">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Help requests for you</h3>
+                        <p class="gm-subtitle">Teammates waiting on a decision or input. Click into a lead to read the full timeline; resolve here when you're done.</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeHelpInboxModal()">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div id="helpInboxList"><p style="color:var(--text-secondary);text-align:center;padding:20px;">Loading…</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Resolve Help Request Modal ═══ -->
+    <div class="gm-overlay" id="helpResolveOverlay">
+        <div class="gm-modal gm-sm">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Resolve help request</h3>
+                        <p class="gm-subtitle" id="helpResolveSubtitle">Add a comment so the requester knows what you decided. They'll see this on the lead timeline.</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeHelpResolveModal()">&times;</button>
+            </div>
+            <div class="gm-body">
+                <label class="form-label">Resolution *</label>
+                <textarea id="helpResolveComment" class="form-control" rows="3" placeholder="e.g. Approved up to ₹2L. Send the quote and CC me."></textarea>
+            </div>
+            <div class="gm-footer" style="display:flex;justify-content:flex-end;gap:8px;">
+                <button class="btn btn-outline-secondary" onclick="closeHelpResolveModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitHelpResolve()" id="helpResolveSubmitBtn">Mark resolved</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══ Pending Transfers Panel ═══ -->
     <div class="gm-overlay" id="pendingTransfersOverlay">
         <div class="gm-modal">
@@ -884,6 +971,7 @@
                 <button class="btn btn-sm btn-outline-primary" onclick="openLogActivityModal(window._leadDetailId)">Log Activity</button>
                 <button class="btn btn-sm btn-outline-primary" onclick="openScheduleFollowupModal(window._leadDetailId)">Schedule Follow-up</button>
                 <button class="btn btn-sm btn-outline-secondary" onclick="openTransferRequestModal(window._leadDetailId)">Transfer to Team</button>
+                <button class="btn btn-sm btn-outline-warning" onclick="openHelpRequestModal(window._leadDetailId)" id="leadDetailNeedHelpBtn">Need Help</button>
             </div>
 
             <!-- Timeline -->

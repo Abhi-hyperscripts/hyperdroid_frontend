@@ -47,6 +47,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadReassignQueueBadge();
     initSearchableDropdowns();
     setupLeadsRealtime();
+    // Banner is hidden by default. Poll inbox once on load so users who
+    // refresh mid-session don't lose their open requests until SignalR
+    // delivers a new event.
+    if (typeof window.refreshHelpInboxBanner === 'function') {
+        window.refreshHelpInboxBanner();
+    }
 });
 
 // Polls the reassign-queue count endpoint. The button + badge stay hidden
@@ -220,6 +226,30 @@ async function setupLeadsRealtime() {
         _pendingNewLeadCount++;
         renderPendingLeadsBanner(lead);
     });
+
+    // Help-request banner — driven by per-user events. The hub adds the
+    // current user to a `user_<tenantId>_<userId>` group on connect, so only
+    // the chosen recipient sees Raised; only the original requester sees
+    // Resolved/Cancelled. We refresh the banner count on any of them, and
+    // ALSO re-run the list+stats query when the user is currently sitting
+    // on the "Help requested" pseudo-filter — otherwise the row that just
+    // resolved/cancelled would linger as a stale entry until the user
+    // toggles the filter or hits refresh.
+    const refresh = () => {
+        if (typeof window.refreshHelpInboxBanner === 'function') {
+            window.refreshHelpInboxBanner();
+        }
+        const currentStatus = filterStatusDropdown
+            ? filterStatusDropdown.getValue()
+            : document.getElementById('filterStatus')?.value;
+        if (currentStatus === 'help_requested') {
+            loadLeads();
+            loadLeadStats();
+        }
+    };
+    _leadsHubConnection.on('HelpRequestRaised', refresh);
+    _leadsHubConnection.on('HelpRequestResolved', refresh);
+    _leadsHubConnection.on('HelpRequestCancelled', refresh);
 
     try {
         await _leadsHubConnection.start();
@@ -430,6 +460,11 @@ function buildFilterParams() {
     // driven by next_followup_date, so this matches what users see.
     if (status === 'follow_up_scheduled') {
         params.set('hasFollowup', 'true');
+    } else if (status === 'help_requested') {
+        // Pseudo-status: backend filters via WHERE EXISTS lead_help_requests.
+        // 'me' is the friendly token; controller resolves it to the caller's
+        // user id so the same filter works for both requester and recipient.
+        params.set('hasHelp', 'me');
     } else if (status) {
         params.set('status', status);
     }

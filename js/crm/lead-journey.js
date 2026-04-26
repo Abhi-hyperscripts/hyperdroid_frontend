@@ -250,8 +250,69 @@
             // Load timeline
             const timeline = await api.request(`/crm/leads/${leadId}/timeline`);
             renderTimeline(timeline);
+
+            // Refresh the Need-Help / Cancel-Help button state. The requester
+            // gets a single button that flips between "Need Help" (no open
+            // request) and "Cancel pending help" (open request raised by them).
+            // Fire-and-forget — failure here just leaves the default Need-Help
+            // button visible, which is correct for the no-existing-request case.
+            refreshHelpButtonForLead(leadId);
         } catch (e) {
             document.getElementById('leadTimeline').innerHTML = `<p style="color:var(--color-error);">${esc(e.message || 'Failed to load')}</p>`;
+        }
+    }
+
+    // Looks up whether the current user has an open help request on this lead
+    // (as the requester) and swaps the panel's Need-Help button accordingly.
+    // Stores the request id on the button so the cancel handler can find it
+    // without a second round-trip.
+    async function refreshHelpButtonForLead(leadId) {
+        const btn = document.getElementById('leadDetailNeedHelpBtn');
+        if (!btn) return;
+        try {
+            const me = (typeof api?.getUser === 'function' && api.getUser()?.userId) || null;
+            const list = await api.request(`/crm/leads/${leadId}/help-requests`);
+            const myOpen = (list || []).find(r => r.status === 'open' && me && r.requester_user_id === me);
+            if (myOpen) {
+                btn.textContent = 'Cancel Help';
+                btn.classList.remove('btn-outline-warning');
+                btn.classList.add('btn-outline-danger');
+                btn.setAttribute('data-help-id', myOpen.id);
+                btn.setAttribute('onclick', `cancelMyHelpRequest('${myOpen.id}')`);
+                btn.title = `Pending with ${myOpen.recipient_name || 'recipient'} — click to cancel.`;
+            } else {
+                btn.textContent = 'Need Help';
+                btn.classList.remove('btn-outline-danger');
+                btn.classList.add('btn-outline-warning');
+                btn.removeAttribute('data-help-id');
+                btn.setAttribute('onclick', `openHelpRequestModal(window._leadDetailId)`);
+                btn.title = '';
+            }
+        } catch {
+            // Non-critical — leave the default Need-Help button.
+        }
+    }
+
+    async function cancelMyHelpRequest(helpId) {
+        if (!helpId) return;
+        // Themed confirmation modal — guards against accidental clicks on
+        // what is otherwise a single-press destructive action.
+        const ok = await Confirm.show({
+            title: 'Cancel help request?',
+            message: 'The recipient will be notified that you no longer need help on this lead. The request will move to "cancelled" on the lead\'s timeline.',
+            type: 'danger',
+            confirmText: 'Yes, cancel it',
+            cancelText: 'Keep request'
+        });
+        if (!ok) return;
+        try {
+            await api.request(`/crm/leads/help-requests/${helpId}/cancel`, { method: 'POST' });
+            Toast.success('Help request cancelled');
+            const lid = window._leadDetailId;
+            if (lid) openLeadDetailPanel(lid);   // refreshes timeline + button
+            if (typeof window.refreshHelpInboxBanner === 'function') window.refreshHelpInboxBanner();
+        } catch (e) {
+            Toast.error(e?.message || 'Failed to cancel');
         }
     }
 
@@ -1114,6 +1175,181 @@
         }
     }
 
+    // ─── Help Request ─────────────────────────────────────────────────────
+
+    let _helpLeadId = null;
+    let _helpResolveId = null;
+
+    async function openHelpRequestModal(leadId) {
+        _helpLeadId = leadId;
+        document.getElementById('helpReasonInput').value = '';
+        const sel = document.getElementById('helpRecipientSelect');
+        sel.innerHTML = '<option value="">Loading…</option>';
+        const hint = document.getElementById('helpRecipientHint');
+        hint.textContent = '';
+
+        document.getElementById('helpRequestOverlay').classList.add('active');
+
+        try {
+            const list = await api.request(`/crm/leads/${leadId}/help-requests/eligible-recipients`);
+            if (!Array.isArray(list) || list.length === 0) {
+                sel.innerHTML = '<option value="">No manager or team lead available</option>';
+                hint.textContent = "This team has no manager or team lead — there's no one to escalate to. Ask an admin to assign one.";
+                document.getElementById('helpRequestSubmitBtn').disabled = true;
+                return;
+            }
+            const labelFor = r => `${esc(r.name)} — ${r.role === 'manager' ? 'Manager' : 'Team Lead'}`;
+            sel.innerHTML = '<option value="">Select recipient…</option>' +
+                list.map(r => `<option value="${esc(r.user_id)}">${labelFor(r)}</option>`).join('');
+            document.getElementById('helpRequestSubmitBtn').disabled = false;
+        } catch (e) {
+            sel.innerHTML = '<option value="">Failed to load</option>';
+            hint.textContent = e?.message || 'Could not load recipients.';
+        }
+    }
+
+    function closeHelpRequestModal() {
+        document.getElementById('helpRequestOverlay').classList.remove('active');
+        _helpLeadId = null;
+    }
+
+    async function submitHelpRequest() {
+        if (!_helpLeadId) return;
+        const recipient = document.getElementById('helpRecipientSelect').value;
+        const reason = document.getElementById('helpReasonInput').value.trim();
+        if (!recipient) { Toast.error('Pick a recipient'); return; }
+        if (!reason) { Toast.error('A short reason is required'); return; }
+
+        const btn = document.getElementById('helpRequestSubmitBtn');
+        btn.disabled = true; btn.textContent = 'Sending…';
+        try {
+            await api.request(`/crm/leads/${_helpLeadId}/help-requests`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ recipient_user_id: recipient, reason })
+            });
+            Toast.success('Help request sent');
+            const wasOpen = window._leadDetailId === _helpLeadId;
+            const lid = _helpLeadId;
+            closeHelpRequestModal();
+            if (wasOpen && typeof openLeadDetailPanel === 'function') openLeadDetailPanel(lid);
+        } catch (e) {
+            Toast.error(e?.message || 'Failed to send help request');
+        } finally {
+            btn.disabled = false; btn.textContent = 'Send help request';
+        }
+    }
+
+    // ─── Help Inbox (recipient view) ──────────────────────────────────────
+
+    async function openHelpInboxModal() {
+        const list = document.getElementById('helpInboxList');
+        list.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px;">Loading…</p>';
+        document.getElementById('helpInboxOverlay').classList.add('active');
+        try {
+            const reqs = await api.request('/crm/leads/help-requests/inbox');
+            renderHelpInbox(reqs || []);
+        } catch (e) {
+            list.innerHTML = `<p style="color:var(--color-error);">${esc(e?.message || 'Failed to load')}</p>`;
+        }
+    }
+
+    function closeHelpInboxModal() {
+        document.getElementById('helpInboxOverlay').classList.remove('active');
+    }
+
+    function renderHelpInbox(reqs) {
+        const list = document.getElementById('helpInboxList');
+        if (reqs.length === 0) {
+            list.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px;">No open help requests. 🎉</p>';
+            // Banner can drop too — there's nothing left.
+            const banner = document.getElementById('helpInboxBanner');
+            if (banner) banner.hidden = true;
+            return;
+        }
+        const fmtDate = ts => {
+            try { return new Date(ts).toLocaleString(); } catch { return ''; }
+        };
+        list.innerHTML = reqs.map(r => `
+            <div class="help-inbox-row" style="border:1px solid var(--border-color);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--bg-card);">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                            <strong style="color:var(--text-primary);">${esc(r.lead_name || '(unnamed lead)')}</strong>
+                            ${r.lead_number ? `<span style="font-size:11px;color:var(--text-secondary);">${esc(r.lead_number)}</span>` : ''}
+                            <span style="font-size:11px;color:var(--text-secondary);">•</span>
+                            <span style="font-size:12px;color:var(--text-secondary);">from ${esc(r.requester_name || r.requester_user_id || 'teammate')}</span>
+                        </div>
+                        <div style="margin-top:6px;color:var(--text-primary);font-size:13px;white-space:pre-wrap;word-break:break-word;">${esc(r.reason)}</div>
+                        <div style="margin-top:6px;font-size:11px;color:var(--text-secondary);">${fmtDate(r.created_at)} · team ${esc(r.team_name || '')}</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <button class="btn btn-sm btn-outline-primary" onclick="openLeadDetailPanel('${esc(r.lead_id)}'); closeHelpInboxModal();">Open lead</button>
+                        <button class="btn btn-sm btn-primary" onclick="openHelpResolveModal('${esc(r.id)}', '${esc((r.lead_name || '').replace(/'/g,'&#39;'))}')">Resolve</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function openHelpResolveModal(id, leadName) {
+        _helpResolveId = id;
+        document.getElementById('helpResolveComment').value = '';
+        if (leadName) {
+            document.getElementById('helpResolveSubtitle').textContent =
+                `Lead: ${leadName}. Add a comment so the requester knows what you decided.`;
+        }
+        document.getElementById('helpResolveOverlay').classList.add('active');
+    }
+
+    function closeHelpResolveModal() {
+        document.getElementById('helpResolveOverlay').classList.remove('active');
+        _helpResolveId = null;
+    }
+
+    async function submitHelpResolve() {
+        if (!_helpResolveId) return;
+        const comment = document.getElementById('helpResolveComment').value.trim();
+        if (!comment) { Toast.error('A short comment is required'); return; }
+        const btn = document.getElementById('helpResolveSubmitBtn');
+        btn.disabled = true; btn.textContent = 'Saving…';
+        try {
+            await api.request(`/crm/leads/help-requests/${_helpResolveId}/resolve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ resolution_comment: comment })
+            });
+            Toast.success('Marked resolved');
+            closeHelpResolveModal();
+            // Re-load inbox so the resolved row drops out + banner re-counts.
+            await refreshHelpInboxBanner();
+            if (document.getElementById('helpInboxOverlay')?.classList.contains('active')) {
+                openHelpInboxModal();
+            }
+        } catch (e) {
+            Toast.error(e?.message || 'Failed to resolve');
+        } finally {
+            btn.disabled = false; btn.textContent = 'Mark resolved';
+        }
+    }
+
+    // ─── Inbox banner — polled once on load + driven live by SignalR ───────
+
+    async function refreshHelpInboxBanner() {
+        const banner = document.getElementById('helpInboxBanner');
+        const text = document.getElementById('helpInboxBannerText');
+        if (!banner || !text) return;
+        try {
+            const reqs = await api.request('/crm/leads/help-requests/inbox');
+            const n = (reqs || []).length;
+            if (n === 0) { banner.hidden = true; return; }
+            text.textContent = n === 1 ? '1 help request waiting for you' : `${n} help requests waiting for you`;
+            banner.hidden = false;
+        } catch {
+            // Silent — non-critical, banner just won't show.
+        }
+    }
+
     // ─── Expose to window ───────────────────────────────────────────────
 
     window.openLeadDetailPanel = openLeadDetailPanel;
@@ -1143,4 +1379,15 @@
     window.submitReply = submitReply;
     window.onReplyAttachChange = onReplyAttachChange;
     window.removeReplyAttachment = removeReplyAttachment;
+    window.openHelpRequestModal = openHelpRequestModal;
+    window.closeHelpRequestModal = closeHelpRequestModal;
+    window.submitHelpRequest = submitHelpRequest;
+    window.openHelpInboxModal = openHelpInboxModal;
+    window.closeHelpInboxModal = closeHelpInboxModal;
+    window.openHelpResolveModal = openHelpResolveModal;
+    window.closeHelpResolveModal = closeHelpResolveModal;
+    window.submitHelpResolve = submitHelpResolve;
+    window.refreshHelpInboxBanner = refreshHelpInboxBanner;
+    window.cancelMyHelpRequest = cancelMyHelpRequest;
+    window.refreshHelpButtonForLead = refreshHelpButtonForLead;
 })();
