@@ -404,7 +404,17 @@ function buildFilterParams() {
     const campaignEl = document.getElementById('filterCampaign');
     const campaignId = campaignEl ? campaignEl.value : '';
 
-    if (status) params.set('status', status);
+    // The dropdown's "Follow up scheduled" option is a pseudo-status — it's
+    // really a date filter on next_followup_date. Translate it here instead
+    // of sending status=follow_up_scheduled (the DB constraint would reject
+    // any matching write, and the WHERE clause would always return zero
+    // rows). The visible follow-up indicator on each lead row is also
+    // driven by next_followup_date, so this matches what users see.
+    if (status === 'follow_up_scheduled') {
+        params.set('hasFollowup', 'true');
+    } else if (status) {
+        params.set('status', status);
+    }
     if (source) {
         // New filter: option values are lead_source UUIDs. Legacy filter
         // (fallback when /lead-sources is down) prefixes with "__legacy:"

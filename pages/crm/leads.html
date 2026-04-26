@@ -150,6 +150,17 @@
         <div class="crm-filter-bar">
             <div class="crm-filter-group">
                 <label for="filterStatus">Status</label>
+                <!-- The lead-status enum is deliberately small (new → contacted →
+                     qualified/unqualified → converted). Opportunity / Negotiation /
+                     Won / Lost are DEAL stages, not lead stages, and live in the
+                     Deals pipeline. Don't add them here — the DB constraint
+                     literally rejects those values.
+
+                     "Follow up scheduled" is NOT a status — it's a date marker
+                     on next_followup_date. We expose it through this same
+                     dropdown for UX (users intuit it as a status), but the
+                     filter handler translates the special "follow_up_scheduled"
+                     value into hasFollowup=true on the API call. -->
                 <select id="filterStatus" class="form-select form-select-sm" onchange="applyFilters()">
                     <option value="">All Statuses</option>
                     <option value="new">New</option>
@@ -157,11 +168,8 @@
                     <option value="contacted">Contacted</option>
                     <option value="qualified">Qualified</option>
                     <option value="unqualified">Unqualified</option>
-                    <option value="follow_up">Follow Up</option>
-                    <option value="opportunity">Opportunity</option>
-                    <option value="negotiation">Negotiation</option>
-                    <option value="won">Won</option>
-                    <option value="lost">Lost</option>
+                    <option value="converted">Converted</option>
+                    <option value="follow_up_scheduled">Follow up scheduled</option>
                 </select>
             </div>
             <div class="crm-filter-group" id="filterTeamGroup" style="display:none;">
