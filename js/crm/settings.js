@@ -3115,6 +3115,7 @@ function gsRenderTable() {
                     <td style="text-align:right;">${r.total_leads_received.toLocaleString()}</td>
                     <td>${escapeHtml(lastSync)}</td>
                     <td class="gs-actions-cell">
+                        <button class="btn btn-sm btn-primary" onclick="syncGoogleSheetNow('${escapeHtml(r.lead_source_id)}', this)" title="Re-scan sheet from row 1. Already-imported leads stay untouched.">Sync now</button>
                         <button class="btn btn-sm btn-outline" onclick="openGoogleSheetSyncLogs('${escapeHtml(r.lead_source_id)}', '${escapeHtml(r.spreadsheet_name)}', '${escapeHtml(r.sheet_tab_name || '')}')">Logs</button>
                         <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${escapeHtml(r.lead_source_id)}', ${!r.is_active})">${toggleLabel}</button>
                         <button class="btn btn-sm btn-outline" onclick="disconnectGoogleSheet('${escapeHtml(r.lead_source_id)}')">Remove</button>
@@ -3239,6 +3240,35 @@ async function toggleGoogleSheet(sourceId, makeActive) {
         await loadGoogleSheetsState();
     } catch (e) {
         Toast.error(e.message || 'Failed to toggle sheet');
+    }
+}
+
+// Manual on-demand sync. Backend resets the cursor to 0 and dedups by
+// source_lead_id, so already-imported leads are NEVER touched — the rescan
+// only inserts rows that were silently skipped or are new since the last
+// successful tick. Runs as a Hangfire background job; the UI refreshes
+// automatically when the SignalR `GoogleSheetSynced` event fires.
+async function syncGoogleSheetNow(sourceId, btnEl) {
+    const ok = await showConfirm(
+        'Re-scan this sheet from the top? Already-imported leads stay untouched (dedup by lead id) — only missing or new rows get added.',
+        'Sync now',
+        'primary'
+    );
+    if (!ok) return;
+    const original = btnEl ? btnEl.textContent : null;
+    if (btnEl) { btnEl.disabled = true; btnEl.textContent = 'Queuing…'; }
+    try {
+        const res = await api.request(`/crm/GoogleSheets/sources/${sourceId}/sync-now?fullRescan=true`, { method: 'POST' });
+        Toast.success(res?.message || 'Sync queued — results will appear shortly.');
+        // Don't poll — the existing SignalR `GoogleSheetSynced` listener
+        // refreshes the table and Logs modal as each batch finishes.
+    } catch (e) {
+        Toast.error(e.message || 'Failed to start sync');
+    } finally {
+        if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.textContent = original || 'Sync now';
+        }
     }
 }
 
