@@ -2137,6 +2137,27 @@ body.crm-dashboard .crm-container {
     height: auto;
 }
 
+/* Mobile: 3-column grid can't fit "Rows [50] | Showing N leads | spacer"
+   in 390px AND it ends up under the floating AI copilot button at the
+   bottom-right. Stack vertically and pad the bottom so the count text
+   isn't masked by the copilot widget. */
+@media (max-width: 768px) {
+    .crm-pagination {
+        grid-template-columns: 1fr !important;
+        row-gap: 8px;
+        padding-bottom: 80px; /* Clear the fixed AI Copilot widget */
+    }
+    .crm-pagesize {
+        justify-self: start;
+    }
+    .crm-pagination-center {
+        justify-self: start;
+    }
+    .crm-pagination-spacer {
+        display: none;
+    }
+}
+
 /* Soft-gray team-assigned rows — signals "bulk-assign will skip this" but
    the checkbox is still interactive so the lead can be included in other
    bulk actions (send campaign, export, delete).
