@@ -322,6 +322,17 @@ async function loadLeads(page) {
  * filtered table — previously cards stayed frozen at tenant-wide totals
  * regardless of which filter was applied.
  */
+/**
+ * Single helper every mutation handler calls so the table + KPI cards
+ * always reload in lockstep. Without this, every new mutation site has a
+ * fresh chance to forget the stats reload (which is exactly how we ended
+ * up with KPIs frozen at the pre-mutation totals after bulk-assign).
+ */
+function refreshLeadView() {
+    loadLeads();
+    loadLeadStats();
+}
+
 async function loadLeadStats() {
     try {
         const params = buildFilterParams();
@@ -793,7 +804,7 @@ window.changePageSize = function (n) {
     if (!PAGE_SIZE_OPTIONS.includes(next)) return;
     pageSize = next;
     currentPage = 1;
-    loadLeads();
+    refreshLeadView();
 };
 
 function formatDate(dateStr) {
@@ -993,6 +1004,11 @@ async function confirmBulkAssign(teamId, teamName) {
         selectedLeadIds.clear();
         updateBulkActionsBar();
         loadLeads();
+        // Bulk-assign flips lead status from 'new' → 'assigned' on the
+        // backend, so the KPI cards have to refresh to stay in sync with
+        // the table. Without this they stayed frozen at the pre-assign
+        // totals (e.g. New=275 even after 50 leads moved to Assigned).
+        loadLeadStats();
     } catch (e) {
         Toast.error(e.message || 'Assignment failed');
     }
@@ -1211,7 +1227,7 @@ async function assignLead(leadId, ownerId) {
             body: JSON.stringify({ owner_id: ownerId })
         });
         Toast.success('Lead assigned successfully');
-        loadLeads();
+        refreshLeadView();
     } catch (error) {
         console.error('Failed to assign lead:', error);
         Toast.error('Failed to assign lead');
@@ -1267,7 +1283,7 @@ async function confirmReassign() {
         });
         Toast.success('Lead reassigned successfully');
         closeReassignModal();
-        loadLeads();
+        refreshLeadView();
     } catch (e) {
         Toast.error(e.message || 'Failed to reassign');
     }
