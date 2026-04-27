@@ -851,6 +851,12 @@ function renderFacebookPageCard(page, forms) {
         ? '<span style="font-size: 0.7em; padding: 2px 6px; background: var(--brand-primary); color: #fff; border-radius: 4px; margin-left: 6px;">System User</span>'
         : '<span style="font-size: 0.7em; padding: 2px 6px; background: var(--bg-tertiary); color: var(--text-secondary); border-radius: 4px; margin-left: 6px;">OAuth</span>';
 
+    // Rate-limit telemetry (May 2026). Only render the chip/badge when
+    // there's something to say — a freshly connected page with no usage
+    // reading yet stays visually clean.
+    const usagePctChip = (page.usage_pct != null) ? renderFbUsageChip(page.usage_pct, page.usage_checked_at) : '';
+    const cooldownBadge = renderFbCooldownBadge(page.cooldown_until);
+
     const formsHtml = forms.length > 0
         ? `<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color-light);">
               ${forms.map(f => renderFacebookFormRow(f)).join('')}
@@ -872,6 +878,8 @@ function renderFacebookPageCard(page, forms) {
                 <span style="font-weight: 600;">${escapeHtml(page.page_name)}</span>
                 ${tokenSourceBadge}
                 <span style="font-size: 0.8em; color: var(--text-secondary);">${page.total_leads_received} lead${page.total_leads_received !== 1 ? 's' : ''}</span>
+                ${usagePctChip}
+                ${cooldownBadge}
                 <div style="margin-left: auto; display: flex; gap: 6px;">
                     <button type="button" class="btn btn-outline" data-fb-action="manage-forms" style="padding: 4px 10px; font-size: 0.75rem;">
                         Manage Forms
@@ -930,6 +938,33 @@ function renderFacebookFormRow(form) {
             </div>
         </div>
     `;
+}
+
+// Meta usage_pct chip: green <70 / yellow 70-89 / red ≥90. Tooltip shows
+// the absolute timestamp of when the score was captured so a stale value
+// (e.g. minutes-old) doesn't mislead the user.
+function renderFbUsageChip(usagePct, checkedAtIso) {
+    const pct = Math.max(0, Math.min(100, Number(usagePct) || 0));
+    let bg, fg;
+    if (pct >= 90)      { bg = 'rgba(239,68,68,0.12)';  fg = '#b91c1c'; }
+    else if (pct >= 70) { bg = 'rgba(234,179,8,0.15)';  fg = '#a16207'; }
+    else                { bg = 'rgba(22,163,74,0.12)';  fg = '#15803d'; }
+    const ts = checkedAtIso ? new Date(checkedAtIso).toLocaleString() : 'unknown';
+    const tip = `Meta API usage at ${ts}. Score ≥ 90% triggers a soft cooldown.`;
+    return `<span title="${escapeHtml(tip)}" style="font-size: 0.7em; padding: 2px 6px; background: ${bg}; color: ${fg}; border-radius: 4px;">Usage ${pct}%</span>`;
+}
+
+// Cooldown badge — only renders when an active cooldown is in effect.
+// "Cooled until 14:32" reads cleaner than an absolute date for the typical
+// sub-1-hour cooldown window; the tooltip carries the precise timestamp.
+function renderFbCooldownBadge(cooldownUntilIso) {
+    if (!cooldownUntilIso) return '';
+    const until = new Date(cooldownUntilIso);
+    if (until.getTime() <= Date.now()) return ''; // already expired
+    const hh = until.getHours().toString().padStart(2, '0');
+    const mm = until.getMinutes().toString().padStart(2, '0');
+    const tip = `Page is in cooldown until ${until.toLocaleString()}. Polling resumes automatically when the window closes.`;
+    return `<span title="${escapeHtml(tip)}" style="font-size: 0.7em; padding: 2px 6px; background: rgba(234,179,8,0.15); color: #a16207; border-radius: 4px;">Cooled until ${hh}:${mm}</span>`;
 }
 
 // Compact "X min ago / Y hours ago" formatter for the last-sync chip. Matches
