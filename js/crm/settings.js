@@ -808,6 +808,10 @@ async function loadFacebookPages() {
         facebookPages = pages || [];
         facebookForms = forms || [];
         renderFacebookPages();
+        // Wire the FacebookSynced SignalR listener so the connected-forms
+        // table + Logs modal stay live without a manual refresh. Mirrors
+        // the setupGoogleSheetsRealtime() call in loadGoogleSheetsState().
+        setupFacebookRealtime();
     } catch (error) {
         console.error('Error loading Facebook pages:', error);
         facebookPages = [];
@@ -887,10 +891,21 @@ function renderFacebookFormRow(form) {
         ? '<span style="font-size: 0.7em; padding: 2px 6px; background: var(--color-success); color: #fff; border-radius: 4px;">Polling</span>'
         : '<span style="font-size: 0.7em; padding: 2px 6px; background: var(--bg-tertiary); color: var(--text-secondary); border-radius: 4px;">Paused</span>';
 
+    // "Last sync" — mirrors the GS settings UI. Pending = first tick hasn't
+    // happened yet; relative time (e.g. "3 min ago") for fresh syncs reads
+    // more naturally than an absolute timestamp at this density.
+    const lastSyncLabel = form.last_polled_at
+        ? `<span style="font-size: 0.75em; color: var(--text-secondary);" title="${escapeHtml(new Date(form.last_polled_at).toLocaleString())}">Last sync: ${fbRelativeTime(form.last_polled_at)}</span>`
+        : '<span style="font-size: 0.75em; color: var(--text-secondary);">Pending first sync</span>';
+
     // Event delegation picks up data-fb-form-action; leadSourceId lives in data-fb-source-id.
+    // Sync now / Logs buttons mirror the per-row actions in the GS table — admins shouldn't
+    // need to grep container logs to answer "did it sync?".
     return `
-        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0;"
-             data-fb-source-id="${escapeHtml(form.lead_source_id || '')}" data-fb-active="${form.is_active ? '1' : '0'}">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 0; flex-wrap: wrap;"
+             data-fb-source-id="${escapeHtml(form.lead_source_id || '')}"
+             data-fb-active="${form.is_active ? '1' : '0'}"
+             data-fb-source-name="${escapeHtml(form.source_name || '')}">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-secondary); flex-shrink: 0;">
                 <polyline points="9 11 12 14 22 4"/>
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
@@ -898,7 +913,14 @@ function renderFacebookFormRow(form) {
             <span style="font-size: 0.9em;">${escapeHtml(form.source_name || 'Unnamed form')}</span>
             ${stateBadge}
             <span style="font-size: 0.8em; color: var(--text-secondary);">${form.total_leads_received || 0} leads</span>
+            ${lastSyncLabel}
             <div style="margin-left: auto; display: flex; gap: 4px;">
+                <button type="button" class="btn btn-sm btn-primary" data-fb-form-action="sync-now" title="Re-scan from connected_at. Already-imported leads stay untouched (dedup by source_lead_id)." style="padding: 2px 8px; font-size: 0.7rem;">
+                    Sync now
+                </button>
+                <button type="button" class="btn btn-outline" data-fb-form-action="logs" style="padding: 2px 8px; font-size: 0.7rem;">
+                    Logs
+                </button>
                 <button type="button" class="btn btn-outline" data-fb-form-action="toggle" style="padding: 2px 8px; font-size: 0.7rem;">
                     ${form.is_active ? 'Pause' : 'Resume'}
                 </button>
@@ -908,6 +930,23 @@ function renderFacebookFormRow(form) {
             </div>
         </div>
     `;
+}
+
+// Compact "X min ago / Y hours ago" formatter for the last-sync chip. Matches
+// the GS settings vibe — a 12-min-old sync says "12 min ago", not the ISO ts
+// (which is shown on hover via the title attribute).
+function fbRelativeTime(iso) {
+    if (!iso) return '—';
+    const ms = Date.now() - new Date(iso).getTime();
+    if (ms < 0) return 'just now';
+    const sec = Math.floor(ms / 1000);
+    if (sec < 60) return 'just now';
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min} min ago`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr} hr ago`;
+    const day = Math.floor(hr / 24);
+    return `${day} day${day > 1 ? 's' : ''} ago`;
 }
 
 // One-time delegation setup. Every click inside #fbPagesList is routed here.
@@ -935,12 +974,144 @@ function bindFacebookPagesListHandlers() {
             if (!row) return;
             const sourceId = row.getAttribute('data-fb-source-id');
             const isActive = row.getAttribute('data-fb-active') === '1';
+            const sourceName = row.getAttribute('data-fb-source-name') || 'this form';
             const action = formBtn.getAttribute('data-fb-form-action');
             if (action === 'toggle') toggleFacebookFormSource(sourceId, !isActive);
             else if (action === 'remove') disconnectFacebookFormSource(sourceId);
+            else if (action === 'sync-now') syncFacebookFormNow(sourceId, formBtn);
+            else if (action === 'logs') openFacebookSyncLogs(sourceId, sourceName);
         }
     });
     _fbPagesListBound = true;
+}
+
+// ─── SignalR live updates for FB forms (mirror of the GS hub wiring) ────
+//
+// The Hangfire FB poller fires CrmEvents.FacebookSynced on every tick per
+// form. Reuses the same hub connection as GS (no second WebSocket). When a
+// FacebookSynced event arrives we debounce-refresh the connected forms list
+// and the Logs modal if it's open for the affected source.
+let _fbSyncLogsCurrentSourceId = null;
+
+function setupFacebookRealtime() {
+    // Piggyback on the GS hub setup if it's already running. Otherwise spin
+    // it up — the same hub instance handles both event streams.
+    setupGoogleSheetsRealtime();
+    if (!_gsHubConnection) return;
+    if (_gsHubConnection._fbBound) return;
+
+    _gsHubConnection.on('FacebookSynced', (payload) => {
+        if (window._fbHubRefreshTimer) return;
+        window._fbHubRefreshTimer = setTimeout(() => {
+            window._fbHubRefreshTimer = null;
+            loadFacebookPages().catch(e => console.warn('FB realtime refresh failed:', e));
+            if (_fbSyncLogsCurrentSourceId && payload?.leadSourceId === _fbSyncLogsCurrentSourceId) {
+                refreshFacebookSyncLogs();
+            }
+        }, 600);
+    });
+    _gsHubConnection._fbBound = true;
+}
+
+// Manual on-demand sync. Backend resets the cursor to NULL when fullRescan
+// is true and dedups by source_lead_id, so already-imported leads are NEVER
+// touched — the rescan only inserts new or previously-missed leads. Runs
+// as a Hangfire background job; the UI refreshes automatically when the
+// SignalR `FacebookSynced` event fires.
+async function syncFacebookFormNow(sourceId, btnEl) {
+    if (!sourceId) return;
+    const ok = await showConfirm(
+        'Re-scan this Facebook form now? Already-imported leads stay untouched (dedup by lead id) — only missing or new leads get added.',
+        'Sync now',
+        'primary'
+    );
+    if (!ok) return;
+    const original = btnEl ? btnEl.textContent : null;
+    if (btnEl) { btnEl.disabled = true; btnEl.textContent = 'Queuing…'; }
+    try {
+        const res = await api.request(`/crm/Facebook/forms/${sourceId}/sync-now?fullRescan=true`, { method: 'POST' });
+        Toast.success(res?.message || 'Sync queued — results will appear shortly.');
+        // Don't poll — the FacebookSynced SignalR listener refreshes the
+        // table and Logs modal as the worker completes.
+    } catch (e) {
+        Toast.error(e.message || 'Failed to start sync');
+    } finally {
+        if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.textContent = original || 'Sync now';
+        }
+    }
+}
+
+// ─── FB sync-logs modal (mirror of the GS Logs modal) ─────────────────────
+
+function openFacebookSyncLogs(sourceId, sourceName) {
+    _fbSyncLogsCurrentSourceId = sourceId;
+    const subtitle = document.getElementById('fbSyncLogsSubtitle');
+    if (subtitle) subtitle.textContent = sourceName || '—';
+    const modal = document.getElementById('fbSyncLogsModal');
+    if (modal) modal.classList.add('active');
+    refreshFacebookSyncLogs();
+}
+
+function closeFacebookSyncLogs() {
+    const modal = document.getElementById('fbSyncLogsModal');
+    if (modal) modal.classList.remove('active');
+    _fbSyncLogsCurrentSourceId = null;
+}
+
+async function refreshFacebookSyncLogs() {
+    const sourceId = _fbSyncLogsCurrentSourceId;
+    if (!sourceId) return;
+
+    const loadingEl = document.getElementById('fbSyncLogsLoading');
+    const emptyEl = document.getElementById('fbSyncLogsEmpty');
+    const wrapEl = document.getElementById('fbSyncLogsTableWrap');
+    const tbody = document.getElementById('fbSyncLogsTableBody');
+
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (wrapEl) wrapEl.style.display = 'none';
+    if (tbody) tbody.innerHTML = '';
+
+    try {
+        const data = await api.request(`/crm/Facebook/forms/${sourceId}/sync-logs?limit=100`);
+        const items = (data && data.items) || [];
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (items.length === 0) {
+            if (emptyEl) emptyEl.style.display = 'block';
+            return;
+        }
+        if (wrapEl) wrapEl.style.display = 'block';
+        tbody.innerHTML = items.map(it => {
+            const start = it.started_at ? new Date(it.started_at).toLocaleString() : '—';
+            const outcome = it.outcome || 'in-flight';
+            const outcomeBadge = `<span class="gs-status-badge gs-sync-${outcome}">${escapeHtml(outcome)}</span>`;
+            // FB analogue of the GS "Cursor" column — show the polled-at
+            // window the tick covered. "(initial)" makes "first tick after
+            // connect" obviously distinct from a missing field.
+            const fmtTs = (ts) => ts ? new Date(ts).toLocaleString() : '(initial)';
+            const window = `${fmtTs(it.last_polled_at_before)} → ${fmtTs(it.last_polled_at_after)}`;
+            const dur = it.duration_ms != null ? `${it.duration_ms} ms` : '—';
+            const note = it.error_message ? escapeHtml(it.error_message) : '';
+            return `
+                <tr>
+                    <td>${escapeHtml(start)}</td>
+                    <td>${outcomeBadge}</td>
+                    <td style="text-align:right;">${(it.rows_read ?? 0).toLocaleString()}</td>
+                    <td style="text-align:right;">${(it.leads_created ?? 0).toLocaleString()}</td>
+                    <td style="font-size: 0.75rem; color: var(--text-secondary);">${escapeHtml(window)}</td>
+                    <td style="text-align:right;">${escapeHtml(dur)}</td>
+                    <td style="max-width:380px; word-break: break-word; color: var(--text-secondary);">${note}</td>
+                </tr>`;
+        }).join('');
+    } catch (e) {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (emptyEl) {
+            emptyEl.style.display = 'block';
+            emptyEl.textContent = 'Failed to load sync history: ' + (e.message || 'unknown error');
+        }
+    }
 }
 
 // ─── System User Token Modal (3-stage wizard) ───────────────────────────────

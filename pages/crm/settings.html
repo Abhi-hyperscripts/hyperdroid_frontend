@@ -888,6 +888,16 @@
                             .gs-status-badge.gs-sync-malformed_id,
                             .gs-status-badge.gs-sync-inactive_connection,
                             .gs-status-badge.gs-sync-sa_not_configured { background: rgba(239,68,68,0.12); color: #b91c1c; }
+                            /* Facebook sync-log outcome badges — share the
+                               .gs-status-badge base for layout, override
+                               colours for FB-specific outcomes the GS palette
+                               doesn't cover. */
+                            .gs-status-badge.gs-sync-skipped_rows { background: rgba(100,116,139,0.15); color: #475569; }
+                            .gs-status-badge.gs-sync-graph_error,
+                            .gs-status-badge.gs-sync-inactive_page,
+                            .gs-status-badge.gs-sync-http_error,
+                            .gs-status-badge.gs-sync-auth_error { background: rgba(239,68,68,0.12); color: #b91c1c; }
+                            .gs-status-badge.gs-sync-paused_page { background: rgba(234,179,8,0.15); color: #a16207; }
                             .gs-account-cell {
                                 font-size: 0.78rem;
                                 color: var(--text-secondary);
@@ -2801,6 +2811,53 @@
             <div class="gm-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeMailboxSyncLogs()">Close</button>
                 <button type="button" class="btn btn-outline" onclick="refreshMailboxSyncLogs()">Refresh</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Facebook Lead Ads sync-history modal — opened by the "Logs" action
+         button on each connected Facebook form. Mirrors the Google Sheets
+         modal structure: latest 50 facebook_lead_sync_log entries from
+         /api/Facebook/forms/{id}/sync-logs. The "Window" column shows the
+         last_polled_at_before → last_polled_at_after timestamps (analogue
+         of the GS row cursor). -->
+    <div class="gm-overlay" id="fbSyncLogsModal">
+        <div class="gm-modal" style="max-width: 1100px; width: 95vw;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon" style="background: #1877f2; color: #fff;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="gm-title">Sync history</h3>
+                        <p class="gm-subtitle" id="fbSyncLogsSubtitle">—</p>
+                    </div>
+                </div>
+                <button type="button" class="gm-close" onclick="closeFacebookSyncLogs()" aria-label="Close">&times;</button>
+            </div>
+            <div class="gm-body" style="-webkit-overflow-scrolling: touch;">
+                <div id="fbSyncLogsLoading" class="crm-loading" style="display:none;"><div class="crm-loading-spinner"></div><p>Loading…</p></div>
+                <div id="fbSyncLogsEmpty" style="display:none; padding: 24px; text-align: center; color: var(--text-secondary);">No syncs yet — the next 2-minute tick will populate this list.</div>
+                <div id="fbSyncLogsTableWrap" class="crm-table-wrapper" style="display:none;">
+                    <table class="crm-table data-table">
+                        <thead>
+                            <tr>
+                                <th>Started</th>
+                                <th>Outcome</th>
+                                <th style="text-align:right;">Leads pulled</th>
+                                <th style="text-align:right;">Leads created</th>
+                                <th>Window</th>
+                                <th style="text-align:right;">Duration</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fbSyncLogsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeFacebookSyncLogs()">Close</button>
+                <button type="button" class="btn btn-outline" onclick="refreshFacebookSyncLogs()">Refresh</button>
             </div>
         </div>
     </div>
