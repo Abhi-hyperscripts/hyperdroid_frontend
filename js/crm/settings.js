@@ -932,9 +932,12 @@ function renderFacebookFormRow(form) {
                 <button type="button" class="btn btn-outline" data-fb-form-action="toggle" style="padding: 2px 8px; font-size: 0.7rem;">
                     ${form.is_active ? 'Pause' : 'Resume'}
                 </button>
-                <button type="button" class="btn btn-outline" data-fb-form-action="remove" style="padding: 2px 8px; font-size: 0.7rem;">
-                    Remove
-                </button>
+                <!-- Remove intentionally hidden (May 2026) — DELETE was a soft-
+                     delete that produced the same DB state as Pause, leading
+                     users to think their "removed" source had been wiped when
+                     it could be Resumed in one click. Pause is the explicit
+                     "stop polling" action; full disconnect is at the FB Page
+                     level (Page settings → Lead Access). -->
             </div>
         </div>
     `;
@@ -3324,7 +3327,9 @@ function gsRenderTable() {
                         <button class="btn btn-sm btn-primary" onclick="syncGoogleSheetNow('${escapeHtml(r.lead_source_id)}', this)" title="Re-scan sheet from row 1. Already-imported leads stay untouched.">Sync now</button>
                         <button class="btn btn-sm btn-outline" onclick="openGoogleSheetSyncLogs('${escapeHtml(r.lead_source_id)}', '${escapeHtml(r.spreadsheet_name)}', '${escapeHtml(r.sheet_tab_name || '')}')">Logs</button>
                         <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${escapeHtml(r.lead_source_id)}', ${!r.is_active})">${toggleLabel}</button>
-                        <button class="btn btn-sm btn-outline" onclick="disconnectGoogleSheet('${escapeHtml(r.lead_source_id)}')">Remove</button>
+                        <!-- Remove hidden (May 2026): identical DB effect as Pause but
+                             confused users into thinking their data was wiped.
+                             Disconnect at the Google account level for full revoke. -->
                     </td>
                 </tr>
             `;
