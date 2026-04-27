@@ -1,5 +1,5 @@
 // ============================================================
-// Ragenaizer Service Worker  [BUILD 33]
+// Ragenaizer Service Worker  [BUILD 34]
 // Handles: Push Notifications (Firebase), Asset Caching, Version Updates
 // ============================================================
 
@@ -311,6 +311,19 @@ self.addEventListener('push', (event) => {
         }).catch(function () {});
     }
 
+    // Lock-screen / Doze visibility on Android Chrome WebAPK is gated by the
+    // notification channel's importance, which Chrome creates from the FIRST
+    // notification's options. requireInteraction:true registers the channel as
+    // IMPORTANCE_HIGH — wakes the device, shows on lock screen, doesn't get
+    // batched in Doze mode. Without it, the SW's showNotification() runs but
+    // Android sits on the toast until the user unlocks (the symptom we hit
+    // 2026-04-27 with FB Lead Ads pushes).
+    //
+    // Chat is high-frequency / lower-signal — let it auto-dismiss so the
+    // tray doesn't fill up. Everything else (leads, deals, help-requests,
+    // task assignments, etc.) is sticky until tapped.
+    var isHighFrequency = data && data.notification_type === 'chat_message';
+
     event.waitUntil(
         self.registration.showNotification(title, {
             body: body,
@@ -318,7 +331,8 @@ self.addEventListener('push', (event) => {
             badge: origin + '/assets/badge-icon.png',
             tag: 'ragenaizer-' + Date.now(),
             renotify: true,
-            requireInteraction: false,
+            requireInteraction: !isHighFrequency,
+            silent: false,
             data: data,
             vibrate: [200, 100, 200]
         }).then(function () {
