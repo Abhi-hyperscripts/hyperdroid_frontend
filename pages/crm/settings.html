@@ -948,6 +948,45 @@
                                     margin-left: 0;
                                 }
                             }
+
+                            /* ─── Sync-history modal scroll fix ────────────
+                               Issue (2026-04-27): table rendered inside the
+                               modal extended past the viewport with no scroll
+                               handle. Cause: `.gm-body` is `display:flex;
+                               flex-direction:column` with `overflow-y:auto`,
+                               but the inner `.crm-table-wrapper` had no
+                               `min-height:0`, so the flex child wouldn't
+                               shrink — its content's intrinsic height
+                               propagated up and the body never overflowed.
+                               Fix: make the wrapper itself the scroll
+                               container (flex:1; min-height:0; overflow).
+                               Applies to GS + FB + Mailbox sync-log modals. */
+                            #gsSyncLogsTableWrap,
+                            #fbSyncLogsTableWrap,
+                            #mailboxSyncLogsTableWrap {
+                                flex: 1 1 auto;
+                                min-height: 0;
+                                max-height: calc(80vh - 220px);
+                                overflow-y: auto;
+                                overflow-x: auto;
+                                -webkit-overflow-scrolling: touch;
+                            }
+
+                            /* ─── Mobile: stop horizontal scroll on cards ──
+                               table-cards.css folds the row to a stacked card
+                               below 768px — the modal body should NOT also
+                               scroll the wrapper horizontally on phones (the
+                               cards are already full width). Only let the
+                               OUTER body scroll vertically through the cards. */
+                            @media screen and (max-width: 768px) {
+                                #gsSyncLogsTableWrap,
+                                #fbSyncLogsTableWrap,
+                                #mailboxSyncLogsTableWrap {
+                                    max-height: none;
+                                    overflow-x: visible;
+                                    overflow-y: visible;
+                                }
+                            }
                         </style>
 
                         <details class="mailbox-help" style="margin-bottom: 16px;">
