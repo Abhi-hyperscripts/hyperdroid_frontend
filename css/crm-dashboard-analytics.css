@@ -50,6 +50,32 @@
     color: var(--text-secondary);
 }
 
+/* "Mark done" button on follow-up notification rows. Clicking POSTs the
+   complete and optimistically removes the row. Without it, users hit the
+   bug where the overdue badge persists across reschedules (real client
+   complaint, 2026-04-28). Subtle by default, brand colour on hover. */
+.notif-item .notif-mark-done {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.notif-item .notif-mark-done:hover:not(:disabled) {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+    border-color: var(--brand-primary);
+}
+.notif-item .notif-mark-done:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* ── Bento Grid ── */
 .bento-grid {
     display: grid;

@@ -443,6 +443,14 @@
                 replyBtn = `<div class="tl-actions"><button class="btn btn-sm btn-outline-primary tl-reply-btn" data-reply='${payloadAttr}' onclick="openReplyModalFromBtn(this)">Reply</button></div>`;
             }
 
+            // Mark-complete CTA on PENDING follow-ups inside the lead timeline.
+            // Mirrors the dashboard Mark Done button so users can clear an
+            // overdue follow-up from whichever surface they're already on.
+            let followupCompleteBtn = '';
+            if (e.type === 'followup' && e.meta && e.meta.followup_status === 'pending' && e.meta.followup_id) {
+                followupCompleteBtn = `<div class="tl-actions"><button class="btn btn-sm btn-outline-primary tl-followup-complete-btn" data-followup-id="${esc(e.meta.followup_id)}" onclick="completeFollowupFromTimeline(this)">Mark complete</button></div>`;
+            }
+
             return `
                 <div class="tl-entry ${typeClass}">
                     <div class="tl-icon">${icon}</div>
@@ -453,12 +461,32 @@
                         ${detailChips}
                         ${desc}
                         ${replyBtn}
+                        ${followupCompleteBtn}
                         <div class="tl-meta">${whoLine ? `${whoLine} · ` : ''}${time}</div>
                     </div>
                 </div>
             `;
         }).join('');
     }
+
+    window.completeFollowupFromTimeline = async function(btn) {
+        const fid = btn.getAttribute('data-followup-id');
+        if (!fid) return;
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = '…';
+        try {
+            await api.request(`/crm/leads/followups/${fid}/complete`, {
+                method: 'PUT',
+                body: JSON.stringify({ completed_notes: 'Marked complete from lead timeline' })
+            });
+            if (window._leadDetailId) openLeadDetailPanel(window._leadDetailId);
+        } catch (e) {
+            btn.disabled = false;
+            btn.textContent = originalText;
+            Toast.error(e.message || 'Failed to mark complete');
+        }
+    };
 
     function getTimelineIcon(type) {
         const icons = {

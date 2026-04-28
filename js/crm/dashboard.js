@@ -531,6 +531,53 @@ function renderDispositionsChart(breakdown) {
 
 // ═══ Notifications ═══
 
+// Single delegated listener for the notifications card. Set once after the
+// first render; subsequent re-renders don't re-bind. Two click targets:
+//   • Mark Done button → POST complete + optimistic remove from card
+//   • Anywhere else on the row → navigate to the lead's detail page
+let _notificationsHandlersBound = false;
+function bindNotificationsHandlers() {
+    if (_notificationsHandlersBound) return;
+    const list = document.getElementById('notificationsList');
+    if (!list) return;
+    list.addEventListener('click', async (ev) => {
+        const doneBtn = ev.target.closest('.notif-mark-done');
+        if (doneBtn) {
+            ev.stopPropagation();  // don't also trigger row navigation
+            const fid = doneBtn.getAttribute('data-followup-id');
+            if (!fid) return;
+            const row = doneBtn.closest('.notif-item');
+            doneBtn.disabled = true;
+            doneBtn.textContent = '…';
+            try {
+                await api.request(`/crm/leads/followups/${fid}/complete`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ completed_notes: 'Marked done from dashboard' })
+                });
+                // Optimistic UI: fade + remove the row, then refresh counts.
+                if (row) {
+                    row.style.transition = 'opacity 200ms ease, max-height 250ms ease';
+                    row.style.opacity = '0';
+                    row.style.maxHeight = '0';
+                    setTimeout(() => { try { row.remove(); } catch {} loadNotifications(); }, 260);
+                } else {
+                    loadNotifications();
+                }
+            } catch (e) {
+                doneBtn.disabled = false;
+                doneBtn.textContent = 'Mark done';
+                Toast.error(e.message || 'Failed to mark complete');
+            }
+            return;
+        }
+        const navRow = ev.target.closest('.notif-item[data-lead-id]');
+        if (navRow) {
+            navigateTo('leads.html');
+        }
+    });
+    _notificationsHandlersBound = true;
+}
+
 async function loadNotifications() {
     try {
         const data = await api.request('/crm/dashboard/notifications');
@@ -552,11 +599,23 @@ async function loadNotifications() {
                 : n.type.includes('due') ? 'notif-due'
                 : 'notif-transfer';
             const time = new Date(n.timestamp).toLocaleDateString();
-            return `<div class="notif-item ${cls}" onclick="${n.entity_id ? `navigateTo('leads.html')` : ''}">
+            // Mark Done button only for follow-up notifications (n.followup_id
+            // present). Server populates this for followup_overdue + followup_due
+            // types; transfer/unassigned types don't have it. Click is wired
+            // via event delegation in bindNotificationsHandlers below so
+            // optimistic-remove works without re-rendering the list.
+            const markDoneBtn = n.followup_id
+                ? `<button type="button" class="notif-mark-done" data-followup-id="${escapeHtml(n.followup_id)}" title="Mark this follow-up complete">Mark done</button>`
+                : '';
+            const onClickAttr = n.entity_id ? `data-lead-id="${escapeHtml(n.entity_id)}"` : '';
+            return `<div class="notif-item ${cls}" ${onClickAttr}>
                 <span class="notif-text">${escapeHtml(n.title)}${n.description ? ' — ' + escapeHtml(n.description).substring(0, 40) : ''}</span>
                 <span class="notif-time">${time}</span>
+                ${markDoneBtn}
             </div>`;
         }).join('') + (data.items.length > 3 ? `<div style="text-align:center;padding:4px;"><a href="leads.html" style="color:var(--brand-primary);font-size:0.78rem;">+${data.items.length - 3} more</a></div>` : '');
+
+        bindNotificationsHandlers();
     } catch (e) {
         console.error('Failed to load notifications:', e);
     }
