@@ -94,8 +94,7 @@ function initDangerZone() {
             showProcurementWipeResult(res);
         } catch (err) {
             console.error('[Procurement settings] wipe failed', err);
-            (typeof Toast !== 'undefined' && Toast.error) ? Toast.error(err?.message || 'Wipe failed')
-                : alert(err?.message || 'Wipe failed');
+            Toast.error(err?.message || 'Wipe failed');
             confirmBtn.disabled = false;
             confirmBtn.textContent = 'Wipe Now';
         }

@@ -150,6 +150,19 @@
                 </div>
                 <div class="modal-body">
                     <form id="inquiryForm" onsubmit="handleInquirySubmit(event)">
+                        <!-- Client is the primary anchor of every inquiry — full row at top so
+                             tenant picks it FIRST, before they think about title/description. -->
+                        <div class="mb-3">
+                            <label for="inquiryClient" class="form-label">Client <span class="text-danger">*</span></label>
+                            <select class="form-select" id="inquiryClient" name="client_id">
+                                <option value="">Select a client...</option>
+                            </select>
+                            <div class="form-text" style="font-size:11px;opacity:0.65;margin-top:4px;">
+                                Clients come from <strong>Accounts → Customers</strong>. Add new clients there first if you don't see the one you need.
+                            </div>
+                            <!-- Hidden carrier so list/detail rendering can keep using client_name without a lookup. -->
+                            <input type="hidden" id="inquiryClientName" name="client_name" value="">
+                        </div>
                         <div class="mb-3">
                             <label for="inquiryTitle" class="form-label">Title <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="inquiryTitle" name="title" required>
@@ -160,15 +173,9 @@
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="inquiryClientName" class="form-label">Client Name</label>
-                                <input type="text" class="form-control" id="inquiryClientName" name="client_name">
-                            </div>
-                            <div class="col-md-6">
                                 <label for="inquiryProjectName" class="form-label">Project Name</label>
                                 <input type="text" class="form-control" id="inquiryProjectName" name="project_name">
                             </div>
-                        </div>
-                        <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="inquiryPriority" class="form-label">Priority</label>
                                 <select class="form-select" id="inquiryPriority" name="priority">
@@ -178,6 +185,8 @@
                                     <option value="urgent">Urgent</option>
                                 </select>
                             </div>
+                        </div>
+                        <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="inquiryDueDate" class="form-label">Due Date</label>
                                 <input type="date" class="form-control" id="inquiryDueDate" name="due_date">
@@ -205,6 +214,7 @@
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/procurement/info-panel.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/procurement/inquiries.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="procurement" data-title="Procurement Assistant"><\/script>')</script>

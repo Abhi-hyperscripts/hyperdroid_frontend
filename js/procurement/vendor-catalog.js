@@ -548,9 +548,10 @@ async function handleSubmitCatalog() {
         return;
     }
 
-    const confirmed = typeof showConfirm === 'function'
-        ? await showConfirm(`You are about to submit your catalog with ${selectedItems.size} item(s). After submission, you will not be able to make changes.`, 'Submit Catalog')
-        : confirm(`Submit catalog with ${selectedItems.size} item(s)?`);
+    const confirmed = await showConfirm(
+        `You are about to submit your catalog with ${selectedItems.size} item(s). After submission, you will not be able to make changes.`,
+        'Submit Catalog'
+    );
     if (!confirmed) return;
 
     const saveBtn = document.getElementById('saveDraftBtn');

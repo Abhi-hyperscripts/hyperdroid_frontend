@@ -168,17 +168,11 @@ function syncPrice(mobileInput, desktopId) {
 // ==================== Submit Quote ====================
 
 async function submitQuote() {
-    // Use showConfirm if available (from toast.js), otherwise use native confirm
-    let confirmed;
-    if (typeof showConfirm === 'function') {
-        confirmed = await showConfirm(
-            'Are you sure you want to submit your quote? You will not be able to modify it after submission.',
-            'Submit Quote',
-            'primary'
-        );
-    } else {
-        confirmed = confirm('Are you sure you want to submit your quote?');
-    }
+    const confirmed = await showConfirm(
+        'Are you sure you want to submit your quote? You will not be able to modify it after submission.',
+        'Submit Quote',
+        'primary'
+    );
     if (!confirmed) return;
 
     const submitBtn = document.getElementById('submitQuoteBtn');
@@ -198,11 +192,7 @@ async function submitQuote() {
     // Validate at least one price is entered
     const hasAnyPrice = itemQuotes.some(q => q.unit_price > 0);
     if (!hasAnyPrice) {
-        if (typeof Toast !== 'undefined') {
-            Toast.error('Please enter at least one unit price');
-        } else {
-            alert('Please enter at least one unit price');
-        }
+        Toast.error('Please enter at least one unit price');
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Submit Quote';
         return;
@@ -231,11 +221,7 @@ async function submitQuote() {
         showSuccess();
     } catch (error) {
         console.error('Failed to submit quote:', error);
-        if (typeof Toast !== 'undefined') {
-            Toast.error(error.message || 'Failed to submit quote. Please try again.');
-        } else {
-            alert(error.message || 'Failed to submit quote. Please try again.');
-        }
+        Toast.error(error.message || 'Failed to submit quote. Please try again.');
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Submit Quote';
     }

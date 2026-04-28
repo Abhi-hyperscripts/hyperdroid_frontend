@@ -201,10 +201,54 @@ function closeModal(modalId) {
     }
 }
 
+// Cached client list (id → display name) populated from /procurement/clients (gRPC bridge to Accounts).
+let _inquiryClientCache = [];
+
+async function loadClientsForInquiryDropdown() {
+    const select = document.getElementById('inquiryClient');
+    if (!select) return;
+    try {
+        const data = await api.request('/procurement/clients');
+        const clients = Array.isArray(data) ? data : (data?.data || []);
+        _inquiryClientCache = clients;
+
+        // Build the option list as plain { value, label } pairs first — works
+        // both for native <select> and for the SearchableDropdown setOptions API.
+        const placeholder = clients.length === 0
+            ? 'No clients yet — add one in Accounts → Customers'
+            : 'Select a client...';
+        const optionList = [{ value: '', label: placeholder }].concat(
+            clients.map(c => {
+                const name = c.customer_name || c.display_name || c.name || '(unnamed)';
+                const code = c.customer_code ? c.customer_code.trim() : '';
+                // Always show name + code so two clients with the same display
+                // name remain distinguishable. Code is bracketed for visual scan.
+                const label = code ? `${name}  ·  [${code}]` : `${name}  ·  [no code]`;
+                return { value: c.id, label };
+            })
+        );
+
+        // Always rewrite the underlying <select>'s options. If a SearchableDropdown
+        // wraps it, prefer calling setOptions() directly (handles edge cases the
+        // MutationObserver inside searchable-dropdown.js may miss when options
+        // change while the wrapper is collapsed).
+        select.innerHTML = optionList
+            .map(o => `<option value="${o.value}">${escapeHtml(o.label)}</option>`)
+            .join('');
+        if (select._searchableDropdown && typeof select._searchableDropdown.setOptions === 'function') {
+            select._searchableDropdown.setOptions(optionList, true);
+        }
+    } catch (err) {
+        console.error('Failed to load clients:', err);
+        select.innerHTML = '<option value="">Failed to load clients (Accounts unreachable?)</option>';
+    }
+}
+
 function openNewInquiryModal() {
     document.getElementById('inquiryModalTitle').textContent = 'New Inquiry';
     document.getElementById('inquiryForm').reset();
     document.getElementById('inquiryPriority').value = 'medium';
+    loadClientsForInquiryDropdown();
     openModal('inquiryModal');
 }
 
@@ -222,10 +266,22 @@ async function handleInquirySubmit(event) {
     submitBtn.disabled = true;
     if (spinner) spinner.style.display = 'inline-block';
 
+    // Client comes from a dropdown sourced via gRPC from Accounts — see loadClientsForInquiryDropdown().
+    // Save both the FK id and the display name so list/detail rendering stays cheap.
+    const clientSelect = document.getElementById('inquiryClient');
+    const clientId = clientSelect ? clientSelect.value : '';
+    const clientLabel = clientId
+        ? (_inquiryClientCache.find(c => c.id === clientId)?.customer_name
+            || _inquiryClientCache.find(c => c.id === clientId)?.display_name
+            || _inquiryClientCache.find(c => c.id === clientId)?.name
+            || '')
+        : '';
+
     const formData = {
         title: document.getElementById('inquiryTitle').value.trim(),
         description: document.getElementById('inquiryDescription').value.trim(),
-        client_name: document.getElementById('inquiryClientName').value.trim(),
+        client_id: clientId || null,
+        client_name: clientLabel || null,
         project_name: document.getElementById('inquiryProjectName').value.trim(),
         priority: document.getElementById('inquiryPriority').value,
         due_date: document.getElementById('inquiryDueDate').value || null

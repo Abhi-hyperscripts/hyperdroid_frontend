@@ -247,22 +247,49 @@ function setBillModalMode(mode, bill) {
         });
     }
 
-    // GST compliance banner — same wording style as the invoice modal
+    // Status-aware read-only banner.
+    // Draft bills are viewed read-only when opened via the eye icon, but they
+    // are NOT yet booked to the GL — copy must reflect that. Once approved or
+    // beyond, the bill is in GSTR-2A territory and editing is locked for
+    // compliance, not just display.
     const modal = document.getElementById('vendorBillModal');
     let banner = modal?.querySelector('.bill-readonly-banner');
-    if (isView && !banner && modal) {
-        banner = document.createElement('div');
-        banner.className = 'bill-readonly-banner';
-        banner.style.cssText = 'background: color-mix(in srgb, var(--color-warning, #ed6c02) 14%, var(--bg-card-hover)); color: var(--text-primary); padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 0.85rem; border: 1px solid color-mix(in srgb, var(--color-warning, #ed6c02) 35%, transparent);';
-        banner.innerHTML = `
-            <strong>This bill has been approved and cannot be edited.</strong><br>
-            Once a vendor bill is booked into the GL, the related Input Tax Credit (ITC)
-            is part of your purchase register and will reconcile against GSTR-2A.
-            To make corrections, <em>cancel this bill</em> or raise a <em>debit note</em>,
-            then create a fresh bill.
-        `;
-        const body = modal.querySelector('.modal-body');
-        body?.insertBefore(banner, body.firstChild);
+    const statusLower = (bill?.status || 'draft').toLowerCase();
+    const isPostedToGl = statusLower !== 'draft' && statusLower !== 'cancelled';
+
+    if (isView && modal) {
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.className = 'bill-readonly-banner';
+            const body = modal.querySelector('.modal-body');
+            body?.insertBefore(banner, body.firstChild);
+        }
+        if (isPostedToGl) {
+            banner.style.cssText = 'background: color-mix(in srgb, var(--color-warning, #ed6c02) 14%, var(--bg-card-hover)); color: var(--text-primary); padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 0.85rem; border: 1px solid color-mix(in srgb, var(--color-warning, #ed6c02) 35%, transparent);';
+            banner.innerHTML = `
+                <strong>This bill is ${statusLower.toUpperCase()} and cannot be edited.</strong><br>
+                Once a vendor bill is booked into the GL, the related Input Tax Credit (ITC)
+                is part of your purchase register and will reconcile against GSTR-2A.
+                To make corrections, <em>cancel this bill</em> or raise a <em>debit note</em>,
+                then create a fresh bill.
+            `;
+        } else if (statusLower === 'cancelled') {
+            banner.style.cssText = 'background: color-mix(in srgb, var(--color-error, #ef4444) 12%, var(--bg-card-hover)); color: var(--text-primary); padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 0.85rem; border: 1px solid color-mix(in srgb, var(--color-error, #ef4444) 35%, transparent);';
+            banner.innerHTML = `
+                <strong>This bill is cancelled and cannot be edited.</strong><br>
+                Cancelled bills are kept for the audit trail. Create a new bill if you need
+                to record a fresh vendor invoice.
+            `;
+        } else {
+            // Draft, opened in view mode (e.g. via the eye icon).
+            banner.style.cssText = 'background: color-mix(in srgb, var(--brand-primary, #3b82f6) 12%, var(--bg-card-hover)); color: var(--text-primary); padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 0.85rem; border: 1px solid color-mix(in srgb, var(--brand-primary, #3b82f6) 35%, transparent);';
+            banner.innerHTML = `
+                <strong>Read-only preview — this draft bill has not been posted to the ledger yet.</strong><br>
+                A draft bill has <em>no GL impact</em> and does not appear in your purchase
+                register. Close this dialog and click <strong>Edit</strong> to modify it,
+                or <strong>Approve</strong> to post it to the GL and start the AP / GSTR-2A flow.
+            `;
+        }
     } else if (!isView && banner) {
         banner.remove();
     }

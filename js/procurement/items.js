@@ -564,6 +564,17 @@ function switchItemDetailTab(tab) {
     if (tab === 'mappings') loadItemMappings();
 }
 
+// ---- Reusable info panel helper for tabs ----
+function tabInfoPanel(id, title, body) {
+    return `<details id="info-${id}" style="margin-bottom:14px;border:1px solid var(--border-primary);border-radius:6px;background:var(--bg-tertiary);">
+        <summary style="cursor:pointer;padding:8px 12px;font-size:12px;font-weight:600;color:var(--text-primary);user-select:none;display:flex;align-items:center;gap:6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.7;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            What is this? — <span style="font-weight:500;opacity:0.85;">${title}</span>
+        </summary>
+        <div style="padding:0 14px 12px 32px;font-size:12px;line-height:1.55;color:var(--text-secondary);">${body}</div>
+    </details>`;
+}
+
 // ---- Tab 1: Linked Vendors ----
 
 async function loadItemVendors() {
@@ -577,9 +588,15 @@ async function loadItemVendors() {
         const vendors = vendorData.data || vendorData || [];
         const rankings = rankingData.data || rankingData || [];
 
-        let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        let html = tabInfoPanel('vendors', 'Linked Vendors',
+            `Vendors here are the ones who supply <strong>this specific item</strong>. ` +
+            `When you create an RFQ (Request For Quote), the system suggests these vendors first — saving you from picking from your full vendor list every time.<br><br>` +
+            `The <strong>Vendor Rankings</strong> table below tracks who quoted, who won, and at what price — so you can spot your best supplier at a glance.<br><br>` +
+            `<em>Tip:</em> Click <strong>+ Link</strong> to attach a new vendor. Click <strong>Unlink</strong> to remove one (their past quotes stay in history).`
+        );
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
             <span style="font-size:13px;font-weight:600;">Linked Vendors (${vendors.length})</span>
-            <button onclick="showLinkVendorInput()" style="font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid var(--brand-primary);background:none;color:var(--brand-primary);cursor:pointer;">+ Link</button>
+            <button onclick="showLinkVendorInput()" style="font-size:11px;padding:3px 10px;border-radius:4px;border:1px solid var(--brand-primary);background:none;color:var(--brand-primary);cursor:pointer;width:auto !important;">+ Link</button>
         </div>
         <div id="linkVendorInputRow" style="display:none;margin-bottom:10px;"></div>`;
 
@@ -625,9 +642,10 @@ function showLinkVendorInput() {
     const row = document.getElementById('linkVendorInputRow');
     row.style.display = 'flex';
     row.style.gap = '8px';
-    row.innerHTML = `<select id="linkVendorSelect" class="form-control form-control-sm" style="flex:1;"><option value="">Loading...</option></select>
-        <button onclick="linkSelectedVendor()" class="btn btn-primary btn-sm" style="font-size:11px;padding:3px 12px;">Link</button>
-        <button onclick="document.getElementById('linkVendorInputRow').style.display='none'" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 8px;">Cancel</button>`;
+    row.style.alignItems = 'center';
+    row.innerHTML = `<select id="linkVendorSelect" class="form-control form-control-sm" style="flex:1 1 auto;min-width:0;"><option value="">Loading...</option></select>
+        <button onclick="linkSelectedVendor()" class="btn btn-primary btn-sm" style="font-size:11px;padding:4px 14px;width:auto !important;flex:0 0 auto;white-space:nowrap;margin-top:0;">Link</button>
+        <button onclick="document.getElementById('linkVendorInputRow').style.display='none'" class="btn btn-secondary btn-sm" style="font-size:11px;padding:4px 14px;width:auto !important;flex:0 0 auto;white-space:nowrap;margin-top:0;">Cancel</button>`;
     // Load vendors
     api.request('/procurement/vendors').then(data => {
         const vendors = data.data || data || [];
@@ -667,23 +685,29 @@ async function loadItemSynonyms() {
         const data = await api.request(`/procurement/item-synonyms?masterItemId=${currentDetailItemId}`);
         const synonyms = data.data || data || [];
 
-        let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-            <input type="text" id="newSynonymInput" class="form-control form-control-sm" placeholder="Add synonym..." style="flex:1;max-width:300px;">
-            <button onclick="addSynonym()" class="btn btn-primary btn-sm" style="font-size:11px;padding:3px 12px;">Add</button>
+        let html = tabInfoPanel('synonyms', 'Synonyms',
+            `Synonyms are <strong>alternative names</strong> for the same item. ` +
+            `For example, this item might be called <em>"Bath Towel 600GSM"</em> in your master list, but a vendor's quote might say <em>"Hand-loom Bath Towel 600gm"</em> or <em>"Premium Bath Towel"</em>.<br><br>` +
+            `When you add those alternate names as synonyms, the system <strong>automatically recognises</strong> them in vendor catalogs, quotes, and bills — so you don't have to manually map every spelling variant.<br><br>` +
+            `<em>Tip:</em> Add synonyms whenever a vendor uses different wording. Use the <strong>Search</strong> box below to find which item a particular synonym is linked to.`
+        );
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <input type="text" id="newSynonymInput" class="form-control form-control-sm" placeholder="Add synonym..." style="flex:1 1 auto;min-width:0;">
+            <button onclick="addSynonym()" class="btn btn-primary btn-sm" style="font-size:11px;padding:4px 14px;width:auto !important;flex:0 0 auto;white-space:nowrap;margin-top:0;">Add</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
             ${synonyms.length > 0 ? synonyms.map(s => `
                 <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:16px;background:var(--bg-tertiary);border:1px solid var(--border-primary);font-size:12px;">
                     ${escapeHtml(s.synonym || s.name || '')}
-                    <button onclick="deleteSynonym('${s.id}')" style="border:none;background:none;color:var(--color-error);cursor:pointer;font-size:14px;line-height:1;padding:0 2px;">&times;</button>
+                    <button onclick="deleteSynonym('${s.id}')" style="border:none;background:none;color:var(--color-error);cursor:pointer;font-size:14px;line-height:1;padding:0 2px;width:auto !important;">&times;</button>
                 </span>
             `).join('') : '<span style="opacity:0.4;font-size:12px;">No synonyms yet.</span>'}
         </div>
         <div style="border-top:1px solid var(--border-primary);padding-top:12px;">
             <div style="font-size:12px;font-weight:600;margin-bottom:6px;">Search Synonyms</div>
-            <div style="display:flex;gap:8px;">
-                <input type="text" id="synonymSearchInput" class="form-control form-control-sm" placeholder="Search across all items..." style="flex:1;max-width:300px;">
-                <button onclick="searchSynonyms()" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 12px;">Search</button>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <input type="text" id="synonymSearchInput" class="form-control form-control-sm" placeholder="Search across all items..." style="flex:1 1 auto;min-width:0;">
+                <button onclick="searchSynonyms()" class="btn btn-secondary btn-sm" style="font-size:11px;padding:4px 14px;width:auto !important;flex:0 0 auto;white-space:nowrap;margin-top:0;">Search</button>
             </div>
             <div id="synonymSearchResults" style="margin-top:8px;font-size:12px;"></div>
         </div>`;
@@ -739,16 +763,21 @@ async function loadItemMappings() {
         const data = await api.request(`/procurement/item-mappings?masterItemId=${currentDetailItemId}`);
         const mappings = data.data || data || [];
 
-        let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-            <input type="text" id="newMappingInput" class="form-control form-control-sm" placeholder="Raw name to map..." style="flex:1;max-width:300px;">
-            <button onclick="addMapping()" class="btn btn-primary btn-sm" style="font-size:11px;padding:3px 12px;">Add</button>
+        let html = tabInfoPanel('mappings', 'Raw Name Mappings',
+            `Mappings are like <strong>shortcuts for messy data</strong>. When a vendor sends a bill or catalog with a typo, abbreviation, or weird formatting (e.g. <em>"BT600gsm-Wht"</em>, <em>"bathtwl 600"</em>), you map that exact <strong>raw text</strong> to this clean master item.<br><br>` +
+            `Next time the same raw text shows up — in OCR'd invoices, vendor uploads, AI-extracted line items — the system automatically resolves it to this item. <strong>No manual matching, no duplicates.</strong><br><br>` +
+            `<em>Difference vs. Synonyms:</em> Synonyms are clean alternative names a human would write. Mappings are <strong>literal exact strings</strong> that come from messy real-world sources (vendor bills, scans, exports). Use <strong>Test Resolve</strong> below to verify a raw string maps correctly.`
+        );
+        html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <input type="text" id="newMappingInput" class="form-control form-control-sm" placeholder="Raw name to map..." style="flex:1 1 auto;min-width:0;">
+            <button onclick="addMapping()" class="btn btn-primary btn-sm" style="font-size:11px;padding:4px 14px;width:auto !important;flex:0 0 auto;white-space:nowrap;margin-top:0;">Add</button>
         </div>`;
 
         if (mappings.length > 0) {
             html += `<div style="border:1px solid var(--border-primary);border-radius:6px;overflow:hidden;margin-bottom:16px;">
                 ${mappings.map(m => `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-bottom:1px solid var(--border-primary);font-size:12px;">
                     <span>"${escapeHtml(m.raw_name || '')}"</span>
-                    <button onclick="deleteMapping('${m.id}')" style="border:none;background:none;color:var(--color-error);cursor:pointer;font-size:14px;">&times;</button>
+                    <button onclick="deleteMapping('${m.id}')" style="border:none;background:none;color:var(--color-error);cursor:pointer;font-size:14px;width:auto !important;">&times;</button>
                 </div>`).join('')}
             </div>`;
         } else {
@@ -757,9 +786,9 @@ async function loadItemMappings() {
 
         html += `<div style="border-top:1px solid var(--border-primary);padding-top:12px;">
             <div style="font-size:12px;font-weight:600;margin-bottom:6px;">Test Resolve</div>
-            <div style="display:flex;gap:8px;">
-                <input type="text" id="resolveInput" class="form-control form-control-sm" placeholder="Enter raw item name..." style="flex:1;max-width:300px;">
-                <button onclick="testResolve()" class="btn btn-secondary btn-sm" style="font-size:11px;padding:3px 12px;">Resolve</button>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <input type="text" id="resolveInput" class="form-control form-control-sm" placeholder="Enter raw item name..." style="flex:1 1 auto;min-width:0;">
+                <button onclick="testResolve()" class="btn btn-secondary btn-sm" style="font-size:11px;padding:4px 14px;width:auto !important;flex:0 0 auto;white-space:nowrap;margin-top:0;">Resolve</button>
             </div>
             <div id="resolveResult" style="margin-top:8px;font-size:12px;"></div>
         </div>`;
@@ -812,11 +841,18 @@ async function testResolve() {
 // ==================== CATEGORY EDIT ====================
 
 async function editCategory(id, currentName) {
-    const newName = prompt('Rename category:', currentName);
-    if (!newName || newName.trim() === currentName) return;
+    const newName = await Prompt.show({
+        title: 'Rename Category',
+        message: `Enter a new name for "${currentName}":`,
+        defaultValue: currentName,
+        placeholder: 'Category name'
+    });
+    if (newName === null) return;
+    const trimmed = (newName || '').trim();
+    if (!trimmed || trimmed === currentName) return;
     try {
         await api.request('/procurement/item-categories', {
-            method: 'PUT', body: JSON.stringify({ id, category_name: newName.trim() })
+            method: 'PUT', body: JSON.stringify({ id, category_name: trimmed })
         });
         Toast.success('Category renamed');
         loadCategories();

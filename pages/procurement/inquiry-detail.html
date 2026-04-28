@@ -271,9 +271,12 @@
                 </div>
                 <div class="modal-body" style="padding:0;">
                     <!-- Search + Category Filter -->
-                    <div style="display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border-primary);">
-                        <input type="text" class="form-control form-control-sm" id="bulkSearchInput" placeholder="Search items..." style="flex:1;" oninput="filterBulkItems()">
-                        <select class="form-control form-control-sm" id="bulkCategoryFilter" style="width:180px;" onchange="filterBulkItems()">
+                    <!-- box-sizing on row so padding doesn't push the children past modal edge.
+                         min-width:0 on input so flex:1 actually shrinks instead of overflowing.
+                         flex-shrink:0 on category select so it doesn't get squashed away. -->
+                    <div style="display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border-primary);box-sizing:border-box;width:100%;">
+                        <input type="text" class="form-control form-control-sm" id="bulkSearchInput" placeholder="Search items..." style="flex:1 1 auto;min-width:0;" oninput="filterBulkItems()">
+                        <select class="form-control form-control-sm" id="bulkCategoryFilter" style="width:180px;flex:0 0 180px;max-width:180px;box-sizing:border-box;" onchange="filterBulkItems()">
                             <option value="">All Categories</option>
                         </select>
                     </div>
@@ -308,6 +311,7 @@
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/procurement/info-panel.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/procurement/inquiry-detail.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="procurement" data-title="Procurement Assistant"><\/script>')</script>

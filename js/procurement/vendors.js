@@ -219,11 +219,14 @@ function renderVendorsTable(vendors) {
                          are owned by AccountsService (single source of truth).
                          Procurement only owns catalog/scoring/intelligence/portal
                          data, surfaced by the buttons that remain. -->
-                    <button class="crm-action-btn" onclick="openManageItemsModal('${vendor.id}')" title="Manage Items">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-                            <rect x="9" y="3" width="6" height="4" rx="1"/>
-                            <line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>
+                    <button class="crm-action-btn" onclick="openManageItemsModal('${vendor.id}')" title="Manage Items this Vendor Supplies">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="8" y1="6" x2="21" y2="6"/>
+                            <line x1="8" y1="12" x2="21" y2="12"/>
+                            <line x1="8" y1="18" x2="21" y2="18"/>
+                            <line x1="3" y1="6" x2="3.01" y2="6"/>
+                            <line x1="3" y1="12" x2="3.01" y2="12"/>
+                            <line x1="3" y1="18" x2="3.01" y2="18"/>
                         </svg>
                     </button>
                     <button class="crm-action-btn" onclick="generateCatalogLink('${vendor.id}')" title="Catalog Link">
