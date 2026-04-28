@@ -137,7 +137,7 @@ function wireWipeFlow() {
         confirmBtn.disabled = true;
         confirmBtn.textContent = 'Wiping…';
         try {
-            const res = await api.request('/accounts/accounts-admin/wipe-all', {
+            const res = await api.request('/accounts/admin/wipe-all', {
                 method: 'POST',
                 body: JSON.stringify({ Confirm: 'WIPE' })
             });
@@ -567,59 +567,107 @@ async function loadPendingApprovals() {
     if (!container) return;
 
     try {
-        const url = AccountsCommon.buildUrl('audit/approvals/pending');
-        const res = await api.request(url, { _skipSpinner: true });
-        // Backend returns { expense_claims: [...], total_pending } per
-        // AuditController.GetPendingApprovals. Was reading res.data || res.items which
-        // are undefined → page always showed "No pending approvals" even with pending claims.
-        // Phase 4 Tier 1 fix: normalize the expense_claims envelope into a uniform shape
-        // the renderer can use. (Tier 3 will extend the backend to also surface pending
-        // bills, invoices, etc — same envelope, more keys; the merger here is forward-compat.)
-        const expenseClaims = Array.isArray(res?.expense_claims) ? res.expense_claims : [];
-        pendingApprovals = expenseClaims.map(c => ({
-            id: c.id,
-            entity_type: 'expense_claim',
-            type: 'Expense Claim',
-            title: c.claim_number || 'Expense Claim',
-            description: c.description || c.claim_number || 'Expense Claim',
-            requested_by: c.employee_name || c.employee_id || '-',
-            amount: c.total_amount,
-            created_at: c.claim_date || c.created_at
-        }));
+        // Fetch BOTH sources in parallel:
+        //   1. Expense claims awaiting manager approval
+        //   2. Client/Vendor master-record requests submitted by CRM/PMS/
+        //      Procurement that need finance approval before becoming
+        //      Customers/Vendors in Accounts. We pull ALL statuses here
+        //      (pending + approved + rejected) so the page also serves as
+        //      an audit trail for cross-service master-data requests.
+        const [expRes, cvrRes] = await Promise.all([
+            api.request(AccountsCommon.buildUrl('audit/approvals/pending'), { _skipSpinner: true }).catch(() => null),
+            api.request(AccountsCommon.buildUrl('requests', { limit: 200 }), { _skipSpinner: true }).catch(() => null)
+        ]);
+
+        const expenseClaims = Array.isArray(expRes?.expense_claims) ? expRes.expense_claims : [];
+        const cvrItems      = Array.isArray(cvrRes?.items) ? cvrRes.items : [];
+
+        pendingApprovals = [
+            ...expenseClaims.map(c => ({
+                id: c.id,
+                entity_type: 'expense_claim',
+                type: 'Expense Claim',
+                title: c.claim_number || 'Expense Claim',
+                description: c.description || c.claim_number || 'Expense Claim',
+                requested_by: c.employee_name || c.employee_id || '-',
+                requested_from_service: 'HRMS',
+                amount: c.total_amount,
+                status: 'pending',
+                created_at: c.claim_date || c.created_at
+            })),
+            ...cvrItems.map(r => ({
+                id: r.id,
+                entity_type: r.request_type === 'client' ? 'client_request' : 'vendor_request',
+                type: r.request_type === 'client' ? 'Client request' : 'Vendor request',
+                title: r.name,
+                description: [r.email, r.phone, r.gst_number, r.tax_id].filter(Boolean).join(' · ') || r.notes || '',
+                requested_by: r.requested_by_name || r.requested_by || '-',
+                requested_from_service: r.requested_from_service || '-',
+                amount: null,
+                status: r.status || 'pending',
+                rejection_reason: r.rejection_reason || null,
+                created_entity_id: r.created_entity_id || null,
+                created_at: r.created_at
+            }))
+        ];
 
         if (!pendingApprovals.length) {
             container.innerHTML = `<div class="empty-message">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                     <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg><p>No pending approvals</p></div>`;
+                </svg><p>No approval requests</p></div>`;
             return;
         }
 
-        container.innerHTML = pendingApprovals.map(a => `
+        const statusBadge = s => {
+            const map = {
+                pending:  { bg:'rgba(245,158,11,0.15)', fg:'#f59e0b', label:'Pending'  },
+                approved: { bg:'rgba(16,185,129,0.15)', fg:'#10b981', label:'Approved' },
+                rejected: { bg:'rgba(239, 68, 68,0.15)', fg:'#ef4444', label:'Rejected' }
+            };
+            const m = map[s] || { bg:'rgba(148,163,184,0.15)', fg:'#94a3b8', label:s || 'unknown' };
+            return `<span style="display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; background:${m.bg}; color:${m.fg};">${m.label}</span>`;
+        };
+
+        container.innerHTML = pendingApprovals.map(a => {
+            const isCVR     = a.entity_type === 'client_request' || a.entity_type === 'vendor_request';
+            const showActions = accountsRoles.isManager() && a.status === 'pending';
+            const extra = a.status === 'rejected' && a.rejection_reason
+                ? `<div style="font-size:12px; color:var(--text-secondary); margin-top:6px;"><strong>Reason:</strong> ${AccountsCommon.escapeHtml(a.rejection_reason)}</div>`
+                : (a.status === 'approved' && a.created_entity_id
+                    ? `<div style="font-size:12px; color:var(--text-secondary); margin-top:6px;"><strong>Created entity:</strong> <code>${AccountsCommon.escapeHtml(a.created_entity_id)}</code></div>`
+                    : '');
+            return `
             <div class="glass-card" style="margin-bottom: 1rem;">
                 <div class="glass-card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                    <div>
-                        <h4 style="margin-bottom: 0.25rem;">${AccountsCommon.escapeHtml(a.title || a.description || 'Approval Request')}</h4>
+                    <div style="flex:1; min-width:280px;">
+                        <h4 style="margin-bottom: 0.25rem; display:flex; align-items:center; gap:8px;">
+                            ${AccountsCommon.escapeHtml(a.title || a.description || 'Approval Request')}
+                            ${statusBadge(a.status)}
+                        </h4>
                         <p style="color: var(--text-secondary); margin: 0; font-size: 0.85rem;">
                             ${AccountsCommon.escapeHtml(a.type || '-')} &bull;
+                            from <strong>${AccountsCommon.escapeHtml(a.requested_from_service || '-')}</strong> &bull;
                             ${AccountsCommon.escapeHtml(a.requested_by || '-')} &bull;
                             ${AccountsCommon.formatDate(a.created_at)}
                             ${a.amount != null ? ' &bull; ' + AccountsCommon.formatCurrency(a.amount) : ''}
                         </p>
+                        ${a.description && isCVR ? `<p style="color: var(--text-secondary); margin: 4px 0 0; font-size: 0.8rem;">${AccountsCommon.escapeHtml(a.description)}</p>` : ''}
+                        ${extra}
                     </div>
                     <div style="display: flex; gap: 0.5rem;">
-                        ${accountsRoles.isManager() ? `
-                            <button class="btn btn-primary" onclick="approveItem('${a.id}')" style="padding: 0.4rem 1rem;">Approve</button>
-                            <button class="btn btn-outline" onclick="rejectItem('${a.id}')" style="padding: 0.4rem 1rem; color: var(--color-danger); border-color: var(--color-danger);">Reject</button>
+                        ${showActions ? `
+                            <button class="btn btn-primary" onclick="approveItem('${a.id}')" data-entity="${a.entity_type}" style="padding: 0.4rem 1rem;">Approve</button>
+                            <button class="btn btn-outline" onclick="rejectItem('${a.id}')" data-entity="${a.entity_type}" style="padding: 0.4rem 1rem; color: var(--color-danger); border-color: var(--color-danger);">Reject</button>
                         ` : ''}
                     </div>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     } catch (err) {
         console.error('[Admin] loadPendingApprovals error:', err);
-        container.innerHTML = `<div class="empty-message"><p>Failed to load pending approvals</p></div>`;
+        container.innerHTML = `<div class="empty-message"><p>Failed to load approval requests</p></div>`;
     }
 }
 
@@ -639,18 +687,37 @@ function _pendingApprovalLabel(id) {
     return parts.join(' ');
 }
 
+// Look up the entity type for a given pending-approval id so we know which
+// backend endpoint to call (expense_claim approval vs CVR approval).
+function _entityTypeFor(id) {
+    const item = (typeof pendingApprovals !== 'undefined' ? pendingApprovals : []).find(x => x.id === id);
+    return item?.entity_type || 'expense_claim';
+}
+
 async function approveItem(id) {
     const label = _pendingApprovalLabel(id);
+    const entity = _entityTypeFor(id);
     const ok = await Confirm.show({
-        title: 'Approve Pending Item',
+        title: 'Approve Request',
         message: `Approve ${label}? The action will be executed on behalf of the requester and the approval will be logged in the audit trail with your user id.`,
         confirmText: 'Approve',
         type: 'info'
     });
     if (!ok) return;
     try {
-        await api.request(AccountsCommon.buildUrl(`audit/approvals/${id}/approve`), { method: 'POST' });
-        Toast.success('Item approved');
+        if (entity === 'client_request' || entity === 'vendor_request') {
+            // CVR review endpoint: POST /api/accounts/requests/{id}/review
+            // with body { action: "approve" }. On success the master record
+            // is created in customers/vendors and the CVR row is marked
+            // approved with created_entity_id linkage.
+            await api.request(AccountsCommon.buildUrl(`requests/${id}/review`), {
+                method: 'POST',
+                body: JSON.stringify({ action: 'approve' })
+            });
+        } else {
+            await api.request(AccountsCommon.buildUrl(`audit/approvals/${id}/approve`), { method: 'POST' });
+        }
+        Toast.success('Approved');
         await loadPendingApprovals();
     } catch (err) {
         console.error('[Admin] approveItem error:', err);
@@ -660,16 +727,28 @@ async function approveItem(id) {
 
 async function rejectItem(id) {
     const label = _pendingApprovalLabel(id);
+    const entity = _entityTypeFor(id);
     const ok = await Confirm.show({
-        title: 'Reject Pending Item',
-        message: `Reject ${label}? The request will be marked as rejected and the requester will be notified. The rejection is logged in the audit trail with your user id. This cannot be undone — if you change your mind, the requester will need to submit a new request.`,
+        title: 'Reject Request',
+        message: `Reject ${label}? The request will be marked as rejected and the requester will be notified. The rejection is logged in the audit trail with your user id.`,
         confirmText: 'Reject',
         type: 'danger'
     });
     if (!ok) return;
+    let reason = null;
+    if (entity === 'client_request' || entity === 'vendor_request') {
+        reason = window.prompt('Reason for rejection (optional but recommended):', '') || '';
+    }
     try {
-        await api.request(AccountsCommon.buildUrl(`audit/approvals/${id}/reject`), { method: 'POST' });
-        Toast.success('Item rejected');
+        if (entity === 'client_request' || entity === 'vendor_request') {
+            await api.request(AccountsCommon.buildUrl(`requests/${id}/review`), {
+                method: 'POST',
+                body: JSON.stringify({ action: 'reject', rejection_reason: reason })
+            });
+        } else {
+            await api.request(AccountsCommon.buildUrl(`audit/approvals/${id}/reject`), { method: 'POST' });
+        }
+        Toast.success('Rejected');
         await loadPendingApprovals();
     } catch (err) {
         console.error('[Admin] rejectItem error:', err);

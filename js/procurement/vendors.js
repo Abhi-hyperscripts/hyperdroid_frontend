@@ -8,6 +8,8 @@ let allVendors = [];
 let currentEditVendorId = null;
 let _vFilteredVendors = [];
 let _vCurrentPage = 1;
+let _vStatusFilter = 'all';   // 'all' | 'approved' | 'pending' | 'rejected'
+let _vStatusDropdown = null;
 const V_PAGE_SIZE = 20;
 
 // ==================== Initialization ====================
@@ -20,8 +22,53 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    initStatusFilterDropdown();
+    initStatCardClicks();
     loadVendors();
 });
+
+function initStatusFilterDropdown() {
+    if (typeof SearchableDropdown === 'undefined') {
+        // Script not loaded yet — retry once after layout settles.
+        setTimeout(initStatusFilterDropdown, 200);
+        return;
+    }
+    _vStatusDropdown = new SearchableDropdown('vendorStatusFilterContainer', {
+        placeholder: 'All statuses',
+        searchPlaceholder: 'Search statuses…',
+        options: [
+            { value: 'all',      label: 'All statuses' },
+            { value: 'approved', label: 'Approved' },
+            { value: 'pending',  label: 'Pending approval' },
+            { value: 'rejected', label: 'Rejected' }
+        ],
+        onChange: v => {
+            _vStatusFilter = v || 'all';
+            applyFilters();
+        }
+    });
+}
+
+function initStatCardClicks() {
+    document.querySelectorAll('.vendor-stat-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const stat = card.getAttribute('data-stat');
+            _vStatusFilter = stat;
+            // Sync dropdown to keep UI consistent. setValue() updates the
+            // displayed text but does NOT fire onChange — that's by design
+            // (it would loop on every programmatic sync). So we explicitly
+            // re-apply the filter ourselves after syncing.
+            if (_vStatusDropdown && typeof _vStatusDropdown.setValue === 'function') {
+                _vStatusDropdown.setValue(stat);
+            }
+            applyFilters();
+            // Highlight the active stat card so the user can see which
+            // status they're viewing.
+            document.querySelectorAll('.vendor-stat-card').forEach(c =>
+                c.style.boxShadow = c === card ? '0 0 0 2px var(--brand-primary)' : '');
+        });
+    });
+}
 
 // ==================== Data Loading ====================
 
@@ -29,9 +76,8 @@ async function loadVendors() {
     try {
         const response = await api.request('/procurement/vendors');
         allVendors = response.data || response || [];
-        _vFilteredVendors = allVendors;
-        _vCurrentPage = 1;
-        renderVendorsTable(allVendors);
+        recomputeVendorStats();
+        applyFilters();
     } catch (error) {
         console.error('Failed to load vendors:', error);
         renderVendorsTable([]);
@@ -39,12 +85,28 @@ async function loadVendors() {
     }
 }
 
+function recomputeVendorStats() {
+    const counts = { approved: 0, pending: 0, rejected: 0 };
+    for (const v of allVendors) {
+        const s = (v.status || 'approved').toLowerCase();
+        if (counts[s] != null) counts[s]++;
+    }
+    const set = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = n; };
+    set('vendorStatTotal',    allVendors.length);
+    set('vendorStatApproved', counts.approved);
+    set('vendorStatPending',  counts.pending);
+    set('vendorStatRejected', counts.rejected);
+}
+
 // ==================== Filter Handling ====================
 
 function applyFilters() {
-    const search = document.getElementById('filterSearch').value.trim().toLowerCase();
+    const search = (document.getElementById('filterSearch')?.value || '').trim().toLowerCase();
 
     let filtered = allVendors;
+    if (_vStatusFilter && _vStatusFilter !== 'all') {
+        filtered = filtered.filter(v => (v.status || 'approved') === _vStatusFilter);
+    }
     if (search) {
         filtered = filtered.filter(vendor => {
             const name = (vendor.vendor_name || '').toLowerCase();
@@ -77,7 +139,7 @@ function renderVendorsTable(vendors) {
     if (!vendors || vendors.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" class="crm-empty-state">
+                <td colspan="10" class="crm-empty-state">
                     <div class="crm-empty-content">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
@@ -91,6 +153,21 @@ function renderVendorsTable(vendors) {
         `;
         return;
     }
+
+    // Status badge: vendors that come back with status='pending' or 'rejected'
+    // are actually client_vendor_request rows in Accounts that haven't been
+    // promoted to the master vendors table yet. Procurement merges them into
+    // this list so the operator can see the full pipeline.
+    const statusBadge = (status, reason) => {
+        const map = {
+            approved: { bg: 'rgba(16,185,129,0.15)', fg: '#10b981', label: 'Approved' },
+            pending:  { bg: 'rgba(245,158,11,0.15)', fg: '#f59e0b', label: 'Pending' },
+            rejected: { bg: 'rgba(239,68,68,0.15)',  fg: '#ef4444', label: 'Rejected' }
+        };
+        const s = map[status] || map.approved;
+        const tip = reason ? ` title="${escapeHtml(reason)}"` : '';
+        return `<span${tip} style="display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; background:${s.bg}; color:${s.fg};">${s.label}</span>`;
+    };
 
     // Pagination
     const totalItems = vendors.length;
@@ -109,9 +186,11 @@ function renderVendorsTable(vendors) {
                     <div>
                         <div style="color: var(--brand-primary); font-weight: 500;">${escapeHtml(vendor.vendor_name || '')}</div>
                         ${vendor.contact_person ? `<div class="crm-cell-secondary">${escapeHtml(vendor.contact_person)}</div>` : ''}
+                        ${vendor.requested_from_service && vendor.status !== 'approved' ? `<div class="crm-cell-secondary" style="font-size:10px; opacity:0.6;">requested from ${escapeHtml(vendor.requested_from_service)}</div>` : ''}
                     </div>
                 </div>
             </td>
+            <td>${statusBadge(vendor.status || 'approved', vendor.rejection_reason)}</td>
             <td><span class="crm-cell-secondary">${escapeHtml(vendor.vendor_code || '-')}</span></td>
             <td class="hide-mobile"><span class="crm-cell-secondary">${escapeHtml(vendor.email || '-')}</span></td>
             <td class="hide-mobile"><span class="crm-cell-secondary">${escapeHtml(vendor.phone || '-')}</span></td>
@@ -121,17 +200,25 @@ function renderVendorsTable(vendors) {
             <td class="hide-mobile"><span class="crm-cell-secondary">${vendor.item_count || 0}</span></td>
             <td>
                 <div class="crm-actions">
+                    ${(vendor.status || 'approved') !== 'approved' ? `
+                        <!-- Pending / rejected vendors have no procurement-side
+                             record yet (no catalog, no quotes, no scoring), so
+                             the action buttons are intentionally suppressed.
+                             They re-appear automatically once the vendor is
+                             approved in Accounts. -->
+                        <span style="opacity:0.4; font-size:11px; font-style:italic;">
+                            ${vendor.status === 'rejected' ? 'rejected — no actions' : 'awaiting approval'}
+                        </span>
+                    ` : `
                     <button class="crm-action-btn" onclick="openVendorIntelligence('${vendor.id}')" title="Intelligence">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
                         </svg>
                     </button>
-                    <button class="crm-action-btn" onclick="openEditVendorModal('${vendor.id}')" title="Edit">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                    </button>
+                    <!-- Edit and Delete intentionally OMITTED: vendor master records
+                         are owned by AccountsService (single source of truth).
+                         Procurement only owns catalog/scoring/intelligence/portal
+                         data, surfaced by the buttons that remain. -->
                     <button class="crm-action-btn" onclick="openManageItemsModal('${vendor.id}')" title="Manage Items">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
@@ -145,12 +232,7 @@ function renderVendorsTable(vendors) {
                             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                         </svg>
                     </button>
-                    <button class="crm-action-btn action-delete" onclick="deleteVendor('${vendor.id}')" title="Delete">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        </svg>
-                    </button>
+                    `}
                 </div>
             </td>
         </tr>

@@ -24,6 +24,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <style>
         .vendor-pick-item:hover { background: var(--bg-tertiary); }
@@ -73,11 +74,43 @@
             </div>
         </div>
 
+        <!-- Vendor Status Stats -->
+        <div class="vendor-stats-row" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; margin-bottom:16px;">
+            <div class="glass-card vendor-stat-card" data-stat="all" style="cursor:pointer;">
+                <div class="glass-card-body" style="padding:14px;">
+                    <div style="font-size:11px; opacity:0.6; text-transform:uppercase; letter-spacing:0.06em;">Total</div>
+                    <div id="vendorStatTotal" style="font-size:1.6rem; font-weight:600; margin-top:4px;">—</div>
+                </div>
+            </div>
+            <div class="glass-card vendor-stat-card" data-stat="approved" style="cursor:pointer; border-left:3px solid #10b981;">
+                <div class="glass-card-body" style="padding:14px;">
+                    <div style="font-size:11px; color:#10b981; text-transform:uppercase; letter-spacing:0.06em;">Approved</div>
+                    <div id="vendorStatApproved" style="font-size:1.6rem; font-weight:600; margin-top:4px;">—</div>
+                </div>
+            </div>
+            <div class="glass-card vendor-stat-card" data-stat="pending" style="cursor:pointer; border-left:3px solid #f59e0b;">
+                <div class="glass-card-body" style="padding:14px;">
+                    <div style="font-size:11px; color:#f59e0b; text-transform:uppercase; letter-spacing:0.06em;">Pending Approval</div>
+                    <div id="vendorStatPending" style="font-size:1.6rem; font-weight:600; margin-top:4px;">—</div>
+                </div>
+            </div>
+            <div class="glass-card vendor-stat-card" data-stat="rejected" style="cursor:pointer; border-left:3px solid #ef4444;">
+                <div class="glass-card-body" style="padding:14px;">
+                    <div style="font-size:11px; color:#ef4444; text-transform:uppercase; letter-spacing:0.06em;">Rejected</div>
+                    <div id="vendorStatRejected" style="font-size:1.6rem; font-weight:600; margin-top:4px;">—</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Filter Bar -->
         <div class="crm-filter-bar">
             <div class="crm-filter-group crm-search-group">
                 <label for="filterSearch">Search</label>
                 <input type="text" id="filterSearch" class="form-control form-control-sm" placeholder="Search vendors..." oninput="applyFilters()">
+            </div>
+            <div class="crm-filter-group" style="min-width:200px;">
+                <label>Status</label>
+                <div id="vendorStatusFilterContainer"></div>
             </div>
         </div>
 
@@ -87,6 +120,7 @@
                 <thead>
                     <tr>
                         <th>Vendor Name</th>
+                        <th>Status</th>
                         <th>Code</th>
                         <th class="hide-mobile">Email</th>
                         <th class="hide-mobile">Phone</th>
@@ -346,6 +380,7 @@
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/procurement/vendors.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <script>document.write('<script src="../../embed/widget.js?v=' + CACHE_VERSION + '" data-mode="copilot" data-service="procurement" data-title="Procurement Assistant"><\/script>')</script>
