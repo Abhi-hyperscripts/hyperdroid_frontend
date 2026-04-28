@@ -100,6 +100,12 @@
         <div class="settings-tabs">
             <button class="settings-tab active" onclick="switchTab('weights')">Scoring Weights</button>
             <button class="settings-tab" onclick="switchTab('memory')">AI Memory</button>
+            <!-- Danger Zone tab — visibility toggled by procurementSettings.js
+                 after reading SUPERADMIN role from JWT. Backend also enforces
+                 SUPERADMIN on /api/procurement-admin/wipe-all so a forged
+                 client-side reveal would still 401/403. -->
+            <button class="settings-tab" id="dangerZoneTabBtn" onclick="switchTab('danger-zone')"
+                    style="display:none; color:var(--color-danger, #ef4444);">Danger Zone</button>
         </div>
 
         <!-- Tab 1: Scoring Weights -->
@@ -158,6 +164,98 @@
                 <div class="crm-empty-state"><div class="crm-empty-content"><p>Loading...</p></div></div>
             </div>
             <div id="memoryCount" style="font-size: 11px; opacity: 0.5; margin-top: 8px; text-align: right;"></div>
+        </div>
+
+        <!-- Tab 3: Danger Zone (SUPERADMIN only) -->
+        <div id="tab-danger-zone" class="tab-content">
+            <div class="glass-card" style="padding:24px; margin-bottom:16px; border:1px solid var(--color-danger, #ef4444);">
+                <h3 style="color:var(--color-danger, #ef4444); margin:0 0 4px 0;">Danger Zone</h3>
+                <p style="font-size:12px; opacity:0.7; margin:0;">
+                    Operates only on <strong>your tenant</strong>. Other tenants' data is never touched.
+                </p>
+            </div>
+
+            <div class="glass-card" style="padding:24px; border:1px solid var(--color-danger, #ef4444); background:rgba(239, 68, 68, 0.04);">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:280px;">
+                        <h3 style="margin:0 0 6px 0;">Wipe All Procurement Data</h3>
+                        <p style="margin:0; opacity:0.75; font-size:13px;">
+                            Permanently deletes:
+                        </p>
+                        <ul style="margin:8px 0 0 18px; opacity:0.75; font-size:12.5px; line-height:1.6;">
+                            <li>All inquiries, RFQs, vendor quotes, comparisons, purchase orders</li>
+                            <li>Master items, item categories, item synonyms, item mappings</li>
+                            <li>Vendor catalogs, contacts, performance scores, portal tokens</li>
+                            <li>Vendor item history, AI context memory, AI logs, activity log</li>
+                            <li>Procurement-side scoring weights and inquiry decisions</li>
+                        </ul>
+                        <p style="margin:12px 0 0 0; font-size:12.5px; opacity:0.75;">
+                            <strong>Vendor master records in AccountsService are NOT touched</strong> —
+                            those live in Accounts as the single source of truth.
+                            Single Postgres transaction — either everything wipes or nothing does.
+                        </p>
+                    </div>
+                    <button id="procurementWipeAllBtn" class="btn"
+                            style="background:var(--color-danger, #ef4444); color:#fff; border:none; flex-shrink:0; padding:10px 18px; border-radius:8px; font-weight:600; cursor:pointer;">
+                        Wipe All Procurement Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wipe Confirmation Modal (SUPERADMIN only) -->
+    <div class="modal" id="procurementWipeModal">
+        <div class="modal-backdrop" onclick="closeProcurementWipeModal()"></div>
+        <div class="modal-dialog" style="max-width:560px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" style="color:var(--color-danger, #ef4444);">Confirm Wipe All Procurement Data</h5>
+                    <button class="close-btn" onclick="closeProcurementWipeModal()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div style="background:rgba(239, 68, 68, 0.08); border:1px solid var(--color-danger, #ef4444); border-radius:8px; padding:16px; margin-bottom:16px;">
+                        <p style="margin:0 0 8px 0;"><strong>Tenant:</strong> <span id="procurementWipeTenantId" style="font-family:monospace; font-size:13px;"></span></p>
+                        <p style="margin:0; font-size:13px;">Operates only on this tenant. Other tenants are never affected.</p>
+                    </div>
+                    <p style="margin-bottom:16px;">
+                        This will permanently delete <strong>all procurement data</strong> for this tenant — inquiries,
+                        RFQs, quotes, comparisons, purchase orders, master items, vendor catalogs and scoring,
+                        AI context, and procurement settings. The action runs in a single transaction and cannot be undone.
+                        Vendor master records in Accounts are <strong>not</strong> affected.
+                    </p>
+                    <p style="margin-bottom:8px; font-size:13px;">Type <code style="background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">WIPE</code> to confirm:</p>
+                    <input type="text" id="procurementWipeConfirmInput" class="form-control" placeholder="Type WIPE here" autocomplete="off">
+                </div>
+                <div class="modal-footer" style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button class="btn btn-sm" onclick="closeProcurementWipeModal()">Cancel</button>
+                    <button class="btn btn-sm" id="procurementWipeConfirmBtn" disabled
+                            style="background:var(--color-danger, #ef4444); color:#fff; border:none;">Wipe Now</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wipe Result Modal -->
+    <div class="modal" id="procurementWipeResultModal">
+        <div class="modal-backdrop" onclick="closeProcurementWipeResult()"></div>
+        <div class="modal-dialog" style="max-width:640px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="procurementWipeResultTitle">Wipe Complete</h5>
+                    <button class="close-btn" onclick="closeProcurementWipeResult()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="procurementWipeResultSummary" style="font-size:14px; line-height:1.7;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary btn-sm" onclick="closeProcurementWipeResult()">Done</button>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -23,7 +23,132 @@ document.addEventListener('DOMContentLoaded', () => {
     loadMemories();
     loadVendors();
     loadCategoryDropdowns();
+    initDangerZone();
 });
+
+// ==================== DANGER ZONE (SUPERADMIN only) ====================
+
+function readRolesFromJwt() {
+    try {
+        const tok = localStorage.getItem('ragenaizer_authToken') || '';
+        const payload = JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        const role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+            || payload['role']
+            || payload['roles']
+            || [];
+        return Array.isArray(role) ? role : [role];
+    } catch {
+        return [];
+    }
+}
+
+function readTenantIdFromJwt() {
+    try {
+        const tok = localStorage.getItem('ragenaizer_authToken') || '';
+        const payload = JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return payload.tenant_id || '(unknown)';
+    } catch {
+        return '(unknown)';
+    }
+}
+
+function initDangerZone() {
+    // Reveal the Danger Zone tab ONLY when the JWT contains SUPERADMIN.
+    // Backend ALSO enforces SUPERADMIN on /api/procurement-admin/wipe-all,
+    // so a forged client-side reveal would still 401/403.
+    if (!readRolesFromJwt().includes('SUPERADMIN')) return;
+
+    const tabBtn = document.getElementById('dangerZoneTabBtn');
+    if (tabBtn) tabBtn.style.display = '';
+
+    const wipeBtn       = document.getElementById('procurementWipeAllBtn');
+    const modal         = document.getElementById('procurementWipeModal');
+    const tenantSpan    = document.getElementById('procurementWipeTenantId');
+    const input         = document.getElementById('procurementWipeConfirmInput');
+    const confirmBtn    = document.getElementById('procurementWipeConfirmBtn');
+    if (!wipeBtn || !modal || !input || !confirmBtn) return;
+
+    wipeBtn.addEventListener('click', () => {
+        tenantSpan.textContent = readTenantIdFromJwt();
+        input.value = '';
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Wipe Now';
+        modal.classList.add('active');
+        setTimeout(() => input.focus(), 50);
+    });
+
+    input.addEventListener('input', () => {
+        confirmBtn.disabled = (input.value !== 'WIPE');
+    });
+
+    confirmBtn.addEventListener('click', async () => {
+        if (input.value !== 'WIPE') return;
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Wiping…';
+        try {
+            const res = await api.request('/procurement/procurement-admin/wipe-all', {
+                method: 'POST',
+                body: JSON.stringify({ Confirm: 'WIPE' })
+            });
+            closeProcurementWipeModal();
+            showProcurementWipeResult(res);
+        } catch (err) {
+            console.error('[Procurement settings] wipe failed', err);
+            (typeof Toast !== 'undefined' && Toast.error) ? Toast.error(err?.message || 'Wipe failed')
+                : alert(err?.message || 'Wipe failed');
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Wipe Now';
+        }
+    });
+}
+
+function closeProcurementWipeModal() {
+    const m = document.getElementById('procurementWipeModal');
+    if (m) m.classList.remove('active');
+}
+
+function closeProcurementWipeResult() {
+    const m = document.getElementById('procurementWipeResultModal');
+    if (m) m.classList.remove('active');
+    // Reload — current page may reference resources that no longer exist.
+    window.location.reload();
+}
+
+function showProcurementWipeResult(res) {
+    const ok = res?.success === true;
+    const total = res?.deleted_rows ?? 0;
+    const tableCount = res?.table_count ?? 0;
+    const perTable = res?.per_table || {};
+    const top = Object.entries(perTable)
+        .filter(([, v]) => typeof v === 'number' && v > 0)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8);
+
+    document.getElementById('procurementWipeResultTitle').textContent =
+        ok ? 'Wipe Complete' : 'Wipe finished with issues';
+    document.getElementById('procurementWipeResultTitle').style.color =
+        ok ? 'var(--color-success, #10b981)' : 'var(--color-warning, #f59e0b)';
+
+    const escapeHtml = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const topRows = top.length
+        ? `<table style="width:100%; margin-top:6px; font-size:12.5px;">
+            ${top.map(([t, n]) => `<tr><td style="padding:2px 6px; opacity:0.7;">${escapeHtml(t)}</td><td style="padding:2px 6px; text-align:right;">${n.toLocaleString()}</td></tr>`).join('')}
+           </table>`
+        : '<div style="opacity:0.6; font-size:12.5px; margin-top:6px;">No rows present — tenant was already empty.</div>';
+
+    document.getElementById('procurementWipeResultSummary').innerHTML = `
+        <div style="margin-bottom:10px;"><strong>${total.toLocaleString()}</strong> rows deleted across <strong>${tableCount}</strong> tables in a single transaction.</div>
+        <details ${top.length ? 'open' : ''} style="margin-top:8px;">
+            <summary style="cursor:pointer; opacity:0.7; font-size:12.5px;">Top tables affected</summary>
+            ${topRows}
+        </details>
+        <div style="margin-top:14px; padding:10px; border-radius:6px; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.3); font-size:12.5px;">
+            Vendor master records in AccountsService were <strong>not</strong> affected by this wipe.
+        </div>
+    `;
+    const m = document.getElementById('procurementWipeResultModal');
+    if (m) m.classList.add('active');
+}
 
 let _prefCatDropdown = null;
 let _pricingCatDropdown = null;
