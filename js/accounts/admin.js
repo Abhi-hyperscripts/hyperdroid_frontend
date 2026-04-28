@@ -32,6 +32,10 @@ let yearEndFYDropdown = null;
 document.addEventListener('DOMContentLoaded', async function () {
     if (!await AccountsCommon.initPage('admin', '../')) return;
 
+    // Reveal Danger Zone tab + nav group ONLY for SUPERADMIN. Backend
+    // also enforces SUPERADMIN on /api/accounts-admin/*, so a forged
+    // client-side toggle would still get 401/403 from the server.
+    const isSuperadmin = readRolesFromJwt().includes('SUPERADMIN');
     const tabNames = {
         'audit-logs': 'Audit Logs',
         'pending-approvals': 'Pending Approvals',
@@ -40,6 +44,12 @@ document.addEventListener('DOMContentLoaded', async function () {
         'closing-checklists': 'Closing Checklists',
         'year-end': 'Year-End Closing'
     };
+    if (isSuperadmin) {
+        const grp = document.getElementById('superadminNavGroup');
+        if (grp) grp.style.display = '';
+        tabNames['danger-zone'] = 'Danger Zone';
+        wireWipeFlow();
+    }
 
     AccountsCommon.setupSidebar('sidebarToggle', 'accountsSidebar', 'sidebarOverlay', tabNames);
     AccountsCommon.setupTabs(tabNames, onTabSwitch);
@@ -49,6 +59,147 @@ document.addEventListener('DOMContentLoaded', async function () {
     AccountsCommon.initSearchableDropdownsWithRetry(initDropdowns);
     setupSearchListeners();
 });
+
+// ────────────────────────────────────────────────────────────────────────
+// Danger Zone — SUPERADMIN tenant wipe. Mirrors HRMS admin.js pattern.
+// ────────────────────────────────────────────────────────────────────────
+
+function readRolesFromJwt() {
+    try {
+        const tok = localStorage.getItem('ragenaizer_authToken') || '';
+        const payload = JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        const role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+            || payload['role']
+            || payload['roles']
+            || [];
+        return Array.isArray(role) ? role : [role];
+    } catch {
+        return [];
+    }
+}
+
+function readTenantIdFromJwt() {
+    try {
+        const tok = localStorage.getItem('ragenaizer_authToken') || '';
+        const payload = JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return payload.tenant_id || '(unknown)';
+    } catch {
+        return '(unknown)';
+    }
+}
+
+function wireWipeFlow() {
+    const wipeBtn       = document.getElementById('accountsWipeAllBtn');
+    const modal         = document.getElementById('accountsWipeModal');
+    const tenantSpan    = document.getElementById('accountsWipeTenantId');
+    const input         = document.getElementById('accountsWipeConfirmInput');
+    const confirmBtn    = document.getElementById('accountsWipeConfirmBtn');
+    const closeBtn      = document.getElementById('accountsWipeModalCloseBtn');
+    const cancelBtn     = document.getElementById('accountsWipeCancelBtn');
+    const resultModal   = document.getElementById('accountsWipeResultModal');
+    const resultClose   = document.getElementById('accountsWipeResultCloseBtn');
+    const resultDone    = document.getElementById('accountsWipeResultDoneBtn');
+    const resultSummary = document.getElementById('accountsWipeResultSummary');
+
+    if (!wipeBtn || !modal) return;
+
+    wipeBtn.addEventListener('click', () => {
+        tenantSpan.textContent = readTenantIdFromJwt();
+        input.value = '';
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Wipe Now';
+        modal.hidden = false;
+        modal.classList.add('active');
+        setTimeout(() => input.focus(), 50);
+    });
+
+    input.addEventListener('input', () => {
+        confirmBtn.disabled = (input.value !== 'WIPE');
+    });
+
+    function closeModal() {
+        modal.classList.remove('active');
+        modal.hidden = true;
+    }
+    function openResult() {
+        resultModal.hidden = false;
+        resultModal.classList.add('active');
+    }
+    function hideResult() {
+        resultModal.classList.remove('active');
+        resultModal.hidden = true;
+    }
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    confirmBtn.addEventListener('click', async () => {
+        if (input.value !== 'WIPE') return;
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Wiping…';
+        try {
+            const res = await api.request('/accounts/accounts-admin/wipe-all', {
+                method: 'POST',
+                body: JSON.stringify({ Confirm: 'WIPE' })
+            });
+            closeModal();
+            showResult(res);
+        } catch (err) {
+            console.error('[Accounts admin] wipe failed', err);
+            Toast?.error?.(err?.message || 'Wipe failed');
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Wipe Now';
+        }
+    });
+
+    function showResult(res) {
+        const ok = res?.success === true;
+        const total = res?.deleted_rows ?? 0;
+        const tableCount = res?.table_count ?? 0;
+        const perTable = res?.per_table || {};
+        // Top 8 tables by deleted-row count, for the summary.
+        const top = Object.entries(perTable)
+            .filter(([, v]) => typeof v === 'number' && v > 0)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 8);
+
+        document.getElementById('accountsWipeResultTitle').textContent =
+            ok ? 'Wipe Complete' : 'Wipe finished with issues';
+        document.getElementById('accountsWipeResultTitle').style.color =
+            ok ? 'var(--color-success, #10b981)' : 'var(--color-warning, #f59e0b)';
+
+        const topRows = top.length
+            ? `<table style="width:100%; margin-top:6px; font-size:0.88rem;">
+                ${top.map(([t, n]) => `<tr><td style="padding:2px 6px; color:var(--text-secondary);">${escapeHtml(t)}</td><td style="padding:2px 6px; text-align:right;">${n.toLocaleString()}</td></tr>`).join('')}
+               </table>`
+            : '<div style="color:var(--text-secondary); font-size:0.88rem; margin-top:6px;">No rows present — tenant was already empty.</div>';
+
+        resultSummary.innerHTML = `
+            <div style="margin-bottom:10px;"><strong>${total.toLocaleString()}</strong> rows deleted across <strong>${tableCount}</strong> tables in a single transaction.</div>
+            <details ${top.length ? 'open' : ''} style="margin-top:8px;">
+                <summary style="cursor:pointer; color:var(--text-secondary); font-size:0.88rem;">Top tables affected</summary>
+                ${topRows}
+            </details>
+        `;
+        openResult();
+    }
+
+    function closeResult() {
+        hideResult();
+        // Reload — current page may reference resources that no longer exist.
+        window.location.reload();
+    }
+    resultClose.addEventListener('click', closeResult);
+    resultDone.addEventListener('click', closeResult);
+}
+
+function escapeHtml(s) {
+    return String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 // ============================================================================
 // TAB SWITCH HANDLER
