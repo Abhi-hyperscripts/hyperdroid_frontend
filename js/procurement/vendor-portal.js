@@ -179,19 +179,26 @@ async function submitQuote() {
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<div class="vp-spinner" style="width: 16px; height: 16px; border-width: 2px;"></div> Submitting...';
 
-    // Collect item prices (use desktop inputs as source of truth)
-    const itemQuotes = rfqItems.map((item, index) => {
-        const priceInput = document.getElementById(`price_${index}`);
-        return {
-            rfq_item_id: item.rfq_item_id || item.id,
-            unit_price: parseFloat(priceInput?.value) || 0,
-            quantity: item.quantity || 0
-        };
-    });
+    // Collect item prices (use desktop inputs as source of truth).
+    // Only include items the vendor actually priced — blank or 0 inputs are
+    // treated as "not quoted" so the comparison page can correctly badge
+    // partial coverage instead of recording bogus 0-price line items.
+    const itemQuotes = rfqItems
+        .map((item, index) => {
+            const priceInput = document.getElementById(`price_${index}`);
+            const raw = priceInput?.value?.trim();
+            if (!raw) return null;
+            const price = parseFloat(raw);
+            if (!isFinite(price) || price <= 0) return null;
+            return {
+                rfq_item_id: item.rfq_item_id || item.id,
+                unit_price: price,
+                quantity: item.quantity || 0
+            };
+        })
+        .filter(Boolean);
 
-    // Validate at least one price is entered
-    const hasAnyPrice = itemQuotes.some(q => q.unit_price > 0);
-    if (!hasAnyPrice) {
+    if (itemQuotes.length === 0) {
         Toast.error('Please enter at least one unit price');
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Submit Quote';

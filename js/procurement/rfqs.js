@@ -192,7 +192,7 @@ async function loadVendorsForModal() {
         // with 50+ vendors otherwise get a noisy list with most rows
         // irrelevant to the RFQ. The dedicated endpoint also keeps the
         // assigned-vendor exclusion server-side so the count is correct.
-        const rfqId = currentDetailRfqId || (window.location.hash.match(/detail\/([^/?#]+)/)?.[1]);
+        const rfqId = (currentRfq && currentRfq.id) || (window.location.hash.match(/detail\/([^/?#]+)/)?.[1]);
         const endpoint = rfqId
             ? `/procurement/rfqs/${rfqId}/eligible-vendors`
             : '/procurement/vendors';
