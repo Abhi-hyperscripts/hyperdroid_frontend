@@ -187,10 +187,18 @@ let _vendorScrollBound = false;
 async function loadVendorsForModal() {
     selectedVendorIds.clear();
     try {
-        const response = await api.request('/procurement/vendors', { _skipSpinner: true });
+        // Backend already returns ONLY vendors mapped (via vendor_items) to
+        // at least one of this RFQ's items, AND not already attached. Tenants
+        // with 50+ vendors otherwise get a noisy list with most rows
+        // irrelevant to the RFQ. The dedicated endpoint also keeps the
+        // assigned-vendor exclusion server-side so the count is correct.
+        const rfqId = currentDetailRfqId || (window.location.hash.match(/detail\/([^/?#]+)/)?.[1]);
+        const endpoint = rfqId
+            ? `/procurement/rfqs/${rfqId}/eligible-vendors`
+            : '/procurement/vendors';
+        const response = await api.request(endpoint, { _skipSpinner: true });
         allVendorsList = response.data || response || [];
-        const assignedIds = new Set(rfqVendors.map(v => v.vendor_id));
-        availableVendorsForModal = allVendorsList.filter(v => !assignedIds.has(v.id));
+        availableVendorsForModal = allVendorsList;
         renderAvailablePane();
         renderSelectedPane();
         updateVendorPickerCounts();
@@ -237,7 +245,17 @@ function renderAvailablePane() {
     const searchVal = document.getElementById('vendorSearchInput')?.value || '';
 
     if (_vendorFilteredCache.length === 0) {
-        container.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-secondary); font-size:12px;">${searchVal ? 'No vendors match' : 'No available vendors'}</div>`;
+        // Distinguish "filter zeroed it out" from "no vendor is mapped to
+        // any of these items in the first place" — the second case needs a
+        // clear next-step pointer or the user is stuck.
+        const emptyHtml = searchVal
+            ? `<div style="padding:20px; text-align:center; color:var(--text-secondary); font-size:12px;">No vendors match &quot;${escapeHtml(searchVal)}&quot;</div>`
+            : `<div style="padding:24px 20px; text-align:center; color:var(--text-secondary); font-size:12px; line-height:1.6;">
+                <div style="font-weight:600; margin-bottom:6px; color:var(--text-primary);">No vendors are eligible for this RFQ</div>
+                <div>Only vendors mapped to at least one of this RFQ's items appear here.</div>
+                <div style="margin-top:8px;">Open <a href="vendors.html" style="color:var(--brand-primary); text-decoration:underline;">Vendors</a> &rarr; click a vendor &rarr; <strong>Manage Items</strong> to map the items they supply.</div>
+              </div>`;
+        container.innerHTML = emptyHtml;
         return;
     }
 
