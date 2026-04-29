@@ -261,22 +261,24 @@
     <!-- Bulk Add Items Modal (Two-Pane Picker) -->
     <div class="modal" id="bulkImportModal">
         <div class="modal-backdrop" onclick="closeModal('bulkImportModal')"></div>
-        <div class="modal-dialog" style="max-width:900px;width:95vw;">
-            <div class="modal-content">
+        <div class="modal-dialog" style="max-width:760px;width:min(95vw, 760px);">
+            <div class="modal-content" style="max-width:100%;overflow:hidden;">
                 <div class="modal-header">
                     <h5 class="modal-title">Bulk Add Items from Catalog</h5>
                     <button class="close-btn" onclick="closeModal('bulkImportModal')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </div>
-                <div class="modal-body" style="padding:0;">
-                    <!-- Search + Category Filter -->
-                    <!-- box-sizing on row so padding doesn't push the children past modal edge.
-                         min-width:0 on input so flex:1 actually shrinks instead of overflowing.
-                         flex-shrink:0 on category select so it doesn't get squashed away. -->
-                    <div style="display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border-primary);box-sizing:border-box;width:100%;">
-                        <input type="text" class="form-control form-control-sm" id="bulkSearchInput" placeholder="Search items..." style="flex:1 1 auto;min-width:0;" oninput="filterBulkItems()">
-                        <select class="form-control form-control-sm" id="bulkCategoryFilter" style="width:180px;flex:0 0 180px;max-width:180px;box-sizing:border-box;" onchange="filterBulkItems()">
+                <div class="modal-body" style="padding:0;max-width:100%;overflow:hidden;">
+                    <!-- Search + Category Filter.
+                         Outer row constrained to 100% width with overflow:hidden so a child
+                         can never push past the modal edge (regression fix Apr 2026).
+                         Search input: flex:1 1 0 + min-width:0 so it shrinks freely.
+                         Category select: hard-capped width that includes native chevron
+                         padding via box-sizing:border-box. -->
+                    <div style="display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border-primary);box-sizing:border-box;width:100%;max-width:100%;overflow:hidden;">
+                        <input type="text" class="form-control form-control-sm" id="bulkSearchInput" placeholder="Search items..." style="flex:1 1 0;min-width:0;box-sizing:border-box;" oninput="filterBulkItems()">
+                        <select class="form-control form-control-sm" id="bulkCategoryFilter" style="flex:0 0 160px;width:160px;max-width:160px;min-width:0;box-sizing:border-box;" onchange="filterBulkItems()">
                             <option value="">All Categories</option>
                         </select>
                     </div>

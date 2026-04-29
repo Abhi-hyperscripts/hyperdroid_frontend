@@ -21,7 +21,11 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    min-width: 200px;
+    /* Prefer 200px floor for readability, but never wider than the parent
+       container — fixes overflow when this dropdown sits in a narrow flex
+       slot (e.g. "All Categories" in the bulk-add modal at <200px). */
+    min-width: min(200px, 100%);
+    max-width: 100%;
     padding: 6px 8px;
     background: var(--bg-input, var(--bg-secondary, #f8fafc));
     border: 1px solid var(--border-primary, var(--gray-300, #d1d5db));
