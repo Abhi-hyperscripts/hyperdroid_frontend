@@ -121,6 +121,28 @@
     .ana-kpi-spark { position: absolute; right: 8px; bottom: 8px; width: 100px; height: 32px; opacity: 0.85; pointer-events: none; }
     .ana-kpi-spark .apexcharts-canvas { background: transparent !important; }
     .ana-kpi-spark .apexcharts-svg { overflow: visible; }
+    /* Info icon top-right of each KPI label row. tooltip.js (loaded below)
+       reads the data-tooltip attr and renders a body-anchored tooltip on
+       hover/focus, so the explanation stays inside the card boundaries
+       without z-index fights. */
+    .ana-kpi-info {
+        position: absolute; top: 10px; right: 10px;
+        width: 18px; height: 18px; padding: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.12);
+        color: var(--text-secondary);
+        border: 1px solid rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25);
+        border-radius: 50%;
+        font-size: 11px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+        cursor: help; line-height: 1;
+        transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    .ana-kpi-info:hover, .ana-kpi-info:focus {
+        color: var(--brand-primary);
+        border-color: var(--brand-primary);
+        background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.20);
+        outline: none;
+    }
 
     .ana-row { display: grid; grid-template-columns: 2fr 3fr; gap: 12px; margin-bottom: 18px; }
     @media (max-width: 1100px) { .ana-row { grid-template-columns: 1fr; } }
@@ -433,6 +455,7 @@
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/setup-guard.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/form-answers-filter.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/analytics.js?v=' + CACHE_VERSION + '"><\/script>');

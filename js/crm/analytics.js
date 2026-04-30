@@ -230,22 +230,37 @@ function renderKpis() {
     _kpiSparks.forEach(c => { try { c.destroy(); } catch {} });
     _kpiSparks = [];
 
+    // Each KPI carries a one-line explanation surfaced via the (i) icon —
+    // tooltip.js (a body-anchored tooltip lib already used elsewhere) reads
+    // the data-tooltip attribute we set inside kpiCard().
     const defs = [
-        { id: 'k0', label: 'NEW LEADS',           value: formatInt(k.new_leads.current),         kpi: k.new_leads },
-        { id: 'k1', label: 'CONNECT RATE',        value: formatPct(k.connect_rate.current),      kpi: k.connect_rate },
-        { id: 'k2', label: 'QUALIFIED RATE',      value: formatPct(k.qualified_rate.current),    kpi: k.qualified_rate },
-        { id: 'k3', label: 'WON RATE',            value: formatPct(k.won_rate.current),          kpi: k.won_rate },
-        { id: 'k4', label: 'WON VALUE',           value: formatCurrency(k.won_value.current),    kpi: k.won_value },
-        { id: 'k5', label: 'MEDIAN RESPONSE',     value: formatDuration(k.median_response_seconds.current), kpi: k.median_response_seconds, lowerBetter: true },
-        { id: 'k6', label: 'AVG ACTIVITIES/LEAD', value: (k.avg_activities_per_lead.current || 0).toFixed(1), kpi: k.avg_activities_per_lead },
-        { id: 'k7', label: 'STALE LEADS',         value: formatInt(k.stale_leads.current),       kpi: k.stale_leads, lowerBetter: true },
+        { id: 'k0', label: 'NEW LEADS',           value: formatInt(k.new_leads.current),         kpi: k.new_leads,
+          tooltip: 'Total leads created in this date range. Filters (source, team, form answers) narrow the cohort.' },
+        { id: 'k1', label: 'CONNECT RATE',        value: formatPct(k.connect_rate.current),      kpi: k.connect_rate,
+          tooltip: 'Share of leads that received at least one call, email, or meeting after creation. Measures whether reps reached out at all.' },
+        { id: 'k2', label: 'QUALIFIED RATE',      value: formatPct(k.qualified_rate.current),    kpi: k.qualified_rate,
+          tooltip: 'Share of leads moved to qualified or converted status. A lead quality signal once reps have evaluated it.' },
+        { id: 'k3', label: 'WON RATE',            value: formatPct(k.won_rate.current),          kpi: k.won_rate,
+          tooltip: 'Share of leads whose deal landed in a Won stage. The bottom of the funnel.' },
+        { id: 'k4', label: 'WON VALUE',           value: formatCurrency(k.won_value.current),    kpi: k.won_value,
+          tooltip: 'Sum of deal value across all won deals attached to leads in this window. Total revenue captured.' },
+        { id: 'k5', label: 'MEDIAN RESPONSE',     value: formatDuration(k.median_response_seconds.current), kpi: k.median_response_seconds, lowerBetter: true,
+          tooltip: 'Median time from lead creation to first call/email/meeting. Half of contacted leads got a faster response, half slower. Lower is better.' },
+        { id: 'k6', label: 'AVG ACTIVITIES/LEAD', value: (k.avg_activities_per_lead.current || 0).toFixed(1), kpi: k.avg_activities_per_lead,
+          tooltip: 'Average number of activities (any type) logged per lead in this window. Higher means more rep effort per lead.' },
+        { id: 'k7', label: 'STALE LEADS',         value: formatInt(k.stale_leads.current),       kpi: k.stale_leads, lowerBetter: true,
+          tooltip: 'Active leads with no activity in the last 7 days. Excludes leads already closed (won/unqualified). Lower is better.' },
         // Timeline-derived engagement metrics — answer "how widely + how long
         // are reps actually working leads, and how fast does each lead reach
         // a final disposition".
-        { id: 'k8', label: 'ENGAGED %',           value: formatPct(k.engaged_pct?.current || 0), kpi: k.engaged_pct || {current:0,previous:0,delta_pct:null,series:[]} },
-        { id: 'k9', label: 'AVG ENGAGEMENT DAYS', value: formatDays(k.avg_engagement_days?.current || 0), kpi: k.avg_engagement_days || {current:0,previous:0,delta_pct:null,series:[]} },
-        { id: 'k10', label: 'AVG DAYS TO WON',    value: formatDays(k.avg_days_to_won?.current || 0), kpi: k.avg_days_to_won || {current:0,previous:0,delta_pct:null,series:[]}, lowerBetter: true },
-        { id: 'k11', label: 'AVG DAYS TO CLOSE',  value: formatDays(k.avg_days_to_terminal?.current || 0), kpi: k.avg_days_to_terminal || {current:0,previous:0,delta_pct:null,series:[]}, lowerBetter: true }
+        { id: 'k8', label: 'ENGAGED %',           value: formatPct(k.engaged_pct?.current || 0), kpi: k.engaged_pct || {current:0,previous:0,delta_pct:null,series:[]},
+          tooltip: 'Share of leads that received at least 2 contact-type touches (call/email/meeting). Distinguishes truly worked leads from drive-by single-call leads.' },
+        { id: 'k9', label: 'AVG ENGAGEMENT DAYS', value: formatDays(k.avg_engagement_days?.current || 0), kpi: k.avg_engagement_days || {current:0,previous:0,delta_pct:null,series:[]},
+          tooltip: 'For engaged leads (≥2 touches), the average span between their first and last contact activity. How long reps stay active before going quiet.' },
+        { id: 'k10', label: 'AVG DAYS TO WON',    value: formatDays(k.avg_days_to_won?.current || 0), kpi: k.avg_days_to_won || {current:0,previous:0,delta_pct:null,series:[]}, lowerBetter: true,
+          tooltip: 'Average time from lead creation to deal-stage Won. Time-to-revenue. Lower is better.' },
+        { id: 'k11', label: 'AVG DAYS TO CLOSE',  value: formatDays(k.avg_days_to_terminal?.current || 0), kpi: k.avg_days_to_terminal || {current:0,previous:0,delta_pct:null,series:[]}, lowerBetter: true,
+          tooltip: 'Average time from lead creation to ANY terminal disposition (won, lost, or unqualified). Time-to-decision. Lower is better.' }
     ];
     grid.innerHTML = defs.map(d => kpiCard(d)).join('');
 
@@ -282,8 +297,13 @@ function kpiCard(d) {
         arrow = Math.abs(delta) < 0.5 ? '–' : (isUp ? '▲' : '▼');
         deltaTxt = `${arrow} ${Math.abs(delta).toFixed(1)}%`;
     }
+    // Info button + tooltip — tooltip.js auto-binds on document load.
+    const infoBtn = d.tooltip
+        ? `<button type="button" class="ana-kpi-info" data-tooltip="${escapeHtml(d.tooltip)}" aria-label="What does ${escapeHtml(d.label)} mean?" tabindex="0">i</button>`
+        : '';
     return `
     <div class="ana-kpi-card">
+        ${infoBtn}
         <div class="ana-kpi-label">${d.label}</div>
         <div class="ana-kpi-value">${d.value}</div>
         <div class="ana-kpi-delta ${deltaClass}">${deltaTxt} <span style="color:var(--text-secondary)">vs prev period</span></div>
