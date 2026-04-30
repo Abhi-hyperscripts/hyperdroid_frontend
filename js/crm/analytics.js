@@ -587,13 +587,56 @@ function onSourceRowClicked(sourceId) {
 }
 window.onSourceRowClicked = onSourceRowClicked;
 
+// Detect ISO-8601 timestamp strings: "2026-04-22t18:09:01+05:30" etc.
+const ISO_TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}[t ]\d{2}:\d{2}/i;
+function looksLikeTimestamp(v) { return typeof v === 'string' && ISO_TIMESTAMP_RE.test(v); }
+
+// Format a value for display in the answer-breakdown table — humanise
+// timestamps, lowercase enums look fine as-is.
+function formatAnswerValue(v) {
+    if (v == null) return '';
+    if (looksLikeTimestamp(v)) {
+        const d = new Date(v);
+        if (!isNaN(d)) return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+    return v;
+}
+
+// Decide whether an answer-breakdown question is worth showing. Hide
+// metadata-style fields where every row carries either the same value
+// (constant — no analytical signal) or a unique value (timestamps,
+// IDs — every row is its own bucket, breakdown is just noise).
+function isUsefulAnswerGroup(g) {
+    const values = g.values || [];
+    const noAnswerCount = g.no_answer ? g.no_answer.leads : 0;
+    const totalLeads = values.reduce((s, r) => s + r.leads, 0) + noAnswerCount;
+    if (totalLeads === 0) return false;
+    // Need at least one real (non-no-answer) value, else the breakdown
+    // is just "(no answer) 100%" which we surface as "No answers." now.
+    if (values.length === 0) return false;
+    // If ANY value carries 2+ leads, the question has signal worth showing.
+    if (values.some(v => v.leads >= 2)) return true;
+    // Otherwise every value is unique — usually timestamps or IDs.
+    // A small cohort (≤3 leads) might just genuinely have unique answers,
+    // so allow it through; anything bigger is almost always metadata noise.
+    return totalLeads <= 3;
+}
+
 function renderAnswerBreakdown() {
     const card = document.getElementById('anaAnswerCard');
     const wrap = document.getElementById('anaAnswers');
-    const groups = _payload.answer_breakdown;
-    if (!groups || groups.length === 0) { card.style.display = 'none'; return; }
+    const allGroups = _payload.answer_breakdown;
+    if (!allGroups || allGroups.length === 0) { card.style.display = 'none'; return; }
+
+    const groups = allGroups.filter(isUsefulAnswerGroup);
+    const hidden = allGroups.length - groups.length;
+
+    if (groups.length === 0) { card.style.display = 'none'; return; }
     card.style.display = '';
-    wrap.innerHTML = groups.map(g => {
+    const hiddenNote = hidden > 0
+        ? `<div style="color:var(--text-secondary);font-size:0.78em;margin-bottom:10px;">${hidden} metadata field${hidden===1?'':'s'} hidden — every row was identical or unique (timestamps, IDs, etc.).</div>`
+        : '';
+    wrap.innerHTML = hiddenNote + groups.map(g => {
         const allRows = [...(g.values || []), ...(g.no_answer ? [Object.assign({}, g.no_answer, { value: '__no_answer__' })] : [])];
         if (allRows.length === 0) {
             return `<div class="ana-answer-block"><div class="ana-answer-q">${escapeHtml(g.label)}</div><div class="ana-empty" style="padding:10px;">No answers.</div></div>`;
@@ -611,7 +654,7 @@ function renderAnswerBreakdown() {
                 <tbody>
                     ${allRows.map(r => {
                         const isNoAns = r.value === '__no_answer__';
-                        const display = isNoAns ? '<em style="color:var(--text-secondary);">(no answer)</em>' : escapeHtml(r.value);
+                        const display = isNoAns ? '<em style="color:var(--text-secondary);">(no answer)</em>' : escapeHtml(formatAnswerValue(r.value));
                         const conn = r.leads === 0 ? 0 : (100 * r.contacted / r.leads);
                         const qual = r.leads === 0 ? 0 : (100 * r.qualified / r.leads);
                         const wonPct = r.leads === 0 ? 0 : (100 * r.won / r.leads);
