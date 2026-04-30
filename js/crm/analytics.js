@@ -9,9 +9,10 @@
 
 // Page state
 let _payload = null;
-let _dailyChart = null;     // ApexCharts instance — daily trend line
-let _funnelChart = null;    // ApexCharts instance — native pyramid funnel
-let _kpiSparks = [];        // ApexCharts instances for the 8 KPI cards
+let _dailyChart = null;        // ApexCharts instance — daily trend line
+let _funnelChart = null;       // ApexCharts instance — native pyramid funnel
+let _engagementChart = null;   // ApexCharts instance — touch-count distribution
+let _kpiSparks = [];           // ApexCharts instances for the KPI cards
 let _sources = [];
 let _teams = [];
 // SearchableDropdown wrappers (codebase convention — never native <select>).
@@ -200,6 +201,7 @@ async function loadAnalytics() {
     renderKpis();
     renderFunnel();
     renderDailyChart();
+    renderEngagementDistribution();
     renderSourceTable();
     renderAnswerBreakdown();
     renderRepLeaderboard();
@@ -236,7 +238,14 @@ function renderKpis() {
         { id: 'k4', label: 'WON VALUE',           value: formatCurrency(k.won_value.current),    kpi: k.won_value },
         { id: 'k5', label: 'MEDIAN RESPONSE',     value: formatDuration(k.median_response_seconds.current), kpi: k.median_response_seconds, lowerBetter: true },
         { id: 'k6', label: 'AVG ACTIVITIES/LEAD', value: (k.avg_activities_per_lead.current || 0).toFixed(1), kpi: k.avg_activities_per_lead },
-        { id: 'k7', label: 'STALE LEADS',         value: formatInt(k.stale_leads.current),       kpi: k.stale_leads, lowerBetter: true }
+        { id: 'k7', label: 'STALE LEADS',         value: formatInt(k.stale_leads.current),       kpi: k.stale_leads, lowerBetter: true },
+        // Timeline-derived engagement metrics — answer "how widely + how long
+        // are reps actually working leads, and how fast does each lead reach
+        // a final disposition".
+        { id: 'k8', label: 'ENGAGED %',           value: formatPct(k.engaged_pct?.current || 0), kpi: k.engaged_pct || {current:0,previous:0,delta_pct:null,series:[]} },
+        { id: 'k9', label: 'AVG ENGAGEMENT DAYS', value: formatDays(k.avg_engagement_days?.current || 0), kpi: k.avg_engagement_days || {current:0,previous:0,delta_pct:null,series:[]} },
+        { id: 'k10', label: 'AVG DAYS TO WON',    value: formatDays(k.avg_days_to_won?.current || 0), kpi: k.avg_days_to_won || {current:0,previous:0,delta_pct:null,series:[]}, lowerBetter: true },
+        { id: 'k11', label: 'AVG DAYS TO CLOSE',  value: formatDays(k.avg_days_to_terminal?.current || 0), kpi: k.avg_days_to_terminal || {current:0,previous:0,delta_pct:null,series:[]}, lowerBetter: true }
     ];
     grid.innerHTML = defs.map(d => kpiCard(d)).join('');
 
@@ -448,6 +457,73 @@ function trendLabel(m) {
     return ({ leads: 'New leads', contacted: 'Contacted', qualified: 'Qualified', won: 'Won', won_value: 'Won value', activities: 'Activities' })[m] || m;
 }
 
+function renderEngagementDistribution() {
+    const el = document.getElementById('anaEngagementChart');
+    if (!el) return;
+    const dist = _payload.engagement_distribution || {};
+    const buckets = [
+        { label: '0 touches',  count: dist.bucket0 || 0,        cls: 'red' },
+        { label: '1 touch',    count: dist.bucket1 || 0,        cls: 'red' },
+        { label: '2–3 touches', count: dist.bucket2to3 || 0,    cls: 'yellow' },
+        { label: '4–5 touches', count: dist.bucket4to5 || 0,    cls: 'green' },
+        { label: '6+ touches',  count: dist.bucket6_plus || 0,  cls: 'green' }
+    ];
+    const total = buckets.reduce((s, b) => s + b.count, 0);
+
+    if (_engagementChart) { try { _engagementChart.destroy(); } catch {} _engagementChart = null; }
+
+    if (total === 0) {
+        el.innerHTML = '<div class="ana-empty">No leads in this window.</div>';
+        return;
+    }
+
+    const { brand, text, grid } = _chartColors();
+    // Red→yellow→green palette so reviewers can instantly read engagement
+    // depth (left buckets are dormant, right buckets are deeply worked).
+    const colors = ['#ef4444', '#f97316', '#f59e0b', '#22c55e', '#16a34a'];
+
+    _engagementChart = new ApexCharts(el, {
+        chart: {
+            type: 'bar', height: 220, background: 'transparent',
+            fontFamily: "'DM Sans', -apple-system, sans-serif",
+            toolbar: { show: false },
+            animations: { enabled: true, speed: 400 }
+        },
+        series: [{ name: 'Leads', data: buckets.map(b => b.count) }],
+        plotOptions: {
+            bar: {
+                horizontal: false, distributed: true, borderRadius: 6,
+                columnWidth: '55%',
+                dataLabels: { position: 'top' }
+            }
+        },
+        colors,
+        dataLabels: {
+            enabled: true, offsetY: -22,
+            formatter: v => v > 0 ? `${v} (${((100*v)/total).toFixed(0)}%)` : '',
+            style: { fontSize: '11px', colors: [text], fontWeight: 600 }
+        },
+        legend: { show: false },
+        xaxis: {
+            categories: buckets.map(b => b.label),
+            labels: { style: { colors: text, fontSize: '11px' } },
+            axisBorder: { show: false }, axisTicks: { color: grid }
+        },
+        yaxis: {
+            labels: {
+                style: { colors: text, fontSize: '11px' },
+                formatter: v => formatInt(v)
+            }
+        },
+        grid: { borderColor: grid, strokeDashArray: 3, padding: { top: 24, bottom: 0, left: 4, right: 8 } },
+        tooltip: {
+            theme: _isDarkTheme() ? 'dark' : 'light',
+            y: { formatter: v => `${v} leads (${((100*v)/total).toFixed(1)}% of cohort)` }
+        }
+    });
+    _engagementChart.render();
+}
+
 function renderSourceTable() {
     const tbody = document.querySelector('#anaSourceTable tbody');
     const rows = _payload.source_breakdown || [];
@@ -576,6 +652,15 @@ function formatDuration(secs) {
     if (secs < 3600) return (secs / 60).toFixed(0) + 'm';
     if (secs < 86400) return (secs / 3600).toFixed(1) + 'h';
     return (secs / 86400).toFixed(1) + 'd';
+}
+// Format a fractional days value for engagement KPIs. Sub-day shows hours,
+// sub-week shows decimals; longer windows round to whole days.
+function formatDays(days) {
+    const d = Number(days) || 0;
+    if (d <= 0) return '—';
+    if (d < 1) return (d * 24).toFixed(1) + 'h';
+    if (d < 7) return d.toFixed(1) + 'd';
+    return Math.round(d) + 'd';
 }
 function capitalise(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 

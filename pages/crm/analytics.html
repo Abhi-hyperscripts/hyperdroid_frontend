@@ -96,6 +96,9 @@
     }
     .ana-toolbar .ana-spacer { flex: 1; }
 
+    /* KPI grid: 4 cols on desktop = 3 rows for 12 cards (lead funnel,
+       deal value, response speed, activity, engagement breadth/depth,
+       lifecycle). Drops to 2 cols on tablet, 1 on mobile. */
     .ana-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
     @media (max-width: 1200px) { .ana-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { .ana-kpi-grid { grid-template-columns: 1fr; } }
@@ -304,6 +307,19 @@
                 </div>
                 <div class="ana-daily-chart-wrap"><div id="anaDailyChart"></div></div>
             </div>
+        </div>
+
+        <!-- Engagement depth distribution — touch-count buckets across the
+             cohort (0 / 1 / 2-3 / 4-5 / 6+). Red→green palette signals
+             "dormant vs deeply worked" at a glance. -->
+        <div class="ana-card" style="margin-bottom:18px;">
+            <div class="ana-card-header">
+                <div>
+                    <div class="ana-card-title">Engagement depth</div>
+                    <div class="ana-card-sub">How many call/email/meeting touches each lead received in this window</div>
+                </div>
+            </div>
+            <div id="anaEngagementChart" style="min-height:220px;"></div>
         </div>
 
         <!-- Sales leaderboard — sits directly under the funnel + daily-trend row
