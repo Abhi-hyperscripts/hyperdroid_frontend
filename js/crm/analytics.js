@@ -646,6 +646,11 @@ function renderAnswerBreakdown() {
         <div class="ana-answer-block">
             <div class="ana-answer-q">${escapeHtml(g.label)}</div>
             <table class="ana-table">
+                <colgroup>
+                    <col class="col-answer"><col class="col-leads"><col class="col-pct">
+                    <col class="col-connect"><col class="col-qual">
+                    <col class="col-won"><col class="col-wonvalue">
+                </colgroup>
                 <thead><tr>
                     <th>Answer</th><th class="num">Leads</th><th class="num">% of total</th>
                     <th class="num">Connect %</th><th class="num">Qual %</th>
