@@ -296,9 +296,15 @@ function renderFunnel() {
     }
 
     // ApexCharts native pyramid: bar chart with horizontal:true + isFunnel:true.
+    // We clamp the rendered y-value to a minimum (8% of the top stage) so a
+    // stage with count=1 doesn't degenerate into a needle and count=0 still
+    // gets a visible flat bar — the real count is preserved in the data
+    // label and tooltip. Without this, lopsided funnels (e.g. 53/45/1/0)
+    // looked like a sharp arrow with floating "Won: 0" text below.
     const { brand, text } = _chartColors();
-    const data = funnel.map(s => ({ x: capitalise(s.stage), y: s.count }));
     const total = funnel[0]?.count || 1;
+    const minRender = Math.max(1, total * 0.08);
+    const data = funnel.map(s => ({ x: capitalise(s.stage), y: Math.max(s.count, minRender) }));
 
     _funnelChart = new ApexCharts(chartEl, {
         chart: {
