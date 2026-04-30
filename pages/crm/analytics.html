@@ -148,6 +148,25 @@
     @media (max-width: 1100px) { .ana-row { grid-template-columns: 1fr; } }
 
     .ana-card { padding: 16px; min-height: 320px; display: flex; flex-direction: column; }
+    /* Info icon shared between KPI cards and chart/table card headers.
+       Reuses the same disc style; placement adjusts via the parent class. */
+    .ana-card-header .ana-info {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 18px; height: 18px; padding: 0; margin-left: 8px;
+        background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.12);
+        color: var(--text-secondary);
+        border: 1px solid rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25);
+        border-radius: 50%;
+        font-size: 11px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+        cursor: help; line-height: 1; vertical-align: middle;
+        transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    .ana-card-header .ana-info:hover, .ana-card-header .ana-info:focus {
+        color: var(--brand-primary);
+        border-color: var(--brand-primary);
+        background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.20);
+        outline: none;
+    }
     /* Daily trend chart container — flex-grow inside the card so ApexCharts'
        x-axis labels have room and don't render outside the card. */
     .ana-daily-chart-wrap { flex: 1; min-height: 240px; display: flex; }
@@ -301,7 +320,7 @@
             <div class="ana-card">
                 <div class="ana-card-header">
                     <div>
-                        <div class="ana-card-title">Funnel</div>
+                        <div class="ana-card-title">Funnel <button type="button" class="ana-info" data-tooltip="The four stages every lead passes through. Each band shows count + share of the original cohort. The chips below show stage-to-stage drop-off — the share of leads lost between adjacent stages." aria-label="What does the funnel show?" tabindex="0">i</button></div>
                         <div class="ana-card-sub">Lead → contacted → qualified → won</div>
                     </div>
                 </div>
@@ -313,7 +332,7 @@
             <div class="ana-card">
                 <div class="ana-card-header">
                     <div>
-                        <div class="ana-card-title">Daily trend</div>
+                        <div class="ana-card-title">Daily trend <button type="button" class="ana-info" data-tooltip="Per-day volume of the metric you pick from the dropdown — new leads, contacts, qualifications, wins, won-value, or activities. Use it to spot spikes (e.g. a campaign push) and lulls (e.g. weekends, mid-pipeline gaps)." aria-label="What does the daily trend show?" tabindex="0">i</button></div>
                         <div class="ana-card-sub">Volume + conversion across the selected window</div>
                     </div>
                     <div>
@@ -337,7 +356,7 @@
         <div class="ana-card" style="margin-bottom:18px;">
             <div class="ana-card-header">
                 <div>
-                    <div class="ana-card-title">Engagement depth</div>
+                    <div class="ana-card-title">Engagement depth <button type="button" class="ana-info" data-tooltip="Touch-count distribution — how many leads received 0, 1, 2-3, 4-5, or 6+ contact touches (call/email/meeting). Buckets sum to total leads. Red buckets are dormant, green are deeply worked. A red-heavy chart means leads are sitting cold." aria-label="What does engagement depth show?" tabindex="0">i</button></div>
                     <div class="ana-card-sub">How many call/email/meeting touches each lead received in this window</div>
                 </div>
             </div>
@@ -350,7 +369,7 @@
         <div class="ana-card" style="margin-bottom:18px;">
             <div class="ana-card-header">
                 <div>
-                    <div class="ana-card-title">Sales Leaderboard</div>
+                    <div class="ana-card-title">Sales Leaderboard <button type="button" class="ana-info" data-tooltip="Per-salesperson breakdown. Leads worked = leads currently owned by that rep. Connect / Qual / Won % are rates against THIS rep's leads only. Median response = how fast they made first contact. Activities/day = average daily activity count from this rep on cohort leads. (Unassigned) row collects leads with no owner." aria-label="What does the sales leaderboard show?" tabindex="0">i</button></div>
                     <div class="ana-card-sub">Auto-scoped to the selected source when one is picked</div>
                 </div>
             </div>
@@ -377,7 +396,7 @@
         <div class="ana-card" style="margin-bottom:18px;">
             <div class="ana-card-header">
                 <div>
-                    <div class="ana-card-title">Per-source performance</div>
+                    <div class="ana-card-title">Per-source performance <button type="button" class="ana-info" data-tooltip="Lead and conversion stats grouped by source / form. Click a row to scope the rest of the dashboard to that source. Coloured bars use red/yellow/green bands per metric — Connect%: red below 40, yellow 40-70, green above 70 etc. (Unspecified) row collects leads with no source attribution." aria-label="What does per-source performance show?" tabindex="0">i</button></div>
                     <div class="ana-card-sub">Click a row to scope the rest of the dashboard to that form</div>
                 </div>
             </div>
@@ -404,7 +423,7 @@
         <div class="ana-card" id="anaAnswerCard" style="margin-bottom:18px; display:none;">
             <div class="ana-card-header">
                 <div>
-                    <div class="ana-card-title">Answer-level performance</div>
+                    <div class="ana-card-title">Answer-level performance <button type="button" class="ana-info" data-tooltip="For the picked source, every form question's answer values and how each cohort moves through the funnel. Tells you which answer values predict higher conversion — e.g. 'role: sales' vs 'role: student' might differ widely on Won%." aria-label="What does answer-level performance show?" tabindex="0">i</button></div>
                     <div class="ana-card-sub">For each form question, how each answer cohort moves through the funnel</div>
                 </div>
             </div>
