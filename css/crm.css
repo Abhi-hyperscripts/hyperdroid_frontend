@@ -3759,4 +3759,254 @@ body.crm-page #gsShareModal .gm-body:has(.searchable-dropdown.open) {
 .status-badge.status-completed  { background: rgba(22,163,74,.12);  color: #15803d; }
 .status-badge.status-failed     { background: rgba(220,38,38,.10);  color: var(--color-danger); }
 
+/* "Form answers" filter button — matches the height of the other filter
+   controls in the toolbar (Status / Team / Source / Email / Campaign /
+   Search) so it lines up cleanly. Bootstrap's btn-sm sits a couple of
+   pixels shorter than form-select-sm; pinning to 32px brings them flush.
+   align-items + justify-content center the [text + count badge] cluster
+   so the label sits exactly in the middle of the 32px box. */
+#formAnswersFilterBtn {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    line-height: 1;
+    white-space: nowrap;
+}
+#formAnswersFilterBtn .badge {
+    /* Sized for legibility — at btn-sm's 11px base font, a 0.7em badge
+       collapsed to ~8px and read as visual noise. Bumping to a fixed
+       11px font + ~18px min-width gives the count its own footprint
+       without crowding the label. */
+    font-size: 11px;
+    line-height: 1;
+    padding: 3px 7px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.22) !important;
+    color: #fff;
+    font-weight: 600;
+}
+#formAnswersFilterBtn:disabled .badge {
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Pulsing "filter is active" indicator. Sits before the label so it reads
+   as ●  Form answers  (3) — like a status LED next to a system tray icon.
+   Two-layer pulse: the dot itself stays solid, while a halo expands and
+   fades. Halo amplitude is small (1px → 6px) so it stays subtle inside
+   the toolbar but is visible enough that a counsellor scrolling the leads
+   list notices the filter is on. */
+.fa-active-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+    animation: fa-dot-pulse 1.6s ease-out infinite;
+    flex: 0 0 auto;
+}
+@keyframes fa-dot-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); }
+    70%  { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* ============================================================
+   Filter by form answers — sidebar + values pane modal
+   ============================================================ */
+
+/* Sticky search + selected pills row */
+.fa-summary {
+    padding: 12px 22px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(0,0,0,0.05);
+    position: sticky; top: 0; z-index: 1;
+}
+.fa-search-wrap input {
+    width: 100%;
+}
+.fa-selected-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 26px;
+    align-items: center;
+}
+.fa-pills-empty {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+}
+.fa-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(var(--brand-primary-rgb,99,102,241), 0.18);
+    color: var(--text-primary);
+    border: 1px solid rgba(var(--brand-primary-rgb,99,102,241), 0.35);
+    border-radius: 999px;
+    padding: 2px 4px 2px 10px;
+    font-size: 0.8em;
+}
+.fa-pill-q { color: var(--text-secondary); }
+.fa-pill-v { font-weight: 600; }
+.fa-pill-x {
+    background: transparent; border: none; color: var(--text-secondary);
+    font-size: 1rem; line-height: 1; padding: 2px 6px; cursor: pointer; border-radius: 999px;
+}
+.fa-pill-x:hover { color: var(--text-primary); background: rgba(255,255,255,0.08); }
+
+/* Two-pane body */
+.fa-body {
+    display: grid !important;
+    grid-template-columns: 240px 1fr;
+    gap: 0;
+    padding: 0 !important;
+    min-height: 320px;
+    max-height: min(560px, calc(100vh - 280px));
+    overflow: hidden;
+}
+
+.fa-questions {
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    padding: 8px 6px;
+    background: rgba(0,0,0,0.05);
+}
+.fa-q-item {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 8px 10px;
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.85em;
+    margin-bottom: 2px;
+}
+.fa-q-item:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: var(--border-color);
+}
+.fa-q-item.is-active {
+    background: rgba(var(--brand-primary-rgb,99,102,241), 0.18);
+    border-color: rgba(var(--brand-primary-rgb,99,102,241), 0.45);
+    color: var(--text-primary);
+}
+.fa-q-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.fa-q-badge {
+    background: var(--brand-primary);
+    color: #fff;
+    font-size: 0.72em;
+    border-radius: 999px;
+    padding: 1px 7px;
+    min-width: 20px; text-align: center;
+    flex: 0 0 auto;
+}
+
+.fa-values {
+    overflow-y: auto;
+    padding: 16px 22px;
+}
+.fa-q-title {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.form-answer-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.form-answer-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.form-answer-chip:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: var(--brand-primary);
+}
+.form-answer-chip.is-on {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: #fff;
+}
+.form-answer-chip.is-on .form-answer-count { color: rgba(255,255,255,0.85); }
+.form-answer-chip.form-answer-noans { font-style: italic; }
+.form-answer-count {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    background: rgba(255,255,255,0.06);
+    padding: 0 6px;
+    border-radius: 8px;
+}
+.form-answer-chip.is-on .form-answer-count {
+    background: rgba(255,255,255,0.18);
+}
+
+.fa-show-more {
+    background: transparent;
+    color: var(--brand-primary);
+    border: 1px dashed var(--border-color);
+    border-radius: 999px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 0.82em;
+}
+.fa-show-more:hover { background: rgba(var(--brand-primary-rgb,99,102,241), 0.1); }
+
+.fa-loading, .fa-empty, .fa-error {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    padding: 8px 12px;
+}
+.fa-error { color: var(--color-error, #dc3545); }
+
+.fa-apply-count {
+    background: rgba(255,255,255,0.22);
+    border-radius: 999px;
+    padding: 0 8px;
+    font-size: 0.85em;
+    margin-left: 4px;
+}
+
+/* Mobile: collapse sidebar above values pane (vertical stack). */
+@media (max-width: 700px) {
+    .fa-body {
+        grid-template-columns: 1fr;
+        max-height: calc(100vh - 280px);
+    }
+    .fa-questions {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        max-height: 35vh;
+        display: flex; flex-wrap: wrap; gap: 4px;
+    }
+    .fa-q-item { width: auto; flex: 1 1 auto; }
+}
+
 /* Responsive — slide-panel.css handles mobile bottom sheet */
