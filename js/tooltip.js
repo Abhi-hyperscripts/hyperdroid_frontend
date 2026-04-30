@@ -66,6 +66,27 @@
         tooltipEl.childNodes.forEach(n => { if (n !== arrowEl) n.remove(); });
         tooltipEl.insertBefore(document.createTextNode(text), arrowEl);
 
+        // Auto-wrap long tooltips so a multi-sentence explanation doesn't
+        // stretch into a single 1000px line that's hard to read. Short
+        // labels like "Edit" stay nowrap so they don't break onto two lines
+        // unnecessarily. Threshold tuned to ~60 chars / explicit newline /
+        // explicit data-tooltip-wrap opt-in.
+        const wantsWrap =
+            target.hasAttribute('data-tooltip-wrap') ||
+            text.length > 60 ||
+            text.includes('\n');
+        if (wantsWrap) {
+            tooltipEl.style.whiteSpace = 'normal';
+            tooltipEl.style.maxWidth = '320px';
+            tooltipEl.style.lineHeight = '1.45';
+            tooltipEl.style.textAlign = 'left';
+        } else {
+            tooltipEl.style.whiteSpace = 'nowrap';
+            tooltipEl.style.maxWidth = '';
+            tooltipEl.style.lineHeight = '';
+            tooltipEl.style.textAlign = '';
+        }
+
         // Position above the element
         const rect = target.getBoundingClientRect();
         tooltipEl.style.opacity = '0';
