@@ -99,7 +99,8 @@
             body: `
                 <p>An <strong>RFQ (Request for Quotation)</strong> takes an inquiry's items and sends them to one or more vendors asking <em>"how much will you charge?"</em>.</p>
                 <p>Each vendor on the RFQ gets a unique <strong>secure portal link</strong> by email — no login needed. They click the link, see the items requested, and fill in their unit prices, delivery time, and terms.</p>
-                <p>RFQ statuses: <strong>Draft</strong> (still being built) → <strong>Sent</strong> (vendors notified) → <strong>Quotes Received</strong> → <strong>Closed</strong> (after PO is awarded).</p>
+                <p>RFQ statuses: <strong>Draft</strong> (still being built) → <strong>Sent</strong> (vendors notified) → <strong>Partially / Fully Quoted</strong> → <strong>Closed</strong> (after PO is awarded).</p>
+                <p><strong>Important:</strong> the <em>Compare Quotes</em> button only appears <strong>after you click <em>Send RFQ</em></strong> — that's what flips the RFQ from Draft to Sent and unlocks the comparison + award flow. Even if vendors have already submitted via their portal link, you still need to formally Send before you can compare and award.</p>
                 <p><em>Tip:</em> Always send an RFQ to at least 3 vendors so the <strong>Comparison</strong> view gives you negotiation leverage. Set a clear <strong>Quote Deadline</strong> so vendors know when to respond.</p>
             `
         },
