@@ -3790,12 +3790,25 @@ body.crm-page #gsShareModal .gm-body:has(.searchable-dropdown.open) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    /* Defaults are tuned for the dark theme (button bg is mostly
+       transparent / brand-tinted, white-on-translucent reads well).
+       Light theme override below — translucent white disappears on a
+       white button so we switch to a brand-tinted background + brand
+       text for visibility. */
     background: rgba(255, 255, 255, 0.22) !important;
     color: #fff;
     font-weight: 600;
 }
 #formAnswersFilterBtn:disabled .badge {
     background: rgba(255, 255, 255, 0.12) !important;
+}
+[data-theme="light"] #formAnswersFilterBtn .badge {
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15) !important;
+    color: var(--brand-primary) !important;
+}
+[data-theme="light"] #formAnswersFilterBtn:disabled .badge {
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: var(--text-secondary) !important;
 }
 
 /* Pulsing "filter is active" indicator. Sits before the label so it reads
