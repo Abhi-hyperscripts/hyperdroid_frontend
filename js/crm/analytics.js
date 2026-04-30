@@ -9,9 +9,18 @@
 
 // Page state
 let _payload = null;
-let _dailyChart = null;
+let _dailyChart = null;     // ApexCharts instance — daily trend line
+let _funnelChart = null;    // ApexCharts instance — native pyramid funnel
+let _kpiSparks = [];        // ApexCharts instances for the 8 KPI cards
 let _sources = [];
 let _teams = [];
+// SearchableDropdown wrappers (codebase convention — never native <select>).
+// We keep handles so we can call .setValue() when the source-table row click
+// scopes the dashboard, and so cross-filter resets stay in sync.
+let _dateRangeDropdown = null;
+let _sourceDropdown = null;
+let _teamDropdown = null;
+let _trendMetricDropdown = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (typeof Navigation !== 'undefined') Navigation.init();
@@ -25,6 +34,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('anaSource').value = '';
     document.getElementById('anaTeam').value = '';
 
+    initSearchableDropdowns();
+
     FormAnswersFilter.init({
         getSourceId: () => document.getElementById('anaSource')?.value,
         onApply: () => loadAnalytics()
@@ -32,6 +43,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await loadAnalytics();
 });
+
+function initSearchableDropdowns() {
+    if (typeof convertSelectToSearchable !== 'function') return;
+
+    _dateRangeDropdown = convertSelectToSearchable('anaDateRange', {
+        compact: true,
+        placeholder: 'Last 30 days',
+        searchPlaceholder: 'Search…',
+        onChange: () => onDateRangeChanged()
+    });
+
+    _sourceDropdown = convertSelectToSearchable('anaSource', {
+        compact: true,
+        placeholder: 'All sources',
+        searchPlaceholder: 'Search sources…',
+        onChange: () => onSourceChanged()
+    });
+
+    _teamDropdown = convertSelectToSearchable('anaTeam', {
+        compact: true,
+        placeholder: 'All teams',
+        searchPlaceholder: 'Search teams…',
+        onChange: () => loadAnalytics()
+    });
+
+    _trendMetricDropdown = convertSelectToSearchable('anaTrendMetric', {
+        compact: true,
+        placeholder: 'New leads',
+        searchPlaceholder: 'Search metric…',
+        onChange: () => renderDailyChart()
+    });
+}
 
 // ── Filter state ─────────────────────────────────────────────
 
@@ -70,6 +113,10 @@ function buildAnalyticsParams() {
     const params = new URLSearchParams();
     params.set('from', from.toISOString());
     params.set('to', to.toISOString());
+    // tzOffsetMinutes is "minutes east of UTC" — JS getTimezoneOffset
+    // returns minutes WEST of UTC, so we negate. Backend uses this to
+    // bucket the daily-trend chart by USER'S local day rather than UTC.
+    params.set('tzOffsetMinutes', String(-new Date().getTimezoneOffset()));
     const src = document.getElementById('anaSource').value;
     if (src) params.set('leadSourceId', src);
     const team = document.getElementById('anaTeam').value;
@@ -161,116 +208,234 @@ async function loadAnalytics() {
 
 // ── Renderers ────────────────────────────────────────────────
 
+// ── ApexCharts theming helpers (mirrors insights-chart-renderer.js) ──
+
+function _isDarkTheme() {
+    return (document.documentElement.getAttribute('data-theme') || 'dark') !== 'light';
+}
+function _chartColors() {
+    const brand = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim() || '#6366f1';
+    const text = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#94a3b8';
+    const grid = _isDarkTheme() ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    return { brand, text, grid };
+}
+
 function renderKpis() {
     const k = _payload.kpis;
     const grid = document.getElementById('anaKpiGrid');
-    const cards = [
-        kpiCard('NEW LEADS',           formatInt(k.new_leads.current),         k.new_leads,           k.new_leads.series),
-        kpiCard('CONNECT RATE',        formatPct(k.connect_rate.current),      k.connect_rate,        k.connect_rate.series),
-        kpiCard('QUALIFIED RATE',      formatPct(k.qualified_rate.current),    k.qualified_rate,      k.qualified_rate.series),
-        kpiCard('WON RATE',            formatPct(k.won_rate.current),          k.won_rate,            k.won_rate.series),
-        kpiCard('WON VALUE',           formatCurrency(k.won_value.current),    k.won_value,           k.won_value.series),
-        kpiCard('MEDIAN RESPONSE',     formatDuration(k.median_response_seconds.current), k.median_response_seconds, k.median_response_seconds.series, /*lowerIsBetter=*/true),
-        kpiCard('AVG ACTIVITIES/LEAD', k.avg_activities_per_lead.current.toFixed(1), k.avg_activities_per_lead, k.avg_activities_per_lead.series),
-        kpiCard('STALE LEADS',         formatInt(k.stale_leads.current),       k.stale_leads,         k.stale_leads.series, /*lowerIsBetter=*/true)
+    // Tear down any existing sparkline instances before re-rendering — the
+    // cards' DOM gets replaced wholesale, so leftover instances would leak.
+    _kpiSparks.forEach(c => { try { c.destroy(); } catch {} });
+    _kpiSparks = [];
+
+    const defs = [
+        { id: 'k0', label: 'NEW LEADS',           value: formatInt(k.new_leads.current),         kpi: k.new_leads },
+        { id: 'k1', label: 'CONNECT RATE',        value: formatPct(k.connect_rate.current),      kpi: k.connect_rate },
+        { id: 'k2', label: 'QUALIFIED RATE',      value: formatPct(k.qualified_rate.current),    kpi: k.qualified_rate },
+        { id: 'k3', label: 'WON RATE',            value: formatPct(k.won_rate.current),          kpi: k.won_rate },
+        { id: 'k4', label: 'WON VALUE',           value: formatCurrency(k.won_value.current),    kpi: k.won_value },
+        { id: 'k5', label: 'MEDIAN RESPONSE',     value: formatDuration(k.median_response_seconds.current), kpi: k.median_response_seconds, lowerBetter: true },
+        { id: 'k6', label: 'AVG ACTIVITIES/LEAD', value: (k.avg_activities_per_lead.current || 0).toFixed(1), kpi: k.avg_activities_per_lead },
+        { id: 'k7', label: 'STALE LEADS',         value: formatInt(k.stale_leads.current),       kpi: k.stale_leads, lowerBetter: true }
     ];
-    grid.innerHTML = cards.join('');
-    // Render sparklines after the cards mount.
-    document.querySelectorAll('.ana-kpi-spark').forEach(canvas => {
-        const series = JSON.parse(canvas.dataset.series || '[]');
-        drawSparkline(canvas, series);
+    grid.innerHTML = defs.map(d => kpiCard(d)).join('');
+
+    // Mount an ApexCharts sparkline into each card.
+    const { brand } = _chartColors();
+    defs.forEach(d => {
+        const el = document.getElementById(`spark-${d.id}`);
+        if (!el) return;
+        const series = (d.kpi.series || []).map(v => Number(v) || 0);
+        // Some KPIs (e.g. stale_leads — a current snapshot, not a daily trend)
+        // intentionally return an empty series. Skip the sparkline rather than
+        // mounting an empty chart that renders a stray axis line.
+        if (series.length === 0) return;
+        const spark = new ApexCharts(el, {
+            chart: { type: 'area', height: 36, width: 100, sparkline: { enabled: true }, animations: { enabled: false }, background: 'transparent' },
+            stroke: { curve: 'smooth', width: 1.5 },
+            fill: { type: 'gradient', gradient: { shadeIntensity: 0.4, opacityFrom: 0.5, opacityTo: 0.05, stops: [0, 100] } },
+            colors: [brand],
+            tooltip: { enabled: false },
+            series: [{ data: series.length ? series : [0, 0] }]
+        });
+        spark.render();
+        _kpiSparks.push(spark);
     });
 }
 
-function kpiCard(label, value, kpi, series, lowerIsBetter) {
-    const delta = kpi.delta_pct;
+function kpiCard(d) {
+    const delta = d.kpi.delta_pct;
     let deltaClass = 'flat', arrow = '–', deltaTxt = '—';
     if (delta != null) {
         const isUp = delta >= 0;
-        const isGood = lowerIsBetter ? !isUp : isUp;
+        const isGood = d.lowerBetter ? !isUp : isUp;
         deltaClass = Math.abs(delta) < 0.5 ? 'flat' : (isGood ? 'up' : 'down');
         arrow = Math.abs(delta) < 0.5 ? '–' : (isUp ? '▲' : '▼');
         deltaTxt = `${arrow} ${Math.abs(delta).toFixed(1)}%`;
     }
     return `
     <div class="ana-kpi-card">
-        <div class="ana-kpi-label">${label}</div>
-        <div class="ana-kpi-value">${value}</div>
+        <div class="ana-kpi-label">${d.label}</div>
+        <div class="ana-kpi-value">${d.value}</div>
         <div class="ana-kpi-delta ${deltaClass}">${deltaTxt} <span style="color:var(--text-secondary)">vs prev period</span></div>
-        <canvas class="ana-kpi-spark" data-series='${JSON.stringify(series || [])}'></canvas>
+        <div id="spark-${d.id}" class="ana-kpi-spark"></div>
     </div>`;
 }
 
-function drawSparkline(canvas, data) {
-    const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    canvas.width = w * dpr; canvas.height = h * dpr; ctx.scale(dpr, dpr);
-    ctx.clearRect(0, 0, w, h);
-    if (!data || data.length === 0) return;
-    const min = Math.min(...data, 0), max = Math.max(...data, 1);
-    const span = max - min || 1;
-    const step = w / Math.max(1, data.length - 1);
-    ctx.beginPath();
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim() || '#6366f1';
-    data.forEach((v, i) => {
-        const x = i * step;
-        const y = h - ((v - min) / span) * (h - 4) - 2;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-}
-
 function renderFunnel() {
-    const el = document.getElementById('anaFunnel');
     const funnel = _payload.funnel || [];
-    const max = Math.max(1, ...funnel.map(s => s.count));
-    el.innerHTML = funnel.map(s => `
-        <div class="ana-funnel-row">
-            <div>${capitalise(s.stage)}</div>
-            <div class="ana-funnel-bar"><div class="ana-funnel-fill" style="width:${(s.count / max) * 100}%"></div></div>
-            <div class="ana-funnel-count">
-                ${formatInt(s.count)}
-                ${s.dropoff_pct_from_previous > 0 ? `<span class="ana-funnel-drop">−${s.dropoff_pct_from_previous.toFixed(0)}%</span>` : ''}
-            </div>
-        </div>
-    `).join('');
+    const chartEl = document.getElementById('anaFunnelChart');
+    const dropEl = document.getElementById('anaFunnelDropoffs');
+
+    if (_funnelChart) { try { _funnelChart.destroy(); } catch {} _funnelChart = null; }
+
+    if (funnel.length === 0) {
+        chartEl.innerHTML = '<div class="ana-empty">No leads in this window.</div>';
+        dropEl.innerHTML = '';
+        return;
+    }
+
+    // ApexCharts native pyramid: bar chart with horizontal:true + isFunnel:true.
+    const { brand, text } = _chartColors();
+    const data = funnel.map(s => ({ x: capitalise(s.stage), y: s.count }));
+    const total = funnel[0]?.count || 1;
+
+    _funnelChart = new ApexCharts(chartEl, {
+        chart: {
+            type: 'bar', height: '100%', background: 'transparent',
+            fontFamily: "'DM Sans', -apple-system, sans-serif",
+            toolbar: { show: false },
+            animations: { enabled: true, speed: 500 }
+        },
+        series: [{ name: 'Leads', data }],
+        plotOptions: {
+            bar: {
+                horizontal: true, distributed: true, isFunnel: true,
+                barHeight: '85%', borderRadius: 6,
+                dataLabels: { position: 'center' }
+            }
+        },
+        colors: [brand, brand, brand, brand],
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shade: 'dark', type: 'horizontal',
+                shadeIntensity: 0.5,
+                gradientToColors: [brand],
+                inverseColors: false,
+                opacityFrom: 1, opacityTo: 0.7,
+                stops: [0, 100]
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: (val, opt) => {
+                const stage = funnel[opt.dataPointIndex];
+                const pct = total > 0 ? (100 * stage.count / total) : 0;
+                const pctLabel = pct >= 10 ? pct.toFixed(0) : pct.toFixed(1);
+                return `${capitalise(stage.stage)}: ${formatInt(stage.count)} (${pctLabel}%)`;
+            },
+            style: { fontSize: '12px', fontWeight: 600, colors: ['#fff'] },
+            dropShadow: { enabled: true, blur: 2, opacity: 0.6 }
+        },
+        legend: { show: false },
+        tooltip: {
+            theme: _isDarkTheme() ? 'dark' : 'light',
+            y: { formatter: (val, ctx) => {
+                const stage = funnel[ctx.dataPointIndex];
+                const pct = total > 0 ? (100 * stage.count / total) : 0;
+                return `${formatInt(stage.count)} leads (${pct.toFixed(1)}% of received)`;
+            } }
+        },
+        xaxis: { labels: { show: false }, axisTicks: { show: false }, axisBorder: { show: false } },
+        yaxis: { labels: { style: { colors: text, fontSize: '12px' } } },
+        grid: { show: false, padding: { left: 8, right: 8, top: 0, bottom: 0 } }
+    });
+    _funnelChart.render();
+
+    // Drop-off chips below the pyramid — ApexCharts can't show stage-to-stage
+    // drop directly inside a funnel without crowding, so we surface them
+    // beneath the chart in a single row.
+    dropEl.innerHTML = funnel.slice(1).map(s => `
+        <div class="ana-funnel-dropoff">
+            <span>${capitalise(s.stage)} drop</span>
+            <span class="ana-funnel-dropoff-pct">−${(s.dropoff_pct_from_previous || 0).toFixed(0)}%</span>
+        </div>`).join('');
 }
 
 function renderDailyChart() {
     const series = _payload.daily_series || [];
-    const metric = document.getElementById('anaTrendMetric').value;
-    const labels = series.map(d => d.day.slice(5));   // MM-DD
-    const data = series.map(d => d[metric] || 0);
+    const metricEl = document.getElementById('anaTrendMetric');
+    const metric = metricEl ? metricEl.value : 'leads';
+
+    // Backend `day` is ::date but the .NET JSON serializer appends T00:00:00.
+    // Parse cleanly so the axis reads "Apr 4" not "04-04T00:00:00".
+    const dayFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+    const points = series.map(d => {
+        const datePart = String(d.day || '').slice(0, 10);
+        return {
+            x: datePart, // ApexCharts datetime string parses YYYY-MM-DD natively
+            label: dayFmt.format(new Date(datePart + 'T00:00:00')),
+            y: Number(d[metric]) || 0
+        };
+    });
 
     const isCurrency = metric === 'won_value';
-    const ctx = document.getElementById('anaDailyChart').getContext('2d');
-    const brand = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim() || '#6366f1';
-    const text = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#94a3b8';
-    if (_dailyChart) _dailyChart.destroy();
-    _dailyChart = new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets: [{
-            label: trendLabel(metric),
-            data,
-            fill: true, tension: 0.3,
-            backgroundColor: brand + '33',
-            borderColor: brand, borderWidth: 2,
-            pointRadius: 2, pointHoverRadius: 5
-        }]},
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            scales: {
-                x: { ticks: { color: text, maxTicksLimit: 8 }, grid: { display: false } },
-                y: { beginAtZero: true, ticks: { color: text, callback: v => isCurrency ? formatCurrency(v) : v }, grid: { color: 'rgba(255,255,255,0.05)' } }
+    const { brand, text, grid } = _chartColors();
+
+    if (_dailyChart) { try { _dailyChart.destroy(); } catch {} _dailyChart = null; }
+
+    // Pre-format the labels ourselves into a `category` axis. ApexCharts'
+    // datetime-axis formatter tokens are finicky (`d` is day-of-week,
+    // `format: 'MMM d'` collided with `datetimeFormatter`, leaving labels
+    // blank). A category axis with pre-formatted strings gives us full
+    // control + lets us explicitly cap tick density.
+    const categories = points.map(p => p.label);
+
+    _dailyChart = new ApexCharts(document.getElementById('anaDailyChart'), {
+        chart: {
+            type: 'area', height: '100%', background: 'transparent',
+            fontFamily: "'DM Sans', -apple-system, sans-serif",
+            toolbar: { show: false },
+            animations: { enabled: true, speed: 400 }
+        },
+        series: [{ name: trendLabel(metric), data: points.map(p => p.y) }],
+        colors: [brand],
+        stroke: { curve: 'smooth', width: 2 },
+        fill: {
+            type: 'gradient',
+            gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.05, stops: [0, 95] }
+        },
+        markers: { size: 3, strokeWidth: 0, hover: { size: 6 } },
+        dataLabels: { enabled: false },
+        xaxis: {
+            type: 'category', categories,
+            tickPlacement: 'on',
+            labels: {
+                style: { colors: text, fontSize: '11px' },
+                rotate: 0, hideOverlappingLabels: true,
+                // ~30 day points → show every 4th-5th label so they don't collide.
+                // ApexCharts' built-in tickAmount caps total tick count.
             },
-            plugins: {
-                legend: { display: false },
-                tooltip: { callbacks: { label: ctx => `${trendLabel(metric)}: ${isCurrency ? formatCurrency(ctx.parsed.y) : ctx.parsed.y}` } }
+            tickAmount: Math.min(8, Math.max(2, categories.length - 1)),
+            axisBorder: { show: false },
+            axisTicks: { show: true, color: grid }
+        },
+        yaxis: {
+            labels: {
+                style: { colors: text, fontSize: '11px' },
+                formatter: v => isCurrency ? formatCurrency(v) : formatInt(v)
             }
-        }
+        },
+        grid: { borderColor: grid, strokeDashArray: 3, padding: { top: 0, bottom: 0, left: 4, right: 8 } },
+        tooltip: {
+            theme: _isDarkTheme() ? 'dark' : 'light',
+            x: { show: true },
+            y: { formatter: v => isCurrency ? formatCurrency(v) : formatInt(v) }
+        },
+        legend: { show: false }
     });
+    _dailyChart.render();
 }
 
 function trendLabel(m) {
@@ -285,8 +450,15 @@ function renderSourceTable() {
         tbody.innerHTML = `<tr><td colspan="8" class="ana-empty">No leads in this window. Widen the date range or pick a different source.</td></tr>`;
         return;
     }
-    tbody.innerHTML = rows.map(r => `
-        <tr class="ana-source-row ${r.source_id === activeId ? 'is-active' : ''}" onclick="onSourceRowClicked('${r.source_id}')">
+    // The "(Unspecified)" row uses a placeholder zero-GUID that doesn't
+    // resolve to any real source, so we don't make it clickable.
+    const ZERO_GUID = '00000000-0000-0000-0000-000000000000';
+    tbody.innerHTML = rows.map(r => {
+        const clickable = r.source_id && r.source_id !== ZERO_GUID;
+        const onclick = clickable ? `onclick="onSourceRowClicked('${r.source_id}')"` : '';
+        const cursor = clickable ? '' : 'style="cursor:default;"';
+        return `
+        <tr class="ana-source-row ${r.source_id === activeId ? 'is-active' : ''}" ${onclick} ${cursor}>
             <td>
                 <div style="font-weight:600;">${escapeHtml(r.source_name)}</div>
                 <div style="color:var(--text-secondary);font-size:0.78em;">${escapeHtml(r.source_type || '')}</div>
@@ -298,12 +470,17 @@ function renderSourceTable() {
             <td class="num">${formatCurrency(r.won_value)}</td>
             <td class="num">${formatCurrency(r.avg_deal_value)}</td>
             <td class="num">${r.median_response_seconds != null ? formatDuration(r.median_response_seconds) : '—'}</td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 }
 
 function onSourceRowClicked(sourceId) {
-    document.getElementById('anaSource').value = sourceId;
+    // Update the wrapper so the trigger label reflects the new selection;
+    // setValue mirrors back to the linked native <select>. Skip
+    // triggerChange (we call onSourceChanged ourselves) so the form-answers
+    // reset only fires once.
+    if (_sourceDropdown) _sourceDropdown.setValue(sourceId, false);
+    else document.getElementById('anaSource').value = sourceId;
     onSourceChanged();
 }
 window.onSourceRowClicked = onSourceRowClicked;
@@ -357,7 +534,7 @@ function renderRepLeaderboard() {
     const tbody = document.querySelector('#anaRepTable tbody');
     const rows = _payload.rep_leaderboard || [];
     if (rows.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="ana-empty">No counsellor activity in this window.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="ana-empty">No salesperson activity in this window.</td></tr>`;
         return;
     }
     tbody.innerHTML = rows.map(r => `

@@ -19,8 +19,10 @@
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- ApexCharts — codebase convention (research/CRM dashboard/accounts/embed all use it). -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
     <style>
     /* Page chrome — match the leads/dashboard convention so the nav bar
        doesn't cover the title and the layout breathes. */
@@ -65,13 +67,40 @@
         border: 1px solid var(--border-color); background: var(--bg-input, rgba(0,0,0,0.2)); color: var(--text-primary);
         font-size: 0.85em; min-width: 140px;
     }
+    /* SearchableDropdown wrappers replace the native <select>s — shrink the
+       compact trigger to match the 32px toolbar height so date pickers,
+       buttons, and dropdowns line up. */
+    .ana-toolbar .searchable-dropdown-wrapper { min-width: 200px; }
+    .ana-toolbar .searchable-dropdown--compact .searchable-dropdown-trigger {
+        min-height: 32px; height: 32px; padding: 4px 10px;
+    }
+    /* Source-form labels combine source name + form name + type and run
+       long ("TEST · Form D · 20-question stress · facebook"). The default
+       menu inherits the wrapper width and truncates them. Let the menu
+       spill rightward so the full label is visible. */
+    .ana-toolbar .searchable-dropdown-menu {
+        right: auto; min-width: 100%; width: max-content; max-width: 460px;
+    }
+    .ana-toolbar .searchable-dropdown-option {
+        white-space: nowrap;
+    }
+    /* Trend-metric dropdown sits in the daily-trend card header, not the
+       toolbar. Widen its wrapper + menu so "New leads" / "Won value" don't
+       truncate to "New le…". */
+    #anaTrendMetric-searchable-container { min-width: 160px; }
+    #anaTrendMetric-searchable-container .searchable-dropdown-menu {
+        right: auto; min-width: 100%; width: max-content;
+    }
+    #anaTrendMetric-searchable-container .searchable-dropdown-option {
+        white-space: nowrap;
+    }
     .ana-toolbar .ana-spacer { flex: 1; }
 
     .ana-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
     @media (max-width: 1200px) { .ana-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { .ana-kpi-grid { grid-template-columns: 1fr; } }
     .ana-kpi-card {
-        padding: 14px 16px; min-height: 110px;
+        padding: 14px 16px 18px; min-height: 120px;
         display: flex; flex-direction: column; gap: 4px;
         position: relative; overflow: hidden;
         transition: border-color 0.25s ease, box-shadow 0.25s ease;
@@ -86,23 +115,29 @@
     .ana-kpi-delta.up { color: var(--color-success, #16a34a); }
     .ana-kpi-delta.down { color: var(--color-error, #dc2626); }
     .ana-kpi-delta.flat { color: var(--text-secondary); }
-    .ana-kpi-spark { position: absolute; right: 8px; bottom: 8px; width: 88px; height: 32px; opacity: 0.7; pointer-events: none; }
+    .ana-kpi-spark { position: absolute; right: 8px; bottom: 8px; width: 100px; height: 32px; opacity: 0.85; pointer-events: none; }
+    .ana-kpi-spark .apexcharts-canvas { background: transparent !important; }
+    .ana-kpi-spark .apexcharts-svg { overflow: visible; }
 
     .ana-row { display: grid; grid-template-columns: 2fr 3fr; gap: 12px; margin-bottom: 18px; }
     @media (max-width: 1100px) { .ana-row { grid-template-columns: 1fr; } }
 
-    .ana-card { padding: 16px; min-height: 280px; }
+    .ana-card { padding: 16px; min-height: 320px; display: flex; flex-direction: column; }
+    /* Daily trend chart container — flex-grow inside the card so ApexCharts'
+       x-axis labels have room and don't render outside the card. */
+    .ana-daily-chart-wrap { flex: 1; min-height: 240px; display: flex; }
+    .ana-daily-chart-wrap > div { flex: 1; min-width: 0; }
     .ana-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; }
     .ana-card-title { font-weight: 600; font-size: 0.95rem; }
     .ana-card-sub { color: var(--text-secondary); font-size: 0.8em; }
 
-    /* Funnel — horizontal stacked bars */
-    .ana-funnel { display: flex; flex-direction: column; gap: 8px; }
-    .ana-funnel-row { display: grid; grid-template-columns: 110px 1fr 90px; gap: 8px; align-items: center; font-size: 0.85em; }
-    .ana-funnel-bar { height: 26px; background: rgba(var(--brand-primary-rgb,99,102,241), 0.15); border-radius: 6px; overflow: hidden; position: relative; }
-    .ana-funnel-fill { height: 100%; background: linear-gradient(90deg, var(--brand-primary), rgba(var(--brand-primary-rgb,99,102,241),0.7)); }
-    .ana-funnel-count { font-weight: 600; }
-    .ana-funnel-drop { color: var(--color-error, #dc2626); font-size: 0.75em; margin-left: 6px; }
+    /* Funnel container — ApexCharts pyramid mounts here. flex:1 inside the
+       card so the chart fills available height (no dead bottom space). */
+    .ana-funnel { flex: 1; display: flex; flex-direction: column; min-height: 220px; }
+    .ana-funnel-chart { flex: 1; min-height: 220px; }
+    .ana-funnel-dropoffs { display: flex; justify-content: space-around; padding: 8px 12px 0; gap: 8px; flex-wrap: wrap; }
+    .ana-funnel-dropoff { font-size: 0.72em; color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .ana-funnel-dropoff-pct { color: var(--color-error, #ef4444); font-weight: 600; font-size: 0.95em; }
 
     .ana-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
     .ana-table th { text-align: left; color: var(--text-secondary); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-card); }
@@ -181,7 +216,7 @@
                     <span>Analytics</span>
                 </div>
                 <h1>Lead & sales analytics</h1>
-                <p>SUPERADMIN view — every block is scoped by the date range, source, and form-answer filters below.</p>
+                <p>Track lead volume, funnel conversion, and team performance. Every chart and table on this page shares the filters below — change the date range, source, or form answers to scope the entire dashboard.</p>
             </div>
         </div>
 
@@ -189,7 +224,7 @@
         <div class="ana-toolbar">
             <div class="field">
                 <label for="anaDateRange">Date range</label>
-                <select id="anaDateRange" onchange="onDateRangeChanged()">
+                <select id="anaDateRange">
                     <option value="7">Last 7 days</option>
                     <option value="14">Last 14 days</option>
                     <option value="30" selected>Last 30 days</option>
@@ -209,13 +244,13 @@
             </div>
             <div class="field">
                 <label for="anaSource">Source / form</label>
-                <select id="anaSource" onchange="onSourceChanged()">
+                <select id="anaSource">
                     <option value="">All sources</option>
                 </select>
             </div>
             <div class="field">
                 <label for="anaTeam">Team</label>
-                <select id="anaTeam" onchange="loadAnalytics()">
+                <select id="anaTeam">
                     <option value="">All teams</option>
                 </select>
             </div>
@@ -245,7 +280,10 @@
                         <div class="ana-card-sub">Lead → contacted → qualified → won</div>
                     </div>
                 </div>
-                <div id="anaFunnel"></div>
+                <div id="anaFunnel" class="ana-funnel">
+                    <div id="anaFunnelChart" class="ana-funnel-chart"></div>
+                    <div id="anaFunnelDropoffs" class="ana-funnel-dropoffs"></div>
+                </div>
             </div>
             <div class="ana-card">
                 <div class="ana-card-header">
@@ -254,7 +292,7 @@
                         <div class="ana-card-sub">Volume + conversion across the selected window</div>
                     </div>
                     <div>
-                        <select id="anaTrendMetric" onchange="renderDailyChart()" style="height:28px;font-size:0.8em;">
+                        <select id="anaTrendMetric" style="height:28px;font-size:0.8em;min-width:140px;">
                             <option value="leads" selected>New leads</option>
                             <option value="contacted">Contacted</option>
                             <option value="qualified">Qualified</option>
@@ -264,7 +302,36 @@
                         </select>
                     </div>
                 </div>
-                <div style="height:240px;"><canvas id="anaDailyChart"></canvas></div>
+                <div class="ana-daily-chart-wrap"><div id="anaDailyChart"></div></div>
+            </div>
+        </div>
+
+        <!-- Sales leaderboard — sits directly under the funnel + daily-trend row
+             so reviewers see who's driving the numbers before drilling into
+             per-source / per-answer breakdowns. -->
+        <div class="ana-card" style="margin-bottom:18px;">
+            <div class="ana-card-header">
+                <div>
+                    <div class="ana-card-title">Sales Leaderboard</div>
+                    <div class="ana-card-sub">Auto-scoped to the selected source when one is picked</div>
+                </div>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="ana-table" id="anaRepTable">
+                    <thead>
+                        <tr>
+                            <th>Salesperson</th>
+                            <th class="num">Leads worked</th>
+                            <th class="num">Connect %</th>
+                            <th class="num">Qual %</th>
+                            <th class="num">Won %</th>
+                            <th class="num">Won value</th>
+                            <th class="num">Median response</th>
+                            <th class="num">Activities/day</th>
+                        </tr>
+                    </thead>
+                    <tbody><tr><td colspan="8" class="ana-empty">Loading…</td></tr></tbody>
+                </table>
             </div>
         </div>
 
@@ -304,33 +371,6 @@
                 </div>
             </div>
             <div id="anaAnswers"></div>
-        </div>
-
-        <!-- Counsellor leaderboard -->
-        <div class="ana-card">
-            <div class="ana-card-header">
-                <div>
-                    <div class="ana-card-title">Counsellor leaderboard</div>
-                    <div class="ana-card-sub">Auto-scoped to the selected source when one is picked</div>
-                </div>
-            </div>
-            <div style="overflow-x:auto;">
-                <table class="ana-table" id="anaRepTable">
-                    <thead>
-                        <tr>
-                            <th>Counsellor</th>
-                            <th class="num">Leads worked</th>
-                            <th class="num">Connect %</th>
-                            <th class="num">Qual %</th>
-                            <th class="num">Won %</th>
-                            <th class="num">Won value</th>
-                            <th class="num">Median response</th>
-                            <th class="num">Activities/day</th>
-                        </tr>
-                    </thead>
-                    <tbody><tr><td colspan="8" class="ana-empty">Loading…</td></tr></tbody>
-                </table>
-            </div>
         </div>
     </div>
 
@@ -375,6 +415,8 @@
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/setup-guard.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/form-answers-filter.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/analytics.js?v=' + CACHE_VERSION + '"><\/script>');
