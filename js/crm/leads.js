@@ -499,12 +499,13 @@ function buildFilterParams() {
         if (ownerEl.value !== '__unassigned__') params.set('ownerUserId', ownerEl.value);
     }
 
-    // Form-answer filter: only sent when a single source is picked (button
-    // is disabled otherwise). Stored in module-level state populated by the
-    // modal; serialised as JSON so the AND-across-keys / IN-within-values
-    // semantics survive the URL round-trip.
-    if (source && !source.startsWith('__legacy:') && _formAnswerFilter && Object.keys(_formAnswerFilter).length > 0) {
-        params.set('customFields', JSON.stringify(_formAnswerFilter));
+    // Form-answer filter — owned by the shared FormAnswersFilter module.
+    // Only meaningful when a single non-legacy source is picked (the
+    // module also enforces this on the button-state side). Serialised
+    // as JSON so AND-across-keys / IN-within-values survive the URL.
+    if (source && !source.startsWith('__legacy:')) {
+        const fa = (typeof FormAnswersFilter !== 'undefined') ? FormAnswersFilter.getFilter() : null;
+        if (fa && Object.keys(fa).length > 0) params.set('customFields', JSON.stringify(fa));
     }
 
     return params;
@@ -512,336 +513,30 @@ function buildFilterParams() {
 
 // ==================== Filter by form answers ====================
 //
-// State model:
-//   _formAnswerFilter: { "<question_key>": ["yes","maybe","__no_answer__"], ... }
-//   _faQuestions:      [{ key, label, leads_with_answer, no_answer_count }, ...]
-//   _faValuesCache:    { "<key>": [{value, count}], ... } — populated lazily
-//                       when a question is opened. One round-trip per unique
-//                       question per modal session.
-//   _faActiveKey:      key of the question whose chips are showing.
-//   _faSearch:         lowercased text from the search box; narrows the
-//                       sidebar to matching questions.
-//   _faValuesShownAll: { "<key>": true } — questions where the operator
-//                       clicked "show more" so we render every value.
-//
-// Semantics: AND across keys, IN within a key's values, "__no_answer__"
-// sentinel matches leads that didn't answer that question. Reset on source
-// change because different forms ask different questions.
-const FA_TOP_N = 12;
-let _formAnswerFilter = {};
-// Snapshot of _formAnswerFilter taken on modal-open. Restored on Cancel /
-// overlay click so the modal behaves like an OK/Cancel dialog (mid-modal
-// changes are discardable) rather than a one-way commit. Apply overwrites
-// this snapshot after a successful apply.
-let _faAppliedFilter = {};
-let _faQuestions = [];
-let _faValuesCache = {};
-let _faActiveKey = null;
-let _faSearch = '';
-let _faValuesShownAll = {};
+// All the heavy lifting (state model, lazy loading of question summaries +
+// per-question values, sidebar/values-pane rendering, search, pills,
+// Cancel-reverts-Apply-commits semantics) lives in the shared module
+// js/crm/form-answers-filter.js. This page just wires its hooks into the
+// shared controller. The analytics dashboard reuses the same module —
+// changing the modal in one place updates both pages.
+// Initialise the shared Form-answers controller with this page's hooks.
+// Source resolution + apply callback are page-specific; everything else
+// is owned by the module.
+document.addEventListener('DOMContentLoaded', () => {
+    FormAnswersFilter.init({
+        getSourceId: () => filterSourceDropdown ? filterSourceDropdown.getValue() : document.getElementById('filterSource')?.value,
+        onApply: () => applyFilters()
+    });
+});
 
-// Toggle the "Form answers" button enabled state based on whether exactly
-// one source is selected.
-function refreshFormAnswersButtonState() {
-    const btn = document.getElementById('formAnswersFilterBtn');
-    if (!btn) return;
-    const source = filterSourceDropdown ? filterSourceDropdown.getValue() : document.getElementById('filterSource')?.value;
-    const isLegacy = source && source.startsWith('__legacy:');
-    const enabled = !!source && !isLegacy;
-    btn.disabled = !enabled;
-    btn.title = enabled
-        ? 'Filter leads by their answers to this form'
-        : (isLegacy
-            ? 'Form answer filter is only available on tenant-named sources'
-            : 'Pick a single source above to filter by form answers');
-
-    const badge = document.getElementById('formAnswersActiveCount');
-    const dot = document.getElementById('formAnswersActiveDot');
-    const n = Object.values(_formAnswerFilter).reduce((s, arr) => s + (arr?.length || 0), 0);
-    if (badge) {
-        badge.textContent = String(n);
-        badge.style.display = n > 0 ? 'inline-flex' : 'none';
-    }
-    // Pulsing dot — same visibility rule as the count badge. Hidden when
-    // the button is disabled or no filter is applied so it never lies.
-    if (dot) dot.hidden = !(n > 0 && enabled);
-}
+function refreshFormAnswersButtonState() { FormAnswersFilter.refreshButtonState(); }
 
 function onSourceFilterChanged() {
-    _formAnswerFilter = {};
-    _faQuestions = [];
-    _faValuesCache = {};
-    _faActiveKey = null;
-    _faSearch = '';
-    _faValuesShownAll = {};
-    refreshFormAnswersButtonState();
+    FormAnswersFilter.reset();
     applyFilters();
 }
 
-async function openFormAnswersModal() {
-    const source = filterSourceDropdown ? filterSourceDropdown.getValue() : document.getElementById('filterSource')?.value;
-    if (!source || source.startsWith('__legacy:')) return;
-
-    const modal = document.getElementById('formAnswersModal');
-    if (!modal) return;
-
-    // Snapshot the currently-applied filter so Cancel / overlay click can
-    // revert any mid-modal experimentation.
-    _faAppliedFilter = JSON.parse(JSON.stringify(_formAnswerFilter || {}));
-
-    const list = document.getElementById('formAnswersQuestionList');
-    const pane = document.getElementById('formAnswersValuesPane');
-    if (list) list.innerHTML = '<p class="fa-loading">Loading…</p>';
-    if (pane) pane.innerHTML = '';
-    document.getElementById('formAnswersSearch').value = _faSearch || '';
-
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-
-    // Load (cheap) question list. Values for each question are pulled
-    // lazily on click — keeps modal-open snappy on 20-question forms.
-    try {
-        if (_faQuestions.length === 0) {
-            const summary = await api.request(`/crm/lead-sources/${source}/answer-options`);
-            _faQuestions = Array.isArray(summary) ? summary : [];
-        }
-        if (!_faActiveKey && _faQuestions.length > 0) _faActiveKey = _faQuestions[0].key;
-        renderFormAnswersSidebar();
-        renderFormAnswersPills();
-        await renderFormAnswersValuesPane();  // loads values for active key if not cached
-    } catch (e) {
-        if (list) list.innerHTML = `<p class="fa-error">Failed to load questions: ${escapeHtml(e?.message || String(e))}</p>`;
-    }
-}
-
-function renderFormAnswersSidebar() {
-    const list = document.getElementById('formAnswersQuestionList');
-    if (!list) return;
-    if (_faQuestions.length === 0) {
-        list.innerHTML = `<p class="fa-empty">This form has no custom questions configured. Add mappings under Settings → Lead Sources to make questions filterable.</p>`;
-        return;
-    }
-
-    // Filter sidebar by search. Match against question label OR
-    // (key) text OR any of the cached values for that key — so typing
-    // "pay" finds "ready_to_pay?" via key, and typing "no" finds the
-    // question that has "no" as an answer (once we've loaded its values).
-    const q = (_faSearch || '').trim().toLowerCase();
-    const matches = _faQuestions.filter(question => {
-        if (!q) return true;
-        const hay = (question.label + ' ' + question.key).toLowerCase();
-        if (hay.includes(q)) return true;
-        const cached = _faValuesCache[question.key];
-        if (cached) {
-            for (const v of cached.values) if (v.value.toLowerCase().includes(q)) return true;
-        }
-        return false;
-    });
-
-    if (matches.length === 0) {
-        list.innerHTML = `<p class="fa-empty">No questions match “${escapeHtml(_faSearch)}”.</p>`;
-        return;
-    }
-
-    list.innerHTML = matches.map(q => {
-        const sel = (_formAnswerFilter[q.key] || []).length;
-        const isActive = q.key === _faActiveKey;
-        return `<button type="button" class="fa-q-item ${isActive ? 'is-active' : ''}"
-                    role="tab" aria-selected="${isActive}"
-                    onclick="setFormAnswerActiveQuestion('${escapeAttr(q.key)}')">
-                    <span class="fa-q-label">${escapeHtml(q.label || q.key)}</span>
-                    ${sel > 0 ? `<span class="fa-q-badge">${sel}</span>` : ''}
-                </button>`;
-    }).join('');
-}
-
-async function renderFormAnswersValuesPane() {
-    const pane = document.getElementById('formAnswersValuesPane');
-    if (!pane) return;
-    if (!_faActiveKey) {
-        pane.innerHTML = `<p class="fa-empty">Pick a question to see its answers.</p>`;
-        return;
-    }
-
-    // Lazy-load values for the active key. Cached for the rest of the
-    // modal session — re-clicking a question is instant.
-    if (!_faValuesCache[_faActiveKey]) {
-        pane.innerHTML = '<p class="fa-loading">Loading answers…</p>';
-        try {
-            const source = filterSourceDropdown.getValue();
-            const url = `/crm/lead-sources/${source}/answer-options?key=${encodeURIComponent(_faActiveKey)}`;
-            const data = await api.request(url);
-            _faValuesCache[_faActiveKey] = {
-                values: Array.isArray(data?.values) ? data.values : [],
-                noAnswer: data?.no_answer_count || 0,
-                label: data?.label || _faActiveKey
-            };
-        } catch (e) {
-            pane.innerHTML = `<p class="fa-error">Failed to load answers: ${escapeHtml(e?.message || String(e))}</p>`;
-            return;
-        }
-    }
-
-    const cached = _faValuesCache[_faActiveKey];
-    const selected = new Set((_formAnswerFilter[_faActiveKey] || []).map(v => v.toLowerCase()));
-    const showAll = !!_faValuesShownAll[_faActiveKey];
-    const allValues = cached.values || [];
-    const visible = showAll ? allValues : allValues.slice(0, FA_TOP_N);
-    const remaining = allValues.length - visible.length;
-
-    const valChips = visible.map(v => {
-        const isOn = selected.has(v.value.toLowerCase());
-        return `<button type="button" class="form-answer-chip ${isOn ? 'is-on' : ''}"
-                    data-key="${escapeAttr(_faActiveKey)}" data-value="${escapeAttr(v.value)}"
-                    onclick="toggleFormAnswerChip(this)">
-                    <span>${escapeHtml(v.value)}</span>
-                    <span class="form-answer-count">${v.count}</span>
-                </button>`;
-    }).join('');
-
-    const noAnsOn = selected.has('__no_answer__');
-    const noAnsChip = (cached.noAnswer || 0) > 0
-        ? `<button type="button" class="form-answer-chip form-answer-noans ${noAnsOn ? 'is-on' : ''}"
-                data-key="${escapeAttr(_faActiveKey)}" data-value="__no_answer__"
-                onclick="toggleFormAnswerChip(this)">
-                <span>(no answer)</span>
-                <span class="form-answer-count">${cached.noAnswer}</span>
-            </button>`
-        : '';
-
-    const moreBtn = remaining > 0
-        ? `<button type="button" class="fa-show-more" onclick="showAllAnswerValues('${escapeAttr(_faActiveKey)}')">+${remaining} more</button>`
-        : '';
-
-    pane.innerHTML = `
-        <div class="fa-q-title">${escapeHtml(cached.label)}</div>
-        <div class="form-answer-chips">${valChips}${noAnsChip}${moreBtn}</div>
-    `;
-}
-
-function showAllAnswerValues(key) {
-    _faValuesShownAll[key] = true;
-    renderFormAnswersValuesPane();
-}
-
-async function setFormAnswerActiveQuestion(key) {
-    _faActiveKey = key;
-    renderFormAnswersSidebar();
-    renderFormAnswersPills();
-    await renderFormAnswersValuesPane();
-}
-
-function onFormAnswerSearch() {
-    const el = document.getElementById('formAnswersSearch');
-    _faSearch = el ? el.value : '';
-    renderFormAnswersSidebar();
-}
-
-function renderFormAnswersPills() {
-    const wrap = document.getElementById('formAnswersPills');
-    if (!wrap) return;
-    const pills = [];
-    for (const [key, vals] of Object.entries(_formAnswerFilter)) {
-        const label = (_faQuestions.find(q => q.key === key)?.label) || key;
-        for (const v of vals) {
-            const display = v === '__no_answer__' ? '(no answer)' : v;
-            pills.push(`<span class="fa-pill" title="${escapeAttr(label)}">
-                <span class="fa-pill-q">${escapeHtml(label)}:</span>
-                <span class="fa-pill-v">${escapeHtml(display)}</span>
-                <button type="button" class="fa-pill-x" aria-label="Remove"
-                    onclick="removeFormAnswerPill('${escapeAttr(key)}','${escapeAttr(v)}')">×</button>
-            </span>`);
-        }
-    }
-    wrap.innerHTML = pills.length === 0
-        ? '<span class="fa-pills-empty">No filters yet — pick answers below.</span>'
-        : pills.join('');
-
-    // Apply button count
-    const total = Object.values(_formAnswerFilter).reduce((s, a) => s + a.length, 0);
-    const apply = document.getElementById('formAnswersApplyCount');
-    if (apply) {
-        apply.hidden = total === 0;
-        apply.textContent = total > 0 ? `(${total})` : '';
-    }
-}
-
-function toggleFormAnswerChip(el) {
-    const key = el.getAttribute('data-key');
-    const value = el.getAttribute('data-value');
-    if (!key || !value) return;
-    const list = _formAnswerFilter[key] || [];
-    const idx = list.findIndex(v => v.toLowerCase() === value.toLowerCase());
-    if (idx >= 0) list.splice(idx, 1);
-    else list.push(value);
-    if (list.length === 0) delete _formAnswerFilter[key];
-    else _formAnswerFilter[key] = list;
-    el.classList.toggle('is-on');
-    // Update sidebar badges + summary pills inline (no full re-render so
-    // the user's scroll position in the values pane is preserved).
-    renderFormAnswersSidebar();
-    renderFormAnswersPills();
-}
-
-function removeFormAnswerPill(key, value) {
-    const list = _formAnswerFilter[key];
-    if (!list) return;
-    const idx = list.findIndex(v => v.toLowerCase() === value.toLowerCase());
-    if (idx >= 0) list.splice(idx, 1);
-    if (list.length === 0) delete _formAnswerFilter[key];
-    renderFormAnswersSidebar();
-    renderFormAnswersPills();
-    // If the removed pill was on the active question, refresh chips so
-    // the deselection is visually reflected without a server round-trip.
-    if (_faActiveKey) renderFormAnswersValuesPane();
-}
-
-function clearFormAnswersSelection() {
-    _formAnswerFilter = {};
-    renderFormAnswersSidebar();
-    renderFormAnswersPills();
-    if (_faActiveKey) renderFormAnswersValuesPane();
-}
-
-function applyFormAnswers() {
-    // Commit: the working state becomes the new applied state.
-    _faAppliedFilter = JSON.parse(JSON.stringify(_formAnswerFilter || {}));
-    closeFormAnswersModal(/*revert=*/false);
-    refreshFormAnswersButtonState();
-    applyFilters();
-}
-
-function closeFormAnswersModal(revert = true) {
-    const modal = document.getElementById('formAnswersModal');
-    if (modal) modal.classList.remove('active');
-    document.body.style.overflow = '';
-    // Cancel / overlay-click semantics: throw away any mid-modal edits and
-    // restore the filter that was already applied to the leads list.
-    // applyFormAnswers() passes revert=false so Apply commits.
-    if (revert) {
-        _formAnswerFilter = JSON.parse(JSON.stringify(_faAppliedFilter || {}));
-        refreshFormAnswersButtonState();
-    }
-}
-
-// Tiny attribute-safe escaper for our inline onclick handlers — keeps
-// keys with apostrophes/parens from breaking the markup. escapeHtml is
-// already defined globally for the textContent case.
-function escapeAttr(s) {
-    return String(s || '').replace(/&/g, '&amp;').replace(/'/g, '&#39;')
-        .replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-window.openFormAnswersModal = openFormAnswersModal;
-window.closeFormAnswersModal = closeFormAnswersModal;
-window.applyFormAnswers = applyFormAnswers;
-window.clearFormAnswersSelection = clearFormAnswersSelection;
-window.toggleFormAnswerChip = toggleFormAnswerChip;
 window.onSourceFilterChanged = onSourceFilterChanged;
-window.setFormAnswerActiveQuestion = setFormAnswerActiveQuestion;
-window.showAllAnswerValues = showAllAnswerValues;
-window.removeFormAnswerPill = removeFormAnswerPill;
-window.onFormAnswerSearch = onFormAnswerSearch;
 
 // Populate the Campaign filter with the tenant's campaigns. Called once
 // on page load; cheap enough that we don't bother caching. Fails soft if

@@ -23,9 +23,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const user = api.getUser();
     const roles = user?.roles || [];
     const isAdmin = roles.includes('CRM_ADMIN') || roles.includes('SUPERADMIN');
+    const isSuperadmin = roles.includes('SUPERADMIN');
     if (!isAdmin) {
         const settingsCard = document.getElementById('cardSettings');
         if (settingsCard) settingsCard.style.display = 'none';
+    }
+    // Analytics card is SUPERADMIN-only — backend endpoint is gated the
+    // same way, but we hide the card so non-superadmins don't see a 403.
+    if (isSuperadmin) {
+        const analyticsCard = document.getElementById('cardAnalytics');
+        if (analyticsCard) analyticsCard.style.display = '';
     }
 
     // Setup gating — disable action cards until functional area + team + pipeline exist.

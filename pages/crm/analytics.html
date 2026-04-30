@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Analytics - CRM | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+    /* Page chrome — match the leads/dashboard convention so the nav bar
+       doesn't cover the title and the layout breathes. */
+    .ana-container { max-width: 1600px; margin: 0 auto; padding: 80px 24px 60px; }
+    .ana-header { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
+    .ana-title h1 { margin: 0 0 4px; font-size: 1.6rem; }
+    .ana-title p { color: var(--text-secondary); margin: 0; font-size: 0.85em; }
+
+    /* All ana-card / ana-kpi-card / ana-toolbar use the same translucent
+       glass background + border + subtle inset highlight as the rest of
+       the CRM (glass-cards.css). Solid bg-card looked flat against the
+       dashboard's gradient backdrop and broke the visual language. */
+    .ana-toolbar, .ana-card, .ana-kpi-card {
+        background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
+            rgba(var(--bg-card-rgb, 15, 23, 42), 0.55);
+        backdrop-filter: blur(16px) saturate(1.4);
+        -webkit-backdrop-filter: blur(16px) saturate(1.4);
+        border: 1px solid rgba(var(--brand-primary-rgb, 99, 102, 241), 0.18);
+        border-radius: 14px;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    [data-theme="light"] .ana-toolbar,
+    [data-theme="light"] .ana-card,
+    [data-theme="light"] .ana-kpi-card {
+        background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
+            rgba(255, 255, 255, 0.55);
+        border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    .ana-toolbar {
+        display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+        padding: 10px 12px; margin-bottom: 18px;
+        position: sticky; top: 70px; z-index: 5;
+    }
+    .ana-toolbar .field { display:flex; flex-direction:column; gap:2px; }
+    .ana-toolbar label { font-size: 0.7em; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .ana-toolbar select, .ana-toolbar input {
+        height: 32px; padding: 0 8px; border-radius: 8px;
+        border: 1px solid var(--border-color); background: var(--bg-input, rgba(0,0,0,0.2)); color: var(--text-primary);
+        font-size: 0.85em; min-width: 140px;
+    }
+    .ana-toolbar .ana-spacer { flex: 1; }
+
+    .ana-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+    @media (max-width: 1200px) { .ana-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .ana-kpi-grid { grid-template-columns: 1fr; } }
+    .ana-kpi-card {
+        padding: 14px 16px; min-height: 110px;
+        display: flex; flex-direction: column; gap: 4px;
+        position: relative; overflow: hidden;
+        transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    .ana-kpi-card:hover {
+        border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 14px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.10);
+    }
+    .ana-kpi-label { font-size: 0.72em; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-secondary); }
+    .ana-kpi-value { font-size: 1.55rem; font-weight: 700; color: var(--text-primary); line-height: 1.1; }
+    .ana-kpi-delta { font-size: 0.8em; display: inline-flex; align-items: center; gap: 4px; }
+    .ana-kpi-delta.up { color: var(--color-success, #16a34a); }
+    .ana-kpi-delta.down { color: var(--color-error, #dc2626); }
+    .ana-kpi-delta.flat { color: var(--text-secondary); }
+    .ana-kpi-spark { position: absolute; right: 8px; bottom: 8px; width: 88px; height: 32px; opacity: 0.7; pointer-events: none; }
+
+    .ana-row { display: grid; grid-template-columns: 2fr 3fr; gap: 12px; margin-bottom: 18px; }
+    @media (max-width: 1100px) { .ana-row { grid-template-columns: 1fr; } }
+
+    .ana-card { padding: 16px; min-height: 280px; }
+    .ana-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; }
+    .ana-card-title { font-weight: 600; font-size: 0.95rem; }
+    .ana-card-sub { color: var(--text-secondary); font-size: 0.8em; }
+
+    /* Funnel — horizontal stacked bars */
+    .ana-funnel { display: flex; flex-direction: column; gap: 8px; }
+    .ana-funnel-row { display: grid; grid-template-columns: 110px 1fr 90px; gap: 8px; align-items: center; font-size: 0.85em; }
+    .ana-funnel-bar { height: 26px; background: rgba(var(--brand-primary-rgb,99,102,241), 0.15); border-radius: 6px; overflow: hidden; position: relative; }
+    .ana-funnel-fill { height: 100%; background: linear-gradient(90deg, var(--brand-primary), rgba(var(--brand-primary-rgb,99,102,241),0.7)); }
+    .ana-funnel-count { font-weight: 600; }
+    .ana-funnel-drop { color: var(--color-error, #dc2626); font-size: 0.75em; margin-left: 6px; }
+
+    .ana-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+    .ana-table th { text-align: left; color: var(--text-secondary); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-card); }
+    .ana-table td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .ana-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .ana-table th.num, .ana-table td.num { text-align: right; }
+    .ana-source-row { cursor: pointer; }
+    .ana-source-row.is-active td { background: rgba(var(--brand-primary-rgb,99,102,241), 0.1); }
+
+    /* Performance bars — small horizontal track with a colored fill that
+       shows a percentage. Colour is bucketed by performance band so a
+       counsellor / form scanning the dashboard sees red/yellow/green
+       instantly rather than reading numbers. Bands are calibrated per
+       metric — see perfBar() in analytics.js. */
+    .ana-perf {
+        display: inline-flex; align-items: center; gap: 10px;
+        width: 160px;
+    }
+    /* Track is the unfilled portion. Tinted in the same colour family as
+       the fill so red/yellow/green is readable even at 0% — the entire
+       bar carries semantic colour. */
+    .ana-perf-track {
+        flex: 1; height: 10px; border-radius: 999px;
+        overflow: hidden; position: relative;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.30);
+    }
+    .ana-perf.green  .ana-perf-track { background: rgba(34, 197, 94, 0.18); }
+    .ana-perf.yellow .ana-perf-track { background: rgba(245, 158, 11, 0.18); }
+    .ana-perf.red    .ana-perf-track { background: rgba(239, 68, 68, 0.18); }
+    [data-theme="light"] .ana-perf.green  .ana-perf-track { background: rgba(34, 197, 94, 0.20); }
+    [data-theme="light"] .ana-perf.yellow .ana-perf-track { background: rgba(245, 158, 11, 0.22); }
+    [data-theme="light"] .ana-perf.red    .ana-perf-track { background: rgba(239, 68, 68, 0.20); }
+    .ana-perf-fill { height: 100%; border-radius: inherit; transition: width 0.35s ease; min-width: 6px; }
+    .ana-perf-fill.green  { background: linear-gradient(90deg, #16a34a, #22c55e); box-shadow: 0 0 12px rgba(34,197,94,0.65), inset 0 1px 0 rgba(255,255,255,0.25); }
+    .ana-perf-fill.yellow { background: linear-gradient(90deg, #d97706, #f59e0b); box-shadow: 0 0 12px rgba(245,158,11,0.60), inset 0 1px 0 rgba(255,255,255,0.25); }
+    .ana-perf-fill.red    { background: linear-gradient(90deg, #dc2626, #ef4444); box-shadow: 0 0 12px rgba(239,68,68,0.55),  inset 0 1px 0 rgba(255,255,255,0.25); }
+    .ana-perf-label { font-size: 0.82em; font-weight: 700; min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
+    .ana-perf-label.green  { color: #22c55e; }
+    .ana-perf-label.yellow { color: #f59e0b; }
+    .ana-perf-label.red    { color: #ef4444; }
+    .ana-table td.num .ana-perf { justify-content: flex-end; margin-left: auto; }
+
+    .ana-answer-block {
+        border: 1px solid rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15);
+        border-radius: 10px;
+        padding: 12px 14px; margin-bottom: 10px;
+        background: rgba(255, 255, 255, 0.02);
+    }
+    [data-theme="light"] .ana-answer-block {
+        background: rgba(0, 0, 0, 0.02);
+    }
+    .ana-answer-q { font-weight: 600; margin-bottom: 8px; display:flex; gap:8px; align-items:center; }
+    .ana-answer-q .ana-answer-toggle { background:none; border:none; color:var(--text-secondary); cursor:pointer; }
+
+    .ana-loading { text-align: center; color: var(--text-secondary); padding: 24px; font-size: 0.9em; }
+    .ana-empty { text-align: center; color: var(--text-secondary); padding: 36px 16px; font-size: 0.9em; }
+
+    /* Reuse leads-page form-answers button styles. We pull crm.css already
+       so the styling is inherited. The button markup is duplicated for
+       this page (different filter parent). */
+    </style>
+</head>
+<body class="dashboard crm-page">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html"><img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo"></a>
+        </div>
+        <div class="navbar-menu"><!-- Navigation.init() --></div>
+    </nav>
+
+    <div class="ana-container">
+        <div class="ana-header">
+            <div class="ana-title">
+                <div style="font-size:0.75em; color:var(--text-secondary); margin-bottom:4px;">
+                    <a href="dashboard.html" style="color:var(--text-secondary);">CRM</a> /
+                    <span>Analytics</span>
+                </div>
+                <h1>Lead & sales analytics</h1>
+                <p>SUPERADMIN view — every block is scoped by the date range, source, and form-answer filters below.</p>
+            </div>
+        </div>
+
+        <!-- Toolbar — date / source / team / form answers -->
+        <div class="ana-toolbar">
+            <div class="field">
+                <label for="anaDateRange">Date range</label>
+                <select id="anaDateRange" onchange="onDateRangeChanged()">
+                    <option value="7">Last 7 days</option>
+                    <option value="14">Last 14 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="this_month">This month</option>
+                    <option value="last_month">Last month</option>
+                    <option value="custom">Custom…</option>
+                </select>
+            </div>
+            <div class="field" id="anaCustomFromWrap" style="display:none;">
+                <label for="anaCustomFrom">From</label>
+                <input type="date" id="anaCustomFrom" onchange="onDateRangeChanged()">
+            </div>
+            <div class="field" id="anaCustomToWrap" style="display:none;">
+                <label for="anaCustomTo">To</label>
+                <input type="date" id="anaCustomTo" onchange="onDateRangeChanged()">
+            </div>
+            <div class="field">
+                <label for="anaSource">Source / form</label>
+                <select id="anaSource" onchange="onSourceChanged()">
+                    <option value="">All sources</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="anaTeam">Team</label>
+                <select id="anaTeam" onchange="loadAnalytics()">
+                    <option value="">All teams</option>
+                </select>
+            </div>
+            <div class="ana-spacer"></div>
+            <div class="field">
+                <label>&nbsp;</label>
+                <button type="button" id="formAnswersFilterBtn" class="btn btn-sm btn-outline-primary"
+                        onclick="window.openFormAnswersModal()" disabled>
+                    <span id="formAnswersActiveDot" class="fa-active-dot" hidden></span>
+                    <span>Form answers</span>
+                    <span id="formAnswersActiveCount" class="badge bg-primary ms-1" style="display:none;">0</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- KPI strip -->
+        <div class="ana-kpi-grid" id="anaKpiGrid">
+            <div class="ana-loading">Loading dashboard…</div>
+        </div>
+
+        <!-- Funnel + Daily trend -->
+        <div class="ana-row">
+            <div class="ana-card">
+                <div class="ana-card-header">
+                    <div>
+                        <div class="ana-card-title">Funnel</div>
+                        <div class="ana-card-sub">Lead → contacted → qualified → won</div>
+                    </div>
+                </div>
+                <div id="anaFunnel"></div>
+            </div>
+            <div class="ana-card">
+                <div class="ana-card-header">
+                    <div>
+                        <div class="ana-card-title">Daily trend</div>
+                        <div class="ana-card-sub">Volume + conversion across the selected window</div>
+                    </div>
+                    <div>
+                        <select id="anaTrendMetric" onchange="renderDailyChart()" style="height:28px;font-size:0.8em;">
+                            <option value="leads" selected>New leads</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="qualified">Qualified</option>
+                            <option value="won">Won</option>
+                            <option value="won_value">Won value</option>
+                            <option value="activities">Activities</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="height:240px;"><canvas id="anaDailyChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Source breakdown -->
+        <div class="ana-card" style="margin-bottom:18px;">
+            <div class="ana-card-header">
+                <div>
+                    <div class="ana-card-title">Per-source performance</div>
+                    <div class="ana-card-sub">Click a row to scope the rest of the dashboard to that form</div>
+                </div>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="ana-table" id="anaSourceTable">
+                    <thead>
+                        <tr>
+                            <th>Source</th>
+                            <th class="num">Leads</th>
+                            <th class="num">Connect %</th>
+                            <th class="num">Qual %</th>
+                            <th class="num">Won %</th>
+                            <th class="num">Won value</th>
+                            <th class="num">Avg deal</th>
+                            <th class="num">Avg response</th>
+                        </tr>
+                    </thead>
+                    <tbody><tr><td colspan="8" class="ana-empty">Loading…</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Answer-level breakdown (only when source is picked) -->
+        <div class="ana-card" id="anaAnswerCard" style="margin-bottom:18px; display:none;">
+            <div class="ana-card-header">
+                <div>
+                    <div class="ana-card-title">Answer-level performance</div>
+                    <div class="ana-card-sub">For each form question, how each answer cohort moves through the funnel</div>
+                </div>
+            </div>
+            <div id="anaAnswers"></div>
+        </div>
+
+        <!-- Counsellor leaderboard -->
+        <div class="ana-card">
+            <div class="ana-card-header">
+                <div>
+                    <div class="ana-card-title">Counsellor leaderboard</div>
+                    <div class="ana-card-sub">Auto-scoped to the selected source when one is picked</div>
+                </div>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="ana-table" id="anaRepTable">
+                    <thead>
+                        <tr>
+                            <th>Counsellor</th>
+                            <th class="num">Leads worked</th>
+                            <th class="num">Connect %</th>
+                            <th class="num">Qual %</th>
+                            <th class="num">Won %</th>
+                            <th class="num">Won value</th>
+                            <th class="num">Median response</th>
+                            <th class="num">Activities/day</th>
+                        </tr>
+                    </thead>
+                    <tbody><tr><td colspan="8" class="ana-empty">Loading…</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form answers modal — same markup as leads.html (FormAnswersFilter shared module). -->
+    <div id="formAnswersModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="formAnswersTitle">
+        <div class="modal-backdrop" onclick="window.closeFormAnswersModal()"></div>
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="formAnswersTitle" class="modal-title">Filter by form answers</h3>
+                    <button type="button" class="close-btn" onclick="window.closeFormAnswersModal()" aria-label="Close">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="fa-summary" id="formAnswersSummary">
+                    <div class="fa-search-wrap">
+                        <input type="text" id="formAnswersSearch" class="form-control form-control-sm"
+                               placeholder="Search questions or answers…" oninput="window.onFormAnswerSearch()" autocomplete="off">
+                    </div>
+                    <div class="fa-selected-pills" id="formAnswersPills"></div>
+                </div>
+                <div class="modal-body fa-body" id="formAnswersBody">
+                    <aside class="fa-questions" id="formAnswersQuestionList" role="tablist" aria-label="Form questions"></aside>
+                    <section class="fa-values" id="formAnswersValuesPane" role="tabpanel"></section>
+                </div>
+                <div class="modal-footer fa-footer">
+                    <button type="button" class="btn btn-link" style="margin-right:auto;" onclick="window.clearFormAnswersSelection()">Clear all</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.closeFormAnswersModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="window.applyFormAnswers()">
+                        Apply filter <span id="formAnswersApplyCount" class="fa-apply-count" hidden></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/setup-guard.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/form-answers-filter.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/analytics.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+</body>
+</html>
