@@ -128,7 +128,7 @@ const AccountsCommon = {
      */
     async initPage(pageId, basePath = '../') {
         if (!api.isAuthenticated()) {
-            window.location.href = basePath + 'index.html';
+            window.location.href = basePath + 'login.html';
             return false;
         }
 
