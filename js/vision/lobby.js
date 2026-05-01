@@ -30,8 +30,14 @@ if (!meetingId) {
     window.location.href = 'dashboard.html';
 }
 
-// Check authentication
-const isGuest = !api.isAuthenticated();
+// Check authentication.
+// IMPORTANT: A JWT-authenticated user can be on a guest session when joining a
+// cross-tenant meeting (their JWT is for tenant A, the meeting is in tenant B,
+// so they were issued a guest token via the guest-join API). meeting.js already
+// honors this distinction via sessionStorage.isGuest; lobby.js was the
+// inconsistent one and would re-trigger the tenant access check, bouncing
+// users back to guest-join in a loop. Treat sessionStorage.isGuest as truth.
+const isGuest = sessionStorage.getItem('isGuest') === 'true' || !api.isAuthenticated();
 
 // Initialize lobby
 async function initializeLobby() {
