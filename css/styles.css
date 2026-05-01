@@ -1327,7 +1327,27 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     background: #050810;
     border-radius: var(--border-radius-lg);
     padding: 12px;
-    overflow: hidden;
+    /* Allow up to ~10 small tiles by scrolling past the visible 4-5; keeps tiles
+       at their nice 16:9 aspect ratio instead of cramming them into a 2-col grid. */
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.small-tiles-container::-webkit-scrollbar {
+    width: 6px;
+}
+.small-tiles-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+.small-tiles-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 3px;
+}
+.small-tiles-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
 }
 
 /* Animated gradient mesh for small tiles container - matches lobby style */

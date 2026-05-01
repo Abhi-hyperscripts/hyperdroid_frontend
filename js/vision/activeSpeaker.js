@@ -8,7 +8,7 @@ class ActiveSpeakerManager {
     constructor(room) {
         this.room = room;
         this.activeSpeakers = []; // Array of {participantSid, identity, lastActiveTime, isSpeaking}
-        this.maxVideoParticipants = 5; // 1 large + 4 small
+        this.maxVideoParticipants = 10; // 1 large + 9 small (small tiles column is scrollable past ~5)
         this.speakingThreshold = 0.15; // Audio level threshold for speaking detection
         this.inactivityTimeout = 30000; // 30 seconds - remove from active list after this
         this.mainSpeaker = null; // Currently focused speaker (large tile)
@@ -244,9 +244,9 @@ class ActiveSpeakerManager {
         const isInTop5 = this.getVideoParticipants().some(p => p.participantSid === participantSid);
 
         if (!wasInTop5 && isInTop5) {
-            console.log(`⬆️ ${identity} moved INTO top 5 video participants`);
+            console.log(`⬆️ ${identity} moved INTO top ${this.maxVideoParticipants} video participants`);
         } else if (wasInTop5 && isInTop5) {
-            console.log(`🔄 ${identity} spoke (already in top 5)`);
+            console.log(`🔄 ${identity} spoke (already in top ${this.maxVideoParticipants})`);
         }
 
         this.updateMainSpeaker();
