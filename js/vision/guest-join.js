@@ -32,14 +32,14 @@ if (isAuthenticated && authenticatedUser && !forceGuest) {
     document.getElementById('userDisplayName').textContent = `${authenticatedUser.firstName} ${authenticatedUser.lastName}`;
 
     // Handle "Join as Myself" button.
-    // Two cases the user can land in here:
-    //   (a) Same-tenant meeting: their JWT works, lobby will accept it. Just redirect.
-    //   (b) Cross-tenant meeting: backend checkMeetingAccess returns 404 because the
-    //       meeting belongs to a different tenant. Previously this caused the lobby
-    //       to bounce back here with forceGuest=1, dropping the user on a form they
-    //       had to refill — which they (rightly) experience as "you sent me back to
-    //       a non-meeting page." We now silently call the guest-join API with their
-    //       JWT first/last name and proceed to lobby with a guest session. One click.
+    // Backend (MeetingsController.CheckMeetingAccess) is now cross-tenant aware:
+    //   - same-tenant         -> canJoin:true, fall through to lobby on JWT
+    //   - cross-tenant + guests-allowed -> canJoin:true (backend issues a token
+    //                                      for the user's JWT identity)
+    //   - cross-tenant + !guests / participant-controlled / not-on-list
+    //                          -> canJoin:false with a human-readable message
+    // No more silent guest-API fallback — we surface the real reason and let
+    // the user pick "Join as Guest" manually if they still want to join.
     document.getElementById('joinAsAuthenticatedBtn').addEventListener('click', async () => {
         const btn = document.getElementById('joinAsAuthenticatedBtn');
         btn.disabled = true;
@@ -49,38 +49,11 @@ if (isAuthenticated && authenticatedUser && !forceGuest) {
                 window.location.href = `lobby.html?id=${meetingId}`;
                 return;
             }
-            // Backend said canJoin:false (e.g. participant-controlled, not on
-            // allowed list). Surface the reason and still attempt guest fallback
-            // so the user is not stranded.
-            if (access && access.message) {
-                Toast.info(access.message);
-            }
+            Toast.error((access && access.message) || 'You cannot join this meeting with your current account.');
         } catch (err) {
-            // 404 (cross-tenant) or transient error — silently fall through.
-            console.log('[guest-join] same-tenant access check failed, falling back to guest with JWT name:', err.message);
+            Toast.error(err.message || 'Failed to check meeting access');
         }
-        // Fallback: guest-join using the user's JWT first/last name. Mirrors the
-        // form-submission path below so meeting.js sees a guest session.
-        try {
-            const firstName = authenticatedUser.firstName || 'User';
-            const lastName = authenticatedUser.lastName || authenticatedUser.firstName || 'User';
-            const r = await api.guestJoinMeeting(meetingId, firstName, lastName);
-            if (r && r.token) {
-                sessionStorage.setItem('guestToken', r.token);
-                sessionStorage.setItem('guestName', r.participant_name);
-                sessionStorage.setItem('guestWsUrl', r.ws_url);
-                sessionStorage.setItem('isGuest', 'true');
-                sessionStorage.setItem('guestMeetingId', meetingId);
-                window.location.href = `lobby.html?id=${meetingId}`;
-            } else {
-                Toast.error('Failed to join meeting. Please try again.');
-                btn.disabled = false;
-            }
-        } catch (e) {
-            console.error('[guest-join] guest fallback failed:', e);
-            Toast.error(e.message || 'Failed to join meeting');
-            btn.disabled = false;
-        }
+        btn.disabled = false;
     });
 
     // Handle "Join as Guest" button
