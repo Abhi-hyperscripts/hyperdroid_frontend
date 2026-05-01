@@ -25,6 +25,7 @@ class ActiveSpeakerManager {
         // With h1080 capture, HIGH = 1080p, MEDIUM = 360p, LOW = 180p
         this.mainSpeakerQuality = LivekitClient.VideoQuality.HIGH;      // 1080p for main speaker (highest layer)
         this.smallTileQuality = LivekitClient.VideoQuality.MEDIUM;      // 360p for small tiles (reduces bandwidth and recording load)
+        this.poorNetworkMode = false;                                   // When true, all tiles are downgraded a tier
 
         // === ACTIVE SPEAKER SWITCHING IMPROVEMENTS ===
         // Sustained speaking detection - prevents switching on brief noises
@@ -985,5 +986,32 @@ class ActiveSpeakerManager {
      */
     isScreenShareActive() {
         return this.screenShareActive;
+    }
+
+    /**
+     * Toggle poor-network mode. When enabled, every tile drops one tier:
+     *   main:  HIGH (1080p) -> MEDIUM (360p)
+     *   small: MEDIUM (360p) -> LOW (180p)
+     * Called from the room's ConnectionQualityChanged listener so a viewer on
+     * a degraded link stops requesting layers their downlink can't carry.
+     * Idempotent.
+     */
+    setPoorNetworkMode(enabled) {
+        if (this.poorNetworkMode === enabled) return;
+        this.poorNetworkMode = enabled;
+
+        if (enabled) {
+            this.setQualityLevels(
+                LivekitClient.VideoQuality.MEDIUM,
+                LivekitClient.VideoQuality.LOW
+            );
+            console.warn('🐌 Poor-network mode ON: main=360p, small=180p');
+        } else {
+            this.setQualityLevels(
+                LivekitClient.VideoQuality.HIGH,
+                LivekitClient.VideoQuality.MEDIUM
+            );
+            console.log('✅ Poor-network mode OFF: main=1080p, small=360p');
+        }
     }
 }

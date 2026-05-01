@@ -492,7 +492,17 @@ async function connectToLiveKit(wsUrl, token) {
         const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
         console.log(`[Room] Browser detected: ${isSafari ? 'Safari' : 'Other'}`);
 
-        // Configure RTC options with TURN/STUN servers and simulcast
+        // Detect mobile / cellular for conservative caps on weak links
+        const effectiveType = navigator.connection?.effectiveType || '';
+        const isSlowNetwork = effectiveType === '2g' || effectiveType === 'slow-2g' || effectiveType === '3g';
+        if (isSlowNetwork) {
+            console.warn(`[Room] Slow network detected (${effectiveType}) - capping publish bitrate at 1.5 Mbps`);
+        }
+
+        // Resolve max publish bitrate: Safari conservative, slow network conservative, otherwise 6 Mbps.
+        const maxPublishBitrate = isSafari ? 2_500_000 : (isSlowNetwork ? 1_500_000 : 6_000_000);
+
+        // Configure RTC options with TURN/STUN servers, simulcast, and audio resilience
         // Safari: Disable adaptive features that cause track subscription issues
         const roomOptions = {
             adaptiveStream: !isSafari,  // Disable for Safari - causes track unsubscription
@@ -502,18 +512,40 @@ async function connectToLiveKit(wsUrl, token) {
                     ? LivekitClient.VideoPresets.h720.resolution  // Safari: Use 720p (more stable)
                     : LivekitClient.VideoPresets.h1080.resolution,
             },
+            // Browser audio preprocessing - helps every participant on every network.
+            audioCaptureDefaults: {
+                autoGainControl: true,
+                noiseSuppression: true,
+                echoCancellation: true,
+            },
             publishDefaults: {
                 simulcast: !isSafari,  // Disable simulcast for Safari - causes layer switching issues
                 videoEncoding: {
-                    maxBitrate: isSafari ? 2_500_000 : 6_000_000,  // Safari: 2.5 Mbps, Others: 6 Mbps
+                    maxBitrate: maxPublishBitrate,
                     maxFramerate: 30,
                 },
-                // Screen share: Use VP9 codec (better for screen content) with high bitrate
+                // Explicit 3-layer simulcast: ensures a true 180p lifeline layer exists
+                // for downlink-constrained subscribers. Without this, LiveKit derives
+                // layers from maxBitrate and the "low" layer can still be ~600 kbps,
+                // which a 1 Mbps user can't sustain.
+                videoSimulcastLayers: isSafari ? [] : [
+                    LivekitClient.VideoPresets.h180,   // ~150 kbps - lifeline for slow viewers
+                    LivekitClient.VideoPresets.h360,   // ~500 kbps - default for small tiles
+                    LivekitClient.VideoPresets.h720,   // ~2 Mbps  - main speaker tier
+                ],
+                // Audio resilience for poor networks
+                audioPreset: LivekitClient.AudioPresets.speech,  // 24 kbps voice-tuned Opus
+                red: true,  // Opus RED packet-loss redundancy - survives 1-2 lost packets
+                dtx: true,  // Discontinuous Transmission - saves uplink during silence
+                // Screen share: Drop the cap from 30 Mbps -> 8 Mbps and add a low layer
+                // so a viewer on a slow link can still see the share at 360p.
                 screenShareEncoding: {
-                    maxBitrate: 30_000_000,  // 30 Mbps for maximum quality
-                    maxFramerate: 30,
+                    maxBitrate: 8_000_000,
+                    maxFramerate: 24,
                 },
-                screenShareSimulcastLayers: [],  // DISABLE simulcast - full quality only
+                screenShareSimulcastLayers: isSafari ? [] : [
+                    LivekitClient.VideoPresets.h360,  // forced low rung for slow viewers
+                ],
                 videoCodec: isSafari ? 'vp8' : 'vp9',  // Safari: VP8 is more compatible
                 backupCodec: isSafari ? true : false,  // Safari: Allow fallback codec
             }
@@ -610,6 +642,38 @@ async function connectToLiveKit(wsUrl, token) {
                 if (participantDiv) {
                     updateCameraOffPlaceholder(participantDiv, true);
                 }
+            }
+        });
+
+        // Connection quality reactor: when LOCAL link degrades, downgrade every
+        // remote subscription one tier and warn the user. Restore on recovery.
+        // This is the missing link that prevents one slow user from requesting
+        // layers their downlink can't carry, which was causing freeze-and-thaw cycles.
+        let _poorNetworkToastShown = false;
+        room.on(LivekitClient.RoomEvent.ConnectionQualityChanged, (quality, participant) => {
+            // Only react to LOCAL participant - remote quality is the publisher's, not our downlink.
+            if (participant !== room.localParticipant) return;
+
+            const isPoor = quality === LivekitClient.ConnectionQuality.Poor;
+            const isLost = quality === LivekitClient.ConnectionQuality.Lost;
+            const degraded = isPoor || isLost;
+
+            if (activeSpeakerManager) {
+                activeSpeakerManager.setPoorNetworkMode(degraded);
+            }
+
+            if (degraded && !_poorNetworkToastShown) {
+                _poorNetworkToastShown = true;
+                if (typeof showToast === 'function') {
+                    showToast('Slow network detected — reducing video quality to keep audio clear', 'warning');
+                }
+                console.warn(`[Network] Local connection quality: ${quality} - downgrading subscriptions`);
+            } else if (!degraded && _poorNetworkToastShown) {
+                _poorNetworkToastShown = false;
+                if (typeof showToast === 'function') {
+                    showToast('Network recovered — restoring video quality', 'success');
+                }
+                console.log(`[Network] Local connection quality recovered: ${quality}`);
             }
         });
 
