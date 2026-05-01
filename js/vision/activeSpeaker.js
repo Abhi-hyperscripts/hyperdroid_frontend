@@ -24,8 +24,10 @@ class ActiveSpeakerManager {
         // HIGH requests the highest available simulcast layer from the publisher
         // With h1080 capture, HIGH = 1080p, MEDIUM = 360p, LOW = 180p
         this.mainSpeakerQuality = LivekitClient.VideoQuality.HIGH;      // 1080p for main speaker (highest layer)
-        this.smallTileQuality = LivekitClient.VideoQuality.MEDIUM;      // 360p for small tiles (reduces bandwidth and recording load)
-        this.poorNetworkMode = false;                                   // When true, all tiles are downgraded a tier
+        this.smallTileQuality = LivekitClient.VideoQuality.MEDIUM;      // 360p for visible small tiles (top of the column)
+        this.overflowTileQuality = LivekitClient.VideoQuality.LOW;      // 180p for tiles past the visible window (scrolled, ranks 5+)
+        this.visibleSmallTileCount = 4;                                 // Visible small tiles WITHOUT scrolling (1 main + 4 small = 5 visible)
+        this.poorNetworkMode = false;                                   // When true, main+small downgrade a tier; overflow stays LOW
 
         // === ACTIVE SPEAKER SWITCHING IMPROVEMENTS ===
         // Sustained speaking detection - prevents switching on brief noises
@@ -614,30 +616,58 @@ class ActiveSpeakerManager {
     }
 
     /**
-     * Update video subscriptions based on active speakers with adaptive quality
-     * Subscribe to top 5 active speakers with appropriate quality levels
-     * Main speaker: 720p HD, Small tiles: 360p SD
+     * Resolve the right video quality for a participant based on their rank in the
+     * top-N active speakers list:
+     *   - Main speaker:                      mainSpeakerQuality   (HIGH = 1080p)
+     *   - Visible small tiles (ranks 1..N):  smallTileQuality     (MEDIUM = 360p)
+     *   - Overflow tiles (rank > N, scrolled): overflowTileQuality (LOW = 180p)
+     * Keeps total downlink bounded as we expanded from 5 to 10 visible participants.
+     * @param {string} participantSid
+     * @param {Map<string, number>} smallTileRankMap - sid -> 0-based rank among non-main top speakers
+     * @returns {{ quality: VideoQuality, role: string }}
+     */
+    resolveQualityForParticipant(participantSid, smallTileRankMap) {
+        if (participantSid === this.mainSpeaker?.participantSid) {
+            return { quality: this.mainSpeakerQuality, role: 'MAIN SPEAKER' };
+        }
+        const rank = smallTileRankMap.get(participantSid);
+        if (rank === undefined) {
+            // Not in top-N - shouldn't be subscribed; default to overflow quality
+            return { quality: this.overflowTileQuality, role: 'OVERFLOW' };
+        }
+        if (rank < this.visibleSmallTileCount) {
+            return { quality: this.smallTileQuality, role: 'SMALL TILE' };
+        }
+        return { quality: this.overflowTileQuality, role: 'OVERFLOW TILE' };
+    }
+
+    /**
+     * Update video subscriptions based on active speakers with adaptive quality.
+     * Subscribes to top maxVideoParticipants and assigns quality by rank
+     * (main = HIGH, visible small = MEDIUM, overflow/scrolled = LOW).
      */
     updateVideoSubscriptions() {
         const topSpeakers = this.activeSpeakers.slice(0, this.maxVideoParticipants);
         const topSpeakerSids = new Set(topSpeakers.map(s => s.participantSid));
         const mainSpeakerSid = this.mainSpeaker?.participantSid;
 
+        // Build sid -> rank map for non-main top speakers (rank 0 is the first small tile)
+        const smallTileRankMap = new Map();
+        let smallRank = 0;
+        for (const speaker of topSpeakers) {
+            if (speaker.participantSid === mainSpeakerSid) continue;
+            smallTileRankMap.set(speaker.participantSid, smallRank++);
+        }
+
         // Iterate through all remote participants
         this.room.remoteParticipants.forEach((participant) => {
             const shouldSubscribe = topSpeakerSids.has(participant.sid);
-            const isMainSpeaker = participant.sid === mainSpeakerSid;
+            const { quality, role } = this.resolveQualityForParticipant(participant.sid, smallTileRankMap);
 
             participant.videoTrackPublications.forEach((publication) => {
                 // Only manage camera video tracks, not screen shares
                 if (publication.source === LivekitClient.Track.Source.Camera) {
                     if (shouldSubscribe && !publication.isSubscribed) {
-                        // Subscribe to video with appropriate quality
-                        const quality = isMainSpeaker
-                            ? this.mainSpeakerQuality
-                            : this.smallTileQuality;
-                        const role = isMainSpeaker ? 'MAIN SPEAKER' : 'SMALL TILE';
-
                         if (this.isSafari) {
                             // Safari: Subscribe with delay to let connection stabilize
                             console.log(`🎥 [${role}] [Safari] Subscribing to ${participant.identity} with 500ms delay...`);
@@ -656,18 +686,12 @@ class ActiveSpeakerManager {
                     else if (shouldSubscribe && publication.isSubscribed) {
                         // Update quality if subscription exists
                         // VP8 codec fix means Safari can now handle quality changes with delay
-                        const quality = isMainSpeaker
-                            ? this.mainSpeakerQuality
-                            : this.smallTileQuality;
-                        const role = isMainSpeaker ? 'MAIN SPEAKER' : 'SMALL TILE';
                         this.setVideoQualityDelayed(publication, quality, participant.identity, false);
                         console.log(`🔄 [${role}] Quality update scheduled for ${participant.identity}`);
                     }
                     // DISABLED: Don't unsubscribe from inactive speakers - show all participant videos
                     // else if (!shouldSubscribe && publication.isSubscribed) {
-                    //     // Unsubscribe from video for inactive speakers
                     //     publication.setSubscribed(false);
-                    //     console.log(`Unsubscribed from ${participant.identity}`);
                     // }
                 }
             });
