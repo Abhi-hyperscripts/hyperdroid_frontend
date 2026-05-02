@@ -389,6 +389,58 @@
                 font-size: 11px;
                 line-height: 1;
             }
+
+            /* Phase 5: Email Triggers modal — per-status rows.
+               Compact layout: label + templates on a single line. */
+            .trig-row {
+                border: 1px solid var(--border-color);
+                border-radius: 6px;
+                padding: 6px 12px;
+                background: var(--bg-card);
+                margin-bottom: 4px;
+                display: flex;
+                gap: 14px;
+                align-items: center;
+            }
+            .trig-row-head {
+                display: flex; gap: 6px; align-items: baseline;
+                min-width: 200px; flex-shrink: 0;
+            }
+            .trig-row-head strong { font-size: 0.88rem; color: var(--text-primary); }
+            .trig-row-hint { color: var(--text-secondary); font-size: 0.72rem; font-style: italic; }
+            .trig-row-body { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; flex: 1; }
+            .trig-pill {
+                display: inline-flex; align-items: center; gap: 4px;
+                background: var(--bg-secondary);
+                border: 1px solid var(--border-color);
+                border-radius: 14px; padding: 3px 6px 3px 10px;
+                font-size: 0.82rem;
+            }
+            .trig-pill-name { color: var(--text-primary); }
+            .trig-pill-x {
+                background: transparent; border: none; cursor: pointer;
+                color: var(--text-secondary); font-size: 1rem;
+                line-height: 1; padding: 0 6px; border-radius: 50%;
+            }
+            .trig-pill-x:hover { background: var(--color-error); color: #fff; }
+            .trig-empty {
+                color: var(--text-secondary); font-style: italic;
+                font-size: 0.82rem; padding: 2px 4px;
+            }
+            .trig-add-btn {
+                background: transparent; border: 1px dashed var(--border-color);
+                border-radius: 14px; padding: 3px 12px;
+                font-size: 0.82rem; cursor: pointer; color: var(--brand-primary);
+            }
+            .trig-add-btn:hover { background: var(--bg-secondary); border-style: solid; }
+            .trig-pick-row {
+                width: 100%; text-align: left;
+                background: var(--bg-card); border: 1px solid var(--border-color);
+                border-radius: 8px; padding: 10px 14px; cursor: pointer;
+            }
+            .trig-pick-row:hover { border-color: var(--brand-primary); background: var(--bg-card-hover); }
+            .trig-pick-name { font-weight: 600; color: var(--text-primary); }
+            .trig-pick-sub { font-size: 0.82rem; color: var(--text-secondary); margin-top: 3px; }
         </style>
 
         <!-- Sidebar overlay for mobile -->
@@ -2464,6 +2516,74 @@
         </div>
     </div>
 
+    <!-- ─── Email Triggers modal (Phase 5 of UNIFIED_MAILBOX_PLAN) ─── -->
+    <!-- Per-team config: when a lead enters a status (assigned, contacted,
+         qualified, ...), fire the configured email templates. Replaces the
+         old "campaigns" concept — bulk uploads, lifecycle nurturing, and
+         cadence all compose from this single rule. Source filter lets a
+         team's "Assigned" template differ between Facebook leads and
+         manually-added leads. -->
+    <div class="gm-overlay" id="triggersModal">
+        <div class="gm-modal" style="width: 1100px; max-width: 95vw;">
+            <div class="gm-header">
+                <h3 id="triggersModalTitle">Email triggers</h3>
+                <button class="gm-close" onclick="window.closeTriggersModal && closeTriggersModal()" aria-label="Close">&times;</button>
+            </div>
+            <div class="gm-body">
+                <details style="margin-bottom: 14px; padding: 10px 12px; background: var(--bg-card); border-radius: 8px;">
+                    <summary style="cursor:pointer; font-weight: 500; color: var(--text-secondary); font-size: 0.85rem;">What is this?</summary>
+                    <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                        Pick which email template fires when a lead enters a status on this team.
+                        Bulk imports auto-trigger via assignment; lifecycle progression triggers via
+                        rep actions. Same template never fires twice for the same lead — that's the
+                        idempotency guard.
+                        <ul style="margin: 8px 0 0 18px; padding: 0;">
+                            <li><strong>Lead source filter:</strong> "Any source" is the catch-all.
+                                Picking a specific source overrides the catch-all for that source —
+                                so Facebook leads can get a different template than Manual leads.</li>
+                            <li><strong>Multiple templates per status:</strong> add as many as you
+                                want; they fire in the order shown.</li>
+                            <li><strong>Future-only:</strong> changing a trigger doesn't fire emails
+                                for leads already in that status — only the next transition does.</li>
+                        </ul>
+                    </div>
+                </details>
+
+                <div class="crm-form-group">
+                    <label for="triggersSource">Lead source</label>
+                    <select class="form-control" id="triggersSource" onchange="window.refreshTriggersGrid && refreshTriggersGrid()">
+                        <option value="">Any source (catch-all)</option>
+                    </select>
+                    <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.78rem; margin: 4px 0 0;">
+                        Configure templates that fire for leads from this source. Leave on
+                        <em>Any source</em> for tenant-wide defaults.
+                    </p>
+                </div>
+
+                <div id="triggersGrid" style="margin-top: 18px;"></div>
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-secondary" onclick="window.closeTriggersModal && closeTriggersModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Add-template-to-trigger picker (modal-in-modal) ────────────── -->
+    <div class="gm-overlay" id="triggerPickTemplateModal">
+        <div class="gm-modal" style="max-width: 540px;">
+            <div class="gm-header">
+                <h3 id="triggerPickTemplateTitle">Pick a template</h3>
+                <button class="gm-close" onclick="window.closeTriggerPickTemplate && closeTriggerPickTemplate()" aria-label="Close">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div id="triggerPickTemplateList" style="display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto;"></div>
+                <div id="triggerPickTemplateEmpty" style="display:none; color: var(--text-secondary); padding: 14px; text-align:center;">
+                    No templates yet. Create one under the Templates tab first.
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ─── Wipe Confirmation Modal ─────────────────────────────── -->
     <div class="gm-overlay" id="wipeModal">
         <div class="gm-modal" style="max-width:520px;">
@@ -2635,6 +2755,18 @@
                 <div class="crm-form-group">
                     <label for="tmplSubject">Subject</label>
                     <input type="text" class="form-control" id="tmplSubject" placeholder="Hi {{first_name}}, quick note about {{company}}">
+                </div>
+                <div class="crm-form-group">
+                    <label for="tmplMailbox">Send from</label>
+                    <select class="form-control" id="tmplMailbox">
+                        <option value="">Tenant default mailbox</option>
+                    </select>
+                    <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.78rem; margin: 4px 0 0;">
+                        Pick the shared mailbox this template sends from. Leave on
+                        <em>Tenant default</em> to use whatever's set under the
+                        Mailboxes tab — handy if you want to swap the team's
+                        default later without editing every template.
+                    </p>
                 </div>
                 <div class="crm-form-group">
                     <label for="tmplBodyHtml">Body (HTML) <span class="muted">— variables auto-escape</span></label>
@@ -2876,6 +3008,7 @@
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/settings.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/teams-setup.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/team-email-triggers.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/mailboxes.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/email-templates.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/email-campaigns.js?v=' + CACHE_VERSION + '"><\/script>');

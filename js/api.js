@@ -116,7 +116,9 @@ class API {
         if (endpoint.startsWith('/crm/')
             || endpoint.startsWith('/mailbox-send/')
             || endpoint.startsWith('/email-templates')
-            || endpoint.startsWith('/email-campaigns')) {
+            || endpoint.startsWith('/email-campaigns')
+            || endpoint.startsWith('/lead-sources')
+            || endpoint.startsWith('/status-email-triggers')) {
             return CONFIG.crmApiBaseUrl;
         }
         // PMS endpoints go to PMS service (independent microservice)

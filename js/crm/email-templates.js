@@ -10,10 +10,19 @@
     let templates = [];
     let editingId = null;
 
+    let _mailboxIndex = {}; // id → email_address, for quick "Sends from" lookup
+
     window.loadTemplatesTab = async function () {
         try {
-            const resp = await api.request('/email-templates');
-            templates = (resp && resp.items) || [];
+            const [tplResp, mbResp] = await Promise.all([
+                api.request('/email-templates'),
+                api.request('/crm/mailbox-attachments/shared-mailboxes').catch(() => ({ mailboxes: [] })),
+            ]);
+            templates = (tplResp && tplResp.items) || [];
+            _mailboxIndex = {};
+            ((mbResp && mbResp.mailboxes) || []).forEach(m => {
+                _mailboxIndex[m.id] = m.email_address;
+            });
         } catch (e) {
             console.error('Failed to load templates:', e);
             templates = [];
@@ -38,9 +47,21 @@
         tbody.innerHTML = templates.map(t => {
             const vars = (t.variables_declared || []).map(v =>
                 `<span class="tmpl-chip">${escapeHtml(v)}</span>`).join(' ');
+            // Sends-from line: shows the picked mailbox, or a muted hint that
+            // the template falls back to the tenant default at fire time.
+            const mailboxId = t.mailbox_id || t.MailboxId;
+            const mailboxLabel = mailboxId
+                ? (_mailboxIndex[mailboxId] || '(deleted mailbox)')
+                : 'Tenant default';
+            const mailboxHint = mailboxId
+                ? `<span class="muted" style="font-size:0.78rem;">Sends from <strong>${escapeHtml(mailboxLabel)}</strong></span>`
+                : `<span class="muted" style="font-size:0.78rem; font-style:italic;">Sends from tenant default</span>`;
             return `
                 <tr>
-                    <td><strong>${escapeHtml(t.name)}</strong></td>
+                    <td>
+                        <strong>${escapeHtml(t.name)}</strong><br>
+                        ${mailboxHint}
+                    </td>
                     <td class="hide-mobile">${escapeHtml(t.subject || '—')}</td>
                     <td class="hide-mobile">${vars || '<span class="muted">—</span>'}</td>
                     <td>${new Date(t.updated_at).toLocaleDateString()}</td>
@@ -60,7 +81,7 @@
         document.getElementById('templateModalTitle').textContent =
             id ? 'Edit template' : 'New template';
 
-        let t = { name: '', subject: '', body_html: '', body_text: '' };
+        let t = { name: '', subject: '', body_html: '', body_text: '', mailbox_id: null };
         if (id) {
             try {
                 const resp = await api.request(`/email-templates/${id}`);
@@ -76,19 +97,48 @@
         document.getElementById('tmplBodyText').value = t.body_text || '';
         document.getElementById('tmplModalError').style.display = 'none';
 
+        // Phase 5: populate mailbox picker with shared mailboxes for this
+        // tenant. Selecting empty = use tenant default at fire time.
+        await populateMailboxOptions(t.mailbox_id || t.MailboxId || '');
+
         showModal('templateModal');
     };
+
+    async function populateMailboxOptions(selectedId) {
+        const sel = document.getElementById('tmplMailbox');
+        if (!sel) return;
+        // Reset to just the default option, then append shared mailboxes.
+        sel.innerHTML = '<option value="">Tenant default mailbox</option>';
+        try {
+            const resp = await api.request('/crm/mailbox-attachments/shared-mailboxes');
+            const mailboxes = (resp && resp.mailboxes) || [];
+            mailboxes.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                const inactive = m.is_active === false ? ' (inactive)' : '';
+                opt.textContent = `${m.email_address}${inactive}`;
+                if (m.is_active === false) opt.disabled = true;
+                sel.appendChild(opt);
+            });
+        } catch (e) {
+            console.warn('Failed to load shared mailboxes for template picker:', e);
+        }
+        sel.value = selectedId || '';
+    }
 
     window.closeTemplateModal = function () {
         hideModal('templateModal');
     };
 
     window.saveTemplate = async function () {
+        const mailboxValue = document.getElementById('tmplMailbox').value.trim();
         const payload = {
             name: document.getElementById('tmplName').value.trim(),
             subject: document.getElementById('tmplSubject').value,
             body_html: document.getElementById('tmplBodyHtml').value,
             body_text: document.getElementById('tmplBodyText').value,
+            // Empty string in the <select> means "use tenant default" → null.
+            mailbox_id: mailboxValue ? mailboxValue : null,
         };
         if (!payload.name) {
             showTmplError('Name is required.');
