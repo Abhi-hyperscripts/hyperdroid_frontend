@@ -651,11 +651,12 @@
                     <label class="form-label">Summary *</label>
                     <textarea id="activitySummary" class="form-control" rows="3" placeholder="What happened during this interaction?"></textarea>
                 </div>
-                <div style="margin-top:10px;">
-                    <label class="form-label">Call Duration (minutes)</label>
-                    <input type="number" id="activityCallDuration" class="form-control form-control-sm" placeholder="e.g. 15" min="0" max="999">
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+                <!-- Call Duration (40%) and Disposition (60%) on one row. -->
+                <div style="display:grid;grid-template-columns:2fr 3fr;gap:10px;margin-top:10px;">
+                    <div>
+                        <label class="form-label">Call Duration (minutes)</label>
+                        <input type="number" id="activityCallDuration" class="form-control form-control-sm" placeholder="e.g. 15" min="0" max="999">
+                    </div>
                     <div>
                         <label class="form-label">Disposition</label>
                         <select id="activityDisposition" class="form-select form-select-sm">
@@ -669,16 +670,13 @@
                             <option value="deal_in_progress">Deal In Progress</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="form-label">Next follow-up</label>
-                        <!-- Date + time as separate inputs (native time input works on Safari
-                             with a clear AM/PM toggle and lets users type "2:30 PM" directly).
-                             HRMSDatePicker.getDateTimeValue('activityNextFollowup') reads them
-                             together as "YYYY-MM-DDTHH:mm". -->
-                        <div style="display:grid;grid-template-columns:1fr 130px;gap:6px;">
-                            <input type="date" id="activityNextFollowup" class="form-control form-control-sm" placeholder="Date">
-                            <select id="activityNextFollowupTime" class="form-select form-select-sm" data-time-picker="true" data-time-step="15"></select>
-                        </div>
+                </div>
+                <!-- Next follow-up on its own row, full width (date + time side by side inside). -->
+                <div style="margin-top:10px;">
+                    <label class="form-label">Next follow-up</label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                        <input type="date" id="activityNextFollowup" class="form-control form-control-sm" placeholder="Date">
+                        <select id="activityNextFollowupTime" class="form-select form-select-sm" data-time-picker="true" data-time-step="15"></select>
                     </div>
                 </div>
             </div>
