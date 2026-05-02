@@ -4037,6 +4037,14 @@ body.crm-page #gsShareModal .gm-body:has(.searchable-dropdown.open) {
     align-items: center;
     justify-content: center;
 }
+/* Tighten the wrapper around the icon-only Columns button so the global
+ * `.crm-filter-bar .crm-filter-group { min-width: 160px }` doesn't pad an
+ * extra 128px of empty space next to a 32×32 control. The neighbouring
+ * .crm-search-group has flex:1 and absorbs the freed width. */
+.crm-filter-bar > .crm-filter-group:has(> .crm-columns-btn) {
+    min-width: 0;
+    flex: 0 0 auto;
+}
 .crm-columns-menu {
     position: absolute;
     top: calc(100% + 6px);
