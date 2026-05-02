@@ -2259,20 +2259,70 @@ async function startRecording() {
             });
         });
 
-        // Combine display video with meeting audio
+        // Combine display video with meeting audio.
         const combinedStream = new MediaStream();
-
-        // Add video track from screen capture
         videoTracks.forEach(track => combinedStream.addTrack(track));
 
-        // If display capture included audio, add it
-        displayStream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
+        // Mix every available audio source into a SINGLE track via Web Audio API.
+        //
+        // Why a mixed single track instead of just adding all source tracks:
+        //   1. MediaRecorder encodes only the FIRST audio track in a MediaStream
+        //      on most browsers — adding 2+ tracks silently drops everything
+        //      after track[0].
+        //   2. Chrome tab-audio capture on macOS frequently returns a silent
+        //      audio track when the user toggles "Also allow tab audio" on,
+        //      which makes the previous "if no display audio, fall back to
+        //      meeting audio" condition false even though the resulting
+        //      recording has no audible sound.
+        //   3. Chrome tab audio doesn't include the local mic anyway (it
+        //      captures what the tab PLAYS, not what your mic hears), so even
+        //      a working tab-audio track still misses your own voice.
+        //
+        // Sources mixed:
+        //   - Tab audio from getDisplayMedia (catches anything else playing
+        //     in the tab — beep sounds, screen shares from others, etc.)
+        //   - Local participant mic publication
+        //   - Every subscribed remote participant audio publication
+        let recordingAudioContext = null;
+        let mixedAudioTrack = null;
+        try {
+            recordingAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const mixDestination = recordingAudioContext.createMediaStreamDestination();
 
-        // Also mix in the meeting audio tracks
-        // Note: If tab audio is captured, we might get echo. User can mute tab audio in picker if needed.
-        if (audioTracks.length > 0 && displayStream.getAudioTracks().length === 0) {
-            // Only add meeting audio if display capture didn't include audio
-            audioTracks.forEach(track => combinedStream.addTrack(track));
+            const addToMix = (track, label) => {
+                if (!track || track.readyState !== 'live') return;
+                try {
+                    const src = recordingAudioContext.createMediaStreamSource(new MediaStream([track]));
+                    src.connect(mixDestination);
+                    console.log(`[Recording] Mixed audio source: ${label}`);
+                } catch (err) {
+                    console.warn(`[Recording] Failed to mix ${label}:`, err);
+                }
+            };
+
+            displayStream.getAudioTracks().forEach((t, i) => addToMix(t, `tab-audio[${i}]`));
+            audioTracks.forEach((t, i) => addToMix(t, `livekit-audio[${i}]`));
+
+            mixedAudioTrack = mixDestination.stream.getAudioTracks()[0] || null;
+
+            // Stash the AudioContext on the recorder scope so stopRecording can close it.
+            window._recordingAudioContext = recordingAudioContext;
+        } catch (err) {
+            console.error('[Recording] Audio mix setup failed, falling back to first available audio track:', err);
+        }
+
+        if (mixedAudioTrack) {
+            combinedStream.addTrack(mixedAudioTrack);
+        } else {
+            // Defensive fallback: if Web Audio API is unavailable for any reason,
+            // pick whichever single audio track we have (display first, then any LiveKit).
+            const fallbackAudio = displayStream.getAudioTracks()[0] || audioTracks[0] || null;
+            if (fallbackAudio) {
+                combinedStream.addTrack(fallbackAudio);
+                console.warn('[Recording] Using fallback single audio track (no mix).');
+            } else {
+                console.warn('[Recording] No audio sources available — recording will be silent.');
+            }
         }
 
         // Create MediaRecorder
@@ -2425,6 +2475,20 @@ async function stopRecording() {
         if (displayStream) {
             displayStream.getTracks().forEach(track => track.stop());
             displayStream = null;
+        }
+
+        // Close the recording AudioContext (created by startRecording for mixing).
+        // Without this, the AudioContext lingers and continues consuming audio frames
+        // from the LiveKit MediaStreamTracks even after recording stops.
+        if (window._recordingAudioContext) {
+            try {
+                if (window._recordingAudioContext.state !== 'closed') {
+                    window._recordingAudioContext.close();
+                }
+            } catch (err) {
+                console.warn('[Recording] Failed to close audio mix context:', err);
+            }
+            window._recordingAudioContext = null;
         }
 
         // Reset UI
