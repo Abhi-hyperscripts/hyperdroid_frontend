@@ -858,7 +858,10 @@ class API {
     }
 
     async getLiveParticipants(meetingId) {
-        return this.request(`/meetings/${meetingId}/live-participants`);
+        // Polled every 2s by the meeting page — must stay invisible.
+        // Without _skipSpinner the global doodle-spinner overlay paints over
+        // the entire meeting room on every poll.
+        return this.request(`/meetings/${meetingId}/live-participants`, { _skipSpinner: true });
     }
 
     async toggleAllowGuests(meetingId, value) {
