@@ -18,6 +18,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     Navigation.init('email', '../');
 
     document.getElementById('btnAddMailbox').addEventListener('click', () => openMailboxModal(null));
+    // Phase 6a — Connect Gmail kicks off the OAuth dance owned by EmailService.
+    // Identical UX to /pages/crm/my-mailbox.html (popup → consent → callback
+    // closes via postMessage), but here it's the canonical home for mailbox
+    // management. CRM's button stays as a convenience link for now.
+    const gmailBtn = document.getElementById('btnConnectGmail');
+    if (gmailBtn) gmailBtn.addEventListener('click', connectGmailOAuth);
     document.getElementById('mailboxModalClose').addEventListener('click', closeMailboxModal);
     document.getElementById('mailboxModal').addEventListener('click', e => {
         if (e.target.id === 'mailboxModal') closeMailboxModal();
@@ -340,4 +346,76 @@ function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     })[c]);
+}
+
+// ─── Phase 6a: Google OAuth connect flow ─────────────────────────────────
+//
+// Hits POST /email/google-oauth/authorize-url to mint a Google consent URL
+// (binds tenant + user via state row in oauth_state). Opens that URL in a
+// popup; the callback page (GoogleOAuthController.Callback) self-closes via
+// postMessage on success/failure. We listen, refresh the mailbox list on
+// success, and surface result via toast.
+async function connectGmailOAuth() {
+    const btn = document.getElementById('btnConnectGmail');
+    const originalText = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Connecting…'; }
+
+    let popup = null;
+    let closeWatcher = null;
+    const cleanup = () => {
+        window.removeEventListener('message', handler);
+        if (closeWatcher) clearInterval(closeWatcher);
+        if (btn) {
+            btn.disabled = false;
+            // Re-render is cheap; rebuild from scratch by re-running
+            // the parent click would re-init the SVG. Just restore text.
+            btn.textContent = originalText;
+        }
+    };
+    const handler = (e) => {
+        const d = e.data;
+        if (!d || typeof d !== 'object') return;
+        if (d.type === 'gmail-oauth-success') {
+            if (typeof showToast === 'function') showToast(d.message || 'Gmail connected', 'success');
+            else alert(d.message || 'Gmail connected');
+            if (typeof loadMailboxes === 'function') loadMailboxes();
+            cleanup();
+        } else if (d.type === 'gmail-oauth-error') {
+            if (typeof showToast === 'function') showToast(d.message || 'Gmail connection failed', 'error');
+            else alert(d.message || 'Gmail connection failed');
+            cleanup();
+        }
+    };
+    window.addEventListener('message', handler);
+
+    try {
+        const resp = await api.request('/email/google-oauth/authorize-url', {
+            method: 'POST',
+            body: JSON.stringify({ return_url: window.location.href }),
+        });
+        if (!resp || !resp.url) throw new Error('Server did not return a consent URL');
+
+        const w = 520, h = 640;
+        const left = window.screenX + (window.outerWidth - w) / 2;
+        const top  = window.screenY + (window.outerHeight - h) / 2;
+        popup = window.open(
+            resp.url, 'connect-gmail',
+            `width=${w},height=${h},left=${left},top=${top},toolbar=0,menubar=0,location=1,status=0`);
+
+        if (!popup) {
+            // Popup blocked — fall back to same-tab nav; user comes back here after consent.
+            cleanup();
+            window.location.href = resp.url;
+            return;
+        }
+
+        closeWatcher = setInterval(() => {
+            if (popup.closed) cleanup();
+        }, 500);
+    } catch (e) {
+        cleanup();
+        console.error('Gmail OAuth start failed:', e);
+        if (typeof showToast === 'function') showToast('Could not start Gmail connect: ' + (e.message || e), 'error');
+        else alert('Could not start Gmail connect: ' + (e.message || e));
+    }
 }

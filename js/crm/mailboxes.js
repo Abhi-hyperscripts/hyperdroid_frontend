@@ -39,8 +39,28 @@
 
     async function loadMailboxes() {
         try {
-            const resp = await api.request('/mailboxes');
-            mailboxes = (resp && resp.mailboxes) || [];
+            // Phase 0+ of unified-mailbox: source of truth moved from Auth
+            // → EmailService. /email/mailboxes returns the snake_case shape
+            // EmailService persists; we remap to the camelCase shape the
+            // existing renderer expects so we don't have to retro-fit every
+            // template at once.
+            const resp = await api.request('/email/mailboxes');
+            const raw = Array.isArray(resp) ? resp : ((resp && resp.mailboxes) || []);
+            mailboxes = raw.map(m => ({
+                id: m.id,
+                emailAddress: m.email_address,
+                displayName: m.display_name,
+                connectionType: m.provider_type,           // gmail_oauth | imap_smtp | m365_oauth
+                userId: m.user_id,
+                isActive: m.is_active,
+                isShared: m.is_shared,
+                isVerified: m.is_active && !m.last_error,  // EmailService doesn't track a separate "verified" bit
+                supportsIdle: m.supports_idle,
+                lastConnectedAt: m.last_connected_at,
+                lastError: m.last_error,
+                imapHost: m.imap_host,
+                smtpHost: m.smtp_host,
+            }));
         } catch (e) {
             console.error('Failed to load mailboxes:', e);
             mailboxes = [];
@@ -644,6 +664,12 @@
     // this file loads (document.write script order), so its dispatch to
     // loadMailboxesTab() misses. Run the init ourselves once this script is
     // parsed — covers both fresh nav and OAuth callback redirect.
+    // Phase 6a — the Gmail connect flow now lives canonically in
+    // EmailService (/pages/email/settings.html). The CRM button on
+    // /pages/crm/my-mailbox.html deep-links there instead of duplicating
+    // the OAuth dance. This avoids two surfaces drifting out of sync on
+    // mailbox state.
+
     function initIfActive() {
         const tab = document.getElementById('tab-mailboxes');
         if (tab && tab.classList.contains('active')) {

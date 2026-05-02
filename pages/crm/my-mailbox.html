@@ -110,13 +110,18 @@
                     </p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-primary" onclick="openConnectMailboxModal()">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;">
+                    <!-- Mailbox connection lives in EmailService (the canonical
+                         owner of mailboxes since Phase 0 of the unified-mailbox
+                         plan). This button used to open a CRM-side connect
+                         modal; now it deep-links to the EmailService settings
+                         page so connect/disconnect/list all live in one place. -->
+                    <a class="btn btn-primary" href="../email/settings.html" style="text-decoration:none;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; vertical-align:-2px;">
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                             <polyline points="22,6 12,13 2,6"/>
                         </svg>
-                        Connect Mailbox
-                    </button>
+                        Manage mailboxes
+                    </a>
                 </div>
             </div>
 
