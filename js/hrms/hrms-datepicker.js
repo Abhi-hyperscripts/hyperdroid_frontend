@@ -632,7 +632,18 @@
         const placeholder = el.dataset.timePlaceholder || 'Select time';
         const previousValue = el.value;
 
-        const opts = ['<option value="">' + placeholder + '</option>'];
+        // Set the placeholder via data-attribute so the SearchableDropdown
+        // auto-converter (auto-searchable-select.js) renders "Select time"
+        // when nothing's chosen instead of falling back to the first option's
+        // label (which would display "12:00 AM" as if it were a real choice).
+        if (!el.dataset.placeholder) el.dataset.placeholder = placeholder;
+
+        // Single empty <option> for the unselected state — required so the
+        // hidden native <select> has a "" value when the dropdown is empty.
+        // Label is intentionally blank (not the placeholder text), since the
+        // SearchableDropdown shows the data-placeholder above; matching them
+        // would double-render the placeholder.
+        const opts = ['<option value=""></option>'];
         for (let mins = 0; mins < 24 * 60; mins += step) {
             const h24 = Math.floor(mins / 60);
             const m   = mins % 60;
@@ -701,6 +712,26 @@
     }
 
     /**
+     * Validate a date/time pair. Use BEFORE submitting a form.
+     * Returns null if valid (both empty OR both filled), or an error string
+     * naming what's missing if the user filled only one of the two.
+     *
+     * Example:
+     *   const err = HRMSDatePicker.validateDateTimePair('activityNextFollowup', 'Next follow-up');
+     *   if (err) { Toast.error(err); return; }
+     */
+    function validateDateTimePair(baseId, fieldLabel) {
+        const dateEl = _dateEl(baseId);
+        const timeEl = _timeEl(baseId);
+        const hasDate = !!(dateEl && dateEl.value);
+        const hasTime = !!(timeEl && timeEl.value);
+        const label = fieldLabel || baseId;
+        if (hasTime && !hasDate) return 'Please pick a date for "' + label + '" — you only set the time.';
+        if (hasDate && !hasTime) return 'Please pick a time for "' + label + '" — you only set the date.';
+        return null;
+    }
+
+    /**
      * Set a date/time pair from a datetime-local-shaped or full ISO string.
      * Routes the date through Flatpickr's setDate() when the date input is
      * Flatpickr-managed; the time goes straight to the native time input.
@@ -738,6 +769,7 @@
         config: defaultConfig,
         getDateTimeValue: getDateTimeValue,
         setDateTimeValue: setDateTimeValue,
+        validateDateTimePair: validateDateTimePair,
         populateTimeSelect: populateTimeSelect,
         populateAllTimeSelects: populateAllTimeSelects
     };

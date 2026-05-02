@@ -233,6 +233,8 @@ async function loadCourseOptions() {
 async function scheduleSession() {
     const title = document.getElementById('sessionTitle').value.trim();
     const courseId = document.getElementById('sessionCourse').value;
+    const sessionErr = HRMSDatePicker.validateDateTimePair('sessionDate', 'Date & Time');
+    if (sessionErr) { showToast(sessionErr, 'error'); return; }
     const scheduledAt = HRMSDatePicker.getDateTimeValue('sessionDate');
     const duration = parseInt(document.getElementById('sessionDuration').value) || 60;
     const description = document.getElementById('sessionDescription').value.trim();

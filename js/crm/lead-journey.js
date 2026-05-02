@@ -138,6 +138,12 @@
         const summary = document.getElementById('activitySummary').value.trim();
         if (!summary) { Toast.error('Summary is required'); return; }
 
+        // Reject "time picked but date empty" (or vice versa) — backend would
+        // silently drop a half-set follow-up, leaving the user thinking they
+        // scheduled one when they didn't.
+        const followupErr = HRMSDatePicker.validateDateTimePair('activityNextFollowup', 'Next follow-up');
+        if (followupErr) { Toast.error(followupErr); return; }
+
         const actType = document.getElementById('activityType').value;
         const outcome = document.getElementById('activityOutcome').value;
         const disposition = document.getElementById('activityDisposition').value;
@@ -795,6 +801,8 @@
 
     async function submitScheduleFollowup() {
         if (!_followupLeadId) return;
+        const followupErr2 = HRMSDatePicker.validateDateTimePair('followupDateTime', 'Date & time');
+        if (followupErr2) { Toast.error(followupErr2); return; }
         const dt = HRMSDatePicker.getDateTimeValue('followupDateTime');
         if (!dt) { Toast.error('Date & time is required'); return; }
         const fType = document.getElementById('followupType').value;

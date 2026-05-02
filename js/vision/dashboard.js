@@ -4410,6 +4410,12 @@ async function saveMeetingSettings() {
     const meetingMode = aiSupport ? document.getElementById('settingsMeetingMode').value : null;
     const newProjectId = settingsProjectSD ? settingsProjectSD.getValue() : null;
     // Flatpickr stores values as "YYYY-MM-DD HH:mm" — helper returns "YYYY-MM-DDTHH:mm".
+    // Reject "time picked but date empty" (or vice versa) before reading
+    // values — half-set datetimes get silently dropped server-side otherwise.
+    const startErr = HRMSDatePicker.validateDateTimePair('settingsStartTime', 'Start');
+    if (startErr) { Toast.warning(startErr); return; }
+    const endErr = HRMSDatePicker.validateDateTimePair('settingsEndTime', 'End');
+    if (endErr) { Toast.warning(endErr); return; }
     const startTimeVal = HRMSDatePicker.getDateTimeValue('settingsStartTime');
     const endTimeVal = HRMSDatePicker.getDateTimeValue('settingsEndTime');
 
