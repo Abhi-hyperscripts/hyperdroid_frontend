@@ -24,10 +24,20 @@
 </head>
 <body>
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
-    <!-- Global app nav intentionally omitted in the meeting room (Google Meet style):
-         clicking Home/Drive/etc. would navigate the user out of an active call.
-         Profile / settings / leave are reachable from the meeting toolbar at the bottom. -->
-    <div class="meeting-container">
+    <!-- Meeting room nav: brand logo only. The user-avatar dropdown is intentionally
+         NOT rendered here (we don't load navigation.js or call Navigation.init) — its
+         menu items (Home, Drive, HRMS, etc.) would navigate the user out of an active
+         call. The empty .navbar-menu stays empty by design; profile/leave are on the
+         meeting toolbar at the bottom. -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+    <div class="meeting-container meeting-container-with-nav">
 
         <div class="meeting-main">
             <!-- Screen share container (hidden by default) -->
