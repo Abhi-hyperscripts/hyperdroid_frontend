@@ -3783,7 +3783,9 @@ body.dark-theme .settings-menu,
 .participants-header h3 {
     font-size: 14px;
     font-weight: 600;
-    color: var(--overlay-near-opaque);
+    /* --overlay-* are black-with-alpha decorative overlays, NOT text colors —
+       they made the title invisible on dark mode (black on dark navy bg). */
+    color: var(--text-primary);
     margin: 0;
 }
 
@@ -3795,7 +3797,7 @@ body.dark-theme .settings-menu,
     border-radius: 50%;
     border: none;
     background: var(--hover-overlay-medium);
-    color: var(--overlay-dark);
+    color: var(--text-secondary);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -3808,7 +3810,7 @@ body.dark-theme .settings-menu,
 
 .participants-header .close-btn:hover {
     background: var(--hover-overlay-strong);
-    color: var(--overlay-darkest);
+    color: var(--text-primary);
 }
 
 .participants-search {
@@ -3820,7 +3822,7 @@ body.dark-theme .settings-menu,
 }
 
 .participants-search svg {
-    color: var(--overlay-medium-strong);
+    color: var(--text-muted);
     flex-shrink: 0;
     width: 14px;
     height: 14px;
@@ -3832,14 +3834,14 @@ body.dark-theme .settings-menu,
     border: none;
     border-radius: 6px;
     padding: 8px 10px;
-    color: var(--overlay-near-opaque);
+    color: var(--text-primary);
     font-size: 12px;
     outline: none;
     transition: all 0.15s ease;
 }
 
 .participants-search input::placeholder {
-    color: var(--overlay-medium-strong);
+    color: var(--text-muted);
 }
 
 .participants-search input:focus {
@@ -3953,7 +3955,7 @@ body.dark-theme .settings-menu,
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    color: var(--overlay-almost-opaque);
+    color: var(--text-primary);
     font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
@@ -3966,7 +3968,7 @@ body.dark-theme .settings-menu,
 
 .participant-status {
     font-size: 11px;
-    color: var(--overlay-dark);
+    color: var(--text-secondary);
     margin-top: 2px;
 }
 
@@ -3999,7 +4001,7 @@ body.dark-theme .settings-menu,
     align-items: center;
     justify-content: center;
     transition: all 0.15s ease;
-    color: var(--overlay-medium-dark);
+    color: var(--text-secondary);
 }
 
 .participant-control-btn:hover {
