@@ -19,9 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('btnAddMailbox').addEventListener('click', () => openMailboxModal(null));
     // Phase 6a — Connect Gmail kicks off the OAuth dance owned by EmailService.
-    // Identical UX to /pages/crm/my-mailbox.html (popup → consent → callback
-    // closes via postMessage), but here it's the canonical home for mailbox
-    // management. CRM's button stays as a convenience link for now.
+    // Popup → consent → callback closes via postMessage.
     const gmailBtn = document.getElementById('btnConnectGmail');
     if (gmailBtn) gmailBtn.addEventListener('click', connectGmailOAuth);
     document.getElementById('mailboxModalClose').addEventListener('click', closeMailboxModal);

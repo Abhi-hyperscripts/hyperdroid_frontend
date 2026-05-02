@@ -664,11 +664,6 @@
     // this file loads (document.write script order), so its dispatch to
     // loadMailboxesTab() misses. Run the init ourselves once this script is
     // parsed — covers both fresh nav and OAuth callback redirect.
-    // Phase 6a — the Gmail connect flow now lives canonically in
-    // EmailService (/pages/email/settings.html). The CRM button on
-    // /pages/crm/my-mailbox.html deep-links there instead of duplicating
-    // the OAuth dance. This avoids two surfaces drifting out of sync on
-    // mailbox state.
 
     function initIfActive() {
         const tab = document.getElementById('tab-mailboxes');
