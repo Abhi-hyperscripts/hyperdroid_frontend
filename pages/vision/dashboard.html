@@ -514,12 +514,18 @@
                         <div class="settings-schedule-inputs">
                             <div class="schedule-field">
                                 <small>Start</small>
-                                <!-- Flatpickr-managed (HRMSDatePicker auto-init via type="date" + data-enable-time). -->
-                                <input type="date" id="settingsStartTime" class="form-control" data-enable-time="true">
+                                <!-- Date + native time input pair (read via HRMSDatePicker.getDateTimeValue). -->
+                                <div style="display:grid;grid-template-columns:1fr 110px;gap:6px;">
+                                    <input type="date" id="settingsStartTime" class="form-control">
+                                    <input type="time" id="settingsStartTimeTime" class="form-control">
+                                </div>
                             </div>
                             <div class="schedule-field">
                                 <small>End</small>
-                                <input type="date" id="settingsEndTime" class="form-control" data-enable-time="true">
+                                <div style="display:grid;grid-template-columns:1fr 110px;gap:6px;">
+                                    <input type="date" id="settingsEndTime" class="form-control">
+                                    <input type="time" id="settingsEndTimeTime" class="form-control">
+                                </div>
                             </div>
                         </div>
                     </div>

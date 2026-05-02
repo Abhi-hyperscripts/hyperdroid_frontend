@@ -612,53 +612,68 @@
     // Auto-initialize when script loads
     autoInit();
 
-    // ─── Helpers for datetime-with-time inputs ───────────────────────────
+    // ─── Helpers for date+time pairs ─────────────────────────────────────
     //
     // Why these exist: <input type="datetime-local"> renders a calendar-only
-    // popup on macOS Safari (no time controls) — users can't change the time.
-    // Replacing it with <input type="date" data-enable-time="true"> lets
-    // Flatpickr/HRMSDatePicker handle the picker (with time), but Flatpickr
-    // formats values as "Y-m-d H:i" (space separator) while the rest of our
-    // codebase expects datetime-local's "YYYY-MM-DDTHH:mm" format. These
-    // helpers do the format conversion + transparently use the Flatpickr API
-    // when an input is Flatpickr-managed.
+    // popup on macOS Safari (no time controls). Flatpickr with enableTime
+    // works but its time UI is hard to use (AM/PM toggle isn't obvious, and
+    // the spinner inputs are tedious to scroll). Best UX is TWO separate
+    // inputs:
+    //   - <input type="date" id="X">       (Flatpickr-managed, calendar)
+    //   - <input type="time" id="XTime">   (native — works on every browser
+    //                                       including Safari, lets users TYPE
+    //                                       the time directly)
+    //
+    // These helpers read/write the pair as a single datetime-local-shaped
+    // string ("YYYY-MM-DDTHH:mm") so calling code can treat it as one field.
 
-    function _resolve(idOrEl) {
-        return typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+    function _dateEl(baseId) { return document.getElementById(baseId); }
+    function _timeEl(baseId) { return document.getElementById(baseId + 'Time'); }
+
+    /**
+     * Read a date/time pair as "YYYY-MM-DDTHH:mm" (datetime-local format).
+     * Returns "" if the date input is empty.
+     * If the time input is empty, defaults to "00:00".
+     */
+    function getDateTimeValue(baseId) {
+        const dateEl = _dateEl(baseId);
+        if (!dateEl || !dateEl.value) return '';
+        // Flatpickr's date-only format is "Y-m-d", which is the same as
+        // <input type="date"> native value — both yield "YYYY-MM-DD".
+        const date = dateEl.value.split(' ')[0].split('T')[0];
+        const timeEl = _timeEl(baseId);
+        const time = (timeEl && timeEl.value) ? timeEl.value : '00:00';
+        return date + 'T' + time;
     }
 
     /**
-     * Read a date+time input as "YYYY-MM-DDTHH:mm" (datetime-local format).
-     * Works for both Flatpickr-managed inputs and plain <input type="datetime-local">.
+     * Set a date/time pair from a datetime-local-shaped or full ISO string.
+     * Routes the date through Flatpickr's setDate() when the date input is
+     * Flatpickr-managed; the time goes straight to the native time input.
+     * Pass empty string / null to clear both.
      */
-    function getDateTimeValue(idOrEl) {
-        const el = _resolve(idOrEl);
-        if (!el || !el.value) return '';
-        // Flatpickr with dateFormat 'Y-m-d H:i' yields "YYYY-MM-DD HH:mm" — swap
-        // the separator so callers can keep using datetime-local-shaped strings.
-        return el.value.replace(' ', 'T');
-    }
+    function setDateTimeValue(baseId, value) {
+        const dateEl = _dateEl(baseId);
+        const timeEl = _timeEl(baseId);
 
-    /**
-     * Set a date+time input from a datetime-local-shaped or full ISO string.
-     * Routes through Flatpickr's setDate() when present (so the visible
-     * altInput updates), otherwise falls back to assigning .value.
-     * Pass empty string / null to clear.
-     */
-    function setDateTimeValue(idOrEl, value) {
-        const el = _resolve(idOrEl);
-        if (!el) return;
         if (!value) {
-            if (el._flatpickr) el._flatpickr.clear();
-            else el.value = '';
+            if (dateEl && dateEl._flatpickr) dateEl._flatpickr.clear();
+            else if (dateEl) dateEl.value = '';
+            if (timeEl) timeEl.value = '';
             return;
         }
-        if (el._flatpickr) {
-            // Flatpickr accepts ISO strings (with "T") and Date objects natively.
-            el._flatpickr.setDate(value, false);
-        } else {
-            el.value = value;
+
+        // Accept "YYYY-MM-DDTHH:mm[anything]" or "YYYY-MM-DD HH:mm[anything]"
+        const normalized = String(value).replace(' ', 'T');
+        const parts = normalized.split('T');
+        const date = parts[0];
+        const time = parts[1] ? parts[1].slice(0, 5) : '';
+
+        if (dateEl) {
+            if (dateEl._flatpickr) dateEl._flatpickr.setDate(date, false);
+            else dateEl.value = date;
         }
+        if (timeEl) timeEl.value = time;
     }
 
     // Expose functions globally for manual initialization

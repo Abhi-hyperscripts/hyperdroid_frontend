@@ -671,10 +671,14 @@
                     </div>
                     <div>
                         <label class="form-label">Next follow-up</label>
-                        <!-- type="date" + data-enable-time="true" routes through HRMSDatePicker
-                             (Flatpickr) which renders BOTH date and time controls — required
-                             because native datetime-local on macOS Safari has no time picker. -->
-                        <input type="date" id="activityNextFollowup" class="form-control form-control-sm" data-enable-time="true">
+                        <!-- Date + time as separate inputs (native time input works on Safari
+                             with a clear AM/PM toggle and lets users type "2:30 PM" directly).
+                             HRMSDatePicker.getDateTimeValue('activityNextFollowup') reads them
+                             together as "YYYY-MM-DDTHH:mm". -->
+                        <div style="display:grid;grid-template-columns:1fr 130px;gap:6px;">
+                            <input type="date" id="activityNextFollowup" class="form-control form-control-sm" placeholder="Date">
+                            <input type="time" id="activityNextFollowupTime" class="form-control form-control-sm">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -866,7 +870,10 @@
                 </div>
                 <div style="margin-top:10px;">
                     <label class="form-label">Date & Time *</label>
-                    <input type="date" id="followupDateTime" class="form-control form-control-sm" data-enable-time="true">
+                    <div style="display:grid;grid-template-columns:1fr 130px;gap:6px;">
+                        <input type="date" id="followupDateTime" class="form-control form-control-sm" placeholder="Date">
+                        <input type="time" id="followupDateTimeTime" class="form-control form-control-sm">
+                    </div>
                 </div>
                 <div style="margin-top:10px;">
                     <label class="form-label">Notes</label>

@@ -113,7 +113,10 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="sessionDate">Date & Time</label>
-                    <input type="date" id="sessionDate" class="form-input" data-enable-time="true">
+                    <div style="display:grid;grid-template-columns:1fr 130px;gap:6px;">
+                        <input type="date" id="sessionDate" class="form-input">
+                        <input type="time" id="sessionDateTime" class="form-input">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="sessionDuration">Duration (minutes)</label>
