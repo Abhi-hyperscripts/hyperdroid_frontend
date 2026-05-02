@@ -770,6 +770,11 @@
         getDateTimeValue: getDateTimeValue,
         setDateTimeValue: setDateTimeValue,
         validateDateTimePair: validateDateTimePair,
+        // Clear a date/time pair — convenience alias for setDateTimeValue(baseId, '').
+        // Wire to a small "× Clear" button next to the field label so users can
+        // unset a mistakenly-picked value (Flatpickr / SearchableDropdown don't
+        // expose a built-in deselect path).
+        clearDateTimePair: function (baseId) { setDateTimeValue(baseId, ''); },
         populateTimeSelect: populateTimeSelect,
         populateAllTimeSelects: populateAllTimeSelects
     };
