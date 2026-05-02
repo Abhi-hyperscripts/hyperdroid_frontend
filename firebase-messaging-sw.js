@@ -1,6 +1,24 @@
 // ============================================================
-// Ragenaizer Service Worker  [BUILD 37]
-// Handles: Push Notifications (Firebase), Asset Caching, Version Updates
+// Ragenaizer Service Worker  [BUILD 38 — KILL SWITCH]
+//
+// ⚠️ This is an EMERGENCY recovery build. Earlier BUILD 35 broke the
+// Request constructor for navigate-mode page loads, leaving live users
+// with a SW that prevented every ragenaizer.com page from rendering
+// (Safari "Can't Open the Page", Chrome hung-spinner). Even after the
+// fixed BUILD 36/37 was deployed, browsers still controlled by an old
+// broken SW couldn't recover automatically — the broken SW kept
+// intercepting requests.
+//
+// This build is a kill switch:
+//   - NO fetch interception (browser handles all requests natively)
+//   - On activate: delete every ragenaizer-* cache, unregister itself,
+//     and reload every controlled tab so they bypass the dead SW.
+//
+// Push handler is preserved so FCM still delivers.
+//
+// Re-introduce a real caching SW only after live users have recovered
+// (~24-48h to be safe), and roll any future fetch-interception change
+// out behind a feature flag with a tested staging deploy first.
 // ============================================================
 
 // ── App Version (single source of truth: /js/sw-version.js) ──
@@ -60,164 +78,78 @@ const NO_CACHE_PATTERNS = [
 let versionCheckTimer = null;
 
 // ============================================================
-// INSTALL — Pre-cache core assets, activate immediately
+// INSTALL — Skip pre-caching. The SW is about to die anyway.
 // ============================================================
 self.addEventListener('install', (event) => {
-    console.log(`[SW] Installing v${APP_VERSION}`);
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => {
-                console.log(`[SW] Pre-caching ${PRECACHE_ASSETS.length} assets`);
-                // Use addAll but don't fail install if some assets 404
-                return Promise.allSettled(
-                    PRECACHE_ASSETS.map((url) =>
-                        cache.add(url).catch((err) => {
-                            console.warn(`[SW] Failed to pre-cache: ${url}`, err.message);
-                        })
-                    )
-                );
-            })
-            .then(() => self.skipWaiting())
-    );
+    console.log(`[SW] [KILL SWITCH] Installing v${APP_VERSION}`);
+    event.waitUntil(self.skipWaiting());
 });
 
 // ============================================================
-// ACTIVATE — Clean old caches, claim clients, start version check
+// ACTIVATE — Wipe all caches, unregister self, reload every tab.
+//
+// This is the recovery path: existing browsers' SW.update() polling
+// fetches this SW, which then removes itself and forces affected tabs
+// to reload without any SW interception.
 // ============================================================
 self.addEventListener('activate', (event) => {
-    console.log(`[SW] Activating v${APP_VERSION}`);
-    event.waitUntil(
-        caches.keys()
-            .then((cacheNames) => {
-                return Promise.all(
-                    cacheNames
-                        .filter((name) => name.startsWith('ragenaizer-') && name !== CACHE_NAME)
-                        .map((name) => {
-                            console.log(`[SW] Deleting old cache: ${name}`);
-                            return caches.delete(name);
-                        })
-                );
-            })
-            .then(() => self.clients.claim())
-            .then(() => startVersionCheckLoop())
-    );
-});
-
-// ============================================================
-// FETCH — Network-first for everything (HTML, CSS, JS, images).
-// Cache is purely an offline fallback.
-//
-// Why not stale-while-revalidate (the previous strategy for CSS/JS)?
-//
-//   SWR returned the cached file immediately and refreshed it in the
-//   background — so the page rendered with the OLD content, and only
-//   the NEXT reload picked up the new file. Combined with stripping
-//   the ?v= query for cache matching, this meant every CSS/JS deploy
-//   reached users one reload late, even when SW_VERSION was bumped.
-//   Users in a long-running meeting tab could see stale UI for hours.
-//
-//   Network-first eliminates the race: every reload pulls fresh
-//   content. The HTTP layer (ETag / Last-Modified / 304) keeps the
-//   cost ~free for unchanged files. Cache only kicks in when the
-//   network is actually unreachable (true offline).
-// ============================================================
-self.addEventListener('fetch', (event) => {
-    const url = new URL(event.request.url);
-
-    // Skip non-GET requests
-    if (event.request.method !== 'GET') return;
-
-    // Skip requests that should never be cached
-    if (NO_CACHE_PATTERNS.some((pattern) => pattern.test(event.request.url))) return;
-
-    // Skip cross-origin requests (CDNs, APIs, etc.)
-    if (url.origin !== self.location.origin) return;
-
-    // HTML pages
-    if (event.request.headers.get('accept')?.includes('text/html') || url.pathname.endsWith('.html')) {
-        event.respondWith(safeRespond(event.request));
-        return;
-    }
-
-    // JS, CSS, images, fonts — same network-first strategy as HTML.
-    if (/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp)$/.test(url.pathname)) {
-        event.respondWith(safeRespond(event.request));
-        return;
-    }
-});
-
-// Defensive wrapper: if the strategy throws (e.g. a bad cache key, a Request
-// constructor that rejects the input mode, etc.), fall through to a plain
-// native fetch so the page still loads. Without this, ANY bug in the SW
-// strategy code becomes a full-site outage. fetch() inside a SW does not
-// re-enter the SW, so this is safe.
-async function safeRespond(request) {
-    try {
-        return await networkFirstStrategy(request);
-    } catch (err) {
-        console.error('[SW] Strategy failed, falling through to native fetch:', err);
+    console.log(`[SW] [KILL SWITCH] Activating v${APP_VERSION} — wiping caches and unregistering`);
+    event.waitUntil((async () => {
+        // 1. Wipe every cache we own. Removes the broken-SW-era entries.
         try {
-            return await fetch(request);
-        } catch (netErr) {
-            // Both strategy and native fetch failed — let the browser surface
-            // its standard offline/error page rather than hanging.
-            throw netErr;
+            const cacheNames = await caches.keys();
+            await Promise.all(
+                cacheNames
+                    .filter((name) => name.startsWith('ragenaizer-'))
+                    .map((name) => {
+                        console.log(`[SW] Deleting cache: ${name}`);
+                        return caches.delete(name);
+                    })
+            );
+        } catch (err) {
+            console.warn('[SW] Cache wipe failed:', err);
         }
-    }
-}
 
-// ── Network First ──
-// Always try network. Cache the result under a query-stripped key so
-// cache entries are reused across `?v=` cache-busts and serve offline.
-async function networkFirstStrategy(request) {
-    const cacheKey = stripVersionQuery(request);
-    try {
-        const networkResponse = await fetch(request);
-        if (networkResponse.ok) {
-            const cache = await caches.open(CACHE_NAME);
-            // Use the stripped key so the next ?v= load can find this entry offline.
-            cache.put(cacheKey, networkResponse.clone());
+        // 2. Take control of any existing client so we can navigate them.
+        try {
+            await self.clients.claim();
+        } catch (err) {
+            console.warn('[SW] clients.claim failed:', err);
         }
-        return networkResponse;
-    } catch (err) {
-        const cachedResponse = await caches.match(cacheKey);
-        if (cachedResponse) {
-            console.log(`[SW] Serving from cache (offline): ${request.url}`);
-            return cachedResponse;
-        }
-        throw err;
-    }
-}
 
-// Strip ?v=timestamp query param for consistent cache keys.
-//
-// CRITICAL: Top-level page navigations have request.mode === 'navigate', and
-// per the Fetch spec the Request() constructor REJECTS that mode (only the
-// browser can create navigate-mode Requests). Copying it through here throws
-// TypeError, which propagates out of FetchEvent.respondWith and makes Safari
-// (and Chrome) refuse to render ANY page — full-site outage.
-//
-// For navigate requests we return the original Request unchanged; the cache
-// key just becomes the full URL. That's fine because navigations don't carry
-// ?v= cache-bust queries anyway (only assets loaded by versioned <link>/
-// <script> tags do).
-function stripVersionQuery(request) {
-    if (request.mode === 'navigate') {
-        return request;
-    }
-    const url = new URL(request.url);
-    if (!url.searchParams.has('v')) {
-        return request; // No-op fast path — most requests don't carry ?v=
-    }
-    url.searchParams.delete('v');
-    return new Request(url.toString(), {
-        method: request.method,
-        headers: request.headers,
-        mode: request.mode,
-        credentials: request.credentials,
-        redirect: request.redirect,
-    });
-}
+        // 3. Reload every controlled tab. After reload they request the
+        //    page natively (we have no fetch handler) and load fresh.
+        try {
+            const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+            for (const client of allClients) {
+                try {
+                    await client.navigate(client.url);
+                } catch (navErr) {
+                    // navigate() may fail across-origin or for cross-process clients.
+                    // Fall back to a postMessage; sw-update.js handles RELOAD_NOW.
+                    try { client.postMessage({ type: 'RELOAD_NOW', reason: 'sw-kill-switch' }); } catch (_) {}
+                }
+            }
+        } catch (err) {
+            console.warn('[SW] Client reload failed:', err);
+        }
+
+        // 4. Unregister self so no SW intercepts ragenaizer.com any more.
+        try {
+            await self.registration.unregister();
+            console.log('[SW] Unregistered. Site will run without a SW until a new one is registered.');
+        } catch (err) {
+            console.warn('[SW] Self-unregister failed:', err);
+        }
+    })());
+});
+
+// ============================================================
+// FETCH — Intentionally NOT registered.
+// With no fetch handler, the browser handles every request natively
+// (no SW interception, no caching, no broken-SW failure mode).
+// ============================================================
+// (no listener)
 
 // ============================================================
 // VERSION CHECK — Fetch /js/sw-version.js every 30 seconds, parse SW_VERSION

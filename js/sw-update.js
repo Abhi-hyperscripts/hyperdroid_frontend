@@ -16,14 +16,26 @@
 
     let reloading = false;
 
-    // Register the service worker immediately on every page
-    // Cache-buster query param forces Chrome Android to bypass V8 bytecode cache.
-    // Chrome aggressively caches compiled SW code and reuses it even after unregister+reregister.
-    // Changing the script URL is the ONLY reliable way to force fresh code on Android.
-    // Bump cb=N when shipping changes to firebase-messaging-sw.js itself.
-    // Chrome aggressively caches compiled SW code; the only reliable way to
-    // make Chrome fetch a new SW source file is to change its URL.
-    var swUrl = '/firebase-messaging-sw.js?cb=5';
+    // ⚠️ EMERGENCY: SW registration is DISABLED.
+    //
+    // BUILD 35 of firebase-messaging-sw.js shipped a Request-constructor bug
+    // that bricked the entire site for any browser controlled by it. To
+    // recover live users we deployed a kill-switch SW (BUILD 38) that
+    // unregisters itself on activate. Re-registering a new SW here would
+    // immediately resurrect it (and re-trigger the kill loop on every load).
+    //
+    // Existing users get the kill-switch via the browser's automatic
+    // SW.update() polling (browser-internal, doesn't need this code path).
+    // After the kill-switch fires, their site runs SW-free — which is fine:
+    // HTTP cache handles asset caching; FCM push is the only real loss and
+    // can be re-introduced once we have a tested, gated SW deploy pipeline.
+    //
+    // Listen for kill-switch reload messages even though we don't register.
+    listenForSwMessages();
+    return;
+
+    // ── Original registration code (intentionally unreachable) ────────────
+    var swUrl = '/firebase-messaging-sw.js?cb=6';
     navigator.serviceWorker.register(swUrl, {
         scope: '/',
         updateViaCache: 'none'
@@ -61,19 +73,32 @@
         console.warn('[SW] Registration failed:', err);
     });
 
-    // Listen for version update messages from the SW
-    navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data?.type === 'APP_UPDATE_AVAILABLE' && !reloading) {
-            reloading = true;
-            console.log(`[Update] Auto-updating: v${event.data.currentVersion} → v${event.data.newVersion}`);
+    // Listen for version update messages from the SW.
+    // Pulled into a function so the disabled-registration early-return path
+    // can still install this handler — kill-switch SW posts RELOAD_NOW.
+    function listenForSwMessages() {
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            if (event.data?.type === 'APP_UPDATE_AVAILABLE' && !reloading) {
+                reloading = true;
+                console.log(`[Update] Auto-updating: v${event.data.currentVersion} → v${event.data.newVersion}`);
 
-            if (navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage('SKIP_WAITING');
+                if (navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage('SKIP_WAITING');
+                }
+
+                window.location.reload();
             }
 
-            window.location.reload();
-        }
-    });
+            // Kill-switch SW (BUILD 38) sends this after unregistering itself.
+            // Force a reload so the page bypasses any leftover broken SW state.
+            if (event.data?.type === 'RELOAD_NOW' && !reloading) {
+                reloading = true;
+                console.log('[Update] SW kill switch fired:', event.data.reason);
+                window.location.reload();
+            }
+        });
+    }
+    listenForSwMessages();
 
     // When a new SW takes control, reload to use its cache
     navigator.serviceWorker.addEventListener('controllerchange', () => {
