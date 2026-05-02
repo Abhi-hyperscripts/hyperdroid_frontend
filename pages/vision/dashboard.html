@@ -517,14 +517,14 @@
                                 <!-- Date + native time input pair (read via HRMSDatePicker.getDateTimeValue). -->
                                 <div style="display:grid;grid-template-columns:1fr 110px;gap:6px;">
                                     <input type="date" id="settingsStartTime" class="form-control">
-                                    <input type="time" id="settingsStartTimeTime" class="form-control">
+                                    <select id="settingsStartTimeTime" class="form-select" data-time-picker="true" data-time-step="15"></select>
                                 </div>
                             </div>
                             <div class="schedule-field">
                                 <small>End</small>
                                 <div style="display:grid;grid-template-columns:1fr 110px;gap:6px;">
                                     <input type="date" id="settingsEndTime" class="form-control">
-                                    <input type="time" id="settingsEndTimeTime" class="form-control">
+                                    <select id="settingsEndTimeTime" class="form-select" data-time-picker="true" data-time-step="15"></select>
                                 </div>
                             </div>
                         </div>

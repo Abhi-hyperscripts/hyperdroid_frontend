@@ -612,6 +612,60 @@
     // Auto-initialize when script loads
     autoInit();
 
+    // ─── Time-of-day select population ───────────────────────────────────
+    //
+    // Pattern: pair a Flatpickr-managed <input type="date"> with a
+    // <select data-time-picker="true"> sibling. populateTimeSelect() fills
+    // the select with HH:mm options at the requested interval (default
+    // 15 min). The codebase's auto-searchable-select.js then converts the
+    // <select> into a styled SearchableDropdown — gives users a clean
+    // dropdown they can search by typing "2:30" etc.
+    //
+    // Why a populated <select> rather than <input type="time">: the native
+    // time input shows OS-provided spinners that users find tedious, and
+    // the AM/PM toggle isn't visually obvious. A dropdown of common times
+    // is faster.
+
+    function populateTimeSelect(el, intervalMinutes) {
+        if (!el || el.tagName !== 'SELECT' || el.dataset.timePopulated === 'true') return;
+        const step = Math.max(1, parseInt(intervalMinutes || el.dataset.timeStep || '15', 10));
+        const placeholder = el.dataset.timePlaceholder || 'Select time';
+        const previousValue = el.value;
+
+        const opts = ['<option value="">' + placeholder + '</option>'];
+        for (let mins = 0; mins < 24 * 60; mins += step) {
+            const h24 = Math.floor(mins / 60);
+            const m   = mins % 60;
+            const ampm = h24 >= 12 ? 'PM' : 'AM';
+            const h12 = ((h24 + 11) % 12) + 1;
+            const value = String(h24).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+            const label = h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
+            opts.push('<option value="' + value + '">' + label + '</option>');
+        }
+        el.innerHTML = opts.join('');
+        el.dataset.timePopulated = 'true';
+        if (previousValue) el.value = previousValue;
+    }
+
+    function populateAllTimeSelects(root) {
+        const scope = root || document;
+        scope.querySelectorAll('select[data-time-picker="true"]').forEach(el => populateTimeSelect(el));
+    }
+
+    // Run once on script load + watch for dynamically-added time selects.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => populateAllTimeSelects());
+    } else {
+        populateAllTimeSelects();
+    }
+    new MutationObserver(muts => {
+        muts.forEach(m => m.addedNodes.forEach(node => {
+            if (node.nodeType !== 1) return;
+            if (node.matches && node.matches('select[data-time-picker="true"]')) populateTimeSelect(node);
+            else if (node.querySelectorAll) populateAllTimeSelects(node);
+        }));
+    }).observe(document.body || document.documentElement, { childList: true, subtree: true });
+
     // ─── Helpers for date+time pairs ─────────────────────────────────────
     //
     // Why these exist: <input type="datetime-local"> renders a calendar-only
@@ -683,7 +737,9 @@
         closeAll: closeAllFpDropdowns,
         config: defaultConfig,
         getDateTimeValue: getDateTimeValue,
-        setDateTimeValue: setDateTimeValue
+        setDateTimeValue: setDateTimeValue,
+        populateTimeSelect: populateTimeSelect,
+        populateAllTimeSelects: populateAllTimeSelects
     };
 
 })();
