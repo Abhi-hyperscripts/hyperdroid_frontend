@@ -4027,6 +4027,16 @@ body.crm-page #gsShareModal .gm-body:has(.searchable-dropdown.open) {
 /* ============================================================
  * Columns picker — Leads table show/hide menu
  * ============================================================ */
+.crm-columns-btn {
+    /* Match the 32px height of the Form answers button (which gets its
+     * size from the badge/dot children). Icon-only — no text. */
+    height: 32px;
+    width: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
 .crm-columns-menu {
     position: absolute;
     top: calc(100% + 6px);

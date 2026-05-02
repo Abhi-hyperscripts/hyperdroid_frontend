@@ -693,14 +693,14 @@ function renderLeadsTable(leads) {
 
 // ==================== Column Visibility ====================
 // Lets the user hide CRM-table columns they don't care about. Selection
-// persists in localStorage so it survives reloads. Three columns stay
-// always-on (checkbox, status, actions) — hiding them would break the
-// core lead workflow, so they're absent from the picker entirely.
+// persists in localStorage so it survives reloads. Five columns stay
+// always-on (checkbox, Lead ID, Name, Status, Actions) — hiding them
+// would break the core lead workflow (no way to identify a lead, click
+// into the detail panel, or take action), so they're absent from the
+// picker entirely.
 
 const COLUMN_PICKER_KEY = 'crm_leads_hidden_cols';
 const COLUMN_PICKER_DEFS = [
-    { id: 'leadId',     label: 'Lead ID' },
-    { id: 'name',       label: 'Name' },
     { id: 'email',      label: 'Email' },
     { id: 'phone',      label: 'Phone' },
     { id: 'source',     label: 'Source' },
@@ -709,12 +709,16 @@ const COLUMN_PICKER_DEFS = [
     { id: 'owner',      label: 'Owner' },
     { id: 'created',    label: 'Created' },
 ];
+const TOGGLEABLE_COLS = new Set(COLUMN_PICKER_DEFS.map(c => c.id));
 
 function getHiddenColumns() {
     try {
         const raw = localStorage.getItem(COLUMN_PICKER_KEY);
         const arr = raw ? JSON.parse(raw) : [];
-        return Array.isArray(arr) ? arr : [];
+        if (!Array.isArray(arr)) return [];
+        // Strip non-toggleable cols so a stale entry from an earlier
+        // version of the picker can't keep Lead ID/Name hidden.
+        return arr.filter(id => TOGGLEABLE_COLS.has(id));
     } catch { return []; }
 }
 
