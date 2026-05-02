@@ -1,5 +1,5 @@
 // ============================================================
-// Ragenaizer Service Worker  [BUILD 34]
+// Ragenaizer Service Worker  [BUILD 35]
 // Handles: Push Notifications (Firebase), Asset Caching, Version Updates
 // ============================================================
 
@@ -104,7 +104,22 @@ self.addEventListener('activate', (event) => {
 });
 
 // ============================================================
-// FETCH — Network-first for HTML, Stale-while-revalidate for JS/CSS/assets
+// FETCH — Network-first for everything (HTML, CSS, JS, images).
+// Cache is purely an offline fallback.
+//
+// Why not stale-while-revalidate (the previous strategy for CSS/JS)?
+//
+//   SWR returned the cached file immediately and refreshed it in the
+//   background — so the page rendered with the OLD content, and only
+//   the NEXT reload picked up the new file. Combined with stripping
+//   the ?v= query for cache matching, this meant every CSS/JS deploy
+//   reached users one reload late, even when SW_VERSION was bumped.
+//   Users in a long-running meeting tab could see stale UI for hours.
+//
+//   Network-first eliminates the race: every reload pulls fresh
+//   content. The HTTP layer (ETag / Last-Modified / 304) keeps the
+//   cost ~free for unchanged files. Cache only kicks in when the
+//   network is actually unreachable (true offline).
 // ============================================================
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
@@ -118,62 +133,40 @@ self.addEventListener('fetch', (event) => {
     // Skip cross-origin requests (CDNs, APIs, etc.)
     if (url.origin !== self.location.origin) return;
 
-    // HTML pages — Network first, fall back to cache
+    // HTML pages
     if (event.request.headers.get('accept')?.includes('text/html') || url.pathname.endsWith('.html')) {
         event.respondWith(networkFirstStrategy(event.request));
         return;
     }
 
-    // JS, CSS, images — Stale-while-revalidate
+    // JS, CSS, images, fonts — same network-first strategy as HTML.
     if (/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp)$/.test(url.pathname)) {
-        event.respondWith(staleWhileRevalidateStrategy(event.request));
+        event.respondWith(networkFirstStrategy(event.request));
         return;
     }
 });
 
-// ── Network First (HTML) ──
-// Try network, cache the response, fall back to cache if offline
+// ── Network First ──
+// Always try network. Cache the result under a query-stripped key so
+// cache entries are reused across `?v=` cache-busts and serve offline.
 async function networkFirstStrategy(request) {
+    const cacheKey = stripVersionQuery(request);
     try {
         const networkResponse = await fetch(request);
         if (networkResponse.ok) {
             const cache = await caches.open(CACHE_NAME);
-            cache.put(request, networkResponse.clone());
+            // Use the stripped key so the next ?v= load can find this entry offline.
+            cache.put(cacheKey, networkResponse.clone());
         }
         return networkResponse;
     } catch (err) {
-        const cachedResponse = await caches.match(request);
+        const cachedResponse = await caches.match(cacheKey);
         if (cachedResponse) {
             console.log(`[SW] Serving from cache (offline): ${request.url}`);
             return cachedResponse;
         }
         throw err;
     }
-}
-
-// ── Stale While Revalidate (JS/CSS/assets) ──
-// Return cached version immediately, update cache in background
-async function staleWhileRevalidateStrategy(request) {
-    const cache = await caches.open(CACHE_NAME);
-
-    // Strip ?v= query params for cache matching (we version via SW, not query strings)
-    const cacheKey = stripVersionQuery(request);
-
-    const cachedResponse = await cache.match(cacheKey);
-
-    // Fetch fresh copy in background
-    const fetchPromise = fetch(request).then((networkResponse) => {
-        if (networkResponse.ok) {
-            cache.put(cacheKey, networkResponse.clone());
-        }
-        return networkResponse;
-    }).catch(() => null);
-
-    // Return cached version if available, otherwise wait for network
-    if (cachedResponse) {
-        return cachedResponse;
-    }
-    return fetchPromise;
 }
 
 // Strip ?v=timestamp query param for consistent cache keys

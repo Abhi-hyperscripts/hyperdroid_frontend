@@ -20,7 +20,10 @@
     // Cache-buster query param forces Chrome Android to bypass V8 bytecode cache.
     // Chrome aggressively caches compiled SW code and reuses it even after unregister+reregister.
     // Changing the script URL is the ONLY reliable way to force fresh code on Android.
-    var swUrl = '/firebase-messaging-sw.js?cb=2';
+    // Bump cb=N when shipping changes to firebase-messaging-sw.js itself.
+    // Chrome aggressively caches compiled SW code; the only reliable way to
+    // make Chrome fetch a new SW source file is to change its URL.
+    var swUrl = '/firebase-messaging-sw.js?cb=3';
     navigator.serviceWorker.register(swUrl, {
         scope: '/',
         updateViaCache: 'none'
