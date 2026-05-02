@@ -4023,3 +4023,44 @@ body.crm-page #gsShareModal .gm-body:has(.searchable-dropdown.open) {
 }
 
 /* Responsive — slide-panel.css handles mobile bottom sheet */
+
+/* ============================================================
+ * Columns picker — Leads table show/hide menu
+ * ============================================================ */
+.crm-columns-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 100;
+    min-width: 220px;
+    padding: 6px 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.crm-columns-menu-header {
+    padding: 8px 14px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+}
+.crm-columns-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+.crm-columns-menu-item:hover { background: var(--bg-hover, rgba(255,255,255,0.04)); }
+.crm-columns-menu-item input[type="checkbox"] { margin: 0; }
+.crm-columns-menu-footer {
+    padding: 4px 8px;
+    border-top: 1px solid var(--border-color);
+    text-align: right;
+}
+

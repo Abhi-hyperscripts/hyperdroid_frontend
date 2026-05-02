@@ -613,40 +613,40 @@ function renderLeadsTable(leads) {
                     ${selectedLeadIds.has(lead.id) ? 'checked' : ''}
                     ${cbTooltip}>
             </td>
-            <td>
+            <td data-col="leadId">
                 <span class="crm-lead-number">${escapeHtml(lead.leadNumber || lead.lead_number || '-')}</span>
             </td>
-            <td onclick="openLeadDetailPanel('${lead.id}')" style="cursor:pointer;">
+            <td data-col="name" onclick="openLeadDetailPanel('${lead.id}')" style="cursor:pointer;">
                 <div class="crm-cell-primary">
                     ${escapeHtml(lead.first_name || '')} ${escapeHtml(lead.last_name || '')}${getCustomFieldsBadge(lead.custom_fields)}
                 </div>
                 ${lead.company_name ? `<div class="crm-cell-secondary">${escapeHtml(lead.company_name)}</div>` : (lead.company ? `<div class="crm-cell-secondary">${escapeHtml(lead.company)}</div>` : '')}
             </td>
-            <td>
+            <td data-col="email">
                 <span class="crm-cell-secondary">${escapeHtml(lead.email || '-')}</span>
             </td>
-            <td class="hide-mobile">
+            <td data-col="phone" class="hide-mobile">
                 <span class="crm-cell-secondary">${escapeHtml(lead.phone || '-')}</span>
             </td>
-            <td class="hide-mobile">
+            <td data-col="source" class="hide-mobile">
                 <span class="crm-source-badge source-${lead.lead_source || 'manual'}">${formatSource(lead.lead_source)}</span>
             </td>
-            <td>
+            <td data-col="status">
                 ${(lead.team_id || lead.team_name) ? `<span class="crm-status-badge status-${lead.status || 'new'}" onclick="openStatusChangeModal('${lead.id}')" style="cursor:pointer;" data-tooltip="Click to change status">${formatStatus(lead.status)}</span>` : `<span class="crm-status-badge status-new" data-tooltip="Assign to team first">${formatStatus(lead.status)}</span>`}
                 ${lead.disposition ? `<span class="crm-disposition-badge disp-${lead.disposition}" title="${formatDisposition(lead.disposition)}">${formatDisposition(lead.disposition)}</span>` : ''}
                 ${lead.next_followup_date ? formatFollowupIndicator(lead.next_followup_date) : ''}
                 ${lead.has_pending_transfer ? '<span class="crm-transfer-pending-badge" data-tooltip="Transfer/Reassignment pending approval">⇄ Transfer Pending</span>' : ''}
             </td>
-            <td class="hide-mobile">
+            <td data-col="engagement" class="hide-mobile">
                 ${renderEmailEngagement(lead)}
             </td>
-            <td class="hide-mobile">
+            <td data-col="team" class="hide-mobile">
                 ${lead.teamName || lead.team_name ? `<span class="crm-team-badge ${teamColorClass(lead.teamName || lead.team_name)}">${escapeHtml(lead.teamName || lead.team_name)}</span>` : '<span class="crm-cell-secondary">—</span>'}
             </td>
-            <td class="hide-mobile">
+            <td data-col="owner" class="hide-mobile">
                 ${renderOwnerCell(lead)}
             </td>
-            <td class="hide-mobile">
+            <td data-col="created" class="hide-mobile">
                 <span class="crm-cell-secondary">${formatDate(lead.created_at)}</span>
             </td>
             <td>
@@ -688,7 +688,111 @@ function renderLeadsTable(leads) {
         </tr>
     `;
     }).join('');
+    applyColumnVisibility();
 }
+
+// ==================== Column Visibility ====================
+// Lets the user hide CRM-table columns they don't care about. Selection
+// persists in localStorage so it survives reloads. Three columns stay
+// always-on (checkbox, status, actions) — hiding them would break the
+// core lead workflow, so they're absent from the picker entirely.
+
+const COLUMN_PICKER_KEY = 'crm_leads_hidden_cols';
+const COLUMN_PICKER_DEFS = [
+    { id: 'leadId',     label: 'Lead ID' },
+    { id: 'name',       label: 'Name' },
+    { id: 'email',      label: 'Email' },
+    { id: 'phone',      label: 'Phone' },
+    { id: 'source',     label: 'Source' },
+    { id: 'engagement', label: 'Email engagement' },
+    { id: 'team',       label: 'Team' },
+    { id: 'owner',      label: 'Owner' },
+    { id: 'created',    label: 'Created' },
+];
+
+function getHiddenColumns() {
+    try {
+        const raw = localStorage.getItem(COLUMN_PICKER_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+}
+
+function setHiddenColumns(arr) {
+    localStorage.setItem(COLUMN_PICKER_KEY, JSON.stringify(arr));
+}
+
+function applyColumnVisibility() {
+    const hidden = new Set(getHiddenColumns());
+    document.querySelectorAll('#leadsTable [data-col]').forEach(el => {
+        el.style.display = hidden.has(el.dataset.col) ? 'none' : '';
+    });
+}
+
+function renderColumnsPickerMenu() {
+    const menu = document.getElementById('columnsPickerMenu');
+    if (!menu) return;
+    const hidden = new Set(getHiddenColumns());
+    menu.innerHTML = `
+        <div class="crm-columns-menu-header">Visible columns</div>
+        ${COLUMN_PICKER_DEFS.map(c => `
+            <label class="crm-columns-menu-item">
+                <input type="checkbox" data-col-toggle="${c.id}" ${hidden.has(c.id) ? '' : 'checked'}>
+                <span>${c.label}</span>
+            </label>
+        `).join('')}
+        <div class="crm-columns-menu-footer">
+            <button type="button" class="btn btn-sm btn-link" onclick="resetColumnsPicker()">Reset</button>
+        </div>
+    `;
+    menu.querySelectorAll('input[data-col-toggle]').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const id = cb.dataset.colToggle;
+            const list = getHiddenColumns().filter(x => x !== id);
+            if (!cb.checked) list.push(id);
+            setHiddenColumns(list);
+            applyColumnVisibility();
+        });
+    });
+}
+
+function toggleColumnsPicker(event) {
+    if (event) event.stopPropagation();
+    const menu = document.getElementById('columnsPickerMenu');
+    if (!menu) return;
+    if (menu.hidden) {
+        renderColumnsPickerMenu();
+        menu.hidden = false;
+        // Close on outside click — bind once per open so we don't pile up listeners.
+        setTimeout(() => {
+            document.addEventListener('click', closeColumnsPickerOnOutside, { once: true });
+        }, 0);
+    } else {
+        menu.hidden = true;
+    }
+}
+
+function closeColumnsPickerOnOutside(e) {
+    const menu = document.getElementById('columnsPickerMenu');
+    const btn = document.getElementById('columnsPickerBtn');
+    if (!menu || menu.hidden) return;
+    if (menu.contains(e.target) || (btn && btn.contains(e.target))) {
+        // Click inside — re-arm the outside-click listener for the next click.
+        document.addEventListener('click', closeColumnsPickerOnOutside, { once: true });
+        return;
+    }
+    menu.hidden = true;
+}
+
+function resetColumnsPicker() {
+    setHiddenColumns([]);
+    applyColumnVisibility();
+    renderColumnsPickerMenu();
+}
+
+// Run once on script load so headers reflect saved prefs even before
+// the first lead row is rendered.
+document.addEventListener('DOMContentLoaded', applyColumnVisibility);
 
 // ==================== Status & Source Formatting ====================
 

@@ -249,6 +249,18 @@
                     <span id="formAnswersActiveCount" class="badge bg-primary ms-1" style="display:none;">0</span>
                 </button>
             </div>
+            <div class="crm-filter-group crm-filter-group--no-label" style="position:relative;">
+                <button type="button" id="columnsPickerBtn" class="btn btn-sm btn-outline-primary"
+                        onclick="toggleColumnsPicker(event)"
+                        title="Show / hide columns in the Leads table">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;">
+                        <rect x="3" y="3" width="7" height="18" rx="1"/>
+                        <rect x="14" y="3" width="7" height="18" rx="1"/>
+                    </svg>
+                    <span>Columns</span>
+                </button>
+                <div id="columnsPickerMenu" class="crm-columns-menu" hidden role="menu" aria-label="Visible columns"></div>
+            </div>
         </div>
 
         <!-- Filter by form answers — sidebar + values pane layout.
@@ -337,16 +349,16 @@
                         <th class="th-checkbox">
                             <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
                         </th>
-                        <th>Lead ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th class="hide-mobile">Phone</th>
-                        <th class="hide-mobile">Source</th>
-                        <th>Status</th>
-                        <th class="hide-mobile">Email</th>
-                        <th class="hide-mobile">Team</th>
-                        <th class="hide-mobile">Owner</th>
-                        <th class="hide-mobile">Created</th>
+                        <th data-col="leadId">Lead ID</th>
+                        <th data-col="name">Name</th>
+                        <th data-col="email">Email</th>
+                        <th data-col="phone" class="hide-mobile">Phone</th>
+                        <th data-col="source" class="hide-mobile">Source</th>
+                        <th data-col="status">Status</th>
+                        <th data-col="engagement" class="hide-mobile">Email</th>
+                        <th data-col="team" class="hide-mobile">Team</th>
+                        <th data-col="owner" class="hide-mobile">Owner</th>
+                        <th data-col="created" class="hide-mobile">Created</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
