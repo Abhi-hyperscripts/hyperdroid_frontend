@@ -360,6 +360,29 @@ async function ensureFcmTokenRegistered(force = false) {
             tokenOptions.serviceWorkerRegistration = swRegistration;
         }
 
+        // CRITICAL: when forcing re-registration (SW version bump or lost
+        // subscription), purge the SDK's cached token first.
+        //
+        // messaging.getToken() returns a cached token from Firebase's
+        // IndexedDB if one exists — but after the kill-switch SW
+        // (BUILD 38) self-unregistered, the original push subscription
+        // was REVOKED on FCM's side. The cached token still looks valid
+        // locally and gets POSTed to the backend, but FCM rejects all
+        // delivery attempts with "Unregistered" because the subscription
+        // it binds to no longer exists.
+        //
+        // deleteToken() forces the SDK to drop the IndexedDB entry; the
+        // following getToken() then creates a brand-new token bound to
+        // the CURRENT push subscription endpoint.
+        if (force) {
+            try {
+                await messaging.deleteToken();
+                console.log('[FCM] Force=true: deleted cached token to ensure fresh subscription binding');
+            } catch (delErr) {
+                console.warn('[FCM] deleteToken() failed (non-fatal):', delErr);
+            }
+        }
+
         const token = await messaging.getToken(tokenOptions);
         if (token) {
             console.log('[FCM] Token acquired:', token.substring(0, 20) + '...');
