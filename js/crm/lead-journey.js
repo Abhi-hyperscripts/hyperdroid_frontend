@@ -120,7 +120,9 @@
         document.getElementById('activityOutcome').value = '';
         document.getElementById('activitySummary').value = '';
         document.getElementById('activityDisposition').value = '';
-        document.getElementById('activityNextFollowup').value = '';
+        // activityNextFollowup is a Flatpickr-managed input — use the helper
+        // so the visible altInput clears too.
+        HRMSDatePicker.setDateTimeValue('activityNextFollowup', '');
         document.getElementById('activityCallDuration').value = '';
         document.getElementById('logActivityOverlay').classList.add('active');
     }
@@ -139,7 +141,9 @@
         const actType = document.getElementById('activityType').value;
         const outcome = document.getElementById('activityOutcome').value;
         const disposition = document.getElementById('activityDisposition').value;
-        const nextFollowup = document.getElementById('activityNextFollowup').value;
+        // Flatpickr stores values as "YYYY-MM-DD HH:mm"; helper returns the
+        // datetime-local-shaped "YYYY-MM-DDTHH:mm" string the backend expects.
+        const nextFollowup = HRMSDatePicker.getDateTimeValue('activityNextFollowup');
         const callDuration = document.getElementById('activityCallDuration').value;
 
         try {
@@ -779,7 +783,7 @@
     function openScheduleFollowupModal(leadId) {
         _followupLeadId = leadId;
         document.getElementById('followupType').value = 'call';
-        document.getElementById('followupDateTime').value = '';
+        HRMSDatePicker.setDateTimeValue('followupDateTime', '');
         document.getElementById('followupNotes').value = '';
         document.getElementById('scheduleFollowupOverlay').classList.add('active');
     }
@@ -791,7 +795,7 @@
 
     async function submitScheduleFollowup() {
         if (!_followupLeadId) return;
-        const dt = document.getElementById('followupDateTime').value;
+        const dt = HRMSDatePicker.getDateTimeValue('followupDateTime');
         if (!dt) { Toast.error('Date & time is required'); return; }
         const fType = document.getElementById('followupType').value;
         const notes = document.getElementById('followupNotes').value.trim();

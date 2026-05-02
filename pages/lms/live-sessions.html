@@ -27,6 +27,10 @@
         document.write('<link rel="stylesheet" href="../../css/lms.css?v=' + CACHE_VERSION + '">');
         document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');
     </script>
+    <!-- Flatpickr — datetime-local has no time picker on macOS Safari. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard lms-dashboard crm-page">
@@ -109,7 +113,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="sessionDate">Date & Time</label>
-                    <input type="datetime-local" id="sessionDate" class="form-input">
+                    <input type="date" id="sessionDate" class="form-input" data-enable-time="true">
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="sessionDuration">Duration (minutes)</label>
@@ -134,6 +138,7 @@
         document.write('<script src="../../js/lms/lms-notifications.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/lmsRoles.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/hrms-datepicker.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/lms/live-sessions.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->

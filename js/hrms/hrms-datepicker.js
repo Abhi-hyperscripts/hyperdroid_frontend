@@ -612,12 +612,63 @@
     // Auto-initialize when script loads
     autoInit();
 
+    // ─── Helpers for datetime-with-time inputs ───────────────────────────
+    //
+    // Why these exist: <input type="datetime-local"> renders a calendar-only
+    // popup on macOS Safari (no time controls) — users can't change the time.
+    // Replacing it with <input type="date" data-enable-time="true"> lets
+    // Flatpickr/HRMSDatePicker handle the picker (with time), but Flatpickr
+    // formats values as "Y-m-d H:i" (space separator) while the rest of our
+    // codebase expects datetime-local's "YYYY-MM-DDTHH:mm" format. These
+    // helpers do the format conversion + transparently use the Flatpickr API
+    // when an input is Flatpickr-managed.
+
+    function _resolve(idOrEl) {
+        return typeof idOrEl === 'string' ? document.getElementById(idOrEl) : idOrEl;
+    }
+
+    /**
+     * Read a date+time input as "YYYY-MM-DDTHH:mm" (datetime-local format).
+     * Works for both Flatpickr-managed inputs and plain <input type="datetime-local">.
+     */
+    function getDateTimeValue(idOrEl) {
+        const el = _resolve(idOrEl);
+        if (!el || !el.value) return '';
+        // Flatpickr with dateFormat 'Y-m-d H:i' yields "YYYY-MM-DD HH:mm" — swap
+        // the separator so callers can keep using datetime-local-shaped strings.
+        return el.value.replace(' ', 'T');
+    }
+
+    /**
+     * Set a date+time input from a datetime-local-shaped or full ISO string.
+     * Routes through Flatpickr's setDate() when present (so the visible
+     * altInput updates), otherwise falls back to assigning .value.
+     * Pass empty string / null to clear.
+     */
+    function setDateTimeValue(idOrEl, value) {
+        const el = _resolve(idOrEl);
+        if (!el) return;
+        if (!value) {
+            if (el._flatpickr) el._flatpickr.clear();
+            else el.value = '';
+            return;
+        }
+        if (el._flatpickr) {
+            // Flatpickr accepts ISO strings (with "T") and Date objects natively.
+            el._flatpickr.setDate(value, false);
+        } else {
+            el.value = value;
+        }
+    }
+
     // Expose functions globally for manual initialization
     window.HRMSDatePicker = {
         init: initDatePicker,
         initAll: initAllDatePickers,
         closeAll: closeAllFpDropdowns,
-        config: defaultConfig
+        config: defaultConfig,
+        getDateTimeValue: getDateTimeValue,
+        setDateTimeValue: setDateTimeValue
     };
 
 })();

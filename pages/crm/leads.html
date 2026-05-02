@@ -29,6 +29,12 @@
     <script>document.write('<link rel="stylesheet" href="../../css/crm-lead-import.css?v=' + CACHE_VERSION + '">');</script>
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    <!-- Flatpickr — needed because <input type="datetime-local"> on macOS Safari
+         shows calendar-only popup with no time controls. HRMSDatePicker wraps
+         Flatpickr and supports data-enable-time="true" on type="date" inputs. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard crm-page crm-leads-page">
@@ -665,7 +671,10 @@
                     </div>
                     <div>
                         <label class="form-label">Next follow-up</label>
-                        <input type="datetime-local" id="activityNextFollowup" class="form-control form-control-sm">
+                        <!-- type="date" + data-enable-time="true" routes through HRMSDatePicker
+                             (Flatpickr) which renders BOTH date and time controls — required
+                             because native datetime-local on macOS Safari has no time picker. -->
+                        <input type="date" id="activityNextFollowup" class="form-control form-control-sm" data-enable-time="true">
                     </div>
                 </div>
             </div>
@@ -857,7 +866,7 @@
                 </div>
                 <div style="margin-top:10px;">
                     <label class="form-label">Date & Time *</label>
-                    <input type="datetime-local" id="followupDateTime" class="form-control form-control-sm">
+                    <input type="date" id="followupDateTime" class="form-control form-control-sm" data-enable-time="true">
                 </div>
                 <div style="margin-top:10px;">
                     <label class="form-label">Notes</label>
@@ -1141,6 +1150,7 @@
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/hrms-datepicker.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/setup-guard.js?v=' + CACHE_VERSION + '"><\/script>');

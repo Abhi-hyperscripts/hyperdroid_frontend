@@ -196,7 +196,7 @@ async function joinSession(sessionId) {
  */
 function showScheduleModal() {
     document.getElementById('sessionTitle').value = '';
-    document.getElementById('sessionDate').value = '';
+    HRMSDatePicker.setDateTimeValue('sessionDate', '');
     document.getElementById('sessionDuration').value = '60';
     document.getElementById('sessionDescription').value = '';
     loadCourseOptions();
@@ -233,7 +233,7 @@ async function loadCourseOptions() {
 async function scheduleSession() {
     const title = document.getElementById('sessionTitle').value.trim();
     const courseId = document.getElementById('sessionCourse').value;
-    const scheduledAt = document.getElementById('sessionDate').value;
+    const scheduledAt = HRMSDatePicker.getDateTimeValue('sessionDate');
     const duration = parseInt(document.getElementById('sessionDuration').value) || 60;
     const description = document.getElementById('sessionDescription').value.trim();
 

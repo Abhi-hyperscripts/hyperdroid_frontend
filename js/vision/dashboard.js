@@ -3770,19 +3770,13 @@ async function showMeetingSettingsModal(meetingId, type) {
         // Populate meeting name
         document.getElementById('settingsMeetingName').value = meeting.meeting_name || '';
 
-        // Populate schedule
-        const startInput = document.getElementById('settingsStartTime');
-        const endInput = document.getElementById('settingsEndTime');
-        if (meeting.start_time) {
-            startInput.value = new Date(meeting.start_time).toISOString().slice(0, 16);
-        } else {
-            startInput.value = '';
-        }
-        if (meeting.end_time) {
-            endInput.value = new Date(meeting.end_time).toISOString().slice(0, 16);
-        } else {
-            endInput.value = '';
-        }
+        // Populate schedule. Inputs are Flatpickr-managed (see dashboard.html
+        // settingsStartTime / settingsEndTime). Use HRMSDatePicker.setDateTimeValue
+        // so the visible altInput updates — direct .value assignment doesn't.
+        HRMSDatePicker.setDateTimeValue('settingsStartTime',
+            meeting.start_time ? new Date(meeting.start_time).toISOString().slice(0, 16) : '');
+        HRMSDatePicker.setDateTimeValue('settingsEndTime',
+            meeting.end_time ? new Date(meeting.end_time).toISOString().slice(0, 16) : '');
 
         document.getElementById('settingsNotes').value = meeting.notes || '';
         document.getElementById('settingsAllowGuests').checked = meeting.allow_guests || false;
@@ -4415,8 +4409,9 @@ async function saveMeetingSettings() {
     const aiSupport = document.getElementById('settingsAiCopilot').checked;
     const meetingMode = aiSupport ? document.getElementById('settingsMeetingMode').value : null;
     const newProjectId = settingsProjectSD ? settingsProjectSD.getValue() : null;
-    const startTimeVal = document.getElementById('settingsStartTime').value;
-    const endTimeVal = document.getElementById('settingsEndTime').value;
+    // Flatpickr stores values as "YYYY-MM-DD HH:mm" — helper returns "YYYY-MM-DDTHH:mm".
+    const startTimeVal = HRMSDatePicker.getDateTimeValue('settingsStartTime');
+    const endTimeVal = HRMSDatePicker.getDateTimeValue('settingsEndTime');
 
     if (!meetingName) {
         Toast.warning('Meeting name is required');

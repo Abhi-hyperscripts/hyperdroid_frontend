@@ -24,6 +24,10 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <!-- Flatpickr — datetime-local has no time picker on macOS Safari. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 </head>
 <body class="dashboard">
@@ -510,11 +514,12 @@
                         <div class="settings-schedule-inputs">
                             <div class="schedule-field">
                                 <small>Start</small>
-                                <input type="datetime-local" id="settingsStartTime" class="form-control">
+                                <!-- Flatpickr-managed (HRMSDatePicker auto-init via type="date" + data-enable-time). -->
+                                <input type="date" id="settingsStartTime" class="form-control" data-enable-time="true">
                             </div>
                             <div class="schedule-field">
                                 <small>End</small>
-                                <input type="datetime-local" id="settingsEndTime" class="form-control">
+                                <input type="date" id="settingsEndTime" class="form-control" data-enable-time="true">
                             </div>
                         </div>
                     </div>
@@ -731,7 +736,8 @@
         });
     </script>
     <script>document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
-        document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+        document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/hrms/hrms-datepicker.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/hrms/hrms-monthpicker.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/slide-panel.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/share-widget.js?v=' + CACHE_VERSION + '"><\/script>');</script>
