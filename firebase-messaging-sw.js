@@ -1,5 +1,5 @@
 // ============================================================
-// Ragenaizer Service Worker  [BUILD 35]
+// Ragenaizer Service Worker  [BUILD 36]
 // Handles: Push Notifications (Firebase), Asset Caching, Version Updates
 // ============================================================
 
@@ -169,9 +169,26 @@ async function networkFirstStrategy(request) {
     }
 }
 
-// Strip ?v=timestamp query param for consistent cache keys
+// Strip ?v=timestamp query param for consistent cache keys.
+//
+// CRITICAL: Top-level page navigations have request.mode === 'navigate', and
+// per the Fetch spec the Request() constructor REJECTS that mode (only the
+// browser can create navigate-mode Requests). Copying it through here throws
+// TypeError, which propagates out of FetchEvent.respondWith and makes Safari
+// (and Chrome) refuse to render ANY page — full-site outage.
+//
+// For navigate requests we return the original Request unchanged; the cache
+// key just becomes the full URL. That's fine because navigations don't carry
+// ?v= cache-bust queries anyway (only assets loaded by versioned <link>/
+// <script> tags do).
 function stripVersionQuery(request) {
+    if (request.mode === 'navigate') {
+        return request;
+    }
     const url = new URL(request.url);
+    if (!url.searchParams.has('v')) {
+        return request; // No-op fast path — most requests don't carry ?v=
+    }
     url.searchParams.delete('v');
     return new Request(url.toString(), {
         method: request.method,
