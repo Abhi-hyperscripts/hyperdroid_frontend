@@ -16,26 +16,21 @@
 
     let reloading = false;
 
-    // ⚠️ EMERGENCY: SW registration is DISABLED.
+    // SW registration is ENABLED again, pointing at BUILD 39 (push-only).
+    // BUILD 39 has NO fetch handler — it can never repeat the BUILD 35 outage.
+    // The kill-switch (BUILD 38) already self-unregistered, so we register a
+    // fresh push-only SW from a clean slate.
     //
-    // BUILD 35 of firebase-messaging-sw.js shipped a Request-constructor bug
-    // that bricked the entire site for any browser controlled by it. To
-    // recover live users we deployed a kill-switch SW (BUILD 38) that
-    // unregisters itself on activate. Re-registering a new SW here would
-    // immediately resurrect it (and re-trigger the kill loop on every load).
+    // If you ever add fetch interception back here, MANDATORY checklist:
+    //   1. Test the new SW with `request.mode === 'navigate'` requests in
+    //      Playwright against a real deployed staging URL (not curl).
+    //   2. Wrap respondWith in a try/catch that falls through to native fetch.
+    //   3. Stage behind a feature flag, roll forward gradually.
     //
-    // Existing users get the kill-switch via the browser's automatic
-    // SW.update() polling (browser-internal, doesn't need this code path).
-    // After the kill-switch fires, their site runs SW-free — which is fine:
-    // HTTP cache handles asset caching; FCM push is the only real loss and
-    // can be re-introduced once we have a tested, gated SW deploy pipeline.
-    //
-    // Listen for kill-switch reload messages even though we don't register.
+    // cb=N forces Chrome to fetch fresh SW source (Chrome aggressively
+    // caches compiled SW V8 bytecode by URL).
     listenForSwMessages();
-    return;
-
-    // ── Original registration code (intentionally unreachable) ────────────
-    var swUrl = '/firebase-messaging-sw.js?cb=6';
+    var swUrl = '/firebase-messaging-sw.js?cb=7';
     navigator.serviceWorker.register(swUrl, {
         scope: '/',
         updateViaCache: 'none'

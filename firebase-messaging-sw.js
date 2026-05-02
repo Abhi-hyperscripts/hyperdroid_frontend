@@ -1,30 +1,24 @@
 // ============================================================
-// Ragenaizer Service Worker  [BUILD 38 — KILL SWITCH]
+// Ragenaizer Service Worker  [BUILD 39 — PUSH ONLY]
 //
-// ⚠️ This is an EMERGENCY recovery build. Earlier BUILD 35 broke the
-// Request constructor for navigate-mode page loads, leaving live users
-// with a SW that prevented every ragenaizer.com page from rendering
-// (Safari "Can't Open the Page", Chrome hung-spinner). Even after the
-// fixed BUILD 36/37 was deployed, browsers still controlled by an old
-// broken SW couldn't recover automatically — the broken SW kept
-// intercepting requests.
+// Scope: web push notifications + click handling, NOTHING ELSE.
 //
-// This build is a kill switch:
-//   - NO fetch interception (browser handles all requests natively)
-//   - On activate: delete every ragenaizer-* cache, unregister itself,
-//     and reload every controlled tab so they bypass the dead SW.
+// Explicitly NOT here (and must stay out):
+//   - fetch event handler
+//   - cache pre-population
+//   - asset caching (HTTP cache + ETag does this for free)
 //
-// Push handler is preserved so FCM still delivers.
-//
-// Re-introduce a real caching SW only after live users have recovered
-// (~24-48h to be safe), and roll any future fetch-interception change
-// out behind a feature flag with a tested staging deploy first.
+// Why: BUILD 35's fetch interception had a Request-constructor bug that
+// took the entire site down for hours today. We replaced that SW with a
+// kill switch (BUILD 38) that unregistered itself. This BUILD 39 brings
+// back ONLY the push capability so FCM still works. If the day comes we
+// want asset caching back, gate it behind staging tests and a feature
+// flag. Never again add a fetch handler to this file without that.
 // ============================================================
 
 // ── App Version (single source of truth: /js/sw-version.js) ──
 importScripts('/js/sw-version.js');      // provides SW_VERSION
 const APP_VERSION = SW_VERSION;
-const CACHE_NAME = `ragenaizer-v${APP_VERSION}`;
 const VERSION_CHECK_INTERVAL = 30 * 1000; // 30 seconds
 
 // NOTE: Firebase SDK is intentionally NOT loaded in this service worker.
@@ -34,122 +28,37 @@ const VERSION_CHECK_INTERVAL = 30 * 1000; // 30 seconds
 // called event.waitUntil() with a promise that didn't include showNotification(),
 // causing Chrome Android to show "This site has been updated in the background".
 
-// ── Assets to pre-cache on install ──
-const PRECACHE_ASSETS = [
-    '/',
-    '/pages/login.html',
-    '/pages/home.html',
-    '/css/theme.css',
-    '/css/styles.css',
-    '/js/config.js',
-    '/js/api.js',
-    '/js/theme.js',
-    '/js/navigation.js',
-    '/js/toast.js',
-    '/js/navbar.js',
-    '/js/footer.js',
-    '/js/cache-buster.js',
-    '/js/firebase-init.js',
-    '/js/cookie-consent.js',
-    '/js/sw-update.js',
-    '/js/pwa-install-prompt.js',
-    '/assets/brand_logo.png',
-    '/assets/notification-icon-v2.png',
-    '/assets/badge-icon.png',
-    '/assets/favicon-32x32.png',
-    '/assets/favicon-16x16.png',
-    '/manifest.json'
-];
-
-// ── Patterns that should NEVER be cached ──
-const NO_CACHE_PATTERNS = [
-    /\/api\//,           // API calls
-    /sw-version\.js/,    // Version file must always be fresh
-    /firebasestorage/,   // Firebase storage
-    /googleapis\.com/,   // Google APIs
-    /gstatic\.com/,      // Firebase SDK (let browser handle)
-    /cdn\.jsdelivr/,     // CDN resources (let browser handle)
-    /chrome-extension/,  // Browser extensions
-    /\/js\/research\/insights\.js/,  // Public insights page — always fresh
-    /\/pages\/research\/insights\.html/,  // Public insights page — always fresh
-];
+// (PRECACHE_ASSETS and NO_CACHE_PATTERNS removed — no fetch handler uses them.)
 
 // ── Version check timer ──
 let versionCheckTimer = null;
 
 // ============================================================
-// INSTALL — Skip pre-caching. The SW is about to die anyway.
+// INSTALL — minimal: take over immediately, no precaching.
 // ============================================================
 self.addEventListener('install', (event) => {
-    console.log(`[SW] [KILL SWITCH] Installing v${APP_VERSION}`);
+    console.log(`[SW] Installing push-only v${APP_VERSION}`);
     event.waitUntil(self.skipWaiting());
 });
 
 // ============================================================
-// ACTIVATE — Wipe all caches, unregister self, reload every tab.
-//
-// This is the recovery path: existing browsers' SW.update() polling
-// fetches this SW, which then removes itself and forces affected tabs
-// to reload without any SW interception.
+// ACTIVATE — minimal: claim clients, start version-check loop.
+// We don't manage any caches, so nothing to clean up.
 // ============================================================
 self.addEventListener('activate', (event) => {
-    console.log(`[SW] [KILL SWITCH] Activating v${APP_VERSION} — wiping caches and unregistering`);
+    console.log(`[SW] Activating push-only v${APP_VERSION}`);
     event.waitUntil((async () => {
-        // 1. Wipe every cache we own. Removes the broken-SW-era entries.
-        try {
-            const cacheNames = await caches.keys();
-            await Promise.all(
-                cacheNames
-                    .filter((name) => name.startsWith('ragenaizer-'))
-                    .map((name) => {
-                        console.log(`[SW] Deleting cache: ${name}`);
-                        return caches.delete(name);
-                    })
-            );
-        } catch (err) {
-            console.warn('[SW] Cache wipe failed:', err);
-        }
-
-        // 2. Take control of any existing client so we can navigate them.
-        try {
-            await self.clients.claim();
-        } catch (err) {
-            console.warn('[SW] clients.claim failed:', err);
-        }
-
-        // 3. Reload every controlled tab. After reload they request the
-        //    page natively (we have no fetch handler) and load fresh.
-        try {
-            const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-            for (const client of allClients) {
-                try {
-                    await client.navigate(client.url);
-                } catch (navErr) {
-                    // navigate() may fail across-origin or for cross-process clients.
-                    // Fall back to a postMessage; sw-update.js handles RELOAD_NOW.
-                    try { client.postMessage({ type: 'RELOAD_NOW', reason: 'sw-kill-switch' }); } catch (_) {}
-                }
-            }
-        } catch (err) {
-            console.warn('[SW] Client reload failed:', err);
-        }
-
-        // 4. Unregister self so no SW intercepts ragenaizer.com any more.
-        try {
-            await self.registration.unregister();
-            console.log('[SW] Unregistered. Site will run without a SW until a new one is registered.');
-        } catch (err) {
-            console.warn('[SW] Self-unregister failed:', err);
-        }
+        try { await self.clients.claim(); } catch (err) { console.warn('[SW] claim failed:', err); }
+        try { startVersionCheckLoop(); } catch (err) { console.warn('[SW] version check loop failed:', err); }
     })());
 });
 
 // ============================================================
-// FETCH — Intentionally NOT registered.
-// With no fetch handler, the browser handles every request natively
-// (no SW interception, no caching, no broken-SW failure mode).
+// FETCH — intentionally NOT registered. See file header.
+// Browser handles every request natively. Do not add a fetch
+// listener here without staging tests; BUILD 35 took the site
+// down by getting this exact thing wrong.
 // ============================================================
-// (no listener)
 
 // ============================================================
 // VERSION CHECK — Fetch /js/sw-version.js every 30 seconds, parse SW_VERSION
