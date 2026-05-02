@@ -23,7 +23,7 @@
     // Bump cb=N when shipping changes to firebase-messaging-sw.js itself.
     // Chrome aggressively caches compiled SW code; the only reliable way to
     // make Chrome fetch a new SW source file is to change its URL.
-    var swUrl = '/firebase-messaging-sw.js?cb=4';
+    var swUrl = '/firebase-messaging-sw.js?cb=5';
     navigator.serviceWorker.register(swUrl, {
         scope: '/',
         updateViaCache: 'none'

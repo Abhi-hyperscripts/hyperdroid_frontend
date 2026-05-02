@@ -1,5 +1,5 @@
 // ============================================================
-// Ragenaizer Service Worker  [BUILD 36]
+// Ragenaizer Service Worker  [BUILD 37]
 // Handles: Push Notifications (Firebase), Asset Caching, Version Updates
 // ============================================================
 
@@ -135,16 +135,36 @@ self.addEventListener('fetch', (event) => {
 
     // HTML pages
     if (event.request.headers.get('accept')?.includes('text/html') || url.pathname.endsWith('.html')) {
-        event.respondWith(networkFirstStrategy(event.request));
+        event.respondWith(safeRespond(event.request));
         return;
     }
 
     // JS, CSS, images, fonts — same network-first strategy as HTML.
     if (/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp)$/.test(url.pathname)) {
-        event.respondWith(networkFirstStrategy(event.request));
+        event.respondWith(safeRespond(event.request));
         return;
     }
 });
+
+// Defensive wrapper: if the strategy throws (e.g. a bad cache key, a Request
+// constructor that rejects the input mode, etc.), fall through to a plain
+// native fetch so the page still loads. Without this, ANY bug in the SW
+// strategy code becomes a full-site outage. fetch() inside a SW does not
+// re-enter the SW, so this is safe.
+async function safeRespond(request) {
+    try {
+        return await networkFirstStrategy(request);
+    } catch (err) {
+        console.error('[SW] Strategy failed, falling through to native fetch:', err);
+        try {
+            return await fetch(request);
+        } catch (netErr) {
+            // Both strategy and native fetch failed — let the browser surface
+            // its standard offline/error page rather than hanging.
+            throw netErr;
+        }
+    }
+}
 
 // ── Network First ──
 // Always try network. Cache the result under a query-stripped key so
