@@ -4,6 +4,15 @@
 
 const S = { mailboxes: [], editingId: null };
 
+// True for SUPERADMIN or EMAILSERVICE_ADMIN. Drives whether the "Shared mailbox"
+// toggle is editable. Non-admins see it disabled with an explanation. Backend
+// is also gated (defense in depth) so a manually-crafted payload can't bypass.
+function isEmailAdmin() {
+    const u = (typeof getStoredUser === 'function') ? getStoredUser() : null;
+    const roles = u?.roles || [];
+    return roles.includes('SUPERADMIN') || roles.includes('EMAILSERVICE_ADMIN');
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (!api.isAuthenticated()) { window.location.href = '../login.html'; return; }
     Navigation.init('email', '../');
@@ -79,7 +88,12 @@ function renderMailboxList() {
                     <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 </div>
                 <div>
-                    <div class="mbx-name">${escapeHtml(m.display_name || m.email_address)}</div>
+                    <div class="mbx-name" style="display:flex; align-items:center; gap:8px;">
+                        ${escapeHtml(m.display_name || m.email_address)}
+                        ${m.is_shared
+                            ? `<span title="Visible to the whole team — can be attached to CRM flows" style="font-size:10.5px; padding:2px 8px; border-radius:10px; background:var(--brand-primary); color:#fff; font-weight:600; letter-spacing:0.3px;">SHARED</span>`
+                            : `<span title="Personal mailbox — only you can see this" style="font-size:10.5px; padding:2px 8px; border-radius:10px; background:var(--bg-card-hover); color:var(--text-secondary); font-weight:600; letter-spacing:0.3px; border:1px solid var(--border-color);">PERSONAL</span>`}
+                    </div>
                     <div class="mbx-sub">${escapeHtml(m.email_address)} · ${escapeHtml(m.imap_host || '')}:${m.imap_port}</div>
                     ${m.last_error ? `<div class="mbx-err">${escapeHtml(m.last_error)}</div>` : ''}
                 </div>
@@ -114,6 +128,17 @@ function openMailboxModal(mbx) {
     document.getElementById('mbxSmtpPass').value = '';
     document.getElementById('mbxEmail').disabled = !!mbx;
     document.getElementById('mbxTestResult').style.display = 'none';
+
+    // Shared toggle — admin-only. Reflect current value, lock for non-admins.
+    const sharedCb = document.getElementById('mbxIsShared');
+    const adminBadge = document.getElementById('mbxSharedAdminBadge');
+    const deniedHint = document.getElementById('mbxSharedDeniedHint');
+    sharedCb.checked = !!(mbx?.is_shared);
+    const admin = isEmailAdmin();
+    sharedCb.disabled = !admin;
+    adminBadge.style.display = admin ? 'none' : '';
+    deniedHint.style.display = admin ? 'none' : '';
+
     document.getElementById('mailboxModal').classList.add('active');
 }
 
@@ -178,7 +203,7 @@ function readForm() {
         email_address: document.getElementById('mbxEmail').value.trim(),
         display_name: document.getElementById('mbxDisplay').value.trim() || null,
         provider_type: 'imap_smtp',
-        is_shared: false,
+        is_shared: !!document.getElementById('mbxIsShared').checked,
         imap_host: document.getElementById('mbxImapHost').value.trim(),
         imap_port: parseInt(document.getElementById('mbxImapPort').value, 10) || 993,
         imap_use_ssl: document.getElementById('mbxImapSsl').value === 'true',
@@ -252,6 +277,12 @@ async function saveMailbox() {
             };
             if (document.getElementById('mbxImapPass').value) payload.imap_password = form.imap_password;
             if (document.getElementById('mbxSmtpPass').value) payload.smtp_password = form.smtp_password;
+            // Only admins see an enabled checkbox; only send is_shared if it
+            // actually changed, so non-admin edits don't trigger the BL guard.
+            const original = S.mailboxes.find(m => m.id === S.editingId);
+            if (isEmailAdmin() && original && original.is_shared !== form.is_shared) {
+                payload.is_shared = form.is_shared;
+            }
             await api.request(`/email/mailboxes/${S.editingId}`, { method: 'PUT', body: JSON.stringify(payload), _skipSpinner: true });
             Toast.success('Mailbox updated.');
         } else {

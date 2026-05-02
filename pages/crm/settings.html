@@ -1060,168 +1060,133 @@
                 </div>
 
                 <!-- ─── Mailboxes Tab ─────────────────────────────────────────────── -->
-                <!-- Two stacked sub-sections:
-                     (A) Tenant OAuth Apps (BYOC) — admin pastes Google/Microsoft app creds once.
-                     (B) Connected Mailboxes — each user connects their own mailbox.
-                         Gmail/M365 via OAuth (requires an app in A); everything else via IMAP. -->
+                <!-- Phase 4 of UNIFIED_MAILBOX_PLAN.md retired the legacy CRM-side
+                     OAuth Apps + Connected Mailboxes sections from this page. The
+                     ONLY surface here now is the shared-mailbox picker — admins
+                     create real mailboxes in EmailService Settings (the unified
+                     IMAP/SMTP host) and pick one here as the tenant default or
+                     per-flow override. -->
                 <div class="crm-tab-content" id="tab-mailboxes">
-                    <!-- Status alerts from OAuth callback -->
-                    <div class="crm-alert crm-alert-success" id="mailboxConnectedAlert" style="display: none;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                            <polyline points="22 4 12 14.01 9 11.01"/>
-                        </svg>
-                        <span id="mailboxConnectedAlertText">Mailbox connected.</span>
-                    </div>
-                    <div class="crm-alert crm-alert-error" id="mailboxErrorAlert" style="display: none;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="8" x2="12" y2="12"/>
-                            <line x1="12" y1="16" x2="12.01" y2="16"/>
-                        </svg>
-                        <span id="mailboxErrorAlertText">Something went wrong.</span>
-                    </div>
-
-                    <!-- ─── A. OAuth Apps (BYOC) ─────────────────────────────────── -->
-                    <details class="mailbox-help">
-                        <summary>
-                            <svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"/>
-                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                                <line x1="12" y1="17" x2="12.01" y2="17"/>
-                            </svg>
-                            What are OAuth Apps &mdash; and do I need one?
-                            <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="6 9 12 15 18 9"/>
-                            </svg>
-                        </summary>
-                        <div class="mailbox-help-body">
-                            <p>An <strong>admin-only, one-time setup</strong> that lets your team connect Gmail or Microsoft 365 mailboxes with a single click.</p>
-                            <ul>
-                                <li>You register your <strong>own</strong> OAuth app in Google Cloud / Azure once &mdash; you control the credentials, not us.</li>
-                                <li>After that, every user on your tenant can sign in to their Gmail / Outlook mailbox through your app &mdash; no Google/Microsoft publisher verification required.</li>
-                                <li>You only need this if your team uses <strong>Gmail or Microsoft 365</strong>. If everyone is on IMAP providers (GoDaddy, Hostinger, Zoho, Zoho Mail, custom SMTP), you can safely skip this section.</li>
-                                <li>Nothing is sent yet &mdash; OAuth Apps just make the "Connect Mailbox" button work for Gmail/Outlook below.</li>
-                            </ul>
-                        </div>
-                    </details>
-
-                    <div class="section-header">
-                        <div>
-                            <h3 class="section-title">OAuth Apps</h3>
-                            <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 0;">
-                                Register your own Google / Microsoft OAuth app once. Your team then
-                                connects their mailboxes through it &mdash; no SaaS-level verification needed.
-                            </p>
-                        </div>
-                        <div class="header-actions">
-                            <button class="btn btn-primary" onclick="openOAuthAppModal()">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
-                                    <line x1="12" y1="5" x2="12" y2="19"/>
-                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <!-- ─── Phase 3 of unified-mailbox plan: shared-mailbox picker ─── -->
+                    <!-- Surfaces the new flow_mailbox_attachments + tenant_default_mailbox
+                         state. Powered by /api/mailbox-attachments/* (the controller
+                         that proxies to EmailService gRPC). -->
+                    <div id="sharedMailboxPickerSection" style="border: 1px solid var(--border-color); border-radius: 12px; padding: 18px 20px; margin-bottom: 24px; background: var(--bg-secondary);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom: 12px;">
+                            <div>
+                                <h3 class="section-title" style="margin:0;">Shared-mailbox picker</h3>
+                                <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 0;">
+                                    Pick a <strong>shared mailbox</strong> (set up in EmailService) for campaigns and lead sources.
+                                    When a rep leaves, conversations stay with the team.
+                                </p>
+                            </div>
+                            <button class="btn btn-secondary" type="button" onclick="refreshSharedMailboxPicker()" style="white-space:nowrap;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: -2px;">
+                                    <polyline points="23 4 23 10 17 10"/>
+                                    <polyline points="1 20 1 14 7 14"/>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
                                 </svg>
-                                Add OAuth App
+                                Refresh
                             </button>
                         </div>
-                    </div>
 
-                    <div class="crm-table-wrapper data-table-container" id="oauthAppsTableWrapper">
-                        <table class="crm-table data-table">
-                            <thead>
-                                <tr>
-                                    <th>Provider</th>
-                                    <th>Client ID</th>
-                                    <th class="hide-mobile">Redirect URI</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="oauthAppsTableBody"></tbody>
-                        </table>
-                    </div>
-                    <div class="empty-state" id="oauthAppsEmpty" style="display: none;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        </svg>
-                        <h3>No OAuth apps configured</h3>
-                        <p>Add a Google or Microsoft OAuth app so your team can connect their mailboxes.
-                        If everyone will use IMAP (e.g. GoDaddy, Hostinger, Zoho), you can skip this.</p>
-                    </div>
+                        <details style="margin-bottom: 14px; padding: 10px 12px; background: var(--bg-card); border-radius: 8px;">
+                            <summary style="cursor:pointer; font-weight: 500; color: var(--text-secondary); font-size: 0.85rem;">What is this?</summary>
+                            <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                                A <strong>shared mailbox</strong> belongs to your team, not to one person — like
+                                <em>sales@yourcompany.com</em> or <em>support@yourcompany.com</em>. Pick one here and
+                                your CRM sends every campaign from that address. Replies land in the team inbox.
+                                <ul style="margin:8px 0 8px 18px; padding:0;">
+                                    <li><strong>Set it up once:</strong> an admin connects the shared mailbox in <em>Mail → Settings</em>.</li>
+                                    <li><strong>Pick it here:</strong> set a tenant default that every campaign uses, or override per-campaign.</li>
+                                    <li><strong>Reps stay personal:</strong> their day-to-day inbox is unchanged; only campaign sends use the shared address.</li>
+                                    <li><strong>Rep leaves, conversations stay:</strong> nothing walks out the door because nothing was tied to a personal account.</li>
+                                </ul>
+                                Only mailboxes marked <strong>shared</strong> show up in the picker. Personal mailboxes
+                                are deliberately filtered out — that's the governance gate.
+                            </div>
+                        </details>
 
-                    <!-- ─── B. Connected Mailboxes ──────────────────────────────────── -->
-                    <hr class="mailbox-section-divider" />
-
-                    <details class="mailbox-help">
-                        <summary>
-                            <svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"/>
-                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                                <line x1="12" y1="17" x2="12.01" y2="17"/>
-                            </svg>
-                            What are Connected Mailboxes &mdash; and how do they differ from OAuth Apps?
-                            <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="6 9 12 15 18 9"/>
-                            </svg>
-                        </summary>
-                        <div class="mailbox-help-body">
-                            <p>The <strong>actual email accounts</strong> your CRM uses to send outreach and receive replies &mdash; one row per user.</p>
-                            <ul>
-                                <li>Each user clicks <strong>Connect Mailbox</strong> and links their own address (e.g. <em>john@company.com</em>). Campaigns go out from that address; replies are routed back into the CRM inbox.</li>
-                                <li>Two ways to connect:
-                                    <ul>
-                                        <li><strong>OAuth (Gmail / Microsoft 365)</strong> &mdash; one-click login, requires an OAuth App above.</li>
-                                        <li><strong>IMAP + SMTP</strong> &mdash; works for any provider (GoDaddy, Hostinger, Zoho, custom). No OAuth App needed.</li>
-                                    </ul>
-                                </li>
-                                <li>A mailbox can be <strong>personal</strong> (only you send from it) or <strong>tenant-shared</strong> (team-wide, e.g. <em>sales@company.com</em>).</li>
-                                <li><strong>TL;DR:</strong> OAuth Apps above = admin infrastructure (set up once). Connected Mailboxes here = the per-user accounts that actually send and receive mail.</li>
-                            </ul>
-                        </div>
-                    </details>
-
-                    <div class="section-header">
-                        <div>
-                            <h3 class="section-title">Connected Mailboxes</h3>
-                            <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 0;">
-                                Each user connects their own mailbox. Emails are sent from their address,
-                                replies are routed back into the CRM.
-                            </p>
-                        </div>
-                        <div class="header-actions">
-                            <button class="btn btn-primary" onclick="openConnectMailboxModal()">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
-                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                    <polyline points="22,6 12,13 2,6"/>
+                        <!-- Migration banner: appears only when a flow is still attached to a non-shared / inactive mailbox. -->
+                        <div id="migrationBanner" style="display:none; padding: 12px 14px; margin-bottom: 14px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 8px; font-size: 0.88rem;">
+                            <div style="display:flex; gap: 10px; align-items:flex-start;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;">
+                                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                    <line x1="12" y1="9" x2="12" y2="13"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
                                 </svg>
-                                Connect Mailbox
-                            </button>
+                                <div>
+                                    <strong style="color:#f59e0b;">Action needed:</strong>
+                                    <span id="migrationBannerText">— flows are still attached to personal or inactive mailboxes. Switch them to a shared mailbox below to keep customer conversations with the team.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tenant default mailbox -->
+                        <div style="display:flex; align-items:center; gap: 14px; flex-wrap: wrap; padding: 12px; background: var(--bg-card); border-radius: 8px; margin-bottom: 14px;">
+                            <div style="flex:1; min-width: 240px;">
+                                <div style="font-weight:500;">Tenant default mailbox</div>
+                                <div style="color: var(--text-secondary); font-size: 0.82rem; margin-top: 2px;">
+                                    Used when a campaign / sequence / lead source has no specific mailbox set.
+                                </div>
+                            </div>
+                            <div id="tenantDefaultMailboxLabel" style="color: var(--text-secondary); font-size: 0.85rem; min-width: 180px;">Loading…</div>
+                            <div style="display:flex; gap: 8px;">
+                                <button class="btn btn-primary btn-sm" type="button" onclick="openTenantDefaultPicker()">Change</button>
+                                <button class="btn btn-secondary btn-sm" type="button" id="tenantDefaultClearBtn" onclick="clearTenantDefaultMailbox()" style="display:none;">Clear</button>
+                            </div>
+                        </div>
+
+                        <!-- Per-flow attachments -->
+                        <div style="margin-top: 6px;">
+                            <div style="font-weight:500; margin-bottom: 6px;">Per-flow overrides</div>
+                            <div style="color: var(--text-secondary); font-size: 0.82rem; margin-bottom: 10px;">
+                                Specific campaigns / sequences / lead sources that send from a different shared mailbox than the tenant default.
+                            </div>
+                            <div class="crm-table-wrapper data-table-container" id="flowAttachmentsTableWrapper">
+                                <table class="crm-table data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Flow</th>
+                                            <th>Mailbox</th>
+                                            <th class="hide-mobile">Status</th>
+                                            <th class="hide-mobile">Attached by</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="flowAttachmentsTableBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="empty-state" id="flowAttachmentsEmpty" style="display: none; padding: 18px;">
+                                <p style="margin:0; color: var(--text-secondary); font-size: 0.88rem;">
+                                    No flow-specific overrides. All campaigns and lead sources fall back to the tenant default above.
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="crm-table-wrapper data-table-container" id="mailboxesTableWrapper">
-                        <table class="crm-table data-table">
-                            <thead>
-                                <tr>
-                                    <th>Email</th>
-                                    <th>Type</th>
-                                    <th class="hide-mobile">Scope</th>
-                                    <th>Status</th>
-                                    <th class="hide-mobile">IDLE</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="mailboxesTableBody"></tbody>
-                        </table>
+                    <!-- Picker modal: choose a shared mailbox from EmailService catalog.
+                         Uses the .modal + .modal.active convention (see openModal()/closeModal()
+                         in companies.js / deals.js etc.). The .modal CSS hides it by default;
+                         adding .active flips it to display:flex via the existing rule. -->
+                    <div id="sharedMailboxPickerModal" class="modal">
+                        <div class="modal-backdrop" onclick="closeSharedMailboxPicker()"></div>
+                        <div class="modal-dialog" style="max-width: 520px;">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h3 id="sharedMailboxPickerTitle" class="modal-title">Pick a shared mailbox</h3>
+                                    <button type="button" class="close-btn" onclick="closeSharedMailboxPicker()" aria-label="Close">&times;</button>
+                                </div>
+                                <div class="modal-body">
+                                    <div id="sharedMailboxPickerList" style="display:flex; flex-direction:column; gap: 8px; max-height: 360px; overflow-y: auto;"></div>
+                                    <div id="sharedMailboxPickerEmpty" style="display:none; color: var(--text-secondary); padding: 14px; text-align:center;">
+                                        No shared mailboxes set up yet. Ask your admin to mark a mailbox shared in EmailService.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="empty-state" id="mailboxesEmpty" style="display: none;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                            <polyline points="22,6 12,13 2,6"/>
-                        </svg>
-                        <h3>No mailboxes connected yet</h3>
-                        <p>Connect a mailbox to start sending campaigns and tracking replies.</p>
-                    </div>
+
                 </div>
 
                 <!-- ─── Templates Tab ─────────────────────────────────────────────── -->

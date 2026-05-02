@@ -70,11 +70,18 @@ _currentFcmToken = localStorage.getItem(_FCM_KEYS.token) || null;
 // controllerchange, so the setTimeout below is a fallback for non-reloading pages.
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('[FCM] SW controller changed — clearing all FCM state for fresh registration');
+        console.log('[FCM] SW controller changed — clearing FCM registration flags');
         localStorage.removeItem(_FCM_KEYS.registered);
         localStorage.removeItem(_FCM_KEYS.failCount);
         localStorage.removeItem(_FCM_KEYS.failTimestamp);
-        localStorage.removeItem(`${STORAGE_PREFIX}fcm_version`);
+        // INTENTIONALLY NOT clearing fcm_version: that flag is the SW_VERSION
+        // the FCM token was registered against. Removing it on every
+        // controllerchange forced an SW re-register on the very next page
+        // load (lastRegisteredVersion=null !== SW_VERSION → force=true),
+        // which itself triggers another install → controllerchange →
+        // infinite reload loop on settings/inbox pages. The token itself is
+        // still re-fetched below via ensureFcmTokenRegistered(true), which
+        // is what we actually need; the version stamp can stay.
         _currentFcmToken = null;
         // Fallback: if page doesn't reload, try re-registration after delay
         setTimeout(() => {
@@ -136,6 +143,12 @@ async function _initFirebase() {
 async function _registerServiceWorker() {
     if (!('serviceWorker' in navigator)) {
         console.warn('[FCM] Service workers not supported');
+        return null;
+    }
+    // Mirror the sw-update.js bypass so FCM doesn't independently re-register
+    // and reintroduce the install/controllerchange loop in headless tests.
+    if (location.search.includes('nosw=1') || sessionStorage.getItem('__nosw') === '1') {
+        console.log('[FCM] ?nosw=1 — skipping SW registration');
         return null;
     }
 

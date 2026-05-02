@@ -447,6 +447,8 @@ function switchSettingsTab(tabName) {
         loadTeamsTab();
     } else if (tabName === 'mailboxes' && typeof loadMailboxesTab === 'function') {
         loadMailboxesTab();
+        // Phase 3 unified-mailbox picker — loads alongside the legacy mailbox table.
+        if (typeof refreshSharedMailboxPicker === 'function') refreshSharedMailboxPicker();
     } else if (tabName === 'templates' && typeof loadTemplatesTab === 'function') {
         loadTemplatesTab();
     } else if (tabName === 'campaigns' && typeof loadCampaignsTab === 'function') {
@@ -4196,3 +4198,219 @@ async function saveGoogleSheetShareConnection() {
         btn.textContent = orig;
     }
 }
+
+// ─── Phase 3 of unified-mailbox plan: shared-mailbox picker UX ─────────────
+// Powered by /api/mailbox-attachments/* — the controller proxies to
+// EmailService gRPC. Three concerns:
+//   1. Load + render the tenant default and per-flow attachments
+//   2. Modal-driven picker over EmailService's shared-mailbox catalog
+//   3. Migration banner that flags flows pointing at non-shared / inactive boxes
+
+let _sharedMailboxes = [];          // cache of EmailService catalog (shared, active)
+let _flowAttachments = [];          // cache of flow_mailbox_attachments rows
+let _tenantDefaultMailbox = null;   // Mailbox object or null
+let _pickerMode = null;             // {kind: 'tenant-default' | 'flow', flowId, flowType}
+
+async function refreshSharedMailboxPicker() {
+    try {
+        // Three calls in parallel — they're cheap and the UI is fully redrawn from the result.
+        const [catalog, defaultMb, attachments] = await Promise.all([
+            api.request('/crm/mailbox-attachments/shared-mailboxes'),
+            api.request('/crm/mailbox-attachments/tenant-default'),
+            api.request('/crm/mailbox-attachments/attachments'),
+        ]);
+        _sharedMailboxes = catalog?.mailboxes || [];
+        _tenantDefaultMailbox = defaultMb?.mailbox || null;
+        _flowAttachments = attachments?.attachments || [];
+        renderTenantDefaultMailbox();
+        renderFlowAttachments();
+        renderMigrationBanner();
+    } catch (e) {
+        console.warn('[mailbox-picker] refresh failed:', e);
+        // Non-fatal — leave the legacy mailbox table working. EmailService gRPC may be down.
+        const lbl = document.getElementById('tenantDefaultMailboxLabel');
+        if (lbl) lbl.textContent = 'EmailService unreachable';
+    }
+}
+
+function renderTenantDefaultMailbox() {
+    const lbl = document.getElementById('tenantDefaultMailboxLabel');
+    const clearBtn = document.getElementById('tenantDefaultClearBtn');
+    if (!lbl) return;
+    if (_tenantDefaultMailbox) {
+        lbl.innerHTML = `<strong>${escapeHtml(_tenantDefaultMailbox.email_address)}</strong>`
+            + (_tenantDefaultMailbox.display_name
+                ? ` <span style="color:var(--text-secondary);">· ${escapeHtml(_tenantDefaultMailbox.display_name)}</span>`
+                : '');
+        if (clearBtn) clearBtn.style.display = '';
+    } else {
+        lbl.innerHTML = '<em style="color:var(--text-secondary);">None — campaigns have no default sender</em>';
+        if (clearBtn) clearBtn.style.display = 'none';
+    }
+}
+
+function renderAttachedBy(a) {
+    const name = a.attached_by_display_name;
+    const email = a.attached_by_email;
+    if (name && email && name !== email) {
+        return `${escapeHtml(name)} <span style="color:var(--text-secondary);font-size:0.85em;">&lt;${escapeHtml(email)}&gt;</span>`;
+    }
+    if (name) return escapeHtml(name);
+    if (email) return escapeHtml(email);
+    const raw = a.attached_by || '';
+    // Auth lookup miss — show short GUID instead of the full ugly one.
+    if (/^[0-9a-f-]{36}$/i.test(raw)) {
+        return `<code title="${escapeHtml(raw)}" style="font-size:0.85em;color:var(--text-secondary);">${escapeHtml(raw.slice(0, 8))}…</code>`;
+    }
+    return escapeHtml(raw);
+}
+
+function renderFlowAttachments() {
+    const tbody = document.getElementById('flowAttachmentsTableBody');
+    const emptyEl = document.getElementById('flowAttachmentsEmpty');
+    const wrapper = document.getElementById('flowAttachmentsTableWrapper');
+    if (!tbody) return;
+    if (_flowAttachments.length === 0) {
+        tbody.innerHTML = '';
+        if (emptyEl) emptyEl.style.display = '';
+        if (wrapper) wrapper.style.display = 'none';
+        return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (wrapper) wrapper.style.display = '';
+    tbody.innerHTML = _flowAttachments.map(a => {
+        const flowLabel = `${escapeHtml(a.flow_type)} · <code style="font-size:0.78em;">${escapeHtml(String(a.flow_id).slice(0, 8))}…</code>`;
+        const mbLabel = a.mailbox_email === '(missing)'
+            ? `<span style="color:var(--color-error);">(mailbox deleted)</span>`
+            : escapeHtml(a.mailbox_email);
+        const status = a.needs_migration
+            ? `<span style="color:#f59e0b;">⚠ ${a.is_shared ? 'inactive' : 'personal — needs migration'}</span>`
+            : `<span style="color:var(--color-success);">✓ shared & active</span>`;
+        return `<tr${a.needs_migration ? ' style="background: rgba(245, 158, 11, 0.05);"' : ''}>
+            <td>${flowLabel}</td>
+            <td>${mbLabel}</td>
+            <td class="hide-mobile">${status}</td>
+            <td class="hide-mobile">${renderAttachedBy(a)}</td>
+            <td>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="openFlowAttachmentPicker('${a.flow_type}','${a.flow_id}')">Change</button>
+                <button class="btn btn-secondary btn-sm" type="button" onclick="detachFlow('${a.flow_type}','${a.flow_id}')">Remove</button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function renderMigrationBanner() {
+    const banner = document.getElementById('migrationBanner');
+    const text = document.getElementById('migrationBannerText');
+    if (!banner || !text) return;
+    const flagged = _flowAttachments.filter(a => a.needs_migration).length;
+    if (flagged === 0) {
+        banner.style.display = 'none';
+        return;
+    }
+    banner.style.display = '';
+    text.textContent = ` ${flagged} flow${flagged === 1 ? ' is' : 's are'} still attached to personal or inactive mailboxes. Switch to a shared mailbox below to keep customer conversations with the team.`;
+}
+
+// ─── Picker modal ─────────────────────────────────────────────────────────
+function openTenantDefaultPicker() {
+    _pickerMode = { kind: 'tenant-default' };
+    const titleEl = document.getElementById('sharedMailboxPickerTitle');
+    if (titleEl) titleEl.textContent = 'Pick the tenant default mailbox';
+    showPicker();
+}
+function openFlowAttachmentPicker(flowType, flowId) {
+    _pickerMode = { kind: 'flow', flowType, flowId };
+    const titleEl = document.getElementById('sharedMailboxPickerTitle');
+    if (titleEl) titleEl.textContent = `Pick mailbox for this ${flowType}`;
+    showPicker();
+}
+function closeSharedMailboxPicker() {
+    const m = document.getElementById('sharedMailboxPickerModal');
+    if (m) m.classList.remove('active');
+    _pickerMode = null;
+}
+
+function showPicker() {
+    const list = document.getElementById('sharedMailboxPickerList');
+    const empty = document.getElementById('sharedMailboxPickerEmpty');
+    const modal = document.getElementById('sharedMailboxPickerModal');
+    if (!list || !modal) return;
+    if (_sharedMailboxes.length === 0) {
+        list.innerHTML = '';
+        if (empty) empty.style.display = '';
+    } else {
+        if (empty) empty.style.display = 'none';
+        list.innerHTML = _sharedMailboxes.map(m => `
+            <button type="button" class="btn btn-secondary"
+                    style="text-align:left; padding: 12px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px;"
+                    onclick="confirmPickerSelection('${m.id}')">
+                <div>
+                    <div style="font-weight:500;">${escapeHtml(m.email_address)}</div>
+                    <div style="color:var(--text-secondary); font-size:0.78rem; margin-top:2px;">
+                        ${escapeHtml(m.provider_type)} · daily cap ${m.daily_cap || '—'} · hourly cap ${m.hourly_cap || '—'}
+                    </div>
+                </div>
+                <span style="color:var(--brand-primary); font-size:0.78rem;">Select →</span>
+            </button>
+        `).join('');
+    }
+    modal.classList.add('active');
+}
+
+async function confirmPickerSelection(mailboxId) {
+    if (!_pickerMode) return;
+    const mode = _pickerMode;
+    closeSharedMailboxPicker();
+    try {
+        if (mode.kind === 'tenant-default') {
+            await api.request('/crm/mailbox-attachments/tenant-default', {
+                method: 'PUT', body: JSON.stringify({ mailbox_id: mailboxId })
+            });
+            Toast.success('Tenant default mailbox updated');
+        } else if (mode.kind === 'flow') {
+            await api.request(`/crm/mailbox-attachments/flow/${encodeURIComponent(mode.flowType)}/${encodeURIComponent(mode.flowId)}`,
+                { method: 'PUT', body: JSON.stringify({ mailbox_id: mailboxId }) });
+            Toast.success('Flow mailbox updated');
+        }
+        await refreshSharedMailboxPicker();
+    } catch (e) {
+        // Surface the BL governance-gate errors (personal mailbox / inactive / cross-tenant)
+        Toast.error(e.message || 'Could not update mailbox attachment.');
+    }
+}
+
+async function clearTenantDefaultMailbox() {
+    if (!confirm('Clear the tenant default mailbox? Campaigns without a flow-specific override will have no sender until you set a new default.')) return;
+    try {
+        await api.request('/crm/mailbox-attachments/tenant-default', { method: 'DELETE' });
+        Toast.success('Tenant default cleared');
+        await refreshSharedMailboxPicker();
+    } catch (e) { Toast.error(e.message || 'Could not clear default'); }
+}
+
+async function detachFlow(flowType, flowId) {
+    if (!confirm(`Remove the mailbox attachment for this ${flowType}? It will fall back to the tenant default.`)) return;
+    try {
+        await api.request(`/crm/mailbox-attachments/flow/${encodeURIComponent(flowType)}/${encodeURIComponent(flowId)}`,
+            { method: 'DELETE' });
+        Toast.success('Flow attachment removed');
+        await refreshSharedMailboxPicker();
+    } catch (e) { Toast.error(e.message || 'Could not remove attachment'); }
+}
+
+// Tiny escaper so we don't pull in lodash for a 5-line need.
+function escapeHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// Expose the entry points the inline onclick handlers reference.
+window.refreshSharedMailboxPicker = refreshSharedMailboxPicker;
+window.openTenantDefaultPicker = openTenantDefaultPicker;
+window.openFlowAttachmentPicker = openFlowAttachmentPicker;
+window.closeSharedMailboxPicker = closeSharedMailboxPicker;
+window.confirmPickerSelection = confirmPickerSelection;
+window.clearTenantDefaultMailbox = clearTenantDefaultMailbox;
+window.detachFlow = detachFlow;

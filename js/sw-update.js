@@ -13,6 +13,14 @@
     'use strict';
 
     if (!('serviceWorker' in navigator)) return;
+    // Test-harness bypass: navigating with ?nosw=1 (or storing __nosw flag)
+    // skips SW registration entirely so headless browsers don't get caught in
+    // the install/controllerchange/reload cycle when running E2E tests.
+    if (location.search.includes('nosw=1') || sessionStorage.getItem('__nosw') === '1') {
+        sessionStorage.setItem('__nosw', '1');
+        navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+        return;
+    }
 
     let reloading = false;
 
@@ -95,13 +103,17 @@
     }
     listenForSwMessages();
 
-    // When a new SW takes control, reload to use its cache
+    // controllerchange used to auto-reload the page so a new SW could take
+    // over. With BUILD 39+ the SW has NO fetch handler — there's nothing for
+    // a "fresh cache" to pick up. Reloading here only created an infinite
+    // loop: first page load → SW installs → SKIP_WAITING → controllerchange
+    // → reload → first install again on the new tab session → repeat. Push
+    // handler logic still updates organically (the new SW handles future
+    // pushes from the moment it activates). Ship updates the user-noticeable
+    // way: APP_UPDATE_AVAILABLE messages from the SW, which we still honor
+    // above. No automatic reload here.
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!reloading) {
-            reloading = true;
-            console.log('[Update] New SW activated, reloading page...');
-            window.location.reload();
-        }
+        console.log('[Update] New SW activated (no auto-reload — push handler active immediately).');
     });
 
     /**
@@ -146,36 +158,18 @@
                 }
             };
 
-            // Timeout: if SW doesn't respond in 3s, it's an old version without GET_VERSION handler
-            setTimeout(function () {
-                // Close the port to avoid leaks
-                channel.port1.close();
-            }, 3000);
-
-            // Old SWs (before GET_VERSION was added) won't respond — that also means stale code
-            var responded = false;
-            var origHandler = channel.port1.onmessage;
-            channel.port1.onmessage = function (event) {
-                responded = true;
-                origHandler(event);
-            };
-
-            setTimeout(function () {
-                if (!responded && !reloading) {
-                    console.log('[Update] SW did not respond to GET_VERSION — stale code. Force re-registering...');
-                    registration.unregister().then(function () {
-                        return navigator.serviceWorker.register(swUrl, {
-                            scope: '/',
-                            updateViaCache: 'none'
-                        });
-                    }).then(function () {
-                        reloading = true;
-                        window.location.reload();
-                    }).catch(function (err) {
-                        console.warn('[Update] Force re-register failed:', err);
-                    });
-                }
-            }, 3000);
+            // Close the port after 3s to avoid leaks. Previously this also
+            // triggered a force-unregister + reload if no response arrived,
+            // but on some browsers (Safari, some Chrome on Mac configs) the
+            // SW is still installing during this 3s window and never replies
+            // — every page load then unregistered + reloaded the SW, which
+            // produces an infinite reload loop indistinguishable from a real
+            // bug. Stale SW code is annoying; an infinite reload loop breaks
+            // the app entirely. We keep the version-mismatch reload above
+            // (which fires only when the SW DOES respond with a wrong
+            // version), and ride out the stale case until the user's next
+            // navigation triggers an organic update.
+            setTimeout(function () { channel.port1.close(); }, 3000);
 
             activeSW.postMessage('GET_VERSION', [channel.port2]);
         } catch (e) {
