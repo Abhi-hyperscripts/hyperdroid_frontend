@@ -449,8 +449,14 @@
                     inReplyTo: meta.reply_message_id || '',
                     replySnippet: e.description || '',
                 };
-                const payloadAttr = esc(JSON.stringify(payload));
-                replyBtn = `<div class="tl-actions"><button class="btn btn-sm btn-outline-primary tl-reply-btn" data-reply='${payloadAttr}' onclick="openReplyModalFromBtn(this)">Reply</button></div>`;
+                // The payload's snippet often contains apostrophes (e.g.
+                // "we've", "don't"). esc() doesn't escape ' — and the
+                // attribute uses single-quote delimiters — so the first
+                // apostrophe in the body would terminate the attribute and
+                // truncate the JSON. Base64-encode to side-step every HTML
+                // attribute escaping concern; decode in openReplyModalFromBtn.
+                const payloadAttr = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+                replyBtn = `<div class="tl-actions"><button class="btn btn-sm btn-outline-primary tl-reply-btn" data-reply="${payloadAttr}" onclick="openReplyModalFromBtn(this)">Reply</button></div>`;
             }
 
             // Mark-complete CTA on PENDING follow-ups inside the lead timeline.
@@ -942,9 +948,13 @@
 
     function openReplyModalFromBtn(btn) {
         try {
-            const payload = JSON.parse(btn.getAttribute('data-reply'));
+            const raw = btn.getAttribute('data-reply');
+            // Decode the base64-utf8 payload written by the timeline renderer.
+            const json = decodeURIComponent(escape(atob(raw)));
+            const payload = JSON.parse(json);
             openReplyModal(payload);
         } catch (e) {
+            console.error('reply payload decode failed:', e);
             Toast.error('Failed to open reply composer');
         }
     }
