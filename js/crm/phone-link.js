@@ -103,40 +103,87 @@
     }
 
     /**
-     * Render a phone number as a tap-to-call anchor.
+     * Build a WhatsApp deep link (https://wa.me/<intl-no-plus>).
+     *
+     * Opens the WhatsApp app on iOS / Android (PWA or browser); falls back
+     * to wa.me web flow on desktop.
+     *
+     * Format: wa.me/ requires the FULL international number with no "+",
+     * no spaces, no leading zeros — opposite of tel: which strips the
+     * country code. So "+91 98506 84450" → "wa.me/919850684450".
+     */
+    function crmWhatsappHref(raw) {
+        const norm = crmNormalizePhone(raw); // "+CCNNNN..."
+        if (!norm) return '';
+        return 'https://wa.me/' + norm.slice(1); // drop the leading "+"
+    }
+
+    // Inline SVG of WhatsApp's logo glyph in their official green (#25D366).
+    // Used as a contact-method indicator next to phone numbers — this is
+    // the standard reduced-mark WhatsApp publishes for "tap to chat" links.
+    const _WA_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="#25D366" '
+                  + 'aria-hidden="true" style="vertical-align:-2px;">'
+                  + '<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413"/>'
+                  + '</svg>';
+
+    /**
+     * Render phone-number contact actions: tap-to-call link + (by default)
+     * a WhatsApp button alongside.
+     *
+     * Output is a single inline group like:
+     *   📞 +91 98506 84450  [WA]
+     * where the number-with-📞 dials when tapped and [WA] opens WhatsApp.
      *
      * opts:
-     *   display       — text to render inside the anchor. Defaults to the
-     *                   ORIGINAL raw input (preserves pretty formatting like
-     *                   "+91 98506 84450" the user entered).
-     *   showIcon      — prepend a 📞 emoji. Default true.
-     *   emptyFallback — what to render when raw is falsy. Default '-'.
-     *   className     — extra CSS class on the anchor.
+     *   display       — text to render inside the call anchor. Defaults to
+     *                   the ORIGINAL raw input (preserves pretty formatting).
+     *   showIcon      — prepend a 📞 emoji to the call anchor. Default true.
+     *   emptyFallback — render this when raw is falsy. Default '-'.
+     *   className     — extra CSS class on the call anchor.
+     *   whatsapp      — also render the WhatsApp button. Default true.
      */
     function crmPhoneLink(raw, opts) {
         opts = opts || {};
         const empty = opts.emptyFallback === undefined ? '-' : opts.emptyFallback;
         if (raw === null || raw === undefined || String(raw).trim() === '') return empty;
 
-        const href = crmPhoneHref(raw);
-        if (!href) return empty;
+        const telHref = crmPhoneHref(raw);
+        if (!telHref) return empty;
 
         const display = opts.display || String(raw);
         const showIcon = opts.showIcon !== false;
+        const includeWhatsapp = opts.whatsapp !== false;
         const cls = 'crm-tel-link' + (opts.className ? ' ' + opts.className : '');
 
         const icon = showIcon
             ? '<span class="crm-tel-icon" aria-hidden="true" style="margin-right:4px;">📞</span>'
             : '';
 
-        return '<a href="' + _esc(href) + '" class="' + _esc(cls) + '" '
-             + 'title="Call ' + _esc(display) + '" '
-             + 'style="color:inherit;text-decoration:none;">'
-             + icon + _esc(display) + '</a>';
+        const callAnchor =
+              '<a href="' + _esc(telHref) + '" class="' + _esc(cls) + '" '
+            + 'title="Call ' + _esc(display) + '" '
+            + 'style="color:inherit;text-decoration:none;">'
+            + icon + _esc(display) + '</a>';
+
+        if (!includeWhatsapp) return callAnchor;
+
+        const waHref = crmWhatsappHref(raw);
+        if (!waHref) return callAnchor;
+
+        const waAnchor =
+              '<a href="' + _esc(waHref) + '" target="_blank" rel="noopener noreferrer" '
+            + 'class="crm-wa-link" title="WhatsApp ' + _esc(display) + '" '
+            + 'style="display:inline-flex;align-items:center;justify-content:center;'
+            + 'margin-left:6px;text-decoration:none;line-height:0;" '
+            + 'onclick="event.stopPropagation();">'
+            + _WA_SVG + '</a>';
+
+        return callAnchor + waAnchor;
     }
 
     global.crmNormalizePhone = crmNormalizePhone;
     global.crmPhoneHref = crmPhoneHref;
+    global.crmWhatsappHref = crmWhatsappHref;
     global.crmPhoneLink = crmPhoneLink;
-    global.CrmPhoneLink = { crmNormalizePhone, crmPhoneHref, crmPhoneLink };
+    global.CrmPhoneLink = { crmNormalizePhone, crmPhoneHref, crmWhatsappHref, crmPhoneLink };
 })(window);
