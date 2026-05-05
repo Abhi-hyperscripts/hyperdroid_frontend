@@ -57,7 +57,18 @@
             return '+' + s.slice(1).replace(/[^\d]/g, '');
         }
 
-        const digits = s.replace(/[^\d]/g, '');
+        let digits = s.replace(/[^\d]/g, '');
+        if (!digits) return '';
+
+        // Strip leading zeros — covers two common dial-out prefixes:
+        //   "0" before a national mobile number (India STD trunk, UK
+        //       trunk: "08586084450" → "8586084450").
+        //   "00" international dial-out prefix used in many countries
+        //       ("00919858608450" → "919858608450").
+        // Without this, "08586084450" was 11 digits → fell through to the
+        // "already has country code" branch → tel:+08586084450 → dialer
+        // rings a literal "+0..." that fails on most networks.
+        digits = digits.replace(/^0+/, '');
         if (!digits) return '';
 
         if (digits.length === 10) {
