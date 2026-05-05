@@ -418,7 +418,7 @@ function buildLeadCardHTML(lead) {
         </div>
         ${contactName ? `<div class="discovery-lead-contact">${escapeHtml(contactName)}${jobTitle ? ' — ' + escapeHtml(jobTitle) : ''}</div>` : ''}
         ${email ? `<div class="discovery-lead-email">${escapeHtml(email)}</div>` : '<div class="discovery-lead-email discovery-pending">Enriching contact info...</div>'}
-        ${phone ? `<div class="discovery-lead-phone">${escapeHtml(phone)}</div>` : ''}
+        ${phone ? `<div class="discovery-lead-phone">${crmPhoneLink(phone)}</div>` : ''}
         ${lead.reasonToContact ? `<div class="discovery-lead-reason">${escapeHtml(lead.reasonToContact)}</div>` : ''}
         ${lead.pitchAngle ? `<div class="discovery-lead-pitch"><em>${escapeHtml(lead.pitchAngle)}</em></div>` : ''}
     `;

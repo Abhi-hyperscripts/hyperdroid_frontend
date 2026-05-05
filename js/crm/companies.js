@@ -117,7 +117,7 @@ function renderCompanies() {
                 </td>
                 <td>${company.industry ? `<span class="badge badge-neutral">${escapeHtml(company.industry)}</span>` : '<span style="color: var(--text-muted);">-</span>'}</td>
                 <td>${company.website ? `<a href="${escapeHtml(company.website)}" target="_blank" rel="noopener" style="color: var(--brand-primary); text-decoration: none;">${escapeHtml(truncateUrl(company.website))}</a>` : '<span style="color: var(--text-muted);">-</span>'}</td>
-                <td>${escapeHtml(company.phone) || '<span style="color: var(--text-muted);">-</span>'}</td>
+                <td>${company.phone ? crmPhoneLink(company.phone) : '<span style="color: var(--text-muted);">-</span>'}</td>
                 <td>${escapeHtml(company.email) || '<span style="color: var(--text-muted);">-</span>'}</td>
                 <td>${location ? escapeHtml(location) : '<span style="color: var(--text-muted);">-</span>'}</td>
                 <td>${renderCompanyStatus(company.status)}</td>

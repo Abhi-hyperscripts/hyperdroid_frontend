@@ -1044,7 +1044,7 @@ async function openDealDetailPanel(dealId) {
                 ${field('Contact', deal.contact_name || (lead ? `${lead.first_name || ''} ${lead.last_name || ''}`.trim() : null))}
                 ${field('Company', deal.company_name || lead?.company_name)}
                 ${field('Email', lead?.email)}
-                ${field('Phone', lead?.phone)}
+                ${field('Phone', lead?.phone, lead?.phone ? crmPhoneLink(lead.phone) : null)}
                 ${field('Source', lead?.lead_source)}
                 ${field('Team', lead?.team_name, teamBadge)}
                 ${field('Owner', lead?.owner_name || deal.owner_name)}

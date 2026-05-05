@@ -161,7 +161,7 @@ function renderContacts() {
                     </div>
                 </td>
                 <td>${escapeHtml(contact.email) || '<span style="color: var(--text-muted);">-</span>'}</td>
-                <td>${escapeHtml(contact.phone || contact.mobile) || '<span style="color: var(--text-muted);">-</span>'}</td>
+                <td>${(contact.phone || contact.mobile) ? crmPhoneLink(contact.phone || contact.mobile) : '<span style="color: var(--text-muted);">-</span>'}</td>
                 <td>${companyName ? escapeHtml(companyName) : '<span style="color: var(--text-muted);">-</span>'}</td>
                 <td>${contact.contact_source ? `<span class="badge badge-neutral">${escapeHtml(contact.contact_source)}</span>` : '<span style="color: var(--text-muted);">-</span>'}</td>
                 <td>${escapeHtml(contact.job_title) || '<span style="color: var(--text-muted);">-</span>'}</td>
@@ -489,7 +489,7 @@ async function openContactDetailPanel(contactId) {
             <div class="lead-detail-grid">
                 ${field('Lead ID', lead?.lead_number, lead?.lead_number ? `<span class="crm-lead-number">${esc(lead.lead_number)}</span>` : null)}
                 ${field('Email', contact.email)}
-                ${field('Phone', contact.phone || contact.mobile || src.phone)}
+                ${field('Phone', contact.phone || contact.mobile || src.phone, crmPhoneLink(contact.phone || contact.mobile || src.phone))}
                 ${field('Company', contact.company_name || src.company_name)}
                 ${field('Job Title', contact.job_title || src.job_title)}
                 ${field('Source', contact.contact_source || src.lead_source)}

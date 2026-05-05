@@ -226,8 +226,8 @@
                 <div class="lead-detail-grid">
                     ${lead.lead_number ? `<div class="lead-detail-item"><span class="lead-detail-label">Lead ID</span><span class="crm-lead-number">${esc(lead.lead_number)}</span></div>` : ''}
                     ${lead.email ? `<div class="lead-detail-item"><span class="lead-detail-label">Email</span><span>${esc(lead.email)}</span></div>` : ''}
-                    ${lead.phone ? `<div class="lead-detail-item"><span class="lead-detail-label">Phone</span><span>${esc(lead.phone)}</span></div>` : ''}
-                    ${lead.alternate_phone ? `<div class="lead-detail-item"><span class="lead-detail-label">Alt. Phone</span><span>${esc(lead.alternate_phone)}</span></div>` : ''}
+                    ${lead.phone ? `<div class="lead-detail-item"><span class="lead-detail-label">Phone</span><span>${crmPhoneLink(lead.phone)}</span></div>` : ''}
+                    ${lead.alternate_phone ? `<div class="lead-detail-item"><span class="lead-detail-label">Alt. Phone</span><span>${crmPhoneLink(lead.alternate_phone)}</span></div>` : ''}
                     ${lead.company_name ? `<div class="lead-detail-item"><span class="lead-detail-label">Company</span><span>${esc(lead.company_name)}</span></div>` : ''}
                     ${lead.job_title ? `<div class="lead-detail-item"><span class="lead-detail-label">Job Title</span><span>${esc(lead.job_title)}</span></div>` : ''}
                     ${lead.lead_source ? `<div class="lead-detail-item"><span class="lead-detail-label">Source</span><span>${esc(lead.lead_source)}</span></div>` : ''}
