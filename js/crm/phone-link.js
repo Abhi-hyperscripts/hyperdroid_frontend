@@ -28,46 +28,67 @@
         }[c]));
     }
 
+    function _defaultCountryCode() {
+        return (document.body && document.body.dataset.defaultCountryCode)
+            || (document.documentElement && document.documentElement.dataset.defaultCountryCode)
+            || '91';
+    }
+
     /**
-     * Strip every char that isn't a digit or "+", and ensure exactly one
-     * leading "+". Numbers without a leading "+" but >= 10 digits are
-     * treated as already-international and just have "+" prepended; pure
-     * 10-digit local numbers (most Indian leads) get "+91" prepended so
-     * the dialer always has enough info.
+     * Normalize a raw phone string to "+CCNNNNNNN..." form.
      *
-     * Override the default country code via `<body data-default-country-code="44">`
-     * (or any data-default-country-code attr on <html>/<body>) so a UK
-     * tenant gets +44 prefixed instead of +91.
+     * - Strips spaces, parens, dashes, dots.
+     * - Numbers with leading "+" are trusted as already-international.
+     * - Pure 10-digit local numbers get the tenant default country code
+     *   prepended (e.g. "9850684450" → "+919850684450").
+     * - 11+ digit numbers without "+" are assumed to already include a
+     *   country code; "+" is just prepended.
+     *
+     * Override the default country code via
+     *   <body data-default-country-code="44">
+     * so a UK tenant gets +44 prefixed instead of +91.
      */
     function crmNormalizePhone(raw) {
         if (raw === null || raw === undefined) return '';
         let s = String(raw).trim();
         if (!s) return '';
 
-        // Has a "+"? Trust it as international, just strip non-digits after.
         if (s.startsWith('+')) {
             return '+' + s.slice(1).replace(/[^\d]/g, '');
         }
 
-        // No "+". Strip everything except digits.
         const digits = s.replace(/[^\d]/g, '');
         if (!digits) return '';
 
-        // 10 digits → assume local, prepend tenant default country code.
         if (digits.length === 10) {
-            const cc = (document.body && document.body.dataset.defaultCountryCode)
-                    || (document.documentElement && document.documentElement.dataset.defaultCountryCode)
-                    || '91';
-            return '+' + cc + digits;
+            return '+' + _defaultCountryCode() + digits;
         }
-
-        // 11+ digits → assume already includes country code, just prepend "+".
         return '+' + digits;
     }
 
+    /**
+     * Build the tel: href.
+     *
+     * IMPORTANT: when the normalized number begins with the tenant's default
+     * country code, we STRIP that prefix from what the dialer rings — so a
+     * lead stored as "+91 98506 84450" hands the user's phone "9850684450"
+     * to call locally (cheaper, avoids weird roaming/carrier interpretations,
+     * matches what users would dial themselves). Numbers from a different
+     * country (e.g. "+1 415 555 2671" when the tenant is +91) keep their
+     * country code so they still route as international calls.
+     *
+     * The visible display string is untouched — still shows "+91 98506 84450".
+     */
     function crmPhoneHref(raw) {
         const norm = crmNormalizePhone(raw);
-        return norm ? 'tel:' + norm : '';
+        if (!norm) return '';
+        const cc = _defaultCountryCode();
+        const ccPrefix = '+' + cc;
+        if (norm.startsWith(ccPrefix)) {
+            // Strip the default country code; trailing digits go to the dialer.
+            return 'tel:' + norm.slice(ccPrefix.length);
+        }
+        return 'tel:' + norm;
     }
 
     /**
