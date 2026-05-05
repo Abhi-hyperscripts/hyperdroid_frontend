@@ -2960,12 +2960,18 @@ function darkenHex(hex, percent) {
 }
 
 // ─── Danger Zone: tenant wipe handlers ──────────────────────────────────────
-// Both endpoints derive tenant_id from the JWT — we never send it, so a
+// All endpoints derive tenant_id from the JWT — we never send it, so a
 // SUPERADMIN can only wipe their own tenant.
 let _pendingWipeMode = null;
+// For mode='range', stash the validated start/end dates here so confirmWipe()
+// can pass them to the wipe call without re-reading the inputs (and without
+// risking a state mismatch if the user touches the date pickers between
+// "Preview" and "Confirm Wipe").
+let _pendingWipeRange = null;
 
 function openWipeModal(mode) {
     _pendingWipeMode = mode;
+    _pendingWipeRange = null;
     const titleEl = document.getElementById('wipeModalTitle');
     const descEl = document.getElementById('wipeModalDescription');
     const tenantEl = document.getElementById('wipeTenantId');
@@ -2984,6 +2990,20 @@ function openWipeModal(mode) {
     if (mode === 'leads') {
         titleEl.textContent = 'Wipe Lead Data';
         descEl.innerHTML = 'This will delete <strong>all leads, contacts, deals, companies, activities, notes, tasks, and history</strong> for this tenant. Teams, members, functional areas, deal stages, lead sources, integrations, and settings will be preserved.';
+    } else if (mode === 'range') {
+        const startDate = document.getElementById('wipeRangeStartDate').value;
+        const endDate = document.getElementById('wipeRangeEndDate').value;
+        if (!startDate || !endDate) {
+            Toast.error('Pick both a start and an end date first.');
+            return;
+        }
+        if (endDate < startDate) {
+            Toast.error('End date must be on or after start date.');
+            return;
+        }
+        _pendingWipeRange = { startDate, endDate };
+        titleEl.textContent = 'Wipe Leads by Date Range';
+        descEl.innerHTML = `This will delete <strong>leads created between ${startDate} and ${endDate}</strong> (inclusive on both ends), plus all their lead-scoped child rows: activities, follow-ups, email sends (and their events/replies), tasks, notes, transfer/help requests, assignment history. <strong>Companies, contacts, and deals are NOT deleted</strong> — they can belong to leads outside this range.`;
     } else {
         titleEl.textContent = 'Wipe All CRM Data';
         descEl.innerHTML = 'This will delete <strong>EVERYTHING</strong> for this tenant — including teams, members, functional areas, deal stages, lead sources, integrations, and CRM settings. Use only when seeding a fresh tenant.';
@@ -2993,6 +3013,37 @@ function openWipeModal(mode) {
     btn.disabled = true;
     document.getElementById('wipeModal').classList.add('active');
     setTimeout(() => inputEl.focus(), 50);
+}
+
+// Show the row counts that the wipe-leads-by-range call would delete.
+// Pure read — no DB writes — so safe to run as often as the user clicks.
+async function previewWipeLeadsByRange() {
+    const startDate = document.getElementById('wipeRangeStartDate').value;
+    const endDate = document.getElementById('wipeRangeEndDate').value;
+    const previewEl = document.getElementById('wipeRangePreview');
+    if (!startDate || !endDate) {
+        previewEl.innerHTML = '<span style="color:var(--color-warning);">Pick both a start and an end date.</span>';
+        return;
+    }
+    if (endDate < startDate) {
+        previewEl.innerHTML = '<span style="color:var(--color-danger);">End date must be on or after start date.</span>';
+        return;
+    }
+    previewEl.textContent = 'Counting…';
+    try {
+        const res = await api.request('/crm/crm-admin/wipe-leads-by-range/preview', {
+            method: 'POST',
+            body: JSON.stringify({ start_date: startDate, end_date: endDate })
+        });
+        if (res.leads_count === 0) {
+            previewEl.innerHTML = `<span style="color:var(--text-secondary);">No leads created between <strong>${startDate}</strong> and <strong>${endDate}</strong> — nothing to wipe.</span>`;
+            return;
+        }
+        previewEl.innerHTML = `Will delete <strong>${res.leads_count} leads</strong>, ${res.activities_count} activities, ${res.followups_count} follow-ups, ${res.email_sends_count} email sends, and ${res.other_child_rows_count} other child rows (tasks, notes, transfer/help requests, assignment history). <strong>Total: ${res.total_rows_count} rows.</strong> Companies, contacts, and deals are not deleted.`;
+    } catch (e) {
+        console.error('Preview wipe failed:', e);
+        previewEl.innerHTML = `<span style="color:var(--color-danger);">${(e.message || 'Preview failed').replace(/</g, '&lt;')}</span>`;
+    }
 }
 
 function closeWipeModal() {
@@ -3010,7 +3061,19 @@ async function confirmWipe() {
     const btn = document.getElementById('wipeConfirmBtn');
     if (!mode || document.getElementById('wipeConfirmInput').value !== 'WIPE') return;
 
-    const endpoint = mode === 'leads' ? '/crm/crm-admin/wipe-leads' : '/crm/crm-admin/wipe-all';
+    let endpoint, body;
+    if (mode === 'leads') {
+        endpoint = '/crm/crm-admin/wipe-leads';
+        body = { confirm: 'WIPE' };
+    } else if (mode === 'range') {
+        if (!_pendingWipeRange) { Toast.error('Date range missing — re-open the modal.'); return; }
+        endpoint = '/crm/crm-admin/wipe-leads-by-range';
+        body = { confirm: 'WIPE', start_date: _pendingWipeRange.startDate, end_date: _pendingWipeRange.endDate };
+    } else {
+        endpoint = '/crm/crm-admin/wipe-all';
+        body = { confirm: 'WIPE' };
+    }
+
     const original = btn.textContent;
     btn.disabled = true;
     btn.textContent = 'Wiping...';
@@ -3018,12 +3081,23 @@ async function confirmWipe() {
     try {
         const res = await api.request(endpoint, {
             method: 'POST',
-            body: JSON.stringify({ confirm: 'WIPE' })
+            body: JSON.stringify(body)
         });
         Toast.success(`Wiped — ${res.deleted_rows} rows deleted (${res.scope}).`);
         closeWipeModal();
-        // Bounce to dashboard so the user sees a fresh state.
-        setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+        // Bounce to dashboard so the user sees a fresh state. For range wipes
+        // stay on settings — there's still other data to manage and the user
+        // probably wants to verify the count by checking the leads page anyway.
+        if (mode === 'range') {
+            // Reset the range form + clear the preview blurb so it doesn't
+            // mislead about a now-stale count.
+            document.getElementById('wipeRangeStartDate').value = '';
+            document.getElementById('wipeRangeEndDate').value = '';
+            const previewEl = document.getElementById('wipeRangePreview');
+            if (previewEl) previewEl.textContent = '';
+        } else {
+            setTimeout(() => { window.location.href = 'dashboard.html'; }, 1200);
+        }
     } catch (e) {
         console.error('Wipe failed:', e);
         Toast.error(e.message || 'Wipe failed');

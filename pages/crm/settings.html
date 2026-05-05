@@ -1526,6 +1526,38 @@
                         </div>
                     </div>
 
+                    <div class="danger-card" style="border:1px solid var(--color-danger); border-radius:12px; padding:20px; margin-bottom:16px; background:rgba(239, 68, 68, 0.04);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+                            <div style="flex:1; min-width:280px;">
+                                <h4 style="margin:0 0 6px 0;">Wipe Leads by Date Range</h4>
+                                <p style="margin:0 0 12px 0; color:var(--text-secondary); font-size:0.9rem;">
+                                    Deletes only the leads created within a date range, plus their child rows
+                                    (deals, activities, follow-ups, email sends, etc.). Companies, contacts,
+                                    teams, and other tenant config are preserved.
+                                </p>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:420px;">
+                                    <div>
+                                        <label class="form-label" style="font-size:0.8rem;">Start date</label>
+                                        <input type="date" id="wipeRangeStartDate" class="form-control form-control-sm">
+                                    </div>
+                                    <div>
+                                        <label class="form-label" style="font-size:0.8rem;">End date</label>
+                                        <input type="date" id="wipeRangeEndDate" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                                <div id="wipeRangePreview" style="margin-top:10px;font-size:0.85rem;color:var(--text-secondary);"></div>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="previewWipeLeadsByRange()">
+                                    Preview count
+                                </button>
+                                <button class="btn" style="background:var(--color-warning); color:#fff; border:none;" onclick="openWipeModal('range')">
+                                    Wipe Leads in Range
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="danger-card" style="border:1px solid var(--color-danger); border-radius:12px; padding:20px; background:rgba(239, 68, 68, 0.04);">
                         <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
                             <div>
