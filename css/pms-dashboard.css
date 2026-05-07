@@ -266,6 +266,80 @@ body.pms-dashboard .action-card[data-action="activity"]:hover {
 }
 
 /* =============================================================
+   PROCUREMENT QUICK ACTION VARIANTS
+   The Procurement dashboard reuses the .pms-dashboard base, but
+   its data-action values are different (vendors / items / inquiries
+   / rfqs / purchase-orders / settings). Add the same colour-tile
+   treatment HRMS uses so the icons stop looking flat / grey.
+   ============================================================= */
+
+/* Vendors - Primary Brand */
+body.pms-dashboard .action-card[data-action="vendors"] .action-icon {
+    background: var(--gradient-primary);
+}
+body.pms-dashboard .action-card[data-action="vendors"] .action-icon svg {
+    color: var(--text-inverse);
+}
+body.pms-dashboard .action-card[data-action="vendors"]:hover {
+    border-color: var(--brand-primary);
+}
+
+/* Master Items - Secondary/Purple */
+body.pms-dashboard .action-card[data-action="items"] .action-icon {
+    background: var(--gradient-secondary);
+}
+body.pms-dashboard .action-card[data-action="items"] .action-icon svg {
+    color: var(--text-inverse);
+}
+body.pms-dashboard .action-card[data-action="items"]:hover {
+    border-color: var(--brand-secondary);
+}
+
+/* Inquiries - Info/Cyan */
+body.pms-dashboard .action-card[data-action="inquiries"] .action-icon {
+    background: var(--gradient-info);
+}
+body.pms-dashboard .action-card[data-action="inquiries"] .action-icon svg {
+    color: var(--text-inverse);
+}
+body.pms-dashboard .action-card[data-action="inquiries"]:hover {
+    border-color: var(--color-info);
+}
+
+/* RFQs - Warning/Amber */
+body.pms-dashboard .action-card[data-action="rfqs"] .action-icon {
+    background: var(--gradient-warning);
+}
+body.pms-dashboard .action-card[data-action="rfqs"] .action-icon svg {
+    color: var(--text-inverse);
+}
+body.pms-dashboard .action-card[data-action="rfqs"]:hover {
+    border-color: var(--color-warning);
+}
+
+/* Purchase Orders - Success/Green */
+body.pms-dashboard .action-card[data-action="purchase-orders"] .action-icon {
+    background: var(--gradient-success);
+}
+body.pms-dashboard .action-card[data-action="purchase-orders"] .action-icon svg {
+    color: var(--text-inverse);
+}
+body.pms-dashboard .action-card[data-action="purchase-orders"]:hover {
+    border-color: var(--color-success);
+}
+
+/* Settings - Accent */
+body.pms-dashboard .action-card[data-action="settings"] .action-icon {
+    background: var(--gradient-accent);
+}
+body.pms-dashboard .action-card[data-action="settings"] .action-icon svg {
+    color: var(--text-inverse);
+}
+body.pms-dashboard .action-card[data-action="settings"]:hover {
+    border-color: var(--brand-accent);
+}
+
+/* =============================================================
    QUICK ACTIONS GRID - 3-column like HRMS
    ============================================================= */
 body.pms-dashboard .quick-actions {
