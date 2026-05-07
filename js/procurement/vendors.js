@@ -1111,16 +1111,26 @@ function renderIntelligence(profile) {
         html += `<div>
             <h4 style="font-size:13px;font-weight:700;margin-bottom:8px;">Recent Decisions</h4>
             <div style="display:flex;flex-direction:column;gap:6px;">
-                ${decisions.slice(0, 10).map(d => `
+                ${decisions.slice(0, 10).map(d => {
+                    // RFQ takes precedence; fall back to Inquiry context.
+                    let ctx = '';
+                    if (d.rfq_number != null) {
+                        ctx = `<span style="font-weight:600;">RFQ #${d.rfq_number}</span>${d.rfq_title ? ` <span style="opacity:0.6;">${escapeHtml(d.rfq_title)}</span>` : ''}`;
+                    } else if (d.inquiry_number != null) {
+                        ctx = `<span style="font-weight:600;">Inquiry #${d.inquiry_number}</span>${d.inquiry_title ? ` <span style="opacity:0.6;">${escapeHtml(d.inquiry_title)}</span>` : ''}`;
+                    }
+                    return `
                     <div style="padding:8px 12px;border:1px solid var(--border-primary);border-radius:6px;font-size:12px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;">
                             <span style="font-weight:600;">${escapeHtml(d.decision_type || 'manual').replace(/_/g, ' ')}</span>
-                            <span style="opacity:0.5;font-size:11px;">${formatIntelDate(d.created_at)}</span>
+                            <span style="opacity:0.5;font-size:11px;" title="${escapeHtml(new Date(d.created_at).toLocaleString())}">${formatIntelDateTime(d.created_at)}</span>
                         </div>
+                        ${ctx ? `<div style="margin-top:3px;font-size:11px;">${ctx}</div>` : ''}
                         ${d.reason ? `<div style="margin-top:3px;opacity:0.7;">${escapeHtml(d.reason)}</div>` : ''}
                         ${d.decided_by_name ? `<div style="margin-top:2px;opacity:0.4;font-size:11px;">by ${escapeHtml(d.decided_by_name)}</div>` : ''}
                     </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         </div>`;
     }
@@ -1160,4 +1170,17 @@ function formatIntelDate(dateStr) {
     if (!dateStr) return '-';
     try { return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
     catch { return '-'; }
+}
+
+// Date + HH:MM so two decisions on the same day from the same vendor on
+// the same RFQ are still visually distinguishable in the Recent Decisions
+// list. Hover (title) shows the locale's full timestamp for precision.
+function formatIntelDateTime(dateStr) {
+    if (!dateStr) return '-';
+    try {
+        const d = new Date(dateStr);
+        const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        return `${date} · ${time}`;
+    } catch { return '-'; }
 }
