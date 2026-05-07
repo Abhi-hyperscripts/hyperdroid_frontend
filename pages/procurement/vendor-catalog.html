@@ -431,7 +431,7 @@
         /* ─── Item Grid Header ─── */
         .vc-item-header {
             display: grid;
-            grid-template-columns: 44px 1fr 72px 150px 200px;
+            grid-template-columns: 1fr 72px 150px 200px;
             padding: 8px 20px;
             gap: 12px;
             border-top: 1px solid rgba(255,255,255,0.04);
@@ -449,7 +449,7 @@
         /* ─── Item Rows ─── */
         .vc-item-row {
             display: grid;
-            grid-template-columns: 44px 1fr 72px 150px 200px;
+            grid-template-columns: 1fr 72px 150px 200px;
             align-items: center;
             padding: 12px 20px;
             gap: 12px;
@@ -914,11 +914,10 @@
                     <span class="vc-badge" id="catalogBadge"></span>
                 </div>
                 <p class="vc-hint" id="catalogHint">
-                    Select items you supply, add pricing, save drafts anytime, and submit when ready.
+                    Add your pricing and notes for each item below. The buyer has pre-selected the items you supply &mdash; save drafts anytime and submit when ready.
                 </p>
                 <div class="vc-hero-bottom">
-                    <span class="vc-stat-pill"><span id="selectedCount">0</span> selected</span>
-                    <span class="vc-stat-pill muted"><span id="totalItemsCount">0</span> available</span>
+                    <span class="vc-stat-pill"><span id="totalItemsCount">0</span> items in your catalog</span>
                 </div>
             </div>
 
@@ -935,7 +934,7 @@
         <!-- Sticky Footer -->
         <div class="vc-footer" id="footerActions">
             <div class="vc-footer-info">
-                <strong id="footerCount">0</strong> items selected
+                <strong id="footerCount">0</strong> items in your catalog
             </div>
             <div class="vc-footer-btns">
                 <button class="vc-btn vc-btn-success" id="saveDraftBtn" onclick="handleSaveDraft()">

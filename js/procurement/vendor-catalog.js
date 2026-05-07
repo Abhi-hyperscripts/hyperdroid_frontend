@@ -97,12 +97,7 @@ async function autoRestore() {
         catalogData = data;
         categories = data.categories || [];
         isEditable = data.is_editable;
-
-        if (data.selected_items) {
-            data.selected_items.forEach(item => {
-                selectedItems.set(item.master_item_id, { price: item.price, notes: item.notes });
-            });
-        }
+        primeSelectedItemsFromCatalog(data);
 
         if (categories.length > 0) expandedCategories.add(0);
         renderCatalog();
@@ -112,6 +107,28 @@ async function autoRestore() {
         fetchVendorPreview();
         showAuthForm();
     }
+}
+
+// Strict allow-list (Option A): the backend has already filtered the
+// catalog to items the admin selected for this vendor. Every shown item
+// is implicitly part of the vendor's catalog — there is no toggle to
+// remove or add. Pre-populate selectedItems for every item so SaveDraft
+// always submits the full catalog with whatever price/notes the vendor
+// has entered.
+function primeSelectedItemsFromCatalog(data) {
+    selectedItems.clear();
+    const priorByItemId = new Map();
+    if (data && Array.isArray(data.selected_items)) {
+        data.selected_items.forEach(item => {
+            priorByItemId.set(item.master_item_id, { price: item.price, notes: item.notes });
+        });
+    }
+    (data?.categories || []).forEach(cat => {
+        (cat.items || []).forEach(item => {
+            const prior = priorByItemId.get(item.id);
+            selectedItems.set(item.id, prior ? { price: prior.price, notes: prior.notes } : { price: null, notes: null });
+        });
+    });
 }
 
 function showLoading() {
@@ -160,15 +177,7 @@ async function handleAccess() {
         sessionStorage.setItem(`vc_pass_${catalogToken}`, password);
         categories = data.categories || [];
         isEditable = data.is_editable;
-
-        if (data.selected_items) {
-            data.selected_items.forEach(item => {
-                selectedItems.set(item.master_item_id, {
-                    price: item.price,
-                    notes: item.notes
-                });
-            });
-        }
+        primeSelectedItemsFromCatalog(data);
 
         // Auto-expand first category
         if (categories.length > 0) expandedCategories.add(0);
@@ -227,7 +236,6 @@ function renderCategories() {
         const filteredItems = filterItems(allItems);
         if (searchQuery && filteredItems.length === 0) return;
 
-        const selectedInCategory = allItems.filter(i => selectedItems.has(i.id)).length;
         const isExpanded = expandedCategories.has(catIndex);
         const collapsedClass = isExpanded ? '' : ' collapsed';
 
@@ -235,8 +243,9 @@ function renderCategories() {
         categoryDiv.className = `vc-category${collapsedClass}`;
         categoryDiv.id = `category-${catIndex}`;
 
-        const allSelectedInCat = filteredItems.length > 0 && filteredItems.every(i => selectedItems.has(i.id));
-
+        // Strict allow-list (Option A): every item shown is in the
+        // catalog, so the category count is just N items — no x/y ratio
+        // and no Select All / Deselect All button.
         categoryDiv.innerHTML = `
             <div class="vc-category-header" onclick="toggleCategory(${catIndex})">
                 <div class="vc-cat-left">
@@ -244,10 +253,9 @@ function renderCategories() {
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                     </div>
                     <span class="vc-category-name">${escapeHtml(category.category_name)}</span>
-                    <span class="vc-category-count">${selectedInCategory}/${allItems.length}</span>
+                    <span class="vc-category-count">${allItems.length} ${allItems.length === 1 ? 'item' : 'items'}</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;">
-                    ${isEditable && filteredItems.length > 1 ? `<button class="vc-select-all-btn" onclick="event.stopPropagation(); toggleSelectAll(${catIndex}, ${!allSelectedInCat})" title="${allSelectedInCat ? 'Deselect All' : 'Select All'}">${allSelectedInCat ? 'Deselect All' : 'Select All'}</button>` : ''}
                     <svg class="vc-category-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
             </div>
@@ -268,9 +276,9 @@ function renderCategoryBody(catIndex, items) {
     const hasMore = !showAll && items.length > ITEMS_PER_PAGE;
     const remaining = items.length - ITEMS_PER_PAGE;
 
-    // Desktop: table header
+    // Desktop: table header (no checkbox column — admin curates the list)
     let html = `<div class="vc-item-header vc-desktop-only">
-        <span></span><span>Item</span><span style="text-align:center;">Unit</span><span>Price (Optional)</span><span>Notes (Optional)</span>
+        <span>Item</span><span style="text-align:center;">Unit</span><span>Price (Optional)</span><span>Notes (Optional)</span>
     </div>`;
 
     // Items
@@ -288,20 +296,18 @@ function renderCategoryBody(catIndex, items) {
 }
 
 function renderItem(item) {
-    const isSelected = selectedItems.has(item.id);
+    // Strict allow-list (Option A): every shown item is part of the
+    // vendor's catalog. There is no toggle; the vendor only fills price
+    // and notes. The "selected" CSS class is kept on the row/card so the
+    // existing visual treatment (subtle highlight) still applies.
     const itemData = selectedItems.get(item.id) || {};
     const disabledAttr = !isEditable ? 'disabled' : '';
-    const toggleClass = isSelected ? 'vc-toggle active' : 'vc-toggle';
-    const rowClass = isSelected ? 'vc-item-row selected' : 'vc-item-row';
     const priceVal = itemData.price != null ? itemData.price : '';
     const notesVal = escapeHtml(itemData.notes || '');
 
     // Desktop row
     const desktopRow = `
-        <div class="${rowClass} vc-desktop-only" id="item-row-${item.id}">
-            <div class="vc-item-check">
-                <button class="${toggleClass}" ${disabledAttr} onclick="handleItemToggle('${item.id}', !this.classList.contains('active'))" id="check-${item.id}"></button>
-            </div>
+        <div class="vc-item-row selected vc-desktop-only" id="item-row-${item.id}">
             <div class="vc-item-info">
                 <div class="vc-item-name">${escapeHtml(item.item_name)}</div>
                 ${item.item_code ? `<span class="vc-item-code">${escapeHtml(item.item_code)}</span>` : ''}
@@ -317,9 +323,8 @@ function renderItem(item) {
 
     // Mobile card
     const mobileCard = `
-        <div class="vc-item-card vc-mobile-only ${isSelected ? 'selected' : ''}" id="item-card-${item.id}">
+        <div class="vc-item-card vc-mobile-only selected" id="item-card-${item.id}">
             <div class="vc-card-top">
-                <button class="${toggleClass}" ${disabledAttr} onclick="handleItemToggle('${item.id}', !this.classList.contains('active'))" id="check-m-${item.id}"></button>
                 <div class="vc-card-info">
                     <div class="vc-item-name">${escapeHtml(item.item_name)}</div>
                     <div class="vc-card-meta">
@@ -354,15 +359,15 @@ function filterItems(items) {
 }
 
 function updateSelectedCount() {
-    const count = selectedItems.size;
-    const countEl = document.getElementById('selectedCount');
-    if (countEl) countEl.textContent = count;
-    const footerInfo = document.querySelector('.vc-footer-info');
-    if (footerInfo) footerInfo.innerHTML = `<strong>${count}</strong> items selected`;
+    // Strict allow-list (Option A): every item shown IS in the vendor's
+    // catalog, so the only meaningful count is the total. No "selected"
+    // ratio is rendered.
     let total = 0;
     categories.forEach(c => { total += (c.items || []).length; });
     const totalEl = document.getElementById('totalItemsCount');
     if (totalEl) totalEl.textContent = total;
+    const footerInfo = document.querySelector('.vc-footer-info');
+    if (footerInfo) footerInfo.innerHTML = `<strong>${total}</strong> ${total === 1 ? 'item' : 'items'} in your catalog`;
 }
 
 // ==================== Interactions ====================
@@ -465,20 +470,21 @@ function handleItemToggle(itemId, checked) {
 }
 
 function handlePriceChange(itemId, value) {
-    if (selectedItems.has(itemId)) {
-        selectedItems.get(itemId).price = value ? parseFloat(value) : null;
-    } else if (value) {
-        // Auto-select
-        handleItemToggle(itemId, true);
-        const data = selectedItems.get(itemId);
-        if (data) data.price = parseFloat(value);
+    let entry = selectedItems.get(itemId);
+    if (!entry) {
+        entry = { price: null, notes: null };
+        selectedItems.set(itemId, entry);
     }
+    entry.price = value ? parseFloat(value) : null;
 }
 
 function handleNotesChange(itemId, value) {
-    if (selectedItems.has(itemId)) {
-        selectedItems.get(itemId).notes = value || null;
+    let entry = selectedItems.get(itemId);
+    if (!entry) {
+        entry = { price: null, notes: null };
+        selectedItems.set(itemId, entry);
     }
+    entry.notes = value || null;
 }
 
 function handleSearch(query) {
@@ -497,9 +503,8 @@ function handleSearch(query) {
 function updateCategoryCounts() {
     categories.forEach((category, catIndex) => {
         const items = category.items || [];
-        const selectedInCategory = items.filter(i => selectedItems.has(i.id)).length;
         const el = document.querySelector(`#category-${catIndex} .vc-category-count`);
-        if (el) el.textContent = `${selectedInCategory}/${items.length}`;
+        if (el) el.textContent = `${items.length} ${items.length === 1 ? 'item' : 'items'}`;
     });
 }
 
@@ -532,7 +537,7 @@ async function handleSaveDraft() {
             throw new Error(errorData.error || 'Failed to save draft');
         }
 
-        _toast(`Draft saved — ${selectedItems.size} items`, 'success');
+        _toast(`Draft saved — ${selectedItems.size} ${selectedItems.size === 1 ? 'item' : 'items'}`, 'success');
     } catch (error) {
         console.error('Save draft failed:', error);
         _toast(error.message || 'Failed to save draft', 'error');
@@ -544,7 +549,7 @@ async function handleSaveDraft() {
 
 async function handleSubmitCatalog() {
     if (selectedItems.size === 0) {
-        _toast('Please select at least one item before submitting', 'error');
+        _toast('Your catalog is empty. Please contact the buyer to have items added.', 'error');
         return;
     }
 
