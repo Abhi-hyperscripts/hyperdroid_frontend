@@ -672,12 +672,18 @@
                             </summary>
                             <div class="mailbox-help-body">
                                 <p>Paste a <strong>System User token</strong> minted inside your own Meta Business Manager. You stay in control of the permissions, and we never touch your Facebook account directly.</p>
+                                <p style="margin: 8px 0 12px; padding: 10px 12px; background: var(--bg-secondary); border-left: 3px solid var(--brand-primary); border-radius: 4px;">
+                                    <strong>Step-by-step walkthrough with screenshots:</strong>
+                                    <a href="/KnowledgeBase/crm/Facebook-Leads-Setup-Guide.html" target="_blank" rel="noreferrer noopener" style="color: var(--brand-primary); font-weight: 600;">Facebook Lead Ads → Ragenaizer CRM Setup Guide</a>
+                                    &nbsp;— covers Business Manager, Meta App, the System User token (and the one click order most people get wrong), and form mapping.
+                                </p>
+                                <p style="margin-top: 12px; font-weight: 600;">Quick reference:</p>
                                 <ol style="padding-left: 20px; line-height: 1.6;">
                                     <li>Open <a href="https://business.facebook.com" target="_blank" rel="noreferrer noopener">business.facebook.com</a>. Create a Business Manager if you don't have one (free, 2 min).</li>
                                     <li>In <strong>Business Settings → Accounts → Pages</strong>, add the Facebook Page that runs your lead ads.</li>
                                     <li>In <strong>Business Settings → Users → System Users</strong>, click <strong>Add</strong>. Name it "CRM Integration", role: Employee.</li>
                                     <li><strong>Assign assets to the System User</strong> — click the System User, <strong>Add Assets → Pages</strong>, pick your page, grant "Access Page" and "Manage Page". <em>This is the step most people miss.</em></li>
-                                    <li>Still on the System User screen, click <strong>Generate New Token</strong>. Select scopes: <code>leads_retrieval</code>, <code>pages_show_list</code>, <code>pages_read_engagement</code>, <code>pages_manage_metadata</code>. Set <strong>Token Expiration: Never</strong>.</li>
+                                    <li>Still on the System User screen, click <strong>Generate New Token</strong>. In the permissions dropdown, <strong>click only <code>leads_retrieval</code></strong> — Meta auto-locks the five required dependencies (<code>business_management</code>, <code>pages_manage_ads</code>, <code>pages_show_list</code>, <code>pages_manage_metadata</code>, <code>pages_read_engagement</code>). Header should read "6 options selected". Set <strong>Token Expiration: Never</strong>.</li>
                                     <li>Copy the token (Meta only shows it once) and paste it below.</li>
                                 </ol>
                                 <p style="margin-top: 8px; color: var(--text-secondary); font-size: 0.9em;">After connecting, pick which pages and forms you want, and map each form's questions to CRM fields — same as a CSV import.</p>

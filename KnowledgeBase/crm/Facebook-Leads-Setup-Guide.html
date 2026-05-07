@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to connect Facebook Lead Ads to your CRM — Ragenaizer Knowledge Base</title>
+<meta name="description" content="A complete tenant-side walkthrough for piping Facebook Lead Ads into Ragenaizer CRM: Business Manager, ad campaign, Meta App, System User token, CRM connect, and form mapping. Built so anyone can do it in under 30 minutes.">
+<meta name="author" content="Ragenaizer">
+<link rel="canonical" href="https://ragenaizer.com/KnowledgeBase/crm/Facebook-Leads-Setup-Guide.html">
+
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Ragenaizer Knowledge Base">
+<meta property="og:url" content="https://ragenaizer.com/KnowledgeBase/crm/Facebook-Leads-Setup-Guide.html">
+<meta property="og:title" content="How to connect Facebook Lead Ads to your CRM">
+<meta property="og:description" content="End-to-end: Business Manager, Lead Ads campaign, Meta App, System User token, CRM connect, form mapping.">
+
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Onest:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --paper:#faf9f6; --paper-2:#f3f1ea; --ink:#0a0a0a; --ink-2:#2d2a26; --ink-3:#6b6660; --ink-4:#a8a39d;
+  --line:#e7e3da; --line-2:#d8d4cb; --card:#ffffff;
+  --blue:#3b82f6; --blue-dark:#2563eb; --blue-light:#dbeafe;
+  --clay:#b85c38; --clay-dark:#8f4426; --clay-light:#f5e6dc;
+  --tip-bg:#ecfdf5; --tip-border:#10b981; --tip-ink:#065f46;
+  --warn-bg:#fffbeb; --warn-border:#f59e0b; --warn-ink:#78350f;
+  --term-bg:#eff6ff; --term-border:var(--blue); --term-ink:#1e3a8a;
+  --try-bg:#fdf3ee; --try-border:var(--clay); --try-ink:var(--clay-dark);
+  --what-bg:#f5f3ff; --what-border:#8b5cf6; --what-ink:#5b21b6;
+  --font-display:'Instrument Serif',Georgia,serif;
+  --font-body:'Onest',system-ui,-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sidebar-w:280px; --content-w:760px; --margin-w:96px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#0a0a0a; --paper-2:#161616; --ink:#ededed; --ink-2:#d4d4d4; --ink-3:#a3a3a3; --ink-4:#525252;
+    --line:#262626; --line-2:#404040; --card:#161616;
+    --blue-light:#172554; --clay-light:#2d1810;
+    --tip-bg:#052e1c; --tip-ink:#6ee7b7; --warn-bg:#2d1f04; --warn-ink:#fcd34d;
+    --term-bg:#0f1d3a; --term-ink:#93c5fd; --try-bg:#2d1408; --try-ink:#fdba74;
+    --what-bg:#1f1438; --what-ink:#c4b5fd;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{font-family:var(--font-body);font-size:17px;line-height:1.65;color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased}
+.app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);background:var(--paper);overflow-y:auto;padding:28px 24px 80px}
+.brand{display:flex;align-items:center;gap:10px;padding-bottom:24px;margin-bottom:24px;border-bottom:1px solid var(--line)}
+.brand__mark{width:28px;height:28px;background:var(--ink);color:var(--paper);border-radius:6px;display:grid;place-items:center;font-family:var(--font-display);font-size:19px;font-style:italic}
+.brand__name{font-family:var(--font-display);font-size:19px}
+.brand__sub{display:block;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-top:2px}
+.toc{list-style:none}
+.toc a{display:block;padding:8px 12px;color:var(--ink-3);text-decoration:none;border-radius:6px;font-size:14px;line-height:1.4}
+.toc a:hover{background:var(--paper-2);color:var(--ink)}
+.toc a.active{background:var(--clay-light);color:var(--clay-dark);font-weight:500}
+.toc__num{display:inline-block;width:24px;font-family:var(--font-mono);font-size:11px;color:var(--ink-4)}
+.main{padding:48px 64px 120px;max-width:calc(var(--content-w) + var(--margin-w) * 2 + 120px);margin:0 auto}
+.hero{padding:48px 0 64px;border-bottom:1px solid var(--line);margin-bottom:64px}
+.hero__eyebrow{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--clay);margin-bottom:24px}
+.hero__title{font-family:var(--font-display);font-size:64px;line-height:1.05;font-weight:400;letter-spacing:-.02em;margin-bottom:24px;color:var(--ink)}
+.hero__title em{font-style:italic;color:var(--clay)}
+.hero__lead{font-size:21px;line-height:1.5;color:var(--ink-2);max-width:680px;font-weight:300}
+.hero__meta{display:flex;gap:24px;margin-top:40px;font-size:13px;color:var(--ink-3)}
+.hero__meta strong{color:var(--ink)}
+section{padding:64px 0;border-bottom:1px solid var(--line);max-width:var(--content-w)}
+section:last-child{border-bottom:0}
+.sect__num{font-family:var(--font-display);font-size:96px;line-height:1;color:var(--clay);font-style:italic;margin-bottom:8px;display:block}
+.sect__eyebrow{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--clay);margin-bottom:8px}
+h1.sect__title{font-family:var(--font-display);font-size:48px;line-height:1.1;font-weight:400;letter-spacing:-.02em;margin-bottom:24px;color:var(--ink)}
+h2{font-family:var(--font-display);font-size:32px;line-height:1.2;font-weight:400;margin:48px 0 16px;color:var(--ink)}
+h3{font-family:var(--font-body);font-size:18px;font-weight:600;margin:32px 0 12px;color:var(--ink)}
+p{margin-bottom:18px;color:var(--ink-2)}
+ul,ol{margin:0 0 18px 24px;color:var(--ink-2)}
+li{margin-bottom:6px}
+strong{color:var(--ink);font-weight:600}
+em{font-style:italic}
+code{font-family:var(--font-mono);font-size:.9em;background:var(--paper-2);padding:1px 6px;border-radius:4px;color:var(--clay-dark)}
+pre{font-family:var(--font-mono);font-size:13px;background:var(--paper-2);padding:18px 22px;border-radius:8px;border:1px solid var(--line);overflow-x:auto;line-height:1.55;margin:18px 0;color:var(--ink-2)}
+pre code{background:transparent;padding:0;color:inherit;font-size:inherit}
+a{color:var(--clay);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+figure{margin:32px 0}
+figure img{max-width:100%;border-radius:8px;border:1px solid var(--line);box-shadow:0 2px 8px rgba(10,10,10,.06),0 8px 24px rgba(10,10,10,.06)}
+figcaption{font-size:13px;color:var(--ink-3);margin-top:12px;font-style:italic;line-height:1.55}
+.callout{margin:24px 0;padding:18px 22px;border-left:3px solid;border-radius:0 6px 6px 0;font-size:15px;line-height:1.55}
+.callout__label{display:block;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.callout--tip{background:var(--tip-bg);border-color:var(--tip-border);color:var(--tip-ink)}
+.callout--tip .callout__label{color:var(--tip-border)}
+.callout--warn{background:var(--warn-bg);border-color:var(--warn-border);color:var(--warn-ink)}
+.callout--warn .callout__label{color:var(--warn-border)}
+.callout--term{background:var(--term-bg);border-color:var(--term-border);color:var(--term-ink)}
+.callout--term .callout__label{color:var(--term-border)}
+.callout--try{background:var(--try-bg);border-color:var(--try-border);color:var(--try-ink)}
+.callout--try .callout__label{color:var(--try-border)}
+.callout--what{background:var(--what-bg);border-color:var(--what-border);color:var(--what-ink)}
+.callout--what .callout__label{color:var(--what-border)}
+.callout p:last-child{margin-bottom:0}
+.callout pre{margin:12px 0 0;background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}
+.diagram{margin:32px 0;padding:32px;background:var(--paper-2);border-radius:8px;text-align:center;font-family:var(--font-mono);font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--ink-2)}
+table{width:100%;border-collapse:collapse;margin:24px 0;font-size:14px}
+th,td{border:1px solid var(--line);padding:10px 14px;text-align:left;vertical-align:top}
+th{background:var(--paper-2);font-weight:600;color:var(--ink)}
+td{color:var(--ink-2)}
+.footer{padding:64px 0;text-align:center;color:var(--ink-3);font-size:13px}
+@media(max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .main{padding:32px 24px}
+  .hero__title{font-size:42px}
+  h1.sect__title{font-size:32px}
+  .sect__num{font-size:64px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<aside class="sidebar">
+  <a href="#top" class="brand" style="text-decoration:none;color:inherit">
+    <span class="brand__mark">R</span>
+    <span class="brand__name">Ragenaizer<span class="brand__sub">Knowledge Base</span></span>
+  </a>
+  <ul class="toc">
+    <li><a href="#welcome"><span class="toc__num">01</span>Welcome</a></li>
+    <li><a href="#mental-model"><span class="toc__num">02</span>Mental model</a></li>
+    <li><a href="#prereqs"><span class="toc__num">03</span>Prerequisites</a></li>
+    <li><a href="#part-a"><span class="toc__num">04</span>A &middot; Business Manager</a></li>
+    <li><a href="#part-b"><span class="toc__num">05</span>B &middot; Lead Ads campaign</a></li>
+    <li><a href="#part-c"><span class="toc__num">06</span>C &middot; Meta App</a></li>
+    <li><a href="#part-d"><span class="toc__num">07</span>D &middot; System User &amp; token</a></li>
+    <li><a href="#part-e"><span class="toc__num">08</span>E &middot; Connect CRM</a></li>
+    <li><a href="#part-f"><span class="toc__num">09</span>F &middot; Connect form</a></li>
+    <li><a href="#troubleshooting"><span class="toc__num">10</span>Troubleshooting</a></li>
+    <li><a href="#glossary"><span class="toc__num">11</span>Glossary</a></li>
+  </ul>
+</aside>
+
+<main class="main" id="top">
+
+<header class="hero">
+  <div class="hero__eyebrow">CRM &middot; Integration guide</div>
+  <h1 class="hero__title">Pipe Facebook <em>Lead Ads</em> into your CRM in under 30 minutes</h1>
+  <p class="hero__lead">A complete tenant-side walkthrough &mdash; from a fresh
+  Meta account to lead rows landing in Ragenaizer CRM. We will build the
+  Business Manager, run a real Lead Ads campaign, create your own Meta App,
+  generate the System User token, paste it into the CRM, and connect a form.
+  No code. No App Review. The integration belongs to you, not to us &mdash; the
+  keyholder is your app, the token is your token.</p>
+  <div class="hero__meta">
+    <div><strong>~25&ndash;30 minutes</strong> first time</div>
+    <div><strong>Re-use:</strong> ~1 min per future form</div>
+    <div><strong>Cost:</strong> free (a small ad budget if you want a live campaign)</div>
+  </div>
+</header>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="welcome">
+  <span class="sect__num">1</span>
+  <div class="sect__eyebrow">Welcome</div>
+  <h1 class="sect__title">What you will have at the end</h1>
+
+  <p>Lead Ads on Facebook are powerful precisely because the user never leaves
+  Facebook to fill out the form. Conversion rates are high; cost per lead is
+  low. The catch &mdash; the leads sit inside Meta until somebody pulls them
+  out. By default that means a marketing manager logging in to Ads Manager
+  once a day, downloading a CSV, and forwarding it to sales. Half of those
+  leads cool off before anyone calls them.</p>
+
+  <p>This guide wires the pipe end to end so that within two minutes of a
+  prospect hitting <strong>Submit</strong> on your Lead Form, the lead row
+  exists inside Ragenaizer CRM with its assigned source, owner, and field
+  mappings &mdash; ready for the sales team to act on. No CSVs, no manual
+  forwarding, no missed leads.</p>
+
+  <div class="callout callout--what">
+    <span class="callout__label">What you'll have working</span>
+    <p>A Facebook Lead Form on a Page you own, polled every two minutes by
+    Ragenaizer CRM via a long-lived System User token issued by <em>your</em>
+    Meta App. Every new submission becomes a CRM lead row automatically.</p>
+  </div>
+
+  <div class="callout callout--term">
+    <span class="callout__label">Architecture note</span>
+    <p>The reason this works without going through Meta App Review is that
+    <em>you</em> create your own Meta App and issue the token from it. You
+    are not asking Ragenaizer's app for any permission &mdash; you are
+    handing Ragenaizer a token that <em>your</em> app already produced.
+    Meta is fine with this, because the token never leaves the
+    customer-of-record (you).</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="mental-model">
+  <span class="sect__num">2</span>
+  <div class="sect__eyebrow">The 30,000-ft view</div>
+  <h1 class="sect__title">Six things, in this order</h1>
+
+  <p>Before we touch a single screen it helps to see the whole shape. Six
+  Meta-side artefacts plus one CRM-side connection. They have to exist in
+  this order &mdash; you cannot skip ahead because each step references the
+  one above it.</p>
+
+  <div class="diagram">  Business Manager
+       │
+       │ owns
+       ▼
+   Facebook Page  ───────┐
+       │                 │
+       │ runs            │ assigned-to
+       ▼                 ▼
+   Lead Ad campaign   System User
+   (with Lead Form)      │
+                         │ generates
+                         ▼
+                    Access Token (5 scopes)
+                         │
+                         │ pasted into
+                         ▼
+                    Ragenaizer CRM
+                         │ polls /forms + /leads
+                         ▼
+                    Lead row in CRM</div>
+
+  <p>The piece that makes this whole flow work without Meta App Review is the
+  <strong>System User</strong>. It is an automation identity inside your own
+  Business Manager &mdash; not a person. The token it issues is long-lived,
+  belongs to your app (not ours), and is scoped exactly to what the CRM needs
+  to read leads. We never hold your password. We never see your Page. We only
+  ever see the leads themselves, retrieved with the token you handed us.</p>
+
+  <div class="callout callout--term">
+    <span class="callout__label">Vocabulary</span>
+    <p><strong>Business Manager</strong> &mdash; Meta's "control plane" for
+    Pages, ad accounts, and people who can act on them. <strong>Page</strong>
+    &mdash; the public face of your business; what runs the lead ads.
+    <strong>Lead Form</strong> &mdash; the in-app questionnaire shown when a
+    user taps the ad. <strong>System User</strong> &mdash; a non-human identity
+    in the Business Manager that issues automation tokens.
+    <strong>Scope</strong> &mdash; a single permission like
+    <code>leads_retrieval</code> attached to the token.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="prereqs">
+  <span class="sect__num">3</span>
+  <div class="sect__eyebrow">Prerequisites</div>
+  <h1 class="sect__title">What you need before you start</h1>
+
+  <table>
+    <thead><tr><th>Item</th><th>Where</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>A Facebook account</td><td>facebook.com</td><td>You need a personal account to own the Business Manager. Two-factor authentication must be enabled (Meta requires it for Business admins).</td></tr>
+      <tr><td>A Facebook Page</td><td>facebook.com/pages/create</td><td>Lead Ads run from a Page, not a profile. If you don't have one, create it before continuing.</td></tr>
+      <tr><td>A phone that can receive SMS</td><td>any country</td><td>One-time verification when you register as a Meta Developer in Part C. The phone can already be in use for another Facebook profile &mdash; that is fine.</td></tr>
+      <tr><td>A public privacy-policy URL</td><td>your website</td><td>Meta requires this on every Lead Form. Cannot be a PDF or image &mdash; must be a real HTML page.</td></tr>
+      <tr><td>A Ragenaizer tenant account</td><td>ragenaizer.com</td><td>You need a tenant to receive leads. If you don't have one, sign up before Part E.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">Tip</span>
+    <p>If you already run ads, you almost certainly have a Business Manager
+    already &mdash; you can skip the "create" steps in Part A and jump
+    straight to "add the Page".</p>
+  </div>
+
+  <div class="callout callout--warn">
+    <span class="callout__label">Note on ad spend</span>
+    <p>You do <em>not</em> need to actually publish a paid ad to test the
+    pipe. Part F shows you how to create a Lead Form via the Graph API
+    directly &mdash; no payment method, no live ad, just a working form
+    you can fire test submissions against. The full ad campaign is shown
+    in Part B for completeness, but it is optional for the integration to
+    function.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="part-a">
+  <span class="sect__num">4</span>
+  <div class="sect__eyebrow">Part A &middot; Foundation</div>
+  <h1 class="sect__title">Set up your Business Manager</h1>
+
+  <p>The <strong>Business Manager</strong> (Meta's newer surfaces call it a
+  "Business Portfolio") is the container that owns your Page and your ad
+  account. Without it, you cannot create a System User &mdash; and without a
+  System User you cannot generate an automation token. So this is step one.</p>
+
+  <h2>Create the Business Portfolio</h2>
+
+  <p>Go to <a href="https://business.facebook.com" target="_blank" rel="noopener">business.facebook.com</a>
+  and click <strong>Create</strong>. You'll be asked for three things:
+  business name, your name, and your email.</p>
+
+  <figure>
+    <img src="facebook-leads-images/04a-2-create-portfolio-modal-filled.png" alt="Create business portfolio modal with business name and email filled">
+    <figcaption>Use a multi-word legal-entity name. Single-word brand names
+    sometimes hit Meta's anti-impersonation filter and get rejected with no
+    explanation.</figcaption>
+  </figure>
+
+  <div class="callout callout--warn">
+    <span class="callout__label">Naming gotcha</span>
+    <p>If Meta rejects your name with "<em>The name you chose for this
+    Business Manager is not valid</em>", it is matching a substring in a
+    blocklist (often a trademark). Try a longer name &mdash; e.g. add
+    "Technologies" or "Pvt Ltd" &mdash; or pick a name that doesn't share a
+    word with a known brand. The rejection is not appeal-able.</p>
+  </div>
+
+  <p>Confirm the email Meta sends you. The portfolio is now live but empty.</p>
+
+  <figure>
+    <img src="facebook-leads-images/04a-6-bm-home-empty.png" alt="Empty Business Manager home page right after creation">
+    <figcaption>Fresh Business Portfolio. Pages and ad accounts come next.</figcaption>
+  </figure>
+
+  <h2>Add your Facebook Page</h2>
+
+  <p>Settings &rarr; Accounts &rarr; <strong>Pages</strong> &rarr;
+  <strong>Add</strong> &rarr; <em>Add a Page</em>. Type the page name (or
+  paste its URL) and pick the right one from the suggestions.</p>
+
+  <figure>
+    <img src="facebook-leads-images/04a-9-add-page-modal.png" alt="Add a Page modal">
+    <figcaption>If the page is yours and was created on the same Facebook
+    profile, it appears in the dropdown immediately. If somebody else
+    created it, you'll have to request access &mdash; that approval flow
+    can take 24h.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="facebook-leads-images/04a-15-page-in-bm-list.png" alt="Page now visible inside Business Manager Pages list">
+    <figcaption>Page is now claimed by the portfolio. Note the
+    <strong>full control</strong> badge &mdash; you'll need this for the
+    System User to issue tokens that can read leads.</figcaption>
+  </figure>
+
+  <h2>Add an ad account</h2>
+
+  <p>Settings &rarr; Accounts &rarr; <strong>Ad accounts</strong> &rarr;
+  <strong>Add</strong> &rarr; <em>Create a new ad account</em>. The ad
+  account is technically optional for retrieving leads &mdash; the SU token
+  reads leads from the Page, not the ad account &mdash; but Meta's UI gates
+  several Lead Form pages behind one being attached to the portfolio, so
+  it's easier to create one now.</p>
+
+  <figure>
+    <img src="facebook-leads-images/04a-19-create-ad-account-filled.png" alt="Create new ad account form, India INR Asia/Kolkata">
+    <figcaption>Country, currency, and time zone are <strong>locked for
+    life</strong> on an ad account. Pick carefully.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="facebook-leads-images/04a-21-ad-account-created.png" alt="Ad account created confirmation">
+    <figcaption>Ad account live. You don't need to add a payment method
+    yet &mdash; the integration works without one.</figcaption>
+  </figure>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">Done with Part A when</span>
+    <p>You can see your <strong>Page</strong> and your <strong>ad
+    account</strong> both listed inside the Business Portfolio Settings. We
+    will reference both later from the System User.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="part-b">
+  <span class="sect__num">5</span>
+  <div class="sect__eyebrow">Part B &middot; The actual ad</div>
+  <h1 class="sect__title">Create your Lead Ads campaign (optional)</h1>
+
+  <p>This part is <strong>optional</strong>. The integration works fine without
+  ever publishing a paid ad &mdash; we will create the Lead Form directly via
+  the Graph API in Part F, and you can fire test submissions at it through
+  Meta's Lead Ads Testing Tool. If you only want the pipe to work, skip to
+  Part C now.</p>
+
+  <p>If you want to actually run a campaign so real users see your ad, read
+  on. The walkthrough below shows the full flow inside Ads Manager from
+  empty campaign to draft state. Whether you publish (and therefore charge
+  your card) is up to you &mdash; Meta lets you save the entire campaign as
+  a draft for as long as you want.</p>
+
+  <h2>Pick the Leads objective</h2>
+
+  <p>Open <strong>Ads Manager</strong> for your ad account. Click
+  <strong>+ Create</strong>, then pick the <strong>Leads</strong> objective.</p>
+
+  <figure>
+    <img src="facebook-leads-images/05b-3-leads-selected.png" alt="Ads Manager objective picker with Leads selected">
+    <figcaption>Leads is the right objective for in-Facebook lead capture.
+    "Engagement" or "Awareness" do not produce form submissions.</figcaption>
+  </figure>
+
+  <h2>Configure the campaign</h2>
+
+  <p>Name it something descriptive (we used "Demo Lead Capture &mdash;
+  Ragenaizer"). Keep the default budget low &mdash; you can lift it later
+  once you see leads flowing.</p>
+
+  <figure>
+    <img src="facebook-leads-images/05b-7-campaign-clean.png" alt="Campaign-level form with name, objective Leads, daily budget USD 25">
+    <figcaption>Campaign editor. The campaign owns the budget cap; the ad
+    set below it owns the audience and schedule.</figcaption>
+  </figure>
+
+  <h2>Accept Lead Generation Terms (one-time, per Page)</h2>
+
+  <p>When you reach the Ad Set step and pick your Page, Meta will block you
+  with this banner:</p>
+
+  <figure>
+    <img src="facebook-leads-images/05b-8-adset-initial.png" alt="Ad Set step blocked by Lead Generation Terms of Service Not Accepted error">
+    <figcaption>Every Facebook Page must accept Lead Generation TOS once
+    before it can ever run a Lead Ad. Brand-new pages haven't, so this
+    error fires the first time. Click <strong>View terms</strong>.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="facebook-leads-images/05b-9-leadgen-tos-modal.png" alt="Lead Ad Terms modal with I Agree button">
+    <figcaption>Read, click <strong>I Agree to Terms and Conditions</strong>.
+    Done forever for that Page.</figcaption>
+  </figure>
+
+  <h2>Configure the audience</h2>
+
+  <p>The Ad Set page is where you pick the country, age range, language, and
+  optional interest targeting. For a test we leave most defaults &mdash;
+  Meta auto-fills a broad audience.</p>
+
+  <figure>
+    <img src="facebook-leads-images/05b-12-audience-controls.png" alt="Audience panel with India targeting and SEBI compliance notice">
+    <figcaption>If you target India, Meta requires you to declare whether
+    your ad is about securities or investments. For most B2B / SaaS lead
+    forms it's not &mdash; click <strong>Review requirements</strong> and
+    answer "No / Not applicable".</figcaption>
+  </figure>
+
+  <h2>Build the Lead Form</h2>
+
+  <p>Continue to the <strong>Ad</strong> step, scroll to
+  <strong>Destination &rarr; Instant form</strong>, click
+  <strong>Create a form</strong>, and pick <strong>Create from
+  scratch</strong>.</p>
+
+  <figure>
+    <img src="facebook-leads-images/05b-18-form-builder-fullscreen.png" alt="Lead Form builder with five steps in left sidebar">
+    <figcaption>The form builder has five steps in the left sidebar:
+    <strong>Form type</strong>, <strong>Intro</strong>,
+    <strong>Questions</strong>, <strong>Privacy policy</strong>,
+    <strong>Ending</strong>. We'll walk through each.</figcaption>
+  </figure>
+
+  <h3>1. Form type</h3>
+
+  <p>Pick <strong>More volume</strong> (the default). It is the friction-free
+  path that gets the highest fill rate. "Higher intent" adds a confirmation
+  step that drops conversion by ~30%.</p>
+
+  <h3>2. Intro</h3>
+
+  <p>Headline (max 60 chars) and a short description. This is what the user
+  sees before they start filling.</p>
+
+  <figure>
+    <img src="facebook-leads-images/05b-21-intro-filled.png" alt="Intro step with headline and description filled, preview on right">
+    <figcaption>The right-hand preview shows exactly what will render in
+    the Facebook app.</figcaption>
+  </figure>
+
+  <h3>3. Questions</h3>
+
+  <p>The default contact-info questions (<strong>Email</strong>,
+  <strong>Full name</strong>, <strong>Phone number</strong>) are exactly what
+  Ragenaizer CRM expects out of the box. Leave them as-is unless you have a
+  reason to change.</p>
+
+  <figure>
+    <img src="facebook-leads-images/05b-23-questions-with-desc.png" alt="Questions step showing Email, Full name, Phone fields">
+    <figcaption>These three fields auto-map to CRM's
+    <code>full_name</code>, <code>email</code>, and <code>phone</code> in
+    Part F &mdash; no manual mapping required.</figcaption>
+  </figure>
+
+  <h3>4. Privacy policy</h3>
+
+  <p>Required. Paste your public privacy-policy URL.</p>
+
+  <figure>
+    <img src="facebook-leads-images/05b-25-privacy-filled.png" alt="Privacy policy step with URL filled">
+    <figcaption>Meta refuses PDF, image, or download URLs. It must be a
+    regular HTML page on your domain.</figcaption>
+  </figure>
+
+  <h3>5. Ending</h3>
+
+  <p>Title + description for the thank-you screen, plus a follow-up action.
+  Picking <strong>Go to website</strong> with your homepage URL is the most
+  common choice.</p>
+
+  <figure>
+    <img src="facebook-leads-images/05b-27-ending-filled.png" alt="Ending step with thank you message and View website CTA">
+    <figcaption>Last step. Once you click <strong>Save draft</strong>
+    or <strong>Publish</strong>, the form's questions and privacy URL are
+    <strong>frozen forever</strong>. You cannot edit them; you can only
+    duplicate the form to make a new one. Review carefully.</figcaption>
+  </figure>
+
+  <div class="callout callout--warn">
+    <span class="callout__label">Forms become immutable on publish</span>
+    <p>This is a common surprise. Once a Lead Form is published, Meta
+    locks every field, every question, and the privacy URL. The reason is
+    consent integrity &mdash; every lead collected against the form must
+    carry the exact schema the user agreed to. If you find a typo, your
+    only option is to duplicate, fix, publish the new one, attach it to
+    the ad, and archive the old one.</p>
+  </div>
+
+  <h2>Save as draft</h2>
+
+  <p>Click <strong>Save draft</strong> at the bottom-left of the form
+  builder. The form is now saved inside your draft ad campaign. The
+  campaign list will show three drafts (campaign, ad set, ad).</p>
+
+  <figure>
+    <img src="facebook-leads-images/05b-32-ads-manager-draft.png" alt="Ads Manager showing 1 ad in draft state">
+    <figcaption>Draft state. The ad will not run and your card will not be
+    charged until you click <strong>Review and publish</strong> at the top
+    of the page. You can come back and do that later.</figcaption>
+  </figure>
+
+  <div class="callout callout--what">
+    <span class="callout__label">Why we don't publish in the guide</span>
+    <p>A Lead Form saved as a draft inside an Ad Manager campaign is
+    <em>not visible</em> to the Graph API &mdash; meaning Ragenaizer CRM
+    will not see it either. We solve this in Part F by creating a separate,
+    instantly-published Lead Form via the Graph API directly. This costs
+    nothing and gives you a working form ID immediately. The draft form
+    above can stay as your in-progress paid campaign whenever you choose
+    to publish it.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="part-c">
+  <span class="sect__num">6</span>
+  <div class="sect__eyebrow">Part C &middot; The keyholder</div>
+  <h1 class="sect__title">Create your own Meta App</h1>
+
+  <p>Every API token Meta issues is bound to a specific app. So you need an
+  app of your own to be the keyholder for your token. This is <em>not</em>
+  the Ragenaizer app &mdash; it lives in your Business Manager and you
+  control it. You will not be submitting it for App Review; it just exists
+  to issue you one long-lived System User token.</p>
+
+  <h2>Register as a Meta Developer</h2>
+
+  <p>Go to <a href="https://developers.facebook.com" target="_blank" rel="noopener">developers.facebook.com</a>.
+  If this is your first time, you'll see <strong>Get Started</strong>.
+  Click it.</p>
+
+  <figure>
+    <img src="facebook-leads-images/06c-2-developer-registration.png" alt="Welcome to Meta for Developers — Register step 1 of 4">
+    <figcaption>Four-step registration. Click <strong>Continue</strong>.</figcaption>
+  </figure>
+
+  <h3>Verify your account</h3>
+
+  <p>Meta requires either a phone number or a credit card before you can
+  create any app. Phone is faster.</p>
+
+  <figure>
+    <img src="facebook-leads-images/06c-5-phone-filled.png" alt="Verify Account screen with phone number entered">
+    <figcaption>Enter your number, click <strong>Send Verification SMS</strong>,
+    enter the 6-digit code that arrives. The same phone can already be
+    associated with another Facebook profile &mdash; that's fine.</figcaption>
+  </figure>
+
+  <h3>Confirm contact email + role</h3>
+
+  <p>Email is pre-filled from your Facebook profile. Pick <strong>Owner /
+  founder</strong> (or whatever describes you) and click
+  <strong>Complete Registration</strong>.</p>
+
+  <h2>Create the app</h2>
+
+  <p>You land on the empty <strong>My Apps</strong> page. Click
+  <strong>Create App</strong>.</p>
+
+  <figure>
+    <img src="facebook-leads-images/06c-11-my-apps-empty.png" alt="My Apps page, empty, with Create App button">
+    <figcaption>You will only ever need one app for this whole integration.</figcaption>
+  </figure>
+
+  <h3>App details</h3>
+
+  <p>Name it descriptively (e.g. "<em>Acme CRM Integration</em>"). 30
+  character max. Email is pre-filled.</p>
+
+  <figure>
+    <img src="facebook-leads-images/06c-15-app-name-correct.png" alt="App name field with name typed, Next button active">
+    <figcaption>Pick a name <em>your team</em> will recognise &mdash; it
+    appears in System User dropdowns later.</figcaption>
+  </figure>
+
+  <h3>Pick the first use case</h3>
+
+  <p>Meta's app creator forces you to pick exactly one "use case" up front.
+  Pick <strong>Create &amp; manage ads with Marketing API</strong>.</p>
+
+  <figure>
+    <img src="facebook-leads-images/06c-17-marketing-api-selected.png" alt="Use cases step with Create and manage ads with Marketing API ticked">
+    <figcaption>This is the right one for ad management, but
+    <strong>it does not include the lead retrieval scope by itself</strong>.
+    We'll add a second use case in a moment.</figcaption>
+  </figure>
+
+  <h3>Connect to your Business Portfolio</h3>
+
+  <p>The Business step asks which portfolio should own the app. Pick the one
+  you created in Part A.</p>
+
+  <figure>
+    <img src="facebook-leads-images/06c-20-bm-selected.png" alt="Business step with portfolio radio selected">
+    <figcaption>This is what binds the app to your business so the System
+    User created later can issue tokens against it.</figcaption>
+  </figure>
+
+  <p>Skip the Requirements step (no requirements yet), review the Overview,
+  click <strong>Create app</strong>, and re-enter your password when Meta
+  asks.</p>
+
+  <figure>
+    <img src="facebook-leads-images/06c-25-dashboard-clean.png" alt="App Dashboard for the newly created app">
+    <figcaption>Your app is created. Note the <strong>Unpublished</strong>
+    badge in the sidebar &mdash; that's fine; we don't need to publish.</figcaption>
+  </figure>
+
+  <h2>Add the second use case &mdash; Capture &amp; manage ad leads</h2>
+
+  <p>This is the step <em>nobody</em> realises they need until their token
+  fails to pull leads. The default Marketing API use case grants
+  <code>pages_manage_ads</code>, <code>ads_read</code>,
+  <code>business_management</code> &mdash; but <strong>not</strong>
+  <code>leads_retrieval</code>. You have to add a second use case to unlock
+  it.</p>
+
+  <p>Sidebar &rarr; <strong>Use cases</strong> &rarr; <strong>+ Add use
+  cases</strong> (top-right). Click the <strong>Ads and monetization</strong>
+  filter to narrow down.</p>
+
+  <figure>
+    <img src="facebook-leads-images/07d-43-ads-filter.png" alt="Add more use cases modal, Ads and monetization filter selected">
+    <figcaption>You'll see <strong>five</strong> options. The one we want is
+    <strong>Capture &amp; manage ad leads with Marketing API</strong>
+    &mdash; the only one named "ad leads".</figcaption>
+  </figure>
+
+  <figure>
+    <img src="facebook-leads-images/07d-44-leads-uc-selected.png" alt="Capture and manage ad leads use case ticked, Save button active">
+    <figcaption>Tick its checkbox &rarr; <strong>Save</strong>. The two use
+    cases coexist on the same app &mdash; no conflict.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="facebook-leads-images/07d-45-uc-saved.png" alt="App use cases page now shows both Marketing API and Capture and manage ad leads">
+    <figcaption>You should now see <strong>both</strong> use cases listed.
+    This is what unlocks <code>leads_retrieval</code> in Part D's permission
+    picker.</figcaption>
+  </figure>
+
+  <div class="callout callout--warn">
+    <span class="callout__label">Don't skip this</span>
+    <p>If you only have the first use case, the System User token you
+    generate in Part D will <em>silently</em> not include
+    <code>leads_retrieval</code>. The CRM will accept the token, find no
+    forms, and you'll spend an hour wondering why &mdash; only to come
+    back here.</p>
+  </div>
+
+  <h2>Confirm your App ID</h2>
+
+  <p>Sidebar &rarr; <strong>App settings</strong> &rarr; <strong>Basic</strong>.
+  Note your App ID. You don't need to copy the secret &mdash; it doesn't
+  get used by this integration.</p>
+
+  <figure>
+    <img src="facebook-leads-images/06c-26-app-settings-basic.png" alt="App settings Basic page showing App ID and other fields">
+    <figcaption>The App ID is stamped on every token your System User
+    generates. Useful for debugging only &mdash; you don't need to paste
+    it anywhere.</figcaption>
+  </figure>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="part-d">
+  <span class="sect__num">7</span>
+  <div class="sect__eyebrow">Part D &middot; The token</div>
+  <h1 class="sect__title">System User &amp; access token</h1>
+
+  <p>This is the most important section of the guide. We're about to create
+  the non-human identity that issues your long-lived API token, attach it
+  to your Page and your App, and generate the token itself. Read carefully
+  &mdash; one specific click order matters.</p>
+
+  <h2>Create the System User</h2>
+
+  <p>Go to <a href="https://business.facebook.com/settings/system-users" target="_blank" rel="noopener">Business
+  Manager &rarr; Settings &rarr; Users &rarr; System users</a>. Click
+  <strong>+ Add</strong>.</p>
+
+  <figure>
+    <img src="facebook-leads-images/07d-1-system-users-empty.png" alt="System users page, empty state">
+    <figcaption>Empty state. Meta may show a one-time
+    "Non-discrimination policy" acceptance modal first &mdash; click
+    <strong>I accept</strong> and continue.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="facebook-leads-images/07d-6-su-form-filled.png" alt="Create system user form with name and Admin role">
+    <figcaption>Name it something like "<em>CRM Bridge</em>" so anyone in
+    your team knows what it does. Pick <strong>Admin</strong> for the role
+    &mdash; Employee SUs can't generate the kind of token we need.</figcaption>
+  </figure>
+
+  <h2>Assign your Page</h2>
+
+  <p>The SU now exists but has no access to anything. Click
+  <strong>Assign assets</strong>, switch to <strong>Facebook Pages</strong>,
+  tick your page, and toggle <strong>Full control &rarr; Everything</strong>
+  on the right.</p>
+
+  <figure>
+    <img src="facebook-leads-images/07d-11-fullcontrol-on.png" alt="Assign assets dialog with Page selected and Full control toggle on">
+    <figcaption>Full Control gives the SU every page-level permission. We
+    need this because <code>leads_retrieval</code> requires the SU to be
+    able to manage page-level lead access.</figcaption>
+  </figure>
+
+  <p>Click <strong>Assign assets</strong> at the bottom of the dialog. You
+  should see "<em>Assets assigned. 1 asset was assigned</em>".</p>
+
+  <h2>Install the App for the System User</h2>
+
+  <p>The SU also needs to be installed on your Meta App. Go to Settings
+  &rarr; Accounts &rarr; <strong>Apps</strong>, click your app, click
+  <strong>Assign people</strong>, tick the System User, and toggle
+  <strong>Manage app</strong> (Full control) on the right.</p>
+
+  <figure>
+    <img src="facebook-leads-images/07d-27-assign-people-modal.png" alt="Add people and set permissions modal showing the SU listed">
+    <figcaption>This is the linkage between SU and App. Without it, the
+    next step's permission picker shows "<em>No permissions available</em>"
+    and you can't issue any token at all.</figcaption>
+  </figure>
+
+  <h2>Generate the token</h2>
+
+  <p>Back to Settings &rarr; System users, click your SU, then click
+  <strong>Generate token</strong> at the top right. The wizard has four
+  steps.</p>
+
+  <h3>1. Select app</h3>
+
+  <p>Pick the Meta App you created in Part C from the dropdown.</p>
+
+  <h3>2. Set expiration</h3>
+
+  <p>Choose <strong>Never</strong>. The default 60-day token expires and
+  silently breaks lead capture every two months. Long-lived tokens are
+  safe because they are tied to your specific Page + App + scopes.</p>
+
+  <figure>
+    <img src="facebook-leads-images/07d-24-never-selected.png" alt="Set expiration step with Never selected">
+    <figcaption>Click <strong>Next</strong>.</figcaption>
+  </figure>
+
+  <h3>3. Assign permissions &mdash; the critical click</h3>
+
+  <p>This is the step that trips everybody up. The dropdown lists ten
+  permissions. You need five of them. <strong>Click only
+  <code>leads_retrieval</code></strong>.</p>
+
+  <div class="callout callout--warn">
+    <span class="callout__label">Click only one. Do not click the others.</span>
+    <p>When you click <code>leads_retrieval</code>, Meta auto-locks
+    <em>five</em> required dependencies in (you'll see them turn into
+    disabled-but-checked rows): <code>business_management</code>,
+    <code>pages_manage_ads</code>, <code>pages_show_list</code>,
+    <code>pages_manage_metadata</code>, and <code>pages_read_engagement</code>.
+    The dropdown header reads "<strong>6 options selected</strong>".</p>
+    <p>If you click any of the others <em>first</em>, Meta will silently
+    drop <code>leads_retrieval</code> from the issued token even though it
+    still appears selected in the UI. This is the #1 reason tokens fail
+    validation later.</p>
+  </div>
+
+  <figure>
+    <img src="facebook-leads-images/08e-14-leads-retrieval-only-click.png" alt="Permissions step showing 6 options selected via leads_retrieval click, no warning banner">
+    <figcaption>"6 options selected" with no warning banner. This is the
+    correct state. Click <strong>Generate token</strong>.</figcaption>
+  </figure>
+
+  <h3>4. Done &mdash; copy the token</h3>
+
+  <figure>
+    <img src="facebook-leads-images/07d-47-token-fresh.png" alt="Token Created modal with token shown">
+    <figcaption>The token starts with <code>EAA...</code>. Copy it (the
+    <strong>Copy</strong> button works) and store it somewhere safe for
+    the next 30 seconds. We're about to paste it into the CRM and forget
+    about it forever.</figcaption>
+  </figure>
+
+  <div class="callout callout--tip">
+    <span class="callout__label">Verify your token (optional)</span>
+    <p>If you want to confirm the scopes <em>before</em> pasting it into
+    the CRM, run this from your terminal:</p>
+<pre><code>curl "https://graph.facebook.com/v23.0/me/permissions?access_token=YOUR_TOKEN"</code></pre>
+    <p>You should see seven entries, all status <code>granted</code>:
+    <code>leads_retrieval</code>, <code>business_management</code>,
+    <code>pages_manage_ads</code>, <code>pages_show_list</code>,
+    <code>pages_manage_metadata</code>, <code>pages_read_engagement</code>,
+    <code>public_profile</code>. If <code>leads_retrieval</code> is
+    missing &mdash; revoke the token, go back to the Meta App and confirm
+    the second use case ("<em>Capture &amp; manage ad leads</em>") is
+    saved (Part C), then re-issue clicking only
+    <code>leads_retrieval</code> first.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="part-e">
+  <span class="sect__num">8</span>
+  <div class="sect__eyebrow">Part E &middot; CRM-side</div>
+  <h1 class="sect__title">Paste the token into Ragenaizer</h1>
+
+  <p>The Meta side is done. Everything from here is one screen.</p>
+
+  <h2>Open Integrations</h2>
+
+  <p>Log in to Ragenaizer, open <strong>CRM</strong>, then
+  <strong>Settings &rarr; Integrations</strong>.</p>
+
+  <figure>
+    <img src="facebook-leads-images/08e-4-integrations-current.png" alt="CRM Settings Integrations panel, Facebook Lead Ads not connected">
+    <figcaption>The Facebook Lead Ads card shows
+    <strong>Not connected</strong>. Click <strong>Connect with System
+    User Token</strong>.</figcaption>
+  </figure>
+
+  <h2>Paste &amp; validate</h2>
+
+  <figure>
+    <img src="facebook-leads-images/08e-6-token-pasted.png" alt="System User token pasted into the CRM modal">
+    <figcaption>Paste the whole token. Click <strong>Validate
+    Token</strong>.</figcaption>
+  </figure>
+
+  <p>The CRM hits Meta's <code>/me/permissions</code> endpoint, confirms
+  every scope is present, then fetches every Page your SU has access to.</p>
+
+  <figure>
+    <img src="facebook-leads-images/08e-16-validate-fresh.png" alt="Validation success showing all granted scopes including leads_retrieval">
+    <figcaption><strong>Token valid.</strong> Granted:
+    <code>pages_show_list</code>, <code>business_management</code>,
+    <code>leads_retrieval</code>, <code>pages_read_engagement</code>,
+    <code>pages_manage_metadata</code>, <code>pages_manage_ads</code>,
+    <code>public_profile</code>. Below, your Pages are listed with checkboxes
+    pre-ticked.</figcaption>
+  </figure>
+
+  <p>Tick the Page(s) you want to connect, click
+  <strong>Connect Selected</strong>.</p>
+
+  <figure>
+    <img src="facebook-leads-images/08e-17-page-connected.png" alt="Pages Connected confirmation">
+    <figcaption>Done. Click <strong>Done</strong>.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="facebook-leads-images/08e-18-final-connected.png" alt="Final Integrations state with Page connected and 0 forms">
+    <figcaption>Your Page now appears in the Integrations panel with the
+    <strong>System User</strong> badge. <strong>1 page · 0 forms</strong>
+    &mdash; the form connection happens next.</figcaption>
+  </figure>
+
+  <div class="callout callout--what">
+    <span class="callout__label">What just happened</span>
+    <p>The CRM stored your token (encrypted at rest), exchanged it for
+    a per-Page access token, and recorded the page metadata. Polling for
+    forms and leads will now happen every two minutes via Hangfire on
+    our side &mdash; you don't need to do anything to keep it
+    running.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="part-f">
+  <span class="sect__num">9</span>
+  <div class="sect__eyebrow">Part F &middot; Form mapping</div>
+  <h1 class="sect__title">Connect a Lead Form &amp; map fields</h1>
+
+  <p>Each Page can host many Lead Forms. You decide which ones the CRM
+  should pull from, and how their questions map onto CRM lead fields. Both
+  decisions happen in one screen.</p>
+
+  <h2>Open Manage Forms</h2>
+
+  <p>On the connected page card, click <strong>Manage Forms</strong>.</p>
+
+  <p>If your form list is empty even though you built one in Part B, that's
+  expected: forms saved as drafts inside an Ad Manager campaign are
+  invisible to Meta's Graph API until the campaign is published. The
+  cleanest fix is to create the form via the API directly. It takes one
+  curl call, costs nothing, and gives you a working ACTIVE form id.</p>
+
+  <h3>Create a Lead Form via API (no ad spend)</h3>
+
+  <p>From your terminal &mdash; replace <code>{TOKEN}</code> with your SU
+  token from Part D and <code>{PAGE_ID}</code> with your Page ID (visible
+  in the connected-page card or under <em>About</em> on your Facebook
+  Page):</p>
+
+<pre><code>PAGE_TOKEN=$(curl -s "https://graph.facebook.com/v23.0/{PAGE_ID}?fields=access_token&amp;access_token={TOKEN}" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+curl -X POST "https://graph.facebook.com/v23.0/{PAGE_ID}/leadgen_forms" \
+  -d "access_token=${PAGE_TOKEN}" \
+  --data-urlencode 'name=Demo Lead Form' \
+  --data-urlencode 'follow_up_action_url=https://example.com' \
+  --data-urlencode 'privacy_policy={"url":"https://example.com/privacy","link_text":"Privacy Policy"}' \
+  --data-urlencode 'questions=[{"type":"FULL_NAME"},{"type":"EMAIL"},{"type":"PHONE"}]' \
+  --data-urlencode 'thank_you_page={"title":"Thanks","body":"All set","button_text":"View website","button_type":"VIEW_WEBSITE","website_url":"https://example.com"}' \
+  --data-urlencode 'locale=en_US'
+# → {"id":"NEW_FORM_ID"}</code></pre>
+
+  <p>The form is created with status <strong>ACTIVE</strong> immediately.
+  No payment method, no ad spend, fully queryable. Reload the
+  <strong>Manage Forms</strong> dialog and your form will appear.</p>
+
+  <figure>
+    <img src="facebook-leads-images/09f-6-manage-forms-with-form.png" alt="Manage Forms dialog now listing Ragenaizer Demo Lead Form, status ACTIVE">
+    <figcaption>The form is now visible. Click <strong>Connect &amp;
+    Map</strong>.</figcaption>
+  </figure>
+
+  <h2>Map the questions to CRM fields</h2>
+
+  <figure>
+    <img src="facebook-leads-images/09f-7-field-mapping.png" alt="Field mapping panel: Full name to Full Name, Email to Email, Phone number to Phone">
+    <figcaption>Out-of-the-box, the three default Facebook questions
+    (<code>full_name</code>, <code>email</code>, <code>phone_number</code>)
+    are pre-mapped to CRM's Full Name, Email, and Phone fields. If your
+    form has extra questions, they appear here too &mdash; map them to a
+    CRM field, mark them as <em>Custom</em>, or skip them. Skipped
+    questions are still stored in the lead's <code>custom_fields</code>
+    JSON for audit.</figcaption>
+  </figure>
+
+  <p>The <strong>Label this source</strong> field at the top determines what
+  shows up in the Leads page filter, so name it however your sales team
+  thinks about it (e.g. "Q4 Webinar Form" or "Diwali Promo"). Click
+  <strong>Save Mapping</strong>.</p>
+
+  <h2>Verify the form is polling</h2>
+
+  <figure>
+    <img src="facebook-leads-images/09f-9-final-form-mapped.png" alt="Final state showing form Mapped, Polling badge active, Last sync just now">
+    <figcaption>The card header now reads <strong>1 page · 1 form</strong>
+    and the form row shows the green <strong>Polling</strong> badge with
+    "<strong>Last sync: just now</strong>". Hangfire will hit your form
+    every two minutes from this moment on.</figcaption>
+  </figure>
+
+  <div class="callout callout--what">
+    <span class="callout__label">Done. The pipe is live.</span>
+    <p>From here on, any submission against your form &mdash; whether
+    from a real ad, from Meta's
+    <a href="https://developers.facebook.com/tools/lead-ads-testing" target="_blank" rel="noopener">Lead
+    Ads Testing Tool</a>, or from a published version of the campaign
+    you drafted in Part B &mdash; will land as a CRM lead row within
+    two minutes, with the source label, owner, and field mappings you
+    configured here.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="troubleshooting">
+  <span class="sect__num">10</span>
+  <div class="sect__eyebrow">If something didn't work</div>
+  <h1 class="sect__title">Troubleshooting</h1>
+
+  <p>The four most common ways this integration fails &mdash; and how to
+  recognise them quickly.</p>
+
+  <h3>Token is valid but no forms show up</h3>
+  <p>Your forms are in DRAFT state inside an Ad Manager campaign. Meta's
+  Graph API does not return draft forms even when you ask explicitly.
+  Either publish the campaign (charges your card) or create the form via
+  the Graph API as shown in Part F.</p>
+
+  <h3>"This token does not include leads_retrieval"</h3>
+  <p>Two possible causes:</p>
+  <ul>
+    <li>The second use case ("Capture &amp; manage ad leads with Marketing
+    API") wasn't added to your Meta App. Go back to Part C, add it,
+    revoke the bad token, regenerate.</li>
+    <li>You clicked permissions individually instead of clicking only
+    <code>leads_retrieval</code>. The dropdown silently drops it from the
+    issued token. Revoke and regenerate clicking only
+    <code>leads_retrieval</code> first.</li>
+  </ul>
+
+  <h3>"No permissions available" in the token wizard</h3>
+  <p>The System User isn't installed on the App. Go to Business Manager
+  Settings &rarr; Accounts &rarr; Apps &rarr; click your app &rarr;
+  <strong>Assign people</strong> &rarr; tick the SU &rarr; toggle
+  <strong>Manage app</strong>. Then re-run Generate token.</p>
+
+  <h3>Ads Manager refuses to publish your ad with "Terms of Service Not Accepted"</h3>
+  <p>Every Page must accept Lead Generation Terms once before it can ever
+  run a Lead Ad. Click <strong>View terms</strong> in the red error and
+  agree. One-time per Page, lasts forever.</p>
+
+  <h3>Business Manager won't accept your name</h3>
+  <p>Meta has an opaque blocklist for substrings that look like trademarks.
+  Add a generic suffix (e.g. "Technologies", "Pvt Ltd"), or pick a name
+  that doesn't share a word with a known brand. There is no appeal.</p>
+
+  <h3>Form was published with a typo</h3>
+  <p>Lead Forms are immutable on publish. Click the form &rarr;
+  <strong>Duplicate</strong>, fix the copy on the duplicate, publish the
+  new one, swap it into the ad, archive the old one. There is no edit.</p>
+
+  <h3>Token works for a while, then stops</h3>
+  <p>Almost always one of:</p>
+  <ul>
+    <li>You generated the token with a 60-day expiry instead of
+    <strong>Never</strong>. Re-issue with Never.</li>
+    <li>The Page admin who set up the Lead Generation TOS got removed
+    from the Page. Re-accept the TOS as a current admin.</li>
+    <li>The System User itself was deleted. Recreate it (or pick another
+    SU, but you'll need to re-issue the token).</li>
+  </ul>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────────────────── -->
+<section id="glossary">
+  <span class="sect__num">11</span>
+  <div class="sect__eyebrow">Reference</div>
+  <h1 class="sect__title">Glossary</h1>
+
+  <table>
+    <thead><tr><th>Term</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Business Manager</strong> (Business Portfolio)</td><td>Meta's container for Pages, ad accounts, people, and apps. The administrative root of everything in this guide.</td></tr>
+      <tr><td><strong>Page</strong></td><td>The public Facebook Page that runs Lead Ads. Lives inside a Business Manager.</td></tr>
+      <tr><td><strong>Ad account</strong></td><td>The billing-and-campaigns container under a Business Manager. Country, currency, and time zone are locked for life once set.</td></tr>
+      <tr><td><strong>Lead Ad</strong></td><td>A Facebook ad whose CTA opens an instant in-app form rather than sending the user to a website.</td></tr>
+      <tr><td><strong>Lead Form</strong> (Instant Form)</td><td>The questionnaire shown when the user taps a Lead Ad. Owned by a Page, immutable once published, queryable via Graph API as <code>/{page_id}/leadgen_forms</code>.</td></tr>
+      <tr><td><strong>Use case</strong></td><td>A Meta-defined bundle of permissions you attach to your app. This integration needs two: <em>Create &amp; manage ads with Marketing API</em> and <em>Capture &amp; manage ad leads with Marketing API</em>.</td></tr>
+      <tr><td><strong>System User (SU)</strong></td><td>A non-human identity inside a Business Manager. Issues long-lived API tokens for automation. Cannot log in to facebook.com.</td></tr>
+      <tr><td><strong>Scope / Permission</strong></td><td>A single capability (e.g. <code>leads_retrieval</code>) attached to an access token. The five scopes this integration uses are listed in Part D.</td></tr>
+      <tr><td><strong>Access Token</strong></td><td>A long string starting with <code>EAA...</code> that authenticates Graph API calls. The one we generate is permanent (Never expires) and bound to your Page + your App + your SU.</td></tr>
+      <tr><td><strong>Graph API</strong></td><td>Meta's REST-ish API at <code>graph.facebook.com</code>. The CRM polls two endpoints: <code>/{page_id}/leadgen_forms</code> for the list of forms, and <code>/{form_id}/leads</code> for new submissions.</td></tr>
+      <tr><td><strong>Hangfire</strong></td><td>The Ragenaizer-side scheduler that runs the two-minute polling job. You do not configure it &mdash; it just runs.</td></tr>
+      <tr><td><strong>Lead Ads Testing Tool</strong></td><td>Meta's free tool at <a href="https://developers.facebook.com/tools/lead-ads-testing" target="_blank" rel="noopener">developers.facebook.com/tools/lead-ads-testing</a> that lets you fire test submissions at any of your Lead Forms without paying for an ad. Useful to verify the pipe end to end.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<footer class="footer">
+  Last updated 2026-05-07 &middot; Ragenaizer Knowledge Base
+</footer>
+
+</main>
+</div>
+
+<script>
+// Highlight active TOC entry as you scroll
+const tocLinks = document.querySelectorAll('.toc a');
+const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id;
+      tocLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+    }
+  });
+}, { rootMargin: '-30% 0px -60% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

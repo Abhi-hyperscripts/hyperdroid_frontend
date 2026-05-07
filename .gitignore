@@ -22,3 +22,7 @@ package-lock.json
 
 # Logs
 *.log
+
+# KB working notes, secrets, internal verification screenshots
+KnowledgeBase/crm/_*
+KnowledgeBase/crm/facebook-leads-images/_*
