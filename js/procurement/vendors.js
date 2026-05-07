@@ -628,6 +628,11 @@ let _manageItemsVendorId = null;
 let _allMasterItems = []; // flat list
 let _allCategories = []; // grouped
 let _selectedItemIds = new Set();
+// master_item_id -> { price, notes, quoted_at } pulled from vendor_items.
+// Captured here so the Selected pane can show the vendor's submission AND
+// so the Save round-trip preserves price/notes for items the admin didn't
+// touch (otherwise saving Manage Items would null out vendor's quotes).
+let _vendorItemData = new Map();
 let _itemScrollBound = false;
 let _itemFilteredCache = [];
 const ITEM_ROW_HEIGHT = 42;
@@ -635,6 +640,7 @@ const ITEM_ROW_HEIGHT = 42;
 async function openManageItemsModal(vendorId) {
     _manageItemsVendorId = vendorId;
     _selectedItemIds.clear();
+    _vendorItemData.clear();
     const vendor = allVendors.find(v => v.id === vendorId);
 
     // Create modal if not exists
@@ -734,10 +740,20 @@ async function openManageItemsModal(vendorId) {
         });
         _allMasterItems.sort((a, b) => (a.item_name || '').localeCompare(b.item_name || ''));
 
-        // Pre-select vendor's existing items
+        // Pre-select vendor's existing items + capture price/notes so the
+        // Selected pane can show the vendor's submission and Save can
+        // round-trip them back without nulling existing quotes.
         const vendorItems = vendorItemsRes.data || vendorItemsRes || [];
         _selectedItemIds.clear();
-        vendorItems.forEach(vi => _selectedItemIds.add(vi.master_item_id));
+        _vendorItemData.clear();
+        vendorItems.forEach(vi => {
+            _selectedItemIds.add(vi.master_item_id);
+            _vendorItemData.set(vi.master_item_id, {
+                price: vi.last_quoted_price ?? null,
+                notes: vi.notes ?? null,
+                quoted_at: vi.last_quoted_at ?? null
+            });
+        });
 
         renderItemAvailablePane();
         renderItemSelectedPane();
@@ -838,10 +854,19 @@ function renderItemSelectedPane() {
         if (!item) return '';
         const name = escapeHtml(item.item_name || '');
         const cat = item.category_name ? escapeHtml(item.category_name) : '';
-        return `<div style="display:flex; align-items:center; gap:8px; padding:7px 10px; border-bottom:1px solid var(--border-primary);">
+        const data = _vendorItemData.get(id) || {};
+        const priceTxt = data.price != null ? `₹${Number(data.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
+        const notesTxt = data.notes ? escapeHtml(data.notes) : '';
+        const meta = [];
+        if (priceTxt) meta.push(`<span style="color:var(--brand-primary); font-weight:600;" title="Vendor's last quoted price">${priceTxt}</span>`);
+        if (notesTxt) meta.push(`<span style="color:var(--text-secondary);" title="Vendor's notes">${notesTxt}</span>`);
+        const metaLine = meta.length ? `<div style="font-size:11px; margin-top:2px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">${meta.join('<span style=\"color:var(--text-secondary); opacity:0.5;\">·</span>')}</div>` : '';
+        const catLine = cat ? `<div style="font-size:10px; color:var(--text-secondary);">${cat}</div>` : '';
+        return `<div style="display:flex; align-items:flex-start; gap:8px; padding:7px 10px; border-bottom:1px solid var(--border-primary);">
             <div style="flex:1; min-width:0;">
                 <div style="font-size:13px; font-weight:500; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</div>
-                ${cat ? `<div style="font-size:10px; color:var(--text-secondary);">${cat}</div>` : ''}
+                ${catLine}
+                ${metaLine}
             </div>
             <button type="button" onclick="toggleItemSelection('${id}')" style="background:none; border:none; cursor:pointer; color:var(--color-error); padding:2px; line-height:1; font-size:16px; opacity:0.7;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.7'" title="Remove">&times;</button>
         </div>`;
@@ -909,7 +934,12 @@ async function handleSaveVendorItems() {
     saveBtn.disabled = true;
     if (spinner) spinner.style.display = 'inline-block';
 
-    const items = Array.from(_selectedItemIds).map(id => ({ master_item_id: id }));
+    // Preserve vendor's submitted price/notes for items already in
+    // vendor_items — the backend upsert would otherwise null them out.
+    const items = Array.from(_selectedItemIds).map(id => {
+        const data = _vendorItemData.get(id) || {};
+        return { master_item_id: id, price: data.price ?? null, notes: data.notes ?? null };
+    });
 
     try {
         await api.request(`/procurement/vendor-catalog/admin/vendors/${_manageItemsVendorId}/items`, {
