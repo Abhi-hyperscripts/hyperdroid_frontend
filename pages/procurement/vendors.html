@@ -351,16 +351,30 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label" style="font-weight: 600;">Catalog URL</label>
-                            <div style="display: flex; gap: 8px;">
-                                <input type="text" class="form-control" id="catalogUrl" readonly>
-                                <button class="btn btn-secondary btn-sm" onclick="copyCatalogUrl()" style="white-space: nowrap;">Copy</button>
+                            <!-- min-width:0 on the flex item lets the input shrink past its
+                                 default content width, leaving the input wide and the Copy
+                                 button compact. Without it, the input refuses to shrink and
+                                 the button steals most of the row. -->
+                            <div style="display: flex; gap: 8px; align-items: stretch;">
+                                <input type="text" class="form-control" id="catalogUrl" readonly style="flex:1 1 auto; min-width:0;">
+                                <button class="btn btn-secondary btn-sm" onclick="copyCatalogUrl()"
+                                        title="Copy URL"
+                                        style="flex:0 0 auto; width:auto !important; padding:0 12px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    Copy
+                                </button>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label" style="font-weight: 600;">Password</label>
-                            <div style="display: flex; gap: 8px;">
-                                <input type="text" class="form-control" id="catalogPassword" readonly>
-                                <button class="btn btn-secondary btn-sm" onclick="copyCatalogPassword()" style="white-space: nowrap;">Copy</button>
+                            <div style="display: flex; gap: 8px; align-items: stretch;">
+                                <input type="text" class="form-control" id="catalogPassword" readonly style="flex:1 1 auto; min-width:0;">
+                                <button class="btn btn-secondary btn-sm" onclick="copyCatalogPassword()"
+                                        title="Copy password"
+                                        style="flex:0 0 auto; width:auto !important; padding:0 12px; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    Copy
+                                </button>
                             </div>
                         </div>
                         <div>
