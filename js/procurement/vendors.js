@@ -1028,7 +1028,7 @@ function renderIntelligence(profile) {
                     </tr></thead>
                     <tbody>
                         ${topItems.slice(0, 10).map(item => `<tr style="border-top:1px solid var(--border-primary);">
-                            <td style="padding:6px 10px;font-weight:500;">${escapeHtml(item.vendor_name || item.item_name || '-')}</td>
+                            <td style="padding:6px 10px;font-weight:500;">${escapeHtml(item.item_name || '-')}</td>
                             <td style="padding:6px 10px;text-align:center;">${item.times_quoted || 0}</td>
                             <td style="padding:6px 10px;text-align:center;">${item.times_selected || 0}</td>
                             <td style="padding:6px 10px;text-align:center;">
