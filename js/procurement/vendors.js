@@ -1082,17 +1082,24 @@ function renderIntelligence(profile) {
                 <table style="width:100%;border-collapse:collapse;font-size:12px;">
                     <thead style="position:sticky;top:0;"><tr style="background:var(--bg-tertiary);">
                         <th style="padding:6px 10px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Item</th>
+                        <th style="padding:6px 10px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">RFQ</th>
                         <th style="padding:6px 10px;text-align:right;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Quoted Price</th>
                         <th style="padding:6px 10px;text-align:center;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Selected</th>
                         <th style="padding:6px 10px;text-align:right;font-weight:600;font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Date</th>
                     </tr></thead>
                     <tbody>
-                        ${items.slice(0, 20).map(h => `<tr style="border-top:1px solid var(--border-primary);">
-                            <td style="padding:5px 10px;">${escapeHtml(h.item_name || '-')}</td>
-                            <td style="padding:5px 10px;text-align:right;">${h.quoted_price != null ? formatCurrency(h.quoted_price) : '-'}</td>
-                            <td style="padding:5px 10px;text-align:center;">${h.was_selected ? '<span style="color:var(--color-success);font-weight:600;">Yes</span>' : '<span style="opacity:0.4;">No</span>'}</td>
-                            <td style="padding:5px 10px;text-align:right;opacity:0.6;">${formatIntelDate(h.created_at)}</td>
-                        </tr>`).join('')}
+                        ${items.slice(0, 20).map(h => {
+                            const rfqLabel = h.rfq_number != null
+                                ? `<span style="font-weight:600;">#${h.rfq_number}</span>${h.rfq_title ? ` <span style="opacity:0.6;">${escapeHtml(h.rfq_title)}</span>` : ''}`
+                                : '<span style="opacity:0.4;">—</span>';
+                            return `<tr style="border-top:1px solid var(--border-primary);">
+                                <td style="padding:5px 10px;">${escapeHtml(h.item_name || '-')}</td>
+                                <td style="padding:5px 10px;font-size:11px;">${rfqLabel}</td>
+                                <td style="padding:5px 10px;text-align:right;">${h.quoted_price != null ? formatCurrency(h.quoted_price) : '-'}</td>
+                                <td style="padding:5px 10px;text-align:center;">${h.was_selected ? '<span style="color:var(--color-success);font-weight:600;">Yes</span>' : '<span style="opacity:0.4;">No</span>'}</td>
+                                <td style="padding:5px 10px;text-align:right;opacity:0.6;">${formatIntelDate(h.created_at)}</td>
+                            </tr>`;
+                        }).join('')}
                     </tbody>
                 </table>
             </div>

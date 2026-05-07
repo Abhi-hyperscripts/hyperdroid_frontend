@@ -239,6 +239,21 @@
             body: `
                 <p>Tracks this vendor's performance over time: how often they quote, how often they win, average price rank vs competitors, and quality/delivery scores.</p>
                 <p>Empty for new vendors — data accumulates as quotes flow in. Use this when shortlisting vendors for a new RFQ.</p>
+                <p style="margin-top:10px;"><strong>What each KPI means:</strong></p>
+                <ul style="margin:6px 0 0 18px; padding:0; line-height:1.55;">
+                    <li><strong>Quality</strong> — average of all manual ratings + goods-receipt acceptance rates (0–5).</li>
+                    <li><strong>Delivery Var.</strong> — average days late vs the promised delivery date. <code>0.0d</code> means on-time on average; positive = late.</li>
+                    <li><strong>Total Orders</strong> — number of performance events recorded for this vendor (RFQs responded to, POs delivered, manual ratings).</li>
+                    <li><strong>Times Selected</strong> — how many quote rows were marked as the winning bid.</li>
+                    <li><strong>Avg Price Rank</strong> — the vendor's average price position when ranked against competitors on the same RFQ item.
+                        <ul style="margin:4px 0 0 18px; padding:0;">
+                            <li><code>#1.0</code> = always the cheapest</li>
+                            <li><code>#1.5</code> = usually cheapest, sometimes 2nd</li>
+                            <li><code>#3.0</code> = consistently 3rd-cheapest</li>
+                            <li><code>—</code> = no comparable quotes yet (vendor hasn't bid against competitors on the same items)</li>
+                        </ul>
+                    </li>
+                </ul>
             `
         },
         'manageItemsModal': {
