@@ -400,26 +400,62 @@ function closeCreatePoModal() {
     closeModal('createPoModal');
 }
 
+// Mirrors AllowedTransitions in BusinessLayer_PurchaseOrders.cs. The
+// "approved" leg lives behind the Approve button (separate endpoint) and
+// "cancelled" lives behind Cancel PO (mandatory reason), so neither shows
+// up in this dropdown — only forward fulfilment moves do.
+const PO_STATUS_TRANSITIONS = {
+    'draft':              [],
+    'approved':           ['sent'],
+    'sent':               ['acknowledged', 'partially_received', 'received'],
+    'acknowledged':       ['partially_received', 'received'],
+    'partially_received': ['received'],
+    'received':           ['closed'],
+    'closed':             [],
+    'cancelled':          []
+};
+
+const PO_STATUS_LABELS = {
+    'sent':               'Sent',
+    'acknowledged':       'Acknowledged',
+    'partially_received': 'Partially Received',
+    'received':           'Received',
+    'closed':             'Closed'
+};
+
 function openStatusModal() {
     document.getElementById('statusForm').reset();
 
-    // Filter dropdown to only show valid transitions for current status
-    const transitions = {
-        'draft': ['approved'],
-        'approved': ['sent'],
-        'sent': ['acknowledged'],
-        'acknowledged': ['partially_received', 'received'],
-        'partially_received': ['received'],
-        'received': ['closed']
-    };
-    const allowed = transitions[currentPo?.status] || [];
+    const allowed = PO_STATUS_TRANSITIONS[currentPo?.status] || [];
     const select = document.getElementById('newStatus');
-    Array.from(select.options).forEach(opt => {
-        opt.style.display = allowed.includes(opt.value) ? '' : 'none';
-        opt.disabled = !allowed.includes(opt.value);
+    const wrap = document.getElementById('statusSelectWrap');
+    const notice = document.getElementById('statusTerminalNotice');
+    const submitBtn = document.getElementById('statusSubmitBtn');
+
+    // Rebuild options from scratch — the auto-searchable observer notices
+    // the childList change and re-renders the SearchableDropdown with the
+    // gated set, so a closed PO can't show "Sent" in the picker.
+    select.innerHTML = '';
+    allowed.forEach(value => {
+        const opt = document.createElement('option');
+        opt.value = value;
+        opt.textContent = PO_STATUS_LABELS[value] || value;
+        select.appendChild(opt);
     });
-    // Select first allowed option
-    if (allowed.length > 0) select.value = allowed[0];
+
+    if (allowed.length === 0) {
+        // Terminal state — hide the picker AND the submit button so the
+        // dialog reads as informational only. Cancel becomes the only
+        // action besides closing the modal.
+        wrap.style.display = 'none';
+        notice.style.display = '';
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.style.display = 'none'; }
+    } else {
+        wrap.style.display = '';
+        notice.style.display = 'none';
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.style.display = ''; }
+        select.value = allowed[0];
+    }
 
     openModal('statusModal');
 }

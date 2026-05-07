@@ -31,6 +31,41 @@
             height: 32px !important; min-height: 32px !important; max-height: 32px !important;
             padding: 5px 8px !important; font-size: 13px !important;
         }
+        /* Update Status / Cancel PO modals carry a long "What is this?"
+           explainer that auto-injects between the header and body. Two
+           goals here:
+             1. The whole dialog must fit and scroll within the viewport.
+             2. The form field is the primary action — it should appear
+                directly under the header, not buried below the explainer.
+                Use flex `order` to push the helper panel below the body.
+        */
+        #statusModal .modal-dialog,
+        #cancelPoModal .modal-dialog {
+            max-width: min(720px, 95vw);
+            width: min(720px, 95vw);
+        }
+        #statusModal .modal-content,
+        #cancelPoModal .modal-content {
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* let the inner scroll region own scrolling */
+        }
+        #statusModal .modal-header,
+        #cancelPoModal .modal-header { order: 1; flex: 0 0 auto; }
+        #statusModal .modal-body,
+        #cancelPoModal .modal-body { order: 2; flex: 0 0 auto; }
+        /* Auto-injected info panel — push below the form, capped height. */
+        #statusModal [id^="info-modal-"],
+        #cancelPoModal [id^="info-modal-"] {
+            order: 3;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            margin: 12px 16px 12px 16px !important;
+        }
+        #statusModal .modal-footer,
+        #cancelPoModal .modal-footer { order: 4; flex: 0 0 auto; }
     </style>
 </head>
 <body class="dashboard crm-page">
@@ -301,14 +336,13 @@
                 </div>
                 <div class="modal-body">
                     <form id="statusForm" onsubmit="handleStatusUpdate(event)">
-                        <div class="mb-3">
+                        <div class="mb-3" id="statusTerminalNotice" style="display:none; padding:12px 14px; border:1px solid var(--border-primary); border-radius:6px; font-size:13px; color:var(--text-secondary);">
+                            This PO is in a terminal state — no further status changes are allowed. Use Cancel PO if you need to roll it back.
+                        </div>
+                        <div class="mb-3" id="statusSelectWrap">
                             <label for="newStatus" class="form-label">New Status <span class="text-danger">*</span></label>
                             <select class="form-select" id="newStatus" required>
-                                <option value="sent">Sent</option>
-                                <option value="acknowledged">Acknowledged</option>
-                                <option value="partially_received">Partially Received</option>
-                                <option value="received">Received</option>
-                                <option value="closed">Closed</option>
+                                <!-- options injected at openStatusModal() based on current PO status -->
                             </select>
                         </div>
                     </form>
