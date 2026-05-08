@@ -4285,6 +4285,19 @@ body.crm-page #gsShareModal .gm-body:has(.searchable-dropdown.open) {
 }
 .form-answer-chip.is-on .form-answer-count { color: rgba(255,255,255,0.85); }
 .form-answer-chip.form-answer-noans { font-style: italic; }
+/* Zero-count pill: the answer exists in historical leads but every matching
+   lead is currently soft-deleted. Render greyed-out + non-interactive so
+   the user can see the shape of the data without picking a chip that
+   would return a zero-result set. Hover affordance suppressed too. */
+.form-answer-chip.is-zero {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: auto;       /* keep it for the data-tooltip hover */
+}
+.form-answer-chip.is-zero:hover {
+    background: var(--bg-input);
+    border-color: var(--border-color);
+}
 .form-answer-count {
     color: var(--text-secondary);
     font-size: 0.85em;

@@ -230,9 +230,21 @@
         const remaining = allValues.length - visible.length;
         const valChips = visible.map(v => {
             const isOn = selected.has(v.value.toLowerCase());
-            return `<button type="button" class="form-answer-chip ${isOn ? 'is-on' : ''}"
+            // Zero-count pill: the answer was on leads that were later
+            // deleted/wiped — render it disabled so the user can see the
+            // shape of the data without picking a chip that returns no rows.
+            const isZero = (v.count || 0) === 0;
+            const cls = ['form-answer-chip',
+                         isOn ? 'is-on' : '',
+                         isZero ? 'is-zero' : ''].filter(Boolean).join(' ');
+            const onclick = isZero ? '' : `onclick="window.faToggleChip(this)"`;
+            const disabledAttr = isZero ? 'disabled aria-disabled="true"' : '';
+            const tooltip = isZero
+                ? 'data-tooltip="No active leads have this answer (the matching leads were deleted)"'
+                : '';
+            return `<button type="button" class="${cls}"
                         data-key="${escapeAttr(_activeKey)}" data-value="${escapeAttr(v.value)}"
-                        onclick="window.faToggleChip(this)">
+                        ${disabledAttr} ${tooltip} ${onclick}>
                         <span>${escapeHtml(v.value)}</span>
                         <span class="form-answer-count">${v.count}</span>
                     </button>`;
@@ -249,9 +261,17 @@
         const moreBtn = remaining > 0
             ? `<button type="button" class="fa-show-more" onclick="window.faShowAll('${escapeAttr(_activeKey)}')">+${remaining} more</button>`
             : '';
+        // Empty-state: zero distinct answer values AND zero no-answer rows
+        // — only happens for a brand-new question that has no leads at all.
+        // The "all matching leads were deleted" case now shows zero-count
+        // disabled pills (see is-zero handling above), so it's no longer
+        // an empty pane.
+        const isEmpty = allValues.length === 0 && (cached.noAnswer || 0) === 0;
         pane.innerHTML = `
             <div class="fa-q-title">${escapeHtml(cached.label)}</div>
-            <div class="form-answer-chips">${valChips}${noAnsChip}${moreBtn}</div>
+            ${isEmpty
+                ? `<p class="fa-empty">No leads have this question yet — once the form starts collecting answers they'll appear here.</p>`
+                : `<div class="form-answer-chips">${valChips}${noAnsChip}${moreBtn}</div>`}
         `;
     }
 
