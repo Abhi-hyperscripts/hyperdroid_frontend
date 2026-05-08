@@ -941,6 +941,7 @@
                                 <option value="Google">Google</option>
                                 <option value="Azure">Azure</option>
                                 <option value="Razorpay">Razorpay (Payment Gateway)</option>
+                                <option value="Interakt">Interakt (WhatsApp BSP)</option>
                                 <option value="Custom">Custom</option>
                             </select>
                         </div>
@@ -954,6 +955,7 @@
                                 <option value="vision">Vision</option>
                                 <option value="embedding">Embedding</option>
                                 <option value="payment_gateway">Payment Gateway</option>
+                                <option value="whatsapp">WhatsApp Messaging</option>
                             </select>
                         </div>
 
@@ -996,6 +998,30 @@
                                     </button>
                                 </div>
                                 <small style="color:var(--text-secondary);font-size:0.75rem;">Required if you want automatic payment confirmation via Razorpay webhooks.</small>
+                            </div>
+                        </div>
+
+                        <!-- Interakt-specific 2-field input (shown only when Interakt is selected) -->
+                        <div id="apiKeyInteraktGroup" style="display:none;">
+                            <div class="form-group">
+                                <label>API Key</label>
+                                <div class="apikey-input-wrapper">
+                                    <input type="password" id="interaktApiKey" placeholder="Base64 API key from Interakt → Settings → Developer Setup..." autocomplete="off">
+                                    <button type="button" class="apikey-toggle-btn" onclick="toggleFieldVisibility('interaktApiKey', 'interaktApiKeyEye')">
+                                        <svg id="interaktApiKeyEye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </button>
+                                </div>
+                                <small style="color:var(--text-secondary);font-size:0.75rem;">Found in your Interakt account: Settings → Developer Setup → Secret Key.</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Webhook Secret</label>
+                                <div class="apikey-input-wrapper">
+                                    <input type="password" id="interaktWebhookSecret" placeholder="Webhook secret you set in Interakt..." autocomplete="off">
+                                    <button type="button" class="apikey-toggle-btn" onclick="toggleFieldVisibility('interaktWebhookSecret', 'interaktWebhookSecretEye')">
+                                        <svg id="interaktWebhookSecretEye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </button>
+                                </div>
+                                <small style="color:var(--text-secondary);font-size:0.75rem;">Required for inbound message verification. Used to validate the <code>interakt-signature</code> header (HMAC-SHA256).</small>
                             </div>
                         </div>
                     </form>

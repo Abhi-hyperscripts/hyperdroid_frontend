@@ -2116,6 +2116,11 @@ function renderApiKeysTable(keys) {
     }
 
     const llmProviders = new Set(['anthropic', 'openai']);
+    // Provider+service combos that show an expandable "how to wire this in
+    // the provider's dashboard" panel — currently just Interakt's webhook
+    // URL + setup instructions.
+    const isInteraktRow = (provider, serviceType) =>
+        (provider || '').toLowerCase() === 'interakt' && (serviceType || '').toLowerCase() === 'whatsapp';
 
     tbody.innerHTML = keys.map((key, idx) => {
         const provider = key.provider || '';
@@ -2130,14 +2135,22 @@ function renderApiKeysTable(keys) {
 
         // Show the expandable copilot row only when this is an active LLM provider
         const isLlmRow = isActive && llmProviders.has(provider.toLowerCase()) && (serviceType.toLowerCase() === 'llm');
+        const isInteraktSetupRow = isActive && isInteraktRow(provider, serviceType);
         const rowId = `apikey-row-${idx}`;
-        const expandToggleHtml = isLlmRow
-            ? `<button class="action-btn copilot-expand-btn" data-tooltip="Configure Copilot" data-row-id="${rowId}" onclick="toggleCopilotExpand('${rowId}')">
+        let expandToggleHtml = '';
+        if (isLlmRow) {
+            expandToggleHtml = `<button class="action-btn copilot-expand-btn" data-tooltip="Configure Copilot" data-row-id="${rowId}" onclick="toggleCopilotExpand('${rowId}')">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="6 9 12 15 18 9"/>
                     </svg>
-                </button>`
-            : '';
+                </button>`;
+        } else if (isInteraktSetupRow) {
+            expandToggleHtml = `<button class="action-btn copilot-expand-btn" data-tooltip="Show Webhook URL" data-row-id="${rowId}" onclick="toggleCopilotExpand('${rowId}')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </button>`;
+        }
 
         const mainRow = `
             <tr>
@@ -2187,6 +2200,55 @@ function renderApiKeysTable(keys) {
             </tr>
         `;
 
+        // Hidden expandable child row — shows Interakt's "where do I paste
+        // this URL" instructions for tenants who just configured the key.
+        let interaktSetupRow = '';
+        if (isInteraktSetupRow) {
+            const tenantId = (function() {
+                try {
+                    const tok = localStorage.getItem('ragenaizer_authToken');
+                    if (!tok) return null;
+                    const payload = JSON.parse(atob(tok.split('.')[1]));
+                    return payload.tenant_id || null;
+                } catch { return null; }
+            })();
+            const baseUrl = (typeof CONFIG !== 'undefined' && CONFIG.endpoints && CONFIG.endpoints.notification)
+                ? CONFIG.endpoints.notification
+                : 'https://notification.ragenaizer.com';
+            const webhookUrl = tenantId
+                ? `${baseUrl}/api/webhooks/interakt/${tenantId}`
+                : '(could not resolve tenant id — please re-login)';
+
+            interaktSetupRow = `
+                <tr class="copilot-expand-row" id="${rowId}-expand" style="display:none;">
+                    <td colspan="6">
+                        <div class="copilot-expand-panel">
+                            <div class="copilot-expand-header">
+                                <div>
+                                    <div class="copilot-expand-title">Connect Interakt → Ragenaizer (one-time setup)</div>
+                                    <div class="copilot-expand-sub">Paste this webhook URL into your Interakt dashboard so customer messages flow into your CRM in real time. The Webhook Secret you entered above must match the one you set in Interakt.</div>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:8px; align-items:center; margin-top:12px; padding:12px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px;">
+                                <code id="${rowId}-webhook-url" style="flex:1; font-size:13px; user-select:all; word-break:break-all;">${webhookUrl}</code>
+                                <button class="btn btn-sm btn-outline-primary" onclick="copyTextToClipboard(document.getElementById('${rowId}-webhook-url').innerText, this)">
+                                    Copy URL
+                                </button>
+                            </div>
+                            <ol style="margin:14px 0 0 18px; line-height:1.7; color:var(--text-secondary); font-size:13px;">
+                                <li>Open <a href="https://app.interakt.ai/settings/developer-setting" target="_blank" rel="noopener" style="color:var(--brand-primary);">Interakt → Settings → Developer Setup</a>.</li>
+                                <li>Click <b>Configure</b> next to "Configure Webhook".</li>
+                                <li>Paste the webhook URL above into <b>Webhook URL</b>.</li>
+                                <li>Paste the same <b>Webhook Secret</b> you entered above (signs every payload with HMAC-SHA256).</li>
+                                <li>Under <b>Others</b>, tick <b>Message received from customers</b>.</li>
+                                <li>Click <b>Submit</b>. You're done — incoming WhatsApp messages will start landing in CRM as leads + activities.</li>
+                            </ol>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
         // Hidden expandable child row with per-service copilot toggles
         let copilotRow = '';
         if (isLlmRow) {
@@ -2229,8 +2291,32 @@ function renderApiKeysTable(keys) {
             `;
         }
 
-        return mainRow + copilotRow;
+        return mainRow + copilotRow + interaktSetupRow;
     }).join('');
+}
+
+/**
+ * Generic clipboard copy with a 2-second "Copied!" button feedback.
+ * Used by the Interakt webhook URL panel — kept here because admin.js
+ * doesn't have a copy helper yet and other clipboard call sites use
+ * navigator.clipboard inline.
+ */
+async function copyTextToClipboard(text, btn) {
+    try {
+        await navigator.clipboard.writeText(text);
+        if (btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = 'Copied!';
+            btn.disabled = true;
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }, 2000);
+        }
+        if (typeof showToast === 'function') showToast('Copied to clipboard', 'success');
+    } catch (e) {
+        if (typeof showToast === 'function') showToast('Could not copy — please select manually', 'error');
+    }
 }
 
 function toggleCopilotExpand(rowId) {
@@ -2278,32 +2364,53 @@ function openAddApiKeyModal() {
     if (rpKeyId) rpKeyId.value = '';
     if (rpKeySecret) { rpKeySecret.value = ''; rpKeySecret.type = 'password'; }
     if (rpWebhook) { rpWebhook.value = ''; rpWebhook.type = 'password'; }
+    // Reset Interakt-specific fields
+    const ikKey = document.getElementById('interaktApiKey');
+    const ikSecret = document.getElementById('interaktWebhookSecret');
+    if (ikKey) { ikKey.value = ''; ikKey.type = 'password'; }
+    if (ikSecret) { ikSecret.value = ''; ikSecret.type = 'password'; }
     onApiKeyProviderChange();
     document.getElementById('apiKeySaveBtn').textContent = 'Save';
     openModal('apiKeyModal');
 }
 
 /**
- * Swap the form UI between the default single-value key input and the
- * Razorpay-specific 3-field block (key_id + key_secret + webhook_secret).
- * Razorpay stores all three values as a JSON blob in the single api_key
- * column of the tenant_api_keys table so Auth itself needs no changes.
+ * Swap the form UI between the default single-value key input and
+ * provider-specific multi-field blocks (Razorpay = 3 fields,
+ * Interakt = 2 fields). Multi-field providers store all values as a
+ * JSON blob in the single api_key column of tenant_api_keys, so Auth
+ * itself needs no schema changes.
  */
 function onApiKeyProviderChange() {
     const provider = document.getElementById('apiKeyProvider').value;
     const isRazorpay = provider === 'Razorpay';
+    const isInterakt = provider === 'Interakt';
+    const isMultiField = isRazorpay || isInterakt;
     const singleGroup = document.getElementById('apiKeySingleGroup');
     const razorpayGroup = document.getElementById('apiKeyRazorpayGroup');
+    const interaktGroup = document.getElementById('apiKeyInteraktGroup');
     const serviceTypeSelect = document.getElementById('apiKeyServiceType');
 
-    if (singleGroup) singleGroup.style.display = isRazorpay ? 'none' : '';
+    if (singleGroup) singleGroup.style.display = isMultiField ? 'none' : '';
     if (razorpayGroup) razorpayGroup.style.display = isRazorpay ? '' : 'none';
+    if (interaktGroup) interaktGroup.style.display = isInterakt ? '' : 'none';
 
-    // For Razorpay, force service type to payment_gateway and lock it
+    // Pin service type for providers that have only one valid service.
+    // When switching AWAY from a pinned provider to a regular one, clear the
+    // value so the user explicitly picks an appropriate service type — otherwise
+    // a stale "whatsapp" or "payment_gateway" would carry over to e.g. Anthropic.
     if (isRazorpay && serviceTypeSelect) {
         serviceTypeSelect.value = 'payment_gateway';
         serviceTypeSelect.disabled = true;
+    } else if (isInterakt && serviceTypeSelect) {
+        serviceTypeSelect.value = 'whatsapp';
+        serviceTypeSelect.disabled = true;
     } else if (!apiKeyEditMode && serviceTypeSelect) {
+        // Clear stale pinned value (whatsapp / payment_gateway) when switching
+        // to a non-pinned provider; let the user re-pick.
+        if (serviceTypeSelect.value === 'whatsapp' || serviceTypeSelect.value === 'payment_gateway') {
+            serviceTypeSelect.value = '';
+        }
         serviceTypeSelect.disabled = false;
     }
 }
@@ -2341,8 +2448,9 @@ async function saveApiKey() {
     const provider = document.getElementById('apiKeyProvider').value;
     const serviceType = document.getElementById('apiKeyServiceType').value;
 
-    // Razorpay stores all 3 credential fields as a JSON blob in the single
-    // api_key column. Other providers use the plain single-value input.
+    // Multi-field providers (Razorpay, Interakt) pack their credential fields
+    // into a JSON blob stored in the single api_key column. Others use the
+    // plain single-value input.
     let apiKeyVal;
     if (provider === 'Razorpay') {
         const keyId = document.getElementById('razorpayKeyId').value.trim();
@@ -2356,6 +2464,17 @@ async function saveApiKey() {
             key_id: keyId,
             key_secret: keySecret,
             webhook_secret: webhookSecret || ''
+        });
+    } else if (provider === 'Interakt') {
+        const apiKey = document.getElementById('interaktApiKey').value.trim();
+        const webhookSecret = document.getElementById('interaktWebhookSecret').value.trim();
+        if (!apiKey || !webhookSecret) {
+            showToast('Interakt requires both API Key and Webhook Secret', 'error');
+            return;
+        }
+        apiKeyVal = JSON.stringify({
+            api_key: apiKey,
+            webhook_secret: webhookSecret
         });
     } else {
         apiKeyVal = document.getElementById('apiKeyValue').value;
