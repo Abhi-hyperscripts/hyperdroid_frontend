@@ -3331,29 +3331,34 @@
 
     <!-- ─── Lead Field Editor Modal (create + edit) ─────────────────────── -->
     <div class="gm-overlay" id="leadFieldModal">
-        <div class="gm-modal" style="max-width:780px;">
+        <div class="gm-modal" style="width:760px;max-width:96vw;">
             <div class="gm-header">
-                <h3 id="leadFieldModalTitle">Add Field</h3>
+                <div class="gm-header-left">
+                    <div class="gm-title-group">
+                        <h3 class="gm-title" id="leadFieldModalTitle">Add Field</h3>
+                        <p class="gm-subtitle">Define a custom dropdown for leads — used in the activity log, filter bar, and table column.</p>
+                    </div>
+                </div>
                 <button class="gm-close" onclick="closeLeadFieldModal()" aria-label="Close">&times;</button>
             </div>
-            <div class="gm-body">
+            <div class="gm-body" style="font-size:13px;">
                 <input type="hidden" id="lfFieldId">
                 <div class="form-grid form-grid-2">
                     <div class="form-group">
-                        <label>Code <span style="color:var(--color-error);">*</span></label>
+                        <label style="font-size:13px;">Code <span style="color:var(--color-error);">*</span></label>
                         <input type="text" id="lfCode" class="form-control" placeholder="e.g. potential" maxlength="60">
-                        <small style="color:var(--text-secondary);">Permanent, lowercase a–z 0–9 _ only.</small>
+                        <small style="color:var(--text-secondary);font-size:12px;">Permanent, lowercase a–z 0–9 _ only.</small>
                     </div>
                     <div class="form-group">
-                        <label>Label <span style="color:var(--color-error);">*</span></label>
+                        <label style="font-size:13px;">Label <span style="color:var(--color-error);">*</span></label>
                         <input type="text" id="lfLabel" class="form-control" placeholder="e.g. Potential" maxlength="120">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Description (optional)</label>
+                    <label style="font-size:13px;">Description (optional)</label>
                     <input type="text" id="lfDescription" class="form-control" placeholder="Helps your team know when to set this field" maxlength="240">
                 </div>
-                <div class="form-grid form-grid-3" style="margin-top:8px;">
+                <div class="form-grid form-grid-3" style="margin-top:8px;font-size:13px;">
                     <label class="checkbox-row" style="display:flex;align-items:center;gap:8px;">
                         <input type="checkbox" id="lfShowAct" checked>
                         <span>Show in activity log</span>
@@ -3371,7 +3376,7 @@
                 <hr style="margin:18px 0; border-color:var(--border-color);">
 
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-                    <h4 style="margin:0;">Options</h4>
+                    <h4 style="margin:0; font-size:14px; font-weight:600;">Options</h4>
                     <button type="button" class="btn btn-outline btn-sm" onclick="addOptionRow()">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         Add option
@@ -3393,7 +3398,11 @@
     <div class="gm-overlay" id="leadFieldDeleteModal">
         <div class="gm-modal" style="max-width:480px;">
             <div class="gm-header">
-                <h3>Remove field</h3>
+                <div class="gm-header-left">
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Remove field</h3>
+                    </div>
+                </div>
                 <button class="gm-close" onclick="closeLeadFieldDeleteModal()" aria-label="Close">&times;</button>
             </div>
             <div class="gm-body">
