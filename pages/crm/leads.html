@@ -193,10 +193,12 @@
             </div>
         </div>
 
-        <!-- Row 2 — dimension filters (status / team / owner / source /
-             campaign / email engagement / created-date range). Each narrows
-             the leads list. -->
-        <div class="crm-filter-bar">
+        <!-- Row 2 — dimension filters (status / team / owner / campaign /
+             email engagement / created-date range). Each narrows the leads
+             list. The --dimensions modifier turns each cell into an equal-
+             width flex item so the 6 visible controls share the row evenly
+             on wide viewports and wrap onto a second line on narrow ones. -->
+        <div class="crm-filter-bar crm-filter-bar--dimensions">
             <div class="crm-filter-group">
                 <label for="filterStatus">Status</label>
                 <!-- The lead-status enum is deliberately small (new → contacted →

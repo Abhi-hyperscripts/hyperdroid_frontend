@@ -1467,6 +1467,21 @@ body.crm-dashboard .crm-container {
     align-items: flex-end;
 }
 
+/* Dimension-filter row — Status / Owner / Email Engagement / Campaign /
+   Created from / Created to. Each cell takes an equal share of the row
+   so the 6 visible controls fill the width on wide viewports. min-width
+   is what triggers wrap to the next row on narrow viewports — flex-basis
+   takes over once available width drops below ~6 × 160px. */
+.crm-filter-bar--dimensions > .crm-filter-group {
+    flex: 1 1 160px;
+    min-width: 0; /* let inputs shrink with the container instead of overflowing */
+}
+.crm-filter-bar--dimensions > .crm-filter-group .form-select,
+.crm-filter-bar--dimensions > .crm-filter-group .form-control,
+.crm-filter-bar--dimensions > .crm-filter-group .searchable-dropdown-trigger {
+    width: 100%;
+}
+
 /* Custom-filter chip row — second filter row for tenant-defined dropdowns.
    Default state: just an "Add filter" pill button. Active filters render as
    removable chips with `Field: Value ×`. Designed to scale to 30+ defined
