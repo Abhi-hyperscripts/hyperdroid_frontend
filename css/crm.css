@@ -1581,7 +1581,10 @@ body.crm-dashboard .crm-container {
    children of body and break our viewport-anchored popover. */
 .lf-popover {
     position: fixed !important;
-    z-index: 1080;
+    /* Above .gm-overlay modals (which use z-index: 99999).
+       !important to win against `.gradient-bg-ambient > *` which forces
+       z-index:1 on direct children of body. */
+    z-index: 1000000 !important;
     min-width: 260px;
     max-width: min(360px, 92vw);
     max-height: min(420px, 70vh);
