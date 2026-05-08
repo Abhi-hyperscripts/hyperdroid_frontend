@@ -29,6 +29,16 @@
     let connection = null;        // SignalR
     let numberDropdown = null;    // SearchableDropdown instance for the picker
 
+    // Pending attachment in the composer. Holds the *uploaded* state so the
+    // user can preview it, change the caption, and Send when ready. Cleared
+    // on send / remove / thread switch.
+    //   { fileId, mediaUrl, mediaType, fileName, contentType, fileSize, previewBlobUrl }
+    let pendingAttachment = null;
+
+    // Interakt limits per WhatsApp's BSP rules (in bytes). Audio caps at 16MB
+    // but document caps at 100MB; the picker also restricts MIME.
+    const MAX_FILE_BYTES = 100 * 1024 * 1024;
+
     document.addEventListener('DOMContentLoaded', init);
 
     async function init() {
@@ -74,6 +84,19 @@
             back.addEventListener('click', () => {
                 document.getElementById('waShell')?.classList.remove('has-active-thread');
             });
+        }
+        const attachBtn = document.getElementById('waAttachBtn');
+        const fileInput = document.getElementById('waFileInput');
+        if (attachBtn && fileInput) {
+            attachBtn.addEventListener('click', () => {
+                if (!activeCustomerPhone) {
+                    if (typeof Toast !== 'undefined') Toast.warning('Pick a conversation first');
+                    return;
+                }
+                fileInput.value = '';   // allow re-picking the same file
+                fileInput.click();
+            });
+            fileInput.addEventListener('change', handleFilePicked);
         }
     }
 
@@ -238,6 +261,8 @@
 
     async function openConversation(customerPhone, customerName) {
         if (!customerPhone) return;
+        // Switching threads invalidates any in-flight composer attachment.
+        clearPendingAttachment();
         activeCustomerPhone = customerPhone;
         document.getElementById('waShell')?.classList.add('has-active-thread');
         renderThreadHeader({ customerPhone, customerName });
@@ -311,17 +336,84 @@
     function renderMessage(m) {
         const dir = (m.direction || '').toLowerCase();
         const cls = dir === 'outbound' ? 'outbound' : 'inbound';
-        const body = m.body ? escapeHtml(m.body) : (m.mediaUrl ? '<em>(media)</em>' : '<em>(empty)</em>');
         const ts = m.receivedAtUtc || m.sentAtUtc || m.createdAtUtc;
         const status = dir === 'outbound' ? ` · ${escapeHtml(m.status || '')}` : '';
+        const meta = `<span class="wa-msg-meta">${formatTimeOfDay(ts)}${status}</span>`;
+        const type = (m.messageType || 'text').toLowerCase();
+
+        // Caption goes BELOW the media (matches WhatsApp's own layout).
+        const captionHtml = m.body
+            ? `<span class="wa-bubble-caption">${escapeHtml(m.body)}</span>`
+            : '';
+
+        if (type === 'image' && m.mediaUrl) {
+            return `
+                <div class="wa-msg-row ${cls}">
+                    <div class="wa-bubble wa-bubble-media">
+                        <img src="${escapeAttr(m.mediaUrl)}" alt="image" loading="lazy"
+                             onclick="window.open(this.src,'_blank')">
+                        ${captionHtml}${meta}
+                    </div>
+                </div>`;
+        }
+        if (type === 'video' && m.mediaUrl) {
+            return `
+                <div class="wa-msg-row ${cls}">
+                    <div class="wa-bubble wa-bubble-media">
+                        <video src="${escapeAttr(m.mediaUrl)}" controls preload="metadata"></video>
+                        ${captionHtml}${meta}
+                    </div>
+                </div>`;
+        }
+        if (type === 'audio' && m.mediaUrl) {
+            return `
+                <div class="wa-msg-row ${cls}">
+                    <div class="wa-bubble wa-bubble-media">
+                        <audio src="${escapeAttr(m.mediaUrl)}" controls preload="metadata"></audio>
+                        ${meta}
+                    </div>
+                </div>`;
+        }
+        if (type === 'document' && m.mediaUrl) {
+            const fileLabel = inferFileNameFromUrl(m.mediaUrl) || 'Document';
+            return `
+                <div class="wa-msg-row ${cls}">
+                    <div class="wa-bubble wa-bubble-media">
+                        <a class="wa-bubble-doc" href="${escapeAttr(m.mediaUrl)}" target="_blank" rel="noopener">
+                            <span class="wa-bubble-doc-icon">📄</span>
+                            <span class="wa-bubble-doc-name">${escapeHtml(fileLabel)}</span>
+                        </a>
+                        ${captionHtml}${meta}
+                    </div>
+                </div>`;
+        }
+        // Fallback: text (or media row with no URL)
+        const body = m.body ? escapeHtml(m.body) : (m.mediaUrl ? '<em>(media)</em>' : '<em>(empty)</em>');
         return `
             <div class="wa-msg-row ${cls}">
                 <div class="wa-bubble">
                     ${body}
-                    <span class="wa-msg-meta">${formatTimeOfDay(ts)}${status}</span>
+                    ${meta}
                 </div>
             </div>
         `;
+    }
+
+    function inferFileNameFromUrl(url) {
+        try {
+            const u = new URL(url);
+            const last = decodeURIComponent(u.pathname.split('/').pop() || '');
+            // Drive S3 keys look like "whatsapp/20260101_abc_filename.ext".
+            // Strip the timestamp_id_ prefix for nicer display.
+            const m = last.match(/^\d{6,}_[a-z0-9]+_(.+)$/i);
+            return m ? m[1] : last;
+        } catch {
+            return '';
+        }
+    }
+
+    function escapeAttr(s) {
+        return String(s || '').replace(/"/g, '&quot;');
     }
 
     function showComposer(show) {
@@ -329,24 +421,183 @@
         document.getElementById('waComposerDisabledNote').style.display = show ? 'none' : '';
     }
 
+    // ─── Attachments ────────────────────────────────────────────────────────
+
+    // Map a MIME type to (mediaType for our API, isAllowed). Only WhatsApp-
+    // supported MIMEs are allowed; everything else is rejected up front.
+    function classifyAttachment(file) {
+        const mime = (file.type || '').toLowerCase();
+        const name = (file.name || '').toLowerCase();
+        const ext  = name.includes('.') ? name.split('.').pop() : '';
+        if (mime.startsWith('image/'))  return { mediaType: 'image',    ok: ['jpeg','png','webp'].some(t => mime === 'image/' + t) };
+        if (mime.startsWith('video/'))  return { mediaType: 'video',    ok: ['mp4','3gpp'].some(t => mime === 'video/' + t) };
+        if (mime.startsWith('audio/'))  return { mediaType: 'audio',    ok: ['mpeg','aac','ogg','amr'].some(t => mime === 'audio/' + t) };
+        // documents — accept by extension since browsers don't always report MIME
+        if (mime === 'application/pdf' || ext === 'pdf') return { mediaType: 'document', ok: true };
+        const docExts = ['doc','docx','xls','xlsx','ppt','pptx','txt'];
+        if (docExts.includes(ext)) return { mediaType: 'document', ok: true };
+        return { mediaType: 'document', ok: false };
+    }
+
+    async function handleFilePicked(e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const cls = classifyAttachment(file);
+        if (!cls.ok) {
+            if (typeof Toast !== 'undefined') Toast.error(`Unsupported file type for WhatsApp: ${file.type || 'unknown'}`);
+            return;
+        }
+        if (file.size > MAX_FILE_BYTES) {
+            if (typeof Toast !== 'undefined') Toast.error('File too large (limit 100MB).');
+            return;
+        }
+
+        // Local preview using a blob URL — released when send/remove fires.
+        const previewBlobUrl = URL.createObjectURL(file);
+        pendingAttachment = {
+            mediaType: cls.mediaType,
+            fileName: file.name,
+            contentType: file.type || 'application/octet-stream',
+            fileSize: file.size,
+            previewBlobUrl,
+            fileId: null,
+            mediaUrl: null,
+            uploading: true,
+        };
+        renderAttachPreview(0);
+
+        try {
+            // 1) Ask Drive for a presigned PUT
+            const upResp = await api.request('/drive/whatsapp/upload-url', {
+                method: 'POST',
+                body: JSON.stringify({
+                    file_name: file.name,
+                    content_type: pendingAttachment.contentType,
+                    file_size: file.size,
+                    expiry_minutes: 30,
+                })
+            });
+            if (!upResp || upResp.success === false || !upResp.upload_url) {
+                throw new Error(upResp?.message || 'Failed to get upload URL');
+            }
+            // 2) PUT the bytes straight to S3 with progress
+            await putWithProgress(upResp.upload_url, file, pct => renderAttachPreview(pct));
+            pendingAttachment.fileId = upResp.file_id;
+
+            // 3) Get a presigned GET URL for Interakt to fetch.
+            //    The S3 key carries embedded slashes ("whatsapp/{tenantId}/...") which
+            //    must remain real path separators for the catch-all route to bind —
+            //    encode each segment without encoding the slashes themselves.
+            const safeKey = String(upResp.file_id).split('/').map(encodeURIComponent).join('/');
+            const dlResp = await api.request(
+                `/drive/whatsapp/download/${safeKey}?expiry_minutes=30`,
+                { method: 'GET' }
+            );
+            if (!dlResp || dlResp.success === false || !dlResp.url) {
+                throw new Error(dlResp?.message || 'Failed to get download URL');
+            }
+            pendingAttachment.mediaUrl = dlResp.url;
+            pendingAttachment.uploading = false;
+            renderAttachPreview(100);
+        } catch (err) {
+            console.error('[wa-inbox] upload failed:', err);
+            if (typeof Toast !== 'undefined') Toast.error(err.message || 'Upload failed');
+            clearPendingAttachment();
+        }
+    }
+
+    function putWithProgress(url, file, onPct) {
+        // Use XHR (not fetch) because we need progress events.
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', url);
+            xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+            xhr.upload.onprogress = e => {
+                if (e.lengthComputable && onPct) onPct(Math.round((e.loaded / e.total) * 100));
+            };
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) resolve();
+                else reject(new Error(`S3 upload failed: HTTP ${xhr.status}`));
+            };
+            xhr.onerror = () => reject(new Error('S3 upload network error'));
+            xhr.send(file);
+        });
+    }
+
+    function renderAttachPreview(pct) {
+        const el = document.getElementById('waAttachPreview');
+        if (!el || !pendingAttachment) return;
+        const a = pendingAttachment;
+        let thumb = '';
+        if (a.mediaType === 'image') {
+            thumb = `<img src="${a.previewBlobUrl}" alt="">`;
+        } else if (a.mediaType === 'video') {
+            thumb = `<video src="${a.previewBlobUrl}" muted></video>`;
+        } else {
+            thumb = `<div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:var(--bg-tertiary);border-radius:4px;">📎</div>`;
+        }
+        const sizeKb = Math.max(1, Math.round(a.fileSize / 1024));
+        const progressBar = a.uploading
+            ? `<div class="wa-attach-progress"><span style="width:${pct || 0}%;"></span></div>`
+            : '';
+        el.innerHTML = `
+            ${thumb}
+            <div class="wa-attach-preview-meta">
+                <div class="wa-attach-preview-name">${escapeHtml(a.fileName)}</div>
+                <div class="wa-attach-preview-info">${a.mediaType} · ${sizeKb} KB${a.uploading ? ` · uploading ${pct || 0}%` : ' · ready'}</div>
+                ${progressBar}
+            </div>
+            <button type="button" class="wa-attach-preview-remove" id="waAttachRemove" title="Remove">×</button>
+        `;
+        el.style.display = '';
+        document.getElementById('waAttachRemove')?.addEventListener('click', clearPendingAttachment);
+    }
+
+    function clearPendingAttachment() {
+        if (pendingAttachment?.previewBlobUrl) URL.revokeObjectURL(pendingAttachment.previewBlobUrl);
+        pendingAttachment = null;
+        const el = document.getElementById('waAttachPreview');
+        if (el) { el.innerHTML = ''; el.style.display = 'none'; }
+        const fileInput = document.getElementById('waFileInput');
+        if (fileInput) fileInput.value = '';
+    }
+
     // ─── Send ───────────────────────────────────────────────────────────────
 
     async function handleSendSubmit(e) {
         e.preventDefault();
         const ta = document.getElementById('waComposerInput');
-        const body = (ta?.value || '').trim();
-        if (!body || !activeCustomerPhone || !activeBusinessPhone) return;
+        const text = (ta?.value || '').trim();
+        if (!activeCustomerPhone || !activeBusinessPhone) return;
+
+        // Three send modes:
+        //   1. Text-only (no attachment, body required)
+        //   2. Media + caption (attachment uploaded, optional caption from text box)
+        //   3. Media-only (attachment uploaded, empty text)
+        const hasAttach = !!pendingAttachment && !pendingAttachment.uploading && !!pendingAttachment.mediaUrl;
+        if (!hasAttach && !text) return;
+        if (pendingAttachment && pendingAttachment.uploading) {
+            if (typeof Toast !== 'undefined') Toast.warning('Wait for the upload to finish');
+            return;
+        }
 
         const sendBtn = document.getElementById('waSendBtn');
         if (sendBtn) sendBtn.disabled = true;
 
-        // Optimistically render so the UI doesn't feel laggy on a slow network.
         const optimisticId = 'opt-' + Date.now();
-        const optimistic = {
+        const optimistic = hasAttach ? {
+            id: optimisticId,
+            direction: 'outbound',
+            messageType: pendingAttachment.mediaType,
+            body: text,                           // caption
+            mediaUrl: pendingAttachment.previewBlobUrl,   // local preview while sending
+            status: 'sending',
+            createdAtUtc: new Date().toISOString(),
+        } : {
             id: optimisticId,
             direction: 'outbound',
             messageType: 'text',
-            body,
+            body: text,
             status: 'sending',
             createdAtUtc: new Date().toISOString(),
         };
@@ -356,31 +607,23 @@
         autoSizeTextarea(ta);
 
         try {
-            // Customer phone in our DB is digits-only with country code (e.g.
-            // 919220474451). NS expects the recipient broken up: country code +
-            // local. We split on the first 1-3 digits — for India numbers that's
-            // the first 2; for any other country we lean on phone digits[0..2]
-            // as the country code with the rest as local. It's not perfect for
-            // every country (US is +1 with 10 digits; UK is +44 with 10) but it
-            // works for the digits-only normalised form NS already accepted on
-            // inbound, since the BSP will recombine them anyway.
             const cc = guessCountryCode(activeCustomerPhone);
             const local = activeCustomerPhone.startsWith(cc)
                 ? activeCustomerPhone.slice(cc.length)
                 : activeCustomerPhone;
 
-            // CRM REST is configured to deserialize snake_case property names
-            // (PropertyNamingPolicy = SnakeCaseLower in Program.cs) so the
-            // controller's [FromBody] SendBody binds via snake_case keys.
+            const payload = {
+                business_phone_number: activeBusinessPhone,
+                recipient_country_code: '+' + cc,
+                recipient_phone: local,
+                message_type: hasAttach ? pendingAttachment.mediaType : 'text',
+                body: hasAttach ? '' : text,
+                media_url: hasAttach ? pendingAttachment.mediaUrl : '',
+                caption: hasAttach ? text : '',
+            };
             const resp = await api.request('/whatsapp/send', {
                 method: 'POST',
-                body: JSON.stringify({
-                    business_phone_number: activeBusinessPhone,
-                    recipient_country_code: '+' + cc,
-                    recipient_phone: local,
-                    message_type: 'text',
-                    body,
-                })
+                body: JSON.stringify(payload),
             });
             const wamId = resp.whatsapp_message_id ?? resp.whatsappMessageId ?? optimisticId;
             const status = resp.status || 'sent';
@@ -389,15 +632,21 @@
                 threadMessages[idx] = {
                     id: wamId,
                     direction: 'outbound',
-                    messageType: 'text',
-                    body,
+                    messageType: payload.message_type,
+                    body: hasAttach ? text : text,
+                    mediaUrl: hasAttach ? pendingAttachment.mediaUrl : '',
                     status,
                     sentAtUtc: new Date().toISOString(),
                     createdAtUtc: optimistic.createdAtUtc,
                 };
             }
+            const previewLine = hasAttach
+                ? (text || `(${pendingAttachment.mediaType})`)
+                : text;
+            // Drop the preview blob — the real S3 URL lives on the message now.
+            if (hasAttach) clearPendingAttachment();
             renderThread();
-            bumpConversationToTop(activeCustomerPhone, body, 'outbound');
+            bumpConversationToTop(activeCustomerPhone, previewLine, 'outbound');
             renderConversationList(filterConversations(document.getElementById('waSearchInput')?.value));
             if (status !== 'sent' && typeof Toast !== 'undefined') {
                 Toast.warning(resp.message || `Provider returned ${status}`);
@@ -405,7 +654,6 @@
         } catch (err) {
             console.error('[wa-inbox] send failed:', err);
             if (typeof Toast !== 'undefined') Toast.error(err.message || 'Send failed');
-            // Mark optimistic row as failed
             const idx = threadMessages.findIndex(m => m.id === optimisticId);
             if (idx >= 0) {
                 threadMessages[idx].status = 'failed';
@@ -502,6 +750,14 @@
         }
     }
 
+    function previewLineFor(body, mediaUrl, messageType) {
+        if (body) return body;
+        const t = (messageType || '').toLowerCase();
+        if (t && t !== 'text') return `(${t})`;
+        if (mediaUrl) return '(media)';
+        return '';
+    }
+
     function onWhatsAppMessageReceived(ev) {
         // Filter to the active business phone only — multi-number tenants get
         // events for ALL their numbers on the same hub group.
@@ -531,7 +787,7 @@
             conv = { customerPhone: ev.customerPhone, customerName: ev.customerName || '' };
         }
         conv.customerName = conv.customerName || ev.customerName || '';
-        conv.lastMessageBody = ev.body || (ev.mediaUrl ? '(media)' : '');
+        conv.lastMessageBody = previewLineFor(ev.body, ev.mediaUrl, ev.messageType);
         conv.lastMessageDirection = 'inbound';
         conv.lastMessageAtUtc = ev.receivedAtUtc || new Date().toISOString();
         conversations.unshift(conv);

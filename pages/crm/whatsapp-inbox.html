@@ -263,6 +263,7 @@
             background: var(--bg-secondary);
             border-top: 1px solid var(--border-color);
             align-items: flex-end;
+            flex-wrap: wrap;
         }
         .wa-composer textarea {
             flex: 1;
@@ -278,10 +279,91 @@
             font-size: 0.92rem;
             line-height: 1.4;
         }
-        .wa-composer button {
+        .wa-composer button.btn { height: 38px; min-width: 84px; }
+        .wa-attach-btn {
             height: 38px;
-            min-width: 84px;
+            width: 38px;
+            min-width: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 0;
         }
+        .wa-attach-btn:hover { background: var(--bg-tertiary); }
+        .wa-attach-btn:disabled { opacity: 0.5; cursor: progress; }
+        .wa-attach-preview {
+            flex: 1 1 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-card);
+        }
+        .wa-attach-preview img,
+        .wa-attach-preview video {
+            max-height: 56px;
+            max-width: 80px;
+            border-radius: 4px;
+            object-fit: cover;
+        }
+        .wa-attach-preview-meta { flex: 1; min-width: 0; }
+        .wa-attach-preview-name { font-weight: 600; font-size: 0.88rem; word-break: break-all; }
+        .wa-attach-preview-info { font-size: 0.78rem; color: var(--text-secondary); }
+        .wa-attach-preview-remove {
+            background: none;
+            border: none;
+            color: var(--color-error);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 4px 8px;
+        }
+        .wa-attach-progress {
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        .wa-attach-progress > span {
+            display: block;
+            height: 100%;
+            background: var(--brand-primary);
+            transition: width 0.2s;
+        }
+
+        /* ── Media bubbles ────────────────────────────────────────── */
+        .wa-bubble-media img,
+        .wa-bubble-media video {
+            display: block;
+            max-width: 280px;
+            max-height: 340px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+        .wa-bubble-media audio { display: block; min-width: 220px; margin-bottom: 4px; }
+        .wa-bubble-doc {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: rgba(0,0,0,0.04);
+            border-radius: 6px;
+            margin-bottom: 4px;
+            color: inherit;
+            text-decoration: none;
+        }
+        .wa-msg-row.outbound .wa-bubble-doc { background: rgba(255,255,255,0.18); }
+        .wa-bubble-doc-icon { flex-shrink: 0; }
+        .wa-bubble-doc-name { font-weight: 600; font-size: 0.88rem; word-break: break-all; }
+        .wa-bubble-caption { display: block; }
         .wa-composer-disabled-note {
             color: var(--text-secondary);
             font-size: 0.85rem;
@@ -390,6 +472,14 @@
                     </div>
                 </div>
                 <form class="wa-composer" id="waComposer" style="display:none;">
+                    <div class="wa-attach-preview" id="waAttachPreview" style="display:none;"></div>
+                    <input type="file" id="waFileInput" hidden
+                           accept="image/jpeg,image/png,image/webp,video/mp4,video/3gpp,audio/mpeg,audio/aac,audio/ogg,audio/amr,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt">
+                    <button type="button" class="wa-attach-btn" id="waAttachBtn" title="Attach file">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                        </svg>
+                    </button>
                     <textarea id="waComposerInput" placeholder="Type a message… (Shift+Enter for newline)" rows="1"></textarea>
                     <button type="submit" class="btn btn-primary" id="waSendBtn">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;">
