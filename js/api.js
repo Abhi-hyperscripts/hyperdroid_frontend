@@ -118,7 +118,8 @@ class API {
             || endpoint.startsWith('/email-templates')
             || endpoint.startsWith('/email-campaigns')
             || endpoint.startsWith('/lead-sources')
-            || endpoint.startsWith('/status-email-triggers')) {
+            || endpoint.startsWith('/status-email-triggers')
+            || endpoint.startsWith('/whatsapp/')) {
             return CONFIG.crmApiBaseUrl;
         }
         // PMS endpoints go to PMS service (independent microservice)
@@ -583,22 +584,24 @@ class API {
         return this.request('/tenant-api-keys');
     }
 
-    async saveApiKey(provider, serviceType, apiKey) {
+    async saveApiKey(provider, serviceType, apiKey, instanceKey) {
         return this.request('/tenant-api-keys', {
             method: 'POST',
-            body: JSON.stringify({ provider, serviceType, apiKey })
+            body: JSON.stringify({ provider, serviceType, apiKey, instanceKey: instanceKey || '' })
         });
     }
 
-    async updateApiKey(provider, serviceType, data) {
-        return this.request(`/tenant-api-keys/${encodeURIComponent(provider)}/${encodeURIComponent(serviceType)}`, {
+    async updateApiKey(provider, serviceType, data, instanceKey) {
+        const qs = instanceKey ? `?instanceKey=${encodeURIComponent(instanceKey)}` : '';
+        return this.request(`/tenant-api-keys/${encodeURIComponent(provider)}/${encodeURIComponent(serviceType)}${qs}`, {
             method: 'PUT',
             body: JSON.stringify(data)
         });
     }
 
-    async deleteApiKey(provider, serviceType) {
-        return this.request(`/tenant-api-keys/${encodeURIComponent(provider)}/${encodeURIComponent(serviceType)}`, {
+    async deleteApiKey(provider, serviceType, instanceKey) {
+        const qs = instanceKey ? `?instanceKey=${encodeURIComponent(instanceKey)}` : '';
+        return this.request(`/tenant-api-keys/${encodeURIComponent(provider)}/${encodeURIComponent(serviceType)}${qs}`, {
             method: 'DELETE'
         });
     }

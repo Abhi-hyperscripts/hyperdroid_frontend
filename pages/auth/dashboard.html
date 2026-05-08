@@ -1001,8 +1001,13 @@
                             </div>
                         </div>
 
-                        <!-- Interakt-specific 2-field input (shown only when Interakt is selected) -->
+                        <!-- Interakt-specific 3-field input (shown only when Interakt is selected) -->
                         <div id="apiKeyInteraktGroup" style="display:none;">
+                            <div class="form-group">
+                                <label>WhatsApp Business Phone Number</label>
+                                <input type="text" id="interaktBusinessPhone" placeholder="e.g. +91 92204 74451 or 919220474451" autocomplete="off">
+                                <small style="color:var(--text-secondary);font-size:0.75rem;">Each number you bought on Interakt has its own credentials. Enter the WhatsApp business number this key is for. We strip non-digits and store as digits-only with country code (e.g. <code>919220474451</code>). The webhook URL becomes <code>/api/webhooks/interakt/{tenantId}/{phone}</code> so multiple numbers route correctly.</small>
+                            </div>
                             <div class="form-group">
                                 <label>API Key</label>
                                 <div class="apikey-input-wrapper">
@@ -1047,6 +1052,7 @@
                     <input type="hidden" id="toggleApiKeyProvider">
                     <input type="hidden" id="toggleApiKeyServiceType">
                     <input type="hidden" id="toggleApiKeyNewState">
+                    <input type="hidden" id="toggleApiKeyInstanceKey">
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" onclick="closeModal('confirmToggleApiKeyModal')">Cancel</button>
@@ -1068,6 +1074,7 @@
                     <p id="deleteApiKeyMessage" class="text-secondary"></p>
                     <input type="hidden" id="deleteApiKeyProvider">
                     <input type="hidden" id="deleteApiKeyServiceType">
+                    <input type="hidden" id="deleteApiKeyInstanceKey">
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" onclick="closeModal('confirmDeleteApiKeyModal')">Cancel</button>

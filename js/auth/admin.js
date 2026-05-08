@@ -10,6 +10,10 @@ let showDeactivatedUsers = false;
 let licenseData = null;
 let allApiKeys = [];
 let apiKeyEditMode = false;
+// When rotating a multi-instance row (e.g. one of several Interakt WhatsApp
+// numbers), we need to remember which instance_key the row used so the PUT
+// targets the right row. Set when openEditApiKeyModal is called.
+let apiKeyEditInstanceKey = '';
 
 // ==================== License-Based Filtering ====================
 
@@ -2125,6 +2129,7 @@ function renderApiKeysTable(keys) {
     tbody.innerHTML = keys.map((key, idx) => {
         const provider = key.provider || '';
         const serviceType = key.serviceType || key.service_type || '';
+        const instanceKey = key.instanceKey || key.instance_key || '';
         const displayHint = key.displayHint || key.display_hint || '****';
         const isActive = key.isActive !== undefined ? key.isActive : (key.is_active !== undefined ? key.is_active : true);
         const createdAt = key.createdAt || key.created_at;
@@ -2132,6 +2137,7 @@ function renderApiKeysTable(keys) {
 
         const escapedProvider = provider.replace(/'/g, "\\'");
         const escapedServiceType = serviceType.replace(/'/g, "\\'");
+        const escapedInstanceKey = instanceKey.replace(/'/g, "\\'");
 
         // Show the expandable copilot row only when this is an active LLM provider
         const isLlmRow = isActive && llmProviders.has(provider.toLowerCase()) && (serviceType.toLowerCase() === 'llm');
@@ -2176,20 +2182,20 @@ function renderApiKeysTable(keys) {
                 <td>
                     <div class="action-buttons">
                         ${expandToggleHtml}
-                        <button class="action-btn" data-tooltip="${isActive ? 'Deactivate' : 'Activate'}" onclick="toggleApiKeyStatus('${escapedProvider}', '${escapedServiceType}', ${!isActive})">
+                        <button class="action-btn" data-tooltip="${isActive ? 'Deactivate' : 'Activate'}" onclick="toggleApiKeyStatus('${escapedProvider}', '${escapedServiceType}', ${!isActive}, '${escapedInstanceKey}')">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 ${isActive
                                     ? '<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>'
                                     : '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'}
                             </svg>
                         </button>
-                        <button class="action-btn" data-tooltip="Rotate Key" onclick="openEditApiKeyModal('${escapedProvider}', '${escapedServiceType}')">
+                        <button class="action-btn" data-tooltip="Rotate Key" onclick="openEditApiKeyModal('${escapedProvider}', '${escapedServiceType}', '${escapedInstanceKey}')">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="23 4 23 10 17 10"/>
                                 <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                             </svg>
                         </button>
-                        <button class="action-btn danger" data-tooltip="Delete" onclick="openDeleteApiKeyModal('${escapedProvider}', '${escapedServiceType}')">
+                        <button class="action-btn danger" data-tooltip="Delete" onclick="openDeleteApiKeyModal('${escapedProvider}', '${escapedServiceType}', '${escapedInstanceKey}')">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -2215,9 +2221,15 @@ function renderApiKeysTable(keys) {
             const baseUrl = (typeof CONFIG !== 'undefined' && CONFIG.endpoints && CONFIG.endpoints.notification)
                 ? CONFIG.endpoints.notification
                 : 'https://notification.ragenaizer.com';
+            // Per-number webhook URL — instance_key is the WhatsApp business phone
+            // (digits-only with country code) so multiple Interakt numbers under one
+            // tenant route to the right credential row in NotificationService.
             const webhookUrl = tenantId
-                ? `${baseUrl}/api/webhooks/interakt/${tenantId}`
+                ? (instanceKey
+                    ? `${baseUrl}/api/webhooks/interakt/${tenantId}/${encodeURIComponent(instanceKey)}`
+                    : `${baseUrl}/api/webhooks/interakt/${tenantId}`)
                 : '(could not resolve tenant id — please re-login)';
+            const phoneLabel = instanceKey ? ` for <code>${instanceKey}</code>` : '';
 
             interaktSetupRow = `
                 <tr class="copilot-expand-row" id="${rowId}-expand" style="display:none;">
@@ -2225,7 +2237,7 @@ function renderApiKeysTable(keys) {
                         <div class="copilot-expand-panel">
                             <div class="copilot-expand-header">
                                 <div>
-                                    <div class="copilot-expand-title">Connect Interakt → Ragenaizer (one-time setup)</div>
+                                    <div class="copilot-expand-title">Connect Interakt → Ragenaizer${phoneLabel} (one-time setup)</div>
                                     <div class="copilot-expand-sub">Paste this webhook URL into your Interakt dashboard so customer messages flow into your CRM in real time. The Webhook Secret you entered above must match the one you set in Interakt.</div>
                                 </div>
                             </div>
@@ -2350,6 +2362,7 @@ async function toggleCopilotService(serviceName, enabled, inputEl) {
 
 function openAddApiKeyModal() {
     apiKeyEditMode = false;
+    apiKeyEditInstanceKey = '';
     document.getElementById('apiKeyModalTitle').textContent = 'Add API Key';
     document.getElementById('apiKeyProvider').value = '';
     document.getElementById('apiKeyProvider').disabled = false;
@@ -2367,8 +2380,10 @@ function openAddApiKeyModal() {
     // Reset Interakt-specific fields
     const ikKey = document.getElementById('interaktApiKey');
     const ikSecret = document.getElementById('interaktWebhookSecret');
+    const ikPhone = document.getElementById('interaktBusinessPhone');
     if (ikKey) { ikKey.value = ''; ikKey.type = 'password'; }
     if (ikSecret) { ikSecret.value = ''; ikSecret.type = 'password'; }
+    if (ikPhone) { ikPhone.value = ''; ikPhone.disabled = false; }
     onApiKeyProviderChange();
     document.getElementById('apiKeySaveBtn').textContent = 'Save';
     openModal('apiKeyModal');
@@ -2422,8 +2437,9 @@ function toggleFieldVisibility(inputId, iconId) {
     input.type = input.type === 'password' ? 'text' : 'password';
 }
 
-function openEditApiKeyModal(provider, serviceType) {
+function openEditApiKeyModal(provider, serviceType, instanceKey) {
     apiKeyEditMode = true;
+    apiKeyEditInstanceKey = instanceKey || '';
     document.getElementById('apiKeyModalTitle').textContent = 'Rotate API Key';
     // Match provider option case-insensitively
     const providerSelect = document.getElementById('apiKeyProvider');
@@ -2440,6 +2456,14 @@ function openEditApiKeyModal(provider, serviceType) {
     document.getElementById('apiKeyValue').value = '';
     document.getElementById('apiKeyValue').type = 'password';
     document.getElementById('apiKeyValue').placeholder = 'Enter new API key...';
+    onApiKeyProviderChange();
+    // Pre-fill + lock the phone field on rotation so the user can't accidentally
+    // change instance_key (which would create a duplicate row instead of rotating).
+    const ikPhone = document.getElementById('interaktBusinessPhone');
+    if (ikPhone) {
+        ikPhone.value = apiKeyEditInstanceKey || '';
+        ikPhone.disabled = true;
+    }
     document.getElementById('apiKeySaveBtn').textContent = 'Update Key';
     openModal('apiKeyModal');
 }
@@ -2447,6 +2471,10 @@ function openEditApiKeyModal(provider, serviceType) {
 async function saveApiKey() {
     const provider = document.getElementById('apiKeyProvider').value;
     const serviceType = document.getElementById('apiKeyServiceType').value;
+    // For multi-instance providers (Interakt), instance_key disambiguates rows
+    // (one per WhatsApp business number). Other providers use "" so a tenant
+    // keeps a single row per (provider, service_type).
+    let instanceKey = '';
 
     // Multi-field providers (Razorpay, Interakt) pack their credential fields
     // into a JSON blob stored in the single api_key column. Others use the
@@ -2468,14 +2496,23 @@ async function saveApiKey() {
     } else if (provider === 'Interakt') {
         const apiKey = document.getElementById('interaktApiKey').value.trim();
         const webhookSecret = document.getElementById('interaktWebhookSecret').value.trim();
+        const phoneRaw = (document.getElementById('interaktBusinessPhone')?.value || '').trim();
+        // Strip non-digits so "+91 92204 74451" → "919220474451"; the webhook URL
+        // path uses this verbatim, so consistency between save + lookup matters.
+        const phoneDigits = phoneRaw.replace(/\D/g, '');
         if (!apiKey || !webhookSecret) {
             showToast('Interakt requires both API Key and Webhook Secret', 'error');
+            return;
+        }
+        if (!apiKeyEditMode && !phoneDigits) {
+            showToast('Interakt requires the WhatsApp business phone number', 'error');
             return;
         }
         apiKeyVal = JSON.stringify({
             api_key: apiKey,
             webhook_secret: webhookSecret
         });
+        instanceKey = phoneDigits;
     } else {
         apiKeyVal = document.getElementById('apiKeyValue').value;
     }
@@ -2491,10 +2528,10 @@ async function saveApiKey() {
 
     try {
         if (apiKeyEditMode) {
-            await api.updateApiKey(provider, serviceType, { apiKey: apiKeyVal });
+            await api.updateApiKey(provider, serviceType, { apiKey: apiKeyVal }, apiKeyEditInstanceKey);
             showToast(`API key for ${provider}/${formatServiceType(serviceType)} rotated successfully`, 'success');
         } else {
-            await api.saveApiKey(provider, serviceType, apiKeyVal);
+            await api.saveApiKey(provider, serviceType, apiKeyVal, instanceKey);
             showToast(`API key for ${provider}/${formatServiceType(serviceType)} added successfully`, 'success');
         }
         closeModal('apiKeyModal');
@@ -2507,13 +2544,15 @@ async function saveApiKey() {
     }
 }
 
-function toggleApiKeyStatus(provider, serviceType, isActive) {
+function toggleApiKeyStatus(provider, serviceType, isActive, instanceKey) {
     document.getElementById('toggleApiKeyProvider').value = provider;
     document.getElementById('toggleApiKeyServiceType').value = serviceType;
     document.getElementById('toggleApiKeyNewState').value = isActive;
+    document.getElementById('toggleApiKeyInstanceKey').value = instanceKey || '';
+    const suffix = instanceKey ? ` (${instanceKey})` : '';
     document.getElementById('toggleApiKeyModalTitle').textContent = isActive ? 'Activate API Key' : 'Deactivate API Key';
     document.getElementById('toggleApiKeyMessage').textContent =
-        `Are you sure you want to ${isActive ? 'activate' : 'deactivate'} the ${provider} / ${formatServiceType(serviceType)} API key?`;
+        `Are you sure you want to ${isActive ? 'activate' : 'deactivate'} the ${provider} / ${formatServiceType(serviceType)}${suffix} API key?`;
     const confirmBtn = document.getElementById('confirmToggleApiKeyBtn');
     confirmBtn.className = isActive ? 'btn btn-primary' : 'btn btn-danger';
     confirmBtn.textContent = isActive ? 'Activate' : 'Deactivate';
@@ -2524,8 +2563,9 @@ async function confirmToggleApiKey() {
     const provider = document.getElementById('toggleApiKeyProvider').value;
     const serviceType = document.getElementById('toggleApiKeyServiceType').value;
     const isActive = document.getElementById('toggleApiKeyNewState').value === 'true';
+    const instanceKey = document.getElementById('toggleApiKeyInstanceKey').value || '';
     try {
-        await api.updateApiKey(provider, serviceType, { isActive });
+        await api.updateApiKey(provider, serviceType, { isActive }, instanceKey);
         closeModal('confirmToggleApiKeyModal');
         showToast(`API key ${isActive ? 'activated' : 'deactivated'}`, 'success');
         await loadApiKeys();
@@ -2535,20 +2575,23 @@ async function confirmToggleApiKey() {
     }
 }
 
-function openDeleteApiKeyModal(provider, serviceType) {
+function openDeleteApiKeyModal(provider, serviceType, instanceKey) {
     document.getElementById('deleteApiKeyProvider').value = provider;
     document.getElementById('deleteApiKeyServiceType').value = serviceType;
+    document.getElementById('deleteApiKeyInstanceKey').value = instanceKey || '';
+    const suffix = instanceKey ? ` (${instanceKey})` : '';
     document.getElementById('deleteApiKeyMessage').textContent =
-        `Are you sure you want to delete the ${provider} / ${formatServiceType(serviceType)} API key? This action cannot be undone.`;
+        `Are you sure you want to delete the ${provider} / ${formatServiceType(serviceType)}${suffix} API key? This action cannot be undone.`;
     openModal('confirmDeleteApiKeyModal');
 }
 
 async function confirmDeleteApiKey() {
     const provider = document.getElementById('deleteApiKeyProvider').value;
     const serviceType = document.getElementById('deleteApiKeyServiceType').value;
+    const instanceKey = document.getElementById('deleteApiKeyInstanceKey').value || '';
 
     try {
-        await api.deleteApiKey(provider, serviceType);
+        await api.deleteApiKey(provider, serviceType, instanceKey);
         showToast(`API key for ${provider}/${formatServiceType(serviceType)} deleted`, 'success');
         closeModal('confirmDeleteApiKeyModal');
         await loadApiKeys();

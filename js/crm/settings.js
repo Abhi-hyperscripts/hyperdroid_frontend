@@ -439,6 +439,7 @@ function switchSettingsTab(tabName) {
     } else if (tabName === 'integrations') {
         loadFacebookPages();
         loadGoogleSheetsState();
+        if (typeof loadWhatsAppNumbers === 'function') loadWhatsAppNumbers();
     } else if (tabName === 'lead-sources') {
         loadLeadSources();
     } else if (tabName === 'functional-groups' && typeof loadFunctionalGroups === 'function') {

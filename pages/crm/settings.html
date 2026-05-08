@@ -710,6 +710,86 @@
                         </div>
                     </div>
 
+                    <!-- WhatsApp (Interakt) Integration Card -->
+                    <div class="integration-card">
+                        <div class="integration-card-header">
+                            <div class="integration-icon" style="background:#25D366; color:#fff;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.149-.174.198-.298.298-.496.099-.198.05-.371-.025-.52-.075-.149-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="integration-title">WhatsApp Business (Interakt)</h4>
+                                <p class="integration-description">Send and receive WhatsApp messages from inside the CRM. One or more business numbers per tenant.</p>
+                            </div>
+                        </div>
+
+                        <div class="integration-status" id="waStatus">
+                            <span class="dot disconnected" id="waStatusDot"></span>
+                            <span id="waStatusText">No numbers configured</span>
+                        </div>
+
+                        <details class="mailbox-help" style="margin-bottom: 16px;">
+                            <summary>
+                                <svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                What is this and how do I set it up?
+                                <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </summary>
+                            <div class="mailbox-help-body">
+                                <p>WhatsApp Business messaging via <a href="https://www.interakt.ai/" target="_blank" rel="noreferrer noopener" style="color:var(--brand-primary);font-weight:600;">Interakt</a> — Meta's official BSP. Each WhatsApp number you've bought on Interakt gets stored separately so you can run multiple lines (sales, support, etc.).</p>
+                                <p style="margin-top:10px;font-weight:600;">Add a number in three steps:</p>
+                                <ol style="padding-left: 20px; line-height: 1.7;">
+                                    <li>In Interakt: <strong>Settings → Developer Setup</strong>. Copy the <strong>Secret Key</strong> (this is the API Key) and the <strong>Webhook Secret</strong> (or set one if blank).</li>
+                                    <li>Click <strong>Add WhatsApp number</strong> below, paste both fields plus your business phone number.</li>
+                                    <li>Copy the webhook URL we generate, paste it back into Interakt's <em>Configure Webhook</em> form, tick <em>Message received from customers</em>, and click Submit.</li>
+                                </ol>
+                                <p style="margin-top:10px;color:var(--text-secondary);font-size:0.9em;">Once connected, customer replies appear in the WhatsApp inbox and can be threaded onto leads. You can rotate keys, deactivate, or remove a number anytime here.</p>
+                            </div>
+                        </details>
+
+                        <!-- Number list (rendered by loadWhatsAppNumbers) -->
+                        <div id="waNumbersWrap" style="display:none; margin-bottom:16px;">
+                            <div class="crm-table-wrapper">
+                                <table class="crm-table data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Business Phone</th>
+                                            <th>Status</th>
+                                            <th>API Key</th>
+                                            <th>Added</th>
+                                            <th style="text-align:right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="waNumbersTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div id="waEmptyState" style="display:none; padding:18px; background:var(--bg-secondary); border:1px dashed var(--border-color); border-radius:8px; text-align:center; margin-bottom:16px;">
+                            <p style="margin:0 0 6px; font-weight:600;">No WhatsApp numbers connected yet</p>
+                            <p style="margin:0; color:var(--text-secondary); font-size:0.9em;">Add your first Interakt number to start sending and receiving WhatsApp messages from the CRM.</p>
+                        </div>
+
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button class="btn btn-primary" onclick="openAddWhatsAppModal()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Add WhatsApp number
+                            </button>
+                            <a class="btn btn-outline" href="/pages/crm/whatsapp-inbox.html" id="waOpenInboxBtn" style="display:none;">
+                                Open WhatsApp Inbox →
+                            </a>
+                        </div>
+                    </div>
+
                     <!-- Google Sheets Integration Card -->
                     <div class="integration-card">
                         <div class="integration-card-header">
@@ -3036,6 +3116,94 @@
         </div>
     </div>
 
+    <!-- ─── WhatsApp Add/Edit Modal ─────────────────────────────── -->
+    <div class="gm-overlay" id="waModal">
+        <div class="gm-modal" style="max-width:520px;">
+            <div class="gm-header">
+                <h3 id="waModalTitle">Add WhatsApp number</h3>
+                <button class="gm-close" onclick="closeWhatsAppModal()" aria-label="Close">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div class="form-group">
+                    <label>WhatsApp Business Phone Number</label>
+                    <input type="text" id="waPhoneInput" class="form-control" placeholder="e.g. +91 92204 74451" autocomplete="off">
+                    <small style="color:var(--text-secondary);font-size:0.75rem;">Enter the WhatsApp business number this key is for. Non-digits are stripped — we store as digits-only with country code.</small>
+                </div>
+                <div class="form-group">
+                    <label>API Key (Interakt Secret Key)</label>
+                    <div class="apikey-input-wrapper">
+                        <input type="password" id="waApiKeyInput" class="form-control" placeholder="Base64 secret key from Interakt → Settings → Developer Setup" autocomplete="off">
+                        <button type="button" class="apikey-toggle-btn" onclick="waToggleField('waApiKeyInput','waApiKeyEye')">
+                            <svg id="waApiKeyEye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Webhook Secret</label>
+                    <div class="apikey-input-wrapper">
+                        <input type="password" id="waWebhookSecretInput" class="form-control" placeholder="Webhook secret you set in Interakt" autocomplete="off">
+                        <button type="button" class="apikey-toggle-btn" onclick="waToggleField('waWebhookSecretInput','waWebhookSecretEye')">
+                            <svg id="waWebhookSecretEye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
+                    <small style="color:var(--text-secondary);font-size:0.75rem;">Used to verify the <code>interakt-signature</code> HMAC on inbound webhooks.</small>
+                </div>
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeWhatsAppModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" id="waSaveBtn" onclick="saveWhatsAppNumber()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── WhatsApp Webhook URL Reveal Modal ─────────────────────────── -->
+    <div class="gm-overlay" id="waWebhookModal">
+        <div class="gm-modal" style="max-width:640px;">
+            <div class="gm-header">
+                <h3>Connect Interakt → Ragenaizer</h3>
+                <button class="gm-close" onclick="closeWebhookModal()" aria-label="Close">&times;</button>
+            </div>
+            <div class="gm-body">
+                <p style="margin-top:0;">Paste this webhook URL into Interakt's <strong>Configure Webhook</strong> form so customer messages flow into the CRM in real time. The Webhook Secret you saved must match the one in Interakt.</p>
+                <div style="display:flex; gap:8px; align-items:center; padding:12px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px;">
+                    <code id="waWebhookUrlText" style="flex:1; font-size:13px; user-select:all; word-break:break-all;"></code>
+                    <button class="btn btn-sm btn-outline-primary" onclick="waCopyText(document.getElementById('waWebhookUrlText').innerText, this)">
+                        Copy URL
+                    </button>
+                </div>
+                <ol style="margin:14px 0 0 18px; line-height:1.7; color:var(--text-secondary); font-size:13px;">
+                    <li>Open <a href="https://app.interakt.ai/settings/developer-setting" target="_blank" rel="noopener" style="color:var(--brand-primary);">Interakt → Settings → Developer Setup</a>.</li>
+                    <li>Click <b>Configure</b> next to "Configure Webhook".</li>
+                    <li>Paste the URL above into <b>Webhook URL</b>.</li>
+                    <li>Paste the same Webhook Secret you entered when adding this number.</li>
+                    <li>Under <b>Others</b>, tick <b>Message received from customers</b>.</li>
+                    <li>Click <b>Submit</b>. Test it with a real WhatsApp message — it should land in the CRM inbox.</li>
+                </ol>
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-primary" onclick="closeWebhookModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── WhatsApp Delete Confirmation Modal ─────────────────────────── -->
+    <div class="gm-overlay" id="waDeleteModal">
+        <div class="gm-modal" style="max-width:480px;">
+            <div class="gm-header">
+                <h3>Remove WhatsApp number</h3>
+                <button class="gm-close" onclick="closeDeleteWhatsAppModal()" aria-label="Close">&times;</button>
+            </div>
+            <div class="gm-body">
+                <p>This deletes the credentials for <strong id="waDeletePhoneLabel"></strong>. Inbound webhooks for this number will start being rejected (401). Existing message history is kept.</p>
+                <p style="color:var(--text-secondary); font-size:0.9em;">You can re-add the number anytime — Interakt will reuse the same secret.</p>
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteWhatsAppModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteWhatsAppNumber()">Remove</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
@@ -3050,6 +3218,7 @@
         document.write('<script src="../../js/crm/mailboxes.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/email-templates.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/email-campaigns.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/whatsapp-settings.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->
