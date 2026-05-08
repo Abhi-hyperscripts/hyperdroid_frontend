@@ -30,7 +30,7 @@
     let _filterValues = {};                // { fieldCode: optionCode }
     let _renderObserver = null;
     let _activityLeadId = null;
-    let _activityDropdowns = new Map();
+    let _activityChips = {};   // { fieldCode: optionCode } — pending changes in the modal
     let _addFilterPopover = null;          // the +Add filter popup, if open
     let _editChipFieldCode = null;         // chip currently in edit mode
 
@@ -171,6 +171,7 @@
         `;
         wrap.appendChild(pop);
         _addFilterPopover = pop;
+        clampPopoverPosition(pop);
         const search = pop.querySelector('.lf-popover-search');
         search.focus();
         search.addEventListener('input', () => {
@@ -193,6 +194,28 @@
     function closeAddFilterPopover() {
         _addFilterPopover?.remove();
         _addFilterPopover = null;
+    }
+
+    // After appending a popover, check whether it overflows the viewport
+    // on the right and flip to right-anchored if so. Chips at the end of a
+    // long row would otherwise push the popover off-screen.
+    function clampPopoverPosition(pop) {
+        if (!pop || pop.dataset.clamped === '1') return;
+        // Defer one frame so the browser has measured the popover.
+        requestAnimationFrame(() => {
+            const r = pop.getBoundingClientRect();
+            const margin = 12;
+            const overflowRight = r.right > window.innerWidth - margin;
+            const overflowLeft = r.left < margin;
+            if (overflowRight) {
+                pop.style.left = 'auto';
+                pop.style.right = '0';
+            } else if (overflowLeft) {
+                pop.style.left = '0';
+                pop.style.right = 'auto';
+            }
+            pop.dataset.clamped = '1';
+        });
     }
 
     // After picking a field from the +Add popover, anchor the value popover
@@ -243,6 +266,7 @@
         `;
         host.appendChild(pop);
         _addFilterPopover = pop;   // reuse same singleton handle for outside-click closing
+        clampPopoverPosition(pop);
         pop.querySelector('.lf-popover-search').focus();
         pop.querySelector('.lf-popover-search').addEventListener('input', e => {
             const q = e.target.value.trim().toLowerCase();
@@ -379,67 +403,213 @@
             origOpen(leadId);
             _activityLeadId = leadId;
             await loadFields();
-            renderActivityFields(leadId, currentActivityFields());
+            renderActivityChips(leadId, currentActivityFields());
         };
 
         window.submitLogActivity = async function () {
-            const picks = collectActivityPicks(currentActivityFields());
+            const fields = currentActivityFields();
+            const lead = readLead(_activityLeadId);
+            const original = parseCustomFields(lead?.custom_fields);
+            // Diff: only PATCH fields whose value changed (or was added/removed)
+            // in this modal session. Activity-log doesn't currently support
+            // un-setting a field — clearing a chip just won't write that key.
+            const changed = {};
+            for (const f of fields) {
+                const wasSet = original[f.code];
+                const nowSet = _activityChips[f.code];
+                if (nowSet && nowSet !== wasSet) changed[f.code] = nowSet;
+            }
             const leadId = _activityLeadId;
             await origSubmit();
-            if (!leadId || Object.keys(picks).length === 0) return;
-            await persistCustomFields(leadId, picks);
+            if (!leadId || Object.keys(changed).length === 0) return;
+            await persistCustomFields(leadId, changed);
         };
     }
 
-    function renderActivityFields(leadId, fields) {
+    function renderActivityChips(leadId, fields) {
         const wrap = document.getElementById('activityLeadFields');
         if (!wrap) return;
         if (fields.length === 0) { wrap.innerHTML = ''; return; }
 
+        // Seed pending chips from the lead's existing values so the rep
+        // sees what's already set without scrolling. New chips can be
+        // added; existing values can be changed; on submit only diffs are
+        // PATCHed.
         const lead = readLead(leadId);
         const current = parseCustomFields(lead?.custom_fields);
-        const setCount = fields.reduce((n, f) => n + (current[f.code] ? 1 : 0), 0);
-        // Auto-expand if the lead already has values set (so the rep can see
-        // them at a glance) OR if the tenant has only a handful (≤4) of
-        // fields total — at that count, hiding them is more friction than
-        // showing them inline.
-        const autoOpen = setCount > 0 || fields.length <= 4;
+        _activityChips = {};
+        for (const f of fields) {
+            if (current[f.code]) _activityChips[f.code] = current[f.code];
+        }
 
         wrap.innerHTML = `
-            <details class="lf-activity-section" ${autoOpen ? 'open' : ''}>
-                <summary>
-                    <span class="lf-activity-summary-text">Custom fields</span>
-                    <span class="lf-activity-summary-meta">${setCount > 0 ? `${setCount} set · ` : ''}${fields.length} available</span>
-                </summary>
-                <div class="lf-activity-grid">
-                    ${fields.map(f => `
-                        <div class="lf-activity-row">
-                            <label class="form-label">${escapeHtml(f.label)}</label>
-                            <div id="actLF_${escapeAttr(f.code)}"></div>
-                        </div>
-                    `).join('')}
+            <div class="lf-activity-section-row">
+                <div class="lf-activity-section-label">Custom fields</div>
+                <div class="lf-activity-chips" id="lfActivityChips"></div>
+                <div class="lf-add-wrap" style="position:relative;">
+                    <button type="button" class="lf-add-btn" id="lfActivityAddBtn"
+                            aria-label="Add custom field value" aria-haspopup="dialog">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <span>Add field</span>
+                    </button>
                 </div>
-            </details>
+            </div>
         `;
+        document.getElementById('lfActivityAddBtn').addEventListener('click', e => {
+            e.stopPropagation();
+            toggleActivityAddPopover(fields);
+        });
+        renderActivityChipPills(fields);
+    }
 
-        _activityDropdowns.clear();
-        for (const f of fields) {
-            const container = document.getElementById(`actLF_${f.code}`);
-            if (!container || typeof SearchableDropdown === 'undefined') continue;
-            const dd = new SearchableDropdown(container, {
-                placeholder: 'No change',
-                searchPlaceholder: 'Search…',
-                options: [
-                    { value: '', label: 'No change' },
-                    ...f.options
-                        .filter(o => o.is_active)
-                        .map(o => ({ value: o.code, label: o.label, html: optionHtml(o) })),
-                ],
-            });
-            const cur = current[f.code];
-            if (cur != null && cur !== '') dd.setValue(String(cur));
-            _activityDropdowns.set(f.code, dd);
+    function renderActivityChipPills(fields) {
+        const wrap = document.getElementById('lfActivityChips');
+        if (!wrap) return;
+        const codes = Object.keys(_activityChips);
+        if (codes.length === 0) {
+            wrap.innerHTML = '';
+            return;
         }
+        wrap.innerHTML = codes.map(code => {
+            const f = _allFieldsByCode.get(code);
+            if (!f) return '';
+            const v = _activityChips[code];
+            const opt = (f.options || []).find(o => o.code === v);
+            const swatch = opt && opt.color
+                ? `<span class="lf-chip-swatch" style="background:${escapeAttr(opt.color)};"></span>`
+                : '';
+            return `
+                <span class="lf-chip" data-act-chip-code="${escapeAttr(code)}">
+                    <span class="lf-chip-body" data-act-chip-edit="${escapeAttr(code)}" tabindex="0" role="button">
+                        ${swatch}<span class="lf-chip-label">${escapeHtml(f.label)}:</span>
+                        <span class="lf-chip-value">${escapeHtml(opt ? opt.label : v)}</span>
+                    </span>
+                    <button type="button" class="lf-chip-x" data-act-chip-remove="${escapeAttr(code)}" aria-label="Remove field">×</button>
+                </span>
+            `;
+        }).join('');
+
+        wrap.querySelectorAll('[data-act-chip-remove]').forEach(el => {
+            el.addEventListener('click', e => {
+                e.stopPropagation();
+                delete _activityChips[el.getAttribute('data-act-chip-remove')];
+                renderActivityChipPills(fields);
+            });
+        });
+        wrap.querySelectorAll('[data-act-chip-edit]').forEach(el => {
+            el.addEventListener('click', e => {
+                e.stopPropagation();
+                openActivityValuePopover(el.getAttribute('data-act-chip-edit'), el.closest('.lf-chip'), fields);
+            });
+        });
+    }
+
+    function toggleActivityAddPopover(fields) {
+        if (_addFilterPopover) { closeAddFilterPopover(); return; }
+        const btn = document.getElementById('lfActivityAddBtn');
+        const wrap = btn.parentElement;
+        const used = new Set(Object.keys(_activityChips));
+        const available = fields.filter(f => !used.has(f.code));
+        if (available.length === 0) {
+            Toast?.info?.('All custom fields are already set');
+            return;
+        }
+        const pop = document.createElement('div');
+        pop.className = 'lf-popover lf-add-popover';
+        pop.innerHTML = `
+            <div class="lf-popover-header">
+                <input type="text" class="lf-popover-search form-control form-control-sm" placeholder="Search fields…" aria-label="Search">
+            </div>
+            <div class="lf-popover-list">
+                ${available.map(f => `
+                    <button type="button" class="lf-popover-item" data-act-add-code="${escapeAttr(f.code)}">
+                        <span class="lf-popover-item-label">${escapeHtml(f.label)}</span>
+                        <span class="lf-popover-item-meta">${(f.options || []).filter(o => o.is_active).length} options</span>
+                    </button>
+                `).join('')}
+            </div>
+        `;
+        wrap.appendChild(pop);
+        _addFilterPopover = pop;
+        clampPopoverPosition(pop);
+        const search = pop.querySelector('.lf-popover-search');
+        search.focus();
+        search.addEventListener('input', () => {
+            const q = search.value.trim().toLowerCase();
+            pop.querySelectorAll('.lf-popover-item').forEach(it => {
+                const label = it.querySelector('.lf-popover-item-label').textContent.toLowerCase();
+                it.style.display = label.includes(q) ? '' : 'none';
+            });
+        });
+        pop.querySelectorAll('[data-act-add-code]').forEach(it => {
+            it.addEventListener('click', e => {
+                e.stopPropagation();
+                const code = it.getAttribute('data-act-add-code');
+                closeAddFilterPopover();
+                // Seed an "empty" chip so its body element exists, then open
+                // its value popover. This avoids a second popover-from-button
+                // anchored to the +Add button when chips and button are on
+                // separate rows after wrap.
+                _activityChips[code] = '';
+                renderActivityChipPills(fields);
+                const newChip = document.querySelector(`[data-act-chip-edit="${cssEscape(code)}"]`);
+                if (newChip) openActivityValuePopover(code, newChip.closest('.lf-chip'), fields);
+            });
+        });
+    }
+
+    function openActivityValuePopover(code, anchor, fields) {
+        closeAddFilterPopover();
+        document.querySelectorAll('.lf-value-popover').forEach(p => p.remove());
+        const f = _allFieldsByCode.get(code);
+        if (!f) return;
+        const current = _activityChips[code] || '';
+        const opts = (f.options || []).filter(o => o.is_active);
+        anchor.style.position ||= 'relative';
+
+        const pop = document.createElement('div');
+        pop.className = 'lf-popover lf-value-popover';
+        pop.innerHTML = `
+            <div class="lf-popover-header">
+                <div style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;">${escapeHtml(f.label)}</div>
+                <input type="text" class="lf-popover-search form-control form-control-sm" placeholder="Search options…" aria-label="Search">
+            </div>
+            <div class="lf-popover-list">
+                ${opts.map(o => `
+                    <button type="button" class="lf-popover-item ${o.code === current ? 'is-selected' : ''}" data-act-pick-code="${escapeAttr(o.code)}">
+                        ${o.color ? `<span class="lf-chip-swatch" style="background:${escapeAttr(o.color)};"></span>` : ''}
+                        <span class="lf-popover-item-label">${escapeHtml(o.label)}</span>
+                    </button>
+                `).join('')}
+            </div>
+        `;
+        anchor.appendChild(pop);
+        _addFilterPopover = pop;
+        clampPopoverPosition(pop);
+        pop.querySelector('.lf-popover-search').focus();
+        pop.querySelector('.lf-popover-search').addEventListener('input', e => {
+            const q = e.target.value.trim().toLowerCase();
+            pop.querySelectorAll('[data-act-pick-code]').forEach(it => {
+                const label = it.querySelector('.lf-popover-item-label').textContent.toLowerCase();
+                it.style.display = label.includes(q) ? '' : 'none';
+            });
+        });
+        pop.querySelectorAll('[data-act-pick-code]').forEach(it => {
+            it.addEventListener('click', e => {
+                e.stopPropagation();
+                _activityChips[code] = it.getAttribute('data-act-pick-code');
+                closeAddFilterPopover();
+                renderActivityChipPills(fields);
+            });
+        });
+    }
+
+    // Lightweight CSS escape for selector usage on user-supplied codes
+    // (lowercase a-z 0-9 _ already enforced server-side, so this is belt+
+    // suspenders rather than a full implementation).
+    function cssEscape(s) {
+        if (window.CSS && CSS.escape) return CSS.escape(s);
+        return String(s).replace(/[^\w-]/g, c => '\\' + c);
     }
 
     function optionHtml(o) {
@@ -447,17 +617,6 @@
             ? `<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${escapeAttr(o.color)};margin-right:8px;vertical-align:middle;"></span>`
             : '';
         return `${swatch}${escapeHtml(o.label)}`;
-    }
-
-    function collectActivityPicks(fields) {
-        const out = {};
-        for (const f of fields) {
-            const dd = _activityDropdowns.get(f.code);
-            if (!dd) continue;
-            const v = dd.getValue();
-            if (v && v !== '') out[f.code] = v;
-        }
-        return out;
     }
 
     async function persistCustomFields(leadId, picks) {

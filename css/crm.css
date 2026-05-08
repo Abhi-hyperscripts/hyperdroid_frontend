@@ -1628,48 +1628,36 @@ body.crm-dashboard .crm-container {
     margin-bottom: 4px;
 }
 
-/* Activity log modal: collapsible custom-fields section. */
-.lf-activity-section {
-    margin-top: 4px;
+/* Activity log modal: chip-based custom-fields row. Same pattern as the
+   leads filter bar — only set fields take space; "+ Add field" button
+   reveals a popover with the rest. */
+.lf-activity-section-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    margin-top: 6px;
+    background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    background: var(--bg-tertiary);
-    overflow: hidden;
+    position: relative;
 }
-.lf-activity-section > summary {
-    padding: 10px 14px;
-    cursor: pointer;
-    user-select: none;
-    list-style: none;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
+.lf-activity-section-label {
+    color: var(--text-secondary);
+    font-size: 0.7rem;
     font-weight: 600;
-    color: var(--text-primary);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-right: 4px;
+    flex-shrink: 0;
 }
-.lf-activity-section > summary::-webkit-details-marker { display: none; }
-.lf-activity-section > summary::before {
-    content: "▸";
-    color: var(--text-secondary);
-    margin-right: 6px;
-    transition: transform 0.15s;
-}
-.lf-activity-section[open] > summary::before { transform: rotate(90deg); }
-.lf-activity-summary-text { flex: 1; }
-.lf-activity-summary-meta {
-    color: var(--text-secondary);
-    font-size: 0.78rem;
-    font-weight: 500;
-}
-.lf-activity-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px 14px;
-    padding: 12px 14px 14px;
-    background: var(--bg-card);
-    max-height: 320px;
-    overflow-y: auto;
+.lf-activity-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
 }
 
 /* Columns picker — divider + sub-section header for tenant-defined fields. */
