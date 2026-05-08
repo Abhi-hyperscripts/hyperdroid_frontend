@@ -202,16 +202,17 @@
             <!-- Created-date range. Both ends optional — leaving them blank
                  = no date filter (the default, "show all"). Sits at the
                  start of the row because the date window is the broadest
-                 narrowing — easier to scan it before status / owner / etc.
-                 data-no-flatpickr keeps the native browser picker (avoids
-                 the Flatpickr scroll-drift + month-dropdown collisions). -->
+                 narrowing. data-flatpickr-static keeps the calendar
+                 anchored to the input on scroll and gives the bigger,
+                 consistent Flatpickr calendar across iOS / macOS / Windows
+                 (the native browser picker is too small on macOS Safari). -->
             <div class="crm-filter-group">
                 <label for="filterDateFrom">Created from</label>
-                <input type="date" id="filterDateFrom" class="form-control form-control-sm" data-no-flatpickr="true" onchange="applyFilters()">
+                <input type="date" id="filterDateFrom" class="form-control form-control-sm" data-flatpickr-static="true" onchange="applyFilters()">
             </div>
             <div class="crm-filter-group">
                 <label for="filterDateTo">Created to</label>
-                <input type="date" id="filterDateTo" class="form-control form-control-sm" data-no-flatpickr="true" onchange="applyFilters()">
+                <input type="date" id="filterDateTo" class="form-control form-control-sm" data-flatpickr-static="true" onchange="applyFilters()">
             </div>
             <div class="crm-filter-group">
                 <label for="filterStatus">Status</label>

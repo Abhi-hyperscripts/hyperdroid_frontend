@@ -561,6 +561,13 @@
 
             // Check for data attributes for custom options
             const customOptions = {};
+            // Static positioning — calendar opens directly beneath the input
+            // (anchored, not absolute-to-body). Survives page scroll, doesn't
+            // drift, and lets compact filter bars place a date picker without
+            // the global popup-positioning gotchas.
+            if (input.dataset.flatpickrStatic === 'true') {
+                customOptions.static = true;
+            }
 
             if (input.dataset.minDate) {
                 customOptions.minDate = input.dataset.minDate;
