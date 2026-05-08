@@ -213,12 +213,30 @@
             const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ') || 'Unknown';
             document.getElementById('leadDetailName').textContent = name;
 
-            // Parse custom fields
+            // Parse custom fields. Resolve codes against the tenant's
+            // schema (active or archived — `getLeadFieldDef` uses the
+            // _allFieldsByCode map populated by lead-fields-runtime.js so
+            // historical values still render with their human label even
+            // after the field is soft-deleted from Settings).
             let customFieldsHtml = '';
             try {
                 const cf = typeof lead.custom_fields === 'string' ? JSON.parse(lead.custom_fields || '{}') : (lead.custom_fields || {});
+                const resolveDef = typeof window.getLeadFieldDef === 'function' ? window.getLeadFieldDef : null;
                 for (const [k, v] of Object.entries(cf)) {
-                    if (v) customFieldsHtml += `<div class="lead-detail-item"><span class="lead-detail-label">${esc(k.replace(/_/g, ' '))}</span><span>${esc(v)}</span></div>`;
+                    if (!v) continue;
+                    const def = resolveDef ? resolveDef(k) : null;
+                    const fieldLabel = def ? def.label : k.replace(/_/g, ' ');
+                    const renderValue = (val) => {
+                        if (!def) return esc(String(val));
+                        const opt = (def.options || []).find(o => o.code === val);
+                        if (!opt) return esc(String(val));
+                        const sw = opt.color
+                            ? `<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${esc(opt.color)};margin-right:6px;vertical-align:middle;"></span>`
+                            : '';
+                        return `${sw}${esc(opt.label)}`;
+                    };
+                    const valueHtml = Array.isArray(v) ? v.map(renderValue).join(', ') : renderValue(v);
+                    customFieldsHtml += `<div class="lead-detail-item"><span class="lead-detail-label">${esc(fieldLabel)}</span><span>${valueHtml}</span></div>`;
                 }
             } catch {}
 

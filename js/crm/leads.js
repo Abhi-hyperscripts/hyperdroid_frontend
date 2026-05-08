@@ -635,7 +635,7 @@ function renderLeadsTable(leads) {
             <td data-col="email">
                 <span class="crm-cell-secondary">${escapeHtml(lead.email || '-')}</span>
             </td>
-            <td data-col="phone">
+            <td data-col="phone" class="hide-mobile">
                 <span class="crm-cell-secondary">${lead.phone ? crmPhoneLink(lead.phone) : '-'}</span>
             </td>
             <td data-col="source" class="hide-mobile">

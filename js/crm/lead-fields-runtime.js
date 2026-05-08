@@ -57,8 +57,24 @@
         addTableHeaders();
         const tbody = document.getElementById('leadsTableBody');
         if (tbody) {
-            _renderObserver = new MutationObserver(() => injectTableCells());
+            _renderObserver = new MutationObserver(() => {
+                injectTableCells();
+                // Newly-injected <td>s must inherit the user's hidden-column
+                // state, otherwise headers and rows desync when a standard
+                // column is hidden via the picker.
+                if (typeof window.applyColumnVisibility === 'function') {
+                    window.applyColumnVisibility();
+                }
+            });
             _renderObserver.observe(tbody, { childList: true });
+            // Tbody may already be populated (loadLeads() finished before us);
+            // the observer won't fire retroactively, so seed it manually.
+            injectTableCells();
+        }
+        // Apply visibility to the headers we just added + any cells we just
+        // back-filled, so the column-hide picker state takes effect immediately.
+        if (typeof window.applyColumnVisibility === 'function') {
+            window.applyColumnVisibility();
         }
         wrapActivityModal();
         // Close any open popover on outside click / esc.
@@ -361,6 +377,14 @@
             .map(f => ({ id: `lf_${f.code}`, label: f.label }));
     };
 
+    // Exposed so the lead detail panel in lead-journey.js can resolve a
+    // raw `custom_fields` code (e.g. "potential") to its full definition
+    // (label + options + colors). Returns archived fields too — historical
+    // values must still render with their label after soft-delete.
+    window.getLeadFieldDef = function (code) {
+        return _allFieldsByCode.get(code) || null;
+    };
+
     // ─── Table column headers ────────────────────────────────────────────────
 
     function addTableHeaders() {
@@ -452,19 +476,56 @@
             const fields = currentActivityFields();
             const lead = readLead(_activityLeadId);
             const original = parseCustomFields(lead?.custom_fields);
-            // Diff: only PATCH fields whose value changed (or was added/removed)
-            // in this modal session. Activity-log doesn't currently support
-            // un-setting a field — clearing a chip just won't write that key.
+            // Diff: PATCH fields whose value changed in this modal session.
+            // Removing a chip via × explicitly clears the field — we track
+            // those separately so persistCustomFields can drop them from
+            // the merged JSONB.
             const changed = {};
+            const removed = [];
+            const changeNotes = [];
             for (const f of fields) {
                 const wasSet = original[f.code];
                 const nowSet = _activityChips[f.code];
-                if (nowSet && nowSet !== wasSet) changed[f.code] = nowSet;
+                if (nowSet && nowSet !== wasSet) {
+                    changed[f.code] = nowSet;
+                    const wasOpt = (f.options || []).find(o => o.code === wasSet);
+                    const nowOpt = (f.options || []).find(o => o.code === nowSet);
+                    const nowLabel = nowOpt ? nowOpt.label : nowSet;
+                    if (wasSet) {
+                        const wasLabel = wasOpt ? wasOpt.label : wasSet;
+                        changeNotes.push(`${f.label}: ${wasLabel} → ${nowLabel}`);
+                    } else {
+                        changeNotes.push(`${f.label}: ${nowLabel}`);
+                    }
+                } else if (wasSet && !nowSet) {
+                    removed.push(f.code);
+                    const wasOpt = (f.options || []).find(o => o.code === wasSet);
+                    const wasLabel = wasOpt ? wasOpt.label : wasSet;
+                    changeNotes.push(`${f.label}: ${wasLabel} → (cleared)`);
+                }
             }
             const leadId = _activityLeadId;
-            await origSubmit();
-            if (!leadId || Object.keys(changed).length === 0) return;
-            await persistCustomFields(leadId, changed);
+            // Append the field-change summary to the activity description so
+            // the timeline records what was marked alongside the call/email
+            // note. Restore the textarea afterwards so a failed submit + retry
+            // doesn't double-stamp.
+            const ta = document.getElementById('activitySummary');
+            const originalSummary = ta ? ta.value : null;
+            if (ta && changeNotes.length > 0 && ta.value.trim()) {
+                ta.value = `${ta.value.trim()}\n\nField updates: ${changeNotes.join('; ')}`;
+            }
+            try {
+                await origSubmit();
+            } finally {
+                if (ta && originalSummary !== null) ta.value = originalSummary;
+            }
+            if (!leadId || (Object.keys(changed).length === 0 && removed.length === 0)) return;
+            await persistCustomFields(leadId, changed, removed);
+            // origSubmit fires `loadLeads()` before our PUT lands, so the
+            // refreshed `allLeads` still shows the old custom_fields.
+            // Re-load now that the PUT has committed so the next time the
+            // user opens the modal the chips reflect the new values.
+            if (typeof window.loadLeads === 'function') window.loadLeads();
         };
     }
 
@@ -660,14 +721,18 @@
         return `${swatch}${escapeHtml(o.label)}`;
     }
 
-    async function persistCustomFields(leadId, picks) {
+    async function persistCustomFields(leadId, picks, removed = []) {
         try {
             const lead = readLead(leadId);
             const existing = parseCustomFields(lead?.custom_fields);
             const merged = { ...existing, ...picks };
+            for (const code of removed) delete merged[code];
+            // CRM's JSON binder uses SnakeCaseLower (Program.cs), so the body
+            // key must be `custom_fields` — `customFields` silently binds to
+            // null, leaving the lead untouched.
             await api.request(`/crm/leads/${leadId}`, {
                 method: 'PUT',
-                body: JSON.stringify({ customFields: JSON.stringify(merged) }),
+                body: JSON.stringify({ custom_fields: JSON.stringify(merged) }),
             });
             if (lead) lead.custom_fields = merged;
             injectTableCells();
