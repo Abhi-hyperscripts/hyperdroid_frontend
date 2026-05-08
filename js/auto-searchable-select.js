@@ -48,6 +48,11 @@
         // class — we whitelist a couple of common ones here.
         if (select.closest('.ql-toolbar')) return false;
         if (select.closest('[data-rich-toolbar]')) return false;
+        // Flatpickr's month / year selects live inside .flatpickr-calendar.
+        // Wrapping them produces a "Search month..." overlay that doesn't
+        // fit and breaks the calendar's layout — leave them as native.
+        if (select.closest('.flatpickr-calendar')) return false;
+        if (select.closest('.flatpickr-monthDropdown-months')) return false;
         // Hidden selects we leave alone — usually they're driven by some other
         // widget already, or not meant to be user-facing.
         if (select.type === 'hidden') return false;

@@ -483,6 +483,15 @@ function buildFilterParams() {
     if (emailStatus) params.set('emailStatus', emailStatus);
     if (campaignId) params.set('campaignId', campaignId);
 
+    // Created-date range. Either endpoint optional — empty = no bound.
+    // Format: YYYY-MM-DD (date input native value). Backend converts to a
+    // half-open interval [from 00:00, to+1day 00:00) so a same-day filter
+    // (from=to=2026-05-09) matches leads created any time on that day.
+    const dateFromEl = document.getElementById('filterDateFrom');
+    const dateToEl = document.getElementById('filterDateTo');
+    if (dateFromEl && dateFromEl.value) params.set('createdFrom', dateFromEl.value);
+    if (dateToEl && dateToEl.value) params.set('createdTo', dateToEl.value);
+
     // Multi-team scope: when the user has picked a specific team, backend
     // narrows leads to that team (manager/TL sees all, member sees own).
     const teamEl = document.getElementById('filterTeam');

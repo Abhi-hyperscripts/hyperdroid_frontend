@@ -554,6 +554,10 @@
         dateInputs.forEach(input => {
             // Skip if already initialized
             if (input._flatpickr) return;
+            // Opt-out — let pages keep the browser-native picker for inputs
+            // that don't need Flatpickr's heavier UI (e.g. compact filter
+            // bars where the popup needs to scroll-anchor itself reliably).
+            if (input.dataset.noFlatpickr === 'true') return;
 
             // Check for data attributes for custom options
             const customOptions = {};
@@ -593,10 +597,12 @@
                     if (node.nodeType === Node.ELEMENT_NODE) {
                         // Check if the added node contains date inputs
                         if (node.matches && node.matches('input[type="date"]')) {
-                            initDatePicker(node);
+                            if (node.dataset.noFlatpickr !== 'true') initDatePicker(node);
                         } else if (node.querySelectorAll) {
                             const dateInputs = node.querySelectorAll('input[type="date"]');
-                            dateInputs.forEach(input => initDatePicker(input));
+                            dateInputs.forEach(input => {
+                                if (input.dataset.noFlatpickr !== 'true') initDatePicker(input);
+                            });
                         }
                     }
                 });
