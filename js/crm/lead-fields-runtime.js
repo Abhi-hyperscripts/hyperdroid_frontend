@@ -226,17 +226,16 @@
             }
             left = Math.max(margin, Math.min(left, window.innerWidth - margin - popW));
 
-            // Vertical: prefer below; flip above if no room below.
-            const spaceBelow = window.innerHeight - t.bottom - margin;
-            const spaceAbove = t.top - margin;
-            let top;
-            if (spaceBelow >= popH || spaceBelow >= spaceAbove) {
-                top = t.bottom + gap;
-                pop.style.maxHeight = `${Math.min(popH, spaceBelow - gap)}px`;
-            } else {
-                top = Math.max(margin, t.top - gap - popH);
-                pop.style.maxHeight = `${Math.min(popH, spaceAbove - gap)}px`;
-            }
+            // Vertical: anchor below the trigger and let the popover scroll
+            // internally. Hopping the popover way up to the top of the
+            // viewport (when there's "more room above") visually disconnects
+            // it from the trigger — users expect it next to where they
+            // clicked, even if that means a shorter list with internal
+            // scroll. Floor the height so 1-2 options always fit.
+            const spaceBelow = window.innerHeight - t.bottom - margin - gap;
+            const top = t.bottom + gap;
+            const fitHeight = Math.max(180, Math.min(popH, spaceBelow));
+            pop.style.maxHeight = `${fitHeight}px`;
 
             pop.style.left = `${left}px`;
             pop.style.top = `${top}px`;
