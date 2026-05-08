@@ -659,6 +659,7 @@ function renderLeadsTable(leads) {
             <td data-col="created" class="hide-mobile">
                 <span class="crm-cell-secondary">${formatDate(lead.created_at)}</span>
             </td>
+            <td data-col="latestSummary" class="hide-mobile">${renderLatestSummaryCell(lead)}</td>
             <td>
                 <div class="crm-actions">
                     ${(lead.team_id || lead.team_name) ? `<button class="crm-action-btn" onclick="openLogActivityModal('${lead.id}')" data-tooltip="Log Activity">
@@ -699,6 +700,7 @@ function renderLeadsTable(leads) {
     `;
     }).join('');
     applyColumnVisibility();
+    applyColumnOrder();
 }
 
 // ==================== Column Visibility ====================
@@ -709,35 +711,83 @@ function renderLeadsTable(leads) {
 // into the detail panel, or take action), so they're absent from the
 // picker entirely.
 
-const COLUMN_PICKER_KEY = 'crm_leads_hidden_cols';
+// Single localStorage key for ALL column prefs — hidden + order together.
+// `{ hidden: [...colIds], order: { builtin: [...], custom: [...] } }`
+// Old keys ('crm_leads_hidden_cols', 'crm_leads_col_order') are read once
+// on first load + migrated into the new shape, then we never touch them
+// again. Lets us add new prefs (column-width, sticky-cols) without
+// proliferating localStorage keys per concern.
+const COLUMN_PREFS_KEY = 'crm_leads_columns_v1';
+const LEGACY_HIDDEN_KEY = 'crm_leads_hidden_cols';
+const LEGACY_ORDER_KEY = 'crm_leads_col_order';
 const COLUMN_PICKER_DEFS = [
-    { id: 'email',      label: 'Email' },
-    { id: 'phone',      label: 'Phone' },
-    { id: 'source',     label: 'Source' },
-    { id: 'engagement', label: 'Email engagement' },
-    { id: 'team',       label: 'Team' },
-    { id: 'owner',      label: 'Owner' },
-    { id: 'created',    label: 'Created' },
+    { id: 'email',         label: 'Email' },
+    { id: 'phone',         label: 'Phone' },
+    { id: 'source',        label: 'Source' },
+    { id: 'engagement',    label: 'Email engagement' },
+    { id: 'team',          label: 'Team' },
+    { id: 'owner',         label: 'Owner' },
+    { id: 'created',       label: 'Created' },
+    { id: 'latestSummary', label: 'Summary' },
 ];
 const TOGGLEABLE_COLS = new Set(COLUMN_PICKER_DEFS.map(c => c.id));
 
-function getHiddenColumns() {
+// Read the unified prefs blob, migrating from legacy single-purpose keys
+// on first load. Always returns a well-formed { hidden, order } object
+// even if storage is empty / corrupt.
+function _getColumnPrefs() {
     try {
-        const raw = localStorage.getItem(COLUMN_PICKER_KEY);
-        const arr = raw ? JSON.parse(raw) : [];
-        if (!Array.isArray(arr)) return [];
-        // Strip non-toggleable cols so a stale entry from an earlier
-        // version of the picker can't keep Lead ID/Name hidden.
-        // Custom-dropdown columns use the `lf_<fieldcode>` data-col convention
-        // and are toggleable too — they just aren't in TOGGLEABLE_COLS because
-        // that set is built at module load before the runtime has fetched
-        // tenant-defined fields.
-        return arr.filter(id => TOGGLEABLE_COLS.has(id) || (typeof id === 'string' && id.startsWith('lf_')));
-    } catch { return []; }
+        const raw = localStorage.getItem(COLUMN_PREFS_KEY);
+        if (raw) {
+            const obj = JSON.parse(raw);
+            if (obj && typeof obj === 'object') {
+                if (!Array.isArray(obj.hidden)) obj.hidden = [];
+                if (!obj.order || typeof obj.order !== 'object') obj.order = {};
+                if (!Array.isArray(obj.order.builtin)) obj.order.builtin = [];
+                if (!Array.isArray(obj.order.custom))  obj.order.custom = [];
+                return obj;
+            }
+        }
+        // Migrate from the two legacy keys used before unification.
+        const legacyHidden = (() => {
+            try { const r = localStorage.getItem(LEGACY_HIDDEN_KEY); const a = r ? JSON.parse(r) : []; return Array.isArray(a) ? a : []; } catch { return []; }
+        })();
+        const legacyOrder = (() => {
+            try { const r = localStorage.getItem(LEGACY_ORDER_KEY); const a = r ? JSON.parse(r) : null; return (a && typeof a === 'object') ? a : { builtin: [], custom: [] }; } catch { return { builtin: [], custom: [] }; }
+        })();
+        const migrated = {
+            hidden: legacyHidden,
+            order: {
+                builtin: Array.isArray(legacyOrder.builtin) ? legacyOrder.builtin : [],
+                custom: Array.isArray(legacyOrder.custom) ? legacyOrder.custom : [],
+            },
+        };
+        localStorage.setItem(COLUMN_PREFS_KEY, JSON.stringify(migrated));
+        try { localStorage.removeItem(LEGACY_HIDDEN_KEY); } catch {}
+        try { localStorage.removeItem(LEGACY_ORDER_KEY);  } catch {}
+        return migrated;
+    } catch {
+        return { hidden: [], order: { builtin: [], custom: [] } };
+    }
+}
+
+function _saveColumnPrefs(prefs) {
+    try { localStorage.setItem(COLUMN_PREFS_KEY, JSON.stringify(prefs)); } catch {}
+}
+
+function getHiddenColumns() {
+    const prefs = _getColumnPrefs();
+    // Strip non-toggleable cols so a stale entry from an earlier version of
+    // the picker can't keep Lead ID/Name hidden. Custom-dropdown columns
+    // use the `lf_<fieldcode>` data-col convention and are toggleable too.
+    return (prefs.hidden || []).filter(id =>
+        TOGGLEABLE_COLS.has(id) || (typeof id === 'string' && id.startsWith('lf_')));
 }
 
 function setHiddenColumns(arr) {
-    localStorage.setItem(COLUMN_PICKER_KEY, JSON.stringify(arr));
+    const prefs = _getColumnPrefs();
+    prefs.hidden = Array.isArray(arr) ? arr : [];
+    _saveColumnPrefs(prefs);
 }
 
 function applyColumnVisibility() {
@@ -747,42 +797,197 @@ function applyColumnVisibility() {
     });
 }
 
+// ─── Column ordering ────────────────────────────────────────────────────
+// Reps drag rows in the columns picker to set their preferred order; we
+// persist the resulting id array and physically reorder <th>/<td>
+// elements after every render. Built-ins and custom fields stay in their
+// own sections (the picker UI doesn't allow cross-section drags) but
+// inside each group the user's order wins.
+
+function _allOrderableIds() {
+    const customDefs = (typeof window.getLeadFieldColumnDefs === 'function')
+        ? window.getLeadFieldColumnDefs() : [];
+    return {
+        builtin: COLUMN_PICKER_DEFS.map(c => c.id),
+        custom: customDefs.map(c => c.id),
+    };
+}
+
+function getColumnOrder() {
+    const stored = _getColumnPrefs().order;
+    const all = _allOrderableIds();
+    // Merge stored order with current defaults so newly-added columns (e.g.
+    // tenant just created a custom field) show up at the end of their
+    // section instead of vanishing from the picker.
+    const merge = (defaults, kind) => {
+        const storedKind = Array.isArray(stored[kind]) ? stored[kind] : [];
+        const seen = new Set();
+        const out = [];
+        for (const id of storedKind) {
+            if (defaults.includes(id) && !seen.has(id)) { out.push(id); seen.add(id); }
+        }
+        for (const id of defaults) {
+            if (!seen.has(id)) { out.push(id); seen.add(id); }
+        }
+        return out;
+    };
+    return {
+        builtin: merge(all.builtin, 'builtin'),
+        custom:  merge(all.custom,  'custom'),
+    };
+}
+
+function setColumnOrder(order) {
+    const prefs = _getColumnPrefs();
+    prefs.order = {
+        builtin: Array.isArray(order?.builtin) ? order.builtin : [],
+        custom:  Array.isArray(order?.custom)  ? order.custom  : [],
+    };
+    _saveColumnPrefs(prefs);
+}
+
+// Reorder <th> in thead AND every <td> in tbody so the user's preferred
+// column order takes effect. Lead-id / Name / Status / Actions columns
+// stay where they are (no data-col on Actions; the others stay put because
+// we only move the ids that are in the order list).
+function applyColumnOrder() {
+    const order = getColumnOrder();
+    const desired = [...order.builtin, ...order.custom];
+    if (!desired.length) return;
+    const idIndex = new Map(desired.map((id, i) => [id, i]));
+
+    const reorderRow = (rowEl) => {
+        // Collect the cells we control (only those whose data-col is in
+        // the desired list). Insert them back in `desired` order, immediately
+        // after the LAST cell that's NOT under our control AND whose original
+        // position was before the orderable cluster — i.e. anchor after the
+        // last unmanaged cell that came before any managed cell.
+        const cells = Array.from(rowEl.children);
+        const managed = cells.filter(c => c.dataset && c.dataset.col && idIndex.has(c.dataset.col));
+        if (managed.length < 2) return;
+        const firstManagedIdx = cells.indexOf(managed[0]);
+        const lastManagedIdx = cells.indexOf(managed[managed.length - 1]);
+        // Sort managed by desired order and re-insert sequentially after
+        // the cell immediately before firstManagedIdx (i.e. preserving any
+        // unmanaged cell that sits between managed ones — none today, but
+        // future-proofs against e.g. a static "score" column wedged in).
+        managed.sort((a, b) => idIndex.get(a.dataset.col) - idIndex.get(b.dataset.col));
+        const anchor = cells[firstManagedIdx - 1] || null;
+        for (let i = managed.length - 1; i >= 0; i--) {
+            if (anchor && anchor.nextSibling !== managed[i]) {
+                rowEl.insertBefore(managed[i], anchor.nextSibling);
+            } else if (!anchor && rowEl.firstChild !== managed[i]) {
+                rowEl.insertBefore(managed[i], rowEl.firstChild);
+            }
+        }
+        // Place each subsequent managed cell right after the previous one.
+        for (let i = 1; i < managed.length; i++) {
+            if (managed[i - 1].nextSibling !== managed[i]) {
+                rowEl.insertBefore(managed[i], managed[i - 1].nextSibling);
+            }
+        }
+        void lastManagedIdx; // referenced only for debug intent
+    };
+
+    document.querySelectorAll('#leadsTable thead tr').forEach(reorderRow);
+    document.querySelectorAll('#leadsTableBody tr[data-lead-id]').forEach(reorderRow);
+}
+
 function renderColumnsPickerMenu() {
     const menu = document.getElementById('columnsPickerMenu');
     if (!menu) return;
     const hidden = new Set(getHiddenColumns());
-    // Tenant-defined custom-dropdown columns appear after the built-in ones,
-    // separated with a divider so admins can tell which set is which. The
-    // runtime exposes them once it has loaded its definitions; before then
-    // the picker just shows the built-ins.
+    const order = getColumnOrder();
     const customDefs = (typeof window.getLeadFieldColumnDefs === 'function')
         ? window.getLeadFieldColumnDefs()
         : [];
-    const renderItem = (c) => `
-        <label class="crm-columns-menu-item">
+    const builtinById = Object.fromEntries(COLUMN_PICKER_DEFS.map(c => [c.id, c]));
+    const customById  = Object.fromEntries(customDefs.map(c => [c.id, c]));
+
+    // Render in the saved order. Each row is draggable within its section;
+    // the data-col-section attribute scopes the drag (built-ins can't be
+    // mixed with custom fields).
+    const renderItem = (c, section) => `
+        <label class="crm-columns-menu-item" draggable="true"
+               data-col-id="${c.id}" data-col-section="${section}">
+            <span class="crm-columns-drag-handle" aria-hidden="true" title="Drag to reorder">⋮⋮</span>
             <input type="checkbox" data-col-toggle="${c.id}" ${hidden.has(c.id) ? '' : 'checked'}>
             <span>${c.label}</span>
         </label>
     `;
+    const builtinHtml = order.builtin
+        .filter(id => builtinById[id])
+        .map(id => renderItem(builtinById[id], 'builtin')).join('');
+    const customHtml = order.custom
+        .filter(id => customById[id])
+        .map(id => renderItem(customById[id], 'custom')).join('');
+
     menu.innerHTML = `
         <div class="crm-columns-menu-header">Visible columns</div>
-        ${COLUMN_PICKER_DEFS.map(renderItem).join('')}
-        ${customDefs.length > 0 ? `
+        ${builtinHtml}
+        ${customHtml ? `
             <div class="crm-columns-menu-divider" aria-hidden="true"></div>
             <div class="crm-columns-menu-subhead">Custom fields</div>
-            ${customDefs.map(renderItem).join('')}
+            ${customHtml}
         ` : ''}
-        <div class="crm-columns-menu-footer">
+        <div class="crm-columns-menu-footer" style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.7rem; color:var(--text-secondary);">Drag rows to reorder</span>
             <button type="button" class="btn btn-sm btn-link" onclick="resetColumnsPicker()">Reset</button>
         </div>
     `;
     menu.querySelectorAll('input[data-col-toggle]').forEach(cb => {
-        cb.addEventListener('change', () => {
+        cb.addEventListener('change', (e) => {
+            // Stop the change from bubbling — without it, the outside-click
+            // listener treats the click on the checkbox as "outside the
+            // menu" once the drag handler has eaten propagation.
+            e.stopPropagation();
             const id = cb.dataset.colToggle;
             const list = getHiddenColumns().filter(x => x !== id);
             if (!cb.checked) list.push(id);
             setHiddenColumns(list);
             applyColumnVisibility();
+        });
+    });
+    _bindColumnsPickerDragDrop(menu);
+}
+
+let _draggedColRow = null;
+function _bindColumnsPickerDragDrop(menu) {
+    menu.querySelectorAll('.crm-columns-menu-item[draggable]').forEach(row => {
+        row.addEventListener('dragstart', (e) => {
+            _draggedColRow = row;
+            row.style.opacity = '0.4';
+            try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', row.dataset.colId); } catch {}
+        });
+        row.addEventListener('dragend', () => {
+            row.style.opacity = '';
+            _draggedColRow = null;
+            menu.querySelectorAll('.crm-columns-menu-item').forEach(r => r.style.borderTop = '');
+        });
+        row.addEventListener('dragover', (e) => {
+            if (!_draggedColRow || _draggedColRow === row) return;
+            // Only allow drop within the same section so the picker UI keeps
+            // its built-ins / custom-fields grouping intact.
+            if (_draggedColRow.dataset.colSection !== row.dataset.colSection) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            // Visual indicator — top-border line on the hovered row.
+            menu.querySelectorAll('.crm-columns-menu-item').forEach(r => r.style.borderTop = '');
+            row.style.borderTop = '2px solid var(--brand-primary)';
+        });
+        row.addEventListener('drop', (e) => {
+            if (!_draggedColRow || _draggedColRow === row) return;
+            if (_draggedColRow.dataset.colSection !== row.dataset.colSection) return;
+            e.preventDefault();
+            row.parentNode.insertBefore(_draggedColRow, row);
+            // Persist the new order from the DOM.
+            const section = row.dataset.colSection;
+            const order = getColumnOrder();
+            const newOrder = Array.from(menu.querySelectorAll(`.crm-columns-menu-item[data-col-section="${section}"]`))
+                .map(el => el.dataset.colId);
+            order[section] = newOrder;
+            setColumnOrder(order);
+            applyColumnOrder();
         });
     });
 }
@@ -816,14 +1021,18 @@ function closeColumnsPickerOnOutside(e) {
 }
 
 function resetColumnsPicker() {
-    setHiddenColumns([]);
+    try { localStorage.removeItem(COLUMN_PREFS_KEY); } catch {}
     applyColumnVisibility();
+    applyColumnOrder();
     renderColumnsPickerMenu();
 }
 
 // Run once on script load so headers reflect saved prefs even before
 // the first lead row is rendered.
-document.addEventListener('DOMContentLoaded', applyColumnVisibility);
+document.addEventListener('DOMContentLoaded', () => {
+    applyColumnVisibility();
+    applyColumnOrder();
+});
 
 // ==================== Status & Source Formatting ====================
 
@@ -1607,6 +1816,146 @@ function initSearchableDropdowns() {
             searchPlaceholder: 'Search status...'
         });
     }
+}
+
+// ==================== Latest Summary Cell + Modal ====================
+//
+// Column shows a 1-line preview of the most recent activity summary; clicking
+// opens a popup with every summary on this lead, newest first, with a live
+// search filter. Hidden by default through the column-picker if a tenant
+// doesn't want it.
+
+function renderLatestSummaryCell(lead) {
+    const summary = lead.latest_activity_summary;
+    if (!summary || !summary.trim()) {
+        return '<span class="crm-cell-secondary">—</span>';
+    }
+    const trimmed = summary.trim();
+    const preview = trimmed.length > 120 ? trimmed.slice(0, 120) + '…' : trimmed;
+    const tooltip = escapeHtml(trimmed.slice(0, 800));
+    const ts = lead.latest_activity_at ? formatDate(lead.latest_activity_at) : '';
+    const safeName = escapeHtml(`${lead.first_name || ''} ${lead.last_name || ''}`.trim() || (lead.lead_number || 'this lead'));
+    // Wrap long descriptions across 2 lines instead of letting an unbroken
+    // 500-char string blow out the column width. word-break:break-word keeps
+    // CJK / no-space text from overflowing; -webkit-line-clamp limits to 2
+    // visible lines so row heights stay consistent — full text is in the
+    // tooltip and the click-through modal.
+    return `
+        <div class="crm-summary-cell" style="cursor:pointer; max-width:260px; min-width:160px; line-height:1.3;"
+              title="${tooltip}"
+              onclick="event.stopPropagation(); openLeadSummariesModal('${escapeHtml(lead.id)}', '${safeName.replace(/'/g, '&#39;')}')">
+            <div style="font-size:0.82rem; color:var(--text-primary);
+                        word-break:break-word; overflow-wrap:anywhere;
+                        display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escapeHtml(preview)}</div>
+            ${ts ? `<div style="font-size:0.7rem; color:var(--text-secondary); margin-top:2px;">${escapeHtml(ts)}</div>` : ''}
+        </div>`;
+}
+
+let _leadSummariesAll = [];     // full unfiltered list — search filter runs client-side
+let _leadSummariesCurrentLeadId = null;
+
+async function openLeadSummariesModal(leadId, leadName) {
+    _leadSummariesCurrentLeadId = leadId;
+    const subtitle = document.getElementById('leadSummariesSubtitle');
+    if (subtitle) subtitle.textContent = leadName || '—';
+    const search = document.getElementById('leadSummariesSearch');
+    if (search) search.value = '';
+    document.getElementById('leadSummariesOverlay').classList.add('active');
+
+    const loadingEl = document.getElementById('leadSummariesLoading');
+    const emptyEl = document.getElementById('leadSummariesEmpty');
+    const listEl = document.getElementById('leadSummariesList');
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (listEl) listEl.innerHTML = '';
+    _leadSummariesAll = [];
+
+    try {
+        // Use the lead timeline endpoint instead of /api/activities — the
+        // timeline already enriches each row with performed_by_name and
+        // performed_by_email, so the modal can show "Abhishek Anand" instead
+        // of a raw user UUID. Activities with non-empty descriptions are
+        // exactly the rep "Summary" entries we want; status changes and
+        // other system events have type !== 'activity' and get filtered out.
+        const data = await api.request(`/crm/leads/${encodeURIComponent(leadId)}/timeline`);
+        const items = Array.isArray(data) ? data : (data?.items || data?.entries || []);
+        items.sort((a, b) => {
+            const aT = new Date(a.timestamp || a.performed_at || a.created_at || 0).getTime();
+            const bT = new Date(b.timestamp || b.performed_at || b.created_at || 0).getTime();
+            return bT - aT;
+        });
+        // Map timeline shape → activity shape used by the renderer; keep
+        // only activity entries with a real description.
+        _leadSummariesAll = items
+            .filter(e => e.type === 'activity' && e.description && String(e.description).trim())
+            .map(e => ({
+                description: e.description,
+                performed_at: e.timestamp,
+                performed_by_name: e.performed_by_name,
+                performed_by_email: e.performed_by_email,
+                activity_type: e.meta?.activity_type || e.icon,
+                contact_outcome: e.meta?.contact_outcome,
+            }));
+        if (loadingEl) loadingEl.style.display = 'none';
+        renderLeadSummariesList(_leadSummariesAll);
+    } catch (e) {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (emptyEl) {
+            emptyEl.style.display = 'block';
+            emptyEl.textContent = 'Failed to load summaries: ' + (e.message || 'unknown error');
+        }
+    }
+}
+
+function closeLeadSummariesModal() {
+    document.getElementById('leadSummariesOverlay').classList.remove('active');
+    _leadSummariesCurrentLeadId = null;
+    _leadSummariesAll = [];
+}
+
+function filterLeadSummaries() {
+    const q = (document.getElementById('leadSummariesSearch')?.value || '').trim().toLowerCase();
+    const filtered = q
+        ? _leadSummariesAll.filter(a => (a.description || '').toLowerCase().includes(q))
+        : _leadSummariesAll;
+    renderLeadSummariesList(filtered);
+}
+
+function renderLeadSummariesList(items) {
+    const listEl = document.getElementById('leadSummariesList');
+    const emptyEl = document.getElementById('leadSummariesEmpty');
+    if (!listEl) return;
+    if (!items.length) {
+        listEl.innerHTML = '';
+        if (emptyEl) {
+            emptyEl.style.display = 'block';
+            emptyEl.textContent = (_leadSummariesAll.length === 0)
+                ? 'No summaries logged yet.'
+                : 'No summaries match your search.';
+        }
+        return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+    listEl.innerHTML = items.map(a => {
+        const when = a.performed_at ? new Date(a.performed_at).toLocaleString() : '—';
+        // Only show a user-friendly identity. The /api/activities endpoint
+        // doesn't always enrich performed_by_name/email — falling back to
+        // the raw `performed_by` GUID was printing UUIDs like
+        // 1f2f4d09-fb45-… which are useless to a sales rep. Skip the line
+        // entirely if we don't have a name or email.
+        const who = a.performed_by_name || a.performed_by_email || '';
+        const type = a.activity_type ? `<span class="tl-chip tl-chip-type">${escapeHtml(a.activity_type)}</span>` : '';
+        const outcome = a.contact_outcome ? `<span class="tl-chip tl-chip-outcome">${escapeHtml(String(a.contact_outcome).replace(/_/g, ' '))}</span>` : '';
+        return `
+            <div style="border:1px solid var(--border-color); border-radius:6px; padding:10px 12px; background:var(--bg-secondary);">
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:6px;">
+                    ${type}${outcome}
+                    <span style="margin-left:auto; font-size:0.75rem; color:var(--text-secondary);">${escapeHtml(when)}</span>
+                </div>
+                <div style="white-space:pre-wrap; word-break:break-word;">${escapeHtml(a.description)}</div>
+                ${who ? `<div style="margin-top:6px; font-size:0.75rem; color:var(--text-secondary);">${escapeHtml(who)}</div>` : ''}
+            </div>`;
+    }).join('');
 }
 
 // ==================== Custom Fields ====================

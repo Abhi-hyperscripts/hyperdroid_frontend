@@ -367,6 +367,7 @@
                         <th data-col="team" class="hide-mobile">Team</th>
                         <th data-col="owner" class="hide-mobile">Owner</th>
                         <th data-col="created" class="hide-mobile">Created</th>
+                        <th data-col="latestSummary" class="hide-mobile">Summary</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -716,6 +717,34 @@
             <div class="gm-footer" style="display:flex;justify-content:flex-end;gap:8px;">
                 <button class="btn btn-outline-secondary" onclick="closeLogActivityModal()">Cancel</button>
                 <button class="btn btn-primary" onclick="submitLogActivity()">Log Activity</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Lead Activity Summaries Modal ═══
+         Triggered from the Latest summary column in the leads table — shows
+         every activity ever logged on a single lead with a search bar at the
+         top. Newest at top by default. Backed by GET /api/activities filtered
+         to the lead's id; the same payload powers the lead-detail timeline. -->
+    <div class="gm-overlay" id="leadSummariesOverlay">
+        <div class="gm-modal" style="width:720px;max-width:96vw;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">All summaries</h3>
+                        <p class="gm-subtitle" id="leadSummariesSubtitle">—</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeLeadSummariesModal()">&times;</button>
+            </div>
+            <div class="gm-body" style="font-size:13px;">
+                <input type="text" id="leadSummariesSearch" class="form-control" placeholder="Search summaries…" style="margin-bottom:12px;" oninput="filterLeadSummaries()">
+                <div id="leadSummariesLoading" class="crm-loading" style="display:none;"><div class="crm-loading-spinner"></div><p>Loading…</p></div>
+                <div id="leadSummariesEmpty" style="display:none; padding:24px; text-align:center; color:var(--text-secondary);">No summaries logged yet.</div>
+                <div id="leadSummariesList" style="display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto;"></div>
+            </div>
+            <div class="gm-footer">
+                <button class="btn btn-secondary" onclick="closeLeadSummariesModal()">Close</button>
             </div>
         </div>
     </div>

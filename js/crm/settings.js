@@ -931,8 +931,11 @@ function renderFacebookFormRow(form) {
                 <button type="button" class="btn btn-sm btn-primary" data-fb-form-action="sync-now" title="Re-scan from connected_at. Already-imported leads stay untouched (dedup by source_lead_id)." style="padding: 2px 8px; font-size: 0.7rem;">
                     Sync now
                 </button>
-                <button type="button" class="btn btn-outline" data-fb-form-action="logs" style="padding: 2px 8px; font-size: 0.7rem;">
+                <button type="button" class="btn btn-outline" data-fb-form-action="logs" style="padding: 2px 8px; font-size: 0.7rem;" title="Polling sync history — every 2-min tick the worker recorded for this form.">
                     Logs
+                </button>
+                <button type="button" class="btn btn-outline" data-fb-form-action="activity" style="padding: 2px 8px; font-size: 0.7rem;" title="Audit trail — who connected / paused / resumed / disconnected, with timestamps.">
+                    Activity
                 </button>
                 <button type="button" class="btn btn-outline" data-fb-form-action="toggle" style="padding: 2px 8px; font-size: 0.7rem;">
                     ${form.is_active ? 'Pause' : 'Resume'}
@@ -1023,6 +1026,7 @@ function bindFacebookPagesListHandlers() {
             else if (action === 'remove') disconnectFacebookFormSource(sourceId);
             else if (action === 'sync-now') syncFacebookFormNow(sourceId, formBtn);
             else if (action === 'logs') openFacebookSyncLogs(sourceId, sourceName);
+            else if (action === 'activity') openActivityLog(`/crm/Facebook/forms/${sourceId}/audit-log?limit=200`, sourceName);
         }
     });
     _fbPagesListBound = true;
@@ -1153,6 +1157,97 @@ async function refreshFacebookSyncLogs() {
         if (emptyEl) {
             emptyEl.style.display = 'block';
             emptyEl.textContent = 'Failed to load sync history: ' + (e.message || 'unknown error');
+        }
+    }
+}
+
+// ─── Activity audit log modal (shared by FB forms + GS sheets) ───────────
+//
+// Shows who/when for connect, manual_pause, manual_resume, manual_disconnect,
+// reconnected, and cascade_page_disconnect. The polling "Logs" modal still
+// shows sync history — this is a separate audit trail.
+let _activityLogFetchUrl = null;
+let _activityLogTitleSubject = '—';
+
+function openActivityLog(url, sourceName) {
+    _activityLogFetchUrl = url;
+    _activityLogTitleSubject = sourceName || '—';
+    const subtitle = document.getElementById('activityLogSubtitle');
+    if (subtitle) subtitle.textContent = sourceName || '—';
+    const modal = document.getElementById('activityLogModal');
+    if (modal) modal.classList.add('active');
+    refreshActivityLog();
+}
+
+function closeActivityLog() {
+    const modal = document.getElementById('activityLogModal');
+    if (modal) modal.classList.remove('active');
+    _activityLogFetchUrl = null;
+}
+
+// Friendlier labels for the raw `reason` codes the backend writes. New codes
+// added in the audit-log writer should be added here too — fallback shows the
+// raw code so a future reason isn't invisible if someone forgets.
+const _activityReasonLabel = {
+    'connected': 'Connected',
+    'reconnected': 'Reconnected',
+    'manual_pause': 'Paused',
+    'manual_resume': 'Resumed',
+    'manual_disconnect': 'Disconnected',
+    'cascade_page_disconnect': 'Auto-paused (page disconnected)',
+};
+
+function _activityStateText(from, to) {
+    const fmt = (v) => v === true ? 'Active' : v === false ? 'Inactive' : '—';
+    if (from === null || from === undefined) return `→ ${fmt(to)}`;
+    return `${fmt(from)} → ${fmt(to)}`;
+}
+
+async function refreshActivityLog() {
+    if (!_activityLogFetchUrl) return;
+
+    const loadingEl = document.getElementById('activityLogLoading');
+    const emptyEl = document.getElementById('activityLogEmpty');
+    const wrapEl = document.getElementById('activityLogTableWrap');
+    const tbody = document.getElementById('activityLogTableBody');
+
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (wrapEl) wrapEl.style.display = 'none';
+    if (tbody) tbody.innerHTML = '';
+
+    try {
+        const items = await api.request(_activityLogFetchUrl) || [];
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (!Array.isArray(items) || items.length === 0) {
+            if (emptyEl) emptyEl.style.display = 'block';
+            return;
+        }
+        if (wrapEl) wrapEl.style.display = 'block';
+        tbody.innerHTML = items.map(it => {
+            const when = it.created_at ? new Date(it.created_at).toLocaleString() : '—';
+            const action = _activityReasonLabel[it.reason] || it.reason || '—';
+            const stateChange = _activityStateText(it.from_state, it.to_state);
+            // System-driven rows (cascade etc.) may carry no actor email — show
+            // "System" rather than blank so the column is never confusing.
+            const who = it.actor_email
+                ? escapeHtml(it.actor_email)
+                : (it.actor_user_id ? escapeHtml(it.actor_user_id) : '<em style="color:var(--text-secondary);">System</em>');
+            const note = it.note ? escapeHtml(it.note) : '';
+            return `
+                <tr>
+                    <td style="white-space:nowrap;">${escapeHtml(when)}</td>
+                    <td>${escapeHtml(action)}</td>
+                    <td style="font-size:0.85rem; color:var(--text-secondary);">${escapeHtml(stateChange)}</td>
+                    <td>${who}</td>
+                    <td style="max-width:380px; word-break:break-word; color:var(--text-secondary);">${note}</td>
+                </tr>`;
+        }).join('');
+    } catch (e) {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (emptyEl) {
+            emptyEl.style.display = 'block';
+            emptyEl.textContent = 'Failed to load activity log: ' + (e.message || 'unknown error');
         }
     }
 }
@@ -3404,7 +3499,8 @@ function gsRenderTable() {
                     <td>${escapeHtml(lastSync)}</td>
                     <td class="gs-actions-cell">
                         <button class="btn btn-sm btn-primary" onclick="syncGoogleSheetNow('${escapeHtml(r.lead_source_id)}', this)" title="Re-scan sheet from row 1. Already-imported leads stay untouched.">Sync now</button>
-                        <button class="btn btn-sm btn-outline" onclick="openGoogleSheetSyncLogs('${escapeHtml(r.lead_source_id)}', '${escapeHtml(r.spreadsheet_name)}', '${escapeHtml(r.sheet_tab_name || '')}')">Logs</button>
+                        <button class="btn btn-sm btn-outline" onclick="openGoogleSheetSyncLogs('${escapeHtml(r.lead_source_id)}', '${escapeHtml(r.spreadsheet_name)}', '${escapeHtml(r.sheet_tab_name || '')}')" title="Polling sync history">Logs</button>
+                        <button class="btn btn-sm btn-outline" onclick="openActivityLog('/crm/GoogleSheets/sources/${escapeHtml(r.lead_source_id)}/audit-log?limit=200', '${escapeHtml(r.spreadsheet_name)}')" title="Audit trail — who paused / resumed / disconnected, with timestamps">Activity</button>
                         <button class="btn btn-sm btn-outline" onclick="toggleGoogleSheet('${escapeHtml(r.lead_source_id)}', ${!r.is_active})">${toggleLabel}</button>
                         <!-- Remove hidden (May 2026): identical DB effect as Pause but
                              confused users into thinking their data was wiped.

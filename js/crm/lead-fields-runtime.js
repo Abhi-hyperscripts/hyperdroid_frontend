@@ -60,10 +60,14 @@
             _renderObserver = new MutationObserver(() => {
                 injectTableCells();
                 // Newly-injected <td>s must inherit the user's hidden-column
-                // state, otherwise headers and rows desync when a standard
-                // column is hidden via the picker.
+                // + reorder preferences, otherwise headers and rows desync
+                // when a standard column is hidden or the user has dragged
+                // columns into a custom order.
                 if (typeof window.applyColumnVisibility === 'function') {
                     window.applyColumnVisibility();
+                }
+                if (typeof window.applyColumnOrder === 'function') {
+                    window.applyColumnOrder();
                 }
             });
             _renderObserver.observe(tbody, { childList: true });
@@ -71,10 +75,14 @@
             // the observer won't fire retroactively, so seed it manually.
             injectTableCells();
         }
-        // Apply visibility to the headers we just added + any cells we just
-        // back-filled, so the column-hide picker state takes effect immediately.
+        // Apply visibility + order to the headers we just added + any cells
+        // we just back-filled, so the column-picker state takes effect
+        // immediately.
         if (typeof window.applyColumnVisibility === 'function') {
             window.applyColumnVisibility();
+        }
+        if (typeof window.applyColumnOrder === 'function') {
+            window.applyColumnOrder();
         }
         wrapActivityModal();
         // Close any open popover on outside click / esc.

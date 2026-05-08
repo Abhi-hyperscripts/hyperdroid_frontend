@@ -3259,6 +3259,53 @@
         </div>
     </div>
 
+    <!-- ─── Activity audit log modal ──────────────────────────────────────
+         Distinct from "Sync history" (which is the polling log). This shows
+         WHO connected/paused/resumed/disconnected the source and WHEN —
+         backed by /api/Facebook/forms/{id}/audit-log and the equivalent GS
+         endpoint. The single modal is reused for both source kinds; the
+         caller passes the right URL via `_activityLogFetchUrl`. -->
+    <div class="gm-overlay" id="activityLogModal">
+        <div class="gm-modal" style="max-width: 920px; width: 95vw;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="gm-title">Activity log</h3>
+                        <p class="gm-subtitle" id="activityLogSubtitle">—</p>
+                    </div>
+                </div>
+                <button type="button" class="gm-close" onclick="closeActivityLog()" aria-label="Close">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div id="activityLogLoading" class="crm-loading" style="display:none;"><div class="crm-loading-spinner"></div><p>Loading…</p></div>
+                <div id="activityLogEmpty" style="display:none; padding: 24px; text-align: center; color: var(--text-secondary);">No activity recorded yet for this source.</div>
+                <div id="activityLogTableWrap" class="crm-table-wrapper" style="display:none;">
+                    <table class="crm-table data-table">
+                        <thead>
+                            <tr>
+                                <th>When</th>
+                                <th>Action</th>
+                                <th>State change</th>
+                                <th>Who</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityLogTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeActivityLog()">Close</button>
+                <button type="button" class="btn btn-outline" onclick="refreshActivityLog()">Refresh</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ─── WhatsApp Add/Edit Modal ─────────────────────────────── -->
     <div class="gm-overlay" id="waModal">
         <div class="gm-modal" style="max-width:520px;">
