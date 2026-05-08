@@ -153,14 +153,22 @@
         </div>
 
         <!-- Filter Bar -->
-        <!-- Row 1 — global controls that apply across every other filter:
-             search, the form-answers narrow-by-question modal, and the
-             columns picker. Sit on their own row so they don't get
-             squeezed when the dropdown row wraps on smaller viewports. -->
+        <!-- Row 1 — search + source + the form-answers narrow-by-question
+             modal + columns picker. Source sits next to "Form answers"
+             because the form-answers modal only makes sense once a single
+             source is picked (different forms ask different questions).
+             Action controls share this row so they don't get squeezed when
+             the dimension row below wraps on smaller viewports. -->
         <div class="crm-filter-bar crm-filter-bar--actions">
             <div class="crm-filter-group crm-search-group" style="flex:1; min-width:240px;">
                 <label for="filterSearch">Search</label>
                 <input type="text" id="filterSearch" class="form-control form-control-sm" placeholder="Search leads..." oninput="applyFilters()">
+            </div>
+            <div class="crm-filter-group">
+                <label for="filterSource">Source</label>
+                <select id="filterSource" class="form-select form-select-sm" onchange="applyFilters()">
+                    <option value="">All Sources</option>
+                </select>
             </div>
             <div class="crm-filter-group crm-filter-group--no-label">
                 <button type="button" id="formAnswersFilterBtn" class="btn btn-sm btn-outline-primary"
@@ -229,12 +237,6 @@
                 <select id="filterOwner" class="form-select form-select-sm" onchange="applyFilters()">
                     <option value="">Any owner</option>
                     <option value="__unassigned__">Unassigned</option>
-                </select>
-            </div>
-            <div class="crm-filter-group">
-                <label for="filterSource">Source</label>
-                <select id="filterSource" class="form-select form-select-sm" onchange="applyFilters()">
-                    <option value="">All Sources</option>
                 </select>
             </div>
             <div class="crm-filter-group">
