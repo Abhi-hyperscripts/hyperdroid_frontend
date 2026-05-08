@@ -199,6 +199,20 @@
              width flex item so the 6 visible controls share the row evenly
              on wide viewports and wrap onto a second line on narrow ones. -->
         <div class="crm-filter-bar crm-filter-bar--dimensions">
+            <!-- Created-date range. Both ends optional — leaving them blank
+                 = no date filter (the default, "show all"). Sits at the
+                 start of the row because the date window is the broadest
+                 narrowing — easier to scan it before status / owner / etc.
+                 data-no-flatpickr keeps the native browser picker (avoids
+                 the Flatpickr scroll-drift + month-dropdown collisions). -->
+            <div class="crm-filter-group">
+                <label for="filterDateFrom">Created from</label>
+                <input type="date" id="filterDateFrom" class="form-control form-control-sm" data-no-flatpickr="true" onchange="applyFilters()">
+            </div>
+            <div class="crm-filter-group">
+                <label for="filterDateTo">Created to</label>
+                <input type="date" id="filterDateTo" class="form-control form-control-sm" data-no-flatpickr="true" onchange="applyFilters()">
+            </div>
             <div class="crm-filter-group">
                 <label for="filterStatus">Status</label>
                 <!-- The lead-status enum is deliberately small (new → contacted →
@@ -259,25 +273,6 @@
                 <select id="filterCampaign" class="form-select form-select-sm" onchange="applyFilters()">
                     <option value="">All campaigns</option>
                 </select>
-            </div>
-            <!-- Created-date range. Both ends optional — leaving them blank
-                 = no date filter (the default, "show all"). When the user
-                 sets one or both, leads are filtered by created_at: from
-                 inclusive at 00:00 of that day, to inclusive at 23:59:59. -->
-            <!-- data-no-flatpickr: keep the browser-native calendar for these
-                 two inputs. The Flatpickr popup gets its own positioning
-                 quirks inside the dense filter bar (calendar drifts when the
-                 page scrolls; month select gets re-styled by the global
-                 SearchableDropdown wrapper). The native picker doesn't have
-                 those problems and looks consistent with how date-range
-                 filters work in other CRMs. -->
-            <div class="crm-filter-group">
-                <label for="filterDateFrom">Created from</label>
-                <input type="date" id="filterDateFrom" class="form-control form-control-sm" data-no-flatpickr="true" onchange="applyFilters()">
-            </div>
-            <div class="crm-filter-group">
-                <label for="filterDateTo">Created to</label>
-                <input type="date" id="filterDateTo" class="form-control form-control-sm" data-no-flatpickr="true" onchange="applyFilters()">
             </div>
         </div>
 
