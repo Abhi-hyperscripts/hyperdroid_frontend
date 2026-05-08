@@ -497,13 +497,23 @@
             return element._flatpickr;
         }
 
+        // Skip the custom searchable month / year selectors for inputs that
+        // ask for the plain Flatpickr UI. Those are useful in HRMS forms
+        // where the user may need to jump back 30 years (DOB), but on a
+        // compact filter bar the Search-month overlay misplaces itself and
+        // the search input is overkill for 12 entries. The plain Flatpickr
+        // dropdown handles month / year just fine.
+        const skipCustomSelectors = element.dataset.flatpickrSimple === 'true';
+
         // Merge callbacks properly
-        const mergedConfig = { ...defaultConfig };
+        const mergedConfig = skipCustomSelectors
+            ? { ...defaultConfig, onReady: undefined, onMonthChange: undefined, onYearChange: undefined }
+            : { ...defaultConfig };
 
         if (options.onReady) {
             const userOnReady = options.onReady;
             mergedConfig.onReady = function(selectedDates, dateStr, instance) {
-                defaultConfig.onReady.call(this, selectedDates, dateStr, instance);
+                if (!skipCustomSelectors) defaultConfig.onReady.call(this, selectedDates, dateStr, instance);
                 userOnReady.call(this, selectedDates, dateStr, instance);
             };
         }
@@ -511,7 +521,7 @@
         if (options.onMonthChange) {
             const userOnMonthChange = options.onMonthChange;
             mergedConfig.onMonthChange = function(selectedDates, dateStr, instance) {
-                defaultConfig.onMonthChange.call(this, selectedDates, dateStr, instance);
+                if (!skipCustomSelectors) defaultConfig.onMonthChange.call(this, selectedDates, dateStr, instance);
                 userOnMonthChange.call(this, selectedDates, dateStr, instance);
             };
         }
@@ -533,7 +543,82 @@
             instance.altInput.placeholder = originalPlaceholder;
         }
 
+        // Optional inline clear (×) button. Opt-in via data-flatpickr-clearable="true".
+        // Used by filter bars where the user needs to wipe the value without
+        // keyboard-deleting every character.
+        if (element.dataset.flatpickrClearable === 'true' && instance.altInput) {
+            attachClearButton(instance, element);
+        }
+
         return instance;
+    }
+
+    function attachClearButton(instance, originalEl) {
+        const altInput = instance.altInput;
+        if (!altInput || altInput.dataset.fpClearableWired === 'true') return;
+        altInput.dataset.fpClearableWired = 'true';
+
+        // Wrap altInput in a position-relative span so the button can sit
+        // over the input's right edge.
+        const wrap = document.createElement('span');
+        wrap.className = 'flatpickr-clearable-wrap';
+        altInput.parentNode.insertBefore(wrap, altInput);
+        wrap.appendChild(altInput);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'flatpickr-clear-btn';
+        btn.setAttribute('aria-label', 'Clear date');
+        btn.tabIndex = -1;
+        // U+2715 (HEAVY MULTIPLICATION X). Use this and not × (U+00D7) — the
+        // multiplication sign rides high in most fonts and never visually
+        // centers inside a circle. ✕ is drawn near the geometric center.
+        btn.textContent = '\u2715';
+        wrap.appendChild(btn);
+
+        const update = () => {
+            btn.style.display = altInput.value ? 'flex' : 'none';
+        };
+
+        btn.addEventListener('mousedown', (e) => {
+            // mousedown so we beat the input's focus/calendar-open handler.
+            e.preventDefault();
+            e.stopPropagation();
+            instance.clear();
+            originalEl.value = '';
+            originalEl.dispatchEvent(new Event('change', { bubbles: true }));
+            update();
+        });
+
+        altInput.addEventListener('input', update);
+        altInput.addEventListener('change', update);
+
+        // User-day-click path goes through Flatpickr's internal selectDate,
+        // which assigns altInput.value directly without firing input/change.
+        // Push our visibility update onto the instance's onChange hook so
+        // it always runs after the value lands.
+        if (Array.isArray(instance.config.onChange)) {
+            instance.config.onChange.push(update);
+        } else {
+            instance.config.onChange = [instance.config.onChange, update].filter(Boolean);
+        }
+
+        // Flatpickr writes the value via setDate / clear. Hook those so the
+        // button visibility tracks programmatic changes too.
+        const origSetDate = instance.setDate.bind(instance);
+        instance.setDate = function (...args) {
+            const r = origSetDate(...args);
+            update();
+            return r;
+        };
+        const origClear = instance.clear.bind(instance);
+        instance.clear = function (...args) {
+            const r = origClear(...args);
+            update();
+            return r;
+        };
+
+        update();
     }
 
     /**

@@ -1841,17 +1841,17 @@ function renderLatestSummaryCell(lead) {
     }
     const trimmed = summary.trim();
     const preview = trimmed.length > 120 ? trimmed.slice(0, 120) + '…' : trimmed;
-    const tooltip = escapeHtml(trimmed.slice(0, 800));
     const ts = lead.latest_activity_at ? formatDate(lead.latest_activity_at) : '';
     const safeName = escapeHtml(`${lead.first_name || ''} ${lead.last_name || ''}`.trim() || (lead.lead_number || 'this lead'));
     // Wrap long descriptions across 2 lines instead of letting an unbroken
     // 500-char string blow out the column width. word-break:break-word keeps
     // CJK / no-space text from overflowing; -webkit-line-clamp limits to 2
     // visible lines so row heights stay consistent — full text is in the
-    // tooltip and the click-through modal.
+    // click-through modal that opens via data-tooltip's affordance.
     return `
         <div class="crm-summary-cell" style="cursor:pointer; max-width:260px; min-width:160px; line-height:1.3;"
-              title="${tooltip}"
+              data-tooltip="Click to see all summaries on this lead"
+              data-tooltip-position="top"
               onclick="event.stopPropagation(); openLeadSummariesModal('${escapeHtml(lead.id)}', '${safeName.replace(/'/g, '&#39;')}')">
             <div style="font-size:0.82rem; color:var(--text-primary);
                         word-break:break-word; overflow-wrap:anywhere;

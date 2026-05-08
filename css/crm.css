@@ -1796,6 +1796,43 @@ body.crm-dashboard .crm-container {
 .crm-filter-bar .crm-filter-group .searchable-dropdown-container { width: 100% !important; }
 .crm-filter-bar .searchable-dropdown-menu { min-width: 220px; }
 
+/* Inline clear (×) button for clearable Flatpickr inputs in the filter bar.
+   Sits over the right edge of the visible (alt) input. The wrap span is
+   inserted by hrms-datepicker.js when data-flatpickr-clearable="true". */
+.flatpickr-clearable-wrap {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+.flatpickr-clearable-wrap > input {
+    width: 100%;
+    padding-right: 26px;
+}
+.flatpickr-clear-btn {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    border: none;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-danger, #ef4444);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.flatpickr-clear-btn:hover {
+    background: var(--color-danger, #ef4444);
+    color: #fff;
+}
+
 /* Email engagement chip in the leads table cell — single row, compact. */
 .crm-email-engagement {
     display: inline-flex;
