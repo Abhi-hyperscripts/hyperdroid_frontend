@@ -236,6 +236,10 @@
                  the button sits flush with the OTHER controls on row 1
                  (which have label + select), and on a wrapped second row it
                  doesn't carry an empty label spacer above it. -->
+            <!-- Tenant-defined custom dropdown filters. Populated at runtime
+                 from /api/lead-fields (show_in_lead_filter rows). Each dropdown
+                 stays in sync with the leads.custom_fields JSONB filter param. -->
+            <div class="crm-filter-group" id="leadFieldsFilterGroup" style="display:contents;"></div>
             <div class="crm-filter-group crm-filter-group--no-label">
                 <button type="button" id="formAnswersFilterBtn" class="btn btn-sm btn-outline-primary"
                         onclick="openFormAnswersModal()" disabled
@@ -683,6 +687,13 @@
                         </select>
                     </div>
                 </div>
+                <!-- Tenant-defined dropdowns from Settings → Lead Fields.
+                     Built at open time by lead-fields-runtime.js based on the
+                     fields with show_in_activity_log=true. Pre-filled with the
+                     lead's current values; on submit, deltas are merged into
+                     lead.custom_fields via PATCH /api/crm/leads/{id}. -->
+                <div id="activityLeadFields" style="margin-top:10px;"></div>
+
                 <!-- Next follow-up on its own row, full width (date + time + clear). -->
                 <div style="margin-top:10px;">
                     <label class="form-label">Next follow-up</label>
@@ -1178,6 +1189,7 @@
         document.write('<script src="../../js/crm/form-answers-filter.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/phone-link.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/leads.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/lead-fields-runtime.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-discovery.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-import.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-journey.js?v=' + CACHE_VERSION + '"><\/script>');

@@ -440,6 +440,8 @@ function switchSettingsTab(tabName) {
         loadFacebookPages();
         loadGoogleSheetsState();
         if (typeof loadWhatsAppNumbers === 'function') loadWhatsAppNumbers();
+    } else if (tabName === 'lead-fields' && typeof loadLeadFieldsTab === 'function') {
+        loadLeadFieldsTab();
     } else if (tabName === 'lead-sources') {
         loadLeadSources();
     } else if (tabName === 'functional-groups' && typeof loadFunctionalGroups === 'function') {

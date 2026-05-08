@@ -114,10 +114,12 @@ class API {
         }
         // CRM endpoints go to CRM service (independent microservice)
         if (endpoint.startsWith('/crm/')
+            || endpoint.startsWith('/crm-admin/')
             || endpoint.startsWith('/mailbox-send/')
             || endpoint.startsWith('/email-templates')
             || endpoint.startsWith('/email-campaigns')
             || endpoint.startsWith('/lead-sources')
+            || endpoint.startsWith('/lead-fields')
             || endpoint.startsWith('/status-email-triggers')
             || endpoint.startsWith('/whatsapp/')) {
             return CONFIG.crmApiBaseUrl;

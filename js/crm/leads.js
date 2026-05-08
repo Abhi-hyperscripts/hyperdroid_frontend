@@ -503,10 +503,20 @@ function buildFilterParams() {
     // Only meaningful when a single non-legacy source is picked (the
     // module also enforces this on the button-state side). Serialised
     // as JSON so AND-across-keys / IN-within-values survive the URL.
+    //
+    // Tenant-defined dropdown filters (Settings → Lead Fields) merge into
+    // the same customFields param. They're tenant-wide so they apply
+    // regardless of source. Backend allows keys from either allowlist.
+    const merged = {};
     if (source && !source.startsWith('__legacy:')) {
         const fa = (typeof FormAnswersFilter !== 'undefined') ? FormAnswersFilter.getFilter() : null;
-        if (fa && Object.keys(fa).length > 0) params.set('customFields', JSON.stringify(fa));
+        if (fa) Object.assign(merged, fa);
     }
+    if (typeof window.getLeadFieldsFilter === 'function') {
+        const lf = window.getLeadFieldsFilter();
+        if (lf) Object.assign(merged, lf);
+    }
+    if (Object.keys(merged).length > 0) params.set('customFields', JSON.stringify(merged));
 
     return params;
 }
