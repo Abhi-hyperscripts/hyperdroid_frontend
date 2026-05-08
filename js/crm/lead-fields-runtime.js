@@ -141,9 +141,9 @@
     }
 
     function toggleAddFilterPopover() {
-        if (_addFilterPopover) { closeAddFilterPopover(); return; }
+        if (popoverOpen()) { closeAddFilterPopover(); return; }
+        _addFilterPopover = null;     // clear stale ref
         const btn = document.getElementById('lfAddFilterBtn');
-        const wrap = btn.parentElement;
         const usedCodes = new Set(Object.keys(_filterValues));
         const available = _fields
             .filter(f => f.show_in_lead_filter && (f.options || []).length > 0 && !usedCodes.has(f.code));
@@ -169,9 +169,9 @@
                 `).join('')}
             </div>
         `;
-        wrap.appendChild(pop);
+        document.body.appendChild(pop);
         _addFilterPopover = pop;
-        clampPopoverPosition(pop);
+        positionPopoverFixed(pop, btn);
         const search = pop.querySelector('.lf-popover-search');
         search.focus();
         search.addEventListener('input', () => {
@@ -196,35 +196,75 @@
         _addFilterPopover = null;
     }
 
-    // After appending a popover, check whether it overflows the viewport
-    // on the right and flip to right-anchored if so. Chips at the end of a
-    // long row would otherwise push the popover off-screen.
-    function clampPopoverPosition(pop) {
-        if (!pop || pop.dataset.clamped === '1') return;
-        // Defer one frame so the browser has measured the popover.
+    // True only when there's an open popover currently in the DOM. Used by
+    // the toggle paths so a stale reference (e.g. modal closed externally
+    // while popover was open) doesn't block reopening on the next click.
+    function popoverOpen() {
+        return _addFilterPopover && document.body.contains(_addFilterPopover);
+    }
+
+    // Position a position:fixed popover relative to a trigger element,
+    // clamping to the viewport so the popover never spills off-screen.
+    // Default placement is below + left-aligned with the trigger; flips
+    // to right-aligned when that would overflow right, and to above the
+    // trigger when there's not enough room below.
+    function positionPopoverFixed(pop, trigger) {
+        if (!pop || !trigger) return;
+        // Defer one frame so the browser has measured the popover content.
         requestAnimationFrame(() => {
-            const r = pop.getBoundingClientRect();
+            const t = trigger.getBoundingClientRect();
             const margin = 12;
-            const overflowRight = r.right > window.innerWidth - margin;
-            const overflowLeft = r.left < margin;
-            if (overflowRight) {
-                pop.style.left = 'auto';
-                pop.style.right = '0';
-            } else if (overflowLeft) {
-                pop.style.left = '0';
-                pop.style.right = 'auto';
+            const gap = 6;
+            const popW = Math.min(pop.offsetWidth || 280, window.innerWidth - margin * 2);
+            const popH = Math.min(pop.offsetHeight || 320, window.innerHeight - margin * 2);
+
+            // Horizontal: prefer left-aligning to trigger; flip to
+            // right-aligning when overflow.
+            let left = t.left;
+            if (left + popW > window.innerWidth - margin) {
+                left = Math.max(margin, t.right - popW);
             }
-            pop.dataset.clamped = '1';
+            left = Math.max(margin, Math.min(left, window.innerWidth - margin - popW));
+
+            // Vertical: prefer below; flip above if no room below.
+            const spaceBelow = window.innerHeight - t.bottom - margin;
+            const spaceAbove = t.top - margin;
+            let top;
+            if (spaceBelow >= popH || spaceBelow >= spaceAbove) {
+                top = t.bottom + gap;
+                pop.style.maxHeight = `${Math.min(popH, spaceBelow - gap)}px`;
+            } else {
+                top = Math.max(margin, t.top - gap - popH);
+                pop.style.maxHeight = `${Math.min(popH, spaceAbove - gap)}px`;
+            }
+
+            pop.style.left = `${left}px`;
+            pop.style.top = `${top}px`;
         });
+    }
+
+    // Repositions all open popovers on resize/scroll so they stay glued
+    // to their triggers. Listeners are wired once at init.
+    let _scrollResizeHookInstalled = false;
+    function installPopoverFollowHooks() {
+        if (_scrollResizeHookInstalled) return;
+        _scrollResizeHookInstalled = true;
+        const reposition = () => {
+            document.querySelectorAll('.lf-popover[data-trigger-id]').forEach(pop => {
+                const trig = document.querySelector(`[data-popover-trigger-id="${pop.dataset.triggerId}"]`);
+                if (trig) positionPopoverFixed(pop, trig);
+            });
+        };
+        window.addEventListener('resize', reposition, { passive: true });
+        window.addEventListener('scroll', reposition, { passive: true, capture: true });
     }
 
     // After picking a field from the +Add popover, anchor the value popover
     // to the +Add button (chip doesn't exist yet for this code).
     function openValuePopoverForCodeAtBtn(code) {
         const btn = document.getElementById('lfAddFilterBtn');
-        const wrap = btn?.parentElement;
-        if (!wrap) return;
-        openValuePopover(code, wrap);
+        if (!btn) return;
+        openValuePopover(code, btn);
     }
 
     function openValuePopoverFor(code, anchor) {
@@ -239,12 +279,6 @@
         if (!f) return;
         const current = _filterValues[code] || '';
         const opts = (f.options || []).filter(o => o.is_active);
-
-        // Anchor must be position:relative for absolute popover. Use the
-        // shared add-wrap as anchor; chips are siblings inside lf-chips, so
-        // we promote the anchor's display via inline style if needed.
-        const host = anchor.closest('.lf-add-wrap') || anchor;
-        host.style.position ||= 'relative';
 
         const pop = document.createElement('div');
         pop.className = 'lf-popover lf-value-popover';
@@ -264,9 +298,9 @@
                 `).join('')}
             </div>
         `;
-        host.appendChild(pop);
+        document.body.appendChild(pop);
         _addFilterPopover = pop;   // reuse same singleton handle for outside-click closing
-        clampPopoverPosition(pop);
+        positionPopoverFixed(pop, anchor);
         pop.querySelector('.lf-popover-search').focus();
         pop.querySelector('.lf-popover-search').addEventListener('input', e => {
             const q = e.target.value.trim().toLowerCase();
@@ -297,8 +331,13 @@
     function onDocClick(e) {
         if (!_addFilterPopover) return;
         if (_addFilterPopover.contains(e.target)) return;
-        // Clicking the trigger toggles, so don't double-close.
-        if (e.target.closest('#lfAddFilterBtn') || e.target.closest('[data-chip-edit]')) return;
+        // Clicking any of these triggers re-toggles the popover; the trigger's
+        // own handler decides what happens. Don't double-close from here.
+        const triggerSelectors = [
+            '#lfAddFilterBtn', '[data-chip-edit]',
+            '#lfActivityAddBtn', '[data-act-chip-edit]',
+        ];
+        if (triggerSelectors.some(sel => e.target.closest(sel))) return;
         closeAddFilterPopover();
     }
 
@@ -505,9 +544,9 @@
     }
 
     function toggleActivityAddPopover(fields) {
-        if (_addFilterPopover) { closeAddFilterPopover(); return; }
+        if (popoverOpen()) { closeAddFilterPopover(); return; }
+        _addFilterPopover = null;     // clear stale ref
         const btn = document.getElementById('lfActivityAddBtn');
-        const wrap = btn.parentElement;
         const used = new Set(Object.keys(_activityChips));
         const available = fields.filter(f => !used.has(f.code));
         if (available.length === 0) {
@@ -529,9 +568,9 @@
                 `).join('')}
             </div>
         `;
-        wrap.appendChild(pop);
+        document.body.appendChild(pop);
         _addFilterPopover = pop;
-        clampPopoverPosition(pop);
+        positionPopoverFixed(pop, btn);
         const search = pop.querySelector('.lf-popover-search');
         search.focus();
         search.addEventListener('input', () => {
@@ -565,7 +604,6 @@
         if (!f) return;
         const current = _activityChips[code] || '';
         const opts = (f.options || []).filter(o => o.is_active);
-        anchor.style.position ||= 'relative';
 
         const pop = document.createElement('div');
         pop.className = 'lf-popover lf-value-popover';
@@ -583,9 +621,9 @@
                 `).join('')}
             </div>
         `;
-        anchor.appendChild(pop);
+        document.body.appendChild(pop);
         _addFilterPopover = pop;
-        clampPopoverPosition(pop);
+        positionPopoverFixed(pop, anchor);
         pop.querySelector('.lf-popover-search').focus();
         pop.querySelector('.lf-popover-search').addEventListener('input', e => {
             const q = e.target.value.trim().toLowerCase();

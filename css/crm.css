@@ -1515,8 +1515,13 @@ body.crm-dashboard .crm-container {
     border-radius: 999px;
     font-size: 0.82rem;
     line-height: 1;
-    overflow: hidden;
+    /* No overflow:hidden — popover (chip's value-picker) is appended INSIDE
+       the chip and would otherwise be clipped to the chip's rounded box. */
+    position: relative;
 }
+/* Round the chip-body's hover background to match the chip's left curve so
+   removing overflow:hidden doesn't leak the hover rectangle past the corner. */
+.lf-chip-body { border-radius: 999px 0 0 999px; }
 .lf-chip-body {
     display: inline-flex;
     align-items: center;
@@ -1566,13 +1571,16 @@ body.crm-dashboard .crm-container {
     border-style: solid;
 }
 
-/* Popover used by both +Add filter and the chip's value picker. Position
-   absolutely under the trigger; sized to comfortably show ~8 options + a
-   search box. Caps at the viewport width on mobile. */
+/* Popover used by both +Add filter and the chip's value picker.
+   position:fixed so it floats above everything (modal bodies, scroll
+   containers, overflow:hidden chips). Coordinates are computed in JS
+   from the trigger's getBoundingClientRect, then clamped to the viewport
+   so it never spills off-screen. */
+/* `!important` to win unambiguously vs `.gradient-bg-ambient > *` in
+   styles.css which would otherwise force position:relative on direct
+   children of body and break our viewport-anchored popover. */
 .lf-popover {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
+    position: fixed !important;
     z-index: 1080;
     min-width: 260px;
     max-width: min(360px, 92vw);
