@@ -1641,11 +1641,13 @@ body.crm-dashboard .crm-container {
 
 /* Activity log modal: chip-based custom-fields row. Same pattern as the
    leads filter bar — only set fields take space; "+ Add field" button
-   reveals a popover with the rest. */
+   reveals a popover with the rest. Capped height with internal scroll
+   so a tenant with 15+ defined fields doesn't push the modal footer
+   off-screen as more chips get added. */
 .lf-activity-section-row {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
     padding: 10px 12px;
     margin-top: 6px;
@@ -1653,6 +1655,9 @@ body.crm-dashboard .crm-container {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     position: relative;
+    /* Hard cap — chips area scrolls internally past this height. */
+    max-height: 180px;
+    overflow-y: auto;
 }
 .lf-activity-section-label {
     color: var(--text-secondary);
@@ -1662,6 +1667,12 @@ body.crm-dashboard .crm-container {
     text-transform: uppercase;
     margin-right: 4px;
     flex-shrink: 0;
+    /* Stick the label to the top of the section as chips scroll under it. */
+    position: sticky;
+    top: 0;
+    background: var(--bg-tertiary);
+    padding: 4px 0;
+    z-index: 1;
 }
 .lf-activity-chips {
     display: flex;
