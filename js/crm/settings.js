@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Deep-link tab switch. Campaigns has its own prefill logic so skip it
     // here; the other tabs just need the sidebar button re-clicked.
     const urlTab = new URLSearchParams(window.location.search).get('tab');
-    const KNOWN_TABS = ['general','pipeline','integrations','mailboxes','templates','campaigns','lead-sources','functional-groups','teams','danger-zone'];
+    const KNOWN_TABS = ['general','pipeline','lead-fields','integrations','mailboxes','templates','campaigns','lead-sources','functional-groups','teams','danger-zone'];
     if (urlTab && urlTab !== 'campaigns' && KNOWN_TABS.includes(urlTab)) {
         switchSettingsTab(urlTab);
     }

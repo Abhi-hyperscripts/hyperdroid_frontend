@@ -236,10 +236,6 @@
                  the button sits flush with the OTHER controls on row 1
                  (which have label + select), and on a wrapped second row it
                  doesn't carry an empty label spacer above it. -->
-            <!-- Tenant-defined custom dropdown filters. Populated at runtime
-                 from /api/lead-fields (show_in_lead_filter rows). Each dropdown
-                 stays in sync with the leads.custom_fields JSONB filter param. -->
-            <div class="crm-filter-group" id="leadFieldsFilterGroup" style="display:contents;"></div>
             <div class="crm-filter-group crm-filter-group--no-label">
                 <button type="button" id="formAnswersFilterBtn" class="btn btn-sm btn-outline-primary"
                         onclick="openFormAnswersModal()" disabled
@@ -265,6 +261,14 @@
                 </button>
                 <div id="columnsPickerMenu" class="crm-columns-menu" hidden role="menu" aria-label="Visible columns"></div>
             </div>
+        </div>
+
+        <!-- Second filter row: tenant-defined custom dropdowns from
+             Settings → Lead Fields. Hidden by default; the runtime module
+             populates + reveals this row only if the tenant has at least
+             one show_in_lead_filter dropdown. -->
+        <div class="crm-filter-bar crm-filter-bar--custom" id="leadFieldsFilterBar" style="display:none;">
+            <div class="crm-filter-bar-label" aria-hidden="true">Custom filters</div>
         </div>
 
         <!-- Filter by form answers — sidebar + values pane layout.

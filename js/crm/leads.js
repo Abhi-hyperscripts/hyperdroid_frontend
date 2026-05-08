@@ -728,7 +728,11 @@ function getHiddenColumns() {
         if (!Array.isArray(arr)) return [];
         // Strip non-toggleable cols so a stale entry from an earlier
         // version of the picker can't keep Lead ID/Name hidden.
-        return arr.filter(id => TOGGLEABLE_COLS.has(id));
+        // Custom-dropdown columns use the `lf_<fieldcode>` data-col convention
+        // and are toggleable too — they just aren't in TOGGLEABLE_COLS because
+        // that set is built at module load before the runtime has fetched
+        // tenant-defined fields.
+        return arr.filter(id => TOGGLEABLE_COLS.has(id) || (typeof id === 'string' && id.startsWith('lf_')));
     } catch { return []; }
 }
 
@@ -747,14 +751,27 @@ function renderColumnsPickerMenu() {
     const menu = document.getElementById('columnsPickerMenu');
     if (!menu) return;
     const hidden = new Set(getHiddenColumns());
+    // Tenant-defined custom-dropdown columns appear after the built-in ones,
+    // separated with a divider so admins can tell which set is which. The
+    // runtime exposes them once it has loaded its definitions; before then
+    // the picker just shows the built-ins.
+    const customDefs = (typeof window.getLeadFieldColumnDefs === 'function')
+        ? window.getLeadFieldColumnDefs()
+        : [];
+    const renderItem = (c) => `
+        <label class="crm-columns-menu-item">
+            <input type="checkbox" data-col-toggle="${c.id}" ${hidden.has(c.id) ? '' : 'checked'}>
+            <span>${c.label}</span>
+        </label>
+    `;
     menu.innerHTML = `
         <div class="crm-columns-menu-header">Visible columns</div>
-        ${COLUMN_PICKER_DEFS.map(c => `
-            <label class="crm-columns-menu-item">
-                <input type="checkbox" data-col-toggle="${c.id}" ${hidden.has(c.id) ? '' : 'checked'}>
-                <span>${c.label}</span>
-            </label>
-        `).join('')}
+        ${COLUMN_PICKER_DEFS.map(renderItem).join('')}
+        ${customDefs.length > 0 ? `
+            <div class="crm-columns-menu-divider" aria-hidden="true"></div>
+            <div class="crm-columns-menu-subhead">Custom fields</div>
+            ${customDefs.map(renderItem).join('')}
+        ` : ''}
         <div class="crm-columns-menu-footer">
             <button type="button" class="btn btn-sm btn-link" onclick="resetColumnsPicker()">Reset</button>
         </div>

@@ -1,118 +1,298 @@
 /**
- * Renders tenant-defined custom dropdowns on the leads page.
+ * Renders tenant-defined custom dropdowns on the leads page using a
+ * chip-based filter pattern that scales to dozens of fields without
+ * eating vertical space:
  *
- *   • Loads /api/lead-fields once on page load (active fields + options).
- *   • Builds a SearchableDropdown per show_in_lead_filter field, parked in
- *     the #leadFieldsFilterGroup placeholder in leads.html.
- *   • Adds a `<th>` per show_in_leads_table field to the leads thead, and
- *     after every `renderLeadsTable` run injects the matching `<td>` per
- *     row with a colored badge.
- *   • Exposes the current filter selections as a {code: [optionCode]} dict
- *     that buildFilterParams in leads.js merges into the customFields query
- *     param. Backend filters via the existing JSONB `?` / `->>` operators.
+ *   • Default state — just an "+ Add filter" button. The 16-dropdown wall
+ *     of UI is gone.
+ *   • Active state — each picked filter shows as a removable chip with
+ *     `Field: Value ×`. Clicking the chip reopens the value picker.
+ *   • Add picker — a popover with a searchable list of all available
+ *     custom dropdown fields. Picking one immediately surfaces the
+ *     value picker for that field.
  *
- * Field code is permanent so the JSONB key on every lead stays valid even
- * if the admin renames the label or rewires colors. Soft-deleted fields
- * still resolve to their last known label so historical badges don't go
- * blank — we read the full list (including is_active=false) just for that.
+ * Activity log modal:
+ *   • Custom fields collapse into a `<details>` "Custom fields" section,
+ *     auto-expanded when the lead already has any custom values set.
+ *
+ * Leads table:
+ *   • show_in_leads_table fields render as colored badge columns,
+ *     toggleable via the existing columns picker.
+ *
+ * All UI tested at narrow viewports (≤480px); chips wrap, popover sizes
+ * to viewport, and the modal stays scrollable.
  */
 (function () {
     'use strict';
 
-    let _fields = [];                    // active filter / table fields
-    let _allFieldsByCode = new Map();    // include archived, for label fallback
-    let _filterValues = {};              // { fieldCode: [optionCode, ...] }
-    const _dropdowns = new Map();        // fieldCode → SearchableDropdown instance
-    let _renderObserver = null;          // MutationObserver for leadsTableBody
+    let _fields = [];                      // active filter / table fields (latest fetch)
+    let _allFieldsByCode = new Map();      // includes archived — for label fallback
+    let _filterValues = {};                // { fieldCode: optionCode }
+    let _renderObserver = null;
+    let _activityLeadId = null;
+    let _activityDropdowns = new Map();
+    let _addFilterPopover = null;          // the +Add filter popup, if open
+    let _editChipFieldCode = null;         // chip currently in edit mode
 
     document.addEventListener('DOMContentLoaded', init);
 
-    async function init() {
+    async function loadFields() {
         try {
-            // Pull the *full* list (active + archived) so badges keep
-            // resolving labels even after a field is hidden.
             const fullResp = await api.request('/lead-fields?includeInactive=true').catch(() => null);
             const allFields = (fullResp && fullResp.fields) ? fullResp.fields : [];
             _allFieldsByCode = new Map(allFields.map(f => [f.code, f]));
             _fields = allFields.filter(f => f.is_active);
+            return true;
         } catch (err) {
-            console.warn('[lead-fields] init failed:', err);
+            console.warn('[lead-fields] load failed:', err);
             _fields = [];
-            return;
+            return false;
         }
+    }
+
+    async function init() {
+        if (!await loadFields()) return;
         if (_fields.length === 0) return;
         renderFilterBar();
         addTableHeaders();
-        // After each render of the leads table, inject the per-row cells.
-        // The leads.js code rewrites tbody.innerHTML so a MutationObserver is
-        // simpler than monkey-patching renderLeadsTable.
         const tbody = document.getElementById('leadsTableBody');
         if (tbody) {
             _renderObserver = new MutationObserver(() => injectTableCells());
             _renderObserver.observe(tbody, { childList: true });
         }
         wrapActivityModal();
+        // Close any open popover on outside click / esc.
+        document.addEventListener('click', onDocClick);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAddFilterPopover(); });
     }
 
-    // ─── Filter bar ──────────────────────────────────────────────────────────
+    // ─── Filter bar (chip pattern) ──────────────────────────────────────────
 
     function renderFilterBar() {
-        const group = document.getElementById('leadFieldsFilterGroup');
-        if (!group) return;
+        const bar = document.getElementById('leadFieldsFilterBar');
+        if (!bar) return;
         const filterFields = _fields.filter(f => f.show_in_lead_filter && (f.options || []).length > 0);
-        if (filterFields.length === 0) return;
+        if (filterFields.length === 0) { bar.style.display = 'none'; return; }
 
-        group.innerHTML = filterFields.map(f => `
-            <div class="crm-filter-group" data-lead-field-code="${escapeAttr(f.code)}">
-                <label>${escapeHtml(f.label)}</label>
-                <div id="ldFilter_${escapeAttr(f.code)}" data-field="${escapeAttr(f.code)}"></div>
+        bar.innerHTML = `
+            <div class="crm-filter-bar-label">Custom filters</div>
+            <div class="lf-chips" id="lfChipsRow">
+                <div id="lfActiveChips" class="lf-chips-active"></div>
+                <div class="lf-add-wrap" style="position:relative;">
+                    <button type="button" class="lf-add-btn" id="lfAddFilterBtn"
+                            aria-label="Add custom filter" aria-haspopup="dialog">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <span>Add filter</span>
+                    </button>
+                </div>
             </div>
-        `).join('');
+        `;
+        bar.style.display = '';
+        document.getElementById('lfAddFilterBtn').addEventListener('click', toggleAddFilterPopover);
+        renderActiveChips();
+    }
 
-        // SearchableDropdown is the project standard (memory: never native select).
-        for (const f of filterFields) {
-            const container = document.getElementById(`ldFilter_${f.code}`);
-            if (!container || typeof SearchableDropdown === 'undefined') continue;
-            const dd = new SearchableDropdown(container, {
-                placeholder: `All ${f.label.toLowerCase()}`,
-                searchPlaceholder: 'Search…',
-                options: [
-                    { value: '', label: `All ${f.label.toLowerCase()}` },
-                    ...f.options
-                        .filter(o => o.is_active)
-                        .map(o => ({
-                            value: o.code,
-                            label: o.label,
-                            description: o.color ? '' : '',
-                            // Color rendered as a leading swatch in the option row.
-                            // SearchableDropdown supports custom html via `html` field.
-                            html: optionHtml(o),
-                        })),
-                ],
-                onChange: (val) => onFilterChange(f.code, val),
+    function renderActiveChips() {
+        const wrap = document.getElementById('lfActiveChips');
+        if (!wrap) return;
+        const codes = Object.keys(_filterValues);
+        if (codes.length === 0) { wrap.innerHTML = ''; return; }
+
+        wrap.innerHTML = codes.map(code => {
+            const f = _allFieldsByCode.get(code);
+            if (!f) return '';
+            const v = _filterValues[code];
+            const opt = (f.options || []).find(o => o.code === v);
+            const swatch = opt && opt.color
+                ? `<span class="lf-chip-swatch" style="background:${escapeAttr(opt.color)};"></span>`
+                : '';
+            return `
+                <span class="lf-chip" data-chip-code="${escapeAttr(code)}">
+                    <span class="lf-chip-body" data-chip-edit="${escapeAttr(code)}" tabindex="0" role="button">
+                        ${swatch}<span class="lf-chip-label">${escapeHtml(f.label)}:</span>
+                        <span class="lf-chip-value">${escapeHtml(opt ? opt.label : v)}</span>
+                    </span>
+                    <button type="button" class="lf-chip-x" data-chip-remove="${escapeAttr(code)}" aria-label="Remove filter">×</button>
+                </span>
+            `;
+        }).join('');
+
+        wrap.querySelectorAll('[data-chip-remove]').forEach(el => {
+            el.addEventListener('click', e => {
+                e.stopPropagation();
+                const code = el.getAttribute('data-chip-remove');
+                delete _filterValues[code];
+                renderActiveChips();
+                if (typeof window.applyFilters === 'function') window.applyFilters();
             });
-            _dropdowns.set(f.code, dd);
+        });
+        wrap.querySelectorAll('[data-chip-edit]').forEach(el => {
+            el.addEventListener('click', e => {
+                e.stopPropagation();
+                openValuePopoverFor(el.getAttribute('data-chip-edit'), el);
+            });
+            el.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openValuePopoverFor(el.getAttribute('data-chip-edit'), el);
+                }
+            });
+        });
+    }
+
+    function toggleAddFilterPopover() {
+        if (_addFilterPopover) { closeAddFilterPopover(); return; }
+        const btn = document.getElementById('lfAddFilterBtn');
+        const wrap = btn.parentElement;
+        const usedCodes = new Set(Object.keys(_filterValues));
+        const available = _fields
+            .filter(f => f.show_in_lead_filter && (f.options || []).length > 0 && !usedCodes.has(f.code));
+        if (available.length === 0) {
+            Toast?.info?.('All custom filters are already active');
+            return;
         }
+
+        const pop = document.createElement('div');
+        pop.className = 'lf-popover lf-add-popover';
+        pop.setAttribute('role', 'dialog');
+        pop.innerHTML = `
+            <div class="lf-popover-header">
+                <input type="text" class="lf-popover-search form-control form-control-sm"
+                       placeholder="Search filters…" aria-label="Search">
+            </div>
+            <div class="lf-popover-list" id="lfAddList">
+                ${available.map(f => `
+                    <button type="button" class="lf-popover-item" data-add-code="${escapeAttr(f.code)}">
+                        <span class="lf-popover-item-label">${escapeHtml(f.label)}</span>
+                        <span class="lf-popover-item-meta">${(f.options || []).filter(o => o.is_active).length} options</span>
+                    </button>
+                `).join('')}
+            </div>
+        `;
+        wrap.appendChild(pop);
+        _addFilterPopover = pop;
+        const search = pop.querySelector('.lf-popover-search');
+        search.focus();
+        search.addEventListener('input', () => {
+            const q = search.value.trim().toLowerCase();
+            pop.querySelectorAll('.lf-popover-item').forEach(it => {
+                const label = it.querySelector('.lf-popover-item-label').textContent.toLowerCase();
+                it.style.display = label.includes(q) ? '' : 'none';
+            });
+        });
+        pop.querySelectorAll('[data-add-code]').forEach(it => {
+            it.addEventListener('click', e => {
+                e.stopPropagation();
+                const code = it.getAttribute('data-add-code');
+                closeAddFilterPopover();
+                openValuePopoverForCodeAtBtn(code);
+            });
+        });
     }
 
-    function optionHtml(o) {
-        const swatch = o.color
-            ? `<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${escapeAttr(o.color)};margin-right:8px;vertical-align:middle;"></span>`
-            : '';
-        return `${swatch}${escapeHtml(o.label)}`;
+    function closeAddFilterPopover() {
+        _addFilterPopover?.remove();
+        _addFilterPopover = null;
     }
 
-    function onFilterChange(code, value) {
-        if (!value) delete _filterValues[code];
-        else _filterValues[code] = [value];
-        // leads.js reads window.getLeadFieldsFilter() inside buildFilterParams
-        // — see the patch in that file.
-        if (typeof window.applyFilters === 'function') window.applyFilters();
+    // After picking a field from the +Add popover, anchor the value popover
+    // to the +Add button (chip doesn't exist yet for this code).
+    function openValuePopoverForCodeAtBtn(code) {
+        const btn = document.getElementById('lfAddFilterBtn');
+        const wrap = btn?.parentElement;
+        if (!wrap) return;
+        openValuePopover(code, wrap);
+    }
+
+    function openValuePopoverFor(code, anchor) {
+        // Anchor to the chip's wrapping element so the popover sits below it.
+        openValuePopover(code, anchor.closest('.lf-chip') || anchor);
+    }
+
+    function openValuePopover(code, anchor) {
+        closeAddFilterPopover();
+        document.querySelectorAll('.lf-value-popover').forEach(p => p.remove());
+        const f = _allFieldsByCode.get(code);
+        if (!f) return;
+        const current = _filterValues[code] || '';
+        const opts = (f.options || []).filter(o => o.is_active);
+
+        // Anchor must be position:relative for absolute popover. Use the
+        // shared add-wrap as anchor; chips are siblings inside lf-chips, so
+        // we promote the anchor's display via inline style if needed.
+        const host = anchor.closest('.lf-add-wrap') || anchor;
+        host.style.position ||= 'relative';
+
+        const pop = document.createElement('div');
+        pop.className = 'lf-popover lf-value-popover';
+        pop.setAttribute('role', 'dialog');
+        pop.innerHTML = `
+            <div class="lf-popover-header">
+                <div style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;">${escapeHtml(f.label)}</div>
+                <input type="text" class="lf-popover-search form-control form-control-sm" placeholder="Search options…" aria-label="Search">
+            </div>
+            <div class="lf-popover-list">
+                ${current ? `<button type="button" class="lf-popover-item lf-popover-item-clear" data-pick-clear>Clear filter</button>` : ''}
+                ${opts.map(o => `
+                    <button type="button" class="lf-popover-item ${o.code === current ? 'is-selected' : ''}" data-pick-code="${escapeAttr(o.code)}">
+                        ${o.color ? `<span class="lf-chip-swatch" style="background:${escapeAttr(o.color)};"></span>` : ''}
+                        <span class="lf-popover-item-label">${escapeHtml(o.label)}</span>
+                    </button>
+                `).join('')}
+            </div>
+        `;
+        host.appendChild(pop);
+        _addFilterPopover = pop;   // reuse same singleton handle for outside-click closing
+        pop.querySelector('.lf-popover-search').focus();
+        pop.querySelector('.lf-popover-search').addEventListener('input', e => {
+            const q = e.target.value.trim().toLowerCase();
+            pop.querySelectorAll('.lf-popover-item').forEach(it => {
+                if (it.hasAttribute('data-pick-clear')) return;
+                const label = it.querySelector('.lf-popover-item-label').textContent.toLowerCase();
+                it.style.display = label.includes(q) ? '' : 'none';
+            });
+        });
+        pop.querySelectorAll('[data-pick-code]').forEach(it => {
+            it.addEventListener('click', e => {
+                e.stopPropagation();
+                _filterValues[code] = it.getAttribute('data-pick-code');
+                closeAddFilterPopover();
+                renderActiveChips();
+                if (typeof window.applyFilters === 'function') window.applyFilters();
+            });
+        });
+        pop.querySelector('[data-pick-clear]')?.addEventListener('click', e => {
+            e.stopPropagation();
+            delete _filterValues[code];
+            closeAddFilterPopover();
+            renderActiveChips();
+            if (typeof window.applyFilters === 'function') window.applyFilters();
+        });
+    }
+
+    function onDocClick(e) {
+        if (!_addFilterPopover) return;
+        if (_addFilterPopover.contains(e.target)) return;
+        // Clicking the trigger toggles, so don't double-close.
+        if (e.target.closest('#lfAddFilterBtn') || e.target.closest('[data-chip-edit]')) return;
+        closeAddFilterPopover();
     }
 
     // Exposed so buildFilterParams in leads.js can fold these into customFields.
     window.getLeadFieldsFilter = function () {
-        return Object.keys(_filterValues).length > 0 ? { ..._filterValues } : null;
+        const out = {};
+        for (const [code, val] of Object.entries(_filterValues)) {
+            if (val) out[code] = [val];
+        }
+        return Object.keys(out).length > 0 ? out : null;
+    };
+
+    // Exposed so the columns-picker in leads.js can include tenant-defined
+    // table columns alongside the built-in ones.
+    window.getLeadFieldColumnDefs = function () {
+        return _fields
+            .filter(f => f.show_in_leads_table)
+            .map(f => ({ id: `lf_${f.code}`, label: f.label }));
     };
 
     // ─── Table column headers ────────────────────────────────────────────────
@@ -122,7 +302,8 @@
                    || document.querySelector('table.crm-table thead tr')
                    || document.querySelector('table thead tr');
         if (!thead) return;
-        // Insert before the last <th> (the actions column).
+        // Remove any previously injected lf-* headers (re-run after settings tweaks).
+        thead.querySelectorAll('[data-lead-field-header]').forEach(el => el.remove());
         const lastTh = thead.lastElementChild;
         for (const f of _fields.filter(x => x.show_in_leads_table)) {
             const th = document.createElement('th');
@@ -139,12 +320,8 @@
     function injectTableCells() {
         const rows = document.querySelectorAll('#leadsTableBody tr[data-lead-id]');
         if (rows.length === 0) return;
-
         rows.forEach(row => {
-            // Already injected? (MutationObserver fires after every full
-            // tbody innerHTML overwrite, so freshly-rendered rows have none.)
             if (row.querySelector('[data-lead-field-cell]')) return;
-
             const leadId = row.getAttribute('data-lead-id');
             const customFields = readLeadCustomFields(leadId);
             const lastTd = row.lastElementChild;
@@ -160,8 +337,6 @@
     }
 
     function readLeadCustomFields(leadId) {
-        // leads.js keeps the array in `allLeads` (page-scope global).
-        // Fall back to empty if a future refactor renames it.
         const list = (typeof allLeads !== 'undefined' && Array.isArray(allLeads)) ? allLeads : [];
         const lead = list.find(l => l.id === leadId);
         if (!lead) return {};
@@ -176,15 +351,13 @@
 
     function renderBadge(field, value) {
         if (value == null || value === '') return '<span class="crm-cell-secondary">—</span>';
-        // Multi-select renders as a row of pills (v1 only single-select; this
-        // is here for forward-compat once we flip the flag).
         if (Array.isArray(value)) return value.map(v => onePill(field, v)).join(' ');
         return onePill(field, String(value));
     }
 
     function onePill(field, code) {
         const opt = (field.options || []).find(o => o.code === code);
-        const label = opt ? opt.label : code;          // stale value falls back to code
+        const label = opt ? opt.label : code;
         const color = opt && opt.color ? opt.color : null;
         const style = color
             ? `background: color-mix(in srgb, ${escapeAttr(color)} 18%, transparent); color: ${escapeAttr(color)}; border:1px solid color-mix(in srgb, ${escapeAttr(color)} 35%, transparent);`
@@ -194,33 +367,23 @@
 
     // ─── Activity log modal integration ─────────────────────────────────────
 
-    // Wraps the global openLogActivityModal / submitLogActivity hooks so the
-    // leads.html / lead-journey.js code stays unchanged. Uses a per-lead
-    // pending state because the user may cancel after picking values, in
-    // which case nothing should be PATCHed.
-    let _activityDropdowns = new Map();        // fieldCode → SearchableDropdown
-    let _activityLeadId = null;
-
     function wrapActivityModal() {
-        const activityFields = _fields.filter(f => f.show_in_activity_log && (f.options || []).length > 0);
-        if (activityFields.length === 0) return;
-
         const origOpen = window.openLogActivityModal;
         const origSubmit = window.submitLogActivity;
         if (typeof origOpen !== 'function' || typeof origSubmit !== 'function') return;
 
-        window.openLogActivityModal = function (leadId) {
+        const currentActivityFields = () => _fields.filter(
+            f => f.show_in_activity_log && (f.options || []).length > 0);
+
+        window.openLogActivityModal = async function (leadId) {
             origOpen(leadId);
             _activityLeadId = leadId;
-            renderActivityFields(leadId, activityFields);
+            await loadFields();
+            renderActivityFields(leadId, currentActivityFields());
         };
 
         window.submitLogActivity = async function () {
-            // Collect picks BEFORE the original function (which closes the
-            // modal and might null out leadId). We attempt the PATCH after
-            // the original succeeds; failures are non-fatal — the activity
-            // is already logged, the dropdown values just won't update.
-            const picks = collectActivityPicks(activityFields);
+            const picks = collectActivityPicks(currentActivityFields());
             const leadId = _activityLeadId;
             await origSubmit();
             if (!leadId || Object.keys(picks).length === 0) return;
@@ -231,17 +394,33 @@
     function renderActivityFields(leadId, fields) {
         const wrap = document.getElementById('activityLeadFields');
         if (!wrap) return;
+        if (fields.length === 0) { wrap.innerHTML = ''; return; }
+
         const lead = readLead(leadId);
         const current = parseCustomFields(lead?.custom_fields);
+        const setCount = fields.reduce((n, f) => n + (current[f.code] ? 1 : 0), 0);
+        // Auto-expand if the lead already has values set (so the rep can see
+        // them at a glance) OR if the tenant has only a handful (≤4) of
+        // fields total — at that count, hiding them is more friction than
+        // showing them inline.
+        const autoOpen = setCount > 0 || fields.length <= 4;
 
-        wrap.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">${
-            fields.map(f => `
-                <div>
-                    <label class="form-label">${escapeHtml(f.label)}</label>
-                    <div id="actLF_${escapeAttr(f.code)}"></div>
+        wrap.innerHTML = `
+            <details class="lf-activity-section" ${autoOpen ? 'open' : ''}>
+                <summary>
+                    <span class="lf-activity-summary-text">Custom fields</span>
+                    <span class="lf-activity-summary-meta">${setCount > 0 ? `${setCount} set · ` : ''}${fields.length} available</span>
+                </summary>
+                <div class="lf-activity-grid">
+                    ${fields.map(f => `
+                        <div class="lf-activity-row">
+                            <label class="form-label">${escapeHtml(f.label)}</label>
+                            <div id="actLF_${escapeAttr(f.code)}"></div>
+                        </div>
+                    `).join('')}
                 </div>
-            `).join('')
-        }</div>`;
+            </details>
+        `;
 
         _activityDropdowns.clear();
         for (const f of fields) {
@@ -263,13 +442,19 @@
         }
     }
 
+    function optionHtml(o) {
+        const swatch = o.color
+            ? `<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${escapeAttr(o.color)};margin-right:8px;vertical-align:middle;"></span>`
+            : '';
+        return `${swatch}${escapeHtml(o.label)}`;
+    }
+
     function collectActivityPicks(fields) {
         const out = {};
         for (const f of fields) {
             const dd = _activityDropdowns.get(f.code);
             if (!dd) continue;
             const v = dd.getValue();
-            // Empty string → user left "No change"; skip so we don't clobber.
             if (v && v !== '') out[f.code] = v;
         }
         return out;
@@ -284,16 +469,10 @@
                 method: 'PUT',
                 body: JSON.stringify({ customFields: JSON.stringify(merged) }),
             });
-            // Reflect locally so the badge in the leads table updates without
-            // a full refresh — leads.js rerenders on the next loadLeads tick
-            // anyway, but we want the immediate cell update too.
             if (lead) lead.custom_fields = merged;
             injectTableCells();
         } catch (err) {
             console.warn('[lead-fields] persist after activity failed:', err);
-            // Don't toast — the activity itself succeeded. A follow-up on the
-            // table would surface stale values; loadLeads at the end of
-            // submitLogActivity normally repopulates from server-of-truth.
         }
     }
 

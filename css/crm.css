@@ -1467,6 +1467,259 @@ body.crm-dashboard .crm-container {
     align-items: flex-end;
 }
 
+/* Custom-filter chip row — second filter row for tenant-defined dropdowns.
+   Default state: just an "Add filter" pill button. Active filters render as
+   removable chips with `Field: Value ×`. Designed to scale to 30+ defined
+   fields without eating vertical space. */
+.crm-filter-bar--custom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    position: relative;
+}
+.crm-filter-bar-label {
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-right: 4px;
+    flex-shrink: 0;
+}
+.lf-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+.lf-chips-active {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.lf-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    font-size: 0.82rem;
+    line-height: 1;
+    overflow: hidden;
+}
+.lf-chip-body {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 4px 6px 10px;
+    cursor: pointer;
+    user-select: none;
+    color: var(--text-primary);
+}
+.lf-chip-body:hover { background: var(--bg-card-hover, rgba(255,255,255,0.04)); }
+.lf-chip-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+.lf-chip-label { color: var(--text-secondary); font-weight: 500; }
+.lf-chip-value { color: var(--text-primary); font-weight: 600; }
+.lf-chip-x {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 6px 10px 6px 4px;
+}
+.lf-chip-x:hover { color: var(--color-error); }
+
+.lf-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px dashed var(--border-color);
+    border-radius: 999px;
+    color: var(--brand-primary);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+.lf-add-btn:hover {
+    background: color-mix(in srgb, var(--brand-primary) 8%, transparent);
+    border-color: var(--brand-primary);
+    border-style: solid;
+}
+
+/* Popover used by both +Add filter and the chip's value picker. Position
+   absolutely under the trigger; sized to comfortably show ~8 options + a
+   search box. Caps at the viewport width on mobile. */
+.lf-popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 1080;
+    min-width: 260px;
+    max-width: min(360px, 92vw);
+    max-height: min(420px, 70vh);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 10px 32px rgba(0,0,0,0.32);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.lf-popover-header {
+    padding: 10px 10px 8px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.lf-popover-search { width: 100%; }
+.lf-popover-list {
+    overflow-y: auto;
+    padding: 6px 4px;
+    flex: 1;
+}
+.lf-popover-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 8px 10px;
+    border-radius: 6px;
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.88rem;
+}
+.lf-popover-item:hover,
+.lf-popover-item.is-selected { background: var(--bg-tertiary); }
+.lf-popover-item-label { flex: 1; }
+.lf-popover-item-meta {
+    color: var(--text-secondary);
+    font-size: 0.74rem;
+    flex-shrink: 0;
+}
+.lf-popover-item-clear {
+    color: var(--color-error);
+    font-size: 0.8rem;
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 0;
+    margin-bottom: 4px;
+}
+
+/* Activity log modal: collapsible custom-fields section. */
+.lf-activity-section {
+    margin-top: 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+    overflow: hidden;
+}
+.lf-activity-section > summary {
+    padding: 10px 14px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.lf-activity-section > summary::-webkit-details-marker { display: none; }
+.lf-activity-section > summary::before {
+    content: "▸";
+    color: var(--text-secondary);
+    margin-right: 6px;
+    transition: transform 0.15s;
+}
+.lf-activity-section[open] > summary::before { transform: rotate(90deg); }
+.lf-activity-summary-text { flex: 1; }
+.lf-activity-summary-meta {
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+.lf-activity-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 14px;
+    padding: 12px 14px 14px;
+    background: var(--bg-card);
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+/* Columns picker — divider + sub-section header for tenant-defined fields. */
+.crm-columns-menu-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 6px 0;
+}
+.crm-columns-menu-subhead {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    padding: 4px 10px 2px;
+}
+
+/* Mobile responsiveness — chips wrap, popover takes nearly the full
+   viewport, modal grid collapses to one column. */
+@media (max-width: 640px) {
+    .crm-filter-bar--custom { padding: 8px; gap: 6px; }
+    .crm-filter-bar-label { display: none; }
+    .lf-chip-body { padding: 6px 4px 6px 8px; }
+    .lf-popover {
+        position: fixed;
+        top: auto;
+        bottom: 16px;
+        left: 16px;
+        right: 16px;
+        max-width: none;
+        max-height: 60vh;
+    }
+    .lf-activity-grid { grid-template-columns: 1fr; }
+}
+
+/* Columns picker — divider + sub-section header for tenant-defined fields. */
+.crm-columns-menu-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 6px 0;
+}
+.crm-columns-menu-subhead {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    padding: 4px 10px 2px;
+}
+
 .crm-filter-group {
     display: flex;
     flex-direction: column;
