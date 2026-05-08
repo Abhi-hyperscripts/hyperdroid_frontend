@@ -630,7 +630,7 @@
 
     <!-- ═══ Log Activity Modal ═══ -->
     <div class="gm-overlay" id="logActivityOverlay">
-        <div class="gm-modal">
+        <div class="gm-modal" style="width:640px;max-width:96vw;">
             <div class="gm-header">
                 <div class="gm-header-left">
                     <div class="gm-title-group">
@@ -691,13 +691,6 @@
                         </select>
                     </div>
                 </div>
-                <!-- Tenant-defined dropdowns from Settings → Lead Fields.
-                     Built at open time by lead-fields-runtime.js based on the
-                     fields with show_in_activity_log=true. Pre-filled with the
-                     lead's current values; on submit, deltas are merged into
-                     lead.custom_fields via PATCH /api/crm/leads/{id}. -->
-                <div id="activityLeadFields" style="margin-top:10px;"></div>
-
                 <!-- Next follow-up on its own row, full width (date + time + clear). -->
                 <div style="margin-top:10px;">
                     <label class="form-label">Next follow-up</label>
@@ -710,6 +703,15 @@
                                 onclick="HRMSDatePicker.clearDateTimePair('activityNextFollowup')">×</button>
                     </div>
                 </div>
+
+                <!-- Tenant-defined dropdowns from Settings → Lead Fields.
+                     Built at open time by lead-fields-runtime.js based on the
+                     fields with show_in_activity_log=true. Pre-filled with the
+                     lead's current values; on submit, deltas are merged into
+                     lead.custom_fields via PATCH /api/crm/leads/{id}. Placed
+                     last so popover-style pickers always have the modal's
+                     bottom space below them — no body-overflow truncation. -->
+                <div id="activityLeadFields" style="margin-top:10px;"></div>
             </div>
             <div class="gm-footer" style="display:flex;justify-content:flex-end;gap:8px;">
                 <button class="btn btn-outline-secondary" onclick="closeLogActivityModal()">Cancel</button>

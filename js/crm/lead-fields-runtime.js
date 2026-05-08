@@ -218,12 +218,16 @@
             const popW = Math.min(pop.offsetWidth || 280, window.innerWidth - margin * 2);
             const popH = Math.min(pop.offsetHeight || 320, window.innerHeight - margin * 2);
 
-            // Horizontal: prefer left-aligning to trigger; flip to
-            // right-aligning when overflow.
-            let left = t.left;
-            if (left + popW > window.innerWidth - margin) {
-                left = Math.max(margin, t.right - popW);
-            }
+            // Horizontal anchor: keep the popover next to the trigger
+            // without spilling past its visual context. Triggers in the
+            // right half of the viewport right-align (popover's right edge
+            // = trigger's right edge) so the popover extends leftward and
+            // stays under the trigger's column. Triggers in the left half
+            // left-align as the natural reading direction.
+            const triggerCenter = (t.left + t.right) / 2;
+            let left = (triggerCenter > window.innerWidth / 2)
+                ? t.right - popW
+                : t.left;
             left = Math.max(margin, Math.min(left, window.innerWidth - margin - popW));
 
             // Vertical: anchor below the trigger and let the popover scroll
