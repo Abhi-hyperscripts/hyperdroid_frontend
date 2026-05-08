@@ -18,7 +18,6 @@ let _teams = [];
 // SearchableDropdown wrappers (codebase convention — never native <select>).
 // We keep handles so we can call .setValue() when the source-table row click
 // scopes the dashboard, and so cross-filter resets stay in sync.
-let _dateRangeDropdown = null;
 let _sourceDropdown = null;
 let _teamDropdown = null;
 let _trendMetricDropdown = null;
@@ -48,12 +47,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 function initSearchableDropdowns() {
     if (typeof convertSelectToSearchable !== 'function') return;
 
-    _dateRangeDropdown = convertSelectToSearchable('anaDateRange', {
-        compact: true,
-        placeholder: 'Last 30 days',
-        searchPlaceholder: 'Search…',
-        onChange: () => onDateRangeChanged()
-    });
+    // Date range is now two Flatpickr inputs (anaCustomFrom / anaCustomTo);
+    // the legacy #anaDateRange select is hidden + ignored — kept in the DOM
+    // only so any old reference doesn't NPE.
 
     _sourceDropdown = convertSelectToSearchable('anaSource', {
         compact: true,
@@ -80,31 +76,32 @@ function initSearchableDropdowns() {
 // ── Filter state ─────────────────────────────────────────────
 
 function getDateWindow() {
-    const sel = document.getElementById('anaDateRange').value;
+    // Two anchored Flatpickr inputs (matches the leads-page filter pattern).
+    // Either bound is optional — leaving both blank defaults to last 30 days
+    // so the dashboard isn't empty on first visit. Only one bound? Use today
+    // for the missing end so the user-typed window still produces sensible
+    // numbers. Half-open interval [from, to) matches the SQL contract.
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const endOfToday = new Date(startOfToday); endOfToday.setDate(endOfToday.getDate() + 1);
 
+    const fStr = document.getElementById('anaCustomFrom')?.value || '';
+    const tStr = document.getElementById('anaCustomTo')?.value || '';
+
     let from, to;
-    if (sel === 'custom') {
-        const f = document.getElementById('anaCustomFrom').value;
-        const t = document.getElementById('anaCustomTo').value;
-        if (f && t) {
-            from = new Date(f + 'T00:00:00');
-            to = new Date(t + 'T00:00:00'); to.setDate(to.getDate() + 1);
-        } else {
-            from = new Date(endOfToday); from.setDate(from.getDate() - 30); to = endOfToday;
-        }
-    } else if (sel === 'this_month') {
-        from = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (fStr && tStr) {
+        from = new Date(fStr + 'T00:00:00');
+        to = new Date(tStr + 'T00:00:00'); to.setDate(to.getDate() + 1);
+    } else if (fStr) {
+        from = new Date(fStr + 'T00:00:00');
         to = endOfToday;
-    } else if (sel === 'last_month') {
-        from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        to = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (tStr) {
+        to = new Date(tStr + 'T00:00:00'); to.setDate(to.getDate() + 1);
+        from = new Date(to); from.setDate(from.getDate() - 30);
     } else {
-        const days = parseInt(sel, 10) || 30;
+        // Both empty → default 30-day rolling window.
         to = endOfToday;
-        from = new Date(endOfToday); from.setDate(from.getDate() - days);
+        from = new Date(endOfToday); from.setDate(from.getDate() - 30);
     }
     return { from, to };
 }
@@ -119,10 +116,18 @@ function buildAnalyticsParams() {
     // bucket the daily-trend chart by USER'S local day rather than UTC.
     params.set('tzOffsetMinutes', String(-new Date().getTimezoneOffset()));
     const src = document.getElementById('anaSource').value;
-    if (src) params.set('leadSourceId', src);
+    // Pseudo-buckets `__manual__` / `__imported__` translate to the backend's
+    // noSourceBucket param (lead_source_id IS NULL [+ lead_source filter]).
+    // Mutually exclusive with leadSourceId; backend gives leadSourceId priority
+    // if both are passed, but we never send both.
+    if (src === '__manual__')        params.set('noSourceBucket', 'manual');
+    else if (src === '__imported__') params.set('noSourceBucket', 'imported');
+    else if (src)                    params.set('leadSourceId', src);
     const team = document.getElementById('anaTeam').value;
     if (team) params.set('teamId', team);
-    if (src) {
+    // Form-answer filter only applies when one specific named source is picked
+    // (different forms ask different questions). The pseudo-buckets bypass it.
+    if (src && !src.startsWith('__')) {
         const fa = FormAnswersFilter.getFilter();
         if (fa && Object.keys(fa).length > 0) params.set('customFields', JSON.stringify(fa));
     }
@@ -130,18 +135,8 @@ function buildAnalyticsParams() {
 }
 
 function onDateRangeChanged() {
-    const sel = document.getElementById('anaDateRange').value;
-    const showCustom = sel === 'custom';
-    document.getElementById('anaCustomFromWrap').style.display = showCustom ? '' : 'none';
-    document.getElementById('anaCustomToWrap').style.display = showCustom ? '' : 'none';
-    if (showCustom) {
-        // Default custom range to last 30 days for first visit.
-        const t = new Date();
-        const f = new Date(t); f.setDate(f.getDate() - 30);
-        const fmt = d => d.toISOString().slice(0, 10);
-        if (!document.getElementById('anaCustomFrom').value) document.getElementById('anaCustomFrom').value = fmt(f);
-        if (!document.getElementById('anaCustomTo').value) document.getElementById('anaCustomTo').value = fmt(t);
-    }
+    // Just re-fetch — getDateWindow() reads the two Flatpickr inputs each
+    // call, so there's no toggle/wrap state to maintain anymore.
     loadAnalytics();
 }
 
@@ -171,6 +166,30 @@ async function loadSources() {
             opt.value = s.id;
             opt.textContent = s.source_name + (s.source_type ? ` · ${s.source_type}` : '');
             sel.appendChild(opt);
+        }
+
+        // Append Manual / Bulk-Import pseudo-options — only when the tenant
+        // actually has rows in those buckets (count-gated, identical to the
+        // leads page filter). Sentinels `__manual__` / `__imported__` are
+        // translated by buildAnalyticsParams into the noSourceBucket query
+        // param, which the analytics SQL cohort applies the same way as
+        // the leads list does.
+        try {
+            const buckets = await api.request('/crm/leads/no-source-bucket-counts');
+            if (buckets?.manual > 0) {
+                const opt = document.createElement('option');
+                opt.value = '__manual__';
+                opt.textContent = `Manual (${buckets.manual})`;
+                sel.appendChild(opt);
+            }
+            if (buckets?.imported > 0) {
+                const opt = document.createElement('option');
+                opt.value = '__imported__';
+                opt.textContent = `Bulk Import (${buckets.imported})`;
+                sel.appendChild(opt);
+            }
+        } catch (bucketErr) {
+            console.warn('no-source-bucket-counts unavailable:', bucketErr?.message || bucketErr);
         }
     } catch (e) { console.warn('loadSources failed', e); }
 }

@@ -20,6 +20,10 @@
     <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <!-- Flatpickr (anchored date pickers — same as leads page filter). -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <!-- ApexCharts — codebase convention (research/CRM dashboard/accounts/embed all use it). -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
@@ -61,6 +65,20 @@
         position: sticky; top: 70px; z-index: 5;
     }
     .ana-toolbar .field { display:flex; flex-direction:column; gap:2px; }
+    /* The four primary filter fields (Created from / Created to / Source / Team)
+       share the row equally and fill all available width. The Form Answers
+       button (5th .field, after .ana-spacer) keeps its intrinsic width and
+       sits flush right. min-width:0 lets fields shrink instead of overflowing
+       on narrow viewports; flex-basis 160px is the floor before they wrap. */
+    .ana-toolbar > .field:nth-child(-n+4) { flex: 1 1 160px; min-width: 0; }
+    .ana-toolbar > .field:nth-child(-n+4) input,
+    .ana-toolbar > .field:nth-child(-n+4) select,
+    .ana-toolbar > .field:nth-child(-n+4) .searchable-dropdown-wrapper,
+    .ana-toolbar > .field:nth-child(-n+4) .searchable-dropdown-trigger,
+    .ana-toolbar > .field:nth-child(-n+4) .flatpickr-clearable-wrap {
+        width: 100%;
+        min-width: 0;
+    }
     .ana-toolbar label { font-size: 0.7em; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
     .ana-toolbar select, .ana-toolbar input {
         height: 32px; padding: 0 8px; border-radius: 8px;
@@ -94,7 +112,39 @@
     #anaTrendMetric-searchable-container .searchable-dropdown-option {
         white-space: nowrap;
     }
-    .ana-toolbar .ana-spacer { flex: 1; }
+    /* Spacer is no longer needed — the Form Answers icon button sits
+       inline with the four primary filters at the row's right edge. */
+    .ana-toolbar .ana-spacer { display: none; }
+    /* Form Answers field shrinks to its icon button's natural size and
+       aligns vertically with the input row. align-self:flex-end puts the
+       button bottom-aligned with the four input bottoms (same baseline). */
+    .ana-toolbar > .field:nth-child(n+5) {
+        flex: 0 0 auto;
+        align-self: flex-end;
+    }
+    /* Make the Form Answers trigger a 32x32 icon button so it doesn't
+       eat horizontal space. The active-state ".badge" pill becomes a
+       small dot/count overlay on the icon. */
+    #formAnswersFilterBtn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    #formAnswersFilterBtn .fa-icon-svg { width: 16px; height: 16px; }
+    #formAnswersFilterBtn .fa-label { display: none; }
+    #formAnswersFilterBtn #formAnswersActiveCount {
+        position: absolute;
+        top: -6px; right: -6px;
+        min-width: 16px; height: 16px;
+        padding: 0 4px;
+        font-size: 10px;
+        line-height: 16px;
+        border-radius: 8px;
+    }
 
     /* KPI grid: 4 cols on desktop = 3 rows for 12 cards (lead funnel,
        deal value, response speed, activity, engagement breadth/depth,
@@ -284,25 +334,25 @@
 
         <!-- Toolbar — date / source / team / form answers -->
         <div class="ana-toolbar">
+            <!-- Date range — two anchored Flatpickr inputs (same UX as the
+                 main leads page filter). The hidden #anaDateRange select
+                 stays around so legacy code that reads its value (loadAnalytics
+                 for the initial fetch) doesn't break — the JS now derives the
+                 window from anaCustomFrom / anaCustomTo when either is set,
+                 falling back to "Last 30 days" when both are empty. -->
             <div class="field">
-                <label for="anaDateRange">Date range</label>
-                <select id="anaDateRange">
-                    <option value="7">Last 7 days</option>
-                    <option value="14">Last 14 days</option>
-                    <option value="30" selected>Last 30 days</option>
-                    <option value="90">Last 90 days</option>
-                    <option value="this_month">This month</option>
-                    <option value="last_month">Last month</option>
-                    <option value="custom">Custom…</option>
-                </select>
+                <label for="anaCustomFrom">Created from</label>
+                <input type="date" id="anaCustomFrom" class="form-control form-control-sm"
+                       placeholder="Pick start date"
+                       data-flatpickr-static="true" data-flatpickr-simple="true" data-flatpickr-clearable="true"
+                       onchange="onDateRangeChanged()">
             </div>
-            <div class="field" id="anaCustomFromWrap" style="display:none;">
-                <label for="anaCustomFrom">From</label>
-                <input type="date" id="anaCustomFrom" onchange="onDateRangeChanged()">
-            </div>
-            <div class="field" id="anaCustomToWrap" style="display:none;">
-                <label for="anaCustomTo">To</label>
-                <input type="date" id="anaCustomTo" onchange="onDateRangeChanged()">
+            <div class="field">
+                <label for="anaCustomTo">Created to</label>
+                <input type="date" id="anaCustomTo" class="form-control form-control-sm"
+                       placeholder="Pick end date"
+                       data-flatpickr-static="true" data-flatpickr-simple="true" data-flatpickr-clearable="true"
+                       onchange="onDateRangeChanged()">
             </div>
             <div class="field">
                 <label for="anaSource">Source / form</label>
@@ -318,12 +368,20 @@
             </div>
             <div class="ana-spacer"></div>
             <div class="field">
-                <label>&nbsp;</label>
+                <!-- Icon-only button, sits inline with the four primary filters
+                     on the same row. data-tooltip names the action since the
+                     "Form answers" label is hidden via CSS to save space. -->
                 <button type="button" id="formAnswersFilterBtn" class="btn btn-sm btn-outline-primary"
-                        onclick="window.openFormAnswersModal()" disabled>
+                        onclick="window.openFormAnswersModal()" disabled
+                        data-tooltip="Filter by form answers"
+                        aria-label="Filter by form answers">
                     <span id="formAnswersActiveDot" class="fa-active-dot" hidden></span>
-                    <span>Form answers</span>
-                    <span id="formAnswersActiveCount" class="badge bg-primary ms-1" style="display:none;">0</span>
+                    <!-- Filter funnel icon — universal "filter" affordance. -->
+                    <svg class="fa-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                    </svg>
+                    <span class="fa-label">Form answers</span>
+                    <span id="formAnswersActiveCount" class="badge bg-primary" style="display:none;">0</span>
                 </button>
             </div>
         </div>
@@ -492,6 +550,9 @@
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/auto-searchable-select.js?v=' + CACHE_VERSION + '"><\/script>');
+        // hrms-datepicker auto-wires every <input type="date"> with the same
+        // anchored / clearable / "simple" UX the leads page filter uses.
+        document.write('<script src="../../js/hrms/hrms-datepicker.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/tooltip.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/setup-guard.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/form-answers-filter.js?v=' + CACHE_VERSION + '"><\/script>');

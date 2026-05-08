@@ -3204,6 +3204,92 @@ async function confirmWipe() {
     }
 }
 
+// ─── Lead deletion audit log ────────────────────────────────────────────────
+// Reads /api/leads/deletion-log (CRM admins + superadmin) and renders the rows
+// inside the Danger Zone modal. Date pickers are optional — both ends blank
+// = full history.
+
+let _deletionLogState = { page: 1, pageSize: 50, total: 0 };
+
+function openDeletionLogModal() {
+    document.getElementById('deletionLogModal').classList.add('active');
+    _deletionLogState.page = 1;
+    loadDeletionLog();
+}
+
+function closeDeletionLogModal() {
+    document.getElementById('deletionLogModal').classList.remove('active');
+}
+
+async function loadDeletionLog() {
+    const tbody = document.getElementById('deletionLogTbody');
+    const totalEl = document.getElementById('deletionLogTotalCount');
+    const pagerEl = document.getElementById('deletionLogPager');
+    if (!tbody) return;
+
+    const fromEl = document.getElementById('deletionLogFrom');
+    const toEl   = document.getElementById('deletionLogTo');
+    const params = new URLSearchParams();
+    params.set('page', _deletionLogState.page);
+    params.set('pageSize', _deletionLogState.pageSize);
+    if (fromEl?.value) params.set('from', fromEl.value);
+    if (toEl?.value)   params.set('to',   toEl.value);
+
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-secondary);">Loading…</td></tr>';
+    try {
+        const res = await api.request('/crm/leads/deletion-log?' + params.toString());
+        const items = res?.data || [];
+        _deletionLogState.total = res?.total ?? items.length;
+
+        if (items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-secondary);">No deletions in this window.</td></tr>';
+        } else {
+            tbody.innerHTML = items.map(r => {
+                const when = r.performed_at ? new Date(r.performed_at).toLocaleString() : '—';
+                const actor = r.performed_by_name || r.performed_by_email || r.performed_by_user_id || '—';
+                const actorEmail = r.performed_by_email && r.performed_by_name ? `<div style="color:var(--text-secondary); font-size:0.78rem;">${escapeHtml(r.performed_by_email)}</div>` : '';
+                const leadDisplay = `${escapeHtml(r.lead_name || '(unnamed)')}${r.lead_number ? `<div style="color:var(--text-secondary); font-size:0.78rem;">${escapeHtml(r.lead_number)}</div>` : ''}`;
+                const contact = [r.lead_email, r.lead_phone].filter(Boolean).map(escapeHtml).join('<br>');
+                let source = '';
+                if (r.lead_source_name) {
+                    source = escapeHtml(r.lead_source_name);
+                    if (r.lead_source) source += ` <span style="color:var(--text-secondary);">· ${escapeHtml(r.lead_source)}</span>`;
+                } else if (r.lead_source) {
+                    source = escapeHtml(r.lead_source);
+                } else {
+                    source = '<span style="color:var(--text-secondary);">— manual / import —</span>';
+                }
+                return `<tr>
+                    <td>${escapeHtml(when)}</td>
+                    <td>${escapeHtml(actor)}${actorEmail}</td>
+                    <td>${leadDisplay}</td>
+                    <td>${contact || '—'}</td>
+                    <td>${source}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        if (totalEl) totalEl.textContent = `${_deletionLogState.total} deletion(s)`;
+
+        // Pager: just prev / next buttons. The total doubles as "where am I".
+        if (pagerEl) {
+            const totalPages = Math.max(1, Math.ceil(_deletionLogState.total / _deletionLogState.pageSize));
+            pagerEl.innerHTML = `
+                <button class="btn btn-outline-secondary btn-sm" ${_deletionLogState.page <= 1 ? 'disabled' : ''} onclick="_deletionLogPage(-1)">‹ Prev</button>
+                <span style="color:var(--text-secondary); font-size:0.85rem; align-self:center;">Page ${_deletionLogState.page} / ${totalPages}</span>
+                <button class="btn btn-outline-secondary btn-sm" ${_deletionLogState.page >= totalPages ? 'disabled' : ''} onclick="_deletionLogPage(1)">Next ›</button>`;
+        }
+    } catch (e) {
+        console.error('Failed to load deletion log:', e);
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--color-danger);">${escapeHtml(e?.message || 'Failed to load deletion log')}</td></tr>`;
+    }
+}
+
+function _deletionLogPage(delta) {
+    _deletionLogState.page = Math.max(1, _deletionLogState.page + delta);
+    loadDeletionLog();
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Google Sheets integration
 // Parallels the Facebook flow: card shows connected accounts + connected sheets,

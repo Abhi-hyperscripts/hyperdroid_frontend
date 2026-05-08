@@ -78,14 +78,25 @@
         const btn = document.getElementById('formAnswersFilterBtn');
         if (!btn) return;
         const source = _getSourceId();
-        const isLegacy = source && typeof source === 'string' && source.startsWith('__legacy:');
-        const enabled = !!source && !isLegacy;
+        // Pseudo-source values use a `__sentinel__` prefix to distinguish them
+        // from real lead_source UUIDs: `__legacy:<type>` (legacy fallback when
+        // /lead-sources is down) and `__manual__` / `__imported__` (the
+        // no-source-id buckets). None of them have form questions to filter by.
+        const isPseudo = source && typeof source === 'string' && source.startsWith('__');
+        const enabled = !!source && !isPseudo;
         btn.disabled = !enabled;
-        btn.title = enabled
+        // Use data-tooltip so the global tooltip.js renders the custom themed
+        // bubble (matches the action buttons on the leads page). Native `title`
+        // would short-circuit it via the browser's built-in tooltip and look
+        // out of place.
+        btn.dataset.tooltip = enabled
             ? 'Filter leads by their answers to this form'
-            : (isLegacy
+            : (isPseudo
                 ? 'Form answer filter is only available on tenant-named sources'
                 : 'Pick a single source above to filter by form answers');
+        // Belt-and-braces: clear any leftover `title` so the browser doesn't
+        // race the custom tooltip.
+        if (btn.hasAttribute('title')) btn.removeAttribute('title');
 
         const badge = document.getElementById('formAnswersActiveCount');
         const dot = document.getElementById('formAnswersActiveDot');
@@ -100,7 +111,10 @@
 
     async function open() {
         const source = _getSourceId();
-        if (!source || (typeof source === 'string' && source.startsWith('__legacy:'))) return;
+        // Block opening for any pseudo-source — manual/imported/legacy don't
+        // have form questions, and the questions endpoint would 400 on a
+        // non-Guid id (which sentinels like '__imported__' aren't).
+        if (!source || (typeof source === 'string' && source.startsWith('__'))) return;
 
         const modal = document.getElementById('formAnswersModal');
         if (!modal) return;

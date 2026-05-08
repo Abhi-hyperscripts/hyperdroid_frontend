@@ -421,6 +421,30 @@ async function loadSourceFilter() {
             o.textContent = `${s.source_name}${type}`;
             sel.appendChild(o);
         });
+
+        // Append Manual / Bulk-Import pseudo-options — only when the tenant
+        // actually has rows in those buckets. Sentinels `__manual__` /
+        // `__imported__` are translated by buildFilterParams into the
+        // noSourceBucket query param.
+        try {
+            const buckets = await api.request('/crm/leads/no-source-bucket-counts');
+            if (buckets?.manual > 0) {
+                const o = document.createElement('option');
+                o.value = '__manual__';
+                o.textContent = `Manual (${buckets.manual})`;
+                sel.appendChild(o);
+            }
+            if (buckets?.imported > 0) {
+                const o = document.createElement('option');
+                o.value = '__imported__';
+                o.textContent = `Bulk Import (${buckets.imported})`;
+                sel.appendChild(o);
+            }
+        } catch (bucketErr) {
+            // Bucket-counts endpoint failure shouldn't break the whole filter —
+            // the named-source list above is still valid. Just log and move on.
+            console.warn('no-source-bucket-counts unavailable:', bucketErr?.message || bucketErr);
+        }
     } catch (e) {
         // Graceful fallback: the old /leads/sources endpoint returns distinct
         // source_type strings. Worse filter but keeps the page usable.
@@ -476,8 +500,14 @@ function buildFilterParams() {
         // New filter: option values are lead_source UUIDs. Legacy filter
         // (fallback when /lead-sources is down) prefixes with "__legacy:"
         // so we can still send the old source= string param.
-        if (source.startsWith('__legacy:')) params.set('source', source.slice('__legacy:'.length));
-        else params.set('leadSourceId', source);
+        // Pseudo-buckets `__manual__` / `__imported__` map to the
+        // backend's noSourceBucket param — narrow to leads that have no
+        // tenant-named source row but were entered manually or imported
+        // via CSV. Mutually exclusive with leadSourceId.
+        if (source.startsWith('__legacy:'))      params.set('source', source.slice('__legacy:'.length));
+        else if (source === '__manual__')        params.set('noSourceBucket', 'manual');
+        else if (source === '__imported__')      params.set('noSourceBucket', 'imported');
+        else                                      params.set('leadSourceId', source);
     }
     if (search) params.set('search', search);
     if (emailStatus) params.set('emailStatus', emailStatus);

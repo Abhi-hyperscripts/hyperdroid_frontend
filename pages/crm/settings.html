@@ -1740,6 +1740,25 @@
                         </p>
                     </div>
 
+                    <!-- Deletion audit log — shows who/when/which-source for every
+                         lead deletion (single + bulk). Lives on top of the wipe
+                         buttons because the most common reason to look here is
+                         "leads vanished — who pressed delete?" -->
+                    <div class="danger-card" style="border:1px solid var(--border-color); border-radius:12px; padding:20px; margin-bottom:16px; background:var(--bg-card);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+                            <div>
+                                <h4 style="margin:0 0 6px 0;">Lead Deletion Audit Log</h4>
+                                <p style="margin:0; color:var(--text-secondary); font-size:0.9rem;">
+                                    Every lead delete writes a row capturing who, when, the lead's identifying details, and the source it came from.
+                                    Use this to investigate accidental bulk deletes.
+                                </p>
+                            </div>
+                            <button class="btn btn-outline-secondary" style="flex-shrink:0;" onclick="openDeletionLogModal()">
+                                View Deletion Log
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="danger-card" style="border:1px solid var(--color-danger); border-radius:12px; padding:20px; margin-bottom:16px; background:rgba(239, 68, 68, 0.04);">
                         <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
                             <div>
@@ -1803,6 +1822,60 @@
                     </div>
                 </div>
             </main>
+        </div>
+    </div>
+
+    <!-- Lead Deletion Audit Log Modal -->
+    <div class="gm-overlay" id="deletionLogModal">
+        <div class="gm-modal" style="max-width:1100px; width:96vw;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon" style="color:var(--color-danger);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-9 0v14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Lead Deletion Audit Log</h3>
+                        <p class="gm-subtitle">Every lead delete this tenant has performed (newest first)</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeDeletionLogModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="gm-body">
+                <div style="display:flex; gap:8px; align-items:end; flex-wrap:wrap; margin-bottom:12px;">
+                    <div>
+                        <label class="form-label" style="font-size:0.8rem;">From</label>
+                        <input type="date" id="deletionLogFrom" class="form-control form-control-sm" data-flatpickr-static="true" data-flatpickr-simple="true" data-flatpickr-clearable="true" placeholder="From date">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:0.8rem;">To</label>
+                        <input type="date" id="deletionLogTo" class="form-control form-control-sm" data-flatpickr-static="true" data-flatpickr-simple="true" data-flatpickr-clearable="true" placeholder="To date">
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="loadDeletionLog()">Apply</button>
+                    <div style="flex:1;"></div>
+                    <span id="deletionLogTotalCount" style="color:var(--text-secondary); font-size:0.85rem;"></span>
+                </div>
+                <div style="overflow:auto; max-height:60vh; border:1px solid var(--border-color); border-radius:8px;">
+                    <table class="crm-table" style="margin:0; font-size:0.85rem;">
+                        <thead>
+                            <tr>
+                                <th>When</th>
+                                <th>Deleted by</th>
+                                <th>Lead</th>
+                                <th>Email / Phone</th>
+                                <th>Source</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deletionLogTbody">
+                            <tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-secondary);">Loading…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="deletionLogPager" style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;"></div>
+            </div>
         </div>
     </div>
 
