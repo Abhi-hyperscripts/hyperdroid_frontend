@@ -15,9 +15,15 @@
     <script>document.write('<script src="/js/sw-update.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="/js/pwa-install-prompt.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Quill rich-text editor — same version CRM / PMS / News use -->
-    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    <!-- TinyMCE 7 community (replaces Quill). Quill stripped inline `style`
+         attrs on paste, breaking pasted Outlook / Drive share-link cards.
+         TinyMCE preserves source verbatim when configured with
+         valid_elements:'*[*]' + paste_remove_styles:false. -->
+    <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js" referrerpolicy="origin"></script>
+    <!-- Shared email-composer modal (Email-service look + feel reused
+         across CRM lead reply / new-email flows). -->
+    <script>document.write('<link rel="stylesheet" href="../../css/email-composer.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/shared/email-composer.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
@@ -291,11 +297,11 @@
                 </div>
                 <div class="email-compose-chips" id="composeAttachChips"></div>
                 <div class="email-compose-body-wrap">
-                    <!-- Quill rich-text host. The <textarea id="composeBody">
-                         stays as a fallback target that the editor's contents
-                         get serialized into on send, so existing code paths
-                         that read composeBody.value keep working. -->
-                    <div id="composeBodyEditor" class="email-rte-host"></div>
+                    <!-- TinyMCE rich-text host (replaces Quill). The hidden
+                         <textarea id="composeBody"> stays as a fallback so any
+                         legacy code paths that read composeBody.value keep
+                         working. -->
+                    <textarea id="composeBodyEditor" class="email-rte-host"></textarea>
                     <textarea id="composeBody" style="display:none;"></textarea>
                 </div>
             </div>

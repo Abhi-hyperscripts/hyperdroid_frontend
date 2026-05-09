@@ -43,7 +43,79 @@ let loadMoreObserver = null;
 
 // Quill rich-text editor instance for the compose modal. Lazy-init on
 // first openCompose() so the page paint isn't delayed by editor setup.
-let _composeQuill = null;
+// TinyMCE replaces Quill — see CRM Settings/Lead-journey for rationale.
+const COMPOSE_TMCE_ID = 'composeBodyEditor';
+let _composeTmceReady = null;
+
+function ensureComposeTmce() {
+    if (_composeTmceReady) return _composeTmceReady;
+    if (typeof tinymce === 'undefined') {
+        console.error('TinyMCE script not loaded');
+        return Promise.resolve(null);
+    }
+    _composeTmceReady = tinymce.init({
+        selector: '#' + COMPOSE_TMCE_ID,
+        license_key: 'gpl',
+        height: 440,
+        menubar: false,
+        promotion: false,
+        branding: false,
+        statusbar: false,
+        plugins: 'lists link image table code preview anchor autolink',
+        toolbar: 'blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link image table | code preview',
+        toolbar_mode: 'wrap',
+        valid_elements: '*[*]',
+        extended_valid_elements: '*[*]',
+        paste_remove_styles: false,
+        paste_remove_styles_if_webkit: false,
+        paste_webkit_styles: 'all',
+        paste_data_images: true,
+        paste_as_text: false,
+        // Gmail/Outlook-style paste — no prompt, no floating "Link…" pill.
+        smart_paste: false,
+        link_context_toolbar: false,
+        contextmenu: '',
+        link_default_target: '_blank',
+        link_default_protocol: 'https',
+        link_assume_external_targets: 'https',
+        keep_styles: true,
+        forced_root_block: 'p',
+        element_format: 'html',
+        verify_html: false,
+        cleanup: false,
+        convert_urls: false,
+        entity_encoding: 'raw',
+        content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
+        placeholder: 'Write your message…',
+        setup: function (editor) {
+            editor.on('init', function () {
+                // Body of the compose modal is the scroll container; close
+                // dropdowns when it scrolls so they don't detach.
+                const modalBody = document.querySelector('#composeOverlay .email-modal-body, #composeOverlay .gm-body, #composeOverlay');
+                if (!modalBody) return;
+                modalBody.addEventListener('scroll', function () {
+                    document.querySelectorAll('.tox-tinymce-aux .tox-pop, .tox-tinymce-aux .tox-menu, .tox-tinymce-aux .tox-collection')
+                        .forEach(function (el) { el.style.display = 'none'; });
+                }, { passive: true });
+            });
+        }
+    }).then(eds => (eds && eds[0]) || tinymce.get(COMPOSE_TMCE_ID));
+    return _composeTmceReady;
+}
+
+function getComposeHtml() {
+    const ed = (typeof tinymce !== 'undefined') ? tinymce.get(COMPOSE_TMCE_ID) : null;
+    return ed ? (ed.getContent() || '') : '';
+}
+function getComposeText() {
+    const ed = (typeof tinymce !== 'undefined') ? tinymce.get(COMPOSE_TMCE_ID) : null;
+    if (!ed) return '';
+    return (ed.getContent({ format: 'text' }) || '').replace(/\n+$/, '');
+}
+function setComposeContent(html) {
+    const ed = (typeof tinymce !== 'undefined') ? tinymce.get(COMPOSE_TMCE_ID) : null;
+    if (ed) ed.setContent(html || '');
+}
 
 // ==================== Bootstrap ====================
 
@@ -1655,28 +1727,9 @@ function openCompose(mode, replyTo) {
     document.getElementById('composeBccRow').style.display = 'none';
     document.getElementById('composeAttachChips').innerHTML = '';
 
-    // Lazy-init Quill on first open — same config CRM uses for parity.
-    // Subsequent opens just clear the contents so drafts don't leak.
-    const editorHost = document.getElementById('composeBodyEditor');
-    if (editorHost && typeof Quill !== 'undefined') {
-        if (!_composeQuill) {
-            _composeQuill = new Quill(editorHost, {
-                theme: 'snow',
-                placeholder: 'Write your message…',
-                modules: {
-                    toolbar: [
-                        [{ header: [1, 2, 3, false] }],
-                        ['bold', 'italic', 'underline', 'strike'],
-                        [{ list: 'ordered' }, { list: 'bullet' }],
-                        [{ color: [] }, { background: [] }],
-                        ['link', 'blockquote', 'code-block'],
-                        ['clean']
-                    ]
-                }
-            });
-        }
-        _composeQuill.setContents([]);
-    }
+    // Lazy-init TinyMCE on first open. Editor is reused across opens; we
+    // just clear the body so drafts don't leak between messages.
+    ensureComposeTmce().then(ed => { if (ed) ed.setContent(''); });
 
     if (State.selectedMailboxId) composeFrom.value = State.selectedMailboxId;
 
@@ -1712,14 +1765,14 @@ function openCompose(mode, replyTo) {
         const quoted = (replyTo.body_text || stripHtml(replyTo.body_html || '') || '')
             .split('\n').map(l => '> ' + l).join('\n');
         body.value = `\n\n\nOn ${qDate}, ${fromName} wrote:\n${quoted}`;
-        // Seed Quill with the quoted preamble so rich-text replies keep
-        // the "> Original message" context visible while the user types
-        // above it. Three empty paragraphs at the top so the caret starts
-        // with room to breathe.
-        if (_composeQuill) {
-            const preamble = `<p><br></p><p><br></p><p><br></p><p>On ${formatFullDate(replyTo.received_at || replyTo.sent_at || replyTo.created_at)}, ${escapeHtml(fromName)} wrote:</p><blockquote>${escapeHtml(quoted).replace(/\n/g, '<br>')}</blockquote>`;
-            _composeQuill.root.innerHTML = preamble;
-        }
+        // Seed the editor with the quoted preamble so rich-text replies
+        // keep the "> Original message" context visible while the user
+        // types above it. Three empty paragraphs at the top so the caret
+        // starts with room to breathe. ensureComposeTmce() is async so we
+        // wait for it before writing — otherwise setContent fires on a
+        // not-yet-initialized editor and gets dropped.
+        const preamble = `<p><br></p><p><br></p><p><br></p><p>On ${formatFullDate(replyTo.received_at || replyTo.sent_at || replyTo.created_at)}, ${escapeHtml(fromName)} wrote:</p><blockquote>${escapeHtml(quoted).replace(/\n/g, '<br>')}</blockquote>`;
+        ensureComposeTmce().then(ed => { if (ed) ed.setContent(preamble); });
     }
 
     renderChips('to'); renderChips('cc'); renderChips('bcc');
@@ -1796,13 +1849,11 @@ async function sendCompose() {
     const bcc = [...State.recipients.bcc];
     if (to.length === 0) return Toast.error('At least one recipient required.');
 
-    // Pull both HTML (from Quill) and plain text for the multipart message.
-    // Backend's MimeKit BodyBuilder needs both — recipients on text-only
-    // clients (e.g. Mutt) still see a readable version.
-    const bodyHtml = _composeQuill ? _composeQuill.root.innerHTML : '';
-    const bodyText = _composeQuill
-        ? _composeQuill.getText().replace(/\n+$/, '')
-        : document.getElementById('composeBody').value;
+    // Pull both HTML and plain text for the multipart message. Backend's
+    // MimeKit BodyBuilder needs both — recipients on text-only clients
+    // (e.g. Mutt) still see a readable version.
+    const bodyHtml = getComposeHtml();
+    const bodyText = getComposeText() || document.getElementById('composeBody').value;
 
     const payload = {
         mailbox_id: mailboxId,

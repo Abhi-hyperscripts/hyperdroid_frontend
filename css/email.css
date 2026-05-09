@@ -1398,8 +1398,8 @@ body.email-page .email-read {
    children (chip fields, compose rows, attach chips) pick up the new
    glassy background without touching the HTML structure. */
 .email-modal {
-    width: 760px;
-    max-width: 100%;
+    width: 1080px;
+    max-width: 92vw;
     max-height: calc(100vh - 100px);
     max-height: calc(100dvh - 100px);
     background: rgba(255, 255, 255, 0.92);
@@ -1419,75 +1419,31 @@ body.email-page .email-read {
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
 }
 
-/* ---------- Quill rich-text editor inside the compose modal ---------- */
-/* Quill.snow.css ships with Bootstrap-era gray colors that fight the
-   glass bg. Scope overrides to .email-rte-host so only our editor gets
-   the theme-aware palette — everything else using Quill keeps its own
-   skin. */
+/* ---------- TinyMCE rich-text editor inside the compose modal ---------- */
 .email-rte-host {
     min-height: 440px;
     display: flex;
     flex-direction: column;
 }
-
-.email-rte-host .ql-toolbar.ql-snow {
-    border: 1px solid var(--border-color-light);
-    border-radius: 8px 8px 0 0;
-    background: transparent;
+/* TinyMCE wraps the textarea in a .tox-tinymce container. Stretch it to
+   fill the compose body. */
+.email-compose-body-wrap .tox-tinymce {
+    width: 100%;
+    min-height: 440px;
+    border-radius: 8px;
 }
 
-.email-rte-host .ql-container.ql-snow {
-    border: 1px solid var(--border-color-light);
-    border-top: none;
-    border-radius: 0 0 8px 8px;
-    background: transparent;
-    font-family: inherit;
-    font-size: 14px;
-    flex: 1;
-    min-height: 400px;
-}
-
-.email-rte-host .ql-editor {
-    min-height: 400px;
-    color: var(--text-primary);
-}
-
-.email-rte-host .ql-editor.ql-blank::before {
-    color: var(--text-tertiary);
-    font-style: normal;
-}
-
-[data-theme="dark"] .email-rte-host .ql-toolbar.ql-snow .ql-stroke {
-    stroke: var(--text-secondary);
-}
-
-[data-theme="dark"] .email-rte-host .ql-toolbar.ql-snow .ql-fill,
-[data-theme="dark"] .email-rte-host .ql-toolbar.ql-snow .ql-stroke.ql-fill {
-    fill: var(--text-secondary);
-}
-
-[data-theme="dark"] .email-rte-host .ql-toolbar.ql-snow .ql-picker,
-[data-theme="dark"] .email-rte-host .ql-toolbar.ql-snow .ql-picker-label,
-[data-theme="dark"] .email-rte-host .ql-toolbar.ql-snow .ql-picker-options {
-    color: var(--text-secondary);
-    background: var(--bg-card);
-    border-color: var(--border-color-light);
-}
-
-[data-theme="dark"] .email-rte-host .ql-snow .ql-picker-options {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color-light);
-}
-
-.email-rte-host .ql-toolbar.ql-snow .ql-formats button:hover .ql-stroke,
-.email-rte-host .ql-toolbar.ql-snow button.ql-active .ql-stroke {
-    stroke: var(--brand-primary);
-}
-
-.email-rte-host .ql-toolbar.ql-snow .ql-formats button:hover .ql-fill,
-.email-rte-host .ql-toolbar.ql-snow button.ql-active .ql-fill {
-    fill: var(--brand-primary);
-}
+/* TinyMCE renders toolbar dropdowns / dialogs into <div class="tox tox-tinymce-aux">
+   appended to <body>. Default z-index sits below our compose overlay
+   (~10000), so dropdowns get clipped behind the modal. Float them above. */
+body > .tox.tox-tinymce-aux,
+body > .tox.tox-silver-sink,
+.tox-tinymce-aux,
+.tox-tinymce-aux .tox-menu,
+.tox-tinymce-aux .tox-collection,
+.tox-tinymce-aux .tox-pop,
+.tox-dialog-wrap,
+.tox-dialog { z-index: 100000 !important; }
 
 .email-modal-header {
     padding: 14px 18px 12px;

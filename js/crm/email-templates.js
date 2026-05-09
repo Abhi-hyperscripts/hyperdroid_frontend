@@ -118,6 +118,14 @@
             paste_webkit_styles: 'all',
             paste_data_images: true,
             paste_as_text: false,
+            // Gmail/Outlook-style paste — no prompt, no floating "Link…"
+            // button, native browser right-click menu.
+            smart_paste: false,
+            link_context_toolbar: false,
+            contextmenu: '',
+            link_default_target: '_blank',
+            link_default_protocol: 'https',
+            link_assume_external_targets: 'https',
             keep_styles: true,
             forced_root_block: 'p',
             element_format: 'html',
@@ -204,8 +212,8 @@
             `<div style="max-width:600px;margin:12px 0;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;font-family:'Segoe UI',Arial,sans-serif;">`,
             `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;background:#ffffff;">`,
             heroRow,
-            `<tr><td style="padding:18px 20px 4px;font-size:20px;font-weight:700;color:#1d4ed8;line-height:1.3;">${title}</td></tr>`,
-            desc ? `<tr><td style="padding:0 20px 14px;font-size:14px;color:#1d4ed8;line-height:1.5;">${desc}</td></tr>` : '',
+            `<tr><td style="padding:16px 20px 4px;font-size:15px;font-weight:600;color:#1d4ed8;line-height:1.35;">${title}</td></tr>`,
+            desc ? `<tr><td style="padding:0 20px 12px;font-size:13px;color:#1d4ed8;line-height:1.5;">${desc}</td></tr>` : '',
             `<tr><td style="padding:0 20px 20px;"><a href="${url}" style="display:inline-block;padding:10px 22px;background:#1d4ed8;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">View File &rarr;</a></td></tr>`,
             `</table>`,
             `</div>`
@@ -368,12 +376,34 @@ https://ragenaizer.com/pages/drive/shared.html?token=..." style="font-family: ui
     async function populateMailboxOptions(selectedId) {
         const sel = document.getElementById('tmplMailbox');
         if (!sel) return;
-        // Reset to just the default option, then append shared mailboxes.
+        // Reset to just the default option, then append CONFIGURED mailboxes.
+        // The /shared-mailboxes catalog lists every shared mailbox the user
+        // can see across the workspace; we want only the ones this tenant
+        // has actually opted in to (tenant-default + per-flow attachments).
         sel.innerHTML = '<option value="">Tenant default mailbox</option>';
         try {
-            const resp = await api.request('/crm/mailbox-attachments/shared-mailboxes');
-            const mailboxes = (resp && resp.mailboxes) || [];
-            mailboxes.forEach(m => {
+            const [defResp, attResp] = await Promise.all([
+                api.request('/crm/mailbox-attachments/tenant-default').catch(() => ({})),
+                api.request('/crm/mailbox-attachments/attachments').catch(() => ({})),
+            ]);
+            const seen = new Set();
+            const list = [];
+            const def = defResp?.mailbox;
+            if (def && def.id) {
+                list.push({ id: def.id, email_address: def.email_address, is_active: def.is_active !== false });
+                seen.add(def.id);
+            }
+            for (const a of (attResp?.attachments || [])) {
+                const id = a.mailbox_id || a.id;
+                if (!id || seen.has(id)) continue;
+                list.push({
+                    id,
+                    email_address: a.mailbox_email || a.email_address,
+                    is_active: a.mailbox_is_active !== false
+                });
+                seen.add(id);
+            }
+            list.forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m.id;
                 const inactive = m.is_active === false ? ' (inactive)' : '';
@@ -382,7 +412,7 @@ https://ragenaizer.com/pages/drive/shared.html?token=..." style="font-family: ui
                 sel.appendChild(opt);
             });
         } catch (e) {
-            console.warn('Failed to load shared mailboxes for template picker:', e);
+            console.warn('Failed to load configured mailboxes for template picker:', e);
         }
         sel.value = selectedId || '';
     }

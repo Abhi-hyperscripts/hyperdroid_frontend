@@ -1,0 +1,317 @@
+/* ===================================================================
+   Shared email-composer styles — used by both the standalone Email
+   service (pages/email/inbox.html) and any CRM page that opens a
+   "send email" composer (lead-journey reply / new-email modal). The
+   markup convention is whatever the email-composer.js utility
+   renders; copy these classes anywhere you need the same look.
+   ================================================================= */
+
+/* Outer modal — uses .email-cmp-overlay/.email-cmp-modal so it can
+   live alongside (and not collide with) the existing .email-modal
+   classes used by inbox.html. */
+.email-cmp-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--overlay-dark, rgba(0, 0, 0, 0.5));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Higher than the CRM lead detail slide-out panel (z=9000-ish) and
+       any other modal layer on the page. TinyMCE's body-level dropdowns
+       sit at 100000 so the picker still shows on top of the composer. */
+    z-index: 50000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+    padding: 20px;
+}
+.email-cmp-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.email-cmp-modal {
+    width: 1180px;
+    max-width: 94vw;
+    max-height: 85vh;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+[data-theme="dark"] .email-cmp-modal {
+    background: rgba(15, 23, 42, 0.58);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+.email-cmp-header {
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.email-cmp-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+}
+.email-cmp-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+/* (legacy header from-pill removed — FROM is now a regular row) */
+.email-cmp-close {
+    width: 28px; height: 28px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted, var(--text-secondary));
+    font-size: 20px;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.email-cmp-close:hover {
+    background: var(--bg-card-hover, rgba(0,0,0,0.06));
+    color: var(--text-primary);
+}
+
+.email-cmp-body {
+    padding: 8px 18px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Compose rows — pill-style inputs. Each row is a labeled card: label
+   on the left, bordered rounded input/field on the right. Focus lights
+   up the border with brand-primary. */
+.email-cmp-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 8px 0;
+}
+.email-cmp-row label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    min-width: 56px;
+    flex-shrink: 0;
+    text-align: right;
+}
+.email-cmp-row .email-cmp-input,
+.email-cmp-row select.email-cmp-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 14px;
+    color: var(--text-primary);
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+[data-theme="dark"] .email-cmp-row .email-cmp-input,
+[data-theme="dark"] .email-cmp-row select.email-cmp-input {
+    background: rgba(255, 255, 255, 0.04);
+}
+.email-cmp-row select.email-cmp-input {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    /* The input has border-radius: 10px; the chevron must clear that
+       curve. Push the chevron 18px in from the right edge and reserve
+       enough right-padding so the option text never overlaps it. */
+    background-position: right 18px center;
+    padding-right: 42px;
+}
+.email-cmp-row .email-cmp-input:focus,
+.email-cmp-row .email-cmp-input:focus-visible,
+.email-cmp-row select.email-cmp-input:focus {
+    border-color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.06);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15);
+}
+.email-cmp-row .email-cmp-input::placeholder { color: var(--text-muted, var(--text-secondary)); }
+
+/* Chip field — wrap recipient chips in the same rounded field other
+   compose inputs use. Matches .chip-field in email.css. */
+.email-cmp-chip-field {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    min-height: 40px;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+[data-theme="dark"] .email-cmp-chip-field { background: rgba(255, 255, 255, 0.04); }
+.email-cmp-chip-field:focus-within {
+    border-color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.06);
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb, 99, 102, 241), 0.15);
+}
+.email-cmp-recipient-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 6px 3px 10px;
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.12);
+    color: var(--brand-primary-dark, var(--brand-primary));
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 1;
+}
+[data-theme="dark"] .email-cmp-recipient-chip {
+    color: var(--brand-primary-light, #c7d2fe);
+}
+.email-cmp-recipient-chip.invalid {
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--color-danger, #dc2626);
+}
+.email-cmp-recipient-chip button {
+    width: 16px; height: 16px;
+    background: transparent; border: none;
+    color: inherit; cursor: pointer;
+    padding: 0; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    opacity: 0.6;
+}
+.email-cmp-recipient-chip button:hover { opacity: 1; background: rgba(0,0,0,0.1); }
+.email-cmp-chip-input {
+    flex: 1; min-width: 160px;
+    padding: 4px 0;
+    border: none; background: transparent;
+    font-size: 14px; color: var(--text-primary);
+    outline: none !important; box-shadow: none !important;
+    font-family: inherit;
+}
+.email-cmp-chip-input:focus,
+.email-cmp-chip-input:focus-visible { outline: none !important; box-shadow: none !important; border: none !important; }
+.email-cmp-chip-input::placeholder { color: var(--text-muted, var(--text-secondary)); }
+
+/* Cc/Bcc toggle pill — sits on the right edge of the To row */
+.email-cmp-cc-toggle {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--brand-primary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: background 0.12s, border-color 0.12s;
+}
+.email-cmp-cc-toggle:hover {
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1);
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.4);
+}
+
+/* Body editor — TinyMCE host. */
+.email-cmp-editor-wrap { padding: 14px 0; }
+.email-cmp-editor-wrap .tox-tinymce {
+    width: 100%;
+    min-height: 360px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+/* TinyMCE renders dropdowns into <body>'s .tox-tinymce-aux. Default
+   z-index is below our overlay; lift it. */
+body > .tox.tox-tinymce-aux,
+body > .tox.tox-silver-sink,
+.tox-tinymce-aux,
+.tox-tinymce-aux .tox-menu,
+.tox-tinymce-aux .tox-collection,
+.tox-tinymce-aux .tox-pop,
+.tox-dialog-wrap,
+.tox-dialog { z-index: 100000 !important; }
+
+/* Attachments chip strip — shown above the footer when files attached */
+.email-cmp-attach-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 0;
+}
+.email-cmp-attach-strip:empty { display: none; }
+.email-cmp-attach-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px 4px 10px;
+    background: var(--bg-card-hover, rgba(0,0,0,0.04));
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-primary);
+}
+.email-cmp-attach-chip .size { color: var(--text-muted, var(--text-secondary)); font-size: 11px; }
+.email-cmp-attach-chip button {
+    background: none; border: none; color: var(--text-muted, var(--text-secondary));
+    cursor: pointer; padding: 0 2px; font-size: 14px; line-height: 1;
+}
+.email-cmp-attach-chip button:hover { color: var(--color-danger); }
+
+/* Footer */
+.email-cmp-footer {
+    padding: 12px 18px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+}
+.email-cmp-footer .footer-left { margin-right: auto; }
+.email-cmp-footer .btn-attach {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: transparent; color: var(--text-primary);
+    border: 1px solid var(--border-color); border-radius: 8px;
+    padding: 6px 14px; font-size: 13px; cursor: pointer;
+}
+.email-cmp-footer .btn-attach:hover { background: var(--bg-card-hover, rgba(0,0,0,0.04)); }
+.email-cmp-footer .btn-send {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--brand-primary); color: #fff;
+    border: 0; border-radius: 8px;
+    padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.email-cmp-footer .btn-send:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Inline error banner */
+.email-cmp-error {
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    color: var(--color-danger, #dc2626);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin: 8px 0;
+}

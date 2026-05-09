@@ -48,6 +48,15 @@
         #templateModal .crm-form-group > .searchable-dropdown-container .searchable-dropdown,
         #templateModal .searchable-dropdown-trigger { width: 100%; max-width: 100%; min-width: 0; }
         #templateModal .tox-tinymce { width: 100%; min-height: 380px; }
+        /* Compact spacing for the template-edit form — default crm-form-group
+           margins push the body editor below the fold on shorter viewports.
+           Halve the inter-row gap and the label-to-input gap. */
+        #templateModal .crm-form-group { margin-bottom: 10px; }
+        #templateModal .crm-form-group > label { margin-bottom: 4px; font-size: 0.82rem; font-weight: 600; }
+        #templateModal .crm-form-group > .form-control,
+        #templateModal .crm-form-group > select.form-control,
+        #templateModal .crm-form-group > input.form-control { padding: 6px 10px; font-size: 0.88rem; }
+        #templateModal .form-help-text { margin-top: 2px !important; font-size: 0.74rem !important; line-height: 1.35; }
         /* TinyMCE renders toolbar dropdowns, color pickers, link / source-code
            dialogs into <div class="tox tox-tinymce-aux"> appended to <body>.
            That container's default z-index sits below our modal overlay
@@ -3220,9 +3229,9 @@
 
     <!-- ─── Template preview modal ─────────────────────────────────────────── -->
     <div class="gm-overlay" id="templatePreviewModal">
-        <div class="gm-modal" style="max-width: 720px;">
+        <div class="gm-modal" style="max-width: 1080px; width: 92vw;">
             <div class="gm-header">
-                <h3>Preview (with sample data)</h3>
+                <h3 style="font-size: 1rem; font-weight: 600;">Preview (with sample data)</h3>
                 <button class="gm-close" onclick="closeTemplatePreview()">&times;</button>
             </div>
             <div class="gm-body">

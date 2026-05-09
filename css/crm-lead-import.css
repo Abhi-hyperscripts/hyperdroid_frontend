@@ -929,10 +929,105 @@
 .reply-modal {
     max-width: 900px;
     width: 92vw;
-    max-height: 90vh;
+    /* 85vh keeps ~7.5vh breathing room above the navbar AND below the
+       footer regardless of viewport size. .gm-overlay centers the modal
+       with align-items:center so the gap is split evenly. The inner
+       .reply-modal-body has overflow-y:auto, so tall content scrolls
+       inside the modal instead of pushing the modal off-screen. */
+    max-height: 85vh;
     display: flex;
     flex-direction: column;
 }
+/* Gmail-style compact composer — From / To / Subject become single-row
+   fields with the label rendered as a left-aligned prefix INSIDE the
+   input row, divided by a thin border instead of a hard label-on-its-own-
+   line. The body editor takes the recovered vertical space. */
+#replyEmailModal .crm-form-group,
+#composeEmailModal .crm-form-group {
+    margin: 0;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0;
+    min-height: 36px;
+}
+#replyEmailModal .crm-form-group > label,
+#composeEmailModal .crm-form-group > label {
+    flex: 0 0 64px;
+    margin: 0;
+    padding: 0 8px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+}
+#replyEmailModal .crm-form-group > .form-control,
+#replyEmailModal .crm-form-group > input.form-control,
+#replyEmailModal .crm-form-group > select.form-control,
+#composeEmailModal .crm-form-group > .form-control,
+#composeEmailModal .crm-form-group > input.form-control,
+#composeEmailModal .crm-form-group > select.form-control {
+    flex: 1 1 auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    box-shadow: none;
+}
+#replyEmailModal .crm-form-group > .form-control:focus,
+#composeEmailModal .crm-form-group > .form-control:focus { outline: none; box-shadow: inset 0 -2px 0 var(--brand-primary); }
+
+/* Message row — drop the label since the editor self-explains; let the
+   editor fill the rest of the modal. */
+#replyEmailModal .crm-form-group.reply-editor,
+#composeEmailModal .crm-form-group.reply-editor {
+    flex-direction: column;
+    align-items: stretch;
+    border-bottom: 0;
+    padding: 8px 0 0;
+}
+#replyEmailModal .crm-form-group.reply-editor > label,
+#composeEmailModal .crm-form-group.reply-editor > label { display: none; }
+
+/* Tighter TinyMCE inside both composers — single-row toolbar feel,
+   reduced button padding. */
+#replyEmailModal .tox-tinymce,
+#composeEmailModal .tox-tinymce { min-height: 280px; border-radius: 6px; }
+#replyEmailModal .tox-toolbar__primary,
+#composeEmailModal .tox-toolbar__primary { padding: 2px 4px; }
+#replyEmailModal .tox-tbtn,
+#composeEmailModal .tox-tbtn { height: 28px; width: 28px; margin: 0; }
+#replyEmailModal .tox-tbtn--select,
+#composeEmailModal .tox-tbtn--select { width: auto; padding: 0 6px; }
+#replyEmailModal .tox-toolbar__group,
+#composeEmailModal .tox-toolbar__group { padding: 0 4px; border-right: 1px solid var(--border-color); }
+
+/* The attachments form-group has a long inline hint that wraps under the
+   inline-label flex layout. Restore stacked layout for that row only and
+   keep it compact. */
+#replyEmailModal .crm-form-group:has(.reply-attach-row),
+#composeEmailModal .crm-form-group:has(.reply-attach-row) {
+    display: block;
+    border-bottom: 0;
+    padding: 6px 0 0;
+    min-height: 0;
+}
+#replyEmailModal .crm-form-group:has(.reply-attach-row) > label,
+#composeEmailModal .crm-form-group:has(.reply-attach-row) > label {
+    flex: none;
+    padding: 0;
+    margin: 0 0 4px;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+#replyEmailModal .reply-attach-row,
+#composeEmailModal .reply-attach-row { margin: 4px 0; }
+#replyEmailModal .reply-attach-hint,
+#composeEmailModal .reply-attach-hint { font-size: 0.72rem; }
 .reply-modal-body {
     flex: 1 1 auto;
     overflow-y: auto;
@@ -941,39 +1036,26 @@
     background: var(--bg-card);
     color: var(--text-primary);
     border-radius: 6px;
-    min-height: 260px;
+    min-height: 320px;
 }
-/* Quill overrides to blend with the dark theme */
-.reply-editor .ql-toolbar {
-    background: var(--bg-card);
-    border-color: var(--border-color);
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-}
-.reply-editor .ql-container {
-    background: var(--bg-card);
-    border-color: var(--border-color);
-    border-bottom-left-radius: 6px;
-    border-bottom-right-radius: 6px;
-    font-size: 0.9rem;
-    min-height: 220px;
-}
-.reply-editor .ql-editor {
-    min-height: 220px;
-    color: var(--text-primary);
-}
-.reply-editor .ql-editor.ql-blank::before {
-    color: var(--text-secondary);
-    font-style: normal;
-}
-.reply-editor .ql-snow .ql-stroke { stroke: var(--text-secondary); }
-.reply-editor .ql-snow .ql-fill { fill: var(--text-secondary); }
-.reply-editor .ql-snow .ql-picker { color: var(--text-secondary); }
-.reply-editor .ql-snow .ql-picker-options { background: var(--bg-primary); border-color: var(--border-color); color: var(--text-primary); }
-.reply-editor .ql-snow .ql-picker-label:hover .ql-stroke,
-.reply-editor .ql-snow .ql-picker-label.ql-active .ql-stroke,
-.reply-editor .ql-snow .ql-toolbar button:hover .ql-stroke,
-.reply-editor .ql-snow .ql-toolbar button.ql-active .ql-stroke { stroke: var(--brand-primary); }
+/* TinyMCE inside the reply modal — keep dropdowns above the modal stack
+   and reset to the editor's own height. The body-level .tox-tinymce-aux
+   z-index lift is global (set in settings.html for the templates editor)
+   and applies here too. */
+.reply-editor .tox-tinymce { width: 100%; min-height: 320px; }
+
+/* TinyMCE renders toolbar dropdowns / link / table / source dialogs into
+   <div class="tox tox-tinymce-aux"> appended to <body>. That container's
+   default z-index sits below our .gm-overlay (~1050) so dropdowns get
+   clipped behind the modal. Float them above. */
+body > .tox.tox-tinymce-aux,
+body > .tox.tox-silver-sink,
+.tox-tinymce-aux,
+.tox-tinymce-aux .tox-menu,
+.tox-tinymce-aux .tox-collection,
+.tox-tinymce-aux .tox-pop,
+.tox-dialog-wrap,
+.tox-dialog { z-index: 100000 !important; }
 
 .reply-attach-hint {
     font-weight: 400;

@@ -39,6 +39,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     loadMyRole();
+    // Probe whether the tenant has any configured shared mailbox. The
+    // result gates the inline "send email" buttons in the leads table and
+    // lead detail panel — no point offering Send Email when the backend
+    // can't actually send. Cached on window so renderLeadsTable +
+    // openLeadDetailPanel can read it synchronously.
+    loadTenantMailboxFlag();
     loadLeads();
     loadLeadStats();
     loadSourceFilter();
@@ -672,7 +678,14 @@ function renderLeadsTable(leads) {
                 ${lead.company_name ? `<div class="crm-cell-secondary">${escapeHtml(lead.company_name)}</div>` : (lead.company ? `<div class="crm-cell-secondary">${escapeHtml(lead.company)}</div>` : '')}
             </td>
             <td data-col="email">
-                <span class="crm-cell-secondary">${escapeHtml(lead.email || '-')}</span>
+                ${lead.email
+                    ? (window._tenantHasMailbox
+                        ? `<span class="crm-cell-secondary" style="display:inline-flex;align-items:center;gap:6px;">
+                              <button type="button" class="lead-email-send-btn" onclick="event.stopPropagation(); openComposeForLeadFromTable('${lead.id}', '${escapeHtml(lead.email)}', '${escapeHtml([lead.first_name, lead.last_name].filter(Boolean).join(' ') || '')}')" data-tooltip="Send email" aria-label="Send email" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-card);color:var(--brand-primary);cursor:pointer;flex-shrink:0;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
+                              ${escapeHtml(lead.email)}
+                           </span>`
+                        : `<span class="crm-cell-secondary">${escapeHtml(lead.email)}</span>`)
+                    : `<span class="crm-cell-secondary">-</span>`}
             </td>
             <td data-col="phone" class="hide-mobile">
                 <span class="crm-cell-secondary">${lead.phone ? crmPhoneLink(lead.phone) : '-'}</span>
@@ -1292,6 +1305,63 @@ function formatDateTime(dateStr) {
         return dateStr;
     }
 }
+
+// Probe whether the tenant has CONFIGURED a sending mailbox in CRM —
+// i.e. has set a tenant-default mailbox or attached one to a flow. We
+// deliberately don't count `shared-mailboxes` (the EmailService catalog),
+// because the catalog lists every shared mailbox the user has access to
+// across the workspace; the tenant has only "opted in" to send-from for
+// the ones explicitly attached. Result + the actual mailbox list both
+// live on window so the compose modal can populate its From dropdown
+// from the same cached set without a second round-trip.
+async function loadTenantMailboxFlag() {
+    try {
+        const [defaultMb, attachments] = await Promise.all([
+            api.request('/crm/mailbox-attachments/tenant-default').catch(() => ({})),
+            api.request('/crm/mailbox-attachments/attachments').catch(() => ({})),
+        ]);
+        // Build a deduped list of configured mailboxes. Tenant-default
+        // first (so it shows up at the top of the From picker), then any
+        // flow-specific overrides not already covered by the default.
+        const seen = new Set();
+        const list = [];
+        const def = defaultMb?.mailbox;
+        if (def && def.id) {
+            list.push({ id: def.id, email_address: def.email_address, is_active: def.is_active !== false });
+            seen.add(def.id);
+        }
+        for (const a of (attachments?.attachments || [])) {
+            const id = a.mailbox_id || a.id;
+            if (!id || seen.has(id)) continue;
+            list.push({ id, email_address: a.mailbox_email || a.email_address, is_active: a.mailbox_is_active !== false });
+            seen.add(id);
+        }
+        window._tenantConfiguredMailboxes = list;
+        window._tenantHasMailbox = list.length > 0;
+    } catch (_) {
+        window._tenantConfiguredMailboxes = [];
+        window._tenantHasMailbox = false;
+    }
+    // If the table already rendered before we resolved, redraw the email
+    // column so the buttons appear without a manual refresh.
+    if (typeof renderLeadsTable === 'function' && Array.isArray(allLeads) && allLeads.length) {
+        try { renderLeadsTable(allLeads); } catch (_) {}
+    }
+}
+
+// Triggered by the inline mail icon on each row of the leads table. Sets
+// the same window globals that openLeadDetailPanel populates so
+// openComposeForLead can read the lead's email/name without re-fetching.
+window.openComposeForLeadFromTable = function (leadId, email, name) {
+    window._leadDetailId = leadId;
+    window._leadDetailEmail = email || '';
+    window._leadDetailName  = name || '';
+    if (typeof window.openComposeForLead === 'function') {
+        window.openComposeForLead(leadId);
+    } else {
+        Toast.error('Composer not loaded yet — refresh and retry.');
+    }
+};
 
 function teamColorClass(name) {
     if (!name) return '';

@@ -243,7 +243,7 @@
             document.getElementById('leadDetailInfo').innerHTML = `
                 <div class="lead-detail-grid">
                     ${lead.lead_number ? `<div class="lead-detail-item"><span class="lead-detail-label">Lead ID</span><span class="crm-lead-number">${esc(lead.lead_number)}</span></div>` : ''}
-                    ${lead.email ? `<div class="lead-detail-item"><span class="lead-detail-label">Email</span><span>${esc(lead.email)}</span></div>` : ''}
+                    ${lead.email ? `<div class="lead-detail-item"><span class="lead-detail-label">Email</span><span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;">${esc(lead.email)}${window._tenantHasMailbox ? `<button type="button" onclick="openComposeForLead(window._leadDetailId)" class="lead-email-send-btn" data-tooltip="Send email" aria-label="Send email" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;border-radius:50%;border:1px solid var(--border-color);background:var(--bg-card);color:var(--brand-primary);cursor:pointer;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>` : ''}</span></div>` : ''}
                     ${lead.phone ? `<div class="lead-detail-item"><span class="lead-detail-label">Phone</span><span>${crmPhoneLink(lead.phone)}</span></div>` : ''}
                     ${lead.alternate_phone ? `<div class="lead-detail-item"><span class="lead-detail-label">Alt. Phone</span><span>${crmPhoneLink(lead.alternate_phone)}</span></div>` : ''}
                     ${lead.company_name ? `<div class="lead-detail-item"><span class="lead-detail-label">Company</span><span>${esc(lead.company_name)}</span></div>` : ''}
@@ -285,6 +285,12 @@
             // Fire-and-forget — failure here just leaves the default Need-Help
             // button visible, which is correct for the no-existing-request case.
             refreshHelpButtonForLead(leadId);
+
+            // Cache the lead's email + display name on a hidden node so
+            // openComposeForLead() can read it without re-fetching. The
+            // small mail-icon button next to the email field uses these.
+            window._leadDetailEmail = lead.email || '';
+            window._leadDetailName  = name || '';
         } catch (e) {
             document.getElementById('leadTimeline').innerHTML = `<p style="color:var(--color-error);">${esc(e.message || 'Failed to load')}</p>`;
         }
@@ -936,8 +942,77 @@
     // picks up email_sends WHERE lead_id = lead).
 
     let _replyCtx = null;
-    let _replyQuill = null;
+    let _replyTmceReady = null;          // Promise<editor> from tinymce.init
+    const REPLY_TMCE_ID = 'replyBodyEditor';
     let _replyAttachments = []; // [{name, size, type, base64}]
+
+    // TinyMCE replaces Quill in this composer for the same reason as the
+    // template editor: Quill's clipboard strips inline `style` attributes,
+    // breaking pasted Outlook / Drive share-link cards. valid_elements +
+    // paste_remove_styles config below preserves source verbatim.
+    function ensureReplyTmce() {
+        if (_replyTmceReady) return _replyTmceReady;
+        if (typeof tinymce === 'undefined') {
+            console.error('TinyMCE script not loaded');
+            return Promise.resolve(null);
+        }
+        _replyTmceReady = tinymce.init({
+            selector: '#' + REPLY_TMCE_ID,
+            license_key: 'gpl',
+            height: 320,
+            menubar: false,
+            promotion: false,
+            branding: false,
+            statusbar: false,
+            plugins: 'lists link image table code preview anchor autolink',
+            toolbar: 'blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link image table | code preview',
+            toolbar_mode: 'wrap',
+            valid_elements: '*[*]',
+            extended_valid_elements: '*[*]',
+            paste_remove_styles: false,
+            paste_remove_styles_if_webkit: false,
+            paste_webkit_styles: 'all',
+            paste_data_images: true,
+            paste_as_text: false,
+            keep_styles: true,
+            forced_root_block: 'p',
+            element_format: 'html',
+            verify_html: false,
+            cleanup: false,
+            convert_urls: false,
+            entity_encoding: 'raw',
+            content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
+            placeholder: 'Type your reply…',
+            setup: function (editor) {
+                editor.on('init', function () {
+                    const modalBody = document.querySelector('#replyEmailModal .reply-modal-body');
+                    if (!modalBody) return;
+                    // Same scroll-closes-popup pattern as the templates editor
+                    // (TinyMCE doesn't reposition body-level dropdowns when the
+                    // modal scrolls, so close them outright).
+                    modalBody.addEventListener('scroll', function () {
+                        document.querySelectorAll('.tox-tinymce-aux .tox-pop, .tox-tinymce-aux .tox-menu, .tox-tinymce-aux .tox-collection')
+                            .forEach(function (el) { el.style.display = 'none'; });
+                    }, { passive: true });
+                });
+            }
+        }).then(eds => (eds && eds[0]) || tinymce.get(REPLY_TMCE_ID));
+        return _replyTmceReady;
+    }
+
+    function getReplyHtml() {
+        const ed = (typeof tinymce !== 'undefined') ? tinymce.get(REPLY_TMCE_ID) : null;
+        return ed ? (ed.getContent() || '') : '';
+    }
+    function getReplyText() {
+        const ed = (typeof tinymce !== 'undefined') ? tinymce.get(REPLY_TMCE_ID) : null;
+        if (!ed) return '';
+        return (ed.getContent({ format: 'text' }) || '').trim();
+    }
+    function setReplyContent(html) {
+        const ed = (typeof tinymce !== 'undefined') ? tinymce.get(REPLY_TMCE_ID) : null;
+        if (ed) ed.setContent(html || '');
+    }
     const REPLY_MAX_ATTACH_COUNT = 20;
     const REPLY_MAX_PER_FILE = 10 * 1024 * 1024;   // 10 MB — matches MailboxController cap
     const REPLY_MAX_TOTAL = 20 * 1024 * 1024;      // 20 MB total — matches MailboxController cap
@@ -977,53 +1052,105 @@
         }
     }
 
-    function openReplyModal(ctx) {
-        _replyCtx = ctx;
-        _replyAttachments = [];
+    async function openReplyModal(ctx) {
         const parsed = parseEmailAddress(ctx.toEmail);
-        ctx._toEmailPure = parsed.email;
-        ctx._toName = parsed.name;
-
-        if (!document.getElementById('replyEmailModal')) {
-            buildReplyModal();
-        }
-
         const subj = ctx.subject && ctx.subject.toLowerCase().startsWith('re:')
             ? ctx.subject
             : (ctx.subject ? `Re: ${ctx.subject}` : '');
-        const displayTo = parsed.name
-            ? `${parsed.name} <${parsed.email}>`
-            : parsed.email;
-        document.getElementById('replyToEmail').value = displayTo;
-        document.getElementById('replySubject').value = subj;
 
-        // Rich-text editor — lazy-init once, then clear between opens so we
-        // don't leak the previous draft. Quill is already loaded at page level
-        // (same version PMS/News use), so this is a cheap handoff.
-        const editorHost = document.getElementById('replyBodyEditor');
-        if (!_replyQuill) {
-            _replyQuill = new Quill(editorHost, {
-                theme: 'snow',
-                placeholder: 'Type your reply…',
-                modules: {
-                    toolbar: [
-                        [{ header: [1, 2, 3, false] }],
-                        ['bold', 'italic', 'underline', 'strike'],
-                        [{ list: 'ordered' }, { list: 'bullet' }],
-                        [{ color: [] }, { background: [] }],
-                        ['link', 'blockquote', 'code-block'],
-                        ['clean']
-                    ]
+        // Mailbox the original message was sent through — Reply must use
+        // the same mailbox so the threading is consistent. Fall back to
+        // tenant-default if ctx.mailboxId is missing.
+        let mailboxes = [];
+        if (Array.isArray(window._tenantConfiguredMailboxes) &&
+            window._tenantConfiguredMailboxes.length > 0) {
+            mailboxes = window._tenantConfiguredMailboxes
+                .filter(m => m && m.id && m.is_active !== false)
+                .map(m => ({ id: m.id, email: m.email_address }));
+        } else {
+            try {
+                const [defResp, attResp] = await Promise.all([
+                    api.request('/crm/mailbox-attachments/tenant-default').catch(() => ({})),
+                    api.request('/crm/mailbox-attachments/attachments').catch(() => ({})),
+                ]);
+                const seen = new Set();
+                if (defResp?.mailbox?.id) {
+                    mailboxes.push({ id: defResp.mailbox.id, email: defResp.mailbox.email_address });
+                    seen.add(defResp.mailbox.id);
                 }
-            });
+                for (const a of (attResp?.attachments || [])) {
+                    const id = a.mailbox_id || a.id;
+                    if (!id || seen.has(id)) continue;
+                    mailboxes.push({ id, email: a.mailbox_email || a.email_address });
+                    seen.add(id);
+                }
+            } catch (_) {}
         }
-        _replyQuill.setContents([]);
+        if (mailboxes.length === 0) {
+            Toast.error('No mailbox configured. Open Settings → Mailboxes to add one.');
+            return;
+        }
+        // Prefer ctx.mailboxId (the mailbox the original landed in) if it
+        // matches a configured mailbox; else first.
+        const selectedId = (ctx.mailboxId && mailboxes.find(m => m.id === ctx.mailboxId))
+            ? ctx.mailboxId
+            : mailboxes[0].id;
 
-        renderReplyAttachments();
-        renderReplyQuotedPreview(ctx);
-        document.getElementById('replyModalError').style.display = 'none';
-        document.getElementById('replyEmailModal').classList.add('active');
-        setTimeout(() => _replyQuill && _replyQuill.focus(), 80);
+        if (typeof window.EmailComposer === 'undefined') {
+            Toast.error('Email composer not loaded — refresh and retry.');
+            return;
+        }
+
+        window.EmailComposer.open({
+            title: 'Reply',
+            fromMailboxes: mailboxes,
+            selectedFromId: selectedId,
+            to: parsed.name ? `${parsed.name} <${parsed.email}>` : parsed.email,
+            subject: subj,
+            initialBodyHtml: '',
+            leadId: window._leadDetailId,
+            inReplyTo: ctx.inReplyTo || null,
+            onSend: async (payload) => {
+                // Stitch quoted original so recipients have context in
+                // clients that don't collapse threads. We add to the HTML
+                // via <blockquote>, and to the text body with the classic
+                // "> " prefix.
+                let finalHtml = payload.html;
+                let finalText = payload.text;
+                if (ctx.replySnippet) {
+                    const who = parsed.name
+                        ? `${parsed.name} &lt;${esc(parsed.email)}&gt;`
+                        : esc(parsed.email);
+                    const snippetEscHtml = esc(ctx.replySnippet).replace(/\n/g, '<br>');
+                    finalHtml += `<br><hr><p style="color:#6b7280;font-size:0.9em;">On earlier reply, ${who} wrote:</p><blockquote style="border-left:3px solid #e5e7eb;padding-left:10px;color:#6b7280;">${snippetEscHtml}</blockquote>`;
+                    const quoteTxt = String(ctx.replySnippet).replace(/\n/g, '\n> ');
+                    finalText += `\n\n-----\n> ${quoteTxt}`;
+                }
+                const attachments = (payload.attachments || []).map(a => ({
+                    file_name: a.name,
+                    mime_type: a.type || 'application/octet-stream',
+                    content_base64: a.base64
+                }));
+                const wrap = arr => (arr || []).map(e => ({ email: e, name: null }));
+                await api.request(`/mailbox-send/${payload.fromId}/send`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        to_email: payload.to,
+                        to_name: payload.toName || undefined,
+                        cc: payload.cc && payload.cc.length ? wrap(payload.cc) : undefined,
+                        bcc: payload.bcc && payload.bcc.length ? wrap(payload.bcc) : undefined,
+                        subject: payload.subject || 'Re:',
+                        body_html: finalHtml,
+                        body_text: finalText,
+                        in_reply_to: payload.inReplyTo || undefined,
+                        lead_id: payload.leadId || undefined,
+                        attachments: attachments.length ? attachments : undefined,
+                    }),
+                });
+                Toast.success('Reply sent');
+                if (payload.leadId) openLeadDetailPanel(payload.leadId);
+            }
+        });
     }
 
     function closeReplyModal() {
@@ -1053,9 +1180,9 @@
                         <label for="replySubject">Subject</label>
                         <input type="text" class="form-control" id="replySubject">
                     </div>
-                    <div class="crm-form-group">
+                    <div class="crm-form-group reply-editor">
                         <label>Message</label>
-                        <div id="replyBodyEditor" class="reply-editor"></div>
+                        <textarea id="replyBodyEditor"></textarea>
                     </div>
                     <div class="crm-form-group">
                         <label>Attachments <span class="reply-attach-hint">(max 20 files, 10 MB each, 20 MB total)</span></label>
@@ -1194,11 +1321,11 @@
             return;
         }
 
-        // Extract both HTML and plain text from Quill. Backend sends as
+        // Extract both HTML and plain text from TinyMCE. Backend sends as
         // multipart/alternative so recipient clients that can't render HTML
         // still see something readable.
-        const bodyHtml = _replyQuill ? _replyQuill.root.innerHTML : '';
-        const bodyText = _replyQuill ? _replyQuill.getText().trim() : '';
+        const bodyHtml = getReplyHtml();
+        const bodyText = getReplyText();
         if (!bodyText) {
             errEl.textContent = 'Message body is required.';
             errEl.style.display = 'block';
@@ -1245,6 +1372,301 @@
             Toast.success('Reply sent');
             closeReplyModal();
             if (leadId) openLeadDetailPanel(leadId); // refresh timeline
+        } catch (e) {
+            errEl.textContent = (e && e.message) ? e.message : 'Send failed';
+            errEl.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Send';
+        }
+    }
+
+    // ─── New Email Composer (lead detail panel) ──────────────────────────
+    //
+    // Reuses the reply modal's TinyMCE editor (ensureReplyTmce) but lives
+    // in a separate gm-overlay so the two flows can co-exist (e.g. the rep
+    // could be replying to one thread and decide to start a fresh email to
+    // a different lead). Send target: /mailbox-send/{mailboxId}/send — same
+    // backend endpoint that handles replies, just without in_reply_to.
+
+    let _composeMailboxes = [];
+    let _composeLeadId = null;
+    let _composeAttachments = [];
+    const COMPOSE_LEAD_TMCE_ID = 'composeLeadBodyEditor';
+    let _composeLeadTmceReady = null;
+
+    function ensureComposeLeadTmce() {
+        if (_composeLeadTmceReady) return _composeLeadTmceReady;
+        if (typeof tinymce === 'undefined') return Promise.resolve(null);
+        _composeLeadTmceReady = tinymce.init({
+            selector: '#' + COMPOSE_LEAD_TMCE_ID,
+            license_key: 'gpl',
+            height: 320,
+            menubar: false, promotion: false, branding: false, statusbar: false,
+            plugins: 'lists link image table code preview anchor autolink',
+            toolbar: 'blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link image table | code preview',
+            toolbar_mode: 'wrap',
+            valid_elements: '*[*]', extended_valid_elements: '*[*]',
+            paste_remove_styles: false, paste_remove_styles_if_webkit: false,
+            paste_webkit_styles: 'all', paste_data_images: true, paste_as_text: false,
+            keep_styles: true, forced_root_block: 'p', element_format: 'html',
+            verify_html: false, cleanup: false, convert_urls: false, entity_encoding: 'raw',
+            content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
+            placeholder: 'Write your message…',
+            setup: function (editor) {
+                editor.on('init', function () {
+                    const modalBody = document.querySelector('#composeEmailModal .reply-modal-body');
+                    if (!modalBody) return;
+                    modalBody.addEventListener('scroll', function () {
+                        document.querySelectorAll('.tox-tinymce-aux .tox-pop, .tox-tinymce-aux .tox-menu, .tox-tinymce-aux .tox-collection')
+                            .forEach(function (el) { el.style.display = 'none'; });
+                    }, { passive: true });
+                });
+            }
+        }).then(eds => (eds && eds[0]) || tinymce.get(COMPOSE_LEAD_TMCE_ID));
+        return _composeLeadTmceReady;
+    }
+    function getComposeLeadHtml() {
+        const ed = (typeof tinymce !== 'undefined') ? tinymce.get(COMPOSE_LEAD_TMCE_ID) : null;
+        return ed ? (ed.getContent() || '') : '';
+    }
+    function getComposeLeadText() {
+        const ed = (typeof tinymce !== 'undefined') ? tinymce.get(COMPOSE_LEAD_TMCE_ID) : null;
+        if (!ed) return '';
+        return (ed.getContent({ format: 'text' }) || '').trim();
+    }
+
+    async function openComposeForLead(leadId) {
+        if (!leadId) return;
+        const leadEmail = window._leadDetailEmail || '';
+        const leadName  = window._leadDetailName  || '';
+        if (!leadEmail) {
+            Toast.error('This lead has no email on file.');
+            return;
+        }
+
+        // Use the configured-mailbox list cached by leads.js
+        // (loadTenantMailboxFlag). Fresh-fetch fallback for deep links.
+        let mailboxes = [];
+        if (Array.isArray(window._tenantConfiguredMailboxes) &&
+            window._tenantConfiguredMailboxes.length > 0) {
+            mailboxes = window._tenantConfiguredMailboxes
+                .filter(m => m && m.id && m.is_active !== false);
+        } else {
+            try {
+                const [defResp, attResp] = await Promise.all([
+                    api.request('/crm/mailbox-attachments/tenant-default').catch(() => ({})),
+                    api.request('/crm/mailbox-attachments/attachments').catch(() => ({})),
+                ]);
+                const seen = new Set();
+                const def = defResp?.mailbox;
+                if (def && def.id && def.is_active !== false) {
+                    mailboxes.push({ id: def.id, email_address: def.email_address });
+                    seen.add(def.id);
+                }
+                for (const a of (attResp?.attachments || [])) {
+                    const id = a.mailbox_id || a.id;
+                    if (!id || seen.has(id)) continue;
+                    if (a.mailbox_is_active === false) continue;
+                    mailboxes.push({ id, email_address: a.mailbox_email || a.email_address });
+                    seen.add(id);
+                }
+            } catch (e) {
+                console.error(e);
+                Toast.error('Failed to load mailboxes.');
+                return;
+            }
+        }
+        if (mailboxes.length === 0) {
+            Toast.error('No mailbox configured. Open Settings → Mailboxes to add one.');
+            return;
+        }
+
+        if (typeof window.EmailComposer === 'undefined') {
+            Toast.error('Email composer not loaded — refresh and retry.');
+            return;
+        }
+
+        window.EmailComposer.open({
+            title: 'New Email',
+            fromMailboxes: mailboxes.map(m => ({ id: m.id, email: m.email_address })),
+            selectedFromId: mailboxes[0].id,
+            to: leadName ? `${leadName} <${leadEmail}>` : leadEmail,
+            subject: '',
+            initialBodyHtml: '',
+            leadId,
+            onSend: async (payload) => {
+                const attachments = (payload.attachments || []).map(a => ({
+                    file_name: a.name,
+                    mime_type: a.type || 'application/octet-stream',
+                    content_base64: a.base64
+                }));
+                // Backend expects cc/bcc as [{email, name}] objects, not
+                // bare strings. Wrap each chip into the EmailAddressDto shape.
+                const wrap = arr => (arr || []).map(e => ({ email: e, name: null }));
+                await api.request(`/mailbox-send/${payload.fromId}/send`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        to_email: payload.to,
+                        to_name: payload.toName || undefined,
+                        cc: payload.cc && payload.cc.length ? wrap(payload.cc) : undefined,
+                        bcc: payload.bcc && payload.bcc.length ? wrap(payload.bcc) : undefined,
+                        subject: payload.subject,
+                        body_html: payload.html,
+                        body_text: payload.text,
+                        lead_id: payload.leadId || undefined,
+                        attachments: attachments.length ? attachments : undefined,
+                    }),
+                });
+                Toast.success('Email sent');
+                if (payload.leadId) openLeadDetailPanel(payload.leadId);  // refresh timeline
+            }
+        });
+    }
+
+    function closeComposeModal() {
+        const modal = document.getElementById('composeEmailModal');
+        if (modal) modal.classList.remove('active');
+        _composeLeadId = null;
+        _composeAttachments = [];
+    }
+
+    function buildComposeModal() {
+        const overlay = document.createElement('div');
+        overlay.id = 'composeEmailModal';
+        overlay.className = 'gm-overlay';
+        overlay.innerHTML = `
+            <div class="gm-modal reply-modal">
+                <div class="gm-header">
+                    <h3 style="font-size:1rem;font-weight:600;">New Email</h3>
+                    <button class="gm-close" onclick="closeComposeModal()">&times;</button>
+                </div>
+                <div class="gm-body reply-modal-body">
+                    <div class="crm-alert crm-alert-error" id="composeModalError" style="display:none;"></div>
+                    <div class="crm-form-group">
+                        <label for="composeFromMailbox">From</label>
+                        <select class="form-control" id="composeFromMailbox"></select>
+                    </div>
+                    <div class="crm-form-group">
+                        <label for="composeToEmail">To</label>
+                        <input type="text" class="form-control" id="composeToEmail">
+                    </div>
+                    <div class="crm-form-group">
+                        <label for="composeSubjectInput">Subject</label>
+                        <input type="text" class="form-control" id="composeSubjectInput" placeholder="">
+                    </div>
+                    <div class="crm-form-group reply-editor">
+                        <label>Message</label>
+                        <textarea id="composeLeadBodyEditor"></textarea>
+                    </div>
+                    <div class="crm-form-group">
+                        <label>Attachments <span class="reply-attach-hint">(max 20 files, 10 MB each, 20 MB total)</span></label>
+                        <div class="reply-attach-row">
+                            <label class="btn btn-sm btn-secondary reply-attach-btn">
+                                <input type="file" id="composeAttachInput" multiple style="display:none;" onchange="onComposeAttachChange(event)">
+                                + Add files
+                            </label>
+                            <span id="composeAttachSummary" class="reply-attach-summary"></span>
+                        </div>
+                        <div id="composeAttachList" class="reply-attach-list"></div>
+                    </div>
+                </div>
+                <div class="gm-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeComposeModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="composeSendBtn" onclick="submitCompose()">Send</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+    }
+
+    function renderComposeAttachments() {
+        const list = document.getElementById('composeAttachList');
+        const summary = document.getElementById('composeAttachSummary');
+        if (!list || !summary) return;
+        list.innerHTML = '';
+        if (_composeAttachments.length === 0) {
+            summary.textContent = 'No files attached';
+            return;
+        }
+        const totalKb = _composeAttachments.reduce((n, a) => n + a.size, 0) / 1024;
+        summary.textContent = `${_composeAttachments.length} file(s), ${totalKb.toFixed(1)} KB total`;
+        _composeAttachments.forEach((a, i) => {
+            const item = document.createElement('div');
+            item.className = 'reply-attach-item';
+            item.innerHTML = `
+                <span class="reply-attach-name">${esc(a.name)}</span>
+                <span class="reply-attach-size">${(a.size/1024).toFixed(1)} KB</span>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="removeComposeAttachment(${i})">×</button>`;
+            list.appendChild(item);
+        });
+    }
+
+    function onComposeAttachChange(ev) {
+        const files = Array.from(ev.target.files || []);
+        const promises = files.map(f => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve({
+                name: f.name, size: f.size, type: f.type || 'application/octet-stream',
+                base64: String(reader.result).split(',')[1] || ''
+            });
+            reader.onerror = reject;
+            reader.readAsDataURL(f);
+        }));
+        Promise.all(promises).then(items => {
+            _composeAttachments = _composeAttachments.concat(items);
+            renderComposeAttachments();
+        }).catch(e => Toast.error('Failed to read file: ' + (e.message || e)));
+        ev.target.value = '';
+    }
+
+    function removeComposeAttachment(i) {
+        _composeAttachments.splice(i, 1);
+        renderComposeAttachments();
+    }
+
+    async function submitCompose() {
+        const btn = document.getElementById('composeSendBtn');
+        const errEl = document.getElementById('composeModalError');
+        errEl.style.display = 'none';
+
+        const mailboxId = document.getElementById('composeFromMailbox').value;
+        if (!mailboxId) { errEl.textContent = 'Select a sending mailbox.'; errEl.style.display = 'block'; return; }
+
+        const toRaw = document.getElementById('composeToEmail').value.trim();
+        const parsed = parseEmailAddress(toRaw);
+        if (!parsed.email) { errEl.textContent = 'Recipient email is required.'; errEl.style.display = 'block'; return; }
+
+        const subject = document.getElementById('composeSubjectInput').value.trim();
+        if (!subject) { errEl.textContent = 'Subject is required.'; errEl.style.display = 'block'; return; }
+
+        const bodyHtml = getComposeLeadHtml();
+        const bodyText = getComposeLeadText();
+        if (!bodyText) { errEl.textContent = 'Message body is required.'; errEl.style.display = 'block'; return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+        try {
+            const attachments = _composeAttachments.map(a => ({
+                file_name: a.name,
+                mime_type: a.type || 'application/octet-stream',
+                content_base64: a.base64
+            }));
+            await api.request(`/mailbox-send/${mailboxId}/send`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    to_email: parsed.email,
+                    to_name: parsed.name || undefined,
+                    subject,
+                    body_html: bodyHtml,
+                    body_text: bodyText,
+                    lead_id: _composeLeadId || undefined,
+                    attachments: attachments.length ? attachments : undefined,
+                }),
+            });
+            Toast.success('Email sent');
+            const lid = _composeLeadId;
+            closeComposeModal();
+            if (lid) openLeadDetailPanel(lid);  // refresh timeline
         } catch (e) {
             errEl.textContent = (e && e.message) ? e.message : 'Send failed';
             errEl.style.display = 'block';
@@ -1458,6 +1880,11 @@
     window.submitReply = submitReply;
     window.onReplyAttachChange = onReplyAttachChange;
     window.removeReplyAttachment = removeReplyAttachment;
+    window.openComposeForLead = openComposeForLead;
+    window.closeComposeModal = closeComposeModal;
+    window.submitCompose = submitCompose;
+    window.onComposeAttachChange = onComposeAttachChange;
+    window.removeComposeAttachment = removeComposeAttachment;
     window.openHelpRequestModal = openHelpRequestModal;
     window.closeHelpRequestModal = closeHelpRequestModal;
     window.submitHelpRequest = submitHelpRequest;

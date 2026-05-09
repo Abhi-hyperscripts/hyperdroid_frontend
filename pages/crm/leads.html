@@ -27,8 +27,14 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-lead-import.css?v=' + CACHE_VERSION + '">');</script>
-    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    <!-- TinyMCE 7 community (replaces Quill) — used by the shared email
+         composer (js/shared/email-composer.js) and any other rich-text
+         editor on this page. -->
+    <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js" referrerpolicy="origin"></script>
+    <!-- Shared email-composer modal (Email-service look + feel, Outlook /
+         Slack-like single composer reused by reply, new-from-lead, etc) -->
+    <script>document.write('<link rel="stylesheet" href="../../css/email-composer.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/shared/email-composer.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <!-- Flatpickr — needed because <input type="datetime-local"> on macOS Safari
          shows calendar-only popup with no time controls. HRMSDatePicker wraps
          Flatpickr and supports data-enable-time="true" on type="date" inputs. -->
