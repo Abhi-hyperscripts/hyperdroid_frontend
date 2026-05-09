@@ -3856,8 +3856,13 @@ body.crm-page #gsShareModal .gm-body:has(.searchable-dropdown.open) {
     max-width: 1600px;
 }
 
+/* Centering the kanban-board with `justify-content: center` clips the
+   first + last columns when total column width exceeds the viewport
+   (the centering anchor pushes them outside the scrollable area).
+   Use flex-start so the leftmost column is always fully visible at
+   scrollLeft=0 and the user can scroll right to reach the rest. */
 .crm-deals-page .kanban-board {
-    justify-content: center;
+    justify-content: flex-start;
 }
 
 /* ── Lead Modal — compact inputs at 32px ── */
