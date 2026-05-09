@@ -64,6 +64,28 @@
         padding: 10px 12px; margin-bottom: 18px;
         position: sticky; top: 70px; z-index: 5;
     }
+    /* Tab strip — segmented look matching the rest of the CRM admin pages.
+       Lives between the page heading and the toolbar; clicking flips
+       .ana-pane visibility and lazy-loads the forecast pane on first show. */
+    .ana-tabs {
+        display: flex; gap: 0; margin-bottom: 16px; border-bottom: 1px solid var(--border-color);
+    }
+    .ana-tab {
+        background: transparent; border: 0; padding: 10px 16px;
+        color: var(--text-secondary); font-size: 0.9rem; font-weight: 500;
+        cursor: pointer; border-bottom: 2px solid transparent;
+        transition: color 120ms, border-color 120ms;
+    }
+    .ana-tab:hover { color: var(--text-primary); }
+    .ana-tab.active { color: var(--text-primary); border-bottom-color: var(--brand-primary); }
+    .ana-pane { display: block; }
+    /* Forecast KPI tile — same shape as the lead KPI cards but with a
+       prominent currency label. */
+    #fcKpiGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 18px; }
+    #fcKpiGrid .ana-kpi-card { padding: 14px; }
+    #fcKpiGrid .fc-kpi-label { color: var(--text-secondary); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    #fcKpiGrid .fc-kpi-value { font-size: 1.5rem; font-weight: 600; margin-top: 4px; }
+    #fcKpiGrid .fc-kpi-sub   { color: var(--text-secondary); font-size: 0.8rem; margin-top: 4px; }
     .ana-toolbar .field { display:flex; flex-direction:column; gap:2px; }
     /* The four primary filter fields (Created from / Created to / Source / Team)
        share the row equally and fill all available width. The Form Answers
@@ -200,7 +222,10 @@
     .ana-card { padding: 16px; min-height: 320px; display: flex; flex-direction: column; }
     /* Info icon shared between KPI cards and chart/table card headers.
        Reuses the same disc style; placement adjusts via the parent class. */
-    .ana-card-header .ana-info {
+    /* Was scoped to .ana-card-header — widened to match every .ana-info on
+       the page so the forecast KPI tiles get the same disc look as the
+       lead-analytics card headers. */
+    .ana-info {
         display: inline-flex; align-items: center; justify-content: center;
         width: 18px; height: 18px; padding: 0; margin-left: 8px;
         background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.12);
@@ -211,7 +236,7 @@
         cursor: help; line-height: 1; vertical-align: middle;
         transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
     }
-    .ana-card-header .ana-info:hover, .ana-card-header .ana-info:focus {
+    .ana-info:hover, .ana-info:focus {
         color: var(--brand-primary);
         border-color: var(--brand-primary);
         background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.20);
@@ -331,6 +356,24 @@
                 <p>Track lead volume, funnel conversion, and team performance. Every chart and table on this page shares the filters below — change the date range, source, or form answers to scope the entire dashboard.</p>
             </div>
         </div>
+
+        <!-- Tab switcher: Lead analytics vs. Forecast.
+             Pure CSS+a tiny JS toggler — keeps the existing dashboard in its
+             own pane untouched and adds the Forecast pane next to it. The
+             toolbar stays visible only on the analytics tab; the forecast
+             pane has its own date range + scope picker. -->
+        <div class="ana-tabs" role="tablist">
+            <button type="button" class="ana-tab active" role="tab" id="anaTabAnalytics"
+                    aria-selected="true" onclick="switchAnaTab('analytics')">
+                Lead analytics
+            </button>
+            <button type="button" class="ana-tab" role="tab" id="anaTabForecast"
+                    aria-selected="false" onclick="switchAnaTab('forecast')">
+                Forecast
+            </button>
+        </div>
+
+        <div id="anaPane-analytics" class="ana-pane">
 
         <!-- Toolbar — date / source / team / form answers -->
         <div class="ana-toolbar">
@@ -505,6 +548,204 @@
             </div>
             <div id="anaAnswers"></div>
         </div>
+
+        </div><!-- /#anaPane-analytics -->
+
+        <!-- ─── Forecast tab pane ─────────────────────────────────────────
+             Hidden by default; switchAnaTab('forecast') flips display +
+             lazy-loads the data on first activation. The pane has its own
+             scope picker (date window + team + owner) so the user can
+             slice the forecast independently of the leads dashboard. -->
+        <div id="anaPane-forecast" class="ana-pane" style="display:none;">
+
+            <!-- Toolbar — date range / team / owner / quotas button -->
+            <div class="ana-toolbar">
+                <div class="field">
+                    <label for="fcFrom">Window from</label>
+                    <input type="date" id="fcFrom" class="form-control form-control-sm"
+                           placeholder="Pick start date"
+                           data-flatpickr-static="true" data-flatpickr-simple="true" data-flatpickr-clearable="true"
+                           onchange="window.loadForecast()">
+                </div>
+                <div class="field">
+                    <label for="fcTo">Window to</label>
+                    <input type="date" id="fcTo" class="form-control form-control-sm"
+                           placeholder="Pick end date"
+                           data-flatpickr-static="true" data-flatpickr-simple="true" data-flatpickr-clearable="true"
+                           onchange="window.loadForecast()">
+                </div>
+                <div class="field">
+                    <label for="fcTeam">Team</label>
+                    <select id="fcTeam" onchange="window.loadForecast()"><option value="">All teams</option></select>
+                </div>
+                <div class="field">
+                    <label for="fcOwner">Owner</label>
+                    <select id="fcOwner" onchange="window.loadForecast()"><option value="">All owners</option></select>
+                </div>
+                <div class="field" style="align-self:flex-end;">
+                    <button type="button" class="btn btn-sm btn-outline-primary"
+                            onclick="window.openQuotasModal()" data-tooltip="Manage quotas">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        Quotas
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI tiles — Open / Weighted / Won-in-window / Quota Attainment -->
+            <div class="ana-kpi-grid" id="fcKpiGrid">
+                <div class="ana-loading">Loading forecast…</div>
+            </div>
+
+            <!-- Forecast trend by month: open + weighted + won bars + quota line. -->
+            <div class="ana-row">
+                <div class="ana-card" style="grid-column:1/-1;">
+                    <div class="ana-card-header">
+                        <div>
+                            <div class="ana-card-title">Pipeline by close month
+                                <button type="button" class="ana-info" data-tooltip="Each month bucket sums open-pipeline value (deal_value of open deals whose expected_close_date falls in that month), weighted value (open × stage win-probability), and won value (deals that closed-won in that month). Quota line, if set, shows the prorated target for that month." aria-label="What does the by-month chart show?" tabindex="0">i</button>
+                            </div>
+                            <div class="ana-card-sub">Open + weighted + actual won, with quota target overlay</div>
+                        </div>
+                    </div>
+                    <div id="fcMonthChart" style="min-height:280px;"></div>
+                </div>
+            </div>
+
+            <div class="ana-row">
+                <!-- By stage — pyramid view of where the open pipeline sits. -->
+                <div class="ana-card">
+                    <div class="ana-card-header">
+                        <div>
+                            <div class="ana-card-title">By stage
+                                <button type="button" class="ana-info" data-tooltip="One row per open stage. Open value = sum of deal_value for deals currently sitting in that stage. Weighted = open × win_probability/100. Edit win_probability per stage from CRM Settings → Pipeline." aria-label="What does the by-stage chart show?" tabindex="0">i</button>
+                            </div>
+                            <div class="ana-card-sub">Open and weighted value per pipeline stage</div>
+                        </div>
+                    </div>
+                    <div id="fcStageChart" style="min-height:240px;"></div>
+                </div>
+
+                <!-- By forecast category — Best Case / Commit / Most Likely / Omitted. -->
+                <div class="ana-card">
+                    <div class="ana-card-header">
+                        <div>
+                            <div class="ana-card-title">By confidence
+                                <button type="button" class="ana-info" data-tooltip="Reps tag each open deal as Best Case / Commit / Most Likely / Omitted. Use Commit + Most Likely for the realistic forecast number. Best Case is upside; Omitted is excluded from the forecast call." aria-label="What does the by-confidence chart show?" tabindex="0">i</button>
+                            </div>
+                            <div class="ana-card-sub">Rep's confidence call per open deal</div>
+                        </div>
+                    </div>
+                    <div id="fcCategoryChart" style="min-height:240px;"></div>
+                </div>
+            </div>
+
+            <!-- Per-rep attainment table — quota vs actual + weighted projection. -->
+            <div class="ana-card" style="margin-bottom:18px;">
+                <div class="ana-card-header">
+                    <div>
+                        <div class="ana-card-title">Rep attainment
+                            <button type="button" class="ana-info" data-tooltip="One row per deal owner. Open value = currently-open pipeline owned. Weighted = open × stage probability. Won = deals that closed-won inside the date window. Quota = target_value from any user-scope quota whose period overlaps the window. Attainment % = won / quota." aria-label="What does the rep attainment table show?" tabindex="0">i</button>
+                        </div>
+                        <div class="ana-card-sub">Per-salesperson pipeline + quota attainment</div>
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table class="ana-table" id="fcRepTable">
+                        <thead>
+                            <tr>
+                                <th>Salesperson</th>
+                                <th class="num">Open deals</th>
+                                <th class="num">Open value</th>
+                                <th class="num">Weighted</th>
+                                <th class="num">Won (window)</th>
+                                <th class="num">Quota</th>
+                                <th class="num">Attainment %</th>
+                            </tr>
+                        </thead>
+                        <tbody><tr><td colspan="7" class="ana-empty">Loading…</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Accuracy chart — historical snapshots vs cumulative actual. -->
+            <div class="ana-card" style="margin-bottom:18px;">
+                <div class="ana-card-header">
+                    <div>
+                        <div class="ana-card-title">Forecast accuracy
+                            <button type="button" class="ana-info" data-tooltip="Each blue point is the weighted-pipeline number we projected on that snapshot date (taken weekly). The green line is the cumulative won-value since that snapshot — i.e. how much of the projected pipeline actually closed. Big gap = over-projection." aria-label="What does the accuracy chart show?" tabindex="0">i</button>
+                        </div>
+                        <div class="ana-card-sub">Projected pipeline vs cumulative actual closed (last 12 weeks)</div>
+                    </div>
+                </div>
+                <div id="fcAccuracyChart" style="min-height:260px;"></div>
+                <p id="fcAccuracyHint" class="ana-empty" style="display:none;">No snapshots yet — the weekly job runs Sunday 02:00 UTC. SUPERADMIN can trigger a manual run via <code>POST /api/forecast/snapshot/run</code>.</p>
+            </div>
+
+        </div><!-- /#anaPane-forecast -->
+
+    </div>
+
+    <!-- Quotas management modal -->
+    <div id="quotasModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="quotasTitle">
+        <div class="modal-backdrop" onclick="window.closeQuotasModal()"></div>
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="quotasTitle" class="modal-title">Quotas</h3>
+                    <button type="button" class="close-btn" onclick="window.closeQuotasModal()" aria-label="Close">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:end; margin-bottom:14px;">
+                        <div class="field">
+                            <label>Scope</label>
+                            <select id="qScopeType" onchange="window.qScopeChanged()">
+                                <option value="tenant">Tenant-wide</option>
+                                <option value="team">Per team</option>
+                                <option value="user">Per user</option>
+                            </select>
+                        </div>
+                        <div class="field" id="qScopeIdField" style="display:none;">
+                            <label>Team / User</label>
+                            <select id="qScopeId"></select>
+                        </div>
+                        <div class="field">
+                            <label>Period start</label>
+                            <input type="date" id="qStart" class="form-control form-control-sm"
+                                   data-flatpickr-static="true" data-flatpickr-simple="true">
+                        </div>
+                        <div class="field">
+                            <label>Period end</label>
+                            <input type="date" id="qEnd" class="form-control form-control-sm"
+                                   data-flatpickr-static="true" data-flatpickr-simple="true">
+                        </div>
+                        <div class="field">
+                            <label>Target value (won_value)</label>
+                            <input type="number" id="qValue" class="form-control form-control-sm" min="0" step="100" placeholder="e.g. 500000">
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="window.saveQuota()">Add quota</button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="ana-table" id="qList">
+                            <thead><tr>
+                                <th>Scope</th>
+                                <th>Period</th>
+                                <th class="num">Target</th>
+                                <th>Metric</th>
+                                <th></th>
+                            </tr></thead>
+                            <tbody><tr><td colspan="5" class="ana-empty">Loading…</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Form answers modal — same markup as leads.html (FormAnswersFilter shared module). -->
@@ -557,6 +798,7 @@
         document.write('<script src="../../js/crm/setup-guard.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/form-answers-filter.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/analytics.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/forecast.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>
 </html>
