@@ -575,6 +575,17 @@ function buildFilterParams() {
     }
     if (Object.keys(merged).length > 0) params.set('customFields', JSON.stringify(merged));
 
+    // Built-in pseudo-filters (Type / Outcome / Disposition) added via the
+    // +Add filter popover. Each maps to a dedicated query param the backend
+    // resolves with an EXISTS against `activities` (type/outcome) or a direct
+    // column read (`leads.disposition`).
+    if (typeof window.getLeadFieldsBuiltinFilters === 'function') {
+        const builtins = window.getLeadFieldsBuiltinFilters();
+        for (const [key, val] of Object.entries(builtins)) {
+            if (val) params.set(key, val);
+        }
+    }
+
     return params;
 }
 

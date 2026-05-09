@@ -27,6 +27,53 @@
 
     let _fields = [];                      // active filter / table fields (latest fetch)
     let _allFieldsByCode = new Map();      // includes archived — for label fallback
+
+    // Built-in pseudo-fields surfaced in the leads filter bar's "+Add filter"
+    // popover alongside tenant-defined custom dropdowns. Codes start with `__`
+    // so they never collide with user-defined codes (server validator rejects
+    // `__` prefixes). getLeadFieldsFilter() routes them to dedicated query
+    // params (activityType / activityOutcome / disposition) instead of folding
+    // them into the customFields JSON the way custom dropdowns are.
+    const LEAD_BUILTIN_FILTER_FIELDS = [
+        {
+            code: '__type', label: 'Type',
+            is_active: true, show_in_lead_filter: true, show_in_leads_table: false,
+            options: [
+                { code: 'call',    label: 'Call',    is_active: true },
+                { code: 'email',   label: 'Email',   is_active: true },
+                { code: 'meeting', label: 'Meeting', is_active: true },
+                { code: 'note',    label: 'Note',    is_active: true },
+            ],
+        },
+        {
+            code: '__outcome', label: 'Outcome',
+            is_active: true, show_in_lead_filter: true, show_in_leads_table: false,
+            options: [
+                { code: 'connected',          label: 'Connected',          is_active: true },
+                { code: 'call_disconnected',  label: 'Call Disconnected',  is_active: true },
+                { code: 'not_reachable',      label: 'Not Reachable',      is_active: true },
+                { code: 'wrong_number',       label: 'Wrong Number',       is_active: true },
+                { code: 'voicemail',          label: 'Voicemail',          is_active: true },
+                { code: 'busy',               label: 'Busy',               is_active: true },
+                { code: 'callback_requested', label: 'Callback Requested', is_active: true },
+                { code: 'meeting_set',        label: 'Meeting Set',        is_active: true },
+                { code: 'email_bounced',      label: 'Email Bounced',      is_active: true },
+            ],
+        },
+        {
+            code: '__disposition', label: 'Disposition',
+            is_active: true, show_in_lead_filter: true, show_in_leads_table: false,
+            options: [
+                { code: 'hot_lead',          label: 'Hot Lead',          is_active: true },
+                { code: 'callback_later',    label: 'Callback Later',    is_active: true },
+                { code: 'not_responding',    label: 'Not Responding',    is_active: true },
+                { code: 'not_interested',    label: 'Not Interested',    is_active: true },
+                { code: 'meeting_scheduled', label: 'Meeting Scheduled', is_active: true },
+                { code: 'proposal_sent',     label: 'Proposal Sent',     is_active: true },
+                { code: 'deal_in_progress',  label: 'Deal In Progress',  is_active: true },
+            ],
+        },
+    ];
     let _filterValues = {};                // { fieldCode: optionCode }
     let _renderObserver = null;
     let _activityLeadId = null;
@@ -40,13 +87,17 @@
         try {
             const fullResp = await api.request('/lead-fields?includeInactive=true').catch(() => null);
             const allFields = (fullResp && fullResp.fields) ? fullResp.fields : [];
-            _allFieldsByCode = new Map(allFields.map(f => [f.code, f]));
-            _fields = allFields.filter(f => f.is_active);
+            // Built-ins go FIRST so the popover surfaces them above tenant
+            // custom dropdowns and the chip-render label lookup hits them.
+            const merged = [...LEAD_BUILTIN_FILTER_FIELDS, ...allFields];
+            _allFieldsByCode = new Map(merged.map(f => [f.code, f]));
+            _fields = merged.filter(f => f.is_active);
             return true;
         } catch (err) {
             console.warn('[lead-fields] load failed:', err);
-            _fields = [];
-            return false;
+            _fields = [...LEAD_BUILTIN_FILTER_FIELDS];
+            _allFieldsByCode = new Map(LEAD_BUILTIN_FILTER_FIELDS.map(f => [f.code, f]));
+            return true; // built-ins still usable even if API failed
         }
     }
 
@@ -143,9 +194,13 @@
 
         wrap.querySelectorAll('[data-chip-remove]').forEach(el => {
             el.addEventListener('click', e => {
-                e.stopPropagation();
+                // No stopPropagation: removing a chip reflows the +Add
+                // button left, so we WANT the document outside-click hook
+                // to close any open popover (otherwise it dangles where
+                // the trigger used to be — see Img #219 user report).
                 const code = el.getAttribute('data-chip-remove');
                 delete _filterValues[code];
+                closeAddFilterPopover();
                 renderActiveChips();
                 if (typeof window.applyFilters === 'function') window.applyFilters();
             });
@@ -234,6 +289,13 @@
     // trigger when there's not enough room below.
     function positionPopoverFixed(pop, trigger) {
         if (!pop || !trigger) return;
+        // Cache the trigger reference on the popover so the scroll/resize
+        // hook below can re-anchor on every scroll without needing the
+        // caller to wire data-trigger-id attributes (the previous design
+        // required that and was easy to forget — popovers then drifted on
+        // scroll because the rehook couldn't find their trigger).
+        pop.__lfTrigger = trigger;
+        installPopoverFollowHooks();
         // Defer one frame so the browser has measured the popover content.
         requestAnimationFrame(() => {
             const t = trigger.getBoundingClientRect();
@@ -271,19 +333,33 @@
     }
 
     // Repositions all open popovers on resize/scroll so they stay glued
-    // to their triggers. Listeners are wired once at init.
+    // to their triggers. Listeners are wired lazily the first time any
+    // popover is shown — `pop.__lfTrigger` is set in positionPopoverFixed
+    // so the loop below can re-anchor without any per-popover data-attr
+    // wiring (which the previous version required and which was never
+    // hooked up by the call-sites, so popovers drifted on every scroll).
     let _scrollResizeHookInstalled = false;
     function installPopoverFollowHooks() {
         if (_scrollResizeHookInstalled) return;
         _scrollResizeHookInstalled = true;
         const reposition = () => {
-            document.querySelectorAll('.lf-popover[data-trigger-id]').forEach(pop => {
-                const trig = document.querySelector(`[data-popover-trigger-id="${pop.dataset.triggerId}"]`);
-                if (trig) positionPopoverFixed(pop, trig);
+            document.querySelectorAll('.lf-popover').forEach(pop => {
+                const trig = pop.__lfTrigger;
+                // Trigger may have been removed from DOM (modal closed,
+                // table re-rendered). Skip silently — popover will close
+                // on the next outside-click pass.
+                if (trig && document.body.contains(trig)) {
+                    positionPopoverFixed(pop, trig);
+                }
             });
         };
-        window.addEventListener('resize', reposition, { passive: true });
-        window.addEventListener('scroll', reposition, { passive: true, capture: true });
+        window.addEventListener('resize',  reposition, { passive: true });
+        // capture:true catches scrolls inside any nested overflow
+        // container (modal bodies, lead-detail panel, etc), not just the
+        // window — important here because the leads page lives inside a
+        // .gradient-bg-ambient wrapper and the lead-detail side panel
+        // both scroll independently.
+        window.addEventListener('scroll',  reposition, { passive: true, capture: true });
     }
 
     // After picking a field from the +Add popover, anchor the value popover
@@ -368,13 +444,37 @@
         closeAddFilterPopover();
     }
 
-    // Exposed so buildFilterParams in leads.js can fold these into customFields.
+    // Exposed so buildFilterParams in leads.js can fold custom-dropdown
+    // selections into the customFields JSON. Built-in pseudo-fields
+    // (codes prefixed `__`) are filtered out — leads.js reads them via
+    // getLeadFieldsBuiltinFilters() and routes them to dedicated query
+    // params instead of customFields.
     window.getLeadFieldsFilter = function () {
         const out = {};
         for (const [code, val] of Object.entries(_filterValues)) {
-            if (val) out[code] = [val];
+            if (!val) continue;
+            if (code.startsWith('__')) continue;
+            out[code] = [val];
         }
         return Object.keys(out).length > 0 ? out : null;
+    };
+
+    /**
+     * Built-in filter chips (Type / Outcome / Disposition) currently
+     * selected in the +Add filter popover. Returns a plain object the
+     * caller can spread onto its query-param builder:
+     *   { activityType: 'call', activityOutcome: 'connected', disposition: 'hot_lead' }
+     * Empty when none are picked. leads.js merges this into the URL.
+     */
+    window.getLeadFieldsBuiltinFilters = function () {
+        const out = {};
+        const map = { '__type': 'activityType', '__outcome': 'activityOutcome', '__disposition': 'disposition' };
+        for (const [code, val] of Object.entries(_filterValues)) {
+            if (!val) continue;
+            const key = map[code];
+            if (key) out[key] = val;
+        }
+        return out;
     };
 
     // Exposed so the columns-picker in leads.js can include tenant-defined
