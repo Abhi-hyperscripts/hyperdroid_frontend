@@ -454,6 +454,8 @@ function switchSettingsTab(tabName) {
         if (typeof refreshSharedMailboxPicker === 'function') refreshSharedMailboxPicker();
     } else if (tabName === 'templates' && typeof loadTemplatesTab === 'function') {
         loadTemplatesTab();
+    } else if (tabName === 'automations' && typeof loadAutomationsTab === 'function') {
+        loadAutomationsTab();
     } else if (tabName === 'campaigns' && typeof loadCampaignsTab === 'function') {
         loadCampaignsTab();
     }

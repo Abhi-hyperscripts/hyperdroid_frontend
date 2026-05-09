@@ -356,10 +356,10 @@
                             ${memberCount}
                         </span>
                         <div class="team-card-actions">
-                            <button class="team-card-iconbtn" onclick="event.stopPropagation(); window.openTriggersModal && window.openTriggersModal('${esc(t.id)}', '${esc(t.team_name)}')" aria-label="Email triggers" title="Email triggers">
+                            <button class="team-card-iconbtn" onclick="event.stopPropagation(); window.openTriggersModal && window.openTriggersModal('${esc(t.id)}', '${esc(t.team_name)}')" aria-label="Email triggers" data-tooltip="Email automations — fire a template when a lead enters a status">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                             </button>
-                            <button class="team-card-iconbtn team-card-iconbtn--danger" onclick="event.stopPropagation(); deleteTeam('${esc(t.id)}', '${esc(t.team_name)}')" aria-label="Delete">
+                            <button class="team-card-iconbtn team-card-iconbtn--danger" onclick="event.stopPropagation(); deleteTeam('${esc(t.id)}', '${esc(t.team_name)}')" aria-label="Delete" data-tooltip="Delete this team">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
                             </button>
                         </div>
