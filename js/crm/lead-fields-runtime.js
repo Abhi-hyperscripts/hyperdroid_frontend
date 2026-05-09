@@ -465,6 +465,38 @@
 
     // ─── Activity log modal integration ─────────────────────────────────────
 
+    // Built-in dropdowns the rep is choosing between — same shape as a
+    // custom field so the picker treats them identically. selectId is the
+    // hidden <select> that submitLogActivity reads on save.
+    const ACTIVITY_BUILTIN_FIELDS = [
+        { code: '__type', label: 'Type', required: true, selectId: 'activityType', options: [
+            { code: 'call', label: 'Call' },
+            { code: 'email', label: 'Email' },
+            { code: 'meeting', label: 'Meeting' },
+            { code: 'note', label: 'Note' },
+        ] },
+        { code: '__outcome', label: 'Outcome', selectId: 'activityOutcome', options: [
+            { code: 'connected', label: 'Connected' },
+            { code: 'call_disconnected', label: 'Call Disconnected' },
+            { code: 'not_reachable', label: 'Not Reachable' },
+            { code: 'wrong_number', label: 'Wrong Number' },
+            { code: 'voicemail', label: 'Voicemail' },
+            { code: 'busy', label: 'Busy' },
+            { code: 'callback_requested', label: 'Callback Requested' },
+            { code: 'meeting_set', label: 'Meeting Set' },
+            { code: 'email_bounced', label: 'Email Bounced' },
+        ] },
+        { code: '__disposition', label: 'Disposition', selectId: 'activityDisposition', options: [
+            { code: 'hot_lead', label: 'Hot Lead' },
+            { code: 'callback_later', label: 'Callback Later' },
+            { code: 'not_responding', label: 'Not Responding' },
+            { code: 'not_interested', label: 'Not Interested' },
+            { code: 'meeting_scheduled', label: 'Meeting Scheduled' },
+            { code: 'proposal_sent', label: 'Proposal Sent' },
+            { code: 'deal_in_progress', label: 'Deal In Progress' },
+        ] },
+    ];
+
     function wrapActivityModal() {
         const origOpen = window.openLogActivityModal;
         const origSubmit = window.submitLogActivity;
@@ -477,7 +509,7 @@
             origOpen(leadId);
             _activityLeadId = leadId;
             await loadFields();
-            renderActivityChips(leadId, currentActivityFields());
+            renderActivityPicker(leadId, currentActivityFields());
         };
 
         window.submitLogActivity = async function () {
@@ -537,15 +569,167 @@
         };
     }
 
+    /**
+     * Form-answers-style unified picker for the Log Activity modal. Renders
+     * three coordinated regions (markup is in leads.html):
+     *   #laPillsBar  — chips for currently-set built-ins + custom fields
+     *   #laQList     — left-rail list of every dropdown field in the modal
+     *   #laQValues   — right pane showing options for the active field
+     *
+     * Built-in dropdowns (Type/Outcome/Disposition) round-trip through the
+     * hidden <select id="activity*"> elements so submitLogActivity's existing
+     * .value reads keep working unchanged. Custom fields stay in the
+     * _activityChips object that the submit-wrapper diffs against the lead.
+     */
+    function renderActivityPicker(leadId, customFields) {
+        const list     = document.getElementById('laQList');
+        const valsPane = document.getElementById('laQValues');
+        const pillsBar = document.getElementById('laPillsBar');
+        if (!list || !valsPane || !pillsBar) return;
+
+        const allFields = [...ACTIVITY_BUILTIN_FIELDS, ...customFields];
+
+        // Seed lead's saved custom values into the in-flight chip state.
+        const lead = readLead(leadId);
+        const savedCustom = parseCustomFields(lead?.custom_fields);
+        _activityChips = {};
+        for (const f of customFields) {
+            if (savedCustom[f.code]) _activityChips[f.code] = savedCustom[f.code];
+        }
+
+        // Reset built-in selects to defaults each open: Type=call (required),
+        // Outcome/Disposition='' (no chip until rep picks one).
+        const typeSel = document.getElementById('activityType');
+        const outSel  = document.getElementById('activityOutcome');
+        const dispSel = document.getElementById('activityDisposition');
+        if (typeSel)  typeSel.value  = 'call';
+        if (outSel)   outSel.value   = '';
+        if (dispSel)  dispSel.value  = '';
+
+        // Activity-log textareas/date pickers reset to empty on each open.
+        const summaryTa = document.getElementById('activitySummary');
+        if (summaryTa) summaryTa.value = '';
+        const callDur = document.getElementById('activityCallDuration');
+        if (callDur) callDur.value = '';
+        if (typeof HRMSDatePicker?.clearDateTimePair === 'function') {
+            HRMSDatePicker.clearDateTimePair('activityNextFollowup');
+        }
+
+        let activeCode = '__type';
+
+        const getVal = (f) => f.selectId
+            ? (document.getElementById(f.selectId)?.value || '')
+            : (_activityChips[f.code] || '');
+        const setVal = (f, v) => {
+            if (f.selectId) {
+                const sel = document.getElementById(f.selectId);
+                if (sel) sel.value = v || '';
+            } else {
+                if (v) _activityChips[f.code] = v;
+                else delete _activityChips[f.code];
+            }
+        };
+
+        function renderList() {
+            list.innerHTML = allFields.map(f => `
+                <button type="button" role="tab"
+                        class="la-q-item ${f.code === activeCode ? 'is-active' : ''} ${getVal(f) ? 'is-set' : ''}"
+                        data-la-field="${escapeAttr(f.code)}">
+                    <span class="la-q-label">${escapeHtml(f.label)}${f.required ? '<span class="la-q-required">*</span>' : ''}</span>
+                </button>
+            `).join('');
+            list.querySelectorAll('[data-la-field]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    activeCode = btn.getAttribute('data-la-field');
+                    renderList();
+                    renderValues();
+                });
+            });
+        }
+
+        function renderValues() {
+            const f = allFields.find(x => x.code === activeCode);
+            if (!f) { valsPane.innerHTML = ''; return; }
+            const current = getVal(f);
+            const opts = (f.options || []).filter(o => o.code !== '');
+            valsPane.innerHTML = `
+                <div class="la-q-title">${escapeHtml(f.label)}${f.required ? '<span class="la-q-required">*</span>' : ''}</div>
+                ${opts.length === 0
+                    ? '<div class="la-q-empty">No options configured.</div>'
+                    : `<div class="la-option-grid">${opts.map(o => {
+                        const swatch = o.color
+                            ? `<span class="la-option-swatch" style="background:${escapeAttr(o.color)};"></span>`
+                            : '';
+                        return `<button type="button" class="la-option ${o.code === current ? 'is-on' : ''}" data-la-option="${escapeAttr(o.code)}">${swatch}${escapeHtml(o.label)}</button>`;
+                    }).join('')}</div>`}
+            `;
+            valsPane.querySelectorAll('[data-la-option]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const code = btn.getAttribute('data-la-option');
+                    const wasOn = code === getVal(f);
+                    // Required field (Type) can't be cleared by re-clicking — only swapped.
+                    setVal(f, (f.required || !wasOn) ? code : '');
+                    renderList();
+                    renderValues();
+                    renderPills();
+                });
+            });
+        }
+
+        function renderPills() {
+            const set = allFields.filter(f => getVal(f));
+            if (set.length === 0) {
+                pillsBar.innerHTML = '<span class="la-pills-empty">No values picked yet — click a field on the left to set one.</span>';
+                return;
+            }
+            pillsBar.innerHTML = set.map(f => {
+                const v = getVal(f);
+                const opt = (f.options || []).find(o => o.code === v);
+                const label = opt ? opt.label : v;
+                const swatch = opt && opt.color
+                    ? `<span class="la-option-swatch" style="background:${escapeAttr(opt.color)};margin-right:2px;"></span>`
+                    : '';
+                return `
+                    <span class="la-pill" data-la-pill="${escapeAttr(f.code)}" ${f.required ? 'data-required="true"' : ''}>
+                        ${swatch}<span class="la-pill-q">${escapeHtml(f.label)}:</span><span class="la-pill-v">${escapeHtml(label)}</span>
+                        ${f.required ? '' : `<button type="button" class="la-pill-x" data-la-pill-x="${escapeAttr(f.code)}" aria-label="Clear ${escapeAttr(f.label)}">×</button>`}
+                    </span>
+                `;
+            }).join('');
+            pillsBar.querySelectorAll('[data-la-pill-x]').forEach(b => {
+                b.addEventListener('click', e => {
+                    e.stopPropagation();
+                    const code = b.getAttribute('data-la-pill-x');
+                    const f = allFields.find(x => x.code === code);
+                    setVal(f, '');
+                    renderList();
+                    if (activeCode === code) renderValues();
+                    renderPills();
+                });
+            });
+            pillsBar.querySelectorAll('.la-pill').forEach(p => {
+                p.addEventListener('click', e => {
+                    if (e.target.closest('[data-la-pill-x]')) return;
+                    activeCode = p.getAttribute('data-la-pill');
+                    renderList();
+                    renderValues();
+                });
+            });
+        }
+
+        renderList();
+        renderValues();
+        renderPills();
+    }
+
+    // Legacy chip renderer kept for callers other than the Log Activity modal
+    // (none today; left intact to avoid silent breakage if a tenant page
+    // still references it). New entry point is renderActivityPicker above.
     function renderActivityChips(leadId, fields) {
         const wrap = document.getElementById('activityLeadFields');
         if (!wrap) return;
         if (fields.length === 0) { wrap.innerHTML = ''; return; }
 
-        // Seed pending chips from the lead's existing values so the rep
-        // sees what's already set without scrolling. New chips can be
-        // added; existing values can be changed; on submit only diffs are
-        // PATCHed.
         const lead = readLead(leadId);
         const current = parseCustomFields(lead?.custom_fields);
         _activityChips = {};
@@ -554,8 +738,7 @@
         }
 
         wrap.innerHTML = `
-            <div class="lf-activity-section-row">
-                <div class="lf-activity-section-label">Custom fields</div>
+            <div class="lf-activity-chip-row">
                 <div class="lf-activity-chips" id="lfActivityChips"></div>
                 <div class="lf-add-wrap" style="position:relative;">
                     <button type="button" class="lf-add-btn" id="lfActivityAddBtn"

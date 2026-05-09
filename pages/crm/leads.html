@@ -658,7 +658,7 @@
 
     <!-- ═══ Log Activity Modal ═══ -->
     <div class="gm-overlay" id="logActivityOverlay">
-        <div class="gm-modal" style="width:640px;max-width:96vw;">
+        <div class="gm-modal" style="width:1080px;max-width:96vw;">
             <div class="gm-header">
                 <div class="gm-header-left">
                     <div class="gm-title-group">
@@ -668,79 +668,93 @@
                 </div>
                 <button class="gm-close" onclick="closeLogActivityModal()">&times;</button>
             </div>
-            <div class="gm-body">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                    <div>
-                        <label class="form-label">Type *</label>
-                        <select id="activityType" class="form-select form-select-sm">
-                            <option value="call">Call</option>
-                            <option value="email">Email</option>
-                            <option value="meeting">Meeting</option>
-                            <option value="note">Note</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">Outcome</label>
-                        <select id="activityOutcome" class="form-select form-select-sm">
-                            <option value="">N/A</option>
-                            <option value="connected">Connected</option>
-                            <option value="call_disconnected">Call Disconnected</option>
-                            <option value="not_reachable">Not Reachable</option>
-                            <option value="wrong_number">Wrong Number</option>
-                            <option value="voicemail">Voicemail</option>
-                            <option value="busy">Busy</option>
-                            <option value="callback_requested">Callback Requested</option>
-                            <option value="meeting_set">Meeting Set</option>
-                            <option value="email_bounced">Email Bounced</option>
-                        </select>
-                    </div>
-                </div>
-                <div style="margin-top:10px;">
+            <!-- Always-visible top strip: free-text Summary + free-form date/time
+                 fields that don't fit the "click-name → pick-option" pattern.
+                 Everything else (Type, Outcome, Disposition, custom fields)
+                 lives in the picker below as dropdown-style choices. -->
+            <div class="la-top">
+                <div>
                     <label class="form-label">Summary *</label>
-                    <textarea id="activitySummary" class="form-control" rows="3" placeholder="What happened during this interaction?"></textarea>
+                    <textarea id="activitySummary" class="form-control" rows="2" placeholder="What happened during this interaction?"></textarea>
                 </div>
-                <!-- Call Duration (40%) and Disposition (60%) on one row. -->
-                <div style="display:grid;grid-template-columns:2fr 3fr;gap:10px;margin-top:10px;">
+                <div class="la-top-row">
                     <div>
-                        <label class="form-label">Call Duration (minutes)</label>
+                        <label class="form-label">Call Duration (min)</label>
                         <input type="number" id="activityCallDuration" class="form-control form-control-sm" placeholder="e.g. 15" min="0" max="999">
                     </div>
                     <div>
-                        <label class="form-label">Disposition</label>
-                        <select id="activityDisposition" class="form-select form-select-sm">
-                            <option value="">No change</option>
-                            <option value="hot_lead">Hot Lead</option>
-                            <option value="callback_later">Callback Later</option>
-                            <option value="not_responding">Not Responding</option>
-                            <option value="not_interested">Not Interested</option>
-                            <option value="meeting_scheduled">Meeting Scheduled</option>
-                            <option value="proposal_sent">Proposal Sent</option>
-                            <option value="deal_in_progress">Deal In Progress</option>
-                        </select>
-                    </div>
-                </div>
-                <!-- Next follow-up on its own row, full width (date + time + clear). -->
-                <div style="margin-top:10px;">
-                    <label class="form-label">Next follow-up</label>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 32px;gap:6px;align-items:center;">
+                        <label class="form-label">Follow-up date</label>
                         <input type="date" id="activityNextFollowup" class="form-control form-control-sm" placeholder="Date">
-                        <select id="activityNextFollowupTime" class="form-select form-select-sm" data-time-picker="true" data-time-step="15"></select>
-                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                                style="padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;line-height:1;"
-                                title="Clear date and time"
-                                onclick="HRMSDatePicker.clearDateTimePair('activityNextFollowup')">×</button>
                     </div>
+                    <div>
+                        <label class="form-label">Follow-up time</label>
+                        <select id="activityNextFollowupTime" class="form-select form-select-sm" data-time-picker="true" data-time-step="15"></select>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary la-top-clear"
+                            title="Clear date and time"
+                            onclick="HRMSDatePicker.clearDateTimePair('activityNextFollowup')">×</button>
                 </div>
-
-                <!-- Tenant-defined dropdowns from Settings → Lead Fields.
-                     Built at open time by lead-fields-runtime.js based on the
-                     fields with show_in_activity_log=true. Pre-filled with the
-                     lead's current values; on submit, deltas are merged into
-                     lead.custom_fields via PATCH /api/crm/leads/{id}. Placed
-                     last so popover-style pickers always have the modal's
-                     bottom space below them — no body-overflow truncation. -->
-                <div id="activityLeadFields" style="margin-top:10px;"></div>
             </div>
+
+            <!-- Selected dropdown values — chip strip across the top of the
+                 picker, like the form-answers filter pills. Clicking a chip
+                 jumps the LEFT-list focus to that field; × clears it. -->
+            <div class="la-pills-bar" id="laPillsBar"></div>
+
+            <!-- Two-pane picker (same shape as Filter-by-form-answers):
+                 LEFT  = list of dropdown-style fields (Type, Outcome,
+                         Disposition, then every tenant-defined custom field
+                         that has show_in_activity_log=true).
+                 RIGHT = active field's options, rendered as click-to-pick
+                         chips. Selecting an option closes the loop by adding
+                         to the pill strip above and persisting through hidden
+                         <select> elements that submitLogActivity reads. -->
+            <div class="gm-body la-fa-body">
+                <aside class="la-q-list" id="laQList" role="tablist" aria-label="Fields"></aside>
+                <section class="la-q-values" id="laQValues" role="tabpanel"></section>
+            </div>
+
+            <!-- Hidden <select> elements — preserve the existing API contract
+                 with submitLogActivity (which reads .value off these IDs).
+                 The picker writes through to them when the rep picks a chip.
+                 data-no-sd opts out of auto-searchable-select.js wrapping;
+                 without it the converter would build a visible chrome wrapper
+                 around the select and the modal would render three orphan
+                 dropdowns under the picker. -->
+            <select id="activityType" hidden data-no-sd="true">
+                <option value="call" selected>Call</option>
+                <option value="email">Email</option>
+                <option value="meeting">Meeting</option>
+                <option value="note">Note</option>
+            </select>
+            <select id="activityOutcome" hidden data-no-sd="true">
+                <option value="" selected>N/A</option>
+                <option value="connected">Connected</option>
+                <option value="call_disconnected">Call Disconnected</option>
+                <option value="not_reachable">Not Reachable</option>
+                <option value="wrong_number">Wrong Number</option>
+                <option value="voicemail">Voicemail</option>
+                <option value="busy">Busy</option>
+                <option value="callback_requested">Callback Requested</option>
+                <option value="meeting_set">Meeting Set</option>
+                <option value="email_bounced">Email Bounced</option>
+            </select>
+            <select id="activityDisposition" hidden data-no-sd="true">
+                <option value="" selected>No change</option>
+                <option value="hot_lead">Hot Lead</option>
+                <option value="callback_later">Callback Later</option>
+                <option value="not_responding">Not Responding</option>
+                <option value="not_interested">Not Interested</option>
+                <option value="meeting_scheduled">Meeting Scheduled</option>
+                <option value="proposal_sent">Proposal Sent</option>
+                <option value="deal_in_progress">Deal In Progress</option>
+            </select>
+
+            <!-- Render target for tenant-defined custom-field state — left
+                 unused now that the unified picker drives everything; the
+                 existing lead-fields-runtime.js still references it as the
+                 "is the lead-fields system mounted?" sentinel. -->
+            <div id="activityLeadFields" hidden></div>
             <div class="gm-footer" style="display:flex;justify-content:flex-end;gap:8px;">
                 <button class="btn btn-outline-secondary" onclick="closeLogActivityModal()">Cancel</button>
                 <button class="btn btn-primary" onclick="submitLogActivity()">Log Activity</button>

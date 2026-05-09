@@ -98,6 +98,7 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
+    flex-shrink: 0;
 }
 
 .gm-header::before {
@@ -190,27 +191,60 @@
    ================================================================= */
 
 .gm-body {
-    flex: 1;
+    flex: 1 1 auto;
     overflow-y: auto;
-    padding: 0 20px 16px 20px;
+    padding: 0 20px 12px 20px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    min-height: 100px;
+    gap: 6px;
+    min-height: 0;
+    /* Firefox scrollbar — visible thumb so users can SEE there's more
+       content below rather than mistaking the bottom of the visible area
+       for the end of the form. */
+    scrollbar-width: auto;
+    scrollbar-color: var(--text-muted, rgba(148, 163, 184, 0.6)) transparent;
+}
+
+/* Tighter label spacing inside modals — every saved pixel here is
+   vertical room reclaimed for the form on low-res monitors. The
+   `.la-top` selector picks up the activity-modal top strip whose
+   labels live OUTSIDE .gm-body. */
+.gm-body .form-label,
+.la-top .form-label {
+    margin-bottom: 2px;
+    font-size: 11.5px;
+    line-height: 1.25;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--text-secondary, #94a3b8);
+    text-transform: uppercase;
 }
 
 .gm-body::-webkit-scrollbar {
-    width: 4px;
+    width: 12px;
 }
 
 .gm-body::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 0 14px 14px 0;
 }
 
 .gm-body::-webkit-scrollbar-thumb {
-    background: var(--text-muted);
-    border-radius: 4px;
-    opacity: 0.3;
+    background: rgba(148, 163, 184, 0.6);
+    border-radius: 6px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    min-height: 40px;
+}
+
+.gm-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.7);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+}
+
+[data-theme="light"] .gm-body::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.04);
 }
 
 /* =================================================================
@@ -414,11 +448,20 @@
     padding: 14px 20px;
     background: rgba(0, 0, 0, 0.15);
     border-top: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+    /* Cast a soft shadow up onto scrolling body content so the footer
+       always reads as a distinct region — prevents the bottom chip /
+       input from looking like it sits on the same row as the action
+       buttons when the body scrolls. */
+    box-shadow: 0 -8px 12px -8px rgba(0, 0, 0, 0.25);
+    position: relative;
+    z-index: 1;
 }
 
 [data-theme="light"] .gm-footer {
     background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.03);
     border-top: 1px solid var(--border-color-light);
+    box-shadow: 0 -8px 12px -8px rgba(15, 23, 42, 0.08);
 }
 
 /* =================================================================

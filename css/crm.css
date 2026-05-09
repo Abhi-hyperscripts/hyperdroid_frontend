@@ -1528,7 +1528,7 @@ body.crm-dashboard .crm-container {
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 999px;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     line-height: 1;
     /* No overflow:hidden — popover (chip's value-picker) is appended INSIDE
        the chip and would otherwise be clipped to the chip's rounded box. */
@@ -1540,8 +1540,8 @@ body.crm-dashboard .crm-container {
 .lf-chip-body {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 4px 6px 10px;
+    gap: 5px;
+    padding: 3px 2px 3px 8px;
     cursor: pointer;
     user-select: none;
     color: var(--text-primary);
@@ -1560,23 +1560,23 @@ body.crm-dashboard .crm-container {
     background: none;
     border: none;
     color: var(--text-secondary);
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     line-height: 1;
     cursor: pointer;
-    padding: 6px 10px 6px 4px;
+    padding: 3px 8px 3px 4px;
 }
 .lf-chip-x:hover { color: var(--color-error); }
 
 .lf-add-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
+    gap: 5px;
+    padding: 3px 10px;
     background: transparent;
     border: 1px dashed var(--border-color);
     border-radius: 999px;
     color: var(--brand-primary);
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 500;
     cursor: pointer;
 }
@@ -1654,40 +1654,233 @@ body.crm-dashboard .crm-container {
     margin-bottom: 4px;
 }
 
-/* Activity log modal: chip-based custom-fields row. Same pattern as the
-   leads filter bar — only set fields take space; "+ Add field" button
-   reveals a popover with the rest. Capped height with internal scroll
-   so a tenant with 15+ defined fields doesn't push the modal footer
-   off-screen as more chips get added. */
-.lf-activity-section-row {
+/* Log Activity modal: form-answers-style unified picker.
+   ─ Top strip   : Summary textarea + Call duration + follow-up date/time
+                   (always visible — fields that don't fit the click-name →
+                    pick-option pattern).
+   ─ Pills bar   : currently-set values (Type / Outcome / Disposition /
+                   custom fields). × clears, click jumps the left list.
+   ─ Two-pane    : LEFT = list of dropdown fields, RIGHT = options for
+                   the active field.
+   ─ Hidden <select>s preserve the submitLogActivity contract. */
+.la-top {
+    flex-shrink: 0;
+    padding: 10px 18px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+/* Compact Summary textarea — keeps the top strip slim on low-res monitors. */
+.la-top textarea#activitySummary {
+    font-size: 0.85rem;
+    line-height: 1.4;
+    padding: 6px 10px;
+}
+/* Hidden <select>s that round-trip values to submitLogActivity. Some host
+   styles override the [hidden] attribute, so force display:none with a
+   selector specific enough to win. */
+#logActivityOverlay select#activityType[hidden],
+#logActivityOverlay select#activityOutcome[hidden],
+#logActivityOverlay select#activityDisposition[hidden],
+#logActivityOverlay #activityLeadFields[hidden] {
+    display: none !important;
+}
+.la-top-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 32px;
+    gap: 8px;
+    align-items: end;
+}
+.la-top-clear {
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+.la-pills-bar {
+    flex-shrink: 0;
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 10px 12px;
-    margin-top: 6px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    position: relative;
-    /* Hard cap — chips area scrolls internally past this height. */
-    max-height: 180px;
-    overflow-y: auto;
+    gap: 6px;
+    padding: 8px 18px;
+    min-height: 30px;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    background: rgba(0, 0, 0, 0.04);
 }
-.lf-activity-section-label {
+[data-theme="light"] .la-pills-bar { background: rgba(15, 23, 42, 0.025); }
+.la-pills-empty {
     color: var(--text-secondary);
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    margin-right: 4px;
+    font-size: 0.78em;
+    font-style: italic;
+}
+.la-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.16);
+    color: var(--text-primary);
+    border: 1px solid rgba(var(--brand-primary-rgb, 99, 102, 241), 0.32);
+    border-radius: 999px;
+    padding: 2px 4px 2px 10px;
+    font-size: 0.78em;
+    cursor: pointer;
+}
+.la-pill[data-required="true"] { background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.24); }
+.la-pill-q { color: var(--text-secondary); margin-right: 2px; }
+.la-pill-v { font-weight: 600; }
+.la-pill-x {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1;
+    padding: 1px 6px;
+    cursor: pointer;
+    border-radius: 999px;
+}
+.la-pill-x:hover { color: var(--color-error); background: rgba(255, 255, 255, 0.06); }
+
+.gm-body.la-fa-body {
+    flex-direction: row;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+}
+.la-q-list {
+    overflow-y: auto;
+    padding: 8px 6px;
+    background: rgba(0, 0, 0, 0.04);
+    border-right: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+[data-theme="light"] .la-q-list { background: rgba(15, 23, 42, 0.025); }
+.la-q-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 10px;
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.85em;
+    margin-bottom: 2px;
+}
+.la-q-item:hover {
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08);
+    border-color: var(--border-color);
+}
+.la-q-item.is-active {
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.18);
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.45);
+}
+.la-q-item.is-set::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--brand-primary);
     flex-shrink: 0;
-    /* Stick the label to the top of the section as chips scroll under it. */
-    position: sticky;
-    top: 0;
-    background: var(--bg-tertiary);
-    padding: 4px 0;
-    z-index: 1;
+}
+.la-q-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.la-q-required {
+    color: var(--color-error, #dc3545);
+    font-weight: 600;
+    margin-left: 2px;
+}
+.la-q-values {
+    overflow-y: auto;
+    padding: 14px 18px;
+}
+.la-q-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin: 0 0 10px;
+    color: var(--text-primary);
+}
+.la-q-empty {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    padding: 8px 0;
+}
+.la-option-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.la-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: var(--bg-card, rgba(255, 255, 255, 0.04));
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    font-size: 0.83em;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.la-option:hover {
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.08);
+    border-color: var(--brand-primary);
+}
+.la-option.is-on {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: #fff;
+}
+.la-option-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+    .gm-body.la-fa-body {
+        grid-template-columns: 1fr;
+    }
+    .la-q-list {
+        border-right: 0;
+        border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+        max-height: 30vh;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .la-q-item { width: auto; flex: 1 1 auto; }
+}
+
+/* Custom-fields chip row inside the right pane (legacy — kept for the
+   old chip-based renderer used by other modals; no longer rendered in
+   Log Activity). */
+.lf-activity-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+.lf-activity-chips {
+    display: contents;
 }
 .lf-activity-chips {
     display: flex;
