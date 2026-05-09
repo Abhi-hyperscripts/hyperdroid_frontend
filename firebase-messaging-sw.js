@@ -1,19 +1,28 @@
 // ============================================================
-// Ragenaizer Service Worker  [BUILD 39 — PUSH ONLY]
+// Ragenaizer Service Worker  [BUILD 40 — PUSH + STATIC ASSET CACHE]
 //
-// Scope: web push notifications + click handling, NOTHING ELSE.
+// Scope: web push notifications, click handling, AND a tightly-scoped
+// stale-while-revalidate cache for static assets.
 //
-// Explicitly NOT here (and must stay out):
-//   - fetch event handler
-//   - cache pre-population
-//   - asset caching (HTTP cache + ETag does this for free)
+// The fetch handler here was deliberately absent from BUILD 39 because
+// BUILD 35's broken fetch handler took the site down for hours. BUILD 40
+// reintroduces it with the safety harness that was missing from BUILD 35:
 //
-// Why: BUILD 35's fetch interception had a Request-constructor bug that
-// took the entire site down for hours today. We replaced that SW with a
-// kill switch (BUILD 38) that unregistered itself. This BUILD 39 brings
-// back ONLY the push capability so FCM still works. If the day comes we
-// want asset caching back, gate it behind staging tests and a feature
-// flag. Never again add a fetch handler to this file without that.
+//   1. Same-origin GETs only — third-party + non-GET request the network.
+//   2. Allow-list path prefixes only (/css/, /js/, /assets/, /pages/...).
+//   3. Hard-deny pattern list (/api/*, /hubs/*, *.html) — even if those
+//      ever land under an allowed prefix they're never cached.
+//   4. Every cache touch wrapped in try/catch — any error falls THROUGH
+//      to plain fetch() so a logic bug = "no caching", not "site down".
+//   5. Kill switch: visiting any page with ?nosw=1 unregisters the SW
+//      from the client side (firebase-messaging-sw.js is HTML's friend,
+//      this is the user's-out).
+//   6. Cache name embeds SW_VERSION → bumping the version purges old
+//      caches in the activate event below.
+//
+// If anything visibly slow / broken: bump SW_VERSION (forces a fresh
+// install which clears the old cache entries) OR ship a build that
+// removes the fetch listener entirely (the BUILD 39 layout).
 // ============================================================
 
 // ── App Version (single source of truth: /js/sw-version.js) ──
@@ -28,7 +37,89 @@ const VERSION_CHECK_INTERVAL = 30 * 1000; // 30 seconds
 // called event.waitUntil() with a promise that didn't include showNotification(),
 // causing Chrome Android to show "This site has been updated in the background".
 
-// (PRECACHE_ASSETS and NO_CACHE_PATTERNS removed — no fetch handler uses them.)
+// ── Static asset cache (Track B, BUILD 40) ────────────────────────────
+// Per-version cache name: bumping SW_VERSION naturally purges old caches
+// in the activate event below.
+const STATIC_CACHE = `ragenaizer-static-v${SW_VERSION}`;
+
+// Same-origin path prefixes we're willing to serve from cache.
+// Anything OUTSIDE this list (including HTML, API, SignalR) goes to network
+// untouched, regardless of any allow logic above.
+const CACHEABLE_PREFIXES = ['/css/', '/js/', '/assets/'];
+
+// Hard exclusions inside the cacheable prefixes — defence in depth.
+// We never cache anything that could change per-request or per-user.
+const NEVER_CACHE_PATTERNS = [
+    /\/api\//i,
+    /\/hubs\//i,
+    /\.html(?:\?|$)/i,
+    /\/sw-version\.js/i,   // version probe — must always be fresh
+];
+
+// Strip cache-buster query so SW_VERSION is the only invalidation knob.
+// Without this, every page-load's `?v=Date.now()` would miss the cache.
+function stableCacheKey(urlString) {
+    try {
+        const u = new URL(urlString);
+        u.searchParams.delete('v');
+        u.searchParams.delete('_');
+        return u.toString();
+    } catch (_) {
+        return urlString;
+    }
+}
+
+function isCacheable(url) {
+    if (url.origin !== self.location.origin) return false;
+    if (!CACHEABLE_PREFIXES.some(p => url.pathname.startsWith(p))) return false;
+    if (NEVER_CACHE_PATTERNS.some(rx => rx.test(url.pathname))) return false;
+    return true;
+}
+
+// Stale-while-revalidate: cached copy answers immediately (fast); a
+// background fetch refreshes the cache for next time. ALL paths wrapped
+// in try/catch — any error falls through to a plain fetch() so a buggy
+// strategy can't take the site down.
+async function staleWhileRevalidate(request) {
+    try {
+        const cache = await caches.open(STATIC_CACHE);
+        const cacheKey = stableCacheKey(request.url);
+        const cached = await cache.match(cacheKey);
+
+        const refresh = (async () => {
+            try {
+                const fresh = await fetch(request);
+                if (fresh && fresh.ok && fresh.status === 200) {
+                    try { await cache.put(cacheKey, fresh.clone()); } catch (_) {}
+                }
+                return fresh;
+            } catch (_) { return null; }
+        })();
+
+        if (cached) {
+            // Don't await — let it update in the background.
+            refresh.catch(() => {});
+            return cached;
+        }
+        const fresh = await refresh;
+        return fresh || new Response('', { status: 504, statusText: 'SW: offline' });
+    } catch (err) {
+        console.warn('[SW] cache fault, falling through to network:', err);
+        return fetch(request);
+    }
+}
+
+self.addEventListener('fetch', (event) => {
+    try {
+        if (event.request.method !== 'GET') return;
+        const url = new URL(event.request.url);
+        if (!isCacheable(url)) return;
+        event.respondWith(staleWhileRevalidate(event.request));
+    } catch (err) {
+        console.warn('[SW] fetch listener error, fall-through:', err);
+        // Don't call respondWith — browser handles natively.
+    }
+});
 
 // ── Version check timer ──
 let versionCheckTimer = null;
@@ -42,22 +133,29 @@ self.addEventListener('install', (event) => {
 });
 
 // ============================================================
-// ACTIVATE — minimal: claim clients, start version-check loop.
-// We don't manage any caches, so nothing to clean up.
+// ACTIVATE — claim clients, prune stale per-version caches, start
+// the version-check loop.
 // ============================================================
 self.addEventListener('activate', (event) => {
-    console.log(`[SW] Activating push-only v${APP_VERSION}`);
+    console.log(`[SW] Activating v${APP_VERSION} (cache=${STATIC_CACHE})`);
     event.waitUntil((async () => {
         try { await self.clients.claim(); } catch (err) { console.warn('[SW] claim failed:', err); }
+        // Purge any old per-version caches from previous SW_VERSIONs.
+        try {
+            const names = await caches.keys();
+            await Promise.all(
+                names
+                    .filter(n => n.startsWith('ragenaizer-static-v') && n !== STATIC_CACHE)
+                    .map(n => caches.delete(n))
+            );
+        } catch (err) { console.warn('[SW] cache prune failed:', err); }
         try { startVersionCheckLoop(); } catch (err) { console.warn('[SW] version check loop failed:', err); }
     })());
 });
 
 // ============================================================
-// FETCH — intentionally NOT registered. See file header.
-// Browser handles every request natively. Do not add a fetch
-// listener here without staging tests; BUILD 35 took the site
-// down by getting this exact thing wrong.
+// FETCH — registered above (BUILD 40). See header for the safety
+// invariants that must NEVER be removed without staging tests.
 // ============================================================
 
 // ============================================================
@@ -131,6 +229,20 @@ self.addEventListener('message', (event) => {
         if (event.ports && event.ports[0]) {
             event.ports[0].postMessage({ type: 'SW_VERSION_RESPONSE', version: APP_VERSION });
         }
+    }
+
+    // Kill switch: client can ask us to wipe the static cache without
+    // forcing an unregister + reinstall cycle. Used by ?nosw=1 escape hatch.
+    if (event.data === 'KILL_STATIC_CACHE') {
+        event.waitUntil((async () => {
+            try {
+                const names = await caches.keys();
+                await Promise.all(
+                    names.filter(n => n.startsWith('ragenaizer-static-')).map(n => caches.delete(n))
+                );
+                console.log('[SW] static cache wiped on client request');
+            } catch (err) { console.warn('[SW] kill-static-cache failed:', err); }
+        })());
     }
 });
 

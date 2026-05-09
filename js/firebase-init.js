@@ -147,8 +147,23 @@ async function _registerServiceWorker() {
     }
     // Mirror the sw-update.js bypass so FCM doesn't independently re-register
     // and reintroduce the install/controllerchange loop in headless tests.
+    // ?nosw=1 also serves as the operator-facing rollback path for BUILD 40+:
+    // it actively UNREGISTERS any existing SW and wipes the static-asset
+    // cache, so a buggy fetch handler can be undone without redeploying.
     if (location.search.includes('nosw=1') || sessionStorage.getItem('__nosw') === '1') {
-        console.log('[FCM] ?nosw=1 — skipping SW registration');
+        console.log('[FCM] ?nosw=1 — skipping SW registration + clearing existing');
+        sessionStorage.setItem('__nosw', '1');
+        try {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map(r => r.unregister().catch(() => {})));
+            if (window.caches?.keys) {
+                const names = await caches.keys();
+                await Promise.all(
+                    names.filter(n => n.startsWith('ragenaizer-static-')).map(n => caches.delete(n))
+                );
+            }
+            console.log('[FCM] ?nosw=1 — old SW unregistered, static cache wiped');
+        } catch (err) { console.warn('[FCM] ?nosw=1 cleanup failed:', err); }
         return null;
     }
 
@@ -160,7 +175,7 @@ async function _registerServiceWorker() {
         // makes sw-update.js reload the page, which re-runs both register()
         // calls — forever. (Chrome aggressively caches compiled SW code by
         // URL on Android, so we still want a busted URL for OS updates.)
-        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js?cb=7', {
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js?cb=8', {
             scope: '/',
             updateViaCache: 'none'  // Always check server for SW updates
         });

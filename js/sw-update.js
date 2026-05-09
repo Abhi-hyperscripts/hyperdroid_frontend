@@ -16,9 +16,17 @@
     // Test-harness bypass: navigating with ?nosw=1 (or storing __nosw flag)
     // skips SW registration entirely so headless browsers don't get caught in
     // the install/controllerchange/reload cycle when running E2E tests.
+    // ALSO serves as the operator-rollback path for BUILD 40+ — unregister
+    // the SW AND wipe the static-asset cache so a buggy fetch handler can
+    // be backed out without redeploying.
     if (location.search.includes('nosw=1') || sessionStorage.getItem('__nosw') === '1') {
         sessionStorage.setItem('__nosw', '1');
-        navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+        navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister().catch(() => {})));
+        if (window.caches && caches.keys) {
+            caches.keys().then(names => Promise.all(
+                names.filter(n => n.startsWith('ragenaizer-static-')).map(n => caches.delete(n))
+            )).catch(() => {});
+        }
         return;
     }
 
@@ -38,7 +46,7 @@
     // cb=N forces Chrome to fetch fresh SW source (Chrome aggressively
     // caches compiled SW V8 bytecode by URL).
     listenForSwMessages();
-    var swUrl = '/firebase-messaging-sw.js?cb=7';
+    var swUrl = '/firebase-messaging-sw.js?cb=8';
     navigator.serviceWorker.register(swUrl, {
         scope: '/',
         updateViaCache: 'none'
