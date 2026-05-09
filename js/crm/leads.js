@@ -527,6 +527,18 @@ function buildFilterParams() {
     const dateToEl = document.getElementById('filterDateTo');
     if (dateFromEl && dateFromEl.value) params.set('createdFrom', dateFromEl.value);
     if (dateToEl && dateToEl.value) params.set('createdTo', dateToEl.value);
+    // dateMode: which column the from/to range filters on. 'created' (default)
+    // = lead.created_at; 'activity' narrows to leads with at least one row in
+    // activities within the range — answers "who did I contact today?".
+    const dateModeEl = document.getElementById('filterDateMode');
+    if (dateModeEl && dateModeEl.value === 'activity') params.set('dateMode', 'activity');
+    // Keep the "<x> to" label in sync with the mode dropdown so both ends of
+    // the range tell the same story (otherwise a rep sees "Activity from /
+    // Created to" which is incoherent).
+    const toLabel = document.getElementById('filterDateModeLabelTo');
+    if (toLabel && dateModeEl) {
+        toLabel.textContent = dateModeEl.value === 'activity' ? 'Activity' : 'Created';
+    }
 
     // Multi-team scope: when the user has picked a specific team, backend
     // narrows leads to that team (manager/TL sees all, member sees own).

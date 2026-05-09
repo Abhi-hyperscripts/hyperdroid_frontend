@@ -1654,6 +1654,30 @@ body.crm-dashboard .crm-container {
     margin-bottom: 4px;
 }
 
+/* Inline mode dropdown sitting inside the "From" label of the leads
+   filter bar — flips the date range between Created and Activity. Made
+   to look like a tiny inline select so the bar doesn't grow a row. */
+.crm-date-mode-select {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    padding: 0 16px 0 0;
+    margin: 0 4px 0 0;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 2px center;
+    background-size: 9px;
+}
+.crm-date-mode-select:focus { outline: 0; color: var(--brand-primary); }
+.crm-date-mode-select option { color: var(--text-primary); background: var(--bg-card); }
+
 /* Log Activity modal: form-answers-style unified picker.
    ─ Top strip   : Summary textarea + Call duration + follow-up date/time
                    (always visible — fields that don't fit the click-name →

@@ -219,12 +219,23 @@
                    while the calendar trigger moves with the scroll). The
                    plain Flatpickr month / year selects don't have that
                    problem on a compact filter bar. -->
+            <!-- Date-range filter has TWO modes: 'created' filters by the
+                 lead's created_at; 'activity' narrows to leads with any row
+                 in the activities table inside the range — used for the
+                 "who did I contact today?" workflow. The mode dropdown lives
+                 on the From input's label so the bar stays the same height. -->
             <div class="crm-filter-group">
-                <label for="filterDateFrom">Created from</label>
+                <label for="filterDateFrom">
+                    <select id="filterDateMode" class="crm-date-mode-select" data-no-sd="true" onchange="applyFilters()">
+                        <option value="created" selected>Created</option>
+                        <option value="activity">Activity</option>
+                    </select>
+                    <span id="filterDateModeLabel">from</span>
+                </label>
                 <input type="date" id="filterDateFrom" class="form-control form-control-sm" placeholder="Pick start date" data-flatpickr-static="true" data-flatpickr-simple="true" data-flatpickr-clearable="true" onchange="applyFilters()">
             </div>
             <div class="crm-filter-group">
-                <label for="filterDateTo">Created to</label>
+                <label for="filterDateTo"><span id="filterDateModeLabelTo">Created</span> to</label>
                 <input type="date" id="filterDateTo" class="form-control form-control-sm" placeholder="Pick end date" data-flatpickr-static="true" data-flatpickr-simple="true" data-flatpickr-clearable="true" onchange="applyFilters()">
             </div>
             <div class="crm-filter-group">
