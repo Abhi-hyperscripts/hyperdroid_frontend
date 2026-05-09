@@ -89,8 +89,6 @@ function ensureComposeTmce() {
         placeholder: 'Write your message…',
         setup: function (editor) {
             editor.on('init', function () {
-                // Body of the compose modal is the scroll container; close
-                // dropdowns when it scrolls so they don't detach.
                 const modalBody = document.querySelector('#composeOverlay .email-modal-body, #composeOverlay .gm-body, #composeOverlay');
                 if (!modalBody) return;
                 modalBody.addEventListener('scroll', function () {
@@ -1710,86 +1708,114 @@ function renderChips(kind) {
     });
 }
 
+// openCompose now delegates to the shared EmailComposer — same widget the
+// CRM lead reply / new-email flows use. Pre-fills to/cc + subject + body
+// based on mode (new / reply / reply-all / forward) and routes Send to
+// `/email/compose/send`. Eliminates the duplicate TinyMCE init, chip
+// field wiring, paste-unfurl handling, and modal markup that used to
+// live in this file.
 function openCompose(mode, replyTo) {
+    if (typeof window.EmailComposer === 'undefined') {
+        Toast.error('Email composer not loaded — refresh and retry.');
+        return;
+    }
+
     State.composeMode = mode;
     State.replyingTo = replyTo || null;
-    State.composeAttachments = [];
-    State.recipients = { to: [], cc: [], bcc: [] };
 
-    const subj = document.getElementById('composeSubject');
-    const body = document.getElementById('composeBody');
-    const title = document.getElementById('composeTitle');
-    const composeFrom = document.getElementById('composeFrom');
+    // FROM dropdown — list every mailbox the user is connected to.
+    const fromMailboxes = (State.mailboxes || [])
+        .filter(m => m && m.id)
+        .map(m => ({ id: m.id, email: m.email_address }));
+    if (fromMailboxes.length === 0) {
+        Toast.error('No mailbox connected — add one in Mailbox Settings.');
+        return;
+    }
 
-    subj.value = '';
-    body.value = '';
-    document.getElementById('composeCcRow').style.display = 'none';
-    document.getElementById('composeBccRow').style.display = 'none';
-    document.getElementById('composeAttachChips').innerHTML = '';
+    let title = 'New message';
+    let to = [];
+    let cc = [];
+    let subject = '';
+    let initialBodyHtml = '';
 
-    // Lazy-init TinyMCE on first open. Editor is reused across opens; we
-    // just clear the body so drafts don't leak between messages.
-    ensureComposeTmce().then(ed => { if (ed) ed.setContent(''); });
-
-    if (State.selectedMailboxId) composeFrom.value = State.selectedMailboxId;
-
-    if (mode === 'new') {
-        title.textContent = 'New message';
-    } else if (replyTo) {
+    if (mode !== 'new' && replyTo) {
         const fromName = replyTo.from_name || replyTo.from_address;
         const toAddrs = parseJsonList(replyTo.to_addresses);
         const ccAddrs = parseJsonList(replyTo.cc_addresses);
         const myAddr = State.mailboxes.find(m => m.id === State.selectedMailboxId)?.email_address?.toLowerCase() || '';
 
         if (mode === 'reply') {
-            title.textContent = 'Reply';
-            if (replyTo.from_address) addRecipient('to', replyTo.from_address);
+            title = 'Reply';
+            if (replyTo.from_address) to = [replyTo.from_address];
         } else if (mode === 'reply-all') {
-            title.textContent = 'Reply all';
-            if (replyTo.from_address) addRecipient('to', replyTo.from_address);
-            [...toAddrs, ...ccAddrs]
-                .filter(a => a && a.toLowerCase() !== myAddr)
-                .forEach(a => addRecipient('cc', a));
-            if (State.recipients.cc.length) {
-                document.getElementById('composeCcRow').style.display = 'flex';
-            }
+            title = 'Reply all';
+            if (replyTo.from_address) to = [replyTo.from_address];
+            cc = [...toAddrs, ...ccAddrs].filter(a => a && a.toLowerCase() !== myAddr);
         } else if (mode === 'forward') {
-            title.textContent = 'Forward';
+            title = 'Forward';
         }
 
         const prefix = mode === 'forward' ? 'Fwd: ' : 'Re: ';
         const base = (replyTo.subject || '').replace(/^(Re:|Fwd:)\s*/i, '');
-        subj.value = prefix + base;
+        subject = prefix + base;
 
         const qDate = formatFullDate(replyTo.received_at || replyTo.sent_at || replyTo.created_at);
         const quoted = (replyTo.body_text || stripHtml(replyTo.body_html || '') || '')
             .split('\n').map(l => '> ' + l).join('\n');
-        body.value = `\n\n\nOn ${qDate}, ${fromName} wrote:\n${quoted}`;
-        // Seed the editor with the quoted preamble so rich-text replies
-        // keep the "> Original message" context visible while the user
-        // types above it. Three empty paragraphs at the top so the caret
-        // starts with room to breathe. ensureComposeTmce() is async so we
-        // wait for it before writing — otherwise setContent fires on a
-        // not-yet-initialized editor and gets dropped.
-        const preamble = `<p><br></p><p><br></p><p><br></p><p>On ${formatFullDate(replyTo.received_at || replyTo.sent_at || replyTo.created_at)}, ${escapeHtml(fromName)} wrote:</p><blockquote>${escapeHtml(quoted).replace(/\n/g, '<br>')}</blockquote>`;
-        ensureComposeTmce().then(ed => { if (ed) ed.setContent(preamble); });
+        // Three empty paragraphs at the top so the caret has breathing room
+        // above the quoted block.
+        initialBodyHtml = `<p><br></p><p><br></p><p><br></p><p>On ${qDate}, ${escapeHtml(fromName)} wrote:</p><blockquote>${escapeHtml(quoted).replace(/\n/g, '<br>')}</blockquote>`;
     }
 
-    renderChips('to'); renderChips('cc'); renderChips('bcc');
-    document.getElementById('composeOverlay').classList.add('active');
-    setTimeout(() => {
-        if (State.recipients.to.length === 0) document.getElementById('composeTo').focus();
-        else document.getElementById('composeSubject').focus();
-    }, 50);
+    window.EmailComposer.open({
+        title,
+        fromMailboxes,
+        selectedFromId: State.selectedMailboxId || fromMailboxes[0].id,
+        to, cc,
+        subject,
+        initialBodyHtml,
+        inReplyTo: replyTo?.message_id || null,
+        onSend: async (payload) => {
+            // Build the email-service /email/compose/send payload. Email
+            // service uses bare-email arrays for to/cc/bcc (different from
+            // CRM which uses [{email, name}] EmailAddressDto).
+            const toList  = payload.toAll && payload.toAll.length ? payload.toAll : [payload.to];
+            const ccList  = payload.cc  || [];
+            const bccList = payload.bcc || [];
+            const attachments = (payload.attachments || []).map(a => ({
+                filename: a.name,
+                mime_type: a.type || 'application/octet-stream',
+                content_base64: a.base64,
+                is_inline: false
+            }));
+            const body = {
+                mailbox_id: payload.fromId,
+                to: toList,
+                subject: payload.subject,
+                body_html: payload.html,
+                body_text: payload.text,
+                idempotency_key: 'frontend-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10),
+            };
+            if (ccList.length) body.cc = ccList;
+            if (bccList.length) body.bcc = bccList;
+            if (attachments.length) body.attachments = attachments;
+            if (payload.inReplyTo) body.in_reply_to_message_id = payload.inReplyTo;
+
+            await api.request('/email/compose/send', { method: 'POST', body: JSON.stringify(body) });
+            Toast.success('Sent.');
+            if (State.selectedFolderType === 'sent' || State.replyingTo) {
+                setTimeout(loadMessages, 1500);
+            }
+        }
+    });
 }
 
 function closeCompose() {
-    document.getElementById('composeOverlay').classList.remove('active');
+    if (typeof window.EmailComposer !== 'undefined') window.EmailComposer.close();
     State.composeMode = null;
     State.replyingTo = null;
     State.composeAttachments = [];
     State.recipients = { to: [], cc: [], bcc: [] };
-    document.getElementById('composeFile').value = '';
 }
 
 function handleAttachFiles(e) {
