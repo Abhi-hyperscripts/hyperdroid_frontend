@@ -99,7 +99,7 @@
             branding: false,
             statusbar: false,
             plugins: 'lists link image table code preview anchor autolink',
-            toolbar: 'blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link image table | code preview',
+            toolbar: 'blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link image table | linkpreview | code preview',
             // 'wrap' makes overflow buttons spill onto a second toolbar row.
             // The default 'floating' shows them in a popup that detaches
             // from its trigger when the modal has any scroll — the visible
@@ -143,15 +143,19 @@
             // moves the trigger but the popup hangs in space. Close any
             // open popups on modal scroll — same pattern Notion uses.
             setup: function (editor) {
+                // Reuse the shared composer's auto-unfurl + link-preview
+                // toolbar button so paste behaviour, og:image fetch, and
+                // card markup stay identical to the EmailComposer modal.
+                if (window.EmailComposer && typeof window.EmailComposer.attachAutoUnfurl === 'function') {
+                    window.EmailComposer.attachAutoUnfurl(editor);
+                }
+                if (window.EmailComposer && typeof window.EmailComposer.attachLinkPreviewButton === 'function') {
+                    window.EmailComposer.attachLinkPreviewButton(editor);
+                }
                 editor.on('init', function () {
                     const modalBody = document.querySelector('#templateModal .gm-body');
                     if (!modalBody) return;
                     modalBody.addEventListener('scroll', function () {
-                        // Force TinyMCE to drop any open menu/popup. Easiest
-                        // path is dispatching a click outside the editor —
-                        // TinyMCE's outside-click watcher closes every aux
-                        // popup. Fall back to manually hiding the aux
-                        // container if the synthetic click doesn't catch it.
                         try { editor.focus(); editor.selection.collapse(true); } catch (_) {}
                         document.querySelectorAll('.tox-tinymce-aux .tox-pop, .tox-tinymce-aux .tox-menu, .tox-tinymce-aux .tox-collection')
                             .forEach(function (el) { el.style.display = 'none'; });
@@ -431,12 +435,20 @@ https://ragenaizer.com/pages/drive/shared.html?token=..." style="font-family: ui
         // whatever the user last saw.
         const bodyHtml = getEditorContent();
         document.getElementById('tmplBodyHtml').value = bodyHtml;
+        // Plain-text fallback is auto-derived from the editor's text
+        // representation. Backend MimeKit BodyBuilder uses this for the
+        // multipart/alternative leg so plain-text clients (Mutt, Apple
+        // Mail in low-bandwidth mode) still get a readable version.
+        const ed = tinymce.get(TMCE_ID);
+        const bodyText = ed ? (ed.getContent({ format: 'text' }) || '').trim() : '';
+        document.getElementById('tmplBodyText').value = bodyText;
+
         const mailboxValue = document.getElementById('tmplMailbox').value.trim();
         const payload = {
             name: document.getElementById('tmplName').value.trim(),
             subject: document.getElementById('tmplSubject').value,
             body_html: bodyHtml,
-            body_text: document.getElementById('tmplBodyText').value,
+            body_text: bodyText,
             // Empty string in the <select> means "use tenant default" → null.
             mailbox_id: mailboxValue ? mailboxValue : null,
         };

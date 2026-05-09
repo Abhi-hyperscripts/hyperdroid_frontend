@@ -24,6 +24,11 @@
          TinyMCE preserves all HTML on paste when configured with
          valid_elements:'*[*]' + paste_remove_styles:false. -->
     <script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js" referrerpolicy="origin"></script>
+    <!-- Shared email-composer helpers (auto-unfurl + link-preview button).
+         Loaded so the Edit-Template TinyMCE editor can call
+         EmailComposer.attachAutoUnfurl(editor). -->
+    <script>document.write('<link rel="stylesheet" href="../../css/email-composer.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/shared/email-composer.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
@@ -3211,10 +3216,12 @@
                     </p>
                     <textarea id="tmplBodyHtmlEditor"></textarea>
                     <textarea id="tmplBodyHtml" style="display:none;"></textarea>
-                </div>
-                <div class="crm-form-group">
-                    <label for="tmplBodyText">Body (plain text) <span class="muted">— optional fallback</span></label>
-                    <textarea class="form-control" id="tmplBodyText" rows="5" spellcheck="false" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem;"></textarea>
+                    <!-- Hidden plain-text fallback. Auto-derived from the
+                         HTML body on save (TinyMCE getContent({format:'text'})),
+                         so multipart/alternative still has a plain-text
+                         leg for clients that can't render HTML. The user
+                         doesn't need to maintain it manually. -->
+                    <textarea id="tmplBodyText" style="display:none;"></textarea>
                 </div>
                 <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.8rem;">
                     Available per-lead variables: <code>first_name</code>, <code>last_name</code>, <code>full_name</code>, <code>company</code>, <code>job_title</code>, <code>city</code>, <code>country</code>, <code>email</code>. Use <code>{{name|default:"friend"}}</code> for fallbacks.

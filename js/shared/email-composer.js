@@ -346,14 +346,11 @@
             content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
             placeholder: 'Write your message…',
             setup: editor => {
-                // "Insert link preview" toolbar button — fetches og:image /
-                // title / description for the URL and inserts an Outlook-
-                // style link-preview card. Backend: GET /email-templates/unfurl.
-                editor.ui.registry.addButton('linkpreview', {
-                    icon: 'browse',
-                    tooltip: 'Insert link preview (Outlook/Slack-style card)',
-                    onAction: () => openLinkPreviewPrompt(editor)
-                });
+                // Toolbar link-preview button + paste auto-unfurl come
+                // from the shared helpers below — same code path the
+                // Settings → Templates editor uses.
+                attachLinkPreviewButton(editor);
+                attachAutoUnfurl(editor);
                 editor.on('init', () => {
                     const body = document.querySelector('#' + MODAL_ID + ' .email-cmp-body');
                     if (!body) return;
@@ -361,75 +358,6 @@
                         document.querySelectorAll('.tox-tinymce-aux .tox-pop, .tox-tinymce-aux .tox-menu, .tox-tinymce-aux .tox-collection')
                             .forEach(el => { el.style.display = 'none'; });
                     }, { passive: true });
-                });
-                // Auto-unfurl on paste — when the pasted content contains a
-                // URL (typically a Drive share link with filename above),
-                // fetch og:image / title / description and swap the plain
-                // text for an Outlook-style preview card. Matches Outlook /
-                // Slack UX. Both `paste` (clipboard event, fires for every
-                // paste regardless of plugin) and `PastePostProcess` (fires
-                // only when TinyMCE's paste pipeline runs) are hooked so
-                // we don't miss the event in any code path.
-                const tryUnfurl = async (urlText, originalText) => {
-                    const parsed = parseLinkBlock(urlText || originalText);
-                    if (!parsed) return;
-                    try {
-                        if (!(window.api || (typeof api !== 'undefined' ? api : null))) return;
-                        const meta = await (window.api || (typeof api !== 'undefined' ? api : null)).request('/email-templates/unfurl?url=' + encodeURIComponent(parsed.url));
-                        if (!meta || meta.success === false) return;
-                        const merged = {
-                            url: parsed.url,
-                            og_title:       parsed.userTitle || meta.og_title,
-                            og_description: parsed.userDesc  || meta.og_description,
-                            og_image:       meta.og_image
-                        };
-                        const cardHtml = buildUnfurlCardHtml(merged);
-                        // Find the standalone URL/text in the editor body
-                        // and replace its containing block. Walk paragraphs
-                        // and check if they contain the URL.
-                        const body = editor.getBody();
-                        const escapedUrl = parsed.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                        const urlRx = new RegExp(escapedUrl);
-                        const blocks = body.querySelectorAll('p, div');
-                        let replaced = false;
-                        for (const blk of blocks) {
-                            if (urlRx.test(blk.textContent || '')) {
-                                const wrapper = editor.getDoc().createElement('div');
-                                wrapper.innerHTML = cardHtml;
-                                blk.parentNode.replaceChild(wrapper.firstChild, blk);
-                                replaced = true;
-                                break;
-                            }
-                        }
-                        if (replaced) editor.fire('change');
-                    } catch (err) { console.warn('[email-composer] auto-unfurl failed:', err); }
-                };
-                editor.on('paste', evt => {
-                    const cd = evt.clipboardData || (evt.event && evt.event.clipboardData);
-                    const text = cd && cd.getData ? cd.getData('text/plain') : '';
-                    if (!text || !/https?:\/\//i.test(text)) return;
-                    setTimeout(() => tryUnfurl(text, text), 120);
-                });
-                editor.on('PastePostProcess', e => {
-                    const text = (e.node && e.node.textContent) || '';
-                    if (!text || !/https?:\/\//i.test(text)) return;
-                    setTimeout(() => tryUnfurl(text, text), 120);
-                });
-                // Listen on the iframe's own document for paste events too —
-                // synthetic ClipboardEvents and some browser plugins bypass
-                // TinyMCE's high-level event emitter but always reach the
-                // contenteditable's native `paste` handler.
-                editor.on('init', () => {
-                    const doc = editor.getDoc();
-                    if (!doc) return;
-                    doc.addEventListener('paste', evt => {
-                        try {
-                            const cd = evt.clipboardData;
-                            const text = cd && cd.getData ? cd.getData('text/plain') : '';
-                            if (!text || !/https?:\/\//i.test(text)) return;
-                            setTimeout(() => tryUnfurl(text, text), 150);
-                        } catch (e) { /* ignore — best-effort */ }
-                    }, true);
                 });
             }
         }).then(eds => (eds && eds[0]) || window.tinymce.get(TMCE_ID));
@@ -622,5 +550,80 @@
         _state = null;
     }
 
-    window.EmailComposer = { open, close };
+    // Public helpers — let other TinyMCE editors (e.g. Settings →
+    // Templates body editor) reuse the same auto-unfurl + toolbar button
+    // without re-implementing parseLinkBlock + the og:image fetch + DOM
+    // swap. Call once inside TinyMCE init's setup callback.
+    function attachAutoUnfurl(editor) {
+        const tryOnPaste = (text) => {
+            if (!text || !/https?:\/\//i.test(text)) return;
+            setTimeout(() => unfurlAndReplaceInEditor(editor, text), 120);
+        };
+        editor.on('paste', evt => {
+            const cd = evt.clipboardData || (evt.event && evt.event.clipboardData);
+            tryOnPaste(cd && cd.getData ? cd.getData('text/plain') : '');
+        });
+        editor.on('PastePostProcess', e => {
+            tryOnPaste((e.node && e.node.textContent) || '');
+        });
+        editor.on('init', () => {
+            const doc = editor.getDoc();
+            if (!doc) return;
+            doc.addEventListener('paste', evt => {
+                try {
+                    const cd = evt.clipboardData;
+                    tryOnPaste(cd && cd.getData ? cd.getData('text/plain') : '');
+                } catch (e) { /* best-effort */ }
+            }, true);
+        });
+    }
+
+    function attachLinkPreviewButton(editor) {
+        editor.ui.registry.addButton('linkpreview', {
+            icon: 'browse',
+            tooltip: 'Insert link preview (Outlook/Slack-style card)',
+            onAction: () => openLinkPreviewPrompt(editor)
+        });
+    }
+
+    async function unfurlAndReplaceInEditor(editor, text) {
+        const parsed = parseLinkBlock(text);
+        if (!parsed) return;
+        const apiClient = (window.api || (typeof api !== 'undefined' ? api : null));
+        if (!apiClient) return;
+        try {
+            const meta = await apiClient.request('/email-templates/unfurl?url=' + encodeURIComponent(parsed.url));
+            if (!meta || meta.success === false) return;
+            const merged = {
+                url: parsed.url,
+                og_title:       parsed.userTitle || meta.og_title,
+                og_description: parsed.userDesc  || meta.og_description,
+                og_image:       meta.og_image
+            };
+            const cardHtml = buildUnfurlCardHtml(merged);
+            const body = editor.getBody();
+            const escapedUrl = parsed.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const urlRx = new RegExp(escapedUrl);
+            const blocks = body.querySelectorAll('p, div');
+            for (const blk of blocks) {
+                if (urlRx.test(blk.textContent || '')) {
+                    const wrapper = editor.getDoc().createElement('div');
+                    wrapper.innerHTML = cardHtml;
+                    blk.parentNode.replaceChild(wrapper.firstChild, blk);
+                    editor.fire('change');
+                    break;
+                }
+            }
+        } catch (err) { console.warn('[email-composer] auto-unfurl failed:', err); }
+    }
+
+    window.EmailComposer = {
+        open, close,
+        attachAutoUnfurl,
+        attachLinkPreviewButton,
+        // Lower-level helpers — exported so callers can build their own
+        // toolbar dialogs / one-shot insertions.
+        parseLinkBlock,
+        buildUnfurlCardHtml
+    };
 })(window, document);
