@@ -378,6 +378,9 @@
         document.getElementById('teamNameInput').value = '';
         document.getElementById('teamCodeInput').value = '';
         document.getElementById('teamDescInput').value = '';
+        // New teams default to brand-primary indigo until the admin picks
+        // something brand-specific. setTeamColor seeds the swatch + preview.
+        setTeamColor('#6366f1');
         renderFaPicker();
         renderManagerSlot();
         renderTeamleadSlots();
@@ -406,6 +409,7 @@
             document.getElementById('teamNameInput').value = team.team_name || '';
             document.getElementById('teamCodeInput').value = team.team_code || '';
             document.getElementById('teamDescInput').value = team.description || '';
+            setTeamColor(team.color || '#6366f1');
             renderFaPicker();
             renderManagerSlot();
             renderTeamleadSlots();
@@ -800,6 +804,7 @@
         const team_code = document.getElementById('teamCodeInput').value.trim() || null;
         const description = document.getElementById('teamDescInput').value.trim() || null;
         const functional_area_ids = [..._teamModal.selectedFaIds];
+        const color = document.getElementById('teamColorPicker')?.value || '#6366f1';
 
         // Client-side validation mirrors the backend rules for a nicer UX —
         // the server still enforces them if this code is tampered with.
@@ -812,7 +817,7 @@
         try {
             if (_teamModal.mode === 'create') {
                 // 1. Create the team (server requires ≥1 FA, creates as 'draft')
-                const team = await apiPost('/teams', { team_name: name, team_code, description, functional_area_ids });
+                const team = await apiPost('/teams', { team_name: name, team_code, description, functional_area_ids, color });
                 const teamId = team.id;
                 // 2. Manager (activates team to 'active')
                 await apiPost(`/teams/${teamId}/members`, { user_id: _teamModal.manager.user_id, role: TEAM_ROLES.MANAGER });
@@ -828,7 +833,7 @@
             } else {
                 // EDIT mode — update team metadata + FA set, then diff members.
                 await apiPut(`/teams/${_teamModal.teamId}`, {
-                    team_name: name, team_code, description, functional_area_ids
+                    team_name: name, team_code, description, functional_area_ids, color
                 });
                 await syncMembersDiff();
                 toastOk(`Team "${name}" updated`);
@@ -939,6 +944,60 @@
     window.closeFunctionalGroupModal      = closeFunctionalGroupModal;
     window.saveFunctionalGroup            = saveFunctionalGroup;
     window.deleteFunctionalGroup          = deleteFunctionalGroup;
+
+    // ─── Team colour swatch picker ─────────────────────────────────────────
+    // Mirrors the lead-field option colour-picker UX: a small grid of curated
+    // swatches (covers ~95% of brand-pick needs in one click) plus a freeform
+    // hex input as the escape hatch. setTeamColor seeds the picker on modal
+    // open; clicking a swatch syncs the hex input + preview.
+    const TEAM_COLOR_PALETTE = [
+        '#6366f1', // indigo (default)
+        '#3b82f6', // blue
+        '#0ea5e9', // sky
+        '#22c55e', // green
+        '#84cc16', // lime
+        '#eab308', // yellow
+        '#f97316', // orange
+        '#ef4444', // red
+        '#ec4899', // pink
+        '#a855f7', // violet
+        '#14b8a6', // teal
+        '#64748b'  // slate
+    ];
+    function setTeamColor(hex) {
+        const value = (hex || '#6366f1').toLowerCase();
+        const picker = document.getElementById('teamColorPicker');
+        const preview = document.getElementById('teamColorPreview');
+        const host = document.getElementById('teamColorSwatches');
+        if (picker) picker.value = value;
+        if (preview) {
+            preview.style.background = value;
+            preview.style.color = pickReadableTextColor(value);
+        }
+        if (host) {
+            host.innerHTML = TEAM_COLOR_PALETTE.map(c => `
+                <button type="button" class="team-color-swatch ${c.toLowerCase() === value ? 'is-on' : ''}"
+                        data-color="${c}" style="background:${c};"
+                        aria-label="Pick ${c}" role="radio" aria-checked="${c.toLowerCase() === value}"></button>
+            `).join('');
+            host.querySelectorAll('.team-color-swatch').forEach(b => {
+                b.addEventListener('click', () => setTeamColor(b.dataset.color));
+            });
+        }
+    }
+    // Wire the freeform <input type="color"> once.
+    document.addEventListener('DOMContentLoaded', () => {
+        const picker = document.getElementById('teamColorPicker');
+        if (picker) picker.addEventListener('input', () => setTeamColor(picker.value));
+    });
+    // Pick black/white text colour for a given background — keeps the
+    // swatch preview chip readable on both light + dark hex values.
+    function pickReadableTextColor(hex) {
+        if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return '#fff';
+        const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+        const luma = 0.299*r + 0.587*g + 0.114*b;
+        return luma > 165 ? '#0f172a' : '#fff';
+    }
 
     window.loadTeamsTab         = loadTeamsTab;
     window.openCreateTeamModal  = openCreateTeamModal;

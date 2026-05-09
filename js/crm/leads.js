@@ -690,7 +690,7 @@ function renderLeadsTable(leads) {
                 ${renderEmailEngagement(lead)}
             </td>
             <td data-col="team" class="hide-mobile">
-                ${lead.teamName || lead.team_name ? `<span class="crm-team-badge ${teamColorClass(lead.teamName || lead.team_name)}">${escapeHtml(lead.teamName || lead.team_name)}</span>` : '<span class="crm-cell-secondary">—</span>'}
+                ${lead.teamName || lead.team_name ? renderTeamBadge(lead) : '<span class="crm-cell-secondary">—</span>'}
             </td>
             <td data-col="owner" class="hide-mobile">
                 ${renderOwnerCell(lead)}
@@ -1299,6 +1299,31 @@ function teamColorClass(name) {
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
     const colors = ['team-indigo', 'team-emerald', 'team-amber', 'team-rose', 'team-cyan', 'team-violet', 'team-orange', 'team-teal'];
     return colors[Math.abs(hash) % colors.length];
+}
+
+// Renders the team badge on a leads-table row. Prefers the explicit
+// per-team colour (lead.team_color from crm_teams.color) and falls back
+// to the deterministic name-hash class for any pre-migration row whose
+// team color is null/blank.
+function renderTeamBadge(lead) {
+    const name = lead.teamName || lead.team_name || '';
+    const explicit = lead.team_color || lead.teamColor;
+    if (explicit && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(explicit)) {
+        const fg = pickReadableTextColor(explicit);
+        return `<span class="crm-team-badge" style="background:${escapeAttr(explicit)};color:${fg};">${escapeHtml(name)}</span>`;
+    }
+    return `<span class="crm-team-badge ${teamColorClass(name)}">${escapeHtml(name)}</span>`;
+}
+
+function pickReadableTextColor(hex) {
+    if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return '#fff';
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    const luma = 0.299*r + 0.587*g + 0.114*b;
+    return luma > 165 ? '#0f172a' : '#fff';
+}
+
+function escapeAttr(s) {
+    return escapeHtml(s);
 }
 
 // ==================== Selection & Bulk Actions ====================

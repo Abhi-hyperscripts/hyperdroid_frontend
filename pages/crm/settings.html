@@ -2806,6 +2806,21 @@
                     <textarea id="teamDescInput" class="form-control" placeholder="What this team focuses on, e.g. 'Handles all Shopify and custom e-commerce builds across the west region.'" rows="2" maxlength="2000"></textarea>
                 </div>
 
+                <!-- Team colour: powers the team badge in the leads table.
+                     Uses a swatch grid (same affordance as the Lead Field
+                     options picker) plus a freeform hex input as escape
+                     hatch for tenants who want a brand-specific colour. -->
+                <div class="crm-form-group">
+                    <label>Team colour</label>
+                    <p class="form-help-text" style="margin-bottom: 8px;">Used as the team badge colour on the leads table.</p>
+                    <div class="team-color-row">
+                        <div class="team-color-swatches" id="teamColorSwatches" role="radiogroup" aria-label="Team colour"></div>
+                        <input type="color" id="teamColorPicker" class="team-color-picker" value="#6366f1" aria-label="Custom team colour">
+                        <span class="team-color-preview" id="teamColorPreview"
+                              style="background:#6366f1; color:#fff;">Preview</span>
+                    </div>
+                </div>
+
                 <div class="crm-form-group">
                     <label>Functional groups <span class="required-mark">*</span></label>
                     <p class="form-help-text" style="margin-bottom: 8px;">Pick one or more areas this team covers. Drives AI lead routing.</p>

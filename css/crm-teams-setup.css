@@ -475,3 +475,41 @@
     font-style: italic;
     padding: 6px 2px;
 }
+
+/* ─── Team colour picker (settings modal) + team badge (leads table) ─── */
+.team-color-row {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+}
+.team-color-swatches {
+    display: flex; flex-wrap: wrap; gap: 6px;
+}
+.team-color-swatch {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.12s, border-color 0.12s;
+}
+.team-color-swatch:hover { transform: scale(1.1); }
+.team-color-swatch.is-on {
+    border-color: var(--text-primary);
+    transform: scale(1.05);
+}
+.team-color-picker {
+    width: 32px; height: 32px; padding: 0; border: 1px solid var(--border-color);
+    border-radius: 6px; background: transparent; cursor: pointer;
+}
+.team-color-preview {
+    display: inline-flex; align-items: center; padding: 4px 12px;
+    border-radius: 999px; font-size: 0.78rem; font-weight: 600;
+    line-height: 1; min-height: 22px;
+}
+
+/* Team badge as it appears on the leads table — driven by inline style
+   set by the renderer (background + foreground are set per row from
+   each team's stored colour). */
+.crm-team-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 999px;
+    font-size: 0.78rem; font-weight: 600; line-height: 1.4;
+    white-space: nowrap;
+}
