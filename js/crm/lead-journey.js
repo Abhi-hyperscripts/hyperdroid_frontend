@@ -528,6 +528,10 @@
     // the sidebar / navbar / breadcrumb.
     window.openWhatsAppThreadModal = function (phoneDigits) {
         if (!phoneDigits) return;
+        // Close the lead-detail slide panel first — the modal is full-width
+        // and the panel would otherwise sit half-covered underneath it. The
+        // panel's data is preserved; it re-opens via the same row click.
+        try { if (typeof closeLeadDetailPanel === 'function') closeLeadDetailPanel(); } catch (_) {}
         // De-dupe — re-clicking should focus the existing modal instead
         // of stacking another iframe on top.
         let modal = document.getElementById('waThreadModal');
