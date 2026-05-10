@@ -595,8 +595,18 @@
             return datePill + bubble;
         }).join('');
         messagesDiv.innerHTML = html;
-        // Scroll to bottom
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        // Scroll to bottom — three-pass to survive async layout shifts.
+        // 1. Sync: lands close enough that the user doesn't see a flash mid-thread.
+        // 2. RAF: after the next paint, when text/font metrics have settled.
+        // 3. Image-load: each <img> in the new content scrolls again as it loads,
+        //    since image loads happen well after innerHTML and would otherwise
+        //    push the latest bubble off-screen.
+        const scrollDown = () => { messagesDiv.scrollTop = messagesDiv.scrollHeight; };
+        scrollDown();
+        requestAnimationFrame(scrollDown);
+        messagesDiv.querySelectorAll('img').forEach(img => {
+            if (!img.complete) img.addEventListener('load', scrollDown, { once: true });
+        });
     }
 
     function showComposer(show) {
