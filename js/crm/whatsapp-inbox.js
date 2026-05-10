@@ -913,7 +913,7 @@
 
             const previewLine = (optimisticInfo.body || '').trim()
                 || `(${payload.message_type})`;
-            bumpConversationToTop(activeCustomerPhone, previewLine, 'outbound', payload.message_type, status);
+            bumpConversationToTop(activeCustomerPhone, previewLine, 'outbound', payload.message_type, status, wamId, providerMessageId);
             renderConversationList();
             if (status !== 'sent' && typeof Toast !== 'undefined') {
                 Toast.warning(resp.message || `Provider returned ${status}`);
@@ -928,7 +928,7 @@
         }
     }
 
-    function bumpConversationToTop(customerPhone, lastBody, direction, messageType, status) {
+    function bumpConversationToTop(customerPhone, lastBody, direction, messageType, status, lastMessageId, lastProviderMessageId) {
         const idx = conversations.findIndex(c => c.customerPhone === customerPhone);
         let conv;
         if (idx >= 0) {
@@ -944,6 +944,10 @@
         conv.lastMessageType = messageType || 'text';
         conv.lastMessageStatus = status || '';
         conv.lastMessageAtUtc = new Date().toISOString();
+        // Stash the ids so the SignalR status_update handler can patch the
+        // tick on the conversation-list preview without needing a refresh.
+        if (lastMessageId) conv.lastMessageId = lastMessageId;
+        if (lastProviderMessageId) conv.lastMessageProviderMessageId = lastProviderMessageId;
         conversations.unshift(conv);
     }
 
@@ -1060,9 +1064,24 @@
             }
             // Also patch the conversation list's lastMessageStatus so the
             // little tick next to "You: ..." in the list reflects the latest.
-            const convIdx = conversations.findIndex(c => c.lastMessageId === ev.id);
+            // Match by id, then providerMessageId, then customerPhone — the
+            // last is the catch-all for rows where the conversation row was
+            // populated before we started stashing ids on it.
+            let convIdx = conversations.findIndex(c => c.lastMessageId === ev.id);
+            if (convIdx < 0 && ev.providerMessageId) {
+                convIdx = conversations.findIndex(c => c.lastMessageProviderMessageId === ev.providerMessageId);
+            }
+            if (convIdx < 0 && ev.customerPhone) {
+                convIdx = conversations.findIndex(c =>
+                    c.customerPhone === ev.customerPhone &&
+                    c.lastMessageDirection === 'outbound');
+            }
             if (convIdx >= 0) {
                 conversations[convIdx].lastMessageStatus = ev.status;
+                if (!conversations[convIdx].lastMessageId && ev.id) conversations[convIdx].lastMessageId = ev.id;
+                if (!conversations[convIdx].lastMessageProviderMessageId && ev.providerMessageId) {
+                    conversations[convIdx].lastMessageProviderMessageId = ev.providerMessageId;
+                }
                 renderConversationList();
             }
             return;
