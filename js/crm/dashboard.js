@@ -35,6 +35,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (analyticsCard) analyticsCard.style.display = '';
     }
 
+    // WhatsApp Inbox card — SUPERADMIN-only AND only when WhatsApp is
+    // actually configured (i.e. /whatsapp/numbers returns at least one
+    // active number). Without this gate, the card would 404-ish into an
+    // empty inbox for tenants who haven't connected Interakt yet.
+    if (isSuperadmin) {
+        try {
+            const resp = await api.request('/whatsapp/numbers');
+            const numbers = (resp && resp.numbers) ? resp.numbers : [];
+            const hasActive = numbers.some(n => n.is_active ?? n.isActive);
+            if (hasActive) {
+                const waCard = document.getElementById('cardWhatsappInbox');
+                if (waCard) waCard.style.display = '';
+            }
+        } catch (err) {
+            // Endpoint missing / 403 / network blip — leave the card hidden.
+            console.warn('[Dashboard] WhatsApp numbers check failed (card stays hidden):', err);
+        }
+    }
+
     // Setup gating — disable action cards until functional area + team + pipeline exist.
     // Settings card is always enabled (it's how users fix the setup).
     await applySetupGating(isAdmin);

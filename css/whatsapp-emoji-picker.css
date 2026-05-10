@@ -1,0 +1,170 @@
+/* ============================================================================
+ * whatsapp-emoji-picker.css — popup styles for WhatsappUI.EmojiPicker.
+ * Loaded alongside whatsapp-ui.css on any page that uses the picker.
+ * Standalone — does not depend on whatsapp-ui.css. Class-prefixed `wep-`
+ * (whatsapp emoji picker) so it can drop into any page without collision.
+ * ============================================================================ */
+
+.wep-popup {
+    /* fixed (not absolute) so positioning is viewport-relative — avoids
+       the surprise of being parented by an offset ancestor we didn't pick. */
+    position: fixed;
+    width: 360px;
+    height: 420px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Sits above the WhatsappUI lightbox (z-index 1000000) so the picker
+       is visible when invoked from the lightbox's reply bar. */
+    z-index: 1000001;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #111b21;
+    /* Tiny entrance animation so the popup feels alive. */
+    animation: wep-fade-in 120ms ease-out;
+    transform-origin: bottom left;
+}
+@keyframes wep-fade-in {
+    from { opacity: 0; transform: scale(0.96) translateY(4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Search bar ─────────────────────────────────────────────────────── */
+.wep-search-wrap {
+    position: relative;
+    padding: 10px 10px 6px;
+    flex-shrink: 0;
+}
+.wep-search-input {
+    width: 100%;
+    height: 36px;
+    padding: 0 10px 0 38px;
+    background: #f0f2f5;
+    border: 0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #111b21;
+    outline: none;
+    box-sizing: border-box;
+}
+.wep-search-input:focus {
+    background: #fff;
+    box-shadow: inset 0 0 0 1px #00a884;
+}
+.wep-search-input::placeholder { color: #667781; }
+.wep-search-icon {
+    position: absolute;
+    left: 22px;
+    top: 18px;
+    width: 18px;
+    height: 18px;
+    color: #667781;
+    pointer-events: none;
+}
+
+/* ── Body — scrollable grid of emojis ────────────────────────────────── */
+.wep-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 8px 8px;
+}
+.wep-body::-webkit-scrollbar { width: 6px; }
+.wep-body::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 3px; }
+
+.wep-section-label {
+    display: block;
+    margin: 8px 4px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #54656f;
+    text-transform: capitalize;
+}
+
+.wep-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+}
+
+.wep-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1;
+    border: 0;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 24px;
+    line-height: 1;
+    padding: 0;
+    transition: background 80ms ease, transform 80ms ease;
+    /* Apple emoji on macOS ships with the system font; on Windows / Linux
+       the browser falls back to whatever color emoji set is installed.
+       Force a sensible stack so the picker looks consistent. */
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif;
+}
+.wep-cell:hover {
+    background: #f0f2f5;
+    transform: scale(1.08);
+}
+.wep-cell:active { transform: scale(0.94); }
+
+/* ── No-results state inside search ──────────────────────────────────── */
+.wep-empty {
+    text-align: center;
+    color: #667781;
+    font-size: 13.5px;
+    padding: 32px 16px;
+}
+
+/* ── Category tabs (bottom strip) ────────────────────────────────────── */
+.wep-tabs {
+    display: flex;
+    height: 44px;
+    border-top: 1px solid #e9edef;
+    flex-shrink: 0;
+    padding: 0 4px;
+}
+.wep-tab {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font-size: 18px;
+    color: #54656f;
+    border-radius: 8px;
+    margin: 4px 1px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif;
+    position: relative;
+    transition: background 100ms ease;
+}
+.wep-tab:hover { background: #f0f2f5; }
+.wep-tab.is-active::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 25%;
+    right: 25%;
+    height: 2px;
+    background: #00a884;
+    border-radius: 2px;
+}
+
+/* ── Mobile — let it expand to nearly full-width on narrow viewports ──── */
+@media screen and (max-width: 480px) {
+    .wep-popup {
+        width: calc(100vw - 16px);
+        max-width: 360px;
+        height: 360px;
+    }
+    .wep-grid { grid-template-columns: repeat(7, 1fr); }
+    .wep-cell { font-size: 26px; }
+}

@@ -9,6 +9,11 @@
  *     reorders the conversation list.
  *  3) Local state cached in module scope (no Vuex needed for this page).
  *
+ * Visual layer is delegated to /js/shared/whatsapp-ui.js (WhatsappUI.*).
+ * That module emits all the markup with WA-Web-look classes; this file
+ * stays focused on data flow + state. To change a colour or rearrange
+ * a bubble, edit whatsapp-ui.css / whatsapp-ui.js — NOT this file.
+ *
  * Multi-number tenant support:
  *  - 0 numbers configured → show "connect a number" empty state.
  *  - 1 number → auto-pick, hide the picker.
@@ -23,17 +28,20 @@
     // ─── State ──────────────────────────────────────────────────────────────
     let allNumbers = [];          // [{businessPhoneNumber, isActive, displayHint, createdAt}]
     let activeBusinessPhone = ''; // currently picked outbound number
-    let conversations = [];       // [{customerPhone, customerName, lastMessageBody, lastMessageAtUtc, lastMessageDirection}]
+    let conversations = [];       // [{customerPhone, customerName, lastMessageBody, lastMessageAtUtc, lastMessageDirection, lastMessageStatus, lastMessageType}]
     let activeCustomerPhone = ''; // currently open thread
-    let threadMessages = [];      // messages for the active thread
+    let threadMessages = [];      // messages for the active thread (raw — UI module groups them on render)
     let connection = null;        // SignalR
     let numberDropdown = null;    // SearchableDropdown instance for the picker
+    let activeFilter = 'all';     // pill filter (all|unread|me)
 
-    // Pending attachment in the composer. Holds the *uploaded* state so the
-    // user can preview it, change the caption, and Send when ready. Cleared
-    // on send / remove / thread switch.
-    //   { fileId, mediaUrl, mediaType, fileName, contentType, fileSize, previewBlobUrl }
-    let pendingAttachment = null;
+    // Pending attachments in the composer. Now an ARRAY so the user can
+    // attach multiple files at once and we render them as a WA-style album
+    // when sent. Each entry holds the *uploaded* state so the user can
+    // preview, caption, and Send when every upload completes. Cleared on
+    // send / remove / thread switch.
+    //   [{ fileId, mediaUrl, mediaType, fileName, contentType, fileSize, previewBlobUrl, uploading }]
+    let pendingAttachments = [];
 
     // Interakt limits per WhatsApp's BSP rules (in bytes). Audio caps at 16MB
     // but document caps at 100MB; the picker also restricts MIME.
@@ -45,6 +53,56 @@
         if (typeof Navigation !== 'undefined') Navigation.init();
         await ensureLoggedIn();
         wireDomEvents();
+        wireMobileBackHandler();
+        // Single delegator for image/video tile clicks — opens the lightbox
+        // and reads video durations as their metadata loads. The context
+        // callback resolves sender + timestamp from the bubble row, and
+        // collects ALL media in the thread for the lightbox's thumb strip
+        // so the user can navigate across albums.
+        WhatsappUI.wireMediaClicks(document.getElementById('waMessages'), {
+            context: (row) => {
+                const senderRaw = row.dataset.msgSender || '';
+                // For outbound rows we get "You". For inbound we get '' (1:1
+                // chats — fall back to the active customer's display name).
+                const customerName = document.getElementById('waThreadTitle')?.textContent || '';
+                const senderName = senderRaw && senderRaw !== 'You'
+                    ? senderRaw
+                    : (senderRaw === 'You' ? 'You' : customerName);
+                const timestamp = row.dataset.msgTime || '';
+                const allMedia = collectThreadMedia();
+                return { senderName, timestamp, allMedia };
+            },
+            // Called by the lightbox's in-place reply form. The lightbox
+            // renders its own quote chip + text input; we just need to take
+            // the typed text and send it as a reply to the active thread.
+            onReply: ({ text, replyTo }) => {
+                if (!text || !activeCustomerPhone || !activeBusinessPhone) return;
+                const cc = guessCountryCode(activeCustomerPhone);
+                const local = activeCustomerPhone.startsWith(cc)
+                    ? activeCustomerPhone.slice(cc.length)
+                    : activeCustomerPhone;
+                // Send as plain text — the recipient sees just the text. The
+                // backend doesn't yet support per-message replyTo refs over
+                // the Interakt template channel, but we already render the
+                // local optimistic bubble with the quote so the operator
+                // sees the context they replied to.
+                sendOne({
+                    business_phone_number: activeBusinessPhone,
+                    recipient_country_code: '+' + cc,
+                    recipient_phone: local,
+                }, {
+                    message_type: 'text', body: text, media_url: '', caption: '',
+                }, {
+                    messageType: 'text',
+                    body: text,
+                    replyTo: replyTo ? {
+                        senderName: replyTo.senderName,
+                        snippet: replyTo.kindLabel || (replyTo.kind === 'video' ? 'Video' : 'Photo'),
+                        mediaType: replyTo.kind,
+                    } : undefined,
+                }).catch(err => console.warn('[wa-inbox] reply send failed:', err));
+            }
+        });
         await loadNumbers();
         await connectSignalR();
     }
@@ -53,6 +111,17 @@
         const tok = localStorage.getItem('ragenaizer_authToken') || localStorage.getItem('authToken');
         if (!tok) {
             window.location.href = '/pages/login.html';
+            return new Promise(() => {});
+        }
+        // SUPERADMIN-only page. Mirror the backend gate on
+        // /api/whatsapp/* so a non-superadmin pasting the URL in the bar
+        // gets bounced back to the CRM dashboard rather than landing on
+        // an empty/403'ing inbox.
+        const user = (typeof api !== 'undefined' && api.getUser) ? api.getUser() : null;
+        const roles = user?.roles || [];
+        if (!roles.includes('SUPERADMIN')) {
+            if (typeof Toast !== 'undefined') Toast.error('WhatsApp Inbox is restricted to administrators.');
+            window.location.href = '/pages/crm/dashboard.html';
             return new Promise(() => {});
         }
         return Promise.resolve();
@@ -77,14 +146,40 @@
         }
         const search = document.getElementById('waSearchInput');
         if (search) {
-            search.addEventListener('input', () => renderConversationList(filterConversations(search.value)));
-        }
-        const back = document.getElementById('waBackBtn');
-        if (back) {
-            back.addEventListener('click', () => {
-                document.getElementById('waShell')?.classList.remove('has-active-thread');
+            search.addEventListener('input', () => {
+                renderConversationList();
             });
         }
+        // Filter pills (All / Unread / Outbound)
+        document.querySelectorAll('#waFilters .wa-filter-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#waFilters .wa-filter-pill').forEach(b => b.classList.remove('is-active'));
+                btn.classList.add('is-active');
+                activeFilter = btn.dataset.filter || 'all';
+                renderConversationList();
+            });
+        });
+        const refreshBtn = document.getElementById('waRefreshBtn');
+        if (refreshBtn) refreshBtn.addEventListener('click', () => loadConversations());
+
+        const emojiBtn = document.getElementById('waEmojiBtn');
+        if (emojiBtn) {
+            emojiBtn.addEventListener('click', () => {
+                WhatsappUI.EmojiPicker.open(emojiBtn, emoji => {
+                    const ta = document.getElementById('waComposerInput');
+                    if (!ta) return;
+                    // Insert at the cursor position (or append if no selection).
+                    const start = ta.selectionStart ?? ta.value.length;
+                    const end = ta.selectionEnd ?? ta.value.length;
+                    ta.value = ta.value.slice(0, start) + emoji + ta.value.slice(end);
+                    const caret = start + emoji.length;
+                    ta.focus();
+                    ta.setSelectionRange(caret, caret);
+                    autoSizeTextarea(ta);
+                });
+            });
+        }
+
         const attachBtn = document.getElementById('waAttachBtn');
         const fileInput = document.getElementById('waFileInput');
         if (attachBtn && fileInput) {
@@ -100,9 +195,46 @@
         }
     }
 
+    function wireMobileBackHandler() {
+        const app = document.getElementById('waApp');
+        WhatsappUI.installMobileBackHandler({
+            app,
+            onBack: () => {
+                app.classList.remove('has-active-thread');
+                activeCustomerPhone = '';
+                threadMessages = [];
+                renderThread();
+                renderThreadHeader(null);
+                renderConversationList();
+            }
+        });
+    }
+
+    // Collect ALL image/video URLs in the open thread, in chronological
+    // order — feeds the lightbox's thumb strip so the user can scrub the
+    // entire thread's media without closing.
+    function collectThreadMedia() {
+        const out = [];
+        for (const m of threadMessages) {
+            const t = (m.messageType || '').toLowerCase();
+            if ((t === 'image' || t === 'video') && m.mediaUrl) {
+                out.push({ kind: t, url: m.mediaUrl });
+            }
+        }
+        return out;
+    }
+
     function autoSizeTextarea(ta) {
         ta.style.height = 'auto';
-        ta.style.height = Math.min(ta.scrollHeight, 150) + 'px';
+        ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+        // Toggle send/mic button visibility — WA Web pattern: empty composer
+        // shows the mic, non-empty composer shows the send.
+        const text = (ta.value || '').trim();
+        const sendBtn = document.getElementById('waSendBtn');
+        const micBtn = document.getElementById('waMicBtn');
+        const hasAttach = pendingAttachments.length > 0;
+        if (sendBtn) sendBtn.hidden = !(text || hasAttach);
+        if (micBtn)  micBtn.hidden  = !!(text || hasAttach);
     }
 
     // ─── Numbers ────────────────────────────────────────────────────────────
@@ -122,12 +254,14 @@
         const picker = document.getElementById('waNumberPicker');
         const noNumbers = document.getElementById('waNoNumbers');
         const sidebarEmpty = document.getElementById('waSidebarEmpty');
+        const convList = document.getElementById('waConvList');
 
         if (allNumbers.length === 0 || activeNumbers.length === 0) {
-            // Show "connect a number" inside the sidebar
+            // Show "connect a number" inside the list pane
             noNumbers.style.display = '';
             sidebarEmpty.style.display = 'none';
             picker.style.display = 'none';
+            if (convList) convList.innerHTML = '';
             return;
         }
         noNumbers.style.display = 'none';
@@ -152,7 +286,6 @@
     function buildNumberPicker(numbers) {
         const container = document.getElementById('waNumberPickerContainer');
         if (!container) return;
-        // Re-build on each call so the option list is fresh.
         container.innerHTML = '';
         numberDropdown = new SearchableDropdown(container, {
             options: numbers.map(n => ({
@@ -167,9 +300,9 @@
                     activeBusinessPhone = value;
                     sessionStorage.setItem('crm_wa_active_business_phone', value);
                     await loadConversations();
-                    // Switching number invalidates the open thread.
                     activeCustomerPhone = '';
                     threadMessages = [];
+                    document.getElementById('waApp')?.classList.remove('has-active-thread');
                     renderThreadHeader(null);
                     renderThread();
                 }
@@ -192,69 +325,164 @@
                 lastMessageBody: c.last_message_body ?? c.lastMessageBody ?? '',
                 lastMessageAtUtc: c.last_message_at_utc ?? c.lastMessageAtUtc ?? '',
                 lastMessageDirection: c.last_message_direction ?? c.lastMessageDirection ?? '',
+                lastMessageStatus: c.last_message_status ?? c.lastMessageStatus ?? '',
+                lastMessageType: c.last_message_type ?? c.lastMessageType ?? 'text',
+                unreadCount: c.unread_count ?? c.unreadCount ?? 0,
+                // Drives the "Lead" badge + the kebab menu's
+                // "Open Lead in CRM" vs "Convert to Lead" branching.
+                leadId: c.lead_id ?? c.leadId ?? '',
             }));
         } catch (err) {
             console.error('[wa-inbox] loadConversations failed:', err);
             conversations = [];
             if (typeof Toast !== 'undefined') Toast.error('Failed to load conversations');
         }
-        renderConversationList(conversations);
+        renderConversationList();
     }
 
-    function filterConversations(q) {
-        const term = (q || '').toLowerCase().trim();
-        if (!term) return conversations;
+    function visibleConversations() {
+        const search = document.getElementById('waSearchInput');
+        const term = (search?.value || '').toLowerCase().trim();
+
         return conversations.filter(c => {
-            return (c.customerPhone || '').toLowerCase().includes(term)
-                || (c.customerName || '').toLowerCase().includes(term)
-                || (c.lastMessageBody || '').toLowerCase().includes(term);
+            // Search filter
+            if (term) {
+                const hit = (c.customerPhone || '').toLowerCase().includes(term)
+                    || (c.customerName || '').toLowerCase().includes(term)
+                    || (c.lastMessageBody || '').toLowerCase().includes(term);
+                if (!hit) return false;
+            }
+            // Pill filter
+            if (activeFilter === 'unread' && !(c.unreadCount > 0)) return false;
+            if (activeFilter === 'me' && c.lastMessageDirection !== 'outbound') return false;
+            return true;
         });
     }
 
-    function renderConversationList(list) {
+    function renderConversationList() {
         const ul = document.getElementById('waConvList');
         const empty = document.getElementById('waSidebarEmpty');
         if (!ul) return;
 
+        const list = visibleConversations();
         if (!list || list.length === 0) {
             ul.innerHTML = '';
             empty.style.display = '';
             return;
         }
         empty.style.display = 'none';
-        ul.innerHTML = list.map(renderConvItem).join('');
-        // Wire click handlers (delegation-free for clarity)
-        ul.querySelectorAll('.wa-conv-item').forEach(li => {
-            li.addEventListener('click', () => openConversation(li.dataset.phone, li.dataset.name || ''));
+        ul.innerHTML = list.map(c => WhatsappUI.renderConversationRow(c, {
+            active: c.customerPhone === activeCustomerPhone,
+            unread: c.unreadCount > 0
+        })).join('');
+        // Wire row clicks (open thread) — but ignore clicks on the kebab.
+        ul.querySelectorAll('.wa-conv-row').forEach(row => {
+            row.addEventListener('click', e => {
+                if (e.target.closest('.wa-conv-menu-btn')) return;   // menu has its own handler
+                openConversation(row.dataset.phone, row.dataset.name || '');
+            });
+        });
+        // Wire kebab menus
+        ul.querySelectorAll('.wa-conv-menu-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                openRowKebabMenu(btn);
+            });
         });
     }
 
-    function renderConvItem(c) {
-        const escName = (c.customerName || '').replace(/"/g, '&quot;');
-        const phone = c.customerPhone || '';
-        const escPhone = phone.replace(/"/g, '&quot;');
-        const isActive = phone === activeCustomerPhone ? ' active' : '';
-        const display = c.customerName && c.customerName.trim()
-            ? c.customerName
-            : formatPhone(phone);
-        const initial = (display || '?').trim().charAt(0).toUpperCase() || '?';
-        const time = formatRelativeTime(c.lastMessageAtUtc);
-        const previewRaw = c.lastMessageBody || '';
-        const previewPrefix = c.lastMessageDirection === 'outbound' ? 'You: ' : '';
-        const preview = escapeHtml(previewPrefix + (previewRaw.length > 80 ? previewRaw.slice(0, 80) + '…' : previewRaw))
-                        || '<em style="color:var(--text-secondary);">(media or empty)</em>';
-        return `
-            <li class="wa-conv-item${isActive}" data-phone="${escPhone}" data-name="${escName}">
-                <div class="wa-avatar">${initial}</div>
-                <div class="wa-conv-meta">
-                    <div class="wa-conv-name">
-                        <span>${escapeHtml(display)}</span>
-                        <span class="wa-conv-time">${time}</span>
-                    </div>
-                    <div class="wa-conv-preview">${preview}</div>
-                </div>
-            </li>
-        `;
+    // Build the kebab-menu items based on whether the row is already a lead.
+    // This is the per-row workflow:
+    //   • If not a lead → "Convert to Lead" + "Convert to Lead and Assign Team…"
+    //   • If already a lead → "Open Lead in CRM" + "Assign Team…" (so an
+    //     operator can attach a team after the fact without leaving WA inbox)
+    function openRowKebabMenu(btn) {
+        const phone = btn.dataset.phone;
+        const name  = btn.dataset.name || '';
+        const leadId = btn.dataset.leadId || '';
+
+        const ICON_LEAD = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>`;
+        const ICON_TEAM = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+        const ICON_OPEN = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+
+        const items = [];
+        if (leadId) {
+            items.push({
+                label: 'Open Lead in CRM',
+                icon: ICON_OPEN,
+                // Lead detail lives inside the leads page via ?lead= deeplink,
+                // matching how `reassign-queue.js` and other CRM modules link.
+                onClick: () => window.location.href = `leads.html?lead=${encodeURIComponent(leadId)}`
+            });
+            items.push({
+                label: 'Assign Team…',
+                icon: ICON_TEAM,
+                onClick: () => pickTeamThenConvert(phone, name, leadId)
+            });
+        } else {
+            items.push({
+                label: 'Convert to Lead',
+                icon: ICON_LEAD,
+                onClick: () => convertToLead(phone, name, /*teamId*/ null)
+            });
+            items.push({
+                label: 'Convert to Lead and Assign Team…',
+                icon: ICON_TEAM,
+                onClick: () => pickTeamThenConvert(phone, name, /*existingLeadId*/ null)
+            });
+        }
+        WhatsappUI.RowMenu.open(btn, items);
+    }
+
+    async function convertToLead(customerPhone, customerName, teamId) {
+        try {
+            const resp = await api.request('/whatsapp/convert-to-lead', {
+                method: 'POST',
+                body: JSON.stringify({
+                    customer_phone: customerPhone,
+                    customer_name: customerName,
+                    team_id: teamId,
+                })
+            });
+            if (!resp || resp.success === false) {
+                throw new Error(resp?.message || 'Convert failed');
+            }
+            const msg = resp.alreadyExisted
+                ? (resp.assigned ? 'Already a lead — team assigned' : 'Already a lead')
+                : (resp.assigned ? 'Converted to lead and assigned to team' : 'Converted to lead');
+            if (typeof Toast !== 'undefined') Toast.success(msg);
+            // Refresh conversations so the lead-id badge shows up.
+            await loadConversations();
+        } catch (err) {
+            console.error('[wa-inbox] convert failed:', err);
+            if (typeof Toast !== 'undefined') Toast.error(err.message || 'Convert failed');
+        }
+    }
+
+    // Open the team picker, then call convert-to-lead with the chosen teamId.
+    async function pickTeamThenConvert(customerPhone, customerName, existingLeadId) {
+        let teams = [];
+        try {
+            // CRM service path — `/teams` alone routes to Vision via api.js's
+            // default-prefix rule. The `/crm/` prefix is what every other
+            // CRM page uses for the same endpoint.
+            const resp = await api.request('/crm/teams');
+            const raw = (resp && resp.teams) ? resp.teams : (Array.isArray(resp) ? resp : []);
+            teams = raw.map(t => ({
+                id: t.id ?? t.teamId ?? t.team_id,
+                name: t.team_name ?? t.teamName ?? t.name ?? '(unnamed team)',
+                meta: t.member_count != null ? `${t.member_count} member${t.member_count === 1 ? '' : 's'}` : '',
+            })).filter(t => t.id);
+        } catch (err) {
+            console.warn('[wa-inbox] team list failed:', err);
+            if (typeof Toast !== 'undefined') Toast.error('Could not load teams');
+            return;
+        }
+        WhatsappUI.TeamPicker.open({
+            title: existingLeadId ? 'Assign team to lead' : 'Convert to lead and assign team',
+            teams,
+            onPick: (teamId) => convertToLead(customerPhone, customerName, teamId),
+        });
     }
 
     // ─── Thread ─────────────────────────────────────────────────────────────
@@ -264,11 +492,16 @@
         // Switching threads invalidates any in-flight composer attachment.
         clearPendingAttachment();
         activeCustomerPhone = customerPhone;
-        document.getElementById('waShell')?.classList.add('has-active-thread');
+        document.getElementById('waApp')?.classList.add('has-active-thread');
         renderThreadHeader({ customerPhone, customerName });
 
         const messagesDiv = document.getElementById('waMessages');
-        if (messagesDiv) messagesDiv.innerHTML = '<div class="wa-loading">Loading…</div>';
+        const empty = document.getElementById('waThreadEmpty');
+        if (empty) empty.style.display = 'none';
+        if (messagesDiv) {
+            messagesDiv.style.display = '';
+            messagesDiv.innerHTML = '<div class="wa-loading">Loading messages…</div>';
+        }
 
         try {
             const resp = await api.request(
@@ -282,6 +515,7 @@
                 messageType: m.message_type ?? m.messageType ?? 'text',
                 body: m.body,
                 mediaUrl: m.media_url ?? m.mediaUrl ?? '',
+                fileName: m.file_name ?? m.fileName ?? '',
                 status: m.status,
                 receivedAtUtc: m.received_at_utc ?? m.receivedAtUtc ?? '',
                 sentAtUtc: m.sent_at_utc ?? m.sentAtUtc ?? '',
@@ -293,138 +527,90 @@
             if (typeof Toast !== 'undefined') Toast.error('Failed to load thread');
         }
         renderThread();
-        renderConversationList(filterConversations(document.getElementById('waSearchInput')?.value));
+        renderConversationList();
         showComposer(true);
     }
 
     function renderThreadHeader(thread) {
+        const header = document.getElementById('waThreadHeader');
         const titleEl = document.getElementById('waThreadTitle');
         const subEl = document.getElementById('waThreadSub');
-        if (!titleEl || !subEl) return;
+        const avatarSlot = document.getElementById('waThreadAvatarSlot');
+        if (!header || !titleEl || !subEl) return;
         if (!thread) {
+            header.style.display = 'none';
             titleEl.textContent = 'Pick a conversation';
             subEl.textContent = '';
+            if (avatarSlot) avatarSlot.innerHTML = '';
             return;
         }
         const display = (thread.customerName && thread.customerName.trim())
             ? thread.customerName
             : formatPhone(thread.customerPhone);
+        header.style.display = '';
         titleEl.textContent = display;
         subEl.textContent = formatPhone(thread.customerPhone);
+        if (avatarSlot) avatarSlot.innerHTML = WhatsappUI.renderAvatar(display);
     }
 
     function renderThread() {
         const messagesDiv = document.getElementById('waMessages');
         const empty = document.getElementById('waThreadEmpty');
+        const composer = document.getElementById('waComposer');
+        const composerNote = document.getElementById('waComposerDisabledNote');
         if (!messagesDiv) return;
 
         if (!activeCustomerPhone) {
             messagesDiv.innerHTML = '';
-            empty.style.display = '';
-            messagesDiv.appendChild(empty);
+            messagesDiv.style.display = 'none';
+            if (empty) empty.style.display = 'flex';
+            if (composer) composer.style.display = 'none';
+            if (composerNote) composerNote.style.display = 'none';
             return;
         }
+
+        if (empty) empty.style.display = 'none';
+        messagesDiv.style.display = '';
+
         if (threadMessages.length === 0) {
             messagesDiv.innerHTML = '<div class="wa-loading">No messages yet — send the first reply below.</div>';
             return;
         }
-        messagesDiv.innerHTML = threadMessages.map(renderMessage).join('');
+
+        // First collapse runs of media into albums (multi-tile bubbles), then
+        // group with first-of-group / first-of-day flags. The renderer drops
+        // any entry tagged `_collapsed: true` since its media has already been
+        // rolled up into the leader's album.
+        const collapsed = WhatsappUI.collapseAlbums(threadMessages, 60);
+        const grouped = WhatsappUI.groupMessages(collapsed);
+        const html = grouped.map(m => {
+            if (m._collapsed) return '';
+            const datePill = m._firstOfDay
+                ? WhatsappUI.renderDatePill(m._dateLabel)
+                : '';
+            const bubble = WhatsappUI.renderBubble(m, {
+                firstOfGroup: m._firstOfGroup,
+                showSender: false   // 1:1 chat — no sender names needed
+            });
+            return datePill + bubble;
+        }).join('');
+        messagesDiv.innerHTML = html;
         // Scroll to bottom
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
-    function renderMessage(m) {
-        const dir = (m.direction || '').toLowerCase();
-        const cls = dir === 'outbound' ? 'outbound' : 'inbound';
-        const ts = m.receivedAtUtc || m.sentAtUtc || m.createdAtUtc;
-        const status = dir === 'outbound' ? ` · ${escapeHtml(m.status || '')}` : '';
-        const meta = `<span class="wa-msg-meta">${formatTimeOfDay(ts)}${status}</span>`;
-        const type = (m.messageType || 'text').toLowerCase();
-
-        // Caption goes BELOW the media (matches WhatsApp's own layout).
-        const captionHtml = m.body
-            ? `<span class="wa-bubble-caption">${escapeHtml(m.body)}</span>`
-            : '';
-
-        if (type === 'image' && m.mediaUrl) {
-            return `
-                <div class="wa-msg-row ${cls}">
-                    <div class="wa-bubble wa-bubble-media">
-                        <img src="${escapeAttr(m.mediaUrl)}" alt="image" loading="lazy"
-                             onclick="window.open(this.src,'_blank')">
-                        ${captionHtml}${meta}
-                    </div>
-                </div>`;
-        }
-        if (type === 'video' && m.mediaUrl) {
-            return `
-                <div class="wa-msg-row ${cls}">
-                    <div class="wa-bubble wa-bubble-media">
-                        <video src="${escapeAttr(m.mediaUrl)}" controls preload="metadata"></video>
-                        ${captionHtml}${meta}
-                    </div>
-                </div>`;
-        }
-        if (type === 'audio' && m.mediaUrl) {
-            return `
-                <div class="wa-msg-row ${cls}">
-                    <div class="wa-bubble wa-bubble-media">
-                        <audio src="${escapeAttr(m.mediaUrl)}" controls preload="metadata"></audio>
-                        ${meta}
-                    </div>
-                </div>`;
-        }
-        if (type === 'document' && m.mediaUrl) {
-            const fileLabel = inferFileNameFromUrl(m.mediaUrl) || 'Document';
-            return `
-                <div class="wa-msg-row ${cls}">
-                    <div class="wa-bubble wa-bubble-media">
-                        <a class="wa-bubble-doc" href="${escapeAttr(m.mediaUrl)}" target="_blank" rel="noopener">
-                            <span class="wa-bubble-doc-icon">📄</span>
-                            <span class="wa-bubble-doc-name">${escapeHtml(fileLabel)}</span>
-                        </a>
-                        ${captionHtml}${meta}
-                    </div>
-                </div>`;
-        }
-        // Fallback: text (or media row with no URL)
-        const body = m.body ? escapeHtml(m.body) : (m.mediaUrl ? '<em>(media)</em>' : '<em>(empty)</em>');
-        return `
-            <div class="wa-msg-row ${cls}">
-                <div class="wa-bubble">
-                    ${body}
-                    ${meta}
-                </div>
-            </div>
-        `;
-    }
-
-    function inferFileNameFromUrl(url) {
-        try {
-            const u = new URL(url);
-            const last = decodeURIComponent(u.pathname.split('/').pop() || '');
-            // Drive S3 keys look like "whatsapp/20260101_abc_filename.ext".
-            // Strip the timestamp_id_ prefix for nicer display.
-            const m = last.match(/^\d{6,}_[a-z0-9]+_(.+)$/i);
-            return m ? m[1] : last;
-        } catch {
-            return '';
-        }
-    }
-
-    function escapeAttr(s) {
-        return String(s || '').replace(/"/g, '&quot;');
-    }
-
     function showComposer(show) {
-        document.getElementById('waComposer').style.display = show ? '' : 'none';
-        document.getElementById('waComposerDisabledNote').style.display = show ? 'none' : '';
+        const composer = document.getElementById('waComposer');
+        const note = document.getElementById('waComposerDisabledNote');
+        if (composer) composer.style.display = show ? '' : 'none';
+        if (note) note.style.display = show ? 'none' : '';
+        // Re-evaluate send/mic button visibility after composer (re)appears.
+        const ta = document.getElementById('waComposerInput');
+        if (ta) autoSizeTextarea(ta);
     }
 
     // ─── Attachments ────────────────────────────────────────────────────────
 
-    // Map a MIME type to (mediaType for our API, isAllowed). Only WhatsApp-
-    // supported MIMEs are allowed; everything else is rejected up front.
     function classifyAttachment(file) {
         const mime = (file.type || '').toLowerCase();
         const name = (file.name || '').toLowerCase();
@@ -432,7 +618,6 @@
         if (mime.startsWith('image/'))  return { mediaType: 'image',    ok: ['jpeg','png','webp'].some(t => mime === 'image/' + t) };
         if (mime.startsWith('video/'))  return { mediaType: 'video',    ok: ['mp4','3gpp'].some(t => mime === 'video/' + t) };
         if (mime.startsWith('audio/'))  return { mediaType: 'audio',    ok: ['mpeg','aac','ogg','amr'].some(t => mime === 'audio/' + t) };
-        // documents — accept by extension since browsers don't always report MIME
         if (mime === 'application/pdf' || ext === 'pdf') return { mediaType: 'document', ok: true };
         const docExts = ['doc','docx','xls','xlsx','ppt','pptx','txt'];
         if (docExts.includes(ext)) return { mediaType: 'document', ok: true };
@@ -440,54 +625,63 @@
     }
 
     async function handleFilePicked(e) {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        const cls = classifyAttachment(file);
-        if (!cls.ok) {
-            if (typeof Toast !== 'undefined') Toast.error(`Unsupported file type for WhatsApp: ${file.type || 'unknown'}`);
-            return;
+        const files = e.target.files ? Array.from(e.target.files) : [];
+        if (files.length === 0) return;
+        // Allow incremental adds — preserve any pending attachments already
+        // uploaded (e.g. user picks a file, then picks more without sending).
+        const startIdx = pendingAttachments.length;
+        for (const file of files) {
+            const cls = classifyAttachment(file);
+            if (!cls.ok) {
+                if (typeof Toast !== 'undefined') Toast.error(`Skipped ${file.name}: unsupported file type`);
+                continue;
+            }
+            if (file.size > MAX_FILE_BYTES) {
+                if (typeof Toast !== 'undefined') Toast.error(`Skipped ${file.name}: too large (limit 100MB)`);
+                continue;
+            }
+            const previewBlobUrl = URL.createObjectURL(file);
+            pendingAttachments.push({
+                mediaType: cls.mediaType,
+                fileName: file.name,
+                contentType: file.type || 'application/octet-stream',
+                fileSize: file.size,
+                previewBlobUrl,
+                fileId: null,
+                mediaUrl: null,
+                uploading: true,
+                uploadPct: 0,
+                _file: file,   // hold the File object for the upload step
+            });
         }
-        if (file.size > MAX_FILE_BYTES) {
-            if (typeof Toast !== 'undefined') Toast.error('File too large (limit 100MB).');
-            return;
-        }
+        renderAttachPreview();
+        autoSizeTextarea(document.getElementById('waComposerInput'));
 
-        // Local preview using a blob URL — released when send/remove fires.
-        const previewBlobUrl = URL.createObjectURL(file);
-        pendingAttachment = {
-            mediaType: cls.mediaType,
-            fileName: file.name,
-            contentType: file.type || 'application/octet-stream',
-            fileSize: file.size,
-            previewBlobUrl,
-            fileId: null,
-            mediaUrl: null,
-            uploading: true,
-        };
-        renderAttachPreview(0);
+        // Upload the newly-added entries in parallel.
+        const newOnes = pendingAttachments.slice(startIdx);
+        await Promise.all(newOnes.map(att => uploadOneAttachment(att)));
+    }
 
+    async function uploadOneAttachment(att) {
         try {
-            // 1) Ask Drive for a presigned PUT
             const upResp = await api.request('/drive/whatsapp/upload-url', {
                 method: 'POST',
                 body: JSON.stringify({
-                    file_name: file.name,
-                    content_type: pendingAttachment.contentType,
-                    file_size: file.size,
+                    file_name: att.fileName,
+                    content_type: att.contentType,
+                    file_size: att.fileSize,
                     expiry_minutes: 30,
                 })
             });
             if (!upResp || upResp.success === false || !upResp.upload_url) {
                 throw new Error(upResp?.message || 'Failed to get upload URL');
             }
-            // 2) PUT the bytes straight to S3 with progress
-            await putWithProgress(upResp.upload_url, file, pct => renderAttachPreview(pct));
-            pendingAttachment.fileId = upResp.file_id;
+            await putWithProgress(upResp.upload_url, att._file, pct => {
+                att.uploadPct = pct;
+                renderAttachPreview();
+            });
+            att.fileId = upResp.file_id;
 
-            // 3) Get a presigned GET URL for Interakt to fetch.
-            //    The S3 key carries embedded slashes ("whatsapp/{tenantId}/...") which
-            //    must remain real path separators for the catch-all route to bind —
-            //    encode each segment without encoding the slashes themselves.
             const safeKey = String(upResp.file_id).split('/').map(encodeURIComponent).join('/');
             const dlResp = await api.request(
                 `/drive/whatsapp/download/${safeKey}?expiry_minutes=30`,
@@ -496,18 +690,24 @@
             if (!dlResp || dlResp.success === false || !dlResp.url) {
                 throw new Error(dlResp?.message || 'Failed to get download URL');
             }
-            pendingAttachment.mediaUrl = dlResp.url;
-            pendingAttachment.uploading = false;
-            renderAttachPreview(100);
+            att.mediaUrl = dlResp.url;
+            att.uploading = false;
+            att.uploadPct = 100;
+            renderAttachPreview();
+            autoSizeTextarea(document.getElementById('waComposerInput'));
         } catch (err) {
             console.error('[wa-inbox] upload failed:', err);
-            if (typeof Toast !== 'undefined') Toast.error(err.message || 'Upload failed');
-            clearPendingAttachment();
+            if (typeof Toast !== 'undefined') Toast.error(`${att.fileName}: ${err.message || 'Upload failed'}`);
+            // Remove the failed entry; keep other pending ones.
+            const idx = pendingAttachments.indexOf(att);
+            if (idx >= 0) pendingAttachments.splice(idx, 1);
+            if (att.previewBlobUrl) URL.revokeObjectURL(att.previewBlobUrl);
+            renderAttachPreview();
+            autoSizeTextarea(document.getElementById('waComposerInput'));
         }
     }
 
     function putWithProgress(url, file, onPct) {
-        // Use XHR (not fetch) because we need progress events.
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open('PUT', url);
@@ -524,42 +724,67 @@
         });
     }
 
-    function renderAttachPreview(pct) {
+    function renderAttachPreview() {
         const el = document.getElementById('waAttachPreview');
-        if (!el || !pendingAttachment) return;
-        const a = pendingAttachment;
-        let thumb = '';
-        if (a.mediaType === 'image') {
-            thumb = `<img src="${a.previewBlobUrl}" alt="">`;
-        } else if (a.mediaType === 'video') {
-            thumb = `<video src="${a.previewBlobUrl}" muted></video>`;
-        } else {
-            thumb = `<div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:var(--bg-tertiary);border-radius:4px;">📎</div>`;
+        if (!el) return;
+        if (pendingAttachments.length === 0) {
+            el.innerHTML = '';
+            el.style.display = 'none';
+            return;
         }
-        const sizeKb = Math.max(1, Math.round(a.fileSize / 1024));
-        const progressBar = a.uploading
-            ? `<div class="wa-attach-progress"><span style="width:${pct || 0}%;"></span></div>`
-            : '';
-        el.innerHTML = `
-            ${thumb}
-            <div class="wa-attach-preview-meta">
-                <div class="wa-attach-preview-name">${escapeHtml(a.fileName)}</div>
-                <div class="wa-attach-preview-info">${a.mediaType} · ${sizeKb} KB${a.uploading ? ` · uploading ${pct || 0}%` : ' · ready'}</div>
-                ${progressBar}
-            </div>
-            <button type="button" class="wa-attach-preview-remove" id="waAttachRemove" title="Remove">×</button>
-        `;
+        // Render one chip per pending attachment, with a thumb + name + size +
+        // per-item progress bar + remove ×. The wrapper itself stays a flex
+        // row, so we wrap chips in a flex column so multiple stack vertically.
+        const chips = pendingAttachments.map((a, i) => {
+            let thumb = '';
+            if (a.mediaType === 'image') {
+                thumb = `<img src="${a.previewBlobUrl}" alt="">`;
+            } else if (a.mediaType === 'video') {
+                thumb = `<video src="${a.previewBlobUrl}" muted></video>`;
+            } else {
+                thumb = `<div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.06);border-radius:6px;">📎</div>`;
+            }
+            const sizeKb = Math.max(1, Math.round(a.fileSize / 1024));
+            const progressBar = a.uploading
+                ? `<div class="wa-attach-progress"><span style="width:${a.uploadPct || 0}%;"></span></div>`
+                : '';
+            return `
+                <div style="display:flex;gap:12px;align-items:center;width:100%;${i > 0 ? 'border-top:1px solid var(--wa-divider);padding-top:8px;margin-top:8px;' : ''}">
+                    ${thumb}
+                    <div class="wa-attach-preview-meta">
+                        <div class="wa-attach-preview-name">${WhatsappUI.escapeHtml(a.fileName)}</div>
+                        <div class="wa-attach-preview-info">${a.mediaType} · ${sizeKb} KB${a.uploading ? ` · uploading ${a.uploadPct || 0}%` : ' · ready'}</div>
+                        ${progressBar}
+                    </div>
+                    <button type="button" class="wa-attach-preview-remove" data-attach-idx="${i}" title="Remove">×</button>
+                </div>`;
+        }).join('');
+        el.innerHTML = `<div style="display:flex;flex-direction:column;width:100%;">${chips}</div>`;
         el.style.display = '';
-        document.getElementById('waAttachRemove')?.addEventListener('click', clearPendingAttachment);
+        el.querySelectorAll('.wa-attach-preview-remove').forEach(btn => {
+            btn.addEventListener('click', () => removeAttachment(Number(btn.dataset.attachIdx)));
+        });
+    }
+
+    function removeAttachment(idx) {
+        if (idx < 0 || idx >= pendingAttachments.length) return;
+        const a = pendingAttachments[idx];
+        if (a.previewBlobUrl) URL.revokeObjectURL(a.previewBlobUrl);
+        pendingAttachments.splice(idx, 1);
+        renderAttachPreview();
+        autoSizeTextarea(document.getElementById('waComposerInput'));
     }
 
     function clearPendingAttachment() {
-        if (pendingAttachment?.previewBlobUrl) URL.revokeObjectURL(pendingAttachment.previewBlobUrl);
-        pendingAttachment = null;
+        for (const a of pendingAttachments) {
+            if (a.previewBlobUrl) URL.revokeObjectURL(a.previewBlobUrl);
+        }
+        pendingAttachments = [];
         const el = document.getElementById('waAttachPreview');
         if (el) { el.innerHTML = ''; el.style.display = 'none'; }
         const fileInput = document.getElementById('waFileInput');
         if (fileInput) fileInput.value = '';
+        autoSizeTextarea(document.getElementById('waComposerInput'));
     }
 
     // ─── Send ───────────────────────────────────────────────────────────────
@@ -570,40 +795,23 @@
         const text = (ta?.value || '').trim();
         if (!activeCustomerPhone || !activeBusinessPhone) return;
 
-        // Three send modes:
-        //   1. Text-only (no attachment, body required)
-        //   2. Media + caption (attachment uploaded, optional caption from text box)
-        //   3. Media-only (attachment uploaded, empty text)
-        const hasAttach = !!pendingAttachment && !pendingAttachment.uploading && !!pendingAttachment.mediaUrl;
-        if (!hasAttach && !text) return;
-        if (pendingAttachment && pendingAttachment.uploading) {
-            if (typeof Toast !== 'undefined') Toast.warning('Wait for the upload to finish');
+        const readyAttachments = pendingAttachments.filter(a => !a.uploading && !!a.mediaUrl);
+        const stillUploading = pendingAttachments.some(a => a.uploading);
+        if (stillUploading) {
+            if (typeof Toast !== 'undefined') Toast.warning('Wait for uploads to finish');
             return;
         }
+        if (readyAttachments.length === 0 && !text) return;
 
         const sendBtn = document.getElementById('waSendBtn');
         if (sendBtn) sendBtn.disabled = true;
 
-        const optimisticId = 'opt-' + Date.now();
-        const optimistic = hasAttach ? {
-            id: optimisticId,
-            direction: 'outbound',
-            messageType: pendingAttachment.mediaType,
-            body: text,                           // caption
-            mediaUrl: pendingAttachment.previewBlobUrl,   // local preview while sending
-            status: 'sending',
-            createdAtUtc: new Date().toISOString(),
-        } : {
-            id: optimisticId,
-            direction: 'outbound',
-            messageType: 'text',
-            body: text,
-            status: 'sending',
-            createdAtUtc: new Date().toISOString(),
-        };
-        threadMessages.push(optimistic);
-        renderThread();
+        // Take a snapshot of what we're about to send and clear the composer
+        // immediately so the user can start typing the next message.
+        const attachmentsToSend = readyAttachments.slice();
+        const captionText = text;
         ta.value = '';
+        clearPendingAttachment();
         autoSizeTextarea(ta);
 
         try {
@@ -611,19 +819,67 @@
             const local = activeCustomerPhone.startsWith(cc)
                 ? activeCustomerPhone.slice(cc.length)
                 : activeCustomerPhone;
-
-            const payload = {
+            const baseRecipient = {
                 business_phone_number: activeBusinessPhone,
                 recipient_country_code: '+' + cc,
                 recipient_phone: local,
-                message_type: hasAttach ? pendingAttachment.mediaType : 'text',
-                body: hasAttach ? '' : text,
-                media_url: hasAttach ? pendingAttachment.mediaUrl : '',
-                caption: hasAttach ? text : '',
             };
+
+            if (attachmentsToSend.length === 0) {
+                // Plain text only — single send.
+                await sendOne(baseRecipient, {
+                    message_type: 'text', body: captionText, media_url: '', caption: '',
+                }, { messageType: 'text', body: captionText });
+            } else {
+                // One /whatsapp/send call per media. Caption travels with the
+                // FIRST one (matches WA Web album behavior). All sends fire in
+                // sequence so they keep their album-grouping order.
+                for (let i = 0; i < attachmentsToSend.length; i++) {
+                    const att = attachmentsToSend[i];
+                    const isFirst = (i === 0);
+                    await sendOne(baseRecipient, {
+                        message_type: att.mediaType,
+                        body: '',
+                        media_url: att.mediaUrl,
+                        caption: isFirst ? captionText : '',
+                    }, {
+                        messageType: att.mediaType,
+                        body: isFirst ? captionText : '',
+                        mediaUrl: att.mediaUrl,   // already uploaded — use the S3 URL directly
+                        fileName: att.fileName,
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('[wa-inbox] send failed:', err);
+            if (typeof Toast !== 'undefined') Toast.error(err.message || 'Send failed');
+        } finally {
+            if (sendBtn) sendBtn.disabled = false;
+        }
+    }
+
+    // Single-message send + optimistic update + rebump. Pulled out of
+    // handleSendSubmit so multi-attachment sends share the same path.
+    async function sendOne(baseRecipient, payload, optimisticInfo) {
+        const optimisticId = 'opt-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+        const optimistic = {
+            id: optimisticId,
+            direction: 'outbound',
+            messageType: optimisticInfo.messageType || 'text',
+            body: optimisticInfo.body || '',
+            mediaUrl: optimisticInfo.previewBlobUrl || optimisticInfo.mediaUrl || '',
+            fileName: optimisticInfo.fileName || '',
+            replyTo: optimisticInfo.replyTo,   // inline reply quote (from lightbox Reply)
+            status: 'sending',
+            createdAtUtc: new Date().toISOString(),
+        };
+        threadMessages.push(optimistic);
+        renderThread();
+
+        try {
             const resp = await api.request('/whatsapp/send', {
                 method: 'POST',
-                body: JSON.stringify(payload),
+                body: JSON.stringify(Object.assign({}, baseRecipient, payload)),
             });
             const wamId = resp.whatsapp_message_id ?? resp.whatsappMessageId ?? optimisticId;
             const status = resp.status || 'sent';
@@ -633,41 +889,39 @@
                     id: wamId,
                     direction: 'outbound',
                     messageType: payload.message_type,
-                    body: hasAttach ? text : text,
-                    mediaUrl: hasAttach ? pendingAttachment.mediaUrl : '',
+                    body: optimisticInfo.body || '',
+                    mediaUrl: optimisticInfo.mediaUrl || '',
+                    fileName: optimisticInfo.fileName || '',
                     status,
                     sentAtUtc: new Date().toISOString(),
                     createdAtUtc: optimistic.createdAtUtc,
                 };
             }
-            const previewLine = hasAttach
-                ? (text || `(${pendingAttachment.mediaType})`)
-                : text;
-            // Drop the preview blob — the real S3 URL lives on the message now.
-            if (hasAttach) clearPendingAttachment();
             renderThread();
-            bumpConversationToTop(activeCustomerPhone, previewLine, 'outbound');
-            renderConversationList(filterConversations(document.getElementById('waSearchInput')?.value));
+
+            const previewLine = (optimisticInfo.body || '').trim()
+                || `(${payload.message_type})`;
+            bumpConversationToTop(activeCustomerPhone, previewLine, 'outbound', payload.message_type, status);
+            renderConversationList();
             if (status !== 'sent' && typeof Toast !== 'undefined') {
                 Toast.warning(resp.message || `Provider returned ${status}`);
             }
         } catch (err) {
-            console.error('[wa-inbox] send failed:', err);
-            if (typeof Toast !== 'undefined') Toast.error(err.message || 'Send failed');
             const idx = threadMessages.findIndex(m => m.id === optimisticId);
             if (idx >= 0) {
                 threadMessages[idx].status = 'failed';
                 renderThread();
             }
-        } finally {
-            if (sendBtn) sendBtn.disabled = false;
+            throw err;
         }
     }
 
-    function bumpConversationToTop(customerPhone, lastBody, direction) {
+    function bumpConversationToTop(customerPhone, lastBody, direction, messageType, status) {
         const idx = conversations.findIndex(c => c.customerPhone === customerPhone);
         let conv;
         if (idx >= 0) {
+            // Mutate the existing object in place to preserve customerName,
+            // unreadCount, and any other fields the row renderer reads.
             conv = conversations[idx];
             conversations.splice(idx, 1);
         } else {
@@ -675,6 +929,8 @@
         }
         conv.lastMessageBody = lastBody;
         conv.lastMessageDirection = direction;
+        conv.lastMessageType = messageType || 'text';
+        conv.lastMessageStatus = status || '';
         conv.lastMessageAtUtc = new Date().toISOString();
         conversations.unshift(conv);
     }
@@ -784,14 +1040,23 @@
             conv = conversations[idx];
             conversations.splice(idx, 1);
         } else {
-            conv = { customerPhone: ev.customerPhone, customerName: ev.customerName || '' };
+            conv = {
+                customerPhone: ev.customerPhone,
+                customerName: ev.customerName || '',
+                unreadCount: 0
+            };
         }
         conv.customerName = conv.customerName || ev.customerName || '';
         conv.lastMessageBody = previewLineFor(ev.body, ev.mediaUrl, ev.messageType);
         conv.lastMessageDirection = 'inbound';
+        conv.lastMessageType = ev.messageType || 'text';
         conv.lastMessageAtUtc = ev.receivedAtUtc || new Date().toISOString();
+        // Bump unread if this isn't the open thread
+        if (ev.customerPhone !== activeCustomerPhone) {
+            conv.unreadCount = (conv.unreadCount || 0) + 1;
+        }
         conversations.unshift(conv);
-        renderConversationList(filterConversations(document.getElementById('waSearchInput')?.value));
+        renderConversationList();
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
@@ -805,32 +1070,5 @@
             return `+${digits.slice(0, 1)} (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
         }
         return `+${digits}`;
-    }
-
-    function formatRelativeTime(iso) {
-        if (!iso) return '';
-        const d = new Date(iso);
-        if (isNaN(d.getTime())) return '';
-        const now = new Date();
-        const sameDay = d.toDateString() === now.toDateString();
-        if (sameDay) return formatTimeOfDay(iso);
-        const diffMs = now.getTime() - d.getTime();
-        const days = Math.floor(diffMs / 86_400_000);
-        if (days < 7) return d.toLocaleDateString(undefined, { weekday: 'short' });
-        return d.toLocaleDateString();
-    }
-
-    function formatTimeOfDay(iso) {
-        if (!iso) return '';
-        const d = new Date(iso);
-        if (isNaN(d.getTime())) return '';
-        return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function escapeHtml(s) {
-        if (s == null) return '';
-        return String(s).replace(/[&<>"']/g, c => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        }[c]));
     }
 })();

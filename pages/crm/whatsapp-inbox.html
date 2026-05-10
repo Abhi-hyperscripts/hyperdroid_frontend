@@ -3,7 +3,8 @@
 <head>
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#00a884">
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
@@ -17,21 +18,24 @@
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/whatsapp-ui.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/whatsapp-emoji-picker.css?v=' + CACHE_VERSION + '">');</script>
     <style>
-        /* Inbox layout — uses brand vars only, no hardcoded colors. */
+        /* Page chrome — wraps the WA-UI shell into the CRM page so the
+           navbar still shows above and the breadcrumb sits between them.
+           The WA palette lives inside .wa-app; outside of it we use the
+           normal brand vars. */
         body.dashboard.wa-inbox-page { overflow: hidden; }
 
         .wa-page {
             display: flex;
             flex-direction: column;
-            /* Navbar is position:fixed at top:0 (~64px tall). Push the inbox
-               below it AND clip our height so the two-pane shell fills the
-               remaining viewport without scrolling the page itself. */
             margin-top: 64px;
             height: calc(100vh - 64px);
-            padding: 16px 16px 0;
+            height: calc(100dvh - 64px);
+            padding: 12px 16px 0;
             box-sizing: border-box;
-            gap: 12px;
+            gap: 10px;
         }
         .wa-toolbar {
             display: flex;
@@ -42,7 +46,7 @@
         }
         .wa-toolbar h1 {
             margin: 0;
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             color: var(--text-primary);
         }
         .wa-toolbar-right {
@@ -64,6 +68,7 @@
             white-space: nowrap;
         }
         .wa-number-picker .searchable-dropdown-container { width: 240px; }
+
         .wa-help-summary {
             font-size: 0.85rem;
             color: var(--text-secondary);
@@ -88,313 +93,36 @@
         }
         .wa-help-body p:last-child { margin-bottom: 0; }
 
-        /* Two-pane shell: sidebar + thread, WhatsApp Web style */
-        .wa-shell {
-            display: flex;
+        /* Container that holds the WA shell — gives it a frame inside the
+           CRM page background. Inside .wa-app the look is pure WhatsApp. */
+        .wa-frame {
             flex: 1;
             min-height: 0;
-            background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             overflow: hidden;
-            margin-bottom: 16px;
-        }
-
-        /* ── Sidebar ──────────────────────────────────────────────── */
-        .wa-sidebar {
-            width: 340px;
-            min-width: 280px;
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            background: var(--bg-secondary);
-        }
-        .wa-search {
-            padding: 12px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .wa-search input {
-            width: 100%;
-            height: 36px;
-            padding: 0 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-card);
-            color: var(--text-primary);
-            font-size: 0.9rem;
-        }
-        .wa-conv-list {
-            flex: 1;
-            overflow-y: auto;
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-        .wa-conv-item {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-        .wa-conv-item:hover { background: var(--bg-tertiary); }
-        .wa-conv-item.active {
-            background: var(--bg-tertiary);
-            border-left: 3px solid var(--brand-primary);
-            padding-left: 13px;
-        }
-        .wa-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--brand-primary);
-            color: var(--text-inverse);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            flex-shrink: 0;
-            text-transform: uppercase;
-        }
-        .wa-conv-meta {
-            flex: 1;
-            min-width: 0;
-        }
-        .wa-conv-name {
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-        }
-        .wa-conv-time {
-            font-size: 0.72rem;
-            color: var(--text-secondary);
-            font-weight: 400;
-            flex-shrink: 0;
-        }
-        .wa-conv-preview {
-            font-size: 0.82rem;
-            color: var(--text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-top: 2px;
-        }
-        .wa-sidebar-empty,
-        .wa-thread-empty,
-        .wa-no-numbers {
-            padding: 32px 16px;
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-        .wa-no-numbers a { color: var(--brand-primary); }
-
-        /* ── Thread / messages ────────────────────────────────────── */
-        .wa-thread {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-            background: var(--bg-primary);
-        }
-        .wa-thread-header {
-            padding: 14px 18px;
-            border-bottom: 1px solid var(--border-color);
-            background: var(--bg-secondary);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .wa-thread-title {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        .wa-thread-sub {
-            font-size: 0.78rem;
-            color: var(--text-secondary);
-        }
-        .wa-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 18px 22px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .wa-msg-row {
-            display: flex;
-            margin-bottom: 2px;
-        }
-        .wa-msg-row.outbound { justify-content: flex-end; }
-        .wa-bubble {
-            max-width: 70%;
-            padding: 8px 12px;
-            border-radius: 12px;
-            color: var(--text-primary);
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            font-size: 0.92rem;
-            line-height: 1.45;
-            word-wrap: break-word;
-        }
-        .wa-msg-row.outbound .wa-bubble {
-            background: var(--brand-primary);
-            color: var(--text-inverse);
-            border-color: var(--brand-primary);
-        }
-        .wa-bubble .wa-msg-meta {
-            display: block;
-            margin-top: 4px;
-            font-size: 0.7rem;
-            opacity: 0.75;
-            text-align: right;
-        }
-        .wa-msg-row.outbound .wa-bubble .wa-msg-meta { color: var(--text-inverse); }
-
-        .wa-composer {
-            display: flex;
-            gap: 10px;
-            padding: 12px 16px;
-            background: var(--bg-secondary);
-            border-top: 1px solid var(--border-color);
-            align-items: flex-end;
-            flex-wrap: wrap;
-        }
-        .wa-composer textarea {
-            flex: 1;
-            resize: none;
-            min-height: 38px;
-            max-height: 150px;
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-card);
-            color: var(--text-primary);
-            font-family: inherit;
-            font-size: 0.92rem;
-            line-height: 1.4;
-        }
-        .wa-composer button.btn { height: 38px; min-width: 84px; }
-        .wa-attach-btn {
-            height: 38px;
-            width: 38px;
-            min-width: 38px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-card);
-            color: var(--text-primary);
-            cursor: pointer;
-            padding: 0;
-        }
-        .wa-attach-btn:hover { background: var(--bg-tertiary); }
-        .wa-attach-btn:disabled { opacity: 0.5; cursor: progress; }
-        .wa-attach-preview {
-            flex: 1 1 100%;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+            margin-bottom: 12px;
             background: var(--bg-card);
         }
-        .wa-attach-preview img,
-        .wa-attach-preview video {
-            max-height: 56px;
-            max-width: 80px;
-            border-radius: 4px;
-            object-fit: cover;
-        }
-        .wa-attach-preview-meta { flex: 1; min-width: 0; }
-        .wa-attach-preview-name { font-weight: 600; font-size: 0.88rem; word-break: break-all; }
-        .wa-attach-preview-info { font-size: 0.78rem; color: var(--text-secondary); }
-        .wa-attach-preview-remove {
-            background: none;
-            border: none;
-            color: var(--color-error);
-            cursor: pointer;
-            font-size: 1.1rem;
-            padding: 4px 8px;
-        }
-        .wa-attach-progress {
-            height: 4px;
-            background: var(--border-color);
-            border-radius: 2px;
-            margin-top: 4px;
-            overflow: hidden;
-        }
-        .wa-attach-progress > span {
-            display: block;
-            height: 100%;
-            background: var(--brand-primary);
-            transition: width 0.2s;
-        }
 
-        /* ── Media bubbles ────────────────────────────────────────── */
-        .wa-bubble-media img,
-        .wa-bubble-media video {
-            display: block;
-            max-width: 280px;
-            max-height: 340px;
-            border-radius: 6px;
-            margin-bottom: 4px;
-            cursor: pointer;
-        }
-        .wa-bubble-media audio { display: block; min-width: 220px; margin-bottom: 4px; }
-        .wa-bubble-doc {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 10px;
-            background: rgba(0,0,0,0.04);
-            border-radius: 6px;
-            margin-bottom: 4px;
-            color: inherit;
-            text-decoration: none;
-        }
-        .wa-msg-row.outbound .wa-bubble-doc { background: rgba(255,255,255,0.18); }
-        .wa-bubble-doc-icon { flex-shrink: 0; }
-        .wa-bubble-doc-name { font-weight: 600; font-size: 0.88rem; word-break: break-all; }
-        .wa-bubble-caption { display: block; }
-        .wa-composer-disabled-note {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-            padding: 14px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        /* ── Empty / loading states ───────────────────────────────── */
-        .wa-loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-secondary);
-            padding: 24px;
-            gap: 8px;
-        }
-
-        @media screen and (max-width: 768px) {
-            .wa-sidebar { width: 100%; min-width: 0; }
-            .wa-shell.has-active-thread .wa-sidebar { display: none; }
-            .wa-shell:not(.has-active-thread) .wa-thread { display: none; }
-            .wa-back-btn { display: inline-flex; }
-        }
-        .wa-back-btn {
-            display: none;
-            background: none;
-            border: none;
-            color: var(--text-primary);
-            cursor: pointer;
-            padding: 4px;
+        /* On mobile, drop the page padding entirely so the WA shell fills
+           the screen edge-to-edge — exactly like the native WhatsApp app. */
+        @media screen and (max-width: 900px) {
+            body.dashboard.wa-inbox-page .navbar { display: none; }
+            .wa-page {
+                margin-top: 0;
+                height: 100vh;
+                height: 100dvh;
+                padding: 0;
+                gap: 0;
+            }
+            .wa-toolbar { display: none; }
+            .wa-frame {
+                flex: 1;
+                margin: 0;
+                border: 0;
+                border-radius: 0;
+            }
         }
     </style>
 </head>
@@ -412,23 +140,18 @@
 
     <main class="wa-page">
         <div class="wa-toolbar">
-            <div>
-                <nav class="breadcrumb-nav" style="margin-bottom:4px;">
-                    <a href="dashboard.html">CRM</a>
-                    <span class="separator">/</span>
-                    <span class="current">WhatsApp Inbox</span>
-                </nav>
-                <h1>WhatsApp Inbox</h1>
-            </div>
+            <nav class="breadcrumb-nav">
+                <a href="dashboard.html">CRM</a>
+                <span class="separator">/</span>
+                <span class="current">WhatsApp Inbox</span>
+            </nav>
             <div class="wa-toolbar-right">
                 <div class="wa-number-picker" id="waNumberPicker" style="display:none;">
                     <label>Sending from</label>
                     <div id="waNumberPickerContainer"></div>
                 </div>
                 <details>
-                    <summary class="wa-help-summary">
-                        What is this?
-                    </summary>
+                    <summary class="wa-help-summary">What is this?</summary>
                     <div class="wa-help-body">
                         <p style="margin:0 0 8px;font-weight:600;color:var(--text-primary);">WhatsApp Inbox</p>
                         <p>Two-way conversational WhatsApp powered by your tenant's Interakt connection. Customers reply to your WhatsApp Business number and the messages land here in real time. You can send replies from this page within Meta's 24-hour reply window without using a template.</p>
@@ -438,61 +161,112 @@
             </div>
         </div>
 
-        <div class="wa-shell" id="waShell">
-            <aside class="wa-sidebar">
-                <div class="wa-search">
-                    <input type="search" id="waSearchInput" placeholder="Search conversations…" autocomplete="off">
-                </div>
-                <ul class="wa-conv-list" id="waConvList"></ul>
-                <div class="wa-sidebar-empty" id="waSidebarEmpty" style="display:none;">
-                    <p style="margin:0 0 6px;">No conversations yet.</p>
-                    <p style="margin:0;font-size:0.82rem;">Inbound WhatsApp messages will appear here.</p>
-                </div>
-                <div class="wa-no-numbers" id="waNoNumbers" style="display:none;">
-                    <p style="margin:0 0 6px;font-weight:600;color:var(--text-primary);">No WhatsApp numbers connected</p>
-                    <p style="margin:0 0 12px;">Add an Interakt number to start sending and receiving messages.</p>
-                    <a href="settings.html?tab=integrations" class="btn btn-primary btn-sm">Connect a number</a>
-                </div>
-            </aside>
+        <!-- WhatsApp-Web look-alike shell. All visuals live in
+             /css/whatsapp-ui.css and /js/shared/whatsapp-ui.js. -->
+        <div class="wa-frame">
+            <div class="wa-app" id="waApp">
+                <!-- (Left icon rail removed — Chats was the only active app.
+                     The cog now lives in the Chats header next to +/⟳.) -->
 
-            <section class="wa-thread" id="waThread">
-                <div class="wa-thread-header" id="waThreadHeader">
-                    <button type="button" class="wa-back-btn" id="waBackBtn" title="Back to conversations" aria-label="Back">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-                    </button>
-                    <div>
-                        <div class="wa-thread-title" id="waThreadTitle">Pick a conversation</div>
-                        <div class="wa-thread-sub" id="waThreadSub"></div>
+                <!-- Conversation list pane -->
+                <section class="wa-list-pane">
+                    <header class="wa-list-header">
+                        <h2>Chats</h2>
+                        <div class="wa-header-actions">
+                            <button type="button" class="wa-icon-btn" title="New chat" id="waNewChatBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                            </button>
+                            <button type="button" class="wa-icon-btn" title="Refresh" id="waRefreshBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                            </button>
+                            <button type="button" class="wa-icon-btn" title="WhatsApp Settings" onclick="window.location.href='settings.html?tab=integrations'">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3 1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+                            </button>
+                        </div>
+                    </header>
+
+                    <div class="wa-search-row">
+                        <div class="wa-search-input">
+                            <svg class="wa-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input type="search" id="waSearchInput" placeholder="Search or start a new chat" autocomplete="off">
+                        </div>
                     </div>
-                </div>
-                <div class="wa-messages" id="waMessages">
-                    <div class="wa-thread-empty" id="waThreadEmpty">
-                        <p style="margin:0 0 6px;">No conversation selected.</p>
-                        <p style="margin:0;font-size:0.82rem;">Pick a customer from the list to read and reply.</p>
+
+                    <div class="wa-filters" id="waFilters">
+                        <button type="button" class="wa-filter-pill is-active" data-filter="all">All</button>
+                        <button type="button" class="wa-filter-pill" data-filter="unread">Unread</button>
+                        <button type="button" class="wa-filter-pill" data-filter="me">Outbound</button>
                     </div>
-                </div>
-                <form class="wa-composer" id="waComposer" style="display:none;">
+
+                    <ul class="wa-conv-list" id="waConvList"></ul>
+
+                    <div class="wa-empty-state" id="waSidebarEmpty" style="display:none;">
+                        <p style="margin:0 0 6px;">No conversations yet.</p>
+                        <p style="margin:0;font-size:13px;">Inbound WhatsApp messages will appear here.</p>
+                    </div>
+                    <div class="wa-empty-state" id="waNoNumbers" style="display:none;">
+                        <h3 style="font-size:18px;margin:0 0 6px;">No WhatsApp numbers connected</h3>
+                        <p>Add an Interakt number to start sending and receiving messages.</p>
+                        <p style="margin-top:12px;">
+                            <a href="settings.html?tab=integrations" class="btn btn-primary btn-sm">Connect a number</a>
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Thread pane -->
+                <section class="wa-thread-pane" id="waThreadPane">
+                    <!-- Header is hidden until a conversation is opened. -->
+                    <header class="wa-thread-header" id="waThreadHeader" style="display:none;">
+                        <button type="button" class="wa-thread-back" id="waBackBtn" title="Back" aria-label="Back to conversations">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                        </button>
+                        <div id="waThreadAvatarSlot"></div>
+                        <div class="wa-thread-info">
+                            <div class="wa-thread-name" id="waThreadTitle">Pick a conversation</div>
+                            <div class="wa-thread-sub" id="waThreadSub"></div>
+                        </div>
+                    </header>
+
+                    <!-- Empty state shown until a conversation is picked. -->
+                    <div class="wa-empty-state" id="waThreadEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;">
+                        <h3>WhatsApp Inbox</h3>
+                        <p>Pick a customer from the list to read and reply.</p>
+                        <p style="opacity:0.7;font-size:13px;">Messages send within Meta's 24-hour customer reply window.</p>
+                    </div>
+
+                    <div class="wa-messages" id="waMessages" style="display:none;"></div>
+
+                    <!-- Composer is hidden until a conversation is opened. -->
                     <div class="wa-attach-preview" id="waAttachPreview" style="display:none;"></div>
-                    <input type="file" id="waFileInput" hidden
-                           accept="image/jpeg,image/png,image/webp,video/mp4,video/3gpp,audio/mpeg,audio/aac,audio/ogg,audio/amr,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt">
-                    <button type="button" class="wa-attach-btn" id="waAttachBtn" title="Attach file">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-                        </svg>
-                    </button>
-                    <textarea id="waComposerInput" placeholder="Type a message… (Shift+Enter for newline)" rows="1"></textarea>
-                    <button type="submit" class="btn btn-primary" id="waSendBtn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;">
-                            <line x1="22" y1="2" x2="11" y2="13"/>
-                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                        </svg>
-                        Send
-                    </button>
-                </form>
-                <div class="wa-composer-disabled-note" id="waComposerDisabledNote" style="display:none;">
-                    Pick a conversation to start replying.
-                </div>
-            </section>
+
+                    <form class="wa-composer" id="waComposer" style="display:none;">
+                        <input type="file" id="waFileInput" hidden multiple
+                               accept="image/jpeg,image/png,image/webp,video/mp4,video/3gpp,audio/mpeg,audio/aac,audio/ogg,audio/amr,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt">
+                        <button type="button" class="wa-composer-attach" id="waAttachBtn" title="Attach">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                            </svg>
+                        </button>
+                        <button type="button" class="wa-composer-emoji" id="waEmojiBtn" title="Emoji">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                        </button>
+                        <div class="wa-composer-input-wrap">
+                            <textarea id="waComposerInput" placeholder="Type a message" rows="1" inputmode="text"></textarea>
+                        </div>
+                        <button type="button" class="wa-composer-mic" id="waMicBtn" title="Voice message" hidden>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+                        </button>
+                        <button type="submit" class="wa-composer-send" id="waSendBtn" title="Send">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z"/>
+                            </svg>
+                        </button>
+                    </form>
+                    <div class="wa-composer-disabled" id="waComposerDisabledNote" style="display:none;">
+                        Pick a conversation to start replying.
+                    </div>
+                </section>
+            </div>
         </div>
     </main>
 
@@ -503,6 +277,8 @@
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/shared/whatsapp-ui.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/shared/whatsapp-emoji-picker.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/whatsapp-inbox.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

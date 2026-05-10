@@ -1,0 +1,1457 @@
+/* ============================================================================
+ * whatsapp-ui.css — pixel-mimic of WhatsApp Web (light theme)
+ *
+ * Drop-in stylesheet for any page that wants the WA-Web look. All class names
+ * are namespaced with `wa-` so they don't collide with site styles. Colors
+ * are hardcoded HEX (not theme vars) on purpose — clients said "it should
+ * look exactly like WhatsApp" and WA's colors are part of the brand pact.
+ *
+ * Usage:
+ *   <link rel=stylesheet href=/css/whatsapp-ui.css>
+ *   <div class=wa-app>
+ *     <aside class=wa-rail>… icons …</aside>
+ *     <section class=wa-list-pane>… chats …</section>
+ *     <section class=wa-thread-pane>… messages …</section>
+ *   </div>
+ *
+ * Companion JS: /js/shared/whatsapp-ui.js exports renderConversationRow,
+ * renderBubble, renderDatePill, senderColor, etc. so callers don't have to
+ * keep these markup snippets in sync with the CSS class names.
+ * ============================================================================ */
+
+/* ── WhatsApp brand palette (light theme) ──────────────────────────────── */
+.wa-app {
+    /* Top-level palette tokens. Override any of these on a parent element to
+       theme-shift a sub-tree (e.g. dark mode in the future). */
+    --wa-bg-app:        #f0f2f5;   /* outer page bg */
+    --wa-bg-pane:       #ffffff;   /* chat list bg */
+    --wa-bg-rail:       #f0f2f5;   /* left icon rail */
+    --wa-bg-active:     #f0f2f5;   /* active conversation row */
+    --wa-bg-hover:      #f5f6f6;   /* row hover */
+    --wa-bg-thread:     #efeae2;   /* doodle-pattern thread bg base */
+    --wa-bubble-in:     #ffffff;
+    --wa-bubble-out:    #d9fdd3;
+    --wa-bubble-shadow: 0 1px 0.5px rgba(11,20,26,0.13);
+
+    --wa-brand:         #00a884;   /* WA green (filter pill bg, send btn) */
+    --wa-brand-dark:    #008f72;
+    --wa-pill-active:   #d1f4cc;   /* active filter pill bg */
+    --wa-pill-active-fg:#1d6e3a;
+
+    --wa-tick:          #667781;   /* sent/delivered (gray) */
+    --wa-tick-read:     #53bdeb;   /* read (blue) */
+
+    --wa-fg-primary:    #111b21;
+    --wa-fg-secondary:  #667781;
+    --wa-fg-link:       #027eb5;
+    --wa-fg-time:       #667781;
+    --wa-fg-time-unread:#1da855;
+
+    --wa-divider:       #e9edef;
+    --wa-divider-soft:  #f0f2f5;
+
+    /* WA's doodle pattern, encoded as inline SVG so we never hit a 404 even
+       if /assets/* gets purged. Tile is 366×366 px, monochrome stamps over
+       the cream base. Opacity is kept low (4%) so messages stay readable. */
+    --wa-doodle-svg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='366' height='366' viewBox='0 0 366 366'><g fill='%23000' fill-opacity='0.04'><circle cx='40' cy='50' r='3'/><circle cx='120' cy='180' r='2.5'/><circle cx='280' cy='95' r='2'/><circle cx='340' cy='250' r='3'/><circle cx='65' cy='320' r='2.5'/><circle cx='220' cy='40' r='2'/><circle cx='180' cy='280' r='3'/><path d='M50 200l8-4 8 4-8 4z'/><path d='M310 70l8-4 8 4-8 4z'/><path d='M150 100l8-4 8 4-8 4z'/><path d='M250 320l8-4 8 4-8 4z'/></g></svg>");
+}
+
+/* ── Outer shell ───────────────────────────────────────────────────────── */
+.wa-app {
+    display: flex;
+    background: var(--wa-bg-app);
+    color: var(--wa-fg-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 14.2px;
+    line-height: 1.4;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ── Left icon rail ───────────────────────────────────────────────────── */
+.wa-rail {
+    width: 60px;
+    flex-shrink: 0;
+    background: var(--wa-bg-rail);
+    border-right: 1px solid var(--wa-divider);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    gap: 4px;
+}
+.wa-rail-btn {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: #54656f;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.12s ease;
+}
+.wa-rail-btn:hover { background: rgba(0,0,0,0.05); }
+.wa-rail-btn.is-active { background: rgba(0,168,132,0.10); color: #1da855; }
+.wa-rail-btn svg { width: 22px; height: 22px; }
+.wa-rail-btn .wa-rail-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--wa-brand);
+    color: #fff;
+    border-radius: 999px;
+    min-width: 16px;
+    height: 16px;
+    line-height: 16px;
+    font-size: 10px;
+    font-weight: 600;
+    text-align: center;
+    padding: 0 4px;
+}
+.wa-rail-spacer { flex: 1; }
+
+/* ── Chat list pane ───────────────────────────────────────────────────── */
+.wa-list-pane {
+    width: 400px;
+    min-width: 320px;
+    flex-shrink: 0;
+    background: var(--wa-bg-pane);
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--wa-divider);
+}
+
+.wa-list-header {
+    height: 60px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--wa-bg-pane);
+}
+.wa-list-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--wa-fg-primary);
+    letter-spacing: -0.5px;
+}
+.wa-header-actions {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+}
+.wa-icon-btn {
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: #54656f;
+    cursor: pointer;
+}
+.wa-icon-btn:hover { background: rgba(0,0,0,0.05); }
+.wa-icon-btn svg { width: 22px; height: 22px; }
+
+/* ── Search bar ───────────────────────────────────────────────────────── */
+.wa-search-row {
+    padding: 8px 12px;
+    background: var(--wa-bg-pane);
+}
+.wa-search-input {
+    position: relative;
+}
+.wa-search-input input {
+    width: 100%;
+    height: 35px;
+    padding: 0 12px 0 60px;
+    background: var(--wa-divider-soft);
+    border: 0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--wa-fg-primary);
+    outline: none;
+}
+.wa-search-input input::placeholder { color: var(--wa-fg-secondary); }
+.wa-search-input input:focus { background: #fff; box-shadow: inset 0 0 0 1px var(--wa-divider); }
+.wa-search-input .wa-search-icon {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: var(--wa-fg-secondary);
+    pointer-events: none;
+}
+
+/* ── Filter pills ─────────────────────────────────────────────────────── */
+.wa-filters {
+    display: flex;
+    gap: 8px;
+    padding: 6px 12px 10px;
+    background: var(--wa-bg-pane);
+    overflow-x: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.wa-filters::-webkit-scrollbar { display: none; }
+.wa-filter-pill {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--wa-divider-soft);
+    color: var(--wa-fg-primary);
+    border: 0;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+.wa-filter-pill:hover { background: var(--wa-divider); }
+.wa-filter-pill.is-active {
+    background: var(--wa-pill-active);
+    color: var(--wa-pill-active-fg);
+}
+
+/* ── Conversation list rows ───────────────────────────────────────────── */
+.wa-conv-list {
+    flex: 1;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.wa-conv-list::-webkit-scrollbar { width: 6px; }
+.wa-conv-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+
+.wa-conv-row {
+    display: flex;
+    gap: 13px;
+    align-items: center;
+    padding: 10px 13px 10px 13px;
+    cursor: pointer;
+    border: 0;
+    width: 100%;
+    background: transparent;
+    text-align: left;
+    transition: background 0.12s ease;
+}
+.wa-conv-row:hover { background: var(--wa-bg-hover); }
+.wa-conv-row.is-active { background: var(--wa-bg-active); }
+.wa-conv-row + .wa-conv-row::before {
+    /* divider is drawn ABOVE row 2..N, indented past the avatar to match WA */
+    content: "";
+    position: absolute;
+    left: 86px;
+    right: 0;
+    height: 1px;
+    background: var(--wa-divider-soft);
+    margin-top: -10px;
+    pointer-events: none;
+}
+.wa-conv-row { position: relative; }
+
+.wa-avatar {
+    width: 49px;
+    height: 49px;
+    border-radius: 50%;
+    background: #d1d7db;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    font-size: 18px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    overflow: hidden;
+    user-select: none;
+}
+.wa-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.wa-conv-meta {
+    flex: 1;
+    min-width: 0;
+    border-bottom: 1px solid var(--wa-divider-soft);
+    padding-bottom: 10px;
+    margin-top: -10px;
+    padding-top: 10px;
+}
+.wa-conv-row:last-child .wa-conv-meta { border-bottom: 0; }
+
+.wa-conv-line1 {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: baseline;
+}
+.wa-conv-name {
+    font-size: 16px;
+    color: var(--wa-fg-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 400;
+}
+.wa-conv-row.is-unread .wa-conv-name { font-weight: 600; }
+.wa-conv-time {
+    font-size: 12px;
+    color: var(--wa-fg-time);
+    flex-shrink: 0;
+}
+.wa-conv-row.is-unread .wa-conv-time { color: var(--wa-fg-time-unread); font-weight: 500; }
+
+.wa-conv-line2 {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 2px;
+    align-items: center;
+}
+.wa-conv-preview {
+    font-size: 14px;
+    color: var(--wa-fg-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.wa-conv-preview svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+.wa-conv-badge {
+    background: var(--wa-brand);
+    color: #fff;
+    border-radius: 999px;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 6px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 19px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* "→ Lead" badge on conversations that have already been converted into a
+   CRM lead. Sits next to the time on line 1 so the operator can see at a
+   glance which contacts are already in the pipeline. */
+.wa-conv-lead-badge {
+    background: rgba(0, 168, 132, 0.12);
+    color: #00875a;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 10.5px;
+    font-weight: 600;
+    line-height: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+}
+
+/* Kebab (⋮) menu button on each conv row — shown on row hover. Click
+   opens the WhatsappUI.RowMenu popover defined in whatsapp-ui.js. */
+.wa-conv-row .wa-conv-menu-btn {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    background: transparent;
+    border-radius: 50%;
+    color: #54656f;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: 4px;
+}
+.wa-conv-row:hover .wa-conv-menu-btn,
+.wa-conv-row .wa-conv-menu-btn.is-open {
+    display: inline-flex;
+}
+.wa-conv-row .wa-conv-menu-btn:hover { background: rgba(0,0,0,0.06); }
+.wa-conv-row .wa-conv-menu-btn svg { width: 16px; height: 16px; }
+
+/* Popover the kebab opens. Position is set inline by RowMenu.open(). */
+.wa-rowmenu {
+    position: fixed;
+    z-index: 1000001;
+    min-width: 240px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18), 0 2px 4px rgba(0,0,0,0.08);
+    padding: 6px 0;
+    animation: wep-fade-in 100ms ease-out;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+.wa-rowmenu button {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border: 0;
+    background: transparent;
+    color: #111b21;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: left;
+}
+.wa-rowmenu button:hover { background: #f0f2f5; }
+.wa-rowmenu button[disabled] { opacity: 0.5; cursor: not-allowed; }
+.wa-rowmenu hr {
+    margin: 6px 0;
+    border: 0;
+    border-top: 1px solid #e9edef;
+}
+.wa-rowmenu-icon {
+    width: 18px;
+    height: 18px;
+    color: #54656f;
+    flex-shrink: 0;
+}
+
+/* Team-picker modal — surfaces when the user picks "Convert + Assign Team".
+   Lists the tenant's teams from /api/teams so they can pick one. */
+.wa-teampicker-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.wa-teampicker {
+    width: min(440px, calc(100vw - 32px));
+    max-height: 80vh;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+.wa-teampicker-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e9edef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.wa-teampicker-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111b21;
+}
+.wa-teampicker-close {
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    color: #54656f;
+    padding: 4px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.wa-teampicker-close:hover { background: rgba(0,0,0,0.06); }
+.wa-teampicker-close svg { width: 18px; height: 18px; }
+.wa-teampicker-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+.wa-teampicker-team {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    padding: 12px 20px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.wa-teampicker-team:hover { background: #f0f2f5; }
+.wa-teampicker-team-name {
+    font-size: 14.5px;
+    font-weight: 500;
+    color: #111b21;
+}
+.wa-teampicker-team-meta {
+    font-size: 12.5px;
+    color: #667781;
+}
+.wa-teampicker-empty {
+    padding: 32px 20px;
+    text-align: center;
+    color: #667781;
+}
+
+/* ── Thread pane ──────────────────────────────────────────────────────── */
+.wa-thread-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: var(--wa-bg-thread);
+    background-image: var(--wa-doodle-svg);
+    background-repeat: repeat;
+    position: relative;
+}
+
+.wa-thread-pane.is-empty {
+    align-items: center;
+    justify-content: center;
+    color: var(--wa-fg-secondary);
+    text-align: center;
+    padding: 40px;
+}
+
+.wa-thread-header {
+    height: 60px;
+    padding: 0 16px;
+    background: var(--wa-bg-app);
+    border-bottom: 1px solid var(--wa-divider);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    z-index: 1;
+}
+.wa-thread-header .wa-avatar { width: 40px; height: 40px; font-size: 16px; }
+.wa-thread-info { flex: 1; min-width: 0; }
+.wa-thread-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--wa-fg-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.wa-thread-sub {
+    font-size: 12.5px;
+    color: var(--wa-fg-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Messages list ────────────────────────────────────────────────────── */
+.wa-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 8% 12px 8%;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.wa-messages::-webkit-scrollbar { width: 8px; }
+.wa-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 4px; }
+
+.wa-msg-row {
+    display: flex;
+    width: 100%;
+    margin-bottom: 2px;
+}
+.wa-msg-row.outbound { justify-content: flex-end; }
+.wa-msg-row.first-of-group { margin-top: 8px; }
+
+/* ── Bubbles ─────────────────────────────────────────────────────────── */
+.wa-bubble {
+    max-width: 65%;
+    min-width: 56px;
+    padding: 6px 7px 8px 9px;
+    border-radius: 7.5px;
+    background: var(--wa-bubble-in);
+    color: var(--wa-fg-primary);
+    box-shadow: var(--wa-bubble-shadow);
+    font-size: 14.2px;
+    line-height: 19px;
+    word-wrap: break-word;
+    position: relative;
+}
+.wa-msg-row.outbound .wa-bubble {
+    background: var(--wa-bubble-out);
+}
+/* Tail-less, modern-messenger look. WhatsApp's notch SVG didn't render
+   well at our size — clients said it looked boxy. Going clean rounded
+   corners instead, à la Telegram / Signal / Apple Messages. The bubble
+   alignment (left-aligned for inbound, right-aligned for outbound) +
+   the green vs white fill is enough for the user to read direction. */
+.wa-bubble { border-radius: 14px; }
+
+.wa-bubble-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.wa-bubble-meta {
+    float: right;
+    margin: 4px -2px -4px 8px;
+    font-size: 11px;
+    color: var(--wa-fg-time);
+    line-height: 15px;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+.wa-bubble-meta-time { white-space: nowrap; }
+.wa-bubble-meta-tick { display: inline-flex; }
+.wa-bubble-meta-tick svg { width: 16px; height: 11px; }
+.wa-bubble-meta-tick.is-read { color: var(--wa-tick-read); }
+
+/* Sender name in groups (above message body) */
+.wa-bubble-sender {
+    display: block;
+    font-size: 12.8px;
+    font-weight: 500;
+    margin-bottom: 2px;
+    /* color is set inline via the senderColor() helper in JS */
+}
+
+/* ── Date + unread separators ────────────────────────────────────────── */
+.wa-date-pill,
+.wa-unread-pill {
+    align-self: center;
+    background: var(--wa-bg-app);
+    color: #54656f;
+    font-size: 12.5px;
+    font-weight: 400;
+    padding: 5px 12px;
+    border-radius: 8px;
+    box-shadow: 0 1px 1px rgba(11,20,26,0.05);
+    margin: 12px 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    user-select: none;
+}
+.wa-unread-pill {
+    color: var(--wa-fg-secondary);
+    text-transform: none;
+    letter-spacing: 0;
+    margin: 8px 0;
+}
+
+/* ── Media bubbles ───────────────────────────────────────────────────── */
+.wa-bubble-media { padding: 3px 3px 8px; }
+.wa-bubble-media img,
+.wa-bubble-media video {
+    display: block;
+    max-width: 320px;
+    max-height: 360px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.wa-bubble-media audio {
+    display: block;
+    width: 260px;
+    margin: 4px 6px 0;
+}
+
+/* ── Video preview with play-button overlay ──────────────────────────── *
+ * WhatsApp shows videos as a poster frame with a centered play button +
+ * a duration badge in the bottom-left. Clicking the play button opens
+ * the lightbox (handled in JS — see WhatsappUI.openMediaLightbox).
+ * ─────────────────────────────────────────────────────────────────────── */
+.wa-video-frame {
+    position: relative;
+    display: block;
+    cursor: pointer;
+    border-radius: 6px;
+    overflow: hidden;
+    line-height: 0;   /* drop the descender gap below the <video> tag */
+}
+.wa-video-frame video {
+    display: block;
+    max-width: 320px;
+    max-height: 360px;
+    background: #000;
+}
+.wa-video-frame .wa-video-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    border: 0;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 120ms ease, transform 120ms ease;
+    pointer-events: none;   /* clicks pass through to .wa-video-frame */
+}
+.wa-video-frame:hover .wa-video-play {
+    background: rgba(0, 0, 0, 0.7);
+    transform: translate(-50%, -50%) scale(1.06);
+}
+.wa-video-frame .wa-video-play svg { width: 22px; height: 22px; margin-left: 2px; }
+.wa-video-frame .wa-video-duration {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 6px 2px 4px;
+    border-radius: 4px;
+    line-height: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    pointer-events: none;
+}
+.wa-video-frame .wa-video-duration svg { width: 12px; height: 12px; }
+
+/* ── Album grid (multiple media in one bubble) ───────────────────────── *
+ * When the user attaches multiple images/videos in the same composer
+ * action (or sends a run of them within ~60s), the WA-UI module groups
+ * them into a single bubble and renders the grid below.
+ *
+ *  1 item   →  single tile (uses .wa-bubble-media as before)
+ *  2 items  →  2-column grid
+ *  3 items  →  1 large left + 2 stacked right
+ *  4+ items →  2×2 grid showing first 4, with "+N" badge on the last tile
+ * ─────────────────────────────────────────────────────────────────────── */
+.wa-album {
+    display: grid;
+    gap: 2px;
+    border-radius: 6px;
+    overflow: hidden;
+    max-width: 320px;
+}
+.wa-album.count-2 { grid-template-columns: 1fr 1fr; }
+.wa-album.count-3 {
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+.wa-album.count-3 .wa-album-tile:first-child {
+    grid-row: 1 / span 2;
+}
+.wa-album.count-4,
+.wa-album.count-many {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+.wa-album-tile {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    cursor: pointer;
+    background: #000;
+}
+.wa-album-tile img,
+.wa-album-tile video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 0;
+    max-width: none;
+    max-height: none;
+}
+.wa-album-tile .wa-video-play {
+    /* Smaller play button inside album tiles. */
+    width: 36px;
+    height: 36px;
+}
+.wa-album-tile .wa-video-play svg { width: 16px; height: 16px; }
+.wa-album-tile .wa-video-duration { font-size: 10px; padding: 1px 5px 1px 3px; }
+
+/* "+N more" overlay on the last tile of >4 albums */
+.wa-album-overflow {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+/* ── Lightbox (full-screen media viewer, WA-Web style) ────────────────── *
+ *
+ * Layout:
+ *   ┌──────────────────────────────────────────────────────────────────┐
+ *   │ avatar  Sender Name              ↓ ↗ ☆ 🗑 ⋯              [header]│
+ *   │         01/01/26, 12:39 PM                                       │
+ *   ├──────────────────────────────────────────────────────────────────┤
+ *   │  ‹                  [stage — image / video]                  ›   │
+ *   ├──────────────────────────────────────────────────────────────────┤
+ *   │ All media      [thumb][thumb][thumb]…           Reply   Done    │
+ *   └──────────────────────────────────────────────────────────────────┘
+ * ─────────────────────────────────────────────────────────────────────── */
+.wa-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.92);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    animation: wa-lb-fade 120ms ease-out;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+@keyframes wa-lb-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Header — sender info on left, action icons on right. */
+.wa-lightbox-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 60px;
+    padding: 0 16px;
+    flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.3);
+}
+.wa-lightbox-header .wa-avatar {
+    width: 36px;
+    height: 36px;
+    background: #54656f;
+    color: #fff;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+.wa-lightbox-sender {
+    flex: 1;
+    min-width: 0;
+}
+.wa-lightbox-sender-name {
+    font-size: 14.5px;
+    font-weight: 500;
+    color: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.wa-lightbox-sender-time {
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.65);
+}
+.wa-lightbox-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.wa-lightbox-action {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 0;
+    color: rgba(255,255,255,0.85);
+    cursor: pointer;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.wa-lightbox-action:hover { background: rgba(255,255,255,0.1); }
+.wa-lightbox-action svg { width: 20px; height: 20px; }
+
+/* Stage — media renders here. */
+.wa-lightbox-stage {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 80px;
+    box-sizing: border-box;
+    min-height: 0;
+    position: relative;
+}
+.wa-lightbox-stage img,
+.wa-lightbox-stage video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+    background: #000;
+}
+.wa-lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.08);
+    border: 0;
+    color: #fff;
+    cursor: pointer;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.wa-lightbox-nav:hover { background: rgba(255,255,255,0.18); }
+.wa-lightbox-nav svg { width: 24px; height: 24px; }
+.wa-lightbox-nav.prev { left: 16px; }
+.wa-lightbox-nav.next { right: 16px; }
+
+/* Footer — All media filter, thumb strip, Reply + Done buttons. */
+.wa-lightbox-footer {
+    height: 64px;
+    padding: 0 16px;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+.wa-lightbox-allmedia {
+    background: rgba(255,255,255,0.08);
+    border: 0;
+    color: rgba(255,255,255,0.85);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.wa-lightbox-allmedia:hover { background: rgba(255,255,255,0.16); }
+.wa-lightbox-thumbstrip {
+    flex: 1;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    min-width: 0;
+}
+.wa-lightbox-thumbstrip::-webkit-scrollbar { display: none; }
+.wa-lightbox-thumb {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    background: #000;
+    border: 2px solid transparent;
+    transition: border-color 100ms ease, transform 100ms ease;
+    position: relative;
+    padding: 0;
+}
+.wa-lightbox-thumb:hover { transform: scale(1.06); }
+.wa-lightbox-thumb.is-active { border-color: #00a884; }
+.wa-lightbox-thumb img,
+.wa-lightbox-thumb video {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.wa-lightbox-thumb .wa-lightbox-thumb-video-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    color: #fff;
+}
+.wa-lightbox-actions-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.wa-lightbox-btn {
+    background: transparent;
+    border: 0;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.wa-lightbox-btn.primary {
+    background: #00a884;
+}
+.wa-lightbox-btn.primary:hover { background: #06b095; }
+.wa-lightbox-btn:not(.primary):hover { background: rgba(255,255,255,0.1); }
+
+@media (max-width: 600px) {
+    .wa-lightbox-stage { padding: 8px; }
+    .wa-lightbox-nav.prev { left: 4px; width: 36px; height: 36px; }
+    .wa-lightbox-nav.next { right: 4px; width: 36px; height: 36px; }
+    .wa-lightbox-allmedia,
+    .wa-lightbox-btn { padding: 6px 10px; font-size: 13px; }
+    .wa-lightbox-footer { gap: 6px; padding: 0 8px; }
+}
+
+/* ── Reply bar (shown when user clicks Reply in the lightbox) ────────── *
+ * Replaces the footer's normal contents while in reply-mode. Shows a
+ * quote chip on the left (sender name + media thumb + "Photo"/"Video"
+ * label) and a text input + emoji + send on the right. Submitting closes
+ * the lightbox and dispatches the reply via the host page's onSubmitReply.
+ * ─────────────────────────────────────────────────────────────────────── */
+.wa-lightbox-replybar {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    height: 100%;
+}
+.wa-lightbox.is-replying .wa-lightbox-footer > :not(.wa-lightbox-replybar) {
+    display: none;
+}
+.wa-lightbox.is-replying .wa-lightbox-replybar { display: flex; }
+
+.wa-lightbox-quote {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.08);
+    border-left: 3px solid #00a884;
+    border-radius: 6px;
+    padding: 6px 10px 6px 8px;
+    max-width: 280px;
+    flex-shrink: 0;
+    position: relative;
+}
+.wa-lightbox-quote-close {
+    background: rgba(0,0,0,0.4);
+    border: 0;
+    color: #fff;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+    flex-shrink: 0;
+}
+.wa-lightbox-quote-close:hover { background: rgba(0,0,0,0.6); }
+.wa-lightbox-quote-close svg { width: 12px; height: 12px; }
+.wa-lightbox-quote-thumb {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    background: #000;
+    flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+}
+.wa-lightbox-quote-thumb img,
+.wa-lightbox-quote-thumb video {
+    width: 100%; height: 100%; object-fit: cover;
+}
+.wa-lightbox-quote-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.wa-lightbox-quote-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #00d09c;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wa-lightbox-quote-kind {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+.wa-lightbox-quote-kind svg { width: 13px; height: 13px; }
+
+.wa-lightbox-replybar form {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+    padding: 4px 8px;
+}
+.wa-lightbox-replybar input[type=text] {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    color: #fff;
+    font-size: 14.5px;
+    outline: none;
+    padding: 8px;
+}
+.wa-lightbox-replybar input[type=text]::placeholder { color: rgba(255,255,255,0.55); }
+.wa-lightbox-replybar-icon {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 0;
+    color: rgba(255,255,255,0.85);
+    cursor: pointer;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.wa-lightbox-replybar-icon:hover { background: rgba(255,255,255,0.12); }
+.wa-lightbox-replybar-icon svg { width: 20px; height: 20px; }
+.wa-lightbox-replybar-send {
+    background: #00a884;
+    color: #fff;
+}
+.wa-lightbox-replybar-send:hover { background: #06b095; }
+.wa-bubble-doc {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 6px;
+    margin: 2px 0 4px;
+    color: inherit;
+    text-decoration: none;
+    min-width: 240px;
+}
+.wa-bubble-doc-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(0,0,0,0.08);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.wa-bubble-doc-icon svg { width: 18px; height: 18px; color: #54656f; }
+.wa-bubble-doc-name {
+    font-size: 14px;
+    font-weight: 500;
+    word-break: break-all;
+}
+.wa-bubble-caption {
+    display: block;
+    margin: 4px 6px 0;
+}
+
+/* Reactions row under bubble */
+.wa-bubble-reactions {
+    display: inline-flex;
+    gap: 4px;
+    background: var(--wa-bg-pane);
+    border-radius: 999px;
+    padding: 2px 8px;
+    box-shadow: var(--wa-bubble-shadow);
+    margin-top: -6px;
+    margin-left: 8px;
+    font-size: 13px;
+    align-self: flex-start;
+    position: relative;
+    z-index: 1;
+}
+.wa-msg-row.outbound .wa-bubble-reactions { align-self: flex-end; margin-left: 0; margin-right: 8px; }
+.wa-bubble-forwarded {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--wa-fg-secondary);
+    font-size: 12.5px;
+    font-style: italic;
+    margin-bottom: 2px;
+}
+.wa-bubble-forwarded svg { width: 14px; height: 14px; }
+
+/* Reply quote inside a bubble */
+.wa-bubble-reply {
+    display: block;
+    background: rgba(0,0,0,0.04);
+    border-left: 4px solid var(--wa-brand);
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin: 0 0 4px;
+    font-size: 13px;
+    color: var(--wa-fg-secondary);
+    cursor: pointer;
+}
+.wa-bubble-reply-name { font-weight: 500; color: var(--wa-brand); display: block; }
+.wa-bubble-reply-snippet { display: block; opacity: 0.85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px; }
+
+/* ── Composer (BUILD-style: + on left, emoji+mic+send on right) ──────── */
+.wa-composer {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--wa-bg-app);
+    flex-shrink: 0;
+    z-index: 1;
+}
+.wa-composer-attach,
+.wa-composer-emoji,
+.wa-composer-mic,
+.wa-composer-send {
+    width: 42px;
+    height: 42px;
+    border: 0;
+    background: transparent;
+    color: #54656f;
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.wa-composer-attach:hover,
+.wa-composer-emoji:hover,
+.wa-composer-mic:hover { background: rgba(0,0,0,0.05); }
+.wa-composer-attach svg,
+.wa-composer-emoji svg,
+.wa-composer-mic svg,
+.wa-composer-send svg { width: 24px; height: 24px; }
+
+.wa-composer-input-wrap {
+    flex: 1;
+    background: var(--wa-bg-pane);
+    border-radius: 8px;
+    padding: 9px 12px;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+}
+.wa-composer-input-wrap textarea {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    resize: none;
+    font-family: inherit;
+    font-size: 14.5px;
+    line-height: 21px;
+    color: var(--wa-fg-primary);
+    outline: none;
+    max-height: 120px;
+}
+.wa-composer-input-wrap textarea::placeholder { color: var(--wa-fg-secondary); }
+
+.wa-composer-send {
+    color: var(--wa-brand);
+    background: transparent;
+}
+.wa-composer-send:hover { background: rgba(0,0,0,0.05); }
+.wa-composer-send[hidden] { display: none; }
+
+.wa-composer-disabled {
+    padding: 16px;
+    background: var(--wa-bg-app);
+    color: var(--wa-fg-secondary);
+    font-size: 13.5px;
+    text-align: center;
+}
+
+/* Attach preview chip above the composer */
+.wa-attach-preview {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 16px;
+    background: var(--wa-bg-app);
+    border-top: 1px solid var(--wa-divider);
+}
+.wa-attach-preview img,
+.wa-attach-preview video {
+    max-height: 48px;
+    max-width: 72px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+.wa-attach-preview-meta { flex: 1; min-width: 0; }
+.wa-attach-preview-name { font-size: 13.5px; font-weight: 500; word-break: break-all; }
+.wa-attach-preview-info { font-size: 12px; color: var(--wa-fg-secondary); }
+.wa-attach-preview-remove {
+    background: transparent;
+    border: 0;
+    color: #d32f2f;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+}
+.wa-attach-progress {
+    height: 3px;
+    background: var(--wa-divider);
+    border-radius: 999px;
+    margin-top: 4px;
+    overflow: hidden;
+}
+.wa-attach-progress > span {
+    display: block;
+    height: 100%;
+    background: var(--wa-brand);
+    transition: width 0.2s;
+}
+
+/* ── Empty / loading ─────────────────────────────────────────────────── */
+.wa-empty-state {
+    text-align: center;
+    color: var(--wa-fg-secondary);
+    padding: 40px 24px;
+    font-size: 14px;
+}
+.wa-empty-state h3 {
+    font-size: 32px;
+    font-weight: 300;
+    color: var(--wa-fg-primary);
+    margin: 16px 0 8px;
+}
+.wa-empty-state p { margin: 4px 0; max-width: 480px; }
+
+.wa-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--wa-fg-secondary);
+    padding: 24px;
+    font-size: 13.5px;
+}
+
+/* ── Mobile responsive — PWA-grade (single-column toggle) ────────────── *
+ *
+ * The aim of this block is "if a customer installs the PWA on their phone
+ * and opens the inbox, it should feel like the real WhatsApp app." That
+ * means a few things beyond just hiding the sidebar:
+ *
+ *   • Use 100dvh/svh, not 100vh — iOS Safari includes the URL bar in vh,
+ *     causing the keyboard-pop layout shift to feel broken. dvh tracks
+ *     the *current* visible viewport, svh the smallest one.
+ *   • Honor `env(safe-area-inset-*)` so the composer doesn't sit under
+ *     the iPhone home indicator and the header doesn't bleed under the
+ *     notch on full-screen PWAs.
+ *   • Slide-in transition when opening a thread (matches native nav
+ *     animations on iOS/Android stack navigators).
+ *   • 44pt minimum touch targets on rail+icon buttons (WCAG + Apple HIG).
+ *   • Larger fonts inside bubbles so a 5"-screen user doesn't squint.
+ *
+ * Trigger at ≤900px so iPad mini in portrait also collapses to single-pane.
+ * ─────────────────────────────────────────────────────────────────────── */
+.wa-thread-back { display: none; }
+
+@media screen and (max-width: 900px) {
+    /* Container fills the *visible* viewport. dvh keeps the bottom bar
+       glued to the top of the keyboard rather than getting hidden behind
+       it. Fallback to 100vh on browsers that don't speak dvh. */
+    .wa-app {
+        height: 100vh;
+        height: 100dvh;
+    }
+
+    .wa-rail { display: none; }
+
+    /* List pane is full-bleed when no thread is open. */
+    .wa-list-pane {
+        width: 100%;
+        min-width: 0;
+        border-right: 0;
+        /* Pad header/search down past the iOS notch. */
+        padding-top: env(safe-area-inset-top, 0);
+    }
+
+    /* Hide the inactive pane and animate the active one in.  */
+    .wa-app.has-active-thread .wa-list-pane { display: none; }
+    .wa-app:not(.has-active-thread) .wa-thread-pane { display: none; }
+
+    .wa-thread-pane {
+        animation: wa-slide-in 180ms cubic-bezier(0.4, 0, 0.2, 1);
+        padding-top: env(safe-area-inset-top, 0);
+    }
+
+    /* Always-visible back arrow in the thread header. */
+    .wa-thread-back {
+        display: inline-flex !important;
+        background: transparent;
+        border: 0;
+        width: 40px;
+        height: 40px;
+        align-items: center;
+        justify-content: center;
+        color: var(--wa-fg-primary);
+        cursor: pointer;
+        flex-shrink: 0;
+        margin-right: -4px; /* tighter than rail buttons */
+    }
+    .wa-thread-back svg { width: 24px; height: 24px; }
+
+    /* Touch targets — keep all icon buttons ≥44px square. */
+    .wa-icon-btn,
+    .wa-composer-attach,
+    .wa-composer-emoji,
+    .wa-composer-mic,
+    .wa-composer-send {
+        width: 44px;
+        height: 44px;
+    }
+
+    /* Bubbles get more headroom on small screens. */
+    .wa-bubble { max-width: 78%; font-size: 15px; line-height: 20px; }
+    .wa-messages { padding: 10px 4% 10px 4%; }
+
+    /* Composer hugs the bottom and accounts for the home-indicator. */
+    .wa-composer {
+        padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0));
+        gap: 4px;
+    }
+    .wa-composer-input-wrap { min-height: 44px; }
+
+    /* List rows feel less cramped on mobile. */
+    .wa-conv-row { padding: 12px 14px; }
+    .wa-conv-name { font-size: 17px; }
+    .wa-conv-preview { font-size: 14.5px; }
+
+    /* Thread header — 56px is the standard mobile app-bar height. */
+    .wa-thread-header { height: 56px; padding: 0 8px 0 4px; }
+    .wa-list-header { height: 56px; }
+}
+
+/* Standalone PWA mode — running outside the browser chrome. Hide any
+   browser-style decorations (we don't render any here, but reserve the
+   selector so callers can target their own page chrome). */
+@media all and (display-mode: standalone) {
+    .wa-app { padding-bottom: env(safe-area-inset-bottom, 0); }
+}
+
+/* Slide-in keyframes for the thread pane on mobile. */
+@keyframes wa-slide-in {
+    from { transform: translateX(8%); opacity: 0.4; }
+    to   { transform: translateX(0);   opacity: 1; }
+}
+
+/* Reduce-motion users get an instant transition. */
+@media (prefers-reduced-motion: reduce) {
+    .wa-thread-pane { animation: none; }
+}
