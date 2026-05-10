@@ -541,15 +541,15 @@
         }
         modal = document.createElement('div');
         modal.id = 'waThreadModal';
-        // Sit BELOW the app navbar (which is 64px tall + leave ~16px breathing
-        // room) and inside a 24px margin on the sides/bottom. Backdrop covers
-        // only the area below the navbar so the user can still see/use the
-        // top nav as a way to navigate away — matches Email composer + Help
-        // modal conventions elsewhere in the CRM.
-        modal.style.cssText = 'position:fixed;top:80px;left:24px;right:24px;bottom:24px;z-index:1000000;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;';
+        // Floats below the navbar — no dim overlay (the user found the dark
+        // wash distracting; an iframe modal that already takes the eye-line
+        // doesn't need a backdrop). pointer-events:none on the wrapper so
+        // clicks on the leads page underneath still work; the card itself
+        // re-enables pointer-events.
+        modal.style.cssText = 'position:fixed;top:80px;left:24px;right:24px;bottom:24px;z-index:1000000;display:flex;align-items:center;justify-content:center;pointer-events:none;';
 
         const card = document.createElement('div');
-        card.style.cssText = 'background:var(--bg-card);border-radius:12px;width:min(1000px,100%);height:100%;box-shadow:0 24px 64px rgba(0,0,0,0.35);overflow:hidden;display:flex;flex-direction:column;';
+        card.style.cssText = 'background:var(--bg-card);border-radius:12px;width:min(1000px,100%);height:100%;box-shadow:0 24px 64px rgba(0,0,0,0.45);overflow:hidden;display:flex;flex-direction:column;pointer-events:auto;border:1px solid var(--border-color);';
 
         const headerBar = document.createElement('div');
         headerBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);font-size:0.9rem;color:var(--text-secondary);';
@@ -571,8 +571,10 @@
         card.appendChild(iframe);
         modal.appendChild(card);
 
-        // Close on backdrop click or ESC
-        modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
+        // No click-outside-to-close — pointer-events:none on the wrapper
+        // lets clicks pass through to the underlying page, which is the
+        // desired UX (no backdrop means no implicit "click outside" zone).
+        // ESC + the X button remain.
         document.addEventListener('keydown', function escHandler(ev) {
             if (ev.key === 'Escape') {
                 modal.remove();
