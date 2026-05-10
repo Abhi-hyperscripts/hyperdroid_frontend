@@ -1019,15 +1019,35 @@
         // events for ALL their numbers on the same hub group.
         if (!ev || ev.businessPhoneNumber !== activeBusinessPhone) return;
 
+        // Status receipts (sent / delivered / read / failed) come through
+        // the same event with eventKind="status_update". Patch the existing
+        // row in place instead of appending — that's what re-renders the
+        // ✓ → ✓✓ → blue-✓✓ tick on the outbound bubble.
+        if (ev.eventKind === 'status_update') {
+            const idx = threadMessages.findIndex(m => m.id === ev.id);
+            if (idx >= 0) {
+                threadMessages[idx].status = ev.status || threadMessages[idx].status;
+                renderThread();
+            }
+            // Also patch the conversation list's lastMessageStatus so the
+            // little tick next to "You: ..." in the list reflects the latest.
+            const convIdx = conversations.findIndex(c => c.lastMessageId === ev.id);
+            if (convIdx >= 0) {
+                conversations[convIdx].lastMessageStatus = ev.status;
+                renderConversationList();
+            }
+            return;
+        }
+
         // If this is for the open thread, append; else just bump the list.
         if (ev.customerPhone === activeCustomerPhone) {
             threadMessages.push({
                 id: ev.id,
-                direction: 'inbound',
+                direction: ev.direction || 'inbound',
                 messageType: ev.messageType,
                 body: ev.body,
                 mediaUrl: ev.mediaUrl,
-                status: 'received',
+                status: ev.status || 'received',
                 receivedAtUtc: ev.receivedAtUtc,
                 createdAtUtc: ev.receivedAtUtc,
             });
