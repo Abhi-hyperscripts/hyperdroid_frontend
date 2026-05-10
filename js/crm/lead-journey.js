@@ -537,10 +537,15 @@
         }
         modal = document.createElement('div');
         modal.id = 'waThreadModal';
-        modal.style.cssText = 'position:fixed;inset:0;z-index:1000000;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;padding:24px;';
+        // Sit BELOW the app navbar (which is 64px tall + leave ~16px breathing
+        // room) and inside a 24px margin on the sides/bottom. Backdrop covers
+        // only the area below the navbar so the user can still see/use the
+        // top nav as a way to navigate away — matches Email composer + Help
+        // modal conventions elsewhere in the CRM.
+        modal.style.cssText = 'position:fixed;top:80px;left:24px;right:24px;bottom:24px;z-index:1000000;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;';
 
         const card = document.createElement('div');
-        card.style.cssText = 'background:var(--bg-card);border-radius:12px;width:min(1000px,100%);height:min(800px,100%);box-shadow:0 24px 64px rgba(0,0,0,0.35);overflow:hidden;display:flex;flex-direction:column;';
+        card.style.cssText = 'background:var(--bg-card);border-radius:12px;width:min(1000px,100%);height:100%;box-shadow:0 24px 64px rgba(0,0,0,0.35);overflow:hidden;display:flex;flex-direction:column;';
 
         const headerBar = document.createElement('div');
         headerBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);font-size:0.9rem;color:var(--text-secondary);';
