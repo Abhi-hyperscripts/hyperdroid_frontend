@@ -190,10 +190,22 @@
      * - Check immediately on page load
      * - Every 30s for the first 5 minutes (10 checks)
      * - Every 60s after that
+     *
+     * Also polls /js/sw-version.js directly from the page so an updated
+     * SW_VERSION on the server reloads the page even if the SW's own
+     * APP_UPDATE_AVAILABLE message was lost. Without this, the race
+     * window we hit on 2026-05-10 leaves the tab stuck on the old version
+     * forever: old SW broadcasts APP_UPDATE_AVAILABLE then immediately
+     * triggers self.registration.update(); the new SW activates with the
+     * correct version baked in and never broadcasts again, so a missed
+     * message is unrecoverable. The page-side check closes that gap by
+     * comparing window.SW_VERSION (frozen at script-tag-load) against the
+     * live /js/sw-version.js content.
      */
     function setupAutoUpdate(registration) {
         // Immediate check
         registration.update().catch(() => {});
+        checkPageVersionAgainstServer();
 
         var checkCount = 0;
         var maxAggressiveChecks = 10;
@@ -202,14 +214,48 @@
         var aggressiveTimer = setInterval(function () {
             checkCount++;
             registration.update().catch(() => {});
+            checkPageVersionAgainstServer();
 
             if (checkCount >= maxAggressiveChecks) {
                 clearInterval(aggressiveTimer);
                 // Switch to normal: every 60 seconds
                 setInterval(function () {
                     registration.update().catch(() => {});
+                    checkPageVersionAgainstServer();
                 }, 60000);
             }
         }, 30000);
+    }
+
+    /**
+     * Compare the page's frozen window.SW_VERSION against the live
+     * /js/sw-version.js on the server. Reload if the server is ahead.
+     *
+     * `cache: 'no-store'` plus a Date.now() bust skips both the browser's
+     * HTTP cache AND any CDN edge cache that might honour query strings.
+     * The SW's NEVER_CACHE_PATTERNS already excludes /sw-version.js from
+     * the static cache, so this fetch always reaches origin.
+     */
+    function checkPageVersionAgainstServer() {
+        if (reloading) return;
+        var pageVersion = (typeof SW_VERSION !== 'undefined') ? SW_VERSION : null;
+        if (pageVersion == null) return;
+        fetch('/js/sw-version.js?_=' + Date.now(), {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache' }
+        })
+            .then(function (r) { return r.ok ? r.text() : null; })
+            .then(function (text) {
+                if (!text) return;
+                var match = text.match(/SW_VERSION\s*=\s*(\d+)/);
+                if (!match) return;
+                var serverVersion = parseInt(match[1], 10);
+                if (serverVersion && serverVersion > pageVersion && !reloading) {
+                    reloading = true;
+                    console.log('[Update] Page-side detected v' + pageVersion + ' < server v' + serverVersion + ' — reloading');
+                    window.location.reload();
+                }
+            })
+            .catch(function () { /* offline — try again next tick */ });
     }
 })();
