@@ -882,11 +882,13 @@
                 body: JSON.stringify(Object.assign({}, baseRecipient, payload)),
             });
             const wamId = resp.whatsapp_message_id ?? resp.whatsappMessageId ?? optimisticId;
+            const providerMessageId = resp.provider_message_id ?? resp.providerMessageId ?? null;
             const status = resp.status || 'sent';
             const idx = threadMessages.findIndex(m => m.id === optimisticId);
             if (idx >= 0) {
                 threadMessages[idx] = {
                     id: wamId,
+                    providerMessageId,
                     direction: 'outbound',
                     messageType: payload.message_type,
                     body: optimisticInfo.body || '',
@@ -1023,10 +1025,27 @@
         // the same event with eventKind="status_update". Patch the existing
         // row in place instead of appending — that's what re-renders the
         // ✓ → ✓✓ → blue-✓✓ tick on the outbound bubble.
-        if (ev.eventKind === 'status_update') {
-            const idx = threadMessages.findIndex(m => m.id === ev.id);
+        //
+        // Belt-and-braces detection: the status branch fires if eventKind
+        // says so OR direction is outbound. Outbound bubbles are written
+        // by /whatsapp/send → optimistic update; SignalR never *adds* one,
+        // it only ever *updates* its status. Treating any outbound payload
+        // as a status patch means a missing/stale eventKind field can't
+        // cause a phantom-inbound to be appended (the bug we shipped on
+        // the first deploy).
+        const isStatusUpdate = ev.eventKind === 'status_update' || ev.direction === 'outbound';
+        if (isStatusUpdate) {
+            // Match by id first, then by providerMessageId — depending on
+            // whether the local message came from the optimistic-replace
+            // (id = CRM row id) or an older send-flow (id = NS transient
+            // guid; providerMessageId = Interakt's id).
+            let idx = threadMessages.findIndex(m => m.id === ev.id);
+            if (idx < 0 && ev.providerMessageId) {
+                idx = threadMessages.findIndex(m => m.providerMessageId === ev.providerMessageId);
+            }
             if (idx >= 0) {
                 threadMessages[idx].status = ev.status || threadMessages[idx].status;
+                threadMessages[idx].providerMessageId = threadMessages[idx].providerMessageId || ev.providerMessageId;
                 renderThread();
             }
             // Also patch the conversation list's lastMessageStatus so the
