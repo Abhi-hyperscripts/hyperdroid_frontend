@@ -124,7 +124,44 @@
                 border-radius: 0;
             }
         }
+
+        /* Compact embed mode: used when the lead-timeline modal loads this
+           page in an iframe with `?compact=1&phone=...`. Strips the page
+           chrome (top nav, breadcrumb, left conversation-list pane) so the
+           iframe shows only the thread + composer for one conversation. */
+        body.wa-compact .navbar,
+        body.wa-compact .breadcrumb-nav,
+        body.wa-compact .wa-toolbar,
+        body.wa-compact .wa-list-pane { display: none !important; }
+        body.wa-compact .wa-page {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            height: 100dvh;
+            gap: 0;
+        }
+        body.wa-compact .wa-frame {
+            margin: 0;
+            border: 0;
+            border-radius: 0;
+        }
+        body.wa-compact .wa-app { grid-template-columns: 1fr !important; }
     </style>
+    <script>
+        // Compact-mode flag must be set BEFORE the WA JS runs so layout
+        // doesn't flash the sidebar. Read the query string and stamp the
+        // body class immediately.
+        (function () {
+            try {
+                if (new URLSearchParams(location.search).get('compact') === '1') {
+                    document.documentElement.classList.add('wa-compact-ready');
+                    document.addEventListener('DOMContentLoaded', function () {
+                        document.body.classList.add('wa-compact');
+                    });
+                }
+            } catch (_) {}
+        })();
+    </script>
 </head>
 <body class="dashboard wa-inbox-page">
     <nav class="navbar">

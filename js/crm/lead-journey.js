@@ -491,8 +491,19 @@
                 followupCompleteBtn = `<div class="tl-actions"><button class="btn btn-sm btn-outline-primary tl-followup-complete-btn" data-followup-id="${esc(e.meta.followup_id)}" onclick="completeFollowupFromTimeline(this)">Mark complete</button></div>`;
             }
 
+            // WhatsApp timeline rows open the chat thread in a modal on
+            // click (icon OR title). The whole row is clickable so users
+            // don't have to aim at the 14×14 icon. Phone digits come from
+            // the entry's meta (set by the backend in
+            // AddWhatsAppMessagesToTimelineAsync).
+            const isWa = e.type === 'whatsapp';
+            const waPhone = isWa && e.meta ? (e.meta.customer_phone || '') : '';
+            const waOpenAttrs = isWa && waPhone
+                ? ` style="cursor:pointer" onclick="openWhatsAppThreadModal('${esc(waPhone)}')" title="Open this conversation"`
+                : '';
+
             return `
-                <div class="tl-entry ${typeClass}">
+                <div class="tl-entry ${typeClass}"${waOpenAttrs}>
                     <div class="tl-icon">${icon}</div>
                     <div class="tl-content">
                         <div class="tl-header">
@@ -508,6 +519,59 @@
             `;
         }).join('');
     }
+
+    // Modal that embeds the existing whatsapp-inbox.html page in compact
+    // mode — same component as the standalone inbox so live ticks, SignalR
+    // updates, emoji, attachments, status receipts etc. all work without
+    // re-implementing anything. The iframe loads with ?phone=&compact=1;
+    // the page's own JS auto-opens the conversation and the CSS hides
+    // the sidebar / navbar / breadcrumb.
+    window.openWhatsAppThreadModal = function (phoneDigits) {
+        if (!phoneDigits) return;
+        // De-dupe — re-clicking should focus the existing modal instead
+        // of stacking another iframe on top.
+        let modal = document.getElementById('waThreadModal');
+        if (modal) {
+            modal.querySelector('iframe')?.contentWindow?.focus?.();
+            return;
+        }
+        modal = document.createElement('div');
+        modal.id = 'waThreadModal';
+        modal.style.cssText = 'position:fixed;inset:0;z-index:1000000;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;padding:24px;';
+
+        const card = document.createElement('div');
+        card.style.cssText = 'background:var(--bg-card);border-radius:12px;width:min(1000px,100%);height:min(800px,100%);box-shadow:0 24px 64px rgba(0,0,0,0.35);overflow:hidden;display:flex;flex-direction:column;';
+
+        const headerBar = document.createElement('div');
+        headerBar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg-secondary);border-bottom:1px solid var(--border-color);font-size:0.9rem;color:var(--text-secondary);';
+        headerBar.innerHTML = '<span>WhatsApp conversation</span>';
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.setAttribute('aria-label', 'Close');
+        close.style.cssText = 'background:transparent;border:none;font-size:1.4rem;line-height:1;cursor:pointer;color:var(--text-secondary);padding:2px 8px;';
+        close.textContent = '×';
+        close.addEventListener('click', () => modal.remove());
+        headerBar.appendChild(close);
+
+        const iframe = document.createElement('iframe');
+        iframe.src = `/pages/crm/whatsapp-inbox.html?phone=${encodeURIComponent(phoneDigits)}&compact=1`;
+        iframe.style.cssText = 'border:0;flex:1;width:100%;background:#efeae2;';
+        iframe.setAttribute('title', 'WhatsApp conversation');
+
+        card.appendChild(headerBar);
+        card.appendChild(iframe);
+        modal.appendChild(card);
+
+        // Close on backdrop click or ESC
+        modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
+        document.addEventListener('keydown', function escHandler(ev) {
+            if (ev.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', escHandler);
+            }
+        });
+        document.body.appendChild(modal);
+    };
 
     window.completeFollowupFromTimeline = async function(btn) {
         const fid = btn.getAttribute('data-followup-id');

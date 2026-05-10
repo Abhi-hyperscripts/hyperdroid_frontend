@@ -281,6 +281,19 @@
         }
 
         await loadConversations();
+
+        // Modal-embed mode: `?phone=<digits>&compact=1` is used by the lead
+        // timeline to open just this thread inside an iframe-modal. We auto-
+        // open the conversation and rely on CSS (body.wa-compact) to hide
+        // the navbar, breadcrumb, and conversation-list pane.
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const phone = (params.get('phone') || '').replace(/\D/g, '');
+            if (phone) {
+                const conv = conversations.find(c => c.customerPhone === phone);
+                await openConversation(phone, conv?.customerName || '');
+            }
+        } catch (_) { /* not fatal — falls back to manual pick */ }
     }
 
     function buildNumberPicker(numbers) {
