@@ -606,7 +606,10 @@
         // (which is scoped to one open/close cycle).
         editor.linkPreviewEnabled = true;
         editor.ui.registry.addToggleButton('unfurltoggle', {
-            icon: 'preview',
+            // 'embed' icon is visually distinct from the 'preview' (eye)
+            // button next to it — semantically reads as "embed/expand link
+            // into a card" which is exactly what auto-unfurl does.
+            icon: 'embed',
             tooltip: 'Auto-render link previews when pasting URLs',
             onAction: (api) => {
                 editor.linkPreviewEnabled = !editor.linkPreviewEnabled;
