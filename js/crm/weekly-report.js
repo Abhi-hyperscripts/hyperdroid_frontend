@@ -469,39 +469,45 @@
         };
 
         // 1. Donut — lead volume per dimension bucket.
-        if (top3.length > 0) mountChart('wrChartDimDonut', {
-            ...themeBase,
-            chart: { ...themeBase.chart, type: 'donut', height: 280, width: '100%' },
-            series: top3.map(d => d.leads),
-            labels: top3.map(d => resolveDimLabel(d.label)),
-            colors: ['#6366f1', '#06b6d4', '#a855f7'],
-            stroke: { width: 0 },
-            plotOptions: {
-                pie: {
-                    donut: {
-                        size: '68%',
-                        labels: {
-                            show: true,
-                            total: {
+        // ApexCharts emits NaN warnings on the first paint when the
+        // donut's total formatter returns a non-string or when its series
+        // sums to 0. Coerce to string + guard the series.
+        if (top3.length > 0) {
+            const totalLeads = top3.reduce((s, d) => s + d.leads, 0);
+            mountChart('wrChartDimDonut', {
+                ...themeBase,
+                chart: { ...themeBase.chart, type: 'donut', height: 280 },
+                series: top3.map(d => d.leads || 0),
+                labels: top3.map(d => resolveDimLabel(d.label)),
+                colors: ['#6366f1', '#06b6d4', '#a855f7'],
+                stroke: { width: 0 },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '68%',
+                            labels: {
                                 show: true,
-                                label: 'Top 3 leads',
-                                fontSize: '12px',
-                                color: 'rgba(226,232,240,0.7)',
-                                formatter: () => top3.reduce((s, d) => s + d.leads, 0)
-                            },
-                            value: { fontSize: '20px', color: '#fff', fontWeight: 700 }
+                                total: {
+                                    show: true,
+                                    label: 'Top 3 leads',
+                                    fontSize: '12px',
+                                    color: 'rgba(226,232,240,0.7)',
+                                    formatter: () => String(totalLeads)
+                                },
+                                value: { fontSize: '20px', color: '#fff', fontWeight: 700 }
+                            }
                         }
                     }
-                }
-            },
-            dataLabels: { enabled: true, style: { fontSize: '11px', fontWeight: 600 }, formatter: v => v.toFixed(1) + '%' },
-            legend: { ...themeBase.legend, position: 'bottom', fontSize: '12px' }
-        });
+                },
+                dataLabels: { enabled: true, style: { fontSize: '11px', fontWeight: 600 }, formatter: v => (isFinite(v) ? v.toFixed(1) : '0.0') + '%' },
+                legend: { ...themeBase.legend, position: 'bottom', fontSize: '12px' }
+            });
+        }
 
         // 2. Stacked bar — per-dimension outcome bucket split.
         if (top3.length > 0) mountChart('wrChartDimBuckets', {
             ...themeBase,
-            chart: { ...themeBase.chart, type: 'bar', stacked: true, stackType: '100%', height: 280, width: '100%' },
+            chart: { ...themeBase.chart, type: 'bar', stacked: true, stackType: '100%', height: 280 },
             series: bucketLabels.map((bl, i) => ({
                 name: bl,
                 data: top3.map(d => [d.connected, d.hot, d.followups, d.no_response, d.not_interested][i])
@@ -518,7 +524,7 @@
         // 3. Horizontal stacked bar — owners × outcome buckets, absolute counts.
         if (ownersForChart.length > 0) mountChart('wrChartOwnerStacked', {
             ...themeBase,
-            chart: { ...themeBase.chart, type: 'bar', stacked: true, height: 320, width: '100%' },
+            chart: { ...themeBase.chart, type: 'bar', stacked: true, height: 320 },
             series: bucketLabels.map((bl, i) => ({
                 name: bl,
                 data: ownersForChart.map(o => [o.connected, o.hot, o.followups, o.no_response, o.not_interested][i])
