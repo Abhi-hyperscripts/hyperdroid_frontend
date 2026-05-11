@@ -1456,11 +1456,18 @@
     .wa-thread-pane .wa-attach-preview {
         position: fixed;
         left: 0; right: 0;
-        bottom: 60px; /* approx composer height */
+        /* Sits just above the fixed composer. --wa-composer-h is JS-measured
+           on the inbox page (mirrors actual composer height incl. safe-area
+           padding) so the preview chip lands correctly even if the composer
+           grows on multi-line input. */
+        bottom: var(--wa-composer-h, 60px);
         z-index: 19;
     }
     .wa-thread-pane .wa-messages {
-        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0));
+        /* Reserve exactly the composer's measured height (set by JS) so
+           the last message can never slide under it. 80px fallback covers
+           composer + safe-area for the first paint before JS measures. */
+        padding-bottom: var(--wa-composer-h, 80px);
     }
     .wa-composer-input-wrap { min-height: 44px; }
 

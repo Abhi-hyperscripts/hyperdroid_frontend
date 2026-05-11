@@ -179,6 +179,37 @@
         body.wa-compact .wa-app { grid-template-columns: 1fr !important; }
     </style>
     <script>
+        // ── Mobile composer height tracker ────────────────────────────────
+        // The mobile composer is position:fixed and its height varies with
+        // safe-area-inset-bottom + multiline-input growth. Publish its real
+        // rendered height as --wa-composer-h so .wa-messages can reserve
+        // matching padding-bottom — otherwise the last bubble slides under
+        // the composer on devices where safe-area-inset-bottom is non-zero.
+        (function () {
+            if (window.innerWidth > 900) return;
+            const measure = () => {
+                const c = document.getElementById('waComposer');
+                if (!c) return;
+                const h = c.getBoundingClientRect().height;
+                if (h > 0) document.documentElement.style.setProperty('--wa-composer-h', h + 'px');
+            };
+            // Re-measure on initial layout + when the composer mounts.
+            const start = () => {
+                measure();
+                if (typeof ResizeObserver === 'function') {
+                    const c = document.getElementById('waComposer');
+                    if (c) new ResizeObserver(measure).observe(c);
+                }
+            };
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', start);
+            } else {
+                start();
+            }
+            window.addEventListener('resize', measure);
+            window.addEventListener('orientationchange', measure);
+        })();
+
         // ── Mobile viewport height fix ────────────────────────────────────
         // Same pattern the /chat module landed on after iterating through
         // dvh, visualViewport, position:fixed shrinkers, etc. (see chat.js
