@@ -184,9 +184,14 @@
 
         const slides = [];
 
+        // Bucket palette — used by both the strip charts and ApexCharts.
+        // Ordered as: Connected, Hot, Follow-up, No Response, Not Interested.
+        const BUCKET_COLORS = ['#10b981', '#ef4444', '#f59e0b', '#6b7280', '#7c3aed'];
+        const BUCKET_LABELS = ['Connected', 'Hot', 'Follow-up', 'No Response', 'Not Interested'];
+
         // 1. Cover / executive summary
         slides.push(`
-            <section class="wr-slide wr-slide-cover">
+            <section class="wr-slide wr-slide--cover">
                 <div class="wr-slide-num">1</div>
                 <div class="wr-slide-eyebrow">SNAPSHOT</div>
                 <h2 class="wr-slide-title">Executive Summary</h2>
@@ -219,7 +224,7 @@
         // 2. Volume mix by dimension
         const top3 = dims.slice(0, 3);
         slides.push(`
-            <section class="wr-slide">
+            <section class="wr-slide wr-slide--distribution">
                 <div class="wr-slide-num">2</div>
                 <div class="wr-slide-eyebrow">VOLUME MIX</div>
                 <h2 class="wr-slide-title">Lead Distribution by ${escapeHtml(dimLabel)}</h2>
@@ -229,25 +234,30 @@
                 ${dims.length > 3
                     ? `<p class="wr-aside">+ ${dims.length - 3} more ${pluralize(dimLabel, dims.length - 3).toLowerCase()} with smaller volumes.</p>`
                     : ''}
+                <div class="wr-chart-row" style="margin-top:18px;">
+                    <div class="wr-chart" id="wrChartDimDonut" style="min-height:280px;"></div>
+                    <div class="wr-chart" id="wrChartDimBuckets" style="min-height:280px;"></div>
+                </div>
             </section>
         `);
 
         // 3. Owner workload + funnel
         slides.push(`
-            <section class="wr-slide">
+            <section class="wr-slide wr-slide--workload">
                 <div class="wr-slide-num">3</div>
                 <div class="wr-slide-eyebrow">COMPARATIVE VIEW</div>
                 <h2 class="wr-slide-title">${escapeHtml(ownerLabel)} Workload &amp; Funnel</h2>
                 <div class="wr-owner-grid">
                     ${owners.slice(0, 8).map(o => ownerSummaryCard(o)).join('')}
                 </div>
+                <div class="wr-chart" id="wrChartOwnerStacked" style="min-height:340px; margin-top:18px;"></div>
             </section>
         `);
 
         // 4. Hot lead champions
         if (totalHot > 0 && topOwnerByHot) {
             slides.push(`
-                <section class="wr-slide">
+                <section class="wr-slide wr-slide--champion">
                     <div class="wr-slide-num">4</div>
                     <div class="wr-slide-eyebrow">CONVERSION QUALITY</div>
                     <h2 class="wr-slide-title">Hot Lead Champions</h2>
@@ -281,8 +291,12 @@
         for (const o of owners) {
             const cells = matrix.filter(c => c.user_id === o.user_id && c.leads > 0)
                                 .sort((a, b) => b.leads - a.leads);
+            // Stacked outcome strip — shows the proportional split of this
+            // owner's leads across the 5 buckets at a glance, so the table
+            // below it is no longer the only visual cue.
+            const strip = renderBucketStrip(o);
             slides.push(`
-                <section class="wr-slide">
+                <section class="wr-slide wr-slide--owner">
                     <div class="wr-slide-num">${slideNum}</div>
                     <div class="wr-slide-eyebrow">${escapeHtml(ownerLabel.toUpperCase())} SPOTLIGHT</div>
                     <h2 class="wr-slide-title">${escapeHtml(o.name)} — Performance Detail</h2>
@@ -295,6 +309,8 @@
                         ${miniKpi(o.followups, 'Follow-ups')}
                         ${miniKpi(o.not_interested, 'Not Interested')}
                     </div>
+
+                    ${strip}
 
                     ${cells.length > 0 ? `
                         <table class="wr-matrix">
@@ -343,7 +359,7 @@
         // 6. Per-dimension deep dive
         for (const d of top3) {
             slides.push(`
-                <section class="wr-slide">
+                <section class="wr-slide wr-slide--dim">
                     <div class="wr-slide-num">${slideNum}</div>
                     <div class="wr-slide-eyebrow">${escapeHtml(dimLabel.toUpperCase())} DEEP DIVE</div>
                     <h2 class="wr-slide-title">${escapeHtml(resolveDimLabel(d.label))}</h2>
@@ -364,7 +380,7 @@
 
         // 7. Recommendations
         slides.push(`
-            <section class="wr-slide">
+            <section class="wr-slide wr-slide--rec">
                 <div class="wr-slide-num">${slideNum}</div>
                 <div class="wr-slide-eyebrow">LOOKING AHEAD</div>
                 <h2 class="wr-slide-title">Insights &amp; Recommended Actions</h2>
@@ -392,6 +408,140 @@
         `);
 
         deck.innerHTML = slides.join('');
+
+        // Charts mount after innerHTML so the target divs exist. Defer to
+        // next tick to let layout settle before ApexCharts measures.
+        setTimeout(() => mountCharts(p, dims, owners, BUCKET_COLORS, BUCKET_LABELS), 30);
+    }
+
+    // ── Bucket strip — proportional horizontal bar of the 5 outcome buckets ─
+    function renderBucketStrip(o) {
+        // Same 5 buckets the matrix table shows. The "other" segment fills
+        // up to the total leads count for visual completeness — leads that
+        // haven't fallen into any specific bucket yet.
+        const segs = [
+            { v: o.connected, label: 'Connected', color: '#10b981' },
+            { v: o.hot, label: 'Hot', color: '#ef4444' },
+            { v: o.followups, label: 'Follow-up', color: '#f59e0b' },
+            { v: o.no_response, label: 'No Response', color: '#6b7280' },
+            { v: o.not_interested, label: 'Not Interested', color: '#7c3aed' },
+        ];
+        const sum = segs.reduce((s, x) => s + x.v, 0);
+        const other = Math.max(0, o.leads - sum);
+        const total = sum + other;
+        if (total === 0) return '';
+        const segHtml = segs.filter(s => s.v > 0).map(s =>
+            `<span class="wr-bar-seg" style="flex:${s.v}; background:${s.color};" title="${s.label}: ${s.v}"></span>`
+        ).join('');
+        const otherHtml = other > 0
+            ? `<span class="wr-bar-seg" style="flex:${other}; background: rgba(148,163,184,0.25);" title="No bucket yet: ${other}"></span>`
+            : '';
+        const legendHtml = segs.filter(s => s.v > 0).map(s =>
+            `<span><i style="background:${s.color};"></i>${escapeHtml(s.label)} (${s.v})</span>`
+        ).join('') + (other > 0 ? `<span><i style="background:rgba(148,163,184,0.4);"></i>Untagged (${other})</span>` : '');
+        return `<div class="wr-bar-strip">${segHtml}${otherHtml}</div>
+                <div class="wr-bar-legend">${legendHtml}</div>`;
+    }
+
+    // ── ApexCharts mounting ────────────────────────────────────────────────
+    function mountCharts(payload, dims, owners, palette, bucketLabels) {
+        if (typeof ApexCharts === 'undefined') return; // library not loaded — silent skip
+        const top3 = dims.slice(0, 3);
+        const ownersForChart = owners.filter(o => o.user_id !== '__unassigned__' && o.leads > 0).slice(0, 8);
+
+        // Common dark-theme options for every chart so they sit on the
+        // glassy background without fighting it.
+        const themeBase = {
+            chart: {
+                background: 'transparent',
+                foreColor: 'rgba(226, 232, 240, 0.85)',
+                fontFamily: 'inherit',
+                toolbar: { show: false },
+                animations: { enabled: true, speed: 400 }
+            },
+            grid: { borderColor: 'rgba(99,102,241,0.12)', strokeDashArray: 3 },
+            tooltip: { theme: 'dark' },
+            legend: { labels: { colors: 'rgba(226,232,240,0.85)' } }
+        };
+
+        // 1. Donut — lead volume per dimension bucket.
+        mountChart('wrChartDimDonut', {
+            ...themeBase,
+            chart: { ...themeBase.chart, type: 'donut', height: 280 },
+            series: top3.map(d => d.leads),
+            labels: top3.map(d => resolveDimLabel(d.label)),
+            colors: ['#6366f1', '#06b6d4', '#a855f7'],
+            stroke: { width: 0 },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '68%',
+                        labels: {
+                            show: true,
+                            total: {
+                                show: true,
+                                label: 'Top 3 leads',
+                                fontSize: '12px',
+                                color: 'rgba(226,232,240,0.7)',
+                                formatter: () => top3.reduce((s, d) => s + d.leads, 0)
+                            },
+                            value: { fontSize: '20px', color: '#fff', fontWeight: 700 }
+                        }
+                    }
+                }
+            },
+            dataLabels: { enabled: true, style: { fontSize: '11px', fontWeight: 600 }, formatter: v => v.toFixed(1) + '%' },
+            legend: { ...themeBase.legend, position: 'bottom', fontSize: '12px' }
+        });
+
+        // 2. Stacked bar — per-dimension outcome bucket split.
+        mountChart('wrChartDimBuckets', {
+            ...themeBase,
+            chart: { ...themeBase.chart, type: 'bar', stacked: true, stackType: '100%', height: 280 },
+            series: bucketLabels.map((bl, i) => ({
+                name: bl,
+                data: top3.map(d => [d.connected, d.hot, d.followups, d.no_response, d.not_interested][i])
+            })),
+            xaxis: { categories: top3.map(d => resolveDimLabel(d.label)), labels: { style: { fontSize: '12px' } } },
+            yaxis: { labels: { formatter: v => v.toFixed(0) + '%' } },
+            colors: palette,
+            plotOptions: { bar: { horizontal: false, borderRadius: 4, columnWidth: '55%' } },
+            stroke: { width: 1, colors: ['rgba(15,23,42,0.4)'] },
+            dataLabels: { enabled: false },
+            legend: { ...themeBase.legend, position: 'bottom', fontSize: '11px' }
+        });
+
+        // 3. Horizontal stacked bar — owners × outcome buckets, absolute counts.
+        mountChart('wrChartOwnerStacked', {
+            ...themeBase,
+            chart: { ...themeBase.chart, type: 'bar', stacked: true, height: 320 },
+            series: bucketLabels.map((bl, i) => ({
+                name: bl,
+                data: ownersForChart.map(o => [o.connected, o.hot, o.followups, o.no_response, o.not_interested][i])
+            })),
+            xaxis: { labels: { style: { fontSize: '11px' } } },
+            yaxis: { labels: { style: { fontSize: '12px', fontWeight: 600 } } },
+            colors: palette,
+            plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '70%' } },
+            stroke: { width: 1, colors: ['rgba(15,23,42,0.4)'] },
+            dataLabels: { enabled: false },
+            legend: { ...themeBase.legend, position: 'bottom', fontSize: '11px' },
+            xaxis: {
+                categories: ownersForChart.map(o => o.name),
+                labels: { style: { fontSize: '11px' } }
+            }
+        });
+    }
+
+    function mountChart(elId, opts) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        try {
+            const chart = new ApexCharts(el, opts);
+            chart.render();
+        } catch (e) {
+            console.warn('[weekly-report] chart mount failed:', elId, e);
+        }
     }
 
     // ── Insight / action generators ───────────────────────────────────────
