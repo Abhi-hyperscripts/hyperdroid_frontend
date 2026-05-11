@@ -185,6 +185,20 @@
         document.head.appendChild(styles);
         document.body.appendChild(banner);
 
+        // Expose the banner's measured height as a CSS variable so pages
+        // that pin content to the bottom of the viewport (the WhatsApp
+        // inbox composer is the motivating case) can subtract it from
+        // their height calc and avoid being hidden behind the banner.
+        // ResizeObserver re-measures on responsive reflow.
+        const setBannerHeightVar = () => {
+            const h = banner.getBoundingClientRect().height || 0;
+            document.documentElement.style.setProperty('--cookie-banner-h', h + 'px');
+        };
+        setBannerHeightVar();
+        if (typeof ResizeObserver === 'function') {
+            new ResizeObserver(setBannerHeightVar).observe(banner);
+        }
+
         // Event listeners
         document.getElementById('cookie-accept').addEventListener('click', function() {
             saveConsent(true);
@@ -203,7 +217,13 @@
         const banner = document.getElementById('cookie-consent-banner');
         if (banner) {
             banner.style.animation = 'slideDown 0.3s ease-out forwards';
-            setTimeout(() => banner.remove(), 300);
+            setTimeout(() => {
+                banner.remove();
+                // Reclaim the reserved space — pages that subtracted the
+                // banner height from their layout get their full viewport
+                // back once it's dismissed.
+                document.documentElement.style.setProperty('--cookie-banner-h', '0px');
+            }, 300);
         }
     }
 

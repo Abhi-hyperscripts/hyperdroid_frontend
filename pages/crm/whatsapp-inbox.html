@@ -31,8 +31,11 @@
             display: flex;
             flex-direction: column;
             margin-top: 64px;
-            height: calc(100vh - 64px);
-            height: calc(100dvh - 64px);
+            /* Subtract --cookie-banner-h (set by /js/cookie-consent.js when
+               the banner mounts, 0px otherwise) so the composer never sits
+               behind the fixed cookie banner. */
+            height: calc(100vh - 64px - var(--cookie-banner-h, 0px));
+            height: calc(100dvh - 64px - var(--cookie-banner-h, 0px));
             padding: 12px 16px 0;
             box-sizing: border-box;
             gap: 10px;
@@ -130,8 +133,9 @@
             .wa-mobile-home { display: inline-flex; }
             .wa-page {
                 margin-top: 0;
-                height: 100vh;
-                height: 100dvh;
+                /* Same banner-height subtraction on mobile. */
+                height: calc(100vh - var(--cookie-banner-h, 0px));
+                height: calc(100dvh - var(--cookie-banner-h, 0px));
                 padding: 0;
                 gap: 0;
             }
