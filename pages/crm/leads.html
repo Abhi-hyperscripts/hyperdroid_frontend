@@ -76,7 +76,7 @@
                             Reassign Queue
                             <span id="reassignQueueBadge" class="transfer-badge" style="background:var(--color-error,#ef4444);color:#fff;margin-left:4px;">0</span>
                         </a>
-                        <button class="btn btn-outline-primary" id="discoverLeadsBtn" onclick="openDiscoveryPanel()">
+                        <button class="btn btn-outline-primary" id="discoverLeadsBtn" onclick="openDiscoveryPanel()" style="display:none;">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="11" cy="11" r="8"></circle>
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -99,6 +99,14 @@
                                 <line x1="12" y1="3" x2="12" y2="15"/>
                             </svg>
                             Import Leads
+                        </button>
+                        <button class="btn btn-outline-primary" id="exportLeadsBtn" onclick="exportLeadsToExcel()" data-tooltip="Download filtered rows as .xlsx (matches current filters)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            <span id="exportLeadsBtnLabel">Export Excel</span>
                         </button>
                         <button class="btn btn-primary" id="newLeadBtn" onclick="openNewLeadModal()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

@@ -335,6 +335,85 @@
     /* Reuse leads-page form-answers button styles. We pull crm.css already
        so the styling is inherited. The button markup is duplicated for
        this page (different filter parent). */
+
+    /* ─── Weekly Report tab ─────────────────────────────────────────────────
+       Slide-style cards. Same wording can render as a tenant-configurable
+       deck — see js/crm/weekly-report.js. */
+    .wr-toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin: 8px 0 18px; padding:10px 14px;
+                  background: var(--bg-card); border:1px solid var(--border-color); border-radius:10px; }
+    .wr-toolbar .field { display:flex; flex-direction:column; gap:4px; min-width:140px; }
+    .wr-toolbar .field label { font-size:0.7rem; letter-spacing:0.06em; color:var(--text-secondary); text-transform:uppercase; }
+    .wr-deck { display:flex; flex-direction:column; gap:18px; }
+    .wr-loading, .wr-empty { padding:36px 18px; text-align:center; color:var(--text-secondary); background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; }
+    .wr-slide { position:relative; padding:32px 36px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:14px; }
+    .wr-slide-num { position:absolute; right:18px; bottom:14px; color:var(--text-secondary); opacity:0.5; font-size:0.78rem; }
+    .wr-slide-eyebrow { color:var(--text-secondary); font-size:0.7rem; letter-spacing:0.18em; font-weight:600; }
+    .wr-slide-title { font-size:1.6rem; font-weight:700; margin:4px 0 4px; color:var(--text-primary); }
+    .wr-slide-subtitle { color:var(--text-secondary); font-size:0.9rem; margin:0 0 22px; }
+    .wr-slide-cover { background: linear-gradient(135deg, rgba(79,70,229,0.04), rgba(99,102,241,0.08)); }
+    .wr-kpis { display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; margin: 16px 0 18px; }
+    .wr-kpi-tile { background:var(--bg-secondary); border-radius:12px; padding:18px 20px; border:1px solid var(--border-color); }
+    .wr-kpi-value { font-size:2.1rem; font-weight:700; line-height:1; color:var(--brand-primary); }
+    .wr-kpi-label { color:var(--text-primary); font-size:0.85rem; font-weight:600; margin-top:6px; }
+    .wr-kpi-hint { color:var(--text-secondary); font-size:0.72rem; margin-top:3px; }
+    .wr-takeaways h4 { font-size:0.72rem; letter-spacing:0.18em; color:var(--text-secondary); margin:18px 0 8px; }
+    .wr-takeaways ol { margin:0; padding-left:22px; font-size:0.92rem; line-height:1.55; color:var(--text-primary); }
+    .wr-takeaways li { margin-bottom:6px; }
+    .wr-dim-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; }
+    .wr-dim-card { padding:22px; border-radius:14px; color:#fff; background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); }
+    .wr-dim-2 { background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); }
+    .wr-dim-3 { background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%); }
+    .wr-dim-rank { font-size:1.05rem; font-weight:700; line-height:1.2; }
+    .wr-dim-pct { opacity:0.85; font-size:0.78rem; margin: 4px 0 16px; }
+    .wr-dim-leads { font-size:2.2rem; font-weight:700; line-height:1; }
+    .wr-dim-leads span { display:block; font-size:0.75rem; opacity:0.9; font-weight:500; margin-top:4px; }
+    .wr-owner-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; }
+    .wr-owner-card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:12px; padding:14px 16px; }
+    .wr-owner-name { font-weight:700; font-size:1rem; color:var(--text-primary); }
+    .wr-owner-volume { color:var(--text-secondary); font-size:0.78rem; margin: 4px 0 10px; }
+    .wr-owner-row { display:flex; justify-content:space-between; align-items:baseline; padding:4px 0; }
+    .wr-owner-row-v { font-size:1.1rem; font-weight:700; color:var(--text-primary); }
+    .wr-owner-row-l { color:var(--text-secondary); font-size:0.78rem; }
+    .wr-owner-hot { border-top:1px solid var(--border-color); padding-top:8px; margin-top:6px; }
+    .wr-owner-hot .wr-owner-row-v { color:var(--color-error, #dc2626); }
+    .wr-champion { display:grid; grid-template-columns: 280px 1fr; gap:22px; margin-top:14px; }
+    .wr-champion-card { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color:#fff; padding:22px; border-radius:14px; }
+    .wr-champion-badge { font-size:0.7rem; letter-spacing:0.15em; opacity:0.85; }
+    .wr-champion-name { font-size:1.6rem; font-weight:700; margin: 8px 0 14px; }
+    .wr-champion-num { font-size:3rem; font-weight:700; }
+    .wr-champion-label { font-size:0.85rem; opacity:0.9; margin-left:6px; }
+    .wr-champion-share { font-size:0.85rem; opacity:0.85; margin-top:10px; }
+    .wr-champion-rest { display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:10px; }
+    .wr-mini-card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:10px; padding:12px 14px; font-size:0.85rem; }
+    .wr-mini-name { font-weight:700; margin-bottom:4px; color:var(--text-primary); }
+    .wr-mini-meta { color:var(--text-secondary); font-size:0.72rem; }
+    .wr-mini-hot { color:var(--color-error, #dc2626); font-weight:600; margin-top:6px; }
+    .wr-owner-kpis { display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin: 6px 0 18px; }
+    .wr-mini-kpi { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:10px; padding:12px 14px; }
+    .wr-mini-kpi-value { font-size:1.6rem; font-weight:700; line-height:1; color:var(--text-primary); }
+    .wr-mini-kpi-label { font-size:0.78rem; color:var(--text-secondary); font-weight:600; margin-top:4px; }
+    .wr-mini-kpi-hint { font-size:0.7rem; color:var(--text-secondary); margin-top:2px; }
+    .wr-matrix { width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:8px; }
+    .wr-matrix th, .wr-matrix td { padding:8px 10px; text-align:left; border-bottom:1px solid var(--border-color); color:var(--text-primary); }
+    .wr-matrix th { background:var(--bg-secondary); font-size:0.72rem; letter-spacing:0.04em; color:var(--text-secondary); }
+    .wr-matrix-total { font-weight:700; background:var(--bg-secondary); }
+    .wr-matrix-total td { border-top:2px solid var(--border-color); }
+    .wr-insight-box { background: rgba(99, 102, 241, 0.08); border:1px solid rgba(99, 102, 241, 0.3); border-radius:12px; padding:14px 16px; margin-top:14px; }
+    .wr-insight-box h4 { font-size:0.7rem; letter-spacing:0.18em; color:var(--brand-primary); margin: 0 0 6px; }
+    .wr-insight-box p { margin:0; font-size:0.92rem; line-height:1.5; color:var(--text-primary); }
+    .wr-recs { display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-top:14px; }
+    .wr-recs h4 { font-size:0.78rem; letter-spacing:0.12em; color:var(--text-secondary); margin:0 0 10px; }
+    .wr-recs ul, .wr-recs ol { margin:0; padding-left:20px; font-size:0.9rem; line-height:1.55; color:var(--text-primary); }
+    .wr-recs li { margin-bottom:6px; }
+    .wr-aside { color:var(--text-secondary); font-size:0.8rem; margin-top:12px; }
+    @media (max-width: 768px) {
+        .wr-kpis, .wr-dim-grid { grid-template-columns: repeat(2, 1fr); }
+        .wr-champion { grid-template-columns: 1fr; }
+        .wr-recs { grid-template-columns: 1fr; }
+        .wr-slide { padding: 22px 18px; }
+        .wr-matrix { font-size: 0.78rem; }
+        .wr-matrix th, .wr-matrix td { padding: 6px 6px; }
+    }
     </style>
 </head>
 <body class="dashboard crm-page">
@@ -370,6 +449,10 @@
             <button type="button" class="ana-tab" role="tab" id="anaTabForecast"
                     aria-selected="false" onclick="switchAnaTab('forecast')">
                 Forecast
+            </button>
+            <button type="button" class="ana-tab" role="tab" id="anaTabWeekly"
+                    aria-selected="false" onclick="switchAnaTab('weekly')">
+                Weekly report
             </button>
         </div>
 
@@ -688,6 +771,59 @@
 
         </div><!-- /#anaPane-forecast -->
 
+        <!-- ── Weekly Report pane ─────────────────────────────────────────────
+             Slide-style deck modelled on a counselor/sales performance PPTX.
+             All wording (owner label, dimension label, dimension field) comes
+             from tenant settings, so the same template renders meaningfully
+             for an education tenant ("Counselor / Course") and a generic
+             sales tenant ("Salesperson / Source").
+        -->
+        <div id="anaPane-weekly" class="ana-pane wr-pane" style="display:none;">
+            <div class="wr-toolbar">
+                <div class="field">
+                    <label for="wrFrom">From</label>
+                    <input type="date" id="wrFrom" class="form-control form-control-sm"
+                           data-flatpickr-static="true" data-flatpickr-simple="true">
+                </div>
+                <div class="field">
+                    <label for="wrTo">To</label>
+                    <input type="date" id="wrTo" class="form-control form-control-sm"
+                           data-flatpickr-static="true" data-flatpickr-simple="true">
+                </div>
+                <div class="field">
+                    <label for="wrDimensionField">Breakdown by</label>
+                    <select id="wrDimensionField" class="form-control form-control-sm">
+                        <option value="lead_source">Lead source</option>
+                        <option value="team">Team</option>
+                        <option value="product_interest">Product interest</option>
+                        <!-- Custom-field options appended at load time -->
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="wrTeam">Team filter</label>
+                    <select id="wrTeam" class="form-control form-control-sm">
+                        <option value="">All teams</option>
+                    </select>
+                </div>
+                <button class="btn btn-outline-primary btn-sm" id="wrRefreshBtn" onclick="loadWeeklyReport()" style="align-self:flex-end;">
+                    Refresh
+                </button>
+                <button class="btn btn-primary btn-sm" id="wrPrintBtn" onclick="printWeeklyReport()" style="align-self:flex-end;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;">
+                        <polyline points="6 9 6 2 18 2 18 9"/>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                        <rect x="6" y="14" width="12" height="8"/>
+                    </svg>
+                    Print / Save as PDF
+                </button>
+            </div>
+
+            <!-- Slot for slides; populated by renderWeeklyReport() -->
+            <div id="wrDeck" class="wr-deck">
+                <div class="wr-loading">Loading weekly report…</div>
+            </div>
+        </div><!-- /#anaPane-weekly -->
+
     </div>
 
     <!-- Quotas management modal -->
@@ -799,6 +935,7 @@
         document.write('<script src="../../js/crm/form-answers-filter.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/analytics.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/forecast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/weekly-report.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>
 </html>

@@ -750,12 +750,39 @@ async function loadGeneralSettings() {
         if (loading) loading.style.display = 'flex';
         if (form) form.style.display = 'none';
 
-        const response = await api.request('/crm/crm-settings/default_currency');
-        const currency = (response && response.value) ? response.value : 'USD';
+        const [currencyResp, ownerLabelResp, dimLabelResp, dimFieldResp, leadFieldsResp] = await Promise.all([
+            api.request('/crm/crm-settings/default_currency'),
+            api.request('/crm/crm-settings/report_owner_label').catch(() => null),
+            api.request('/crm/crm-settings/report_dimension_label').catch(() => null),
+            api.request('/crm/crm-settings/report_dimension_field').catch(() => null),
+            api.request('/crm/lead-fields?includeInactive=false').catch(() => null)
+        ]);
 
+        const currency = (currencyResp && currencyResp.value) ? currencyResp.value : 'USD';
         const select = document.getElementById('defaultCurrency');
         if (select) select.value = currency;
         if (defaultCurrencyDropdown) defaultCurrencyDropdown.setValue(currency);
+
+        const ownerLabel = document.getElementById('reportOwnerLabel');
+        if (ownerLabel) ownerLabel.value = (ownerLabelResp?.value) || 'Salesperson';
+
+        const dimLabel = document.getElementById('reportDimensionLabel');
+        if (dimLabel) dimLabel.value = (dimLabelResp?.value) || 'Source';
+
+        const dimField = document.getElementById('reportDimensionField');
+        if (dimField) {
+            // Append a row per active custom dropdown so a tenant can pivot
+            // the report by their own taxonomy (e.g. "Course" custom field).
+            const fields = leadFieldsResp?.fields || [];
+            for (const f of fields) {
+                if (!f || !f.code || !f.label) continue;
+                const opt = document.createElement('option');
+                opt.value = `lf_${f.code}`;
+                opt.textContent = `${f.label} (custom)`;
+                dimField.appendChild(opt);
+            }
+            dimField.value = (dimFieldResp?.value) || 'lead_source';
+        }
     } catch (error) {
         console.error('Error loading general settings:', error);
     } finally {
@@ -775,10 +802,28 @@ async function saveGeneralSettings() {
     if (spinner) spinner.style.display = 'inline-block';
 
     try {
-        await api.request('/crm/crm-settings/default_currency', {
-            method: 'PUT',
-            body: JSON.stringify({ value: currency })
-        });
+        const ownerLabel = (document.getElementById('reportOwnerLabel')?.value || '').trim() || 'Salesperson';
+        const dimLabel = (document.getElementById('reportDimensionLabel')?.value || '').trim() || 'Source';
+        const dimField = document.getElementById('reportDimensionField')?.value || 'lead_source';
+
+        await Promise.all([
+            api.request('/crm/crm-settings/default_currency', {
+                method: 'PUT',
+                body: JSON.stringify({ value: currency })
+            }),
+            api.request('/crm/crm-settings/report_owner_label', {
+                method: 'PUT',
+                body: JSON.stringify({ value: ownerLabel })
+            }),
+            api.request('/crm/crm-settings/report_dimension_label', {
+                method: 'PUT',
+                body: JSON.stringify({ value: dimLabel })
+            }),
+            api.request('/crm/crm-settings/report_dimension_field', {
+                method: 'PUT',
+                body: JSON.stringify({ value: dimField })
+            })
+        ]);
         Toast.success('Settings saved successfully');
     } catch (error) {
         console.error('Error saving general settings:', error);

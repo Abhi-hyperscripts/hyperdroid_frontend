@@ -735,7 +735,39 @@
                             </select>
                         </div>
 
-                        <div style="margin-top: 16px;">
+                        <div style="border-top:1px solid var(--border-color); margin: 28px 0 20px;"></div>
+
+                        <h4 style="margin: 0 0 6px; font-size: 0.95rem; color: var(--text-primary);">Weekly Report Labels</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 16px; max-width: 560px;">
+                            Customise the wording of the Weekly Report deck (Analytics → Weekly Report). An education tenant might use <em>Counselor</em> and <em>Course</em>; a typical sales tenant uses <em>Salesperson</em> and <em>Source</em>.
+                        </p>
+
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; max-width: 720px;">
+                            <div class="crm-form-group">
+                                <label for="reportOwnerLabel">Owner label (singular)</label>
+                                <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.78rem; margin: 4px 0 6px;">e.g. Salesperson, Counselor, Agent.</p>
+                                <input type="text" id="reportOwnerLabel" class="form-control" placeholder="Salesperson" maxlength="40">
+                            </div>
+
+                            <div class="crm-form-group">
+                                <label for="reportDimensionLabel">Breakdown axis label</label>
+                                <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.78rem; margin: 4px 0 6px;">e.g. Source, Course, Product, Team.</p>
+                                <input type="text" id="reportDimensionLabel" class="form-control" placeholder="Source" maxlength="40">
+                            </div>
+
+                            <div class="crm-form-group">
+                                <label for="reportDimensionField">Breakdown reads from</label>
+                                <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.78rem; margin: 4px 0 6px;">Which CRM field the axis groups by.</p>
+                                <select id="reportDimensionField">
+                                    <option value="lead_source">Lead source</option>
+                                    <option value="team">Team</option>
+                                    <option value="product_interest">Product interest (text)</option>
+                                    <!-- Custom-field options appended at load time -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 24px;">
                             <button class="btn btn-primary" onclick="saveGeneralSettings()" id="saveGeneralBtn">
                                 <span class="btn-spinner" id="saveGeneralSpinner" style="display:none;"></span>
                                 Save Settings

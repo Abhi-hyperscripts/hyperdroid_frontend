@@ -356,6 +356,167 @@ async function loadLeads(page) {
     }
 }
 
+// ==================== Excel export ====================
+//
+// One-click .xlsx of every lead matching the *currently applied filters*
+// (search, source, date range, status, engagement, campaign, team, owner,
+// plus tenant-defined custom-field filters). Columns are the visible table
+// columns plus a column for every tenant-defined lead-field that's either
+// in `show_in_leads_table` OR has a value selected in the filter bar — so
+// the spreadsheet stays self-describing when a client opens it later
+// without remembering which filter they ran.
+//
+// SheetJS loads lazily on first click so the leads page doesn't pay for
+// the 100kb library on every cold load.
+
+let _xlsxLoading = null;
+function ensureSheetJsLoaded() {
+    if (typeof XLSX !== 'undefined') return Promise.resolve();
+    if (_xlsxLoading) return _xlsxLoading;
+    _xlsxLoading = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js';
+        s.onload = () => resolve();
+        s.onerror = () => { _xlsxLoading = null; reject(new Error('Failed to load XLSX library')); };
+        document.head.appendChild(s);
+    });
+    return _xlsxLoading;
+}
+
+function _parseLeadCustomFields(raw) {
+    if (!raw) return {};
+    if (typeof raw === 'object') return raw;
+    try { const o = JSON.parse(raw); return (o && typeof o === 'object') ? o : {}; }
+    catch { return {}; }
+}
+
+function _resolveCustomFieldLabel(fieldCode, rawValue) {
+    if (rawValue == null || rawValue === '') return '';
+    const def = (typeof window.getLeadFieldDef === 'function') ? window.getLeadFieldDef(fieldCode) : null;
+    if (!def || !Array.isArray(def.options)) return String(rawValue);
+    const opt = def.options.find(o => o.code === rawValue || o.code === String(rawValue));
+    return opt ? opt.label : String(rawValue);
+}
+
+function _fmtCsvDate(s) {
+    if (!s) return '';
+    const d = new Date(s);
+    return isNaN(d) ? '' : d.toISOString().slice(0, 10);
+}
+
+async function exportLeadsToExcel() {
+    const btn = document.getElementById('exportLeadsBtn');
+    const label = document.getElementById('exportLeadsBtnLabel');
+    const origText = label ? label.textContent : '';
+    if (btn) btn.disabled = true;
+    if (label) label.textContent = 'Preparing…';
+
+    try {
+        await ensureSheetJsLoaded();
+
+        // 1. Reuse the live filter state — list endpoint already supports
+        //    every filter the UI exposes, so the export shows EXACTLY the
+        //    same rows the table is currently showing (just unpaginated).
+        const baseParams = buildFilterParams();
+        baseParams.delete('page');
+        baseParams.delete('pageSize');
+
+        // 2. Pull every matching row. Pull in chunks rather than one giant
+        //    query so a tenant with 50k leads doesn't time out the request.
+        const CHUNK = 500;
+        const allRows = [];
+        let page = 1;
+        let total = Infinity;
+        while (allRows.length < total) {
+            const p = new URLSearchParams(baseParams);
+            p.set('page', String(page));
+            p.set('pageSize', String(CHUNK));
+            const resp = await api.request('/crm/leads?' + p.toString());
+            const rows = resp?.data || [];
+            total = resp?.total || allRows.length + rows.length;
+            if (rows.length === 0) break;
+            allRows.push(...rows);
+            if (label) label.textContent = `Preparing… ${allRows.length}/${total}`;
+            page += 1;
+            if (page > 200) break;  // hard ceiling — 100k rows is way past Excel friendly anyway
+        }
+
+        if (allRows.length === 0) {
+            if (typeof Toast !== 'undefined') Toast.warning('No rows to export with the current filters');
+            return;
+        }
+
+        // 3. Decide which custom-field columns to include. Two sources:
+        //    (a) lead-fields the tenant has marked show_in_leads_table — same
+        //        columns visible in the table (so what you see is what you
+        //        get); (b) any lead-field the user is currently FILTERING by
+        //        — even if it's not in the table, the filter context belongs
+        //        in the sheet so the export remains self-describing.
+        const tableFields = (typeof window.getLeadFieldColumnDefs === 'function')
+            ? window.getLeadFieldColumnDefs() : [];
+        const tableFieldCodes = tableFields.map(f => f.id.replace(/^lf_/, ''));
+        const filterValues = (typeof window.getLeadFieldsFilter === 'function')
+            ? (window.getLeadFieldsFilter() || {}) : {};
+        const filteredCodes = Object.keys(filterValues);
+        const customCodes = Array.from(new Set([...tableFieldCodes, ...filteredCodes]));
+        const customDefs = customCodes
+            .map(code => ({ code, def: (typeof window.getLeadFieldDef === 'function') ? window.getLeadFieldDef(code) : null }))
+            .filter(x => x.def)
+            .map(x => ({ code: x.code, label: x.def.label || x.code }));
+
+        // 4. Header row.
+        const headers = [
+            'Lead ID', 'Created', 'First Name', 'Last Name', 'Email', 'Phone',
+            'Company', 'Job Title', 'Source', 'Team', 'Owner', 'Status',
+            'City', 'State', 'Country', 'Tags',
+            ...customDefs.map(c => c.label)
+        ];
+
+        // 5. Body rows.
+        const body = allRows.map(lead => {
+            const cf = _parseLeadCustomFields(lead.custom_fields);
+            const base = [
+                lead.lead_number || lead.leadNumber || '',
+                _fmtCsvDate(lead.created_at || lead.createdAt),
+                lead.first_name || lead.firstName || '',
+                lead.last_name || lead.lastName || '',
+                lead.email || '',
+                lead.phone || '',
+                lead.company_name || lead.companyName || lead.company || '',
+                lead.job_title || lead.jobTitle || '',
+                lead.lead_source || lead.leadSource || '',
+                lead.team_name || lead.teamName || '',
+                lead.ownerName || lead.owner_name || '',
+                lead.status || '',
+                lead.city || '',
+                lead.state || '',
+                lead.country || '',
+                Array.isArray(lead.tags) ? lead.tags.join(', ') : ''
+            ];
+            for (const c of customDefs) base.push(_resolveCustomFieldLabel(c.code, cf[c.code]));
+            return base;
+        });
+
+        // 6. Build workbook with sensible column widths.
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...body]);
+        ws['!cols'] = headers.map((h, i) => ({ wch: Math.max(12, Math.min(40, h.length + 4)) }));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+
+        const today = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(wb, `leads-${today}.xlsx`);
+
+        if (typeof Toast !== 'undefined') Toast.success(`Exported ${allRows.length} lead${allRows.length === 1 ? '' : 's'}`);
+    } catch (err) {
+        console.error('[leads-export] failed:', err);
+        if (typeof Toast !== 'undefined') Toast.error(err.message || 'Failed to export leads');
+    } finally {
+        if (btn) btn.disabled = false;
+        if (label) label.textContent = origText || 'Export Excel';
+    }
+}
+window.exportLeadsToExcel = exportLeadsToExcel;
+
 /**
  * Load lead statistics. Mirrors the same filter set the leads list sends so
  * the KPI cards (Total / New / Qualified / Converted) stay in sync with the

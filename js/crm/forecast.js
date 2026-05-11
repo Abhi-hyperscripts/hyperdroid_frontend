@@ -31,17 +31,34 @@
     // ── Tab switcher (wired to the inline onclick on the tab buttons) ────
     window.switchAnaTab = function(tab) {
         const isFc = tab === 'forecast';
-        document.getElementById('anaTabAnalytics').classList.toggle('active', !isFc);
-        document.getElementById('anaTabAnalytics').setAttribute('aria-selected', String(!isFc));
-        document.getElementById('anaTabForecast').classList.toggle('active', isFc);
-        document.getElementById('anaTabForecast').setAttribute('aria-selected', String(isFc));
-        document.getElementById('anaPane-analytics').style.display = isFc ? 'none' : '';
-        document.getElementById('anaPane-forecast').style.display  = isFc ? '' : 'none';
-        // First time the user opens the forecast tab, prime the scope
-        // dropdowns + load the data. Subsequent tab clicks are cheap (no
-        // re-fetch unless filters change).
+        const isWr = tab === 'weekly';
+        const isAn = !isFc && !isWr;
+
+        const setActive = (id, on) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.toggle('active', on);
+            el.setAttribute('aria-selected', String(on));
+        };
+        setActive('anaTabAnalytics', isAn);
+        setActive('anaTabForecast', isFc);
+        setActive('anaTabWeekly', isWr);
+
+        const setPane = (id, on) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = on ? '' : 'none';
+        };
+        setPane('anaPane-analytics', isAn);
+        setPane('anaPane-forecast', isFc);
+        setPane('anaPane-weekly', isWr);
+
+        // Lazy first-load on each tab so we don't pay for everything on cold
+        // page open. Subsequent tab clicks just toggle visibility.
         if (isFc && !_fcLoaded) {
             populateScopeDropdowns().then(() => loadForecast());
+        }
+        if (isWr && typeof window.initWeeklyReport === 'function') {
+            window.initWeeklyReport();
         }
     };
 
