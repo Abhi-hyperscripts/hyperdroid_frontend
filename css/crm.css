@@ -2772,6 +2772,15 @@ body.crm-dashboard .crm-container {
         width: 100%;
     }
 
+    /* When .crm-filter-bar flips to flex-direction:column on mobile, the
+       `flex: 1 1 160px` declared higher up suddenly applies to the MAIN
+       axis = height, painting every filter group as a 160px-tall block
+       with a 32px input floating in the middle. Reset flex-basis to auto
+       so each group shrinks to its label + control. */
+    .crm-filter-bar--dimensions > .crm-filter-group {
+        flex: 0 0 auto;
+    }
+
     /* The Report-Issue wrapper uses inline align-self: flex-end for desktop;
        stretch it and make the button full-width on mobile so it doesn't pin right. */
     .crm-filter-bar > div[style*="align-self"] {
