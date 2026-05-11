@@ -409,9 +409,12 @@
 
         deck.innerHTML = slides.join('');
 
-        // Charts mount after innerHTML so the target divs exist. Defer to
-        // next tick to let layout settle before ApexCharts measures.
-        setTimeout(() => mountCharts(p, dims, owners, BUCKET_COLORS, BUCKET_LABELS), 30);
+        // Charts mount after innerHTML so the target divs exist. Two rAFs
+        // ensure layout + paint have settled — without this ApexCharts can
+        // read width=0 on the just-mounted container and emit NaN paths.
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            mountCharts(p, dims, owners, BUCKET_COLORS, BUCKET_LABELS);
+        }));
     }
 
     // ── Bucket strip — proportional horizontal bar of the 5 outcome buckets ─
@@ -446,8 +449,9 @@
     // ── ApexCharts mounting ────────────────────────────────────────────────
     function mountCharts(payload, dims, owners, palette, bucketLabels) {
         if (typeof ApexCharts === 'undefined') return; // library not loaded — silent skip
-        const top3 = dims.slice(0, 3);
+        const top3 = dims.slice(0, 3).filter(d => d.leads > 0);
         const ownersForChart = owners.filter(o => o.user_id !== '__unassigned__' && o.leads > 0).slice(0, 8);
+        if (top3.length === 0 && ownersForChart.length === 0) return;
 
         // Common dark-theme options for every chart so they sit on the
         // glassy background without fighting it.
@@ -465,9 +469,9 @@
         };
 
         // 1. Donut — lead volume per dimension bucket.
-        mountChart('wrChartDimDonut', {
+        if (top3.length > 0) mountChart('wrChartDimDonut', {
             ...themeBase,
-            chart: { ...themeBase.chart, type: 'donut', height: 280 },
+            chart: { ...themeBase.chart, type: 'donut', height: 280, width: '100%' },
             series: top3.map(d => d.leads),
             labels: top3.map(d => resolveDimLabel(d.label)),
             colors: ['#6366f1', '#06b6d4', '#a855f7'],
@@ -495,9 +499,9 @@
         });
 
         // 2. Stacked bar — per-dimension outcome bucket split.
-        mountChart('wrChartDimBuckets', {
+        if (top3.length > 0) mountChart('wrChartDimBuckets', {
             ...themeBase,
-            chart: { ...themeBase.chart, type: 'bar', stacked: true, stackType: '100%', height: 280 },
+            chart: { ...themeBase.chart, type: 'bar', stacked: true, stackType: '100%', height: 280, width: '100%' },
             series: bucketLabels.map((bl, i) => ({
                 name: bl,
                 data: top3.map(d => [d.connected, d.hot, d.followups, d.no_response, d.not_interested][i])
@@ -512,14 +516,13 @@
         });
 
         // 3. Horizontal stacked bar — owners × outcome buckets, absolute counts.
-        mountChart('wrChartOwnerStacked', {
+        if (ownersForChart.length > 0) mountChart('wrChartOwnerStacked', {
             ...themeBase,
-            chart: { ...themeBase.chart, type: 'bar', stacked: true, height: 320 },
+            chart: { ...themeBase.chart, type: 'bar', stacked: true, height: 320, width: '100%' },
             series: bucketLabels.map((bl, i) => ({
                 name: bl,
                 data: ownersForChart.map(o => [o.connected, o.hot, o.followups, o.no_response, o.not_interested][i])
             })),
-            xaxis: { labels: { style: { fontSize: '11px' } } },
             yaxis: { labels: { style: { fontSize: '12px', fontWeight: 600 } } },
             colors: palette,
             plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '70%' } },
