@@ -536,14 +536,63 @@
         });
     }
 
+    // Track mounted ApexCharts instances so a re-render (Refresh click) can
+    // destroy the previous ones cleanly instead of stacking them.
+    const _mountedCharts = new Map();
+
     function mountChart(elId, opts) {
         const el = document.getElementById(elId);
         if (!el) return;
-        try {
-            const chart = new ApexCharts(el, opts);
-            chart.render();
-        } catch (e) {
-            console.warn('[weekly-report] chart mount failed:', elId, e);
+
+        // Tear down any prior instance bound to this slot — happens when the
+        // user hits Refresh, which calls renderDeck → mountCharts again.
+        const prior = _mountedCharts.get(elId);
+        if (prior) {
+            try { prior.destroy(); } catch (_) {}
+            _mountedCharts.delete(elId);
+        }
+
+        // The classic ApexCharts "M NaN NaN" path bug: the library reads the
+        // container's clientWidth at render-time. If the deck just got its
+        // innerHTML or the tab pane is mid-show, that read returns 0 and
+        // every SVG calc downstream produces NaN. ResizeObserver lets us
+        // wait until the browser has actually laid the box out before
+        // calling render(), which kills the warning stream and the brief
+        // 0-width chart flash.
+        const doRender = () => {
+            try {
+                const chart = new ApexCharts(el, opts);
+                _mountedCharts.set(elId, chart);
+                chart.render();
+            } catch (e) {
+                console.warn('[weekly-report] chart mount failed:', elId, e);
+            }
+        };
+
+        // Fast path: container already has real width — render synchronously
+        // so the first paint is right.
+        if (el.clientWidth > 0) {
+            doRender();
+            return;
+        }
+
+        // Slow path: container is 0 wide right now. Watch it, render once
+        // it gains size, then disconnect.
+        if (typeof ResizeObserver === 'function') {
+            const ro = new ResizeObserver(entries => {
+                for (const entry of entries) {
+                    const w = entry.contentRect ? entry.contentRect.width : el.clientWidth;
+                    if (w > 0) {
+                        ro.disconnect();
+                        doRender();
+                        return;
+                    }
+                }
+            });
+            ro.observe(el);
+        } else {
+            // Old-browser fallback — defer with rAF chain and try once.
+            requestAnimationFrame(() => requestAnimationFrame(doRender));
         }
     }
 
