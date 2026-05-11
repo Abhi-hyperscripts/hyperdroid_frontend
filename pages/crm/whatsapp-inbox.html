@@ -134,15 +134,15 @@
             .wa-page {
                 margin-top: 0;
                 /* On installed Android-Chrome PWAs, dvh covers the screen
-                   *including* the OS gesture / nav bar area, which means
-                   the composer lands behind it. Subtract safe-area-inset-
-                   bottom so the bottom edge of .wa-page stops above the
-                   system chrome on every mobile environment (PWA on iOS,
-                   PWA on Android, in-browser Safari, in-browser Chrome).
-                   Also subtract the cookie banner var (set by
+                   *including* the OS gesture / nav bar area on some Chrome
+                   builds, which means the composer lands behind it.
+                   --wa-vh is JS-computed from visualViewport.height (set
+                   by the inline script above) and is the only measurement
+                   that reliably excludes system chrome across iOS PWA,
+                   Android PWA, mobile Safari, and mobile Chrome. Also
+                   subtract the cookie banner var (set by
                    /js/cookie-consent.js when the banner is showing). */
-                height: calc(100vh - var(--cookie-banner-h, 0px) - env(safe-area-inset-bottom, 0px));
-                height: calc(100dvh - var(--cookie-banner-h, 0px) - env(safe-area-inset-bottom, 0px));
+                height: calc(var(--wa-vh, 100dvh) - var(--cookie-banner-h, 0px));
                 padding: 0;
                 gap: 0;
             }
@@ -184,6 +184,29 @@
         body.wa-compact .wa-app { grid-template-columns: 1fr !important; }
     </style>
     <script>
+        // ── PWA viewport height fix ───────────────────────────────────────
+        // Android Chrome PWA reports 100dvh including the OS gesture-nav
+        // area on some builds, so the composer ends up behind the system
+        // chrome and the user sees the thread but no input. We bypass the
+        // CSS calc on this page by JS-setting --wa-vh from the most
+        // accurate measurement available (visualViewport.height when
+        // present, falls back to window.innerHeight). visualViewport also
+        // fires resize when the soft keyboard opens, so the composer
+        // stays glued just above the keyboard.
+        (function () {
+            const apply = () => {
+                const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+                document.documentElement.style.setProperty('--wa-vh', h + 'px');
+            };
+            apply();
+            window.addEventListener('resize', apply);
+            window.addEventListener('orientationchange', apply);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', apply);
+                window.visualViewport.addEventListener('scroll', apply);
+            }
+        })();
+
         // Compact-mode flag must be set BEFORE the WA JS runs so layout
         // doesn't flash the sidebar. Read the query string and stamp the
         // body class immediately.
