@@ -772,11 +772,11 @@
         </div><!-- /#anaPane-forecast -->
 
         <!-- ── Weekly Report pane ─────────────────────────────────────────────
-             Slide-style deck modelled on a counselor/sales performance PPTX.
-             All wording (owner label, dimension label, dimension field) comes
-             from tenant settings, so the same template renders meaningfully
-             for an education tenant ("Counselor / Course") and a generic
-             sales tenant ("Salesperson / Source").
+             Industry-agnostic slide-style performance deck. All wording
+             (owner label, dimension label, dimension field) is driven by
+             three tenant settings on CRM Settings → General, so the same
+             template renders meaningfully whatever the tenant's vertical
+             vocabulary happens to be.
         -->
         <div id="anaPane-weekly" class="ana-pane wr-pane" style="display:none;">
             <div class="wr-toolbar">
@@ -792,9 +792,9 @@
                 </div>
                 <div class="field">
                     <label for="wrDimensionField">Breakdown by</label>
-                    <select id="wrDimensionField" class="form-control form-control-sm">
+                    <select id="wrDimensionField" class="form-control form-control-sm" data-tooltip="What field the breakdown axis groups leads by. Defaults to whatever you saved on Settings → General → Weekly Report Labels.">
                         <option value="lead_source">Lead source (full)</option>
-                        <option value="source_prefix">Source prefix</option>
+                        <option value="source_prefix">Source — 2nd slash token</option>
                         <option value="team">Team</option>
                         <option value="product_interest">Product interest</option>
                         <!-- Custom-field options appended at load time -->

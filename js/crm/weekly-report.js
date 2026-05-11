@@ -1,13 +1,19 @@
 /**
- * Weekly Report tab — slide-style deck modelled on a counselor/sales
- * performance PPTX. Sits next to the Lead-analytics and Forecast tabs on
- * the analytics page. Wording (owner label, axis label, axis field) is
- * fully tenant-configurable via three crm_settings keys saved on the
- * Settings → General page:
+ * Weekly Report tab — slide-style performance deck. Sits next to the
+ * Lead-analytics and Forecast tabs on the analytics page. The deck
+ * structure is industry-agnostic — every label that names the
+ * people-axis or the breakdown-axis comes from tenant settings, so the
+ * same template renders meaningfully for any vertical (a SaaS sales
+ * team, an education academy, a real-estate agency, a recruiting firm,
+ * etc.). The three tenant-configurable settings:
  *
- *   report_owner_label      → "Salesperson" | "Counselor" | "Agent" | …
- *   report_dimension_label  → "Source" | "Course" | "Team" | …
- *   report_dimension_field  → lead_source | team | product_interest | lf_<code>
+ *   report_owner_label      → e.g. "Salesperson" (default), or whatever
+ *                              your team calls the person who owns a lead
+ *   report_dimension_label  → e.g. "Source" (default), or your team's
+ *                              name for the breakdown column
+ *   report_dimension_field  → which CRM column drives the breakdown:
+ *                              lead_source | source_prefix | team |
+ *                              product_interest | lf_<custom_field_code>
  *
  * Backend: GET /api/reports/weekly?from=&to=&dimensionField=&teamId=
  * Returns totals + per-dimension + per-owner + owner×dimension matrix with
@@ -53,8 +59,9 @@
         if (toEl   && !toEl.value)   toEl.value   = isoDate(nextSunday());
 
         // Append the tenant's custom dropdown fields as dimension options —
-        // so a tenant who has a "Course" custom field can pivot the report
-        // by course directly. Matches the Settings → General dropdown.
+        // so a tenant with a custom field like "Region", "Plan tier",
+        // "Course", "Property type", etc. can pivot the report by that
+        // field. Matches the Settings → General dropdown.
         const sel = document.getElementById('wrDimensionField');
         if (sel) {
             for (const f of _customFields) {
