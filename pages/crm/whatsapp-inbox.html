@@ -133,9 +133,16 @@
             .wa-mobile-home { display: inline-flex; }
             .wa-page {
                 margin-top: 0;
-                /* Same banner-height subtraction on mobile. */
-                height: calc(100vh - var(--cookie-banner-h, 0px));
-                height: calc(100dvh - var(--cookie-banner-h, 0px));
+                /* On installed Android-Chrome PWAs, dvh covers the screen
+                   *including* the OS gesture / nav bar area, which means
+                   the composer lands behind it. Subtract safe-area-inset-
+                   bottom so the bottom edge of .wa-page stops above the
+                   system chrome on every mobile environment (PWA on iOS,
+                   PWA on Android, in-browser Safari, in-browser Chrome).
+                   Also subtract the cookie banner var (set by
+                   /js/cookie-consent.js when the banner is showing). */
+                height: calc(100vh - var(--cookie-banner-h, 0px) - env(safe-area-inset-bottom, 0px));
+                height: calc(100dvh - var(--cookie-banner-h, 0px) - env(safe-area-inset-bottom, 0px));
                 padding: 0;
                 gap: 0;
             }
