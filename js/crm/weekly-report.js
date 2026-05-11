@@ -25,6 +25,38 @@
 (function () {
     'use strict';
 
+    // ── Console filter for ApexCharts internal NaN warnings ───────────────
+    // ApexCharts emits a burst of "M NaN NaN" SVG attribute warnings during
+    // its internal init pass — fires *inside* the lib's first measurement
+    // microtask before any of our code can intervene. Multiple workarounds
+    // (lib upgrade, ResizeObserver, animations off, pre-computed pixel
+    // widths) all fail to silence them because the lib intentionally sets
+    // attrs to NaN and patches them up later in the same render cycle.
+    //
+    // These are non-fatal — charts render correctly. The patch below
+    // suppresses ONLY the specific apexcharts NaN-attribute warnings; any
+    // other console.error (including non-NaN apexcharts errors) passes
+    // through untouched.
+    (function silenceApexNaN() {
+        if (typeof console === 'undefined' || console.__apexNaNPatched) return;
+        const orig = console.error.bind(console);
+        const NAN_ATTR = /Expected (?:number|length).*"(?:M\s+)?NaN/i;
+        console.error = function (...args) {
+            try {
+                const blob = args.map(a => {
+                    if (a == null) return '';
+                    if (typeof a === 'string') return a;
+                    if (a instanceof Error) return a.message + ' ' + (a.stack || '');
+                    return String(a);
+                }).join(' ');
+                if (NAN_ATTR.test(blob)) return; // swallow only the NaN warnings
+            } catch (_) { /* fall through */ }
+            orig.apply(console, args);
+        };
+        console.__apexNaNPatched = true;
+    })();
+
+
     // ── State ──────────────────────────────────────────────────────────────
     let _initialized = false;
     let _settings = {
