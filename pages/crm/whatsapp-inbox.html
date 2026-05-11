@@ -132,7 +132,12 @@
         body.wa-compact .navbar,
         body.wa-compact .breadcrumb-nav,
         body.wa-compact .wa-toolbar,
-        body.wa-compact .wa-list-pane { display: none !important; }
+        body.wa-compact .wa-list-pane,
+        /* The mobile-back chevron only makes sense in the standalone inbox
+           where it returns to the conversation list. In the modal there's
+           no list to return to — pressing it just empties the thread pane.
+           Hide it in compact mode on every viewport. */
+        body.wa-compact .wa-thread-back { display: none !important; }
         body.wa-compact .wa-page {
             margin: 0;
             padding: 0;
