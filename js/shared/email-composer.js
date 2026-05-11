@@ -321,7 +321,7 @@
             height: 360,
             menubar: false, promotion: false, branding: false, statusbar: false,
             plugins: 'lists link image table code preview anchor autolink',
-            toolbar: 'blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link image table | linkpreview | code preview',
+            toolbar: 'blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link image table | linkpreview unfurltoggle | code preview',
             toolbar_mode: 'wrap',
             valid_elements: '*[*]', extended_valid_elements: '*[*]',
             paste_remove_styles: false, paste_remove_styles_if_webkit: false,
@@ -350,6 +350,7 @@
                 // from the shared helpers below — same code path the
                 // Settings → Templates editor uses.
                 attachLinkPreviewButton(editor);
+                attachUnfurlToggle(editor);
                 attachAutoUnfurl(editor);
                 editor.on('init', () => {
                     const body = document.querySelector('#' + MODAL_ID + ' .email-cmp-body');
@@ -556,6 +557,14 @@
     // swap. Call once inside TinyMCE init's setup callback.
     function attachAutoUnfurl(editor) {
         const tryOnPaste = (text) => {
+            // Respect the per-compose link-preview toggle — the user can
+            // turn auto-unfurl off via the toolbar paperclip icon when the
+            // recipient prefers a plain hyperlink (some clients dislike
+            // Outlook-style hero cards). The toolbar toggle in
+            // attachUnfurlToggle flips editor.linkPreviewEnabled on the
+            // editor instance so this check picks it up without state
+            // plumbing through the composer wrapper.
+            if (editor.linkPreviewEnabled === false) return;
             if (!text || !/https?:\/\//i.test(text)) return;
             setTimeout(() => unfurlAndReplaceInEditor(editor, text), 120);
         };
@@ -583,6 +592,30 @@
             icon: 'browse',
             tooltip: 'Insert link preview (Outlook/Slack-style card)',
             onAction: () => openLinkPreviewPrompt(editor)
+        });
+    }
+
+    // Per-compose toggle that controls whether pasted URLs auto-unfurl into
+    // Outlook-style hero cards. Default ON (preserves the existing behaviour
+    // and is what most recipients prefer). When OFF, pastes drop in as plain
+    // hyperlinks and the user can still insert a card on demand via the
+    // "linkpreview" button beside this toggle.
+    function attachUnfurlToggle(editor) {
+        // Default state lives on the editor instance — survives between
+        // toolbar interactions without touching the composer's _state
+        // (which is scoped to one open/close cycle).
+        editor.linkPreviewEnabled = true;
+        editor.ui.registry.addToggleButton('unfurltoggle', {
+            icon: 'preview',
+            tooltip: 'Auto-render link previews when pasting URLs',
+            onAction: (api) => {
+                editor.linkPreviewEnabled = !editor.linkPreviewEnabled;
+                api.setActive(editor.linkPreviewEnabled);
+            },
+            onSetup: (api) => {
+                api.setActive(editor.linkPreviewEnabled);
+                return () => {};
+            }
         });
     }
 
