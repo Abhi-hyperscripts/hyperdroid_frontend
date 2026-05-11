@@ -566,6 +566,12 @@
     padding: 12px 8% 12px 8%;
     display: flex;
     flex-direction: column;
+    /* Stick messages to the bottom of the viewport — mirrors native
+       WhatsApp: if there are few messages, the empty space sits at the
+       TOP of the thread-pane, and the latest message hugs the composer.
+       Without this, few-message threads showed a large white void
+       between the last bubble and the composer on mobile. */
+    justify-content: flex-end;
     gap: 2px;
 }
 .wa-messages::-webkit-scrollbar { width: 8px; }
