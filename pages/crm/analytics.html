@@ -345,54 +345,46 @@
     .wr-toolbar .field label { font-size:0.7rem; letter-spacing:0.06em; color:var(--text-secondary); text-transform:uppercase; }
     .wr-deck { display:flex; flex-direction:column; gap:18px; }
     .wr-loading, .wr-empty { padding:36px 18px; text-align:center; color:var(--text-secondary); background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; }
-    /* Glassmorphism slide card — subtle gradient + soft border, applied to
-       every slide (cover & content) for a consistent deck feel. Each slide
-       type can layer a tinted accent via .wr-slide--<type> below. */
+    /* Transparent glassmorphism — no colour tint. Uses a soft white overlay
+       and a slight backdrop blur so the card reads as frosted glass over
+       whatever the page background happens to be (works in both light and
+       dark themes). Same treatment for every slide — no per-slide hues. */
     .wr-slide {
         position:relative;
         padding:32px 36px;
         border-radius:16px;
-        background:
-            linear-gradient(135deg, rgba(79,70,229,0.10) 0%, rgba(139,92,246,0.04) 45%, rgba(99,102,241,0.08) 100%),
-            var(--bg-card);
-        border:1px solid rgba(99,102,241,0.18);
-        box-shadow: 0 4px 28px rgba(15,23,42,0.18), inset 0 1px 0 rgba(255,255,255,0.04);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.03);
+        border:1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
         overflow:hidden;
     }
-    .wr-slide::before {
-        content: ""; position:absolute; inset:0;
-        background: radial-gradient(circle at 100% 0%, rgba(168,85,247,0.08), transparent 50%);
-        pointer-events:none; z-index:0;
-    }
-    .wr-slide > * { position:relative; z-index:1; }
     .wr-slide-num { position:absolute; right:22px; bottom:16px; color:var(--text-secondary); opacity:0.45; font-size:0.78rem; }
-    .wr-slide-eyebrow { color: rgba(165, 180, 252, 0.9); font-size:0.7rem; letter-spacing:0.18em; font-weight:600; }
+    .wr-slide-eyebrow { color: var(--text-secondary); font-size:0.7rem; letter-spacing:0.18em; font-weight:600; }
     .wr-slide-title { font-size:1.7rem; font-weight:700; margin:4px 0 4px; color:var(--text-primary); }
     .wr-slide-subtitle { color:var(--text-secondary); font-size:0.9rem; margin:0 0 22px; }
-    /* Per-type accent tints — overlay a faint hue so visually similar slides
-       feel rhythmic rather than monotonous. */
-    .wr-slide--distribution { background: linear-gradient(135deg, rgba(6,182,212,0.10) 0%, rgba(14,165,233,0.04) 50%, rgba(99,102,241,0.08) 100%), var(--bg-card); border-color: rgba(14,165,233,0.20); }
-    .wr-slide--workload    { background: linear-gradient(135deg, rgba(245,158,11,0.10) 0%, rgba(249,115,22,0.04) 50%, rgba(217,70,239,0.06) 100%), var(--bg-card); border-color: rgba(245,158,11,0.20); }
-    .wr-slide--champion    { background: linear-gradient(135deg, rgba(239,68,68,0.12) 0%, rgba(220,38,38,0.04) 50%, rgba(124,58,237,0.06) 100%), var(--bg-card); border-color: rgba(239,68,68,0.22); }
-    .wr-slide--owner       { background: linear-gradient(135deg, rgba(16,185,129,0.10) 0%, rgba(20,184,166,0.04) 50%, rgba(59,130,246,0.06) 100%), var(--bg-card); border-color: rgba(16,185,129,0.20); }
-    .wr-slide--dim         { background: linear-gradient(135deg, rgba(124,58,237,0.10) 0%, rgba(168,85,247,0.04) 50%, rgba(99,102,241,0.08) 100%), var(--bg-card); border-color: rgba(168,85,247,0.20); }
-    .wr-slide--rec         { background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.04) 50%, rgba(79,70,229,0.10) 100%), var(--bg-card); border-color: rgba(139,92,246,0.22); }
+    /* Light theme: drop the white overlay (it'd wash the card out) and use
+       a very faint dark overlay instead so the glass effect still reads. */
+    [data-theme="light"] .wr-slide {
+        background: rgba(15, 23, 42, 0.025);
+        border:1px solid rgba(15, 23, 42, 0.08);
+        box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
     .wr-kpis { display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; margin: 16px 0 18px; }
     .wr-kpi-tile {
-        background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(99,102,241,0.04) 100%), var(--bg-secondary);
+        background: rgba(255, 255, 255, 0.03);
         border-radius:14px;
         padding:18px 20px;
-        border:1px solid rgba(99,102,241,0.18);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
-        position:relative;
-        overflow:hidden;
+        border:1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
-    .wr-kpi-tile::after {
-        content: ""; position:absolute; top:-30%; right:-20%; width:120px; height:120px;
-        background: radial-gradient(circle, rgba(99,102,241,0.16), transparent 70%);
-        pointer-events:none;
+    [data-theme="light"] .wr-kpi-tile {
+        background: rgba(15, 23, 42, 0.025);
+        border:1px solid rgba(15, 23, 42, 0.08);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
     }
     .wr-kpi-value { font-size:2.1rem; font-weight:700; line-height:1; color:var(--brand-primary); }
     .wr-kpi-label { color:var(--text-primary); font-size:0.85rem; font-weight:600; margin-top:6px; }
@@ -400,62 +392,127 @@
     .wr-takeaways h4 { font-size:0.72rem; letter-spacing:0.18em; color:var(--text-secondary); margin:18px 0 8px; }
     .wr-takeaways ol { margin:0; padding-left:22px; font-size:0.92rem; line-height:1.55; color:var(--text-primary); }
     .wr-takeaways li { margin-bottom:6px; }
+    /* Every inner card uses the same transparent glass look — no per-element
+       colored backgrounds, no gradients. Distinction comes from typography
+       and a single accent for numeric values via var(--text-primary). */
     .wr-dim-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; }
-    .wr-dim-card { padding:22px; border-radius:14px; color:#fff; background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); }
-    .wr-dim-2 { background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); }
-    .wr-dim-3 { background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%); }
+    .wr-dim-card {
+        padding:22px; border-radius:14px; color:var(--text-primary);
+        background: rgba(255, 255, 255, 0.04);
+        border:1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    [data-theme="light"] .wr-dim-card {
+        background: rgba(15, 23, 42, 0.03);
+        border:1px solid rgba(15, 23, 42, 0.08);
+    }
     .wr-dim-rank { font-size:1.05rem; font-weight:700; line-height:1.2; }
-    .wr-dim-pct { opacity:0.85; font-size:0.78rem; margin: 4px 0 16px; }
+    .wr-dim-pct { color: var(--text-secondary); font-size:0.78rem; margin: 4px 0 16px; }
     .wr-dim-leads { font-size:2.2rem; font-weight:700; line-height:1; }
-    .wr-dim-leads span { display:block; font-size:0.75rem; opacity:0.9; font-weight:500; margin-top:4px; }
+    .wr-dim-leads span { display:block; font-size:0.75rem; color: var(--text-secondary); font-weight:500; margin-top:4px; }
     .wr-owner-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; }
-    .wr-owner-card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:12px; padding:14px 16px; }
+    .wr-owner-card {
+        background: rgba(255, 255, 255, 0.04);
+        border:1px solid rgba(255, 255, 255, 0.08);
+        border-radius:12px; padding:14px 16px;
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    [data-theme="light"] .wr-owner-card {
+        background: rgba(15, 23, 42, 0.03);
+        border:1px solid rgba(15, 23, 42, 0.08);
+    }
     .wr-owner-name { font-weight:700; font-size:1rem; color:var(--text-primary); }
     .wr-owner-volume { color:var(--text-secondary); font-size:0.78rem; margin: 4px 0 10px; }
     .wr-owner-row { display:flex; justify-content:space-between; align-items:baseline; padding:4px 0; }
     .wr-owner-row-v { font-size:1.1rem; font-weight:700; color:var(--text-primary); }
     .wr-owner-row-l { color:var(--text-secondary); font-size:0.78rem; }
-    .wr-owner-hot { border-top:1px solid var(--border-color); padding-top:8px; margin-top:6px; }
+    .wr-owner-hot { border-top:1px solid rgba(255, 255, 255, 0.08); padding-top:8px; margin-top:6px; }
+    [data-theme="light"] .wr-owner-hot { border-top-color: rgba(15, 23, 42, 0.08); }
     .wr-owner-hot .wr-owner-row-v { color:var(--color-error, #dc2626); }
     .wr-champion { display:grid; grid-template-columns: 280px 1fr; gap:22px; margin-top:14px; }
-    .wr-champion-card { background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); color:#fff; padding:22px; border-radius:14px; }
-    .wr-champion-badge { font-size:0.7rem; letter-spacing:0.15em; opacity:0.85; }
+    .wr-champion-card {
+        color:var(--text-primary); padding:22px; border-radius:14px;
+        background: rgba(255, 255, 255, 0.04);
+        border:1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    [data-theme="light"] .wr-champion-card {
+        background: rgba(15, 23, 42, 0.03);
+        border:1px solid rgba(15, 23, 42, 0.08);
+    }
+    .wr-champion-badge { font-size:0.7rem; letter-spacing:0.15em; color: var(--text-secondary); }
     .wr-champion-name { font-size:1.6rem; font-weight:700; margin: 8px 0 14px; }
     .wr-champion-num { font-size:3rem; font-weight:700; }
-    .wr-champion-label { font-size:0.85rem; opacity:0.9; margin-left:6px; }
-    .wr-champion-share { font-size:0.85rem; opacity:0.85; margin-top:10px; }
+    .wr-champion-label { font-size:0.85rem; color: var(--text-secondary); margin-left:6px; }
+    .wr-champion-share { font-size:0.85rem; color: var(--text-secondary); margin-top:10px; }
     .wr-champion-rest { display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:10px; }
-    .wr-mini-card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:10px; padding:12px 14px; font-size:0.85rem; }
+    .wr-mini-card {
+        background: rgba(255, 255, 255, 0.04);
+        border:1px solid rgba(255, 255, 255, 0.08);
+        border-radius:10px; padding:12px 14px; font-size:0.85rem;
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    [data-theme="light"] .wr-mini-card {
+        background: rgba(15, 23, 42, 0.03);
+        border:1px solid rgba(15, 23, 42, 0.08);
+    }
     .wr-mini-name { font-weight:700; margin-bottom:4px; color:var(--text-primary); }
     .wr-mini-meta { color:var(--text-secondary); font-size:0.72rem; }
     .wr-mini-hot { color:var(--color-error, #dc2626); font-weight:600; margin-top:6px; }
     .wr-owner-kpis { display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin: 6px 0 18px; }
-    .wr-mini-kpi { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:10px; padding:12px 14px; }
+    .wr-mini-kpi {
+        background: rgba(255, 255, 255, 0.04);
+        border:1px solid rgba(255, 255, 255, 0.08);
+        border-radius:10px; padding:12px 14px;
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    [data-theme="light"] .wr-mini-kpi {
+        background: rgba(15, 23, 42, 0.03);
+        border:1px solid rgba(15, 23, 42, 0.08);
+    }
     .wr-mini-kpi-value { font-size:1.6rem; font-weight:700; line-height:1; color:var(--text-primary); }
     .wr-mini-kpi-label { font-size:0.78rem; color:var(--text-secondary); font-weight:600; margin-top:4px; }
     .wr-mini-kpi-hint { font-size:0.7rem; color:var(--text-secondary); margin-top:2px; }
     .wr-matrix { width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:8px; }
-    .wr-matrix th, .wr-matrix td { padding:8px 10px; text-align:left; border-bottom:1px solid var(--border-color); color:var(--text-primary); }
-    .wr-matrix th { background:var(--bg-secondary); font-size:0.72rem; letter-spacing:0.04em; color:var(--text-secondary); }
-    .wr-matrix-total { font-weight:700; background:var(--bg-secondary); }
-    .wr-matrix-total td { border-top:2px solid var(--border-color); }
-    .wr-insight-box { background: rgba(99, 102, 241, 0.08); border:1px solid rgba(99, 102, 241, 0.3); border-radius:12px; padding:14px 16px; margin-top:14px; }
-    .wr-insight-box h4 { font-size:0.7rem; letter-spacing:0.18em; color:var(--brand-primary); margin: 0 0 6px; }
+    .wr-matrix th, .wr-matrix td { padding:8px 10px; text-align:left; border-bottom:1px solid rgba(255, 255, 255, 0.06); color:var(--text-primary); }
+    [data-theme="light"] .wr-matrix th, [data-theme="light"] .wr-matrix td { border-bottom-color: rgba(15, 23, 42, 0.06); }
+    .wr-matrix th { background: rgba(255, 255, 255, 0.03); font-size:0.72rem; letter-spacing:0.04em; color:var(--text-secondary); }
+    [data-theme="light"] .wr-matrix th { background: rgba(15, 23, 42, 0.03); }
+    .wr-matrix-total { font-weight:700; background: rgba(255, 255, 255, 0.03); }
+    [data-theme="light"] .wr-matrix-total { background: rgba(15, 23, 42, 0.03); }
+    .wr-matrix-total td { border-top:2px solid rgba(255, 255, 255, 0.10); }
+    [data-theme="light"] .wr-matrix-total td { border-top-color: rgba(15, 23, 42, 0.10); }
+    .wr-insight-box {
+        background: rgba(255, 255, 255, 0.04);
+        border:1px solid rgba(255, 255, 255, 0.08);
+        border-radius:12px; padding:14px 16px; margin-top:14px;
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    [data-theme="light"] .wr-insight-box {
+        background: rgba(15, 23, 42, 0.03);
+        border:1px solid rgba(15, 23, 42, 0.08);
+    }
+    .wr-insight-box h4 { font-size:0.7rem; letter-spacing:0.18em; color:var(--text-secondary); margin: 0 0 6px; }
     .wr-insight-box p { margin:0; font-size:0.92rem; line-height:1.5; color:var(--text-primary); }
     .wr-recs { display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-top:14px; }
     .wr-recs h4 { font-size:0.78rem; letter-spacing:0.12em; color:var(--text-secondary); margin:0 0 10px; }
     .wr-recs ul, .wr-recs ol { margin:0; padding-left:20px; font-size:0.9rem; line-height:1.55; color:var(--text-primary); }
     .wr-recs li { margin-bottom:6px; }
     .wr-aside { color:var(--text-secondary); font-size:0.8rem; margin-top:12px; }
-    /* Charts — ApexCharts containers. The library renders into the div but
-       we control the chrome (background, padding) here so it stays on-brand. */
+    /* Charts — ApexCharts containers. Same transparent glass look as the
+       rest of the deck, no colour tint. */
     .wr-chart {
-        background: rgba(15, 23, 42, 0.25);
-        border: 1px solid rgba(99, 102, 241, 0.14);
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 12px;
         padding: 14px;
         margin-top: 16px;
         backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    [data-theme="light"] .wr-chart {
+        background: rgba(15, 23, 42, 0.03);
+        border: 1px solid rgba(15, 23, 42, 0.08);
     }
     .wr-chart-row { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .wr-chart-mini { min-height: 80px; }
