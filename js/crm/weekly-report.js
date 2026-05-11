@@ -461,7 +461,12 @@
                 foreColor: 'rgba(226, 232, 240, 0.85)',
                 fontFamily: 'inherit',
                 toolbar: { show: false },
-                animations: { enabled: true, speed: 400 }
+                // Animations off — ApexCharts emits NaN paths during the
+                // init-tween before its first real measurement. Static
+                // render produces clean SVG from frame zero.
+                animations: { enabled: false },
+                redrawOnParentResize: true,
+                redrawOnWindowResize: true
             },
             grid: { borderColor: 'rgba(99,102,241,0.12)', strokeDashArray: 3 },
             tooltip: { theme: 'dark' },
