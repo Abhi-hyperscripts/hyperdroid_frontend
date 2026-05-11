@@ -1430,10 +1430,31 @@
     .wa-bubble { max-width: 78%; font-size: 15px; line-height: 20px; }
     .wa-messages { padding: 10px 4% 10px 4%; }
 
-    /* Composer hugs the bottom and accounts for the home-indicator. */
-    .wa-composer {
+    /* Composer hugs the bottom. position:fixed instead of the default flex
+       layout because Android Chrome PWA's dvh / safe-area-inset values are
+       unreliable — a fixed-position composer always sits at the very bottom
+       of the visible viewport no matter what the surrounding flex container
+       computes. Messages list reserves matching padding-bottom so the last
+       bubble doesn't sit under the composer. */
+    .wa-thread-pane .wa-composer {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 20;
         padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0));
         gap: 4px;
+        background: var(--wa-bg-app);
+        border-top: 1px solid var(--wa-divider);
+    }
+    .wa-thread-pane .wa-attach-preview {
+        position: fixed;
+        left: 0; right: 0;
+        bottom: 60px; /* approx composer height */
+        z-index: 19;
+    }
+    .wa-thread-pane .wa-messages {
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0));
     }
     .wa-composer-input-wrap { min-height: 44px; }
 
