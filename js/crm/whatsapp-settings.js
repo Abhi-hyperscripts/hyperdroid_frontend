@@ -26,6 +26,11 @@
 
     // ─── Public entry point ─────────────────────────────────────────────────
 
+    // In-memory snapshot of per-number push-notification toggle state.
+    // Populated alongside the numbers list so the row renderer doesn't have
+    // to make a per-row settings call. Key = digits-only phone, value = bool.
+    const waNotifyState = new Map();
+
     async function loadWhatsAppNumbers() {
         const wrap = document.getElementById('waNumbersWrap');
         const empty = document.getElementById('waEmptyState');
@@ -51,6 +56,20 @@
                 return;
             }
 
+            // Pull per-number push toggle state in parallel — missing key means
+            // ON (default), which matches the backend ingest-path behaviour.
+            waNotifyState.clear();
+            await Promise.all(numbers.map(async n => {
+                const phone = n.instanceKey || n.instance_key || '';
+                if (!phone) return;
+                try {
+                    const r = await api.request(`/crm/crm-settings/notify_whatsapp_inbound_${phone}`);
+                    waNotifyState.set(phone, r?.value !== 'false');
+                } catch {
+                    waNotifyState.set(phone, true);
+                }
+            }));
+
             wrap.style.display = '';
             empty.style.display = 'none';
             const activeCount = numbers.filter(n => n.isActive ?? n.is_active).length;
@@ -73,6 +92,7 @@
         const created = num.createdAt || num.created_at;
         const createdLabel = created ? new Date(created).toLocaleDateString() : '—';
         const formattedPhone = formatPhoneForDisplay(phone);
+        const notifyOn = waNotifyState.get(phone) !== false;
 
         return `
             <tr>
@@ -88,6 +108,15 @@
                 </td>
                 <td><code class="apikey-hint">${hint}</code></td>
                 <td>${createdLabel}</td>
+                <td>
+                    <label class="wa-notify-switch" data-tooltip="${notifyOn ? 'Push enabled — SUPERADMINs + assigned rep notified on new messages' : 'Push disabled for this number'}" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; user-select:none;">
+                        <input type="checkbox" class="wa-notify-toggle-input" data-phone="${escPhone}" ${notifyOn ? 'checked' : ''} onchange="toggleWhatsAppNotify('${escPhone}', this.checked)" style="position:absolute; opacity:0; pointer-events:none;">
+                        <span class="wa-notify-track" style="position:relative; width:34px; height:18px; background:${notifyOn ? 'var(--brand-primary)' : 'var(--border-color)'}; border-radius:999px; transition:background 0.18s ease; flex:0 0 34px;">
+                            <span style="position:absolute; top:2px; left:${notifyOn ? '18px' : '2px'}; width:14px; height:14px; background:#fff; border-radius:50%; transition:left 0.18s ease; box-shadow:0 1px 2px rgba(0,0,0,0.25);"></span>
+                        </span>
+                        <span class="wa-notify-label" style="font-size:0.78rem; color:var(--text-secondary);">${notifyOn ? 'On' : 'Off'}</span>
+                    </label>
+                </td>
                 <td style="text-align:right;">
                     <div class="action-buttons" style="justify-content:flex-end;">
                         <button class="action-btn" data-tooltip="Show webhook URL" onclick="showWhatsAppWebhook('${escPhone}')">
@@ -210,6 +239,29 @@
         }
     }
 
+    async function toggleWhatsAppNotify(phone, enabled) {
+        // Optimistic update — flip local state and re-render so the switch
+        // animates instantly. Revert on server error.
+        const previous = waNotifyState.get(phone);
+        waNotifyState.set(phone, !!enabled);
+        try {
+            await api.request(`/crm/crm-settings/notify_whatsapp_inbound_${phone}`, {
+                method: 'PUT',
+                body: JSON.stringify({ value: enabled ? 'true' : 'false' })
+            });
+            // Re-render so the track-color, knob-position and tooltip refresh.
+            await loadWhatsAppNumbers();
+            if (typeof Toast !== 'undefined') {
+                Toast.success(enabled ? 'Push notifications enabled' : 'Push notifications disabled');
+            }
+        } catch (err) {
+            console.error('[whatsapp-settings] notify toggle failed:', err);
+            waNotifyState.set(phone, previous);
+            await loadWhatsAppNumbers();
+            if (typeof Toast !== 'undefined') Toast.error(err.message || 'Failed to update notification setting');
+        }
+    }
+
     async function toggleWhatsAppActive(phone, makeActive) {
         try {
             await api.updateApiKey('Interakt', 'whatsapp', { isActive: makeActive }, phone);
@@ -323,6 +375,7 @@
     window.closeWhatsAppModal = closeWhatsAppModal;
     window.saveWhatsAppNumber = saveWhatsAppNumber;
     window.toggleWhatsAppActive = toggleWhatsAppActive;
+    window.toggleWhatsAppNotify = toggleWhatsAppNotify;
     window.openDeleteWhatsAppModal = openDeleteWhatsAppModal;
     window.closeDeleteWhatsAppModal = closeDeleteWhatsAppModal;
     window.confirmDeleteWhatsAppNumber = confirmDeleteWhatsAppNumber;
