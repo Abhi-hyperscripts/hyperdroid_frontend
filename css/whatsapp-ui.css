@@ -504,9 +504,13 @@
 /* ── Thread pane ──────────────────────────────────────────────────────── */
 .wa-thread-pane {
     flex: 1;
+    /* Critical for flex-shrink in column layouts — without this, the
+       .wa-messages child can refuse to shrink and pushes .wa-composer
+       below the viewport on small screens. */
+    min-height: 0;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    min-width: 0;
     background: var(--wa-bg-thread);
     background-image: var(--wa-doodle-svg);
     background-repeat: repeat;
@@ -553,7 +557,12 @@
 /* ── Messages list ────────────────────────────────────────────────────── */
 .wa-messages {
     flex: 1;
+    /* min-height:0 lets the messages area actually shrink when content
+       exceeds the thread-pane height. Without it the composer gets pushed
+       below the viewport on mobile. */
+    min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 12px 8% 12px 8%;
     display: flex;
     flex-direction: column;

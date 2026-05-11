@@ -105,10 +105,29 @@
             background: var(--bg-card);
         }
 
+        /* Back-to-CRM chevron in the chat list header — hidden on desktop
+           where the global navbar handles navigation; shown on mobile where
+           the navbar is hidden for the native-app feel. */
+        .wa-mobile-home {
+            display: none;
+            width: 40px;
+            height: 40px;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 50%;
+            margin-right: -4px;
+            flex-shrink: 0;
+        }
+        .wa-mobile-home:hover { background: rgba(0,0,0,0.05); }
+        .wa-mobile-home svg { width: 22px; height: 22px; }
+
         /* On mobile, drop the page padding entirely so the WA shell fills
            the screen edge-to-edge — exactly like the native WhatsApp app. */
         @media screen and (max-width: 900px) {
             body.dashboard.wa-inbox-page .navbar { display: none; }
+            .wa-mobile-home { display: inline-flex; }
             .wa-page {
                 margin-top: 0;
                 height: 100vh;
@@ -137,7 +156,8 @@
            where it returns to the conversation list. In the modal there's
            no list to return to — pressing it just empties the thread pane.
            Hide it in compact mode on every viewport. */
-        body.wa-compact .wa-thread-back { display: none !important; }
+        body.wa-compact .wa-thread-back,
+        body.wa-compact .wa-mobile-home { display: none !important; }
         body.wa-compact .wa-page {
             margin: 0;
             padding: 0;
@@ -213,6 +233,14 @@
                 <!-- Conversation list pane -->
                 <section class="wa-list-pane">
                     <header class="wa-list-header">
+                        <!-- Mobile-only escape hatch — the global navbar is
+                             hidden on small screens for the WhatsApp-like
+                             chrome, so without this the user is stuck inside
+                             the inbox with no way back to the rest of the
+                             CRM. Hidden on desktop via CSS. -->
+                        <a href="../crm/dashboard.html" class="wa-mobile-home" title="Back to CRM" aria-label="Back to CRM">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                        </a>
                         <h2>Chats</h2>
                         <div class="wa-header-actions">
                             <button type="button" class="wa-icon-btn" title="New chat" id="waNewChatBtn">
