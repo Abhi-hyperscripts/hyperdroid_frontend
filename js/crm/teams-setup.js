@@ -188,7 +188,13 @@
     }
 
     async function deleteFunctionalGroup(id, name) {
-        if (!confirm(`Delete functional group "${name}"?\n\nIt must not be assigned to any team.`)) return;
+        const ok = await Confirm.show({
+            title: `Delete functional group "${name}"?`,
+            message: 'It must not be assigned to any team. If it is, the server will reject this and list the affected teams.',
+            type: 'danger',
+            confirmText: 'Delete group'
+        });
+        if (!ok) return;
         try {
             await apiDelete(`/functional-areas/${id}`);
             toastOk('Functional group deleted');
@@ -674,7 +680,12 @@
             res = await apiGet(`/teams/${_teamModal.teamId}/members/${userObj.user_id}/open-leads-count`);
         } catch (e) {
             console.warn('open-leads-count check failed', e);
-            return confirm('Could not verify open leads. Remove anyway?');
+            return await Confirm.show({
+                title: "Couldn't verify open leads",
+                message: "We hit an error checking how many open leads this person owns. Remove them anyway?",
+                type: 'warning',
+                confirmText: 'Remove anyway'
+            });
         }
         const count = (res && typeof res.count === 'number') ? res.count : 0;
         if (count === 0) return true;
@@ -913,14 +924,138 @@
     }
 
     async function deleteTeam(teamId, teamName) {
-        if (!confirm(`Delete team "${teamName}"?\n\nThe team must have no active members and no assigned leads. If it does, the server will reject and list what to clean up first.`)) return;
+        const ok = await Confirm.show({
+            title: `Delete team "${teamName}"?`,
+            message: "If the team has assigned leads, you'll be asked to pick another team — the leads will be round-robin distributed across that team's Members + Team Leads before this team is archived.\n\nMembers stay where they are — remove or move them through Edit Team first.",
+            type: 'danger',
+            confirmText: 'Delete team'
+        });
+        if (!ok) return;
         try {
             await apiDelete(`/teams/${teamId}`);
             toastOk('Team deleted');
             await loadTeamsTab();
         } catch (e) {
-            toastErr(e, 'Failed to delete team');
+            // Backend refuses with "still has N leads" when the team has open
+            // leads. Promote that case to the reassign-and-delete modal
+            // instead of just toasting the error.
+            const msg = (e && e.message) ? String(e.message) : '';
+            if (/\d+\s*lead/i.test(msg)) {
+                openReassignDeleteModal(teamId, teamName, msg);
+            } else {
+                toastErr(e, 'Failed to delete team');
+            }
         }
+    }
+
+    // ─── Reassign + delete modal ───────────────────────────────────────────
+    //
+    // Triggered when DELETE /teams/{id} responds with "still has N leads".
+    // We render a small overlay that lets the admin pick a target team; on
+    // confirm we hit POST /teams/{id}/delete-with-reassign which round-robin
+    // distributes leads across the target's Members + Team Leads, then
+    // archives the source team.
+
+    function ensureReassignDeleteModalHtml() {
+        if (document.getElementById('reassignDeleteTeamModal')) return;
+        const overlay = document.createElement('div');
+        overlay.className = 'gm-overlay';
+        overlay.id = 'reassignDeleteTeamModal';
+        overlay.innerHTML = `
+          <div class="gm-modal gm-sm" style="max-width: 520px;">
+            <div class="gm-header">
+              <div class="gm-header-left">
+                <div class="gm-icon" style="background: rgba(239, 68, 68, 0.12); color: var(--color-danger);">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </div>
+                <div class="gm-title-group">
+                  <h3 class="gm-title" id="rdtTitle">Reassign leads & delete team</h3>
+                  <p class="gm-subtitle" id="rdtSubtitle">Pick a team to absorb this team's leads</p>
+                </div>
+              </div>
+              <button class="gm-close" onclick="closeReassignDeleteModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="gm-body">
+              <p id="rdtServerMessage" style="margin: 0 0 12px; color: var(--text-secondary); font-size: 0.8rem;"></p>
+              <div class="crm-form-group">
+                <label for="rdtTargetTeam">Move leads to *</label>
+                <select id="rdtTargetTeam"></select>
+                <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.72rem; margin-top: 6px;">
+                  Leads will be round-robin assigned across the target team's <strong>Members</strong> and <strong>Team Leads</strong>. Managers don't pick up leads. The source team must have no remaining human members for the archive step to succeed.
+                </p>
+              </div>
+            </div>
+            <div class="gm-footer" style="padding: 16px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color-light);">
+              <button type="button" class="btn btn-secondary" onclick="closeReassignDeleteModal()">Cancel</button>
+              <button type="button" class="btn btn-danger" id="rdtConfirmBtn" onclick="confirmReassignDelete()">Reassign & delete</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+
+    let _rdtSourceTeamId = null;
+
+    function openReassignDeleteModal(sourceTeamId, sourceTeamName, serverMessage) {
+        ensureReassignDeleteModalHtml();
+        _rdtSourceTeamId = sourceTeamId;
+
+        document.getElementById('rdtTitle').textContent = `Reassign leads & delete "${sourceTeamName}"`;
+        document.getElementById('rdtServerMessage').textContent = serverMessage || '';
+
+        // Populate the target-team picker with every OTHER active team. The
+        // cached _teams list already excludes archived ones (loadTeamsTab
+        // calls /teams without includeArchived).
+        const select = document.getElementById('rdtTargetTeam');
+        const others = (_teams || []).filter(t => t.id !== sourceTeamId);
+        if (others.length === 0) {
+            select.innerHTML = '<option value="">— no other team available —</option>';
+            document.getElementById('rdtConfirmBtn').disabled = true;
+        } else {
+            select.innerHTML = '<option value="">— pick a team —</option>' +
+                others.map(t => `<option value="${t.id}">${escapeHtml(t.team_name)}</option>`).join('');
+            document.getElementById('rdtConfirmBtn').disabled = false;
+        }
+
+        openGmOverlay('reassignDeleteTeamModal');
+    }
+
+    function closeReassignDeleteModal() {
+        closeGmOverlay('reassignDeleteTeamModal');
+        _rdtSourceTeamId = null;
+    }
+
+    async function confirmReassignDelete() {
+        const targetTeamId = document.getElementById('rdtTargetTeam').value;
+        if (!_rdtSourceTeamId || !targetTeamId) {
+            toastErr(new Error('Pick a target team first'));
+            return;
+        }
+        const btn = document.getElementById('rdtConfirmBtn');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Working…';
+        try {
+            const result = await apiPost(`/teams/${_rdtSourceTeamId}/delete-with-reassign`, {
+                target_team_id: targetTeamId
+            });
+            const moved = result?.moved_leads ?? 0;
+            toastOk(`Moved ${moved} lead${moved === 1 ? '' : 's'} and deleted the team`);
+            closeReassignDeleteModal();
+            await loadTeamsTab();
+        } catch (e) {
+            toastErr(e, 'Failed to reassign + delete');
+            btn.disabled = false;
+            btn.textContent = orig;
+        }
+    }
+
+    function escapeHtml(s) {
+        return String(s ?? '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
     // ─── Modal helpers — reuse project's glassmorphic modal style ──────────
@@ -1004,7 +1139,9 @@
     window.openEditTeamModal    = openEditTeamModal;
     window.closeTeamModal       = closeTeamModal;
     window.saveTeam             = saveTeam;
-    window.deleteTeam           = deleteTeam;
+    window.deleteTeam                = deleteTeam;
+    window.closeReassignDeleteModal  = closeReassignDeleteModal;
+    window.confirmReassignDelete     = confirmReassignDelete;
     window._addManager          = _addManager;
     window._removeManager       = _removeManager;
     window._addRoleUser         = _addRoleUser;
