@@ -47,14 +47,23 @@
                         <h1>Projects Dashboard</h1>
                         <p class="header-subtitle">Project Management System</p>
                     </div>
-                    <button class="refresh-btn" id="refreshBtn" onclick="refreshDashboard()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="23 4 23 10 17 10"/>
-                            <polyline points="1 20 1 14 7 14"/>
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                        </svg>
-                        Refresh
-                    </button>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <a id="pmsAdminLink" href="admin.html" class="refresh-btn" style="display:none; text-decoration:none;" title="Superadmin admin panel — wipe tenant PMS data">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                            Admin
+                        </a>
+                        <button class="refresh-btn" id="refreshBtn" onclick="refreshDashboard()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <polyline points="1 20 1 14 7 14"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -174,9 +183,12 @@
         <!-- Quick Actions -->
         <div class="section-header">
             <h3 class="section-title">Quick Actions</h3>
+            <p style="margin:4px 0 0 0; color:var(--text-secondary); font-size:13px;">
+                Start with a <strong>Client</strong> — projects, sub-projects and tasks all live under one. Use the personal tiles below for your own time and tasks.
+            </p>
         </div>
         <div class="quick-actions" id="quickActionsGrid">
-            <div class="action-card" data-action="clients" onclick="navigateTo('clients.html')">
+            <div class="action-card action-card-primary" data-action="clients" onclick="navigateTo('clients.html')" style="grid-column: span 2;">
                 <div class="action-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
@@ -184,25 +196,8 @@
                     </svg>
                 </div>
                 <div class="action-content">
-                    <h4>Clients</h4>
-                    <p>Manage your client accounts</p>
-                </div>
-                <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="9 18 15 12 9 6"/>
-                </svg>
-            </div>
-
-            <div class="action-card" data-action="projects" onclick="navigateTo('projects.html')">
-                <div class="action-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                        <path d="M2 17l10 5 10-5"/>
-                        <path d="M2 12l10 5 10-5"/>
-                    </svg>
-                </div>
-                <div class="action-content">
-                    <h4>Projects</h4>
-                    <p>View and manage all projects</p>
+                    <h4>Clients · Projects · Sub-Projects</h4>
+                    <p>Pick a client, drill into its projects, then sub-projects and tasks. The natural entry point for most work.</p>
                 </div>
                 <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="9 18 15 12 9 6"/>
@@ -217,8 +212,8 @@
                     </svg>
                 </div>
                 <div class="action-content">
-                    <h4>Tasks</h4>
-                    <p>Track and manage project tasks</p>
+                    <h4>My Tasks</h4>
+                    <p>Flat list across all your projects</p>
                 </div>
                 <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="9 18 15 12 9 6"/>
@@ -234,8 +229,8 @@
                     </svg>
                 </div>
                 <div class="action-content">
-                    <h4>Time Tracking</h4>
-                    <p>Log and review time entries</p>
+                    <h4>My Time</h4>
+                    <p>Log and review your time entries</p>
                 </div>
                 <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="9 18 15 12 9 6"/>
@@ -254,7 +249,7 @@
                 </div>
                 <div class="action-content">
                     <h4>Timesheets</h4>
-                    <p>Submit and approve timesheets</p>
+                    <p>Submit your weekly timesheets</p>
                 </div>
                 <svg class="action-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="9 18 15 12 9 6"/>
@@ -285,6 +280,7 @@
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/pms/pms-modal-esc.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/pms/dashboard.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->

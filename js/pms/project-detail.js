@@ -177,9 +177,11 @@ function renderProjectHeader() {
     if (project.client_id) {
         clientLink.href = `client-detail.html?id=${project.client_id}`;
         clientLink.textContent = project.client_name || '-';
+        clientLink.title = project.client_name || '';
     } else {
         clientLink.removeAttribute('href');
         clientLink.textContent = 'No client';
+        clientLink.removeAttribute('title');
     }
 
     document.getElementById('projectBudget').textContent = project.budget ? `$${Number(project.budget).toLocaleString()}` : '-';
@@ -422,7 +424,7 @@ async function loadProjectTasks() {
         }
 
         tbody.innerHTML = filtered.map(task => `
-            <tr>
+            <tr style="cursor:pointer;" onclick="openEditTaskModal('${task.id}')">
                 <td>
                     <div class="crm-cell-primary">${escapeHtml(task.title || '')}</div>
                     ${task.description ? `<div class="crm-cell-secondary">${escapeHtml(truncate(task.description, 60))}</div>` : ''}
@@ -431,7 +433,7 @@ async function loadProjectTasks() {
                 <td><span class="crm-status-badge status-${getTaskStatusClass(task.status)}">${formatTaskStatus(task.status)}</span></td>
                 <td class="hide-mobile"><span class="crm-status-badge status-${getPriorityClass(task.priority)}">${capitalize(task.priority || 'medium')}</span></td>
                 <td class="hide-mobile"><span class="crm-cell-secondary">${formatDate(task.due_date)}</span></td>
-                <td>
+                <td onclick="event.stopPropagation()">
                     <div class="crm-actions">
                         <button class="crm-action-btn" onclick="openEditTaskModal('${task.id}')" title="Edit">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -623,68 +625,47 @@ async function loadProjectMembers() {
     }
 }
 
-// ── Add Member multi-select state ──
+// ── Add Member split-pane state ──
 let memberAllUsers = [];
 let memberFilteredUsers = [];
 let memberSelectedUserIds = [];
-let memberDropdownOpen = false;
+let memberSelectedRoles = {}; // userId -> 'member' | 'lead' | 'manager' | 'viewer'
+const MEMBER_ROLE_OPTIONS = [
+    { value: 'member', label: 'Member' },
+    { value: 'lead', label: 'Lead' },
+    { value: 'manager', label: 'Manager' },
+    { value: 'viewer', label: 'Viewer' }
+];
 
 async function openAddMemberModal() {
     currentEditMemberId = null;
     document.getElementById('memberModalTitle').textContent = 'Add Members';
-    document.getElementById('memberSubmitBtn').innerHTML = '<span class="btn-spinner" id="memberSubmitSpinner" style="display:none;"></span> Add Members';
-    document.getElementById('memberRole').value = 'member';
-    document.getElementById('memberBillingRate').value = '';
+    const searchInput = document.getElementById('memberUsersSearch');
+    if (searchInput) searchInput.value = '';
     memberSelectedUserIds = [];
+    memberSelectedRoles = {};
     updateMemberSelectedCount();
     openModal('memberModal');
     loadAvailablePmsUsers();
+    setTimeout(() => searchInput && searchInput.focus(), 80);
 }
 
 async function loadAvailablePmsUsers() {
-    const container = document.getElementById('memberUsersOptions');
-    container.innerHTML = '<div class="dropdown-no-results">Loading users...</div>';
+    const available = document.getElementById('memberAvailablePane');
+    if (available) available.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-secondary);font-size:13px;">Loading users…</div>';
 
     try {
         const response = await api.request('/pms/project-members/available-users');
         const allPmsUsers = response.data || response || [];
-
-        // Filter out users already in the project
         const existingUserIds = new Set(projectMembers.map(m => m.user_id));
         memberAllUsers = allPmsUsers.filter(u => !existingUserIds.has(u.user_id));
         memberFilteredUsers = [...memberAllUsers];
         renderMemberUsersOptions();
+        renderMemberSelectedPane();
     } catch (error) {
         console.error('Error loading available users:', error);
-        container.innerHTML = '<div class="dropdown-no-results">Failed to load users</div>';
+        if (available) available.innerHTML = '<div style="padding:24px;text-align:center;color:var(--color-error);font-size:13px;">Failed to load users</div>';
     }
-}
-
-function toggleMemberUsersDropdown() {
-    const selectedDiv = document.getElementById('memberUsersSelected');
-    const menu = document.getElementById('memberUsersMenu');
-    const searchInput = document.getElementById('memberUsersSearch');
-
-    memberDropdownOpen = !memberDropdownOpen;
-
-    if (memberDropdownOpen) {
-        selectedDiv.classList.add('open');
-        menu.classList.add('open');
-        searchInput.value = '';
-        memberFilteredUsers = [...memberAllUsers];
-        renderMemberUsersOptions();
-        setTimeout(() => searchInput.focus(), 50);
-    } else {
-        closeMemberUsersDropdown();
-    }
-}
-
-function closeMemberUsersDropdown() {
-    const selectedDiv = document.getElementById('memberUsersSelected');
-    const menu = document.getElementById('memberUsersMenu');
-    memberDropdownOpen = false;
-    if (selectedDiv) selectedDiv.classList.remove('open');
-    if (menu) menu.classList.remove('open');
 }
 
 function filterMemberUsersOptions() {
@@ -703,61 +684,147 @@ function filterMemberUsersOptions() {
     renderMemberUsersOptions();
 }
 
-function renderMemberUsersOptions() {
-    const container = document.getElementById('memberUsersOptions');
+function _memberDisplayName(user) {
+    return user.display_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+}
 
-    if (memberFilteredUsers.length === 0) {
-        container.innerHTML = '<div class="dropdown-no-results">No users found</div>';
+function _memberInitials(user) {
+    const name = _memberDisplayName(user) || '';
+    const parts = name.trim().split(/\s+/);
+    const a = (parts[0] || '?')[0] || '?';
+    const b = parts.length > 1 ? (parts[parts.length - 1][0] || '') : '';
+    return (a + b).toUpperCase();
+}
+
+function renderMemberUsersOptions() {
+    const container = document.getElementById('memberAvailablePane');
+    const countEl = document.getElementById('memberAvailableCount');
+    if (!container) return;
+
+    // Hide already-selected users from the left pane.
+    const selectedSet = new Set(memberSelectedUserIds);
+    const visible = memberFilteredUsers
+        .filter(u => !selectedSet.has(u.user_id))
+        .sort((a, b) => _memberDisplayName(a).toLowerCase().localeCompare(_memberDisplayName(b).toLowerCase()));
+
+    if (countEl) countEl.textContent = `(${visible.length})`;
+
+    if (visible.length === 0) {
+        const allHidden = memberFilteredUsers.length > 0;
+        container.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-secondary);font-size:13px;">${allHidden ? 'All matching users added' : 'No users found'}</div>`;
         return;
     }
 
-    const sortedUsers = [...memberFilteredUsers].sort((a, b) => {
-        const aSelected = memberSelectedUserIds.includes(a.user_id);
-        const bSelected = memberSelectedUserIds.includes(b.user_id);
-        if (aSelected && !bSelected) return -1;
-        if (!aSelected && bSelected) return 1;
-        const aName = `${a.first_name || ''} ${a.last_name || ''}`.toLowerCase();
-        const bName = `${b.first_name || ''} ${b.last_name || ''}`.toLowerCase();
-        return aName.localeCompare(bName);
-    });
-
-    container.innerHTML = sortedUsers.map(user => {
-        const isSelected = memberSelectedUserIds.includes(user.user_id);
-        const name = user.display_name || `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+    container.innerHTML = visible.map(user => {
+        const name = _memberDisplayName(user);
         const roleLabel = (user.roles || []).join(', ');
-
         return `
-            <div class="dropdown-option ${isSelected ? 'selected' : ''}" onclick="toggleMemberUserSelection(event, '${user.user_id}')">
-                <div class="option-info">
-                    <div class="option-name">${escapeHtml(name)}</div>
-                    <div class="option-email">${escapeHtml(user.email)}${roleLabel ? ' &middot; ' + escapeHtml(roleLabel) : ''}</div>
+            <div class="picker-row" onclick="addMemberToSelection('${user.user_id}')" title="Add ${escapeHtml(name)}">
+                <div class="picker-avatar">${escapeHtml(_memberInitials(user))}</div>
+                <div class="picker-text">
+                    <div class="picker-name">${escapeHtml(name)}</div>
+                    <div class="picker-meta">${escapeHtml(user.email)}${roleLabel ? ' · ' + escapeHtml(roleLabel) : ''}</div>
                 </div>
-                <div class="option-toggle">
-                    <div class="mini-toggle ${isSelected ? 'active' : ''}"></div>
-                </div>
-            </div>
-        `;
+                <div class="picker-action picker-action-add" aria-hidden="true">+</div>
+            </div>`;
     }).join('');
 }
 
-function toggleMemberUserSelection(event, userId) {
-    event.stopPropagation();
-    if (!userId) return;
+function renderMemberSelectedPane() {
+    const container = document.getElementById('memberSelectedPane');
+    const clearBtn = document.getElementById('memberClearAllBtn');
+    if (!container) return;
 
-    const index = memberSelectedUserIds.indexOf(userId);
-    if (index > -1) {
-        memberSelectedUserIds.splice(index, 1);
-    } else {
-        memberSelectedUserIds.push(userId);
+    if (memberSelectedUserIds.length === 0) {
+        container.innerHTML = `<div style="padding:24px;text-align:center;color:var(--text-secondary);font-size:13px;">Click users on the left to add them</div>`;
+        if (clearBtn) clearBtn.style.display = 'none';
+        return;
     }
 
+    if (clearBtn) clearBtn.style.display = 'inline';
+
+    const lookup = new Map(memberAllUsers.map(u => [u.user_id, u]));
+    const rows = memberSelectedUserIds
+        .map(id => lookup.get(id))
+        .filter(Boolean)
+        .sort((a, b) => _memberDisplayName(a).toLowerCase().localeCompare(_memberDisplayName(b).toLowerCase()));
+
+    container.innerHTML = rows.map(user => {
+        const name = _memberDisplayName(user);
+        const role = memberSelectedRoles[user.user_id] || 'member';
+        const pills = MEMBER_ROLE_OPTIONS.map(opt => `
+            <button type="button" class="role-pill ${role === opt.value ? 'active' : ''}" onclick="event.stopPropagation();setMemberRole('${user.user_id}','${opt.value}')">${opt.label}</button>
+        `).join('');
+        return `
+            <div class="picker-row picker-row-selected" title="${escapeHtml(name)}">
+                <div class="picker-avatar picker-avatar-selected">${escapeHtml(_memberInitials(user))}</div>
+                <div class="picker-text">
+                    <div class="picker-name">${escapeHtml(name)}</div>
+                    <div class="picker-meta">${escapeHtml(user.email)}</div>
+                </div>
+                <div class="role-pill-group" role="radiogroup" aria-label="Role for ${escapeHtml(name)}">
+                    ${pills}
+                </div>
+                <button type="button" class="picker-action picker-action-remove" title="Remove" onclick="event.stopPropagation();removeMemberFromSelection('${user.user_id}')">×</button>
+            </div>`;
+    }).join('');
+}
+
+function setMemberRole(userId, role) {
+    if (!memberSelectedUserIds.includes(userId)) return;
+    memberSelectedRoles[userId] = role;
+    renderMemberSelectedPane();
+}
+
+function addMemberToSelection(userId) {
+    if (!userId || memberSelectedUserIds.includes(userId)) return;
+    memberSelectedUserIds.push(userId);
+    if (!memberSelectedRoles[userId]) memberSelectedRoles[userId] = 'member';
     updateMemberSelectedCount();
     renderMemberUsersOptions();
+    renderMemberSelectedPane();
+}
+
+function removeMemberFromSelection(userId) {
+    const i = memberSelectedUserIds.indexOf(userId);
+    if (i < 0) return;
+    memberSelectedUserIds.splice(i, 1);
+    delete memberSelectedRoles[userId];
+    updateMemberSelectedCount();
+    renderMemberUsersOptions();
+    renderMemberSelectedPane();
+}
+
+function addAllAvailableMembers() {
+    const selectedSet = new Set(memberSelectedUserIds);
+    memberFilteredUsers.forEach(u => {
+        if (!selectedSet.has(u.user_id)) {
+            memberSelectedUserIds.push(u.user_id);
+            memberSelectedRoles[u.user_id] = 'member';
+        }
+    });
+    updateMemberSelectedCount();
+    renderMemberUsersOptions();
+    renderMemberSelectedPane();
+}
+
+function clearSelectedMembers() {
+    memberSelectedUserIds = [];
+    memberSelectedRoles = {};
+    updateMemberSelectedCount();
+    renderMemberUsersOptions();
+    renderMemberSelectedPane();
 }
 
 function updateMemberSelectedCount() {
     const countEl = document.getElementById('selectedMembersCount');
     if (countEl) countEl.textContent = memberSelectedUserIds.length;
+    const submitCount = document.getElementById('memberSubmitCount');
+    if (submitCount) submitCount.textContent = memberSelectedUserIds.length;
+    const plural = document.getElementById('memberSubmitPlural');
+    if (plural) plural.style.display = memberSelectedUserIds.length === 1 ? 'none' : 'inline';
+    const submitBtn = document.getElementById('memberSubmitBtn');
+    if (submitBtn) submitBtn.disabled = memberSelectedUserIds.length === 0;
 }
 
 async function handleMemberSubmit() {
@@ -771,9 +838,6 @@ async function handleMemberSubmit() {
     submitBtn.disabled = true;
     if (spinner) spinner.style.display = 'inline-block';
 
-    const role = document.getElementById('memberRole').value;
-    const billingRate = parseFloat(document.getElementById('memberBillingRate').value) || null;
-
     let successCount = 0;
     let failCount = 0;
 
@@ -785,8 +849,8 @@ async function handleMemberSubmit() {
                     body: JSON.stringify({
                         project_id: projectId,
                         user_id: userId,
-                        role: role,
-                        billing_rate: billingRate
+                        role: memberSelectedRoles[userId] || 'member',
+                        billing_rate: null
                     })
                 });
                 successCount++;
@@ -825,7 +889,6 @@ async function removeMember(memberId) {
 function closeMemberModal() {
     closeModal('memberModal');
     currentEditMemberId = null;
-    closeMemberUsersDropdown();
     memberSelectedUserIds = [];
 }
 
@@ -1183,7 +1246,7 @@ async function loadSubProjectAssignments(userId) {
                      style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border-primary);">
                     <div class="option-info">
                         <div class="option-name">${escapeHtml(sp.sub_project_name)}</div>
-                        <div class="option-email">${sp.member_count || 0} members</div>
+                        <div class="option-email">${(sp.member_count || 0) === 0 ? 'Open to everyone' : `${sp.member_count} restricted member${sp.member_count === 1 ? '' : 's'}`}</div>
                     </div>
                     <div class="option-toggle">
                         <div class="mini-toggle ${isAssigned && !allAccess ? 'active' : ''}" id="spToggle_${sp.id}"></div>

@@ -367,6 +367,22 @@ body.hrms-dashboard::before {
     opacity: 1;
 }
 
+/* Primary "start here" card — emphasizes the canonical Client → Project flow */
+.action-card-primary {
+    border: 1px solid rgba(var(--brand-primary-rgb, 99, 102, 241), 0.35);
+    background: linear-gradient(135deg,
+        rgba(var(--brand-primary-rgb, 99, 102, 241), 0.10),
+        rgba(var(--brand-primary-rgb, 99, 102, 241), 0.04));
+}
+.action-card-primary .action-icon {
+    background: var(--brand-primary);
+    color: #fff;
+}
+.action-card-primary .action-icon svg { color: #fff; }
+.action-card-primary:hover {
+    border-color: var(--brand-primary);
+}
+
 /* =============================================================
    ACTION CARD VARIANTS - Theme-Aware Color System
    Using brand/semantic colors from theme.css

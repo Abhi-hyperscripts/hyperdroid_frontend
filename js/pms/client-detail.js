@@ -148,7 +148,7 @@ async function loadClientContacts() {
         document.getElementById('clientContactCount').textContent = clientContacts.length;
 
         if (!clientContacts.length) {
-            container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No contacts yet. Add the first one above.</p>';
+            container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 20px;">No contacts yet. Click <strong>Add Contact</strong> to add the first one.</p>';
             return;
         }
 

@@ -9,6 +9,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // Show Admin (Danger Zone) link only for SUPERADMIN
+    try {
+        const tok = localStorage.getItem('ragenaizer_authToken') || '';
+        if (tok) {
+            const payload = JSON.parse(atob(tok.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+            const role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+                || payload['role'] || payload['roles'] || [];
+            const roles = Array.isArray(role) ? role : [role];
+            if (roles.includes('SUPERADMIN')) {
+                const adminLink = document.getElementById('pmsAdminLink');
+                if (adminLink) adminLink.style.display = 'inline-flex';
+            }
+        }
+    } catch { /* JWT parse fails are non-fatal */ }
+
     await loadDashboard();
 });
 

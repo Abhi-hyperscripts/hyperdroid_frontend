@@ -226,6 +226,8 @@ function formatDetails(activity) {
         const parts = [];
         for (const [key, value] of Object.entries(details)) {
             if (value === null || value === undefined) continue;
+            // Hide raw UUID-bearing keys — they aren't useful to end users
+            if (key === 'id' || /(_id|_uuid)$/i.test(key)) continue;
             const label = key.replace(/_/g, ' ');
             parts.push(`${label}: ${value}`);
         }

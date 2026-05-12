@@ -2749,6 +2749,27 @@ body.crm-dashboard .crm-container {
         gap: 8px;
     }
 
+    /* The 5-column project-meta grid (.pms-stats-5col) is more specific than
+       the .crm-stats-grid mobile rule, so its 5-col template wins and the
+       row overflows the viewport. Force it back to 2 columns on mobile.
+       Use minmax(0, 1fr) so a card with long text (client name, project
+       title) can shrink below its content's intrinsic width — default
+       grid track size is `min-content` which keeps the column wide. */
+    .crm-stats-grid.pms-stats-5col {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .crm-stats-grid.pms-stats-5col .crm-stat-card,
+    .crm-stats-grid .crm-stat-card {
+        min-width: 0;
+    }
+    .crm-stats-grid .crm-stat-value,
+    .crm-stats-grid .crm-stat-label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .crm-stat-card {
         padding: 12px;
     }

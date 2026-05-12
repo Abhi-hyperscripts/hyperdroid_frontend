@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>PMS Admin - Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <style>
+        .gm-overlay[hidden] { display: none !important; }
+    </style>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu"></div>
+    </nav>
+
+    <div style="max-width:960px; margin:0 auto; padding:24px; min-height:calc(100vh - 64px); display:flex; flex-direction:column; justify-content:center;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+            <div>
+                <h1 style="margin:0;">PMS Admin</h1>
+                <p style="margin:4px 0 0 0; color:var(--text-secondary);">Superadmin-only tenant administration</p>
+            </div>
+        </div>
+
+        <div id="notSuperadminMessage" style="display:none; padding:40px; text-align:center; border:1px solid var(--border-primary); border-radius:12px; background:var(--bg-card);">
+            <h3 style="margin:0 0 8px 0;">Restricted</h3>
+            <p style="margin:0; color:var(--text-secondary);">This page is available to SUPERADMIN users only.</p>
+        </div>
+
+        <div id="adminContent" style="display:none;">
+            <section id="dangerZone" aria-labelledby="dangerZoneTitle">
+                <header style="margin-bottom:12px;">
+                    <h2 id="dangerZoneTitle" style="color:var(--color-error, #ef4444); margin:0;">Danger Zone</h2>
+                    <p style="margin:4px 0 0 0; color:var(--text-secondary); font-size:0.9rem;">
+                        Operates only on <strong>your tenant</strong>. Other tenants' data is never touched.
+                    </p>
+                </header>
+
+                <div style="border:1px solid var(--color-error, #ef4444); border-radius:12px; padding:20px; background:rgba(239, 68, 68, 0.04);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:280px;">
+                            <h3 style="margin:0 0 6px 0;">Wipe All PMS Data</h3>
+                            <p style="margin:0; color:var(--text-secondary); font-size:0.9rem;">
+                                Permanently deletes:
+                            </p>
+                            <ul style="margin:8px 0 0 18px; color:var(--text-secondary); font-size:0.88rem; line-height:1.6;">
+                                <li>All projects, sub-projects, tasks, task comments, time entries, timesheets</li>
+                                <li>All client cache rows, client contacts, project members, tags, activity log</li>
+                                <li>All issues, issue comments, watchers, history, and attachments</li>
+                                <li>All PMS files stored in Drive for this tenant (issue attachments, inline images — everything under <code>pms/{tenant}/</code> on S3)</li>
+                            </ul>
+                            <p style="margin:12px 0 0 0; font-size:0.88rem; color:var(--text-secondary);">
+                                User accounts, HRMS, Drive (non-PMS files), and other services' data are not touched. The local <strong>clients</strong> cache rebuilds itself from Accounts the next time you open Clients.
+                            </p>
+                        </div>
+                        <button id="wipeAllBtn" class="btn" style="background:var(--color-error, #ef4444); color:#fff; border:none; flex-shrink:0; padding:10px 18px; border-radius:8px; font-weight:600; cursor:pointer;">
+                            Wipe All PMS Data
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Wipe Confirmation Modal -->
+    <div class="gm-overlay" id="wipeModal" hidden>
+        <div class="gm-modal" style="max-width:560px;">
+            <div class="gm-header">
+                <h3 style="color:var(--color-error, #ef4444); margin:0;">Confirm Wipe All PMS Data</h3>
+                <button class="gm-close" type="button" aria-label="Close" id="wipeModalCloseBtn">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div style="background:rgba(239, 68, 68, 0.08); border:1px solid var(--color-error, #ef4444); border-radius:8px; padding:16px; margin-bottom:16px;">
+                    <p style="margin:0 0 8px 0;"><strong>Tenant:</strong> <span id="wipeTenantId" style="font-family:monospace; font-size:0.85rem;"></span></p>
+                    <p style="margin:0; font-size:0.9rem;">Operates only on this tenant. Other tenants are never affected.</p>
+                </div>
+                <p style="margin-bottom:16px;">
+                    This will permanently delete <strong>all PMS data</strong> for this tenant and every file stored under <code>pms/{tenant}/</code> on Drive. User accounts and other services are untouched.
+                </p>
+                <p style="margin-bottom:8px; font-size:0.9rem;">Type <code style="background:var(--bg-tertiary, #1f2937); padding:2px 6px; border-radius:4px;">WIPE</code> to confirm:</p>
+                <input type="text" id="wipeConfirmInput" class="form-control" placeholder="Type WIPE here" autocomplete="off">
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-secondary" id="wipeCancelBtn">Cancel</button>
+                <button type="button" class="btn" id="wipeConfirmBtn" disabled style="background:var(--color-error, #ef4444); color:#fff; border:none;">Wipe Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wipe Result Modal -->
+    <div class="gm-overlay" id="wipeResultModal" hidden>
+        <div class="gm-modal" style="max-width:640px;">
+            <div class="gm-header">
+                <h3 id="wipeResultTitle" style="margin:0;">Wipe Complete</h3>
+                <button class="gm-close" type="button" aria-label="Close" id="wipeResultCloseBtn">&times;</button>
+            </div>
+            <div class="gm-body">
+                <div id="wipeResultSummary" style="font-size:0.95rem; line-height:1.7;"></div>
+            </div>
+            <div class="gm-footer">
+                <button type="button" class="btn btn-primary" id="wipeResultDoneBtn">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/pms/pms-modal-esc.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/pms/admin.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</body>
+</html>
