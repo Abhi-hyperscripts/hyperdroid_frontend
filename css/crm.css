@@ -3624,6 +3624,42 @@ label.ff-checkbox-inline input[type="checkbox"] {
     resize: vertical;
 }
 
+/* ─── Inline eye-toggle for secret inputs ─────────────────────────────
+   Used by the WhatsApp number modal (and any future "rotate credential"
+   surface) on the CRM settings page. Mirrors the auth.css rule of the
+   same name but lives here so the CRM doesn't depend on auth.css. */
+.apikey-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.apikey-input-wrapper > .form-control {
+    width: 100%;
+    padding-right: 38px;
+}
+.apikey-toggle-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted, var(--text-secondary));
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    transition: color 0.15s ease;
+}
+.apikey-toggle-btn:hover { color: var(--text-primary); }
+.apikey-toggle-btn:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
 /* ─── Captured Data (Source Raw Data in Lead Modal) ──────────────────── */
 
 .captured-data-header {
