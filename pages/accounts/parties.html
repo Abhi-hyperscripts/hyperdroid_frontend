@@ -545,25 +545,25 @@
                         <div class="form-row three-col">
                             <div class="form-group">
                                 <label for="customerName">Name *</label>
-                                <input type="text" id="customerName" class="form-control" required placeholder="Customer name">
+                                <input type="text" id="customerName" class="form-control" required maxlength="200" placeholder="Customer name">
                             </div>
                             <div class="form-group">
                                 <label for="customerDisplayName">Display Name</label>
-                                <input type="text" id="customerDisplayName" class="form-control" placeholder="Display name (optional)">
+                                <input type="text" id="customerDisplayName" class="form-control" maxlength="200" placeholder="Display name (optional)">
                             </div>
                             <div class="form-group">
-                                <label for="customerEmail">Email</label>
-                                <input type="email" id="customerEmail" class="form-control" placeholder="customer@example.com">
+                                <label for="customerEmail">Email *</label>
+                                <input type="email" id="customerEmail" class="form-control" required maxlength="200" placeholder="customer@example.com">
                             </div>
                         </div>
                         <div class="form-row three-col">
                             <div class="form-group">
-                                <label for="customerPhone">Phone</label>
-                                <input type="text" id="customerPhone" class="form-control" placeholder="Phone number">
+                                <label for="customerPhone">Phone *</label>
+                                <input type="text" id="customerPhone" class="form-control" required maxlength="50" placeholder="Phone number">
                             </div>
                             <div class="form-group">
-                                <label for="customerTaxId">GSTIN / Tax ID</label>
-                                <input type="text" id="customerTaxId" class="form-control" placeholder="Tax identification number">
+                                <label for="customerTaxId">GSTIN / Tax ID *</label>
+                                <input type="text" id="customerTaxId" class="form-control" required maxlength="50" placeholder="Tax identification number">
                             </div>
                             <div class="form-group">
                                 <label for="customerPaymentTerms">Payment Terms (Days)</label>
@@ -572,36 +572,36 @@
                         </div>
                         <div class="form-row three-col">
                             <div class="form-group">
-                                <label for="customerAddressLine1">Address Line 1</label>
-                                <input type="text" id="customerAddressLine1" class="form-control" placeholder="Street address">
+                                <label for="customerAddressLine1">Address Line 1 *</label>
+                                <input type="text" id="customerAddressLine1" class="form-control" required maxlength="500" placeholder="Street address">
                             </div>
                             <div class="form-group">
                                 <label for="customerAddressLine2">Address Line 2</label>
-                                <input type="text" id="customerAddressLine2" class="form-control" placeholder="Apt, suite, etc.">
+                                <input type="text" id="customerAddressLine2" class="form-control" maxlength="500" placeholder="Apt, suite, etc.">
                             </div>
                             <div class="form-group">
-                                <label for="customerCity">City</label>
-                                <input type="text" id="customerCity" class="form-control" placeholder="City">
+                                <label for="customerCity">City *</label>
+                                <input type="text" id="customerCity" class="form-control" required maxlength="100" placeholder="City">
                             </div>
                         </div>
                         <div class="form-row three-col">
                             <div class="form-group">
-                                <label for="customerState">State</label>
-                                <input type="text" id="customerState" class="form-control" placeholder="State / Province">
+                                <label for="customerState">State *</label>
+                                <input type="text" id="customerState" class="form-control" required maxlength="100" placeholder="State / Province">
                             </div>
                             <div class="form-group">
-                                <label for="customerStateCode">State Code</label>
-                                <input type="text" id="customerStateCode" class="form-control" placeholder="e.g., 29">
+                                <label for="customerStateCode">State Code <span style="color:var(--text-muted);font-weight:400;font-size:0.7rem;">(short code, e.g. 09 or MH)</span></label>
+                                <input type="text" id="customerStateCode" class="form-control" maxlength="10" placeholder="e.g., 09 or MH">
                             </div>
                             <div class="form-group">
-                                <label for="customerCountry">Country</label>
-                                <input type="text" id="customerCountry" class="form-control" placeholder="Country">
+                                <label for="customerCountry">Country *</label>
+                                <input type="text" id="customerCountry" class="form-control" required maxlength="100" placeholder="Country">
                             </div>
                         </div>
                         <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="customerPostalCode">Postal Code</label>
-                                <input type="text" id="customerPostalCode" class="form-control" placeholder="Postal / ZIP code">
+                                <input type="text" id="customerPostalCode" class="form-control" maxlength="20" placeholder="Postal / ZIP code">
                             </div>
                             <div class="form-group">
                                 <label for="customerCreditLimit">Credit Limit</label>
