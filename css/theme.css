@@ -375,6 +375,12 @@
   --bg-input-alt: rgba(250, 250, 250, 0.8);
   --bg-elevated: rgba(245, 245, 248, 0.95);
 
+  /* Tertiary background — used by info banners, side panels, deeply-nested
+     surfaces that need to step DOWN from --bg-card without going pure white.
+     Was undefined in light mode, causing every consumer to fall through to
+     a hardcoded dark fallback and look out of place on light surfaces. */
+  --bg-tertiary: rgba(99, 102, 241, 0.06);
+
   /* Additional Brand Color Transparent Variants */
   --danger-alpha-40: rgba(239, 68, 68, 0.4);
   --secondary-alpha-5: rgba(139, 92, 246, 0.05);
@@ -536,6 +542,9 @@
   --bg-card-rgb: 30, 41, 59;           /* RGB values for rgba() glass usage */
   --bg-card-hover: #334155;
   --bg-elevated: #1e293b;
+  /* Dark-mode tertiary: subtle brand-tinted overlay that's a touch lighter
+     than --bg-card so info banners still read on dark gradients. */
+  --bg-tertiary: rgba(99, 102, 241, 0.10);
   --bg-sunken: #020617;
   --bg-hover: #334155;
   --bg-input: #1e293b;
