@@ -10342,3 +10342,30 @@ label.toggle-switch,
     -moz-appearance: textfield;
     appearance: textfield;
 }
+
+/* ────────────────────────────────────────────────────────────────────
+   Brand logo color-inversion on dark surfaces
+   ────────────────────────────────────────────────────────────────────
+   `assets/brand_logo.png` is true-black on transparent. It vanishes
+   against the product's dark gradient backgrounds (auth pages,
+   Drive's shared/download surface, every Vision page, plus any app
+   page that toggles to dark theme).
+
+   Filter trick: `brightness(0)` collapses every channel to pure
+   black; `invert(1)` flips that to white. Result: the same PNG asset
+   reads correctly on both light and dark contexts without shipping
+   a second image variant or touching markup.
+
+   Selector list covers every class actually used on a dark surface
+   (audited 2026-05-12 — these 3 classes appear ONLY on always-dark
+   pages: auth, drive/shared, vision lobby/guest-join/pre-meeting).
+   The `[data-theme="dark"]` catch-all handles theme-switchable app
+   pages (CRM/HRMS/Drive/etc) that toggle dark mode at runtime. */
+body .auth-logo-img,
+body.auth-page .auth-logo-img,
+body .shared-logo,
+body.shared-page .shared-logo,
+body .pre-meeting-logo,
+[data-theme="dark"] img[src*="brand_logo"] {
+    filter: brightness(0) invert(1) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35)) !important;
+}
