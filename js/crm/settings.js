@@ -2005,7 +2005,7 @@ function openNewLeadSourceModal() {
     document.getElementById('leadSourceSubmitBtn').textContent = 'Create Source';
     document.getElementById('leadSourceForm').reset();
     document.getElementById('leadSourceId').value = '';
-    clearFieldMappingsEditor();
+    clearFormFieldsBuilder();
     openModal('leadSourceModal');
 }
 
@@ -2023,8 +2023,7 @@ async function editLeadSource(id) {
     document.getElementById('leadSourceType').value = source.source_type || 'landing_page';
     document.getElementById('leadSourceIdentifier').value = source.source_identifier || '';
 
-    // Populate field mappings
-    populateFieldMappingsEditor(source.field_mappings);
+    populateFormFieldsBuilder(source.form_fields);
 
     openModal('leadSourceModal');
 }
@@ -2045,13 +2044,24 @@ async function handleLeadSourceSubmit(event) {
     submitBtn.innerHTML = '<span class="btn-spinner"></span>Saving...';
 
     try {
-        const fieldMappings = getFieldMappingsFromEditor();
+        const formFields = getFormFieldsFromBuilder();
+        // Derive field_mappings from form_fields: every form key becomes
+        // its own alias. The CRM backend's FieldMappingHelper routes
+        // standard keys (full_name, email, phone, company_name, job_title…)
+        // to their CRM columns and dumps everything else into custom_fields.
+        // Empty form_fields → empty mapping, which the backend treats as
+        // "use default aliases" (a sensible no-config fallback).
+        const fieldMappings = {};
+        for (const f of formFields) {
+            if (f.key) fieldMappings[f.key] = [f.key];
+        }
 
         const payload = {
             source_name: document.getElementById('leadSourceName').value.trim(),
             source_type: document.getElementById('leadSourceType').value,
             source_identifier: document.getElementById('leadSourceIdentifier').value.trim() || null,
-            field_mappings: JSON.stringify(fieldMappings)
+            field_mappings: JSON.stringify(fieldMappings),
+            form_fields: JSON.stringify(formFields)
         };
 
         if (editingLeadSourceId) {
@@ -2157,108 +2167,311 @@ async function regenerateWebhookKey(id) {
     }
 }
 
-// ─── Field Mappings Editor ───────────────────────────────────────────────────
+// ─── Form Fields Builder (typed fields rendered on the public form) ──────────
+// Distinct from Field Mappings above (which is alias-only ingestion). This
+// drives WHAT shows up on the lead's form: text/email/tel/textarea/select,
+// per-field width, required, options (for select).
 
-function clearFieldMappingsEditor() {
-    document.getElementById('mapFirstName').value = '';
-    document.getElementById('mapLastName').value = '';
-    document.getElementById('mapFullName').value = '';
-    document.getElementById('mapEmail').value = '';
-    document.getElementById('mapPhone').value = '';
-    document.getElementById('mapCompany').value = '';
-    document.getElementById('mapJobTitle').value = '';
-    document.getElementById('customFieldMappings').innerHTML = '';
+const FF_TYPES = ['text', 'email', 'tel', 'textarea', 'select'];
+const FF_WIDTHS = ['full', 'half', 'third', 'two-thirds', 'quarter', 'three-quarters'];
+
+// Mirrors FieldMappingHelper.cs defaults — any key here routes to its
+// own CRM column at ingestion. Everything else lands in custom_fields.
+const FF_STANDARD_KEY_MAP = {
+    // Name
+    'first_name': 'First name', 'firstname': 'First name', 'fname': 'First name', 'given_name': 'First name',
+    'last_name': 'Last name', 'lastname': 'Last name', 'lname': 'Last name', 'family_name': 'Last name', 'surname': 'Last name',
+    'full_name': 'Full name (split on first space)', 'fullname': 'Full name (split on first space)', 'name': 'Full name (split on first space)',
+    // Contact
+    'email': 'Email', 'email_address': 'Email', 'work_email': 'Email',
+    'phone': 'Phone', 'phone_number': 'Phone', 'mobile': 'Phone', 'tel': 'Phone',
+    'alternate_phone': 'Alternate phone',
+    // Company
+    'company': 'Company', 'company_name': 'Company', 'organization': 'Company', 'org': 'Company',
+    'job_title': 'Job title', 'jobtitle': 'Job title', 'title': 'Job title', 'position': 'Job title',
+    // Address
+    'city': 'City', 'state': 'State', 'country': 'Country', 'address': 'Address',
+    'pincode': 'Postal code', 'zip': 'Postal code', 'postal_code': 'Postal code',
+    // Other
+    'website': 'Website', 'campaign_name': 'Campaign', 'notes': 'Notes',
+    'product_interest': 'Product interest'
+};
+
+function clearFormFieldsBuilder() {
+    const list = document.getElementById('formFieldsList');
+    if (list) list.innerHTML = '';
 }
 
-function addCustomFieldRow(fieldName = '', aliases = '') {
-    const container = document.getElementById('customFieldMappings');
-    const row = document.createElement('div');
-    row.className = 'custom-field-mapping-row';
-    row.innerHTML = `
-        <input type="text" class="custom-field-name" placeholder="field_name" value="${fieldName}">
-        <input type="text" class="custom-field-aliases" placeholder="alias1, alias2, alias3" value="${aliases}">
-        <button type="button" class="btn-remove-custom-field" title="Remove field" onclick="this.parentElement.remove()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-    `;
-    container.appendChild(row);
+function _ffEscape(s) {
+    return String(s ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-function populateFieldMappingsEditor(fieldMappingsJson) {
-    clearFieldMappingsEditor();
-    if (!fieldMappingsJson || fieldMappingsJson === '{}') return;
+// Each card stores its config on a private data object. The visible
+// row only renders the label, type pill, required pill — the rest
+// is edited via the sub-modal (cog button).
+let _ffSubModalActiveCard = null;
+let _ffSubModalKeyEdited = false;
 
-    try {
-        const mappings = typeof fieldMappingsJson === 'string'
-            ? JSON.parse(fieldMappingsJson)
-            : fieldMappingsJson;
+function addFormFieldCard(field) {
+    const list = document.getElementById('formFieldsList');
+    if (!list) return;
 
-        const fieldMap = {
-            'first_name': 'mapFirstName',
-            'last_name': 'mapLastName',
-            'full_name': 'mapFullName',
-            'email': 'mapEmail',
-            'phone': 'mapPhone',
-            'company_name': 'mapCompany',
-            'job_title': 'mapJobTitle'
-        };
+    const f = field || { key: '', type: 'text', label: '', placeholder: '', required: false, width: 'full', options: [] };
 
-        const coreKeys = new Set(Object.keys(fieldMap));
+    const card = document.createElement('div');
+    card.className = 'ff-row';
+    card.dataset.ffCard = '1';
 
-        for (const [key, inputId] of Object.entries(fieldMap)) {
-            const val = mappings[key];
-            if (val) {
-                const el = document.getElementById(inputId);
-                if (el) {
-                    el.value = Array.isArray(val) ? val.join(', ') : val;
-                }
-            }
-        }
-
-        // Load custom fields (any key not in core set)
-        for (const [key, val] of Object.entries(mappings)) {
-            if (!coreKeys.has(key)) {
-                const aliases = Array.isArray(val) ? val.join(', ') : val;
-                addCustomFieldRow(key, aliases);
-            }
-        }
-    } catch (e) {
-        console.error('Error parsing field mappings:', e);
-    }
-}
-
-function getFieldMappingsFromEditor() {
-    const mappings = {};
-
-    const fields = {
-        'first_name': 'mapFirstName',
-        'last_name': 'mapLastName',
-        'full_name': 'mapFullName',
-        'email': 'mapEmail',
-        'phone': 'mapPhone',
-        'company_name': 'mapCompany',
-        'job_title': 'mapJobTitle'
+    // Store full config on the card; sub-modal reads/writes this.
+    card._ffData = {
+        key: f.key || '',
+        type: f.type || 'text',
+        label: f.label || '',
+        placeholder: f.placeholder || '',
+        required: !!f.required,
+        width: f.width || 'full',
+        options: Array.isArray(f.options) ? f.options.slice() : [],
+        keyUserEdited: !!f.key  // if it came in with a key, treat as user-set
     };
 
-    for (const [key, inputId] of Object.entries(fields)) {
-        const val = document.getElementById(inputId)?.value?.trim();
-        if (val) {
-            mappings[key] = val.split(',').map(s => s.trim()).filter(s => s);
-        }
-    }
+    card.innerHTML = `
+        <span class="ff-row-handle" title="Drag to reorder">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
+        </span>
+        <input type="text" class="ff-row-label" data-ff-row-label placeholder="Untitled field">
+        <span class="ff-type-pill" data-ff-row-type></span>
+        <span class="ff-required-pill" data-ff-row-required style="display:none;">required</span>
+        <div class="ff-row-actions">
+            <button type="button" class="ff-icon-btn ff-cog" title="Field settings" data-ff-settings>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </button>
+            <button type="button" class="ff-icon-btn" title="Move up" data-ff-up>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+            </button>
+            <button type="button" class="ff-icon-btn" title="Move down" data-ff-down>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button type="button" class="ff-icon-btn ff-danger" title="Remove field" data-ff-remove>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+    `;
 
-    // Collect custom field mappings
-    const customRows = document.querySelectorAll('#customFieldMappings .custom-field-mapping-row');
-    customRows.forEach(row => {
-        const fieldName = row.querySelector('.custom-field-name')?.value?.trim();
-        const aliases = row.querySelector('.custom-field-aliases')?.value?.trim();
-        if (fieldName && aliases) {
-            const key = fieldName.toLowerCase().replace(/\s+/g, '_');
-            mappings[key] = aliases.split(',').map(s => s.trim()).filter(s => s);
+    _ffRenderRowPills(card);
+    card.querySelector('[data-ff-row-label]').value = card._ffData.label;
+
+    card.querySelector('[data-ff-row-label]').addEventListener('input', (e) => {
+        card._ffData.label = e.target.value;
+        if (!card._ffData.keyUserEdited) {
+            card._ffData.key = _slugify(card._ffData.label);
         }
     });
 
-    return mappings;
+    card.querySelector('[data-ff-remove]').addEventListener('click', () => card.remove());
+    card.querySelector('[data-ff-up]').addEventListener('click', () => {
+        const prev = card.previousElementSibling;
+        if (prev && prev.dataset.ffCard) list.insertBefore(card, prev);
+    });
+    card.querySelector('[data-ff-down]').addEventListener('click', () => {
+        const next = card.nextElementSibling;
+        if (next && next.dataset.ffCard) list.insertBefore(next, card);
+    });
+    card.querySelector('[data-ff-settings]').addEventListener('click', () => {
+        openFieldSettings(card);
+    });
+
+    list.appendChild(card);
+    return card;
+}
+
+function _ffRenderRowPills(card) {
+    const d = card._ffData;
+    card.querySelector('[data-ff-row-type]').textContent = d.type;
+    card.querySelector('[data-ff-row-required]').style.display = d.required ? '' : 'none';
+}
+
+// ─── Field-settings sub-modal (opens on top of leadSourceModal) ──────────────
+
+function openFieldSettings(card) {
+    _ffSubModalActiveCard = card;
+    _ffSubModalKeyEdited = card._ffData.keyUserEdited;
+
+    const d = card._ffData;
+    document.getElementById('fsLabel').value = d.label;
+    document.getElementById('fsType').value = d.type;
+    document.getElementById('fsWidth').value = d.width;
+    document.getElementById('fsPlaceholder').value = d.placeholder;
+    document.getElementById('fsKey').value = d.key;
+    document.getElementById('fsRequired').checked = d.required;
+
+    const optsText = Array.isArray(d.options)
+        ? d.options.map(o => o.label && o.label !== o.value ? `${o.value}|${o.label}` : o.value).join('\n')
+        : '';
+    document.getElementById('fsOptions').value = optsText;
+
+    _ffSyncOptionsVisibility();
+    _ffRenderKeyStatus();
+
+    // One-time wiring for the sub-modal inputs (no-op on subsequent opens)
+    _ffWireSubModal();
+
+    openModal('fieldSettingsModal');
+    // Focus label so user can immediately type
+    setTimeout(() => document.getElementById('fsLabel')?.focus(), 50);
+}
+
+function _ffRenderKeyStatus() {
+    const el = document.getElementById('fsKeyStatus');
+    if (!el) return;
+    const key = (document.getElementById('fsKey').value || '').trim().toLowerCase();
+    if (!key) {
+        el.innerHTML = '';
+        return;
+    }
+    const mappedTo = FF_STANDARD_KEY_MAP[key];
+    if (mappedTo) {
+        el.innerHTML = `<span class="ff-key-pill ff-key-pill-ok">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Maps to <strong>${mappedTo}</strong> column
+        </span>`;
+    } else {
+        el.innerHTML = `<span class="ff-key-pill ff-key-pill-warn">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Stored as custom field — won't fill name / email / phone columns
+        </span>`;
+    }
+}
+
+function _ffSyncOptionsVisibility() {
+    const wrap = document.getElementById('fsOptionsWrap');
+    if (!wrap) return;
+    wrap.style.display = document.getElementById('fsType').value === 'select' ? '' : 'none';
+}
+
+let _ffSubModalWired = false;
+function _ffWireSubModal() {
+    if (_ffSubModalWired) return;
+    _ffSubModalWired = true;
+
+    const labelEl = document.getElementById('fsLabel');
+    const keyEl = document.getElementById('fsKey');
+    const typeEl = document.getElementById('fsType');
+
+    labelEl.addEventListener('input', () => {
+        if (!_ffSubModalKeyEdited) {
+            keyEl.value = _slugify(labelEl.value);
+            _ffRenderKeyStatus();
+        }
+    });
+    keyEl.addEventListener('input', () => {
+        _ffSubModalKeyEdited = true;
+        _ffRenderKeyStatus();
+    });
+    typeEl.addEventListener('change', _ffSyncOptionsVisibility);
+}
+
+function closeFieldSettings() {
+    closeModal('fieldSettingsModal');
+    _ffSubModalActiveCard = null;
+}
+
+function saveFieldSettings() {
+    if (!_ffSubModalActiveCard) return closeFieldSettings();
+
+    const label = document.getElementById('fsLabel').value.trim();
+    if (!label) {
+        if (typeof Toast !== 'undefined') Toast.error('Label is required');
+        return;
+    }
+
+    const key = document.getElementById('fsKey').value.trim() || _slugify(label);
+    const type = document.getElementById('fsType').value || 'text';
+    const width = document.getElementById('fsWidth').value || 'full';
+    const placeholder = document.getElementById('fsPlaceholder').value;
+    const required = document.getElementById('fsRequired').checked;
+
+    let options = [];
+    if (type === 'select') {
+        const text = document.getElementById('fsOptions').value || '';
+        options = text.split('\n').map(line => {
+            const t = line.trim();
+            if (!t) return null;
+            const idx = t.indexOf('|');
+            if (idx === -1) return { value: t, label: t };
+            const v = t.slice(0, idx).trim();
+            const l = t.slice(idx + 1).trim();
+            return v ? { value: v, label: l || v } : null;
+        }).filter(Boolean);
+    }
+
+    const card = _ffSubModalActiveCard;
+    card._ffData = { key, type, label, placeholder, required, width, options, keyUserEdited: _ffSubModalKeyEdited };
+    card.querySelector('[data-ff-row-label]').value = label;
+    _ffRenderRowPills(card);
+
+    closeFieldSettings();
+}
+
+function _slugify(s) {
+    return String(s || '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+function populateFormFieldsBuilder(formFieldsJson) {
+    clearFormFieldsBuilder();
+    if (!formFieldsJson) return;
+
+    let fields;
+    try {
+        fields = typeof formFieldsJson === 'string'
+            ? JSON.parse(formFieldsJson)
+            : formFieldsJson;
+    } catch (e) {
+        console.error('Error parsing form_fields:', e);
+        return;
+    }
+    if (!Array.isArray(fields)) return;
+
+    fields.forEach(f => {
+        if (f && typeof f === 'object') addFormFieldCard(f);
+    });
+}
+
+function getFormFieldsFromBuilder() {
+    const cards = document.querySelectorAll('#formFieldsList [data-ff-card]');
+    const out = [];
+    cards.forEach(card => {
+        const d = card._ffData;
+        if (!d) return;
+
+        // Prefer the live label from the inline row input (it may have
+        // been edited without opening the sub-modal).
+        const liveLabel = card.querySelector('[data-ff-row-label]')?.value?.trim() || d.label || '';
+        const key = (d.key || '').trim() || _slugify(liveLabel);
+        if (!key) return;
+
+        const field = {
+            key,
+            type: d.type || 'text',
+            label: liveLabel || key,
+            placeholder: d.placeholder || '',
+            required: !!d.required,
+            width: d.width || 'full'
+        };
+        if (field.type === 'select') {
+            field.options = Array.isArray(d.options) ? d.options : [];
+        }
+        out.push(field);
+    });
+    return out;
 }
 
 // ─── Embed Code ─────────────────────────────────────────────────────────────

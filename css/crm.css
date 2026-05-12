@@ -3359,6 +3359,271 @@ body.crm-page #gsShareModal .gm-body:has(.searchable-dropdown.open) {
     background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.06);
 }
 
+/* ─── Lead Source modal: wider + proper viewport clearance ───────────
+   The CRM page has a fixed top navbar (~64px). Without explicit top
+   padding the modal slides up under the navbar; without bottom padding
+   the modal's footer button bar gets clipped by the Dock / viewport
+   edge. Reserve 96px on top (clears nav + breathing gap) and 32px on
+   the bottom. max-height is computed off those values so the body
+   always scrolls cleanly without overflowing the viewport. */
+#leadSourceModal.gm-overlay {
+    padding: 96px 20px 32px 20px !important;
+    align-items: flex-start !important;
+}
+
+#leadSourceModal .gm-modal {
+    width: 880px;
+    max-width: min(880px, calc(100vw - 40px));
+    max-height: calc(100vh - 96px - 32px);
+    margin: 0 auto;
+}
+
+@media (max-width: 920px) {
+    #leadSourceModal .gm-modal {
+        width: 100%;
+        max-width: calc(100vw - 40px);
+    }
+}
+
+/* ─── Form Fields Builder (typed fields per source) ──────────────────── */
+
+.form-fields-builder {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#formFieldsList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ff-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-card);
+}
+
+.ff-row-handle {
+    flex: 0 0 auto;
+    color: var(--text-muted, var(--text-secondary));
+    opacity: 0.6;
+    cursor: grab;
+    display: inline-flex;
+    align-items: center;
+}
+
+.ff-row-label {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    font-size: 0.85rem !important;
+    font-weight: 500;
+    color: var(--text-primary);
+    padding: 4px 6px !important;
+    height: auto !important;
+    box-shadow: none !important;
+}
+
+.ff-row-label:hover {
+    border-color: var(--border-color) !important;
+    background: rgba(0,0,0,0.02) !important;
+}
+
+[data-theme="dark"] .ff-row-label:hover {
+    background: rgba(255,255,255,0.04) !important;
+}
+
+.ff-row-label:focus {
+    border-color: var(--brand-primary) !important;
+    background: var(--bg-input, var(--bg-card)) !important;
+    outline: none !important;
+}
+
+.ff-type-pill {
+    flex: 0 0 auto;
+    font-family: ui-monospace, "SFMono-Regular", monospace;
+    font-size: 0.7rem;
+    color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.1);
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: lowercase;
+}
+
+.ff-required-pill {
+    flex: 0 0 auto;
+    font-size: 0.65rem;
+    color: var(--color-warning, #f59e0b);
+    background: rgba(245, 158, 11, 0.1);
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ff-row-actions {
+    display: flex;
+    gap: 2px;
+    flex: 0 0 auto;
+    margin-left: 4px;
+}
+
+/* Cog icon emphasized so it reads as the primary "configure" action. */
+.ff-icon-btn.ff-cog {
+    color: var(--brand-primary);
+    border-color: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.25);
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.06);
+    width: 26px;
+    height: 26px;
+}
+
+.ff-icon-btn.ff-cog:hover {
+    color: var(--brand-primary);
+    border-color: var(--brand-primary);
+    background: rgba(var(--brand-primary-rgb, 99, 102, 241), 0.14);
+}
+
+.ff-hint {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-muted, var(--text-secondary));
+    font-size: 0.68rem;
+}
+
+label.ff-checkbox-inline {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 8px;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    font-size: 0.85rem !important;
+    color: var(--text-primary) !important;
+    cursor: pointer;
+}
+
+label.ff-checkbox-inline input[type="checkbox"] {
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+}
+
+/* Sub-modal that opens on top of the lead source modal — bump z-index
+   so it sits above the parent overlay (10000) and its dropdown sub-menus. */
+#fieldSettingsModal.gm-overlay {
+    z-index: 10010 !important;
+}
+
+.ff-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.ff-key-status {
+    margin-top: 6px;
+    min-height: 22px;
+}
+
+.ff-key-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    padding: 3px 9px;
+    border-radius: 999px;
+    line-height: 1.4;
+    border: 1px solid transparent;
+}
+
+.ff-key-pill strong {
+    font-weight: 600;
+}
+
+.ff-key-pill-ok {
+    color: var(--color-success, #16a34a);
+    background: rgba(22, 163, 74, 0.1);
+    border-color: rgba(22, 163, 74, 0.25);
+}
+
+.ff-key-pill-warn {
+    color: var(--color-warning, #d97706);
+    background: rgba(217, 119, 6, 0.1);
+    border-color: rgba(217, 119, 6, 0.25);
+}
+
+.ff-icon-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ff-icon-btn:hover {
+    border-color: var(--border-color);
+    color: var(--text-primary);
+    background: rgba(0,0,0,0.03);
+}
+
+.ff-icon-btn.ff-danger:hover {
+    border-color: var(--color-error, #ef4444);
+    color: var(--color-error, #ef4444);
+    background: rgba(239, 68, 68, 0.08);
+}
+
+.ff-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ff-field.ff-full {
+    grid-column: 1 / -1;
+}
+
+.ff-field label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin: 0;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ff-field input[type="text"],
+.ff-field select,
+.ff-field textarea {
+    font-size: 0.8rem;
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-input, var(--bg-card));
+    color: var(--text-primary);
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.ff-field textarea {
+    min-height: 56px;
+    resize: vertical;
+}
+
 /* ─── Captured Data (Source Raw Data in Lead Modal) ──────────────────── */
 
 .captured-data-header {

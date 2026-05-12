@@ -2107,43 +2107,15 @@
                         </p>
                     </div>
                     <div class="crm-form-group">
-                        <label>Field Mappings</label>
-                        <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 8px;">
-                            Map source field names to CRM fields. Comma-separated aliases for each field. Defaults are applied if left empty.
+                        <label>Form Fields (visible to leads)</label>
+                        <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 10px;">
+                            Build the form your leads will fill in. Pick a type for each field (text, dropdown, etc.), set its label and width. Each field's <code>key</code> decides where its value lands in the CRM — standard keys like <code>full_name</code>, <code>email</code>, <code>phone</code>, <code>company_name</code>, <code>job_title</code> go into their CRM columns; anything else is kept as a custom field on the lead.
                         </p>
-                        <div class="field-mappings-editor" id="fieldMappingsEditor">
-                            <div class="field-mapping-row">
-                                <label>First Name</label>
-                                <input type="text" id="mapFirstName" placeholder="first_name, firstName, fname, given_name">
-                            </div>
-                            <div class="field-mapping-row">
-                                <label>Last Name</label>
-                                <input type="text" id="mapLastName" placeholder="last_name, lastName, lname, family_name">
-                            </div>
-                            <div class="field-mapping-row">
-                                <label>Full Name</label>
-                                <input type="text" id="mapFullName" placeholder="full_name, fullName, name">
-                            </div>
-                            <div class="field-mapping-row">
-                                <label>Email</label>
-                                <input type="text" id="mapEmail" placeholder="email, email_address, work_email">
-                            </div>
-                            <div class="field-mapping-row">
-                                <label>Phone</label>
-                                <input type="text" id="mapPhone" placeholder="phone, phone_number, mobile, tel">
-                            </div>
-                            <div class="field-mapping-row">
-                                <label>Company</label>
-                                <input type="text" id="mapCompany" placeholder="company, company_name, organization">
-                            </div>
-                            <div class="field-mapping-row">
-                                <label>Job Title</label>
-                                <input type="text" id="mapJobTitle" placeholder="job_title, jobTitle, title, position">
-                            </div>
-                            <div id="customFieldMappings"></div>
-                            <button type="button" class="btn-add-custom-field" onclick="addCustomFieldRow()">
+                        <div class="form-fields-builder" id="formFieldsBuilder">
+                            <div id="formFieldsList"></div>
+                            <button type="button" class="btn-add-custom-field" onclick="addFormFieldCard()">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                Add Custom Field
+                                Add Form Field
                             </button>
                         </div>
                     </div>
@@ -2152,6 +2124,84 @@
             <div class="gm-footer" style="padding: 16px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color-light);">
                 <button type="button" class="btn btn-secondary" onclick="closeLeadSourceModal()">Cancel</button>
                 <button type="submit" form="leadSourceForm" class="btn btn-primary" id="leadSourceSubmitBtn">Create Source</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Field Settings Sub-Modal (opens on top of Lead Source modal) -->
+    <div class="gm-overlay" id="fieldSettingsModal">
+        <div class="gm-modal gm-sm">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Field Settings</h3>
+                        <p class="gm-subtitle" id="fieldSettingsSubtitle">Configure how this field renders</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeFieldSettings()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gm-body">
+                <div class="crm-form-group">
+                    <label for="fsLabel">Label *</label>
+                    <input type="text" id="fsLabel" placeholder="e.g., Full name">
+                </div>
+                <div class="ff-modal-grid">
+                    <div class="crm-form-group">
+                        <label for="fsType">Type</label>
+                        <select id="fsType">
+                            <option value="text">Single-line text</option>
+                            <option value="email">Email</option>
+                            <option value="tel">Phone (tel)</option>
+                            <option value="textarea">Multi-line textarea</option>
+                            <option value="select">Dropdown (select)</option>
+                        </select>
+                    </div>
+                    <div class="crm-form-group">
+                        <label for="fsWidth">Width</label>
+                        <select id="fsWidth">
+                            <option value="full">Full row</option>
+                            <option value="half">Half (1/2)</option>
+                            <option value="third">Third (1/3)</option>
+                            <option value="two-thirds">Two-thirds (2/3)</option>
+                            <option value="quarter">Quarter (1/4)</option>
+                            <option value="three-quarters">Three-quarters (3/4)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="crm-form-group">
+                    <label for="fsPlaceholder">Placeholder</label>
+                    <input type="text" id="fsPlaceholder" placeholder="e.g., Jane Doe">
+                </div>
+                <div class="crm-form-group">
+                    <label for="fsKey">Key <span class="ff-hint">(auto from label; standard keys route to CRM columns)</span></label>
+                    <input type="text" id="fsKey" placeholder="full_name">
+                    <div id="fsKeyStatus" class="ff-key-status" aria-live="polite"></div>
+                </div>
+                <div class="crm-form-group" id="fsOptionsWrap" style="display:none;">
+                    <label for="fsOptions">Options <span class="ff-hint">(one per line, optionally <code>value|label</code>)</span></label>
+                    <textarea id="fsOptions" rows="5" placeholder="hot&#10;warm&#10;cold|Cold lead"></textarea>
+                </div>
+                <div class="crm-form-group">
+                    <label class="ff-checkbox-inline">
+                        <input type="checkbox" id="fsRequired">
+                        Required field
+                    </label>
+                </div>
+            </div>
+            <div class="gm-footer" style="padding: 16px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color-light);">
+                <button type="button" class="btn btn-secondary" onclick="closeFieldSettings()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveFieldSettings()">Apply</button>
             </div>
         </div>
     </div>
