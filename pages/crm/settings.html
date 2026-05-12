@@ -2690,7 +2690,7 @@
                                 <option value="">— pick a preset —</option>
                                 <option value="default-light">Default Light (clean, friendly)</option>
                                 <option value="default-dark">Default Dark</option>
-                                <option value="wisetrack">WiseTrack Brief (dark + monospace + aurora)</option>
+                                <option value="agency-dark">Agency Dark (gradient + monospace + aurora)</option>
                             </select>
                         </div>
 
@@ -2699,6 +2699,29 @@
                         <div class="fs-row">
                             <label for="fsFormTitle" class="fs-label">Form Title</label>
                             <input type="text" id="fsFormTitle" value="" placeholder="Leave empty to hide" class="fs-text-input">
+                        </div>
+                        <div class="fs-row">
+                            <label for="fsEyebrowText" class="fs-label">Header label — left</label>
+                            <input type="text" id="fsEyebrowText" value="" placeholder="e.g. FORM · BRIEF (leave empty to hide)" maxlength="60" class="fs-text-input">
+                        </div>
+                        <div class="fs-row">
+                            <label for="fsBadgeText" class="fs-label">Header label — right</label>
+                            <input type="text" id="fsBadgeText" value="" placeholder="e.g. SECURE / DRAFT v2 (leave empty to hide)" maxlength="60" class="fs-text-input">
+                        </div>
+                        <div class="fs-toggle-row">
+                            <label class="fs-toggle-switch">
+                                <input type="checkbox" id="fsBadgeDot">
+                                <span id="fsBadgeDotToggle" class="fs-toggle-track"></span>
+                                <span id="fsBadgeDotKnob" class="fs-toggle-knob"></span>
+                            </label>
+                            <span class="fs-toggle-label">Show coloured dot before right label</span>
+                        </div>
+                        <div class="fs-row">
+                            <label class="fs-label">Right-label dot colour</label>
+                            <div class="fs-color-row">
+                                <input type="color" id="fsBadgeDotColor" value="#34D399" class="fs-color-swatch">
+                                <input type="text" id="fsBadgeDotColorHex" value="#34D399" maxlength="7" class="fs-color-hex">
+                            </div>
                         </div>
                         <div class="fs-row">
                             <label for="fsTheme" class="fs-label">Theme</label>
@@ -2916,6 +2939,35 @@
                                 <span id="fsButtonGradientKnob" class="fs-toggle-knob"></span>
                             </label>
                             <span class="fs-toggle-label">Gradient on submit button</span>
+                        </div>
+                        <div class="fs-row">
+                            <label for="fsRenderSelectAs" class="fs-label">Render select fields as</label>
+                            <select id="fsRenderSelectAs" class="fs-select">
+                                <option value="dropdown">Native dropdown</option>
+                                <option value="pills">Segmented pill chips</option>
+                            </select>
+                        </div>
+                        <div class="fs-row">
+                            <label for="fsGridColumns" class="fs-label">Field grid columns</label>
+                            <select id="fsGridColumns" class="fs-select">
+                                <option value="1">1 column (stack every field)</option>
+                                <option value="2">2 columns</option>
+                                <option value="3">3 columns</option>
+                                <option value="4">4 columns</option>
+                            </select>
+                            <p class="fs-help" style="margin-top:6px;color:var(--text-secondary);font-size:0.75rem;line-height:1.4;">Each field can override with its own width (full / half / third / quarter) when configured. This sets the page-level grid.</p>
+                        </div>
+                        <div class="fs-toggle-row">
+                            <label class="fs-toggle-switch">
+                                <input type="checkbox" id="fsHairlines">
+                                <span id="fsHairlinesToggle" class="fs-toggle-track"></span>
+                                <span id="fsHairlinesKnob" class="fs-toggle-knob"></span>
+                            </label>
+                            <span class="fs-toggle-label">Hairline dividers (under header + above footer)</span>
+                        </div>
+                        <div class="fs-row">
+                            <label for="fsFooterText" class="fs-label">Footer helper text</label>
+                            <input type="text" id="fsFooterText" value="" placeholder="WE REPLY WITHIN ONE WORKING DAY." maxlength="80" class="fs-text-input">
                         </div>
 
                         <!-- Section: Shape -->

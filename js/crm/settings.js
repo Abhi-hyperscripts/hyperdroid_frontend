@@ -2414,9 +2414,17 @@ const FS_TYPOGRAPHY_DEFAULTS = {
     font_label: 'system',
     label_uppercase: false,
     headline_gradient: false,
-    bg_style: 'solid',         // solid | gradient | aurora | grid | dots
+    bg_style: 'solid',          // solid | gradient | aurora | grid | dots
     hud_brackets: false,
-    button_gradient: false
+    button_gradient: false,
+    eyebrow_text: '',           // small uppercase label, top-LEFT of the header strip
+    badge_text: '',             // small uppercase label, top-RIGHT of the header strip
+    badge_dot: false,           // small coloured dot before the badge text
+    badge_dot_color: '#34D399', // colour of that dot
+    render_select_as: 'dropdown', // dropdown | pills (for select fields)
+    grid_columns: 1,            // 1–4 — how many columns the field grid uses
+    hairlines: false,           // thin gradient rule under eyebrow + above footer
+    footer_text: ''             // small text left-aligned in the footer (CTA on right)
 };
 
 const LIGHT_DEFAULTS = {
@@ -2473,10 +2481,11 @@ const DARK_DEFAULTS = {
     ...FS_TYPOGRAPHY_DEFAULTS
 };
 
-// WiseTrack-style preset — deep navy with aurora orbs + grid, serif
-// headline with gradient text, monospace uppercase labels, violet CTA
-// gradient. Mirrors the wisetrack.in contact-page form aesthetic.
-const WISETRACK_DEFAULTS = {
+// Agency-style "dark studio" preset — deep navy with aurora orbs,
+// serif headline with gradient text, monospace uppercase labels, violet
+// CTA gradient. Generic — any agency / studio / consulting tenant can
+// start here and tweak.
+const AGENCY_DARK_DEFAULTS = {
     theme: 'dark',
     position: 'center',
     form_title: '',
@@ -2499,7 +2508,7 @@ const WISETRACK_DEFAULTS = {
     logo_height: 32,
     input_height: 48,
     button_height: 48,
-    form_width: 520,
+    form_width: 600,
     font_heading: 'fraunces',
     font_body: 'inter-tight',
     font_label: 'jetbrains-mono',
@@ -2507,13 +2516,21 @@ const WISETRACK_DEFAULTS = {
     headline_gradient: true,
     bg_style: 'aurora',
     hud_brackets: true,
-    button_gradient: true
+    button_gradient: true,
+    eyebrow_text: 'FORM · BRIEF',
+    badge_text: 'SECURE',
+    badge_dot: true,
+    badge_dot_color: '#34D399',
+    render_select_as: 'pills',
+    grid_columns: 2,
+    hairlines: true,
+    footer_text: 'WE REPLY WITHIN ONE WORKING DAY.'
 };
 
 const FS_PRESETS = {
     'default-light': LIGHT_DEFAULTS,
     'default-dark': DARK_DEFAULTS,
-    'wisetrack': WISETRACK_DEFAULTS
+    'agency-dark': AGENCY_DARK_DEFAULTS
 };
 
 // Google Fonts URL fragments for each font choice. Map key → (family
@@ -2564,6 +2581,7 @@ const FS_COLOR_PAIRS = [
     ['fsButtonColor', 'fsButtonColorHex'],
     ['fsButtonTextColor', 'fsButtonTextColorHex'],
     ['fsBorderColor', 'fsBorderColorHex'],
+    ['fsBadgeDotColor', 'fsBadgeDotColorHex'],
 ];
 
 let _fsSyncBound = false;
@@ -2714,16 +2732,20 @@ function initFormStylingSync() {
     }
 
     // ── New design-system controls — live preview ───────────────────────
-    ['fsFontHeading', 'fsFontBody', 'fsFontLabel', 'fsBgStyle'].forEach(id => {
+    ['fsFontHeading', 'fsFontBody', 'fsFontLabel', 'fsBgStyle', 'fsRenderSelectAs', 'fsGridColumns'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('change', () => renderStylingPreview());
     });
-    ['fsLabelUppercase', 'fsHeadlineGradient', 'fsHudBrackets', 'fsButtonGradient'].forEach(id => {
+    ['fsLabelUppercase', 'fsHeadlineGradient', 'fsHudBrackets', 'fsButtonGradient', 'fsBadgeDot', 'fsHairlines'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('change', () => {
             updateNewToggleVisuals();
             renderStylingPreview();
         });
+    });
+    ['fsEyebrowText', 'fsBadgeText', 'fsFooterText'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => renderStylingPreview());
     });
 }
 
@@ -2790,7 +2812,15 @@ function getFormStylingValues() {
         headline_gradient: document.getElementById('fsHeadlineGradient')?.checked || false,
         bg_style: document.getElementById('fsBgStyle')?.value || 'solid',
         hud_brackets: document.getElementById('fsHudBrackets')?.checked || false,
-        button_gradient: document.getElementById('fsButtonGradient')?.checked || false
+        button_gradient: document.getElementById('fsButtonGradient')?.checked || false,
+        eyebrow_text: document.getElementById('fsEyebrowText')?.value?.trim() || '',
+        badge_text: document.getElementById('fsBadgeText')?.value?.trim() || '',
+        badge_dot: document.getElementById('fsBadgeDot')?.checked || false,
+        badge_dot_color: document.getElementById('fsBadgeDotColorHex')?.value || '#34D399',
+        render_select_as: document.getElementById('fsRenderSelectAs')?.value || 'dropdown',
+        grid_columns: Math.max(1, Math.min(4, parseInt(document.getElementById('fsGridColumns')?.value, 10) || 1)),
+        hairlines: document.getElementById('fsHairlines')?.checked || false,
+        footer_text: document.getElementById('fsFooterText')?.value?.trim() || ''
     };
 }
 
@@ -2891,6 +2921,17 @@ function populateFormStylingControls(s) {
     setVal('fsBgStyle', s.bg_style, 'solid');
     setChecked('fsHudBrackets', s.hud_brackets);
     setChecked('fsButtonGradient', s.button_gradient);
+    setVal('fsEyebrowText', s.eyebrow_text, '');
+    setVal('fsBadgeText', s.badge_text, '');
+    setChecked('fsBadgeDot', s.badge_dot);
+    const dotColorEl = document.getElementById('fsBadgeDotColor');
+    const dotHexEl = document.getElementById('fsBadgeDotColorHex');
+    if (dotColorEl && s.badge_dot_color) dotColorEl.value = s.badge_dot_color;
+    if (dotHexEl && s.badge_dot_color) dotHexEl.value = s.badge_dot_color;
+    setVal('fsRenderSelectAs', s.render_select_as, 'dropdown');
+    setVal('fsGridColumns', String(s.grid_columns ?? 1), '1');
+    setChecked('fsHairlines', s.hairlines);
+    setVal('fsFooterText', s.footer_text, '');
     updateNewToggleVisuals();
 }
 
@@ -2901,7 +2942,9 @@ function updateNewToggleVisuals() {
         ['fsLabelUppercase', 'fsLabelUppercaseToggle', 'fsLabelUppercaseKnob'],
         ['fsHeadlineGradient', 'fsHeadlineGradientToggle', 'fsHeadlineGradientKnob'],
         ['fsHudBrackets', 'fsHudBracketsToggle', 'fsHudBracketsKnob'],
-        ['fsButtonGradient', 'fsButtonGradientToggle', 'fsButtonGradientKnob']
+        ['fsButtonGradient', 'fsButtonGradientToggle', 'fsButtonGradientKnob'],
+        ['fsBadgeDot', 'fsBadgeDotToggle', 'fsBadgeDotKnob'],
+        ['fsHairlines', 'fsHairlinesToggle', 'fsHairlinesKnob']
     ];
     for (const [cbId, trackId, knobId] of pairs) {
         const cb = document.getElementById(cbId);
@@ -2966,6 +3009,10 @@ function _renderStylingPreviewNow() {
         ? `background: linear-gradient(180deg, ${s.button_color} 0%, ${s.button_hover_color} 100%);`
         : `background: ${s.button_color};`;
 
+    // Column count — clamped 1..4 (any field-width hint maps into a span
+    // out of this number of columns).
+    const gridCols = Math.max(1, Math.min(4, parseInt(s.grid_columns, 10) || 1));
+
     // Body background — what the form floats over. WiseTrack-style aurora
     // adds blurred conic-gradient orbs behind a solid dark base.
     const bodyBg = buildPreviewBodyBg(s);
@@ -2974,32 +3021,82 @@ function _renderStylingPreviewNow() {
         <span class="pf-hud pf-hud-br"></span>
     ` : '';
 
-    // Build preview fields from cached source fields
+    // Build preview fields from cached source fields. When the cache is
+    // empty (no real form yet), surface a representative demo so the
+    // tenant can SEE how pills + grid + textarea render against the
+    // chosen styling — otherwise toggling knobs has no visual effect.
     const fields = formStylingFields || [
-        { label: 'Email', type: 'email', placeholder: 'you@example.com', required: true },
-        { label: 'Phone', type: 'tel', placeholder: '+1 (555) 000-0000', required: false },
+        { label: 'Full Name', type: 'text', placeholder: 'Jane Doe', required: false, width: 'half' },
+        { label: 'Email', type: 'email', placeholder: 'jane@company.com', required: false, width: 'half' },
+        { label: 'Company', type: 'text', placeholder: 'Acme Inc.', required: false },
+        { label: 'What can we help with?', type: 'text', placeholder: 'Custom application (HyperScripts)', required: false },
+        { label: 'Budget', type: 'select', width: 'half', options: [{ value: 'l', label: '< ₹10L' }, { value: 'm', label: '₹10–50L' }, { value: 'h', label: '₹50L+' }], required: false },
+        { label: 'Timeline', type: 'select', width: 'half', options: [{ value: '1', label: '< 3 mo' }, { value: '2', label: '3–6 mo' }, { value: '3', label: '6 mo+' }], required: false },
+        { label: 'Project Details', type: 'textarea', placeholder: 'What do you want to build? When do you need it? Any constraints we should know about…', required: false }
     ];
 
     const showLabels = s.show_labels !== false;
 
     let fieldsHtml = '';
-    fields.forEach(f => {
+    fields.forEach((f, fieldIdx) => {
         const reqMark = f.required ? `<span style="color: #ef4444; margin-left: 2px;"> *</span>` : '';
         const labelHtml = showLabels ? `<label class="pf-label">${_escHtml(f.label)}${reqMark}</label>` : '';
-        if (f.type === 'textarea') {
+        const isSelect = (f.type === 'select' || f.type === 'single_select') && Array.isArray(f.options) && f.options.length > 0;
+        // Field span — translate width hint into a grid span out of
+        // gridCols. full / undefined → spans the whole row. Textareas
+        // always span the whole row regardless of their hint.
+        let fieldCls = 'pf-field ';
+        if (f.type === 'textarea' || !f.width || f.width === 'full') {
+            fieldCls += 'pf-field--full';
+        } else {
+            // half = 1/2, third = 1/3, quarter = 1/4, two-thirds = 2/3,
+            // three-quarters = 3/4. Compute span = round(gridCols * fraction).
+            const fractions = { half: 1/2, third: 1/3, quarter: 1/4, 'two-thirds': 2/3, 'three-quarters': 3/4 };
+            const frac = fractions[f.width] ?? 1;
+            const span = Math.max(1, Math.min(gridCols, Math.round(gridCols * frac)));
+            fieldCls += 'pf-span-' + span;
+        }
+
+        if (isSelect && s.render_select_as === 'pills') {
+            // Segmented pill chips — second option marked active for the
+            // preview so the active state is visible (matches the
+            // "₹10–50L" + "3-6 MO" highlighted state on WiseTrack).
+            const pillsHtml = f.options.map((opt, i) => {
+                const lbl = (typeof opt === 'string') ? opt : (opt.label || opt.value || '');
+                const activeClass = i === 1 ? 'pf-pill pf-pill-active' : 'pf-pill';
+                return `<button type="button" disabled class="${activeClass}">${_escHtml(lbl)}</button>`;
+            }).join('');
             fieldsHtml += `
-                <div class="pf-field">
+                <div class="${fieldCls}">
                     ${labelHtml}
-                    <textarea rows="2" placeholder="${_escHtml(f.placeholder || '')}" disabled class="pf-textarea"></textarea>
+                    <div class="pf-pill-row">${pillsHtml}</div>
+                </div>`;
+        } else if (isSelect) {
+            const optsHtml = f.options.map(opt => {
+                const lbl = (typeof opt === 'string') ? opt : (opt.label || opt.value || '');
+                return `<option>${_escHtml(lbl)}</option>`;
+            }).join('');
+            fieldsHtml += `
+                <div class="${fieldCls}">
+                    ${labelHtml}
+                    <select disabled class="pf-input">${optsHtml}</select>
+                </div>`;
+        } else if (f.type === 'textarea') {
+            fieldsHtml += `
+                <div class="pf-field pf-field--full">
+                    ${labelHtml}
+                    <textarea rows="3" placeholder="${_escHtml(f.placeholder || '')}" disabled class="pf-textarea"></textarea>
                 </div>`;
         } else {
             fieldsHtml += `
-                <div class="pf-field">
+                <div class="${fieldCls}">
                     ${labelHtml}
                     <input type="${f.type || 'text'}" placeholder="${_escHtml(f.placeholder || '')}" disabled class="pf-input">
                 </div>`;
         }
     });
+    // Wrap every field in a CSS grid so width:half fields can pair up.
+    fieldsHtml = `<div class="pf-fields-grid">${fieldsHtml}</div>`;
 
     const formTitle = s.form_title || '';
 
@@ -3011,8 +3108,8 @@ function _renderStylingPreviewNow() {
         ? `<div class="pf-logo ${logoPos === 'bottom' ? 'pf-logo-bottom' : ''}"><img src="${_escHtml(logoUrl)}" alt="Logo"></div>`
         : '';
 
-    // Extra top padding on body when there's nothing above it (no logo-top, no title)
-    const hasTopContent = (logoPos === 'top' && logoUrl) || formTitle;
+    // Extra top padding on body when there's nothing above it (no logo-top, no title, no eyebrow)
+    const hasTopContent = (logoPos === 'top' && logoUrl) || formTitle || s.eyebrow_text || s.secure_badge;
     const bodyPadTop = hasTopContent ? '20px' : '48px';
 
     // Build a fully self-contained HTML document for the iframe
@@ -3118,8 +3215,97 @@ ${gfTag}
     }
     .pf-hud-tl { top: 8px; left: 8px; border-top: 1px solid; border-left: 1px solid; }
     .pf-hud-br { bottom: 8px; right: 8px; border-bottom: 1px solid; border-right: 1px solid; }
+    /* Header strip across the top of the form card — two free-text
+       slots (left + right) plus an optional coloured dot before the
+       right slot. Both texts and the dot are tenant-configurable. */
+    .pf-eyebrow-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 24px 4px;
+        font-family: ${fontLabel};
+        font-size: 0.65rem;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: ${s.label_color};
+    }
+    .pf-eyebrow { opacity: 0.8; }
+    .pf-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        color: ${s.badge_dot ? s.badge_dot_color : s.label_color};
+        opacity: 0.9;
+    }
+    .pf-badge-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: ${s.badge_dot_color || '#34D399'};
+        box-shadow: 0 0 8px ${hexToRgba(s.badge_dot_color || '#34D399', 0.7)};
+    }
+    /* Segmented pill chips for select fields */
+    .pf-pill-row {
+        display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .pf-pill {
+        font-family: ${fontLabel};
+        font-size: 0.68rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.35rem 0.6rem;
+        border-radius: 6px;
+        border: 1px solid ${s.border_color};
+        background: ${s.input_bg_color};
+        color: ${s.label_color};
+        cursor: default;
+        white-space: nowrap;
+        flex: 0 1 auto;
+    }
+    .pf-pill-active {
+        border-color: ${hexToRgba(s.button_color, 0.5)};
+        background: ${hexToRgba(s.button_color, 0.10)};
+        color: ${s.text_color};
+    }
     .pf-body { padding: ${bodyPadTop} 24px 24px; }
-    .pf-field { margin-bottom: 16px; }
+    /* N-column field grid (1-4, tenant-configurable). Each field can
+       override its span via a width hint (full / half / third /
+       quarter / two-thirds / three-quarters). Width values are clamped
+       so a "quarter" field on a 2-col grid still occupies 1 column,
+       never less. Falls back to single column on narrow viewports. */
+    .pf-fields-grid {
+        display: grid;
+        grid-template-columns: repeat(${gridCols}, 1fr);
+        gap: 14px 16px;
+    }
+    @media (max-width: 480px) {
+        .pf-fields-grid { grid-template-columns: 1fr; }
+        .pf-fields-grid > .pf-field { grid-column: 1 / -1; }
+    }
+    .pf-field { margin-bottom: 0; min-width: 0; }
+    /* Span helper classes — pre-emitted up to 4 to keep CSS simple. */
+    .pf-span-1 { grid-column: span 1; }
+    .pf-span-2 { grid-column: span ${Math.min(gridCols, 2)}; }
+    .pf-span-3 { grid-column: span ${Math.min(gridCols, 3)}; }
+    .pf-span-4 { grid-column: span ${Math.min(gridCols, 4)}; }
+    .pf-field--full { grid-column: 1 / -1; }
+    /* Thin gradient hairline rule, used under the eyebrow + above the footer */
+    .pf-hairline {
+        height: 1px;
+        margin: 14px 24px 0;
+        background: linear-gradient(90deg, transparent, ${hexToRgba(s.border_color, 0.5)} 35%, ${hexToRgba(s.button_color, 0.5)} 75%, transparent);
+    }
+    /* Footer split: helper text on the left, submit button on the right.
+       Falls back to centered button when footer_text is empty. */
+    .pf-footer-row {
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        padding: 18px 24px 22px;
+    }
+    .pf-footer-row .pf-submit { width: auto; padding: 0 24px; }
+    .pf-footer-text {
+        font-family: ${fontLabel};
+        font-size: 0.65rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: ${s.label_color};
+        opacity: 0.8;
+    }
     .pf-label {
         display: block;
         font-family: ${fontLabel};
@@ -3201,6 +3387,13 @@ ${gfTag}
 <body class="${motifClass}">
     <div class="pf-card">
         ${hudBracketsHtml}
+        ${(s.eyebrow_text || s.badge_text) ? `
+            <div class="pf-eyebrow-row">
+                <span class="pf-eyebrow">${_escHtml(s.eyebrow_text || '')}</span>
+                ${s.badge_text ? `<span class="pf-badge">${s.badge_dot ? '<span class="pf-badge-dot"></span>' : ''}${_escHtml(s.badge_text)}</span>` : ''}
+            </div>
+            ${s.hairlines ? '<div class="pf-hairline"></div>' : ''}
+        ` : ''}
         <button class="pf-close">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -3208,8 +3401,18 @@ ${gfTag}
         ${formTitle ? `<div class="pf-header"><div class="pf-title">${_escHtml(formTitle)}</div></div>` : ''}
         <div class="pf-body">
             ${fieldsHtml}
-            <button disabled class="pf-submit">${_escHtml(s.button_text || 'Submit')}</button>
         </div>
+        ${s.hairlines ? '<div class="pf-hairline" style="margin-top:0;"></div>' : ''}
+        ${s.footer_text ? `
+            <div class="pf-footer-row">
+                <span class="pf-footer-text">${_escHtml(s.footer_text)}</span>
+                <button disabled class="pf-submit">${_escHtml(s.button_text || 'Submit')}</button>
+            </div>
+        ` : `
+            <div style="padding: 0 24px 22px;">
+                <button disabled class="pf-submit">${_escHtml(s.button_text || 'Submit')}</button>
+            </div>
+        `}
         ${logoPos === 'bottom' ? logoHtml : ''}
         <div class="pf-footer">Powered by <span>Ragenaizer</span></div>
     </div>

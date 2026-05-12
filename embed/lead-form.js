@@ -128,9 +128,17 @@
             font_label: 'system',
             label_uppercase: false,
             headline_gradient: false,
-            bg_style: 'solid',      // solid | gradient | aurora | grid | dots
+            bg_style: 'solid',          // solid | gradient | aurora | grid | dots
             hud_brackets: false,
-            button_gradient: false
+            button_gradient: false,
+            eyebrow_text: '',
+            badge_text: '',
+            badge_dot: false,
+            badge_dot_color: '#34D399',
+            render_select_as: 'dropdown', // dropdown | pills
+            grid_columns: 1,              // 1-4
+            hairlines: false,
+            footer_text: ''
         };
 
         // Theme defaults
@@ -308,6 +316,88 @@
             }
             .rlf-hud-tl { top: 8px; left: 8px; border-top: 1px solid; border-left: 1px solid; }
             .rlf-hud-br { bottom: 8px; right: 8px; border-bottom: 1px solid; border-right: 1px solid; }
+
+            /* Header strip — two free-text slots + optional coloured dot */
+            .rlf-eyebrow-row {
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 18px 24px 4px;
+                font-family: ${fontLabel};
+                font-size: 0.65rem;
+                letter-spacing: 0.22em;
+                text-transform: uppercase;
+                color: ${s.label_color};
+            }
+            .rlf-eyebrow { opacity: 0.8; }
+            .rlf-badge {
+                display: inline-flex; align-items: center; gap: 6px;
+                color: ${s.badge_dot ? (s.badge_dot_color || '#34D399') : s.label_color};
+                opacity: 0.9;
+            }
+            .rlf-badge-dot {
+                width: 6px; height: 6px; border-radius: 50%;
+                background: ${s.badge_dot_color || '#34D399'};
+                box-shadow: 0 0 8px ${hexToRgba(s.badge_dot_color || '#34D399', 0.7)};
+            }
+            /* N-column field grid (1-4, tenant-configurable) */
+            .rlf-fields-grid {
+                display: grid;
+                grid-template-columns: repeat(${Math.max(1, Math.min(4, parseInt(s.grid_columns, 10) || 1))}, 1fr);
+                gap: 14px 16px;
+            }
+            @media (max-width: 480px) {
+                .rlf-fields-grid { grid-template-columns: 1fr; }
+                .rlf-fields-grid > .rlf-field { grid-column: 1 / -1; }
+            }
+            .rlf-span-1 { grid-column: span 1; }
+            .rlf-span-2 { grid-column: span ${Math.min(parseInt(s.grid_columns, 10) || 1, 2)}; }
+            .rlf-span-3 { grid-column: span ${Math.min(parseInt(s.grid_columns, 10) || 1, 3)}; }
+            .rlf-span-4 { grid-column: span ${Math.min(parseInt(s.grid_columns, 10) || 1, 4)}; }
+            .rlf-field--full { grid-column: 1 / -1; }
+            /* Hairline rules — under eyebrow + above footer */
+            .rlf-hairline {
+                height: 1px;
+                margin: 14px 24px 0;
+                background: linear-gradient(90deg, transparent, ${hexToRgba(s.border_color, 0.5)} 35%, ${hexToRgba(s.button_color, 0.5)} 75%, transparent);
+            }
+            /* Footer split: helper text left + CTA right */
+            .rlf-footer-row {
+                display: flex; align-items: center; justify-content: space-between; gap: 16px;
+                padding: 18px 24px 22px;
+            }
+            .rlf-footer-row .rlf-submit { width: auto; padding: 0 24px; }
+            .rlf-footer-text {
+                font-family: ${fontLabel};
+                font-size: 0.65rem;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: ${s.label_color};
+                opacity: 0.8;
+            }
+
+            /* Segmented pill chips for select fields */
+            .rlf-pill-row {
+                display: flex; flex-wrap: wrap; gap: 8px;
+            }
+            .rlf-pill {
+                font-family: ${fontLabel};
+                font-size: 0.7rem;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                padding: 0.4rem 0.75rem;
+                border-radius: 6px;
+                border: 1px solid ${s.border_color};
+                background: ${s.input_bg_color};
+                color: ${s.label_color};
+                cursor: pointer;
+                white-space: nowrap;
+                transition: filter 0.12s, background 0.12s, border-color 0.12s;
+            }
+            .rlf-pill:hover { filter: brightness(1.08); }
+            .rlf-pill-active {
+                border-color: ${hexToRgba(s.button_color, 0.5)};
+                background: ${hexToRgba(s.button_color, 0.10)};
+                color: ${s.text_color};
+            }
 
             /* Background motifs applied to the overlay backdrop */
             .rlf-overlay.rlf-motif-aurora::before {
@@ -646,6 +736,18 @@
         closeBtn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
         closeBtn.addEventListener('click', closeForm);
 
+        // Eyebrow strip — left label + right badge. Either can be empty.
+        // Coloured dot before the right badge is its own toggle.
+        let eyebrowEl = null;
+        if (styling.eyebrow_text || styling.badge_text) {
+            eyebrowEl = document.createElement('div');
+            eyebrowEl.className = 'rlf-eyebrow-row';
+            eyebrowEl.innerHTML = `
+                <span class="rlf-eyebrow">${escapeHtml(styling.eyebrow_text || '')}</span>
+                ${styling.badge_text ? `<span class="rlf-badge">${styling.badge_dot ? '<span class="rlf-badge-dot"></span>' : ''}${escapeHtml(styling.badge_text)}</span>` : ''}
+            `;
+        }
+
         // Header — only rendered if form_title is set
         let header = null;
         const titleText = styling.form_title || '';
@@ -665,10 +767,28 @@
         const form = document.createElement('form');
         form.setAttribute('novalidate', '');
 
+        // Wrap fields in a CSS grid wrapper so per-field width hints
+        // (full / half / third / quarter / two-thirds / three-quarters)
+        // can pair them side-by-side based on grid_columns.
+        const fieldsGrid = document.createElement('div');
+        fieldsGrid.className = 'rlf-fields-grid';
+
+        const gridCols = Math.max(1, Math.min(4, parseInt(styling.grid_columns, 10) || 1));
+        const widthFractions = { half: 1/2, third: 1/3, quarter: 1/4, 'two-thirds': 2/3, 'three-quarters': 3/4 };
+
         // Build fields
         formConfig.fields.forEach(field => {
             const div = document.createElement('div');
-            div.className = 'rlf-field';
+            // Translate width hint to span class.
+            let spanCls = 'rlf-field--full';
+            if (field.type === 'textarea' || !field.width || field.width === 'full') {
+                spanCls = 'rlf-field--full';
+            } else {
+                const frac = widthFractions[field.width] ?? 1;
+                const span = Math.max(1, Math.min(gridCols, Math.round(gridCols * frac)));
+                spanCls = 'rlf-span-' + span;
+            }
+            div.className = 'rlf-field ' + spanCls;
 
             if (styling.show_labels !== false) {
                 const label = document.createElement('label');
@@ -681,6 +801,63 @@
                     label.appendChild(req);
                 }
                 div.appendChild(label);
+            }
+
+            // Select field — with options. Render as segmented pills or
+            // native dropdown depending on tenant's render_select_as choice.
+            const isSelect = (field.type === 'select' || field.type === 'single_select') && Array.isArray(field.options) && field.options.length > 0;
+
+            if (isSelect && styling.render_select_as === 'pills') {
+                // Hidden input carries the picked value back on submit;
+                // the pill buttons toggle .rlf-pill-active and update it.
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = field.name;
+                if (field.required) hidden.required = true;
+
+                const row = document.createElement('div');
+                row.className = 'rlf-pill-row';
+                field.options.forEach(opt => {
+                    const val = (typeof opt === 'string') ? opt : (opt.value ?? opt.label ?? '');
+                    const lbl = (typeof opt === 'string') ? opt : (opt.label ?? opt.value ?? '');
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'rlf-pill';
+                    btn.dataset.value = String(val);
+                    btn.textContent = lbl;
+                    btn.addEventListener('click', () => {
+                        row.querySelectorAll('.rlf-pill').forEach(p => p.classList.remove('rlf-pill-active'));
+                        btn.classList.add('rlf-pill-active');
+                        hidden.value = btn.dataset.value;
+                    });
+                    row.appendChild(btn);
+                });
+                div.appendChild(row);
+                div.appendChild(hidden);
+                fieldsGrid.appendChild(div);
+                return;
+            }
+
+            if (isSelect) {
+                const select = document.createElement('select');
+                select.className = 'rlf-input';
+                select.name = field.name;
+                if (field.required) select.required = true;
+                if (field.placeholder) {
+                    const ph = document.createElement('option');
+                    ph.value = ''; ph.textContent = field.placeholder; ph.disabled = true; ph.selected = true;
+                    select.appendChild(ph);
+                }
+                field.options.forEach(opt => {
+                    const val = (typeof opt === 'string') ? opt : (opt.value ?? opt.label ?? '');
+                    const lbl = (typeof opt === 'string') ? opt : (opt.label ?? opt.value ?? '');
+                    const o = document.createElement('option');
+                    o.value = String(val); o.textContent = lbl;
+                    select.appendChild(o);
+                });
+                div.appendChild(select);
+                fieldsGrid.appendChild(div);
+                return;
             }
 
             let input;
@@ -698,15 +875,39 @@
             if (field.required) input.required = true;
 
             div.appendChild(input);
-            form.appendChild(div);
+            fieldsGrid.appendChild(div);
         });
 
-        // Submit button
+        // Mount the fields grid into the form before the submit row.
+        form.appendChild(fieldsGrid);
+
+        // Optional hairline above the footer
+        if (styling.hairlines) {
+            const hairline = document.createElement('div');
+            hairline.className = 'rlf-hairline';
+            hairline.style.margin = '0';
+            form.appendChild(hairline);
+        }
+
+        // Submit button — when footer_text is set, it sits in a split row;
+        // otherwise it spans the full width like before.
         const submitBtn = document.createElement('button');
         submitBtn.type = 'submit';
         submitBtn.className = 'rlf-submit';
         submitBtn.innerHTML = `<span class="rlf-btn-text">${escapeHtml(buttonText)}</span><span class="rlf-spinner"></span>`;
-        form.appendChild(submitBtn);
+
+        if (styling.footer_text) {
+            const footerRow = document.createElement('div');
+            footerRow.className = 'rlf-footer-row';
+            const footerSpan = document.createElement('span');
+            footerSpan.className = 'rlf-footer-text';
+            footerSpan.textContent = styling.footer_text;
+            footerRow.appendChild(footerSpan);
+            footerRow.appendChild(submitBtn);
+            form.appendChild(footerRow);
+        } else {
+            form.appendChild(submitBtn);
+        }
 
         // Success state
         const success = document.createElement('div');
@@ -813,6 +1014,14 @@
         body.appendChild(success);
         modal.appendChild(closeBtn);
         if (logoEl && styling.logo_position === 'top') modal.appendChild(logoEl);
+        if (eyebrowEl) {
+            modal.appendChild(eyebrowEl);
+            if (styling.hairlines) {
+                const hl = document.createElement('div');
+                hl.className = 'rlf-hairline';
+                modal.appendChild(hl);
+            }
+        }
         if (header) modal.appendChild(header);
         modal.appendChild(body);
         if (logoEl && styling.logo_position === 'bottom') modal.appendChild(logoEl);
