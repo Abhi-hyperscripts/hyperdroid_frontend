@@ -2406,6 +2406,19 @@ function closeEmbedCodeModal() {
 let formStylingSourceId = null;
 let formStylingFields = null; // cached fields for preview
 
+// Baseline shared across all presets — the new design-system keys.
+// Anything not overridden by the preset falls back to these.
+const FS_TYPOGRAPHY_DEFAULTS = {
+    font_heading: 'system',
+    font_body: 'system',
+    font_label: 'system',
+    label_uppercase: false,
+    headline_gradient: false,
+    bg_style: 'solid',         // solid | gradient | aurora | grid | dots
+    hud_brackets: false,
+    button_gradient: false
+};
+
 const LIGHT_DEFAULTS = {
     theme: 'light',
     position: 'center',
@@ -2429,7 +2442,8 @@ const LIGHT_DEFAULTS = {
     logo_height: 32,
     input_height: 40,
     button_height: 44,
-    form_width: 440
+    form_width: 440,
+    ...FS_TYPOGRAPHY_DEFAULTS
 };
 
 const DARK_DEFAULTS = {
@@ -2455,8 +2469,90 @@ const DARK_DEFAULTS = {
     logo_height: 32,
     input_height: 40,
     button_height: 44,
-    form_width: 440
+    form_width: 440,
+    ...FS_TYPOGRAPHY_DEFAULTS
 };
+
+// WiseTrack-style preset — deep navy with aurora orbs + grid, serif
+// headline with gradient text, monospace uppercase labels, violet CTA
+// gradient. Mirrors the wisetrack.in contact-page form aesthetic.
+const WISETRACK_DEFAULTS = {
+    theme: 'dark',
+    position: 'center',
+    form_title: '',
+    background_color: '#0E1018',        // surface
+    background_opacity: 1.0,
+    text_color: '#EAEAF5',
+    label_color: '#8A88A6',              // muted — small uppercase labels
+    input_bg_color: '#171929',           // translucent-feel input
+    input_text_color: '#EAEAF5',
+    button_color: '#8B5CF6',             // violet top stop
+    button_hover_color: '#5B21B6',       // violet bottom stop
+    button_text_color: '#FFFFFF',
+    button_text: 'Send brief →',
+    border_color: '#1F2236',             // line
+    border_radius: 14,
+    glassy_effect: true,
+    show_labels: true,
+    logo_url: '',
+    logo_position: 'top',
+    logo_height: 32,
+    input_height: 48,
+    button_height: 48,
+    form_width: 520,
+    font_heading: 'fraunces',
+    font_body: 'inter-tight',
+    font_label: 'jetbrains-mono',
+    label_uppercase: true,
+    headline_gradient: true,
+    bg_style: 'aurora',
+    hud_brackets: true,
+    button_gradient: true
+};
+
+const FS_PRESETS = {
+    'default-light': LIGHT_DEFAULTS,
+    'default-dark': DARK_DEFAULTS,
+    'wisetrack': WISETRACK_DEFAULTS
+};
+
+// Google Fonts URL fragments for each font choice. Map key → (family
+// param, css-family string). Loaded on demand by the preview iframe
+// and the embed widget so we only request fonts the tenant has chosen.
+const FS_FONTS = {
+    'system':         { gf: null, css: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
+    'inter':          { gf: 'Inter:wght@300..700', css: '"Inter", system-ui, sans-serif' },
+    'inter-tight':    { gf: 'Inter+Tight:wght@300..700', css: '"Inter Tight", "Inter", system-ui, sans-serif' },
+    'roboto':         { gf: 'Roboto:wght@300..700', css: '"Roboto", system-ui, sans-serif' },
+    'open-sans':      { gf: 'Open+Sans:wght@300..700', css: '"Open Sans", system-ui, sans-serif' },
+    'space-grotesk':  { gf: 'Space+Grotesk:wght@300..700', css: '"Space Grotesk", system-ui, sans-serif' },
+    'fraunces':       { gf: 'Fraunces:opsz,wght@9..144,300..700', css: '"Fraunces", Georgia, serif' },
+    'playfair':       { gf: 'Playfair+Display:wght@400..900', css: '"Playfair Display", Georgia, serif' },
+    'lora':           { gf: 'Lora:wght@400..700', css: '"Lora", Georgia, serif' },
+    'jetbrains-mono': { gf: 'JetBrains+Mono:wght@300..700', css: '"JetBrains Mono", ui-monospace, monospace' },
+    'fira-code':      { gf: 'Fira+Code:wght@300..700', css: '"Fira Code", ui-monospace, monospace' },
+    'ibm-plex-mono':  { gf: 'IBM+Plex+Mono:wght@300..700', css: '"IBM Plex Mono", ui-monospace, monospace' },
+    'space-mono':     { gf: 'Space+Mono:wght@400;700', css: '"Space Mono", ui-monospace, monospace' }
+};
+
+// Build a single Google Fonts <link> URL for a set of font keys (skips
+// 'system' and duplicates). Returns null when nothing needs loading.
+function buildGoogleFontsLink(keys) {
+    const families = [];
+    const seen = new Set();
+    for (const k of keys) {
+        const f = FS_FONTS[k];
+        if (!f || !f.gf || seen.has(f.gf)) continue;
+        seen.add(f.gf);
+        families.push('family=' + f.gf);
+    }
+    if (families.length === 0) return null;
+    return `https://fonts.googleapis.com/css2?${families.join('&')}&display=swap`;
+}
+
+function fsFontFamily(key) {
+    return (FS_FONTS[key] || FS_FONTS.system).css;
+}
 
 // Color picker sync pairs: [colorInputId, hexInputId]
 const FS_COLOR_PAIRS = [
@@ -2605,6 +2701,30 @@ function initFormStylingSync() {
             renderStylingPreview();
         });
     }
+
+    // ── Preset dropdown — one-click brand match ─────────────────────────
+    const presetSel = document.getElementById('fsPreset');
+    if (presetSel) {
+        presetSel.addEventListener('change', () => {
+            const preset = FS_PRESETS[presetSel.value];
+            if (!preset) return;
+            populateFormStylingControls(preset);
+            renderStylingPreview();
+        });
+    }
+
+    // ── New design-system controls — live preview ───────────────────────
+    ['fsFontHeading', 'fsFontBody', 'fsFontLabel', 'fsBgStyle'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', () => renderStylingPreview());
+    });
+    ['fsLabelUppercase', 'fsHeadlineGradient', 'fsHudBrackets', 'fsButtonGradient'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', () => {
+            updateNewToggleVisuals();
+            renderStylingPreview();
+        });
+    });
 }
 
 function updateGlassyToggleVisual() {
@@ -2661,7 +2781,16 @@ function getFormStylingValues() {
         logo_height: parseInt(document.getElementById('fsLogoHeight')?.value || '32'),
         input_height: parseInt(document.getElementById('fsInputHeight')?.value || '40'),
         button_height: parseInt(document.getElementById('fsButtonHeight')?.value || '44'),
-        form_width: parseInt(document.getElementById('fsFormWidth')?.value || '440')
+        form_width: parseInt(document.getElementById('fsFormWidth')?.value || '440'),
+        // ── New design-system knobs ─────────────────────────────────────
+        font_heading: document.getElementById('fsFontHeading')?.value || 'system',
+        font_body: document.getElementById('fsFontBody')?.value || 'system',
+        font_label: document.getElementById('fsFontLabel')?.value || 'system',
+        label_uppercase: document.getElementById('fsLabelUppercase')?.checked || false,
+        headline_gradient: document.getElementById('fsHeadlineGradient')?.checked || false,
+        bg_style: document.getElementById('fsBgStyle')?.value || 'solid',
+        hud_brackets: document.getElementById('fsHudBrackets')?.checked || false,
+        button_gradient: document.getElementById('fsButtonGradient')?.checked || false
     };
 }
 
@@ -2744,6 +2873,49 @@ function populateFormStylingControls(s) {
     const formWidthLabel = document.getElementById('fsFormWidthValue');
     if (formWidthSlider) formWidthSlider.value = s.form_width || 440;
     if (formWidthLabel) formWidthLabel.textContent = `${s.form_width || 440}px`;
+
+    // ── New design-system knobs ─────────────────────────────────────────
+    const setVal = (id, val, fallback) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val ?? fallback;
+    };
+    const setChecked = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = !!val;
+    };
+    setVal('fsFontHeading', s.font_heading, 'system');
+    setVal('fsFontBody', s.font_body, 'system');
+    setVal('fsFontLabel', s.font_label, 'system');
+    setChecked('fsLabelUppercase', s.label_uppercase);
+    setChecked('fsHeadlineGradient', s.headline_gradient);
+    setVal('fsBgStyle', s.bg_style, 'solid');
+    setChecked('fsHudBrackets', s.hud_brackets);
+    setChecked('fsButtonGradient', s.button_gradient);
+    updateNewToggleVisuals();
+}
+
+// Visual sync for the three new toggle switches (label-uppercase,
+// headline-gradient, hud-brackets, button-gradient).
+function updateNewToggleVisuals() {
+    const pairs = [
+        ['fsLabelUppercase', 'fsLabelUppercaseToggle', 'fsLabelUppercaseKnob'],
+        ['fsHeadlineGradient', 'fsHeadlineGradientToggle', 'fsHeadlineGradientKnob'],
+        ['fsHudBrackets', 'fsHudBracketsToggle', 'fsHudBracketsKnob'],
+        ['fsButtonGradient', 'fsButtonGradientToggle', 'fsButtonGradientKnob']
+    ];
+    for (const [cbId, trackId, knobId] of pairs) {
+        const cb = document.getElementById(cbId);
+        const t = document.getElementById(trackId);
+        const k = document.getElementById(knobId);
+        if (!cb || !t || !k) continue;
+        if (cb.checked) {
+            t.style.background = 'var(--brand-primary, #6366f1)';
+            k.style.transform = 'translateX(18px)';
+        } else {
+            t.style.background = 'var(--border-primary, #d4d4d8)';
+            k.style.transform = 'translateX(0)';
+        }
+    }
 }
 
 function hexToRgba(hex, opacity) {
@@ -2778,6 +2950,29 @@ function _renderStylingPreviewNow() {
     const glassyFilter = s.glassy_effect ? 'backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);' : '';
     const inputH = s.input_height || 40;
     const buttonH = s.button_height || 44;
+
+    // ── New design-system computed pieces ──────────────────────────────
+    const fontHeading = fsFontFamily(s.font_heading);
+    const fontBody = fsFontFamily(s.font_body);
+    const fontLabel = fsFontFamily(s.font_label === 'system' ? s.font_body : s.font_label);
+    const gfLink = buildGoogleFontsLink([s.font_heading, s.font_body, s.font_label]);
+    const gfTag = gfLink ? `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${gfLink}">` : '';
+
+    const labelTransform = s.label_uppercase ? 'text-transform: uppercase; letter-spacing: 0.18em; font-size: 0.7rem;' : '';
+    const titleGradient = s.headline_gradient
+        ? 'background: linear-gradient(95deg, currentColor 0%, #A78BFA 35%, #38BDF8 75%, #BEF264 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;'
+        : '';
+    const buttonGradient = s.button_gradient
+        ? `background: linear-gradient(180deg, ${s.button_color} 0%, ${s.button_hover_color} 100%);`
+        : `background: ${s.button_color};`;
+
+    // Body background — what the form floats over. WiseTrack-style aurora
+    // adds blurred conic-gradient orbs behind a solid dark base.
+    const bodyBg = buildPreviewBodyBg(s);
+    const hudBracketsHtml = s.hud_brackets ? `
+        <span class="pf-hud pf-hud-tl"></span>
+        <span class="pf-hud pf-hud-br"></span>
+    ` : '';
 
     // Build preview fields from cached source fields
     const fields = formStylingFields || [
@@ -2821,11 +3016,15 @@ function _renderStylingPreviewNow() {
     const bodyPadTop = hasTopContent ? '20px' : '48px';
 
     // Build a fully self-contained HTML document for the iframe
+    const motifClass = (s.bg_style === 'aurora' || s.bg_style === 'grid' || s.bg_style === 'dots')
+        ? `pf-motif-${s.bg_style}` : '';
+
     const iframeDoc = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+${gfTag}
 <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -2835,11 +3034,38 @@ function _renderStylingPreviewNow() {
     }
     body {
         display: flex; align-items: flex-start; justify-content: center; padding: 16px;
-        /* Demo background for opacity/glassy preview */
+        position: relative;
+        overflow: hidden;
+        min-height: 100%;
+        font-family: ${fontBody};
+        ${bodyBg}
+    }
+    body::before, body::after {
+        content: ""; position: fixed; pointer-events: none;
+    }
+    /* Background motifs — wired by .pf-motif-* classes on body */
+    body.pf-motif-aurora::before {
+        inset: -10%;
         background:
-            linear-gradient(135deg, #667eea 0%, #764ba2 100%),
-            linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
-        background-size: cover;
+            radial-gradient(40vmax 30vmax at 18% 10%, rgba(124,58,237,0.45), transparent 60%),
+            radial-gradient(35vmax 28vmax at 85% 90%, rgba(34,211,238,0.35), transparent 60%),
+            radial-gradient(28vmax 22vmax at 50% 50%, rgba(99,102,241,0.20), transparent 60%);
+        filter: blur(40px);
+        opacity: 0.8;
+    }
+    body.pf-motif-grid::before {
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+        -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+    }
+    body.pf-motif-dots::before {
+        inset: 0;
+        background-image: radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px);
+        background-size: 28px 28px;
     }
     .pf-card {
         width: 100%;
@@ -2847,8 +3073,9 @@ function _renderStylingPreviewNow() {
         position: relative;
         background: ${cardBg};
         border-radius: ${radius};
-        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.04);
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,0,0,0.04);
         color: ${s.text_color};
+        font-family: ${fontBody};
         overflow: hidden;
         ${cardBorder}
         ${glassyFilter}
@@ -2873,19 +3100,34 @@ function _renderStylingPreviewNow() {
         padding-right: 48px;
     }
     .pf-title {
-        font-size: 1.15rem;
-        font-weight: 700;
+        font-family: ${fontHeading};
+        font-size: 1.4rem;
+        font-weight: 600;
         letter-spacing: -0.02em;
+        line-height: 1.15;
         color: ${s.text_color};
+        ${titleGradient}
     }
+    /* HUD corner brackets — small L-shapes top-left + bottom-right */
+    .pf-hud {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        border-color: ${hexToRgba(s.button_color, 0.7)};
+        pointer-events: none;
+    }
+    .pf-hud-tl { top: 8px; left: 8px; border-top: 1px solid; border-left: 1px solid; }
+    .pf-hud-br { bottom: 8px; right: 8px; border-bottom: 1px solid; border-right: 1px solid; }
     .pf-body { padding: ${bodyPadTop} 24px 24px; }
     .pf-field { margin-bottom: 16px; }
     .pf-label {
         display: block;
+        font-family: ${fontLabel};
         font-size: 0.82rem;
         font-weight: 600;
         margin-bottom: 6px;
         color: ${s.label_color};
+        ${labelTransform}
     }
     .pf-input {
         width: 100%;
@@ -2921,17 +3163,19 @@ function _renderStylingPreviewNow() {
         padding: 0 20px;
         font-size: 0.95rem;
         font-weight: 600;
-        font-family: inherit;
+        font-family: ${fontBody};
         border: none;
         border-radius: ${radius};
         cursor: default;
-        background: ${s.button_color};
+        ${buttonGradient}
         color: ${s.button_text_color};
         display: flex;
         align-items: center;
         justify-content: center;
         margin-top: 4px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        box-shadow: ${s.button_gradient
+            ? '0 14px 30px -10px ' + hexToRgba(s.button_color, 0.55) + ', inset 0 1px 0 rgba(255,255,255,0.22)'
+            : '0 1px 3px rgba(0,0,0,0.12)'};
     }
     .pf-footer {
         text-align: center;
@@ -2954,8 +3198,9 @@ function _renderStylingPreviewNow() {
     }
 </style>
 </head>
-<body>
+<body class="${motifClass}">
     <div class="pf-card">
+        ${hudBracketsHtml}
         <button class="pf-close">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -2991,6 +3236,29 @@ function _renderStylingPreviewNow() {
             }
         } catch (e) { /* cross-origin guard */ }
     };
+}
+
+// Build the body background CSS for the preview iframe based on bg_style.
+// solid → flat color taken from text_color contrast guess
+// gradient → linear violet→navy
+// aurora → solid base + ::before blob layer (set via class on body)
+// grid/dots → solid base + ::before pattern (set via class on body)
+function buildPreviewBodyBg(s) {
+    const isDark = s.theme === 'dark';
+    const base = isDark ? '#07080F' : '#f7f8fc';
+    if (s.bg_style === 'gradient') {
+        return isDark
+            ? 'background: linear-gradient(135deg, #07080F 0%, #1F1B3E 50%, #07080F 100%);'
+            : 'background: linear-gradient(135deg, #f7f8fc 0%, #ede9fe 100%);';
+    }
+    if (s.bg_style === 'aurora' || s.bg_style === 'grid' || s.bg_style === 'dots') {
+        return `background: ${base};`;
+    }
+    // Solid — keep the existing pleasant demo gradient on light themes,
+    // and a clean navy on dark themes, so opacity preview still reads.
+    return isDark
+        ? 'background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);'
+        : `background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);`;
 }
 
 // Lightweight HTML escape for preview (avoids dependency on global escapeHtml)

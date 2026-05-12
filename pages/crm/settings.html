@@ -2682,6 +2682,18 @@
                     <div class="fs-controls">
                         <input type="hidden" id="formStylingSourceId">
 
+                        <!-- Section: Preset (one-click brand match) -->
+                        <div class="fs-section-label">Preset</div>
+                        <div class="fs-row">
+                            <label for="fsPreset" class="fs-label">Start from</label>
+                            <select id="fsPreset" class="fs-select">
+                                <option value="">— pick a preset —</option>
+                                <option value="default-light">Default Light (clean, friendly)</option>
+                                <option value="default-dark">Default Dark</option>
+                                <option value="wisetrack">WiseTrack Brief (dark + monospace + aurora)</option>
+                            </select>
+                        </div>
+
                         <!-- Section: Layout -->
                         <div class="fs-section-label">Layout</div>
                         <div class="fs-row">
@@ -2823,6 +2835,87 @@
                                 <span id="fsLogoHeightValue" class="fs-label-value">32px</span>
                             </label>
                             <input type="range" id="fsLogoHeight" min="16" max="80" step="2" value="32" class="fs-range">
+                        </div>
+
+                        <!-- Section: Typography -->
+                        <div class="fs-section-label">Typography</div>
+                        <div class="fs-row">
+                            <label for="fsFontHeading" class="fs-label">Heading font</label>
+                            <select id="fsFontHeading" class="fs-select">
+                                <option value="system">System sans</option>
+                                <option value="inter-tight">Inter Tight</option>
+                                <option value="inter">Inter</option>
+                                <option value="fraunces">Fraunces (serif)</option>
+                                <option value="playfair">Playfair Display (serif)</option>
+                                <option value="lora">Lora (serif)</option>
+                                <option value="space-grotesk">Space Grotesk</option>
+                            </select>
+                        </div>
+                        <div class="fs-row">
+                            <label for="fsFontBody" class="fs-label">Body font</label>
+                            <select id="fsFontBody" class="fs-select">
+                                <option value="system">System sans</option>
+                                <option value="inter-tight">Inter Tight</option>
+                                <option value="inter">Inter</option>
+                                <option value="roboto">Roboto</option>
+                                <option value="open-sans">Open Sans</option>
+                                <option value="space-grotesk">Space Grotesk</option>
+                            </select>
+                        </div>
+                        <div class="fs-row">
+                            <label for="fsFontLabel" class="fs-label">Label font</label>
+                            <select id="fsFontLabel" class="fs-select">
+                                <option value="system">Same as body</option>
+                                <option value="jetbrains-mono">JetBrains Mono</option>
+                                <option value="fira-code">Fira Code</option>
+                                <option value="ibm-plex-mono">IBM Plex Mono</option>
+                                <option value="space-mono">Space Mono</option>
+                            </select>
+                        </div>
+                        <div class="fs-toggle-row">
+                            <label class="fs-toggle-switch">
+                                <input type="checkbox" id="fsLabelUppercase">
+                                <span id="fsLabelUppercaseToggle" class="fs-toggle-track"></span>
+                                <span id="fsLabelUppercaseKnob" class="fs-toggle-knob"></span>
+                            </label>
+                            <span class="fs-toggle-label">Uppercase letter-spaced labels</span>
+                        </div>
+                        <div class="fs-toggle-row">
+                            <label class="fs-toggle-switch">
+                                <input type="checkbox" id="fsHeadlineGradient">
+                                <span id="fsHeadlineGradientToggle" class="fs-toggle-track"></span>
+                                <span id="fsHeadlineGradientKnob" class="fs-toggle-knob"></span>
+                            </label>
+                            <span class="fs-toggle-label">Gradient text on title</span>
+                        </div>
+
+                        <!-- Section: Effects (motifs + brackets + button gradient) -->
+                        <div class="fs-section-label">Effects</div>
+                        <div class="fs-row">
+                            <label for="fsBgStyle" class="fs-label">Background style</label>
+                            <select id="fsBgStyle" class="fs-select">
+                                <option value="solid">Solid colour</option>
+                                <option value="gradient">Linear gradient</option>
+                                <option value="aurora">Aurora orbs (violet + cyan blobs)</option>
+                                <option value="grid">Blueprint grid</option>
+                                <option value="dots">Dot pattern</option>
+                            </select>
+                        </div>
+                        <div class="fs-toggle-row">
+                            <label class="fs-toggle-switch">
+                                <input type="checkbox" id="fsHudBrackets">
+                                <span id="fsHudBracketsToggle" class="fs-toggle-track"></span>
+                                <span id="fsHudBracketsKnob" class="fs-toggle-knob"></span>
+                            </label>
+                            <span class="fs-toggle-label">HUD corner brackets</span>
+                        </div>
+                        <div class="fs-toggle-row">
+                            <label class="fs-toggle-switch">
+                                <input type="checkbox" id="fsButtonGradient">
+                                <span id="fsButtonGradientToggle" class="fs-toggle-track"></span>
+                                <span id="fsButtonGradientKnob" class="fs-toggle-knob"></span>
+                            </label>
+                            <span class="fs-toggle-label">Gradient on submit button</span>
                         </div>
 
                         <!-- Section: Shape -->

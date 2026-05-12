@@ -68,6 +68,51 @@
         return `rgba(${r},${g},${b},${opacity})`;
     }
 
+    // Same fonts map as the settings.js preview — keep parallel.
+    const FONTS = {
+        'system':         { gf: null, css: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
+        'inter':          { gf: 'Inter:wght@300..700', css: '"Inter", system-ui, sans-serif' },
+        'inter-tight':    { gf: 'Inter+Tight:wght@300..700', css: '"Inter Tight", "Inter", system-ui, sans-serif' },
+        'roboto':         { gf: 'Roboto:wght@300..700', css: '"Roboto", system-ui, sans-serif' },
+        'open-sans':      { gf: 'Open+Sans:wght@300..700', css: '"Open Sans", system-ui, sans-serif' },
+        'space-grotesk':  { gf: 'Space+Grotesk:wght@300..700', css: '"Space Grotesk", system-ui, sans-serif' },
+        'fraunces':       { gf: 'Fraunces:opsz,wght@9..144,300..700', css: '"Fraunces", Georgia, serif' },
+        'playfair':       { gf: 'Playfair+Display:wght@400..900', css: '"Playfair Display", Georgia, serif' },
+        'lora':           { gf: 'Lora:wght@400..700', css: '"Lora", Georgia, serif' },
+        'jetbrains-mono': { gf: 'JetBrains+Mono:wght@300..700', css: '"JetBrains Mono", ui-monospace, monospace' },
+        'fira-code':      { gf: 'Fira+Code:wght@300..700', css: '"Fira Code", ui-monospace, monospace' },
+        'ibm-plex-mono':  { gf: 'IBM+Plex+Mono:wght@300..700', css: '"IBM Plex Mono", ui-monospace, monospace' },
+        'space-mono':     { gf: 'Space+Mono:wght@400;700', css: '"Space Mono", ui-monospace, monospace' }
+    };
+    function fontFamily(key) { return (FONTS[key] || FONTS.system).css; }
+    // Inject a Google Fonts <link> into the host document head (NOT the
+    // Shadow DOM — fonts need to load at the document level for Shadow
+    // DOM children to inherit them in all browsers).
+    let _gfLoaded = false;
+    function injectGoogleFonts(keys) {
+        if (_gfLoaded) return;
+        const families = [];
+        const seen = new Set();
+        for (const k of keys) {
+            const f = FONTS[k];
+            if (!f || !f.gf || seen.has(f.gf)) continue;
+            seen.add(f.gf);
+            families.push('family=' + f.gf);
+        }
+        if (families.length === 0) return;
+        const url = `https://fonts.googleapis.com/css2?${families.join('&')}&display=swap`;
+        const preconnect1 = document.createElement('link');
+        preconnect1.rel = 'preconnect'; preconnect1.href = 'https://fonts.googleapis.com';
+        const preconnect2 = document.createElement('link');
+        preconnect2.rel = 'preconnect'; preconnect2.href = 'https://fonts.gstatic.com'; preconnect2.crossOrigin = '';
+        const link = document.createElement('link');
+        link.rel = 'stylesheet'; link.href = url;
+        document.head.appendChild(preconnect1);
+        document.head.appendChild(preconnect2);
+        document.head.appendChild(link);
+        _gfLoaded = true;
+    }
+
     // ── Styling Resolution ──────────────────────────────────────────────────
     // Priority: backend styling > data-attributes > theme defaults
 
@@ -75,6 +120,18 @@
         const bs = backendStyling || {};
         const theme = bs.theme || attrTheme || 'light';
         const isDark = theme === 'dark';
+
+        // Design-system extras — shared baseline for all themes.
+        const typographyDefaults = {
+            font_heading: 'system',
+            font_body: 'system',
+            font_label: 'system',
+            label_uppercase: false,
+            headline_gradient: false,
+            bg_style: 'solid',      // solid | gradient | aurora | grid | dots
+            hud_brackets: false,
+            button_gradient: false
+        };
 
         // Theme defaults
         const lightDefaults = {
@@ -100,7 +157,8 @@
             logo_height: 32,
             input_height: 40,
             button_height: 44,
-            form_width: 440
+            form_width: 440,
+            ...typographyDefaults
         };
 
         const darkDefaults = {
@@ -126,7 +184,8 @@
             logo_height: 32,
             input_height: 40,
             button_height: 44,
-            form_width: 440
+            form_width: 440,
+            ...typographyDefaults
         };
 
         const defaults = isDark ? darkDefaults : lightDefaults;
@@ -158,6 +217,24 @@
             ? `backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid ${hexToRgba(s.border_color, 0.3)};`
             : '';
         const modalBg = bgRgba; // always rgba for opacity support
+
+        // ── Design-system computed pieces ─────────────────────────────
+        const fontHeading = fontFamily(s.font_heading);
+        const fontBody = fontFamily(s.font_body);
+        const fontLabel = fontFamily(s.font_label === 'system' ? s.font_body : s.font_label);
+
+        const labelTransform = s.label_uppercase
+            ? 'text-transform: uppercase; letter-spacing: 0.18em; font-size: 0.7rem;'
+            : '';
+        const titleGradient = s.headline_gradient
+            ? 'background: linear-gradient(95deg, currentColor 0%, #A78BFA 35%, #38BDF8 75%, #BEF264 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;'
+            : '';
+        const buttonGradient = s.button_gradient
+            ? `background: linear-gradient(180deg, ${s.button_color} 0%, ${s.button_hover_color} 100%);`
+            : `background: ${s.button_color};`;
+        const buttonShadow = s.button_gradient
+            ? `box-shadow: 0 14px 30px -10px ${hexToRgba(s.button_color, 0.55)}, inset 0 1px 0 rgba(255,255,255,0.22);`
+            : '';
 
         // Extra top padding on body when nothing above it (no logo-top, no title)
         const hasTopContent = (s.logo_position === 'top' && s.logo_url) || s.form_title;
@@ -207,7 +284,7 @@
                 position: relative;
                 background: ${modalBg};
                 border-radius: ${radius};
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
                 ${glassyModal}
                 width: 100%;
                 max-width: ${s.form_width || 440}px;
@@ -216,8 +293,45 @@
                 transform: translateY(16px) scale(0.97);
                 opacity: 0;
                 transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
-                font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                font-family: ${fontBody};
                 color: ${s.text_color};
+            }
+
+            /* HUD corner brackets — small L-shapes top-left + bottom-right */
+            .rlf-hud {
+                position: absolute;
+                width: 14px;
+                height: 14px;
+                border-color: ${hexToRgba(s.button_color, 0.7)};
+                pointer-events: none;
+                z-index: 1;
+            }
+            .rlf-hud-tl { top: 8px; left: 8px; border-top: 1px solid; border-left: 1px solid; }
+            .rlf-hud-br { bottom: 8px; right: 8px; border-bottom: 1px solid; border-right: 1px solid; }
+
+            /* Background motifs applied to the overlay backdrop */
+            .rlf-overlay.rlf-motif-aurora::before {
+                content: ""; position: absolute; inset: -10%; pointer-events: none;
+                background:
+                    radial-gradient(40vmax 30vmax at 18% 10%, rgba(124,58,237,0.45), transparent 60%),
+                    radial-gradient(35vmax 28vmax at 85% 90%, rgba(34,211,238,0.35), transparent 60%),
+                    radial-gradient(28vmax 22vmax at 50% 50%, rgba(99,102,241,0.20), transparent 60%);
+                filter: blur(40px);
+                opacity: 0.7;
+            }
+            .rlf-overlay.rlf-motif-grid::before {
+                content: ""; position: absolute; inset: 0; pointer-events: none;
+                background-image:
+                    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+                background-size: 48px 48px;
+                mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+                -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+            }
+            .rlf-overlay.rlf-motif-dots::before {
+                content: ""; position: absolute; inset: 0; pointer-events: none;
+                background-image: radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px);
+                background-size: 28px 28px;
             }
 
             .rlf-open .rlf-modal {
@@ -253,10 +367,13 @@
             }
 
             .rlf-title {
-                font-size: 1.2rem;
-                font-weight: 700;
-                letter-spacing: -0.01em;
+                font-family: ${fontHeading};
+                font-size: 1.4rem;
+                font-weight: 600;
+                letter-spacing: -0.02em;
+                line-height: 1.15;
                 color: ${s.text_color};
+                ${titleGradient}
             }
 
             .rlf-body {
@@ -269,10 +386,12 @@
 
             .rlf-label {
                 display: block;
+                font-family: ${fontLabel};
                 font-size: 0.82rem;
                 font-weight: 600;
                 margin-bottom: 6px;
                 color: ${s.label_color};
+                ${labelTransform}
             }
 
             .rlf-required {
@@ -316,13 +435,14 @@
                 padding: 0 20px;
                 font-size: 0.95rem;
                 font-weight: 600;
-                font-family: inherit;
+                font-family: ${fontBody};
                 border: none;
                 border-radius: ${radius};
                 cursor: pointer;
-                background: ${s.button_color};
+                ${buttonGradient}
+                ${buttonShadow}
                 color: ${s.button_text_color};
-                transition: background 0.15s, transform 0.1s;
+                transition: filter 0.15s, transform 0.1s;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -331,7 +451,7 @@
             }
 
             .rlf-submit:hover:not(:disabled) {
-                background: ${s.button_hover_color};
+                ${s.button_gradient ? 'filter: brightness(1.08);' : `background: ${s.button_hover_color};`}
             }
 
             .rlf-submit:active:not(:disabled) {
@@ -479,6 +599,11 @@
         const styling = resolveStyling(formConfig.styling);
         const buttonText = styling.button_text || 'Submit';
 
+        // Load Google Fonts BEFORE the Shadow DOM mounts so the first paint
+        // uses the right typeface. Browsers inherit document-level
+        // @font-face into Shadow DOM children automatically.
+        injectGoogleFonts([styling.font_heading, styling.font_body, styling.font_label]);
+
         host = document.createElement('div');
         host.id = 'ragenaizer-lead-form';
         shadow = host.attachShadow({ mode: 'closed' });
@@ -488,9 +613,11 @@
         style.textContent = getStyles(styling);
         shadow.appendChild(style);
 
-        // Overlay
+        // Overlay — motif class drives the aurora / grid / dots backdrop.
         const overlay = document.createElement('div');
-        overlay.className = 'rlf-overlay';
+        const motifSuffix = ['aurora', 'grid', 'dots'].includes(styling.bg_style)
+            ? ` rlf-motif-${styling.bg_style}` : '';
+        overlay.className = 'rlf-overlay' + motifSuffix;
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) closeForm();
         });
@@ -500,6 +627,17 @@
         modal.className = 'rlf-modal';
         modal.setAttribute('role', 'dialog');
         modal.setAttribute('aria-modal', 'true');
+
+        // HUD corner brackets — small L-shaped accents pinned to the modal
+        // corners. Only when the tenant has enabled the effect.
+        if (styling.hud_brackets) {
+            const hudTl = document.createElement('span');
+            hudTl.className = 'rlf-hud rlf-hud-tl';
+            const hudBr = document.createElement('span');
+            hudBr.className = 'rlf-hud rlf-hud-br';
+            modal.appendChild(hudTl);
+            modal.appendChild(hudBr);
+        }
 
         // Close button — absolutely positioned at top-right of card
         const closeBtn = document.createElement('button');
