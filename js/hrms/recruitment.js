@@ -63,7 +63,10 @@
         ['clean']
     ];
 
-    const FIELD_TYPES_WITH_OPTIONS = new Set(['select']);
+    const FIELD_TYPES_WITH_OPTIONS = new Set(['select', 'multiselect', 'radio']);
+    const FIELD_TYPES_WITH_LENGTH = new Set(['text', 'textarea', 'url']);
+    const FIELD_TYPES_WITH_RANGE  = new Set(['number', 'age']);
+    const FIELD_TYPES_WITH_DATE_RANGE = new Set(['date', 'date_of_birth']);
 
     // ─── Init ──────────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
@@ -73,6 +76,18 @@
         initSearchableDropdowns();
         await loadPostings();
     });
+
+    // Global SignalR handler invoked by hrms-signalr.js when an application
+    // arrives for a posting that has notify_on_application = true. Refresh the
+    // list so the new-app count badge updates without HR hitting reload, and
+    // refresh the detail-view application table if it's currently visible.
+    window.onRecruitmentApplicationReceived = function (data) {
+        try { loadPostings(); } catch { /* ignore */ }
+        const postingId = data?.posting_id || data?.PostingId;
+        if (postingId && activePostingId && postingId === activePostingId && typeof loadDetailApps === 'function') {
+            try { loadDetailApps(); } catch { /* ignore */ }
+        }
+    };
 
     function wireSearchInputs() {
         document.getElementById('postingSearch')?.addEventListener('input', e => {
@@ -760,6 +775,7 @@
         document.getElementById('postingLongitude').value = '';
         document.getElementById('postingSummary').value = '';
         document.getElementById('postingOgImageUrl').value = '';
+        document.getElementById('postingNotifyOnApplication').checked = false;
         updateSummaryCounter();
         dd.postingEmploymentType?.setValue('');
         dd.postingStatus?.setValue('open');
@@ -792,6 +808,7 @@
         document.getElementById('postingLongitude').value = p.office_longitude ?? '';
         document.getElementById('postingSummary').value = p.summary || '';
         document.getElementById('postingOgImageUrl').value = p.og_image_url || '';
+        document.getElementById('postingNotifyOnApplication').checked = !!p.notify_on_application;
         updateSummaryCounter();
 
         document.getElementById('formFieldsList').innerHTML = '';
@@ -830,7 +847,8 @@
                 office_latitude: latRaw === '' ? null : parseFloat(latRaw),
                 office_longitude: lngRaw === '' ? null : parseFloat(lngRaw),
                 summary: nullIfBlank(document.getElementById('postingSummary').value),
-                og_image_url: nullIfBlank(document.getElementById('postingOgImageUrl').value)
+                og_image_url: nullIfBlank(document.getElementById('postingOgImageUrl').value),
+                notify_on_application: document.getElementById('postingNotifyOnApplication').checked
             };
 
             if (editingPostingId) {
@@ -940,6 +958,15 @@
             required: !!f.required,
             width: f.width || 'full',
             options: Array.isArray(f.options) ? f.options.slice() : [],
+            // Round-trip the new constraint props so editing a field doesn't
+            // drop them when HR opens & re-saves the settings modal.
+            helper_text: f.helper_text || null,
+            min: (f.min == null) ? null : Number(f.min),
+            max: (f.max == null) ? null : Number(f.max),
+            min_date: f.min_date || null,
+            max_date: f.max_date || null,
+            min_length: (f.min_length == null) ? null : parseInt(f.min_length, 10),
+            max_length: (f.max_length == null) ? null : parseInt(f.max_length, 10),
             keyUserEdited: !!f.key
         };
         card.innerHTML = `
@@ -982,8 +1009,16 @@
         document.getElementById('fsLabel').value = d.label;
         dd.fsType?.setValue(d.type || 'text');
         document.getElementById('fsPlaceholder').value = d.placeholder;
+        document.getElementById('fsHelperText').value = d.helper_text || '';
         document.getElementById('fsKey').value = d.key;
         document.getElementById('fsRequired').checked = d.required;
+        // Per-type constraint values (blanks left as blanks)
+        document.getElementById('fsMinLength').value = d.min_length ?? '';
+        document.getElementById('fsMaxLength').value = d.max_length ?? '';
+        document.getElementById('fsMin').value       = d.min ?? '';
+        document.getElementById('fsMax').value       = d.max ?? '';
+        document.getElementById('fsMinDate').value   = d.min_date || '';
+        document.getElementById('fsMaxDate').value   = d.max_date || '';
         document.getElementById('fsOptions').value = (d.options || [])
             .map(o => o.label && o.label !== o.value ? `${o.value}|${o.label}` : o.value).join('\n');
         syncOptionsVisibility();
@@ -1008,7 +1043,10 @@
         const key = (document.getElementById('fsKey').value.trim() || slugify(label));
         const required = document.getElementById('fsRequired').checked;
         const placeholder = document.getElementById('fsPlaceholder').value;
+        const helperText = document.getElementById('fsHelperText').value.trim();
         let options = [];
+        // country/yesno have hardcoded options on the backend, HR doesn't supply
+        // them — only the "real" choice types ask HR to type the list.
         if (FIELD_TYPES_WITH_OPTIONS.has(type)) {
             options = document.getElementById('fsOptions').value.split('\n').map(line => {
                 const t = line.trim(); if (!t) return null;
@@ -1018,7 +1056,29 @@
                 return v ? { value: v, label: l || v } : null;
             }).filter(Boolean);
         }
-        activeFieldCard._ffData = { key, type, label, placeholder, required, width: 'full', options, keyUserEdited: true };
+        const numOrNull = (id) => {
+            const v = document.getElementById(id).value;
+            return v === '' || v == null ? null : Number(v);
+        };
+        const intOrNull = (id) => {
+            const v = document.getElementById(id).value;
+            return v === '' || v == null ? null : parseInt(v, 10);
+        };
+        const strOrNull = (id) => {
+            const v = (document.getElementById(id).value || '').trim();
+            return v || null;
+        };
+        activeFieldCard._ffData = {
+            key, type, label, placeholder, required, width: 'full', options,
+            helper_text: helperText || null,
+            min: FIELD_TYPES_WITH_RANGE.has(type) ? numOrNull('fsMin') : null,
+            max: FIELD_TYPES_WITH_RANGE.has(type) ? numOrNull('fsMax') : null,
+            min_date: FIELD_TYPES_WITH_DATE_RANGE.has(type) ? strOrNull('fsMinDate') : null,
+            max_date: FIELD_TYPES_WITH_DATE_RANGE.has(type) ? strOrNull('fsMaxDate') : null,
+            min_length: FIELD_TYPES_WITH_LENGTH.has(type) ? intOrNull('fsMinLength') : null,
+            max_length: FIELD_TYPES_WITH_LENGTH.has(type) ? intOrNull('fsMaxLength') : null,
+            keyUserEdited: true
+        };
         activeFieldCard.querySelector('.ff-row-label').value = label;
         activeFieldCard.querySelector('[data-ff-type]').textContent = type;
         activeFieldCard.querySelector('[data-ff-req]').style.display = required ? '' : 'none';
@@ -1026,9 +1086,11 @@
     };
 
     function syncOptionsVisibility() {
-        const wrap = document.getElementById('fsOptionsWrap');
         const t = dd.fsType?.getValue() || 'text';
-        wrap.style.display = FIELD_TYPES_WITH_OPTIONS.has(t) ? '' : 'none';
+        document.getElementById('fsOptionsWrap').style.display    = FIELD_TYPES_WITH_OPTIONS.has(t) ? '' : 'none';
+        document.getElementById('fsLengthWrap').style.display     = FIELD_TYPES_WITH_LENGTH.has(t) ? '' : 'none';
+        document.getElementById('fsRangeWrap').style.display      = FIELD_TYPES_WITH_RANGE.has(t) ? '' : 'none';
+        document.getElementById('fsDateRangeWrap').style.display  = FIELD_TYPES_WITH_DATE_RANGE.has(t) ? '' : 'none';
     }
 
     function collectFormFields() {
@@ -1039,8 +1101,28 @@
             const liveLabel = card.querySelector('.ff-row-label')?.value?.trim() || d.label || '';
             const key = (d.key || '').trim() || slugify(liveLabel);
             if (!key) return;
-            const f = { key, type: d.type || 'text', label: liveLabel || key, placeholder: d.placeholder || '', required: !!d.required, width: d.width || 'full' };
-            if (f.type === 'select') f.options = Array.isArray(d.options) ? d.options : [];
+            const f = {
+                key, type: d.type || 'text', label: liveLabel || key,
+                placeholder: d.placeholder || '', required: !!d.required, width: d.width || 'full'
+            };
+            // Only the user-curated option types ship an options[] array. The
+            // backend generates options for country/yesno on its own.
+            if (FIELD_TYPES_WITH_OPTIONS.has(f.type)) f.options = Array.isArray(d.options) ? d.options : [];
+            // Forward the per-type constraints when they're meaningful for that
+            // type. Send nulls for blanks so the backend can apply its defaults.
+            if (d.helper_text) f.helper_text = d.helper_text;
+            if (FIELD_TYPES_WITH_LENGTH.has(f.type)) {
+                if (d.min_length != null) f.min_length = d.min_length;
+                if (d.max_length != null) f.max_length = d.max_length;
+            }
+            if (FIELD_TYPES_WITH_RANGE.has(f.type)) {
+                if (d.min != null) f.min = d.min;
+                if (d.max != null) f.max = d.max;
+            }
+            if (FIELD_TYPES_WITH_DATE_RANGE.has(f.type)) {
+                if (d.min_date) f.min_date = d.min_date;
+                if (d.max_date) f.max_date = d.max_date;
+            }
             out.push(f);
         });
         return out;

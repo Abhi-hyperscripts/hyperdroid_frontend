@@ -448,11 +448,23 @@
         const placeholder = f.placeholder || '';
         const labelHtml = `<label for="${id}">${escapeHtml(f.label || f.key)}${required ? '<span class="req">*</span>' : ''}</label>`;
 
+        // Per-type attribute helpers — emit native HTML constraints so the
+        // browser does the first pass of validation and the backend's stricter
+        // checks catch the rest. Using attributes (not classes) keeps the
+        // markup aligned with what `<input type="...">` already understands.
+        const minAttr  = (f.min  != null) ? ` min="${escapeAttr(String(f.min))}"`   : '';
+        const maxAttr  = (f.max  != null) ? ` max="${escapeAttr(String(f.max))}"`   : '';
+        const minDate  = f.min_date ? ` min="${escapeAttr(f.min_date)}"`             : '';
+        const maxDate  = f.max_date ? ` max="${escapeAttr(f.max_date)}"`             : '';
+        const minLen   = (f.min_length != null) ? ` minlength="${escapeAttr(String(f.min_length))}"` : '';
+        const maxLen   = ` maxlength="${escapeAttr(String(f.max_length || 500))}"`;
+        const tareaMax = ` maxlength="${escapeAttr(String(f.max_length || 5000))}"`;
+
         // Decide control HTML based on type
         let control;
         switch (f.type) {
             case 'textarea':
-                control = `<textarea id="${id}" name="${escapeAttr(f.key)}" ${required ? 'required' : ''} placeholder="${escapeAttr(placeholder)}"></textarea>`;
+                control = `<textarea id="${id}" name="${escapeAttr(f.key)}" ${required ? 'required' : ''} placeholder="${escapeAttr(placeholder)}"${tareaMax}${minLen}></textarea>`;
                 break;
             case 'select':
                 {
@@ -463,25 +475,95 @@
                                </select>`;
                 }
                 break;
+            case 'country':
+                {
+                    // Backend ships the country options on the form-config so HR
+                    // doesn't have to maintain a list. Sorted by name already.
+                    const opts = (f.options || []).map(o =>
+                        `<option value="${escapeAttr(o.value)}">${escapeHtml(o.label || o.value)}</option>`).join('');
+                    control = `<select id="${id}" name="${escapeAttr(f.key)}" ${required ? 'required' : ''}>
+                                  <option value="">Select country…</option>${opts}
+                               </select>`;
+                }
+                break;
+            case 'multiselect':
+                {
+                    // Render as a checkbox group. The submit handler picks them
+                    // up by name and posts an array.
+                    const items = (f.options || []).map(o => {
+                        const optId = `${id}__${slugifyClient(o.value)}`;
+                        return `<label class="apply-checkbox-item" for="${optId}">
+                                    <input id="${optId}" type="checkbox" name="${escapeAttr(f.key)}" value="${escapeAttr(o.value)}">
+                                    <span>${escapeHtml(o.label || o.value)}</span>
+                                </label>`;
+                    }).join('');
+                    control = `<div class="apply-checkbox-group" id="${id}" data-multiselect="1" data-required="${required ? '1' : '0'}">${items}</div>`;
+                }
+                break;
+            case 'radio':
+                {
+                    const items = (f.options || []).map(o => {
+                        const optId = `${id}__${slugifyClient(o.value)}`;
+                        return `<label class="apply-radio-item" for="${optId}">
+                                    <input id="${optId}" type="radio" name="${escapeAttr(f.key)}" value="${escapeAttr(o.value)}" ${required ? 'required' : ''}>
+                                    <span>${escapeHtml(o.label || o.value)}</span>
+                                </label>`;
+                    }).join('');
+                    control = `<div class="apply-radio-group" id="${id}" data-radio="1">${items}</div>`;
+                }
+                break;
+            case 'yesno':
+                {
+                    // Two-button toggle, hidden radio inputs underneath. Mobile
+                    // candidates can tap a chunky target instead of a tiny radio.
+                    const optYes = `${id}__yes`, optNo = `${id}__no`;
+                    control = `<div class="apply-yesno" id="${id}" data-radio="1">
+                                <label class="apply-yesno-btn" for="${optYes}">
+                                    <input id="${optYes}" type="radio" name="${escapeAttr(f.key)}" value="yes" ${required ? 'required' : ''}>
+                                    <span>Yes</span>
+                                </label>
+                                <label class="apply-yesno-btn" for="${optNo}">
+                                    <input id="${optNo}" type="radio" name="${escapeAttr(f.key)}" value="no" ${required ? 'required' : ''}>
+                                    <span>No</span>
+                                </label>
+                            </div>`;
+                }
+                break;
             case 'email':
-                control = `<input id="${id}" name="${escapeAttr(f.key)}" type="email" ${required ? 'required' : ''} placeholder="${escapeAttr(placeholder)}" autocomplete="email">`;
+                control = `<input id="${id}" name="${escapeAttr(f.key)}" type="email" ${required ? 'required' : ''} placeholder="${escapeAttr(placeholder)}" autocomplete="email" maxlength="254">`;
                 break;
             case 'tel':
-                control = `<input id="${id}" name="${escapeAttr(f.key)}" type="tel" ${required ? 'required' : ''} placeholder="${escapeAttr(placeholder)}" autocomplete="tel">`;
+                control = `<input id="${id}" name="${escapeAttr(f.key)}" type="tel" ${required ? 'required' : ''} placeholder="${escapeAttr(placeholder)}" autocomplete="tel" maxlength="50">`;
+                break;
+            case 'url':
+                control = `<input id="${id}" name="${escapeAttr(f.key)}" type="url" ${required ? 'required' : ''} placeholder="${escapeAttr(placeholder || 'https://')}" autocomplete="url" maxlength="500">`;
                 break;
             case 'number':
-                control = `<input id="${id}" name="${escapeAttr(f.key)}" type="number" ${required ? 'required' : ''} placeholder="${escapeAttr(placeholder)}">`;
+                control = `<input id="${id}" name="${escapeAttr(f.key)}" type="number" ${required ? 'required' : ''} placeholder="${escapeAttr(placeholder)}"${minAttr}${maxAttr}>`;
+                break;
+            case 'age':
+                // Integer-only via step="1". Native pickers with min/max give a
+                // mobile-friendly numeric keypad.
+                control = `<input id="${id}" name="${escapeAttr(f.key)}" type="number" inputmode="numeric" step="1" ${required ? 'required' : ''} placeholder="${escapeAttr(placeholder)}"${minAttr}${maxAttr}>`;
                 break;
             case 'date':
-                control = `<input id="${id}" name="${escapeAttr(f.key)}" type="date" ${required ? 'required' : ''}>`;
+                control = `<input id="${id}" name="${escapeAttr(f.key)}" type="date" ${required ? 'required' : ''}${minDate}${maxDate}>`;
+                break;
+            case 'date_of_birth':
+                // Same control as `date`, but the backend ships sensible default
+                // bounds (today-100y .. today-14y) so the calendar lands on a
+                // useful year for DOB. Browsers honour min/max automatically.
+                control = `<input id="${id}" name="${escapeAttr(f.key)}" type="date" autocomplete="bday" ${required ? 'required' : ''}${minDate}${maxDate}>`;
                 break;
             case 'text':
             default:
-                control = `<input id="${id}" name="${escapeAttr(f.key)}" type="text" ${required ? 'required' : ''} placeholder="${escapeAttr(placeholder)}" maxlength="500">`;
+                control = `<input id="${id}" name="${escapeAttr(f.key)}" type="text" ${required ? 'required' : ''} placeholder="${escapeAttr(placeholder)}"${minLen}${maxLen}>`;
         }
 
-        // Wrap text-like inputs with an icon prefix when we recognise the field
-        const icon = (f.type !== 'textarea' && f.type !== 'date') ? iconForKey(f.key, f.type) : null;
+        // Wrap text-like inputs with an icon prefix when we recognise the field.
+        // Choice/multi controls render their own layout — no icon overlay.
+        const iconableTypes = !['textarea', 'date', 'date_of_birth', 'multiselect', 'radio', 'yesno', 'select', 'country'].includes(f.type);
+        const icon = iconableTypes ? iconForKey(f.key, f.type) : null;
         // Inject `class="input-icon"` into the SVG opening tag so the prefix
         // styling kicks in. Keeps the original viewBox + stroke attributes.
         const iconWithClass = icon ? icon.replace(/<svg(\s|>)/, '<svg class="input-icon" aria-hidden="true"$1') : '';
@@ -489,8 +571,16 @@
             ? `<div class="input-wrap has-icon">${iconWithClass}${control}</div>`
             : `<div class="input-wrap">${control}</div>`;
 
-        wrap.innerHTML = labelHtml + inputWrap;
+        const helperHtml = f.helper_text
+            ? `<small class="apply-helper">${escapeHtml(f.helper_text)}</small>` : '';
+
+        wrap.innerHTML = labelHtml + inputWrap + helperHtml;
         return wrap;
+    }
+
+    // Local slugify for option-id construction (keeps id attributes valid).
+    function slugifyClient(s) {
+        return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'opt';
     }
 
     window.submitApplication = async function (ev) {
@@ -506,10 +596,34 @@
             const data = {};
             const fields = Array.isArray(formConfig?.fields) ? formConfig.fields : [];
             fields.forEach(f => {
-                const el = document.getElementById(`f_${f.key}`);
+                const id = `f_${f.key}`;
+
+                // Multiselect → array of checked values.
+                if (f.type === 'multiselect') {
+                    const boxes = document.querySelectorAll(`input[type="checkbox"][name="${cssEscape(f.key)}"]`);
+                    const picks = Array.from(boxes).filter(b => b.checked).map(b => b.value);
+                    if (picks.length > 0) data[f.key] = picks;
+                    return;
+                }
+
+                // Radio / yes-no → the value of the selected radio (or empty).
+                if (f.type === 'radio' || f.type === 'yesno') {
+                    const checked = document.querySelector(`input[type="radio"][name="${cssEscape(f.key)}"]:checked`);
+                    if (checked) data[f.key] = checked.value;
+                    return;
+                }
+
+                const el = document.getElementById(id);
                 if (!el) return;
-                data[f.key] = (el.value || '').trim();
+                const v = (el.value || '').trim();
+                if (v !== '') data[f.key] = v;
             });
+
+            // Forward the honeypot value. Real candidates leave it blank; bots
+            // typically fill every field. Backend silently accepts-and-drops
+            // the submission when this is non-empty.
+            const honeypot = document.getElementById('company_country');
+            if (honeypot && honeypot.value) data.company_country = honeypot.value;
 
             const url = `${getApiBase()}/recruitment/apply/${encodeURIComponent(webhookKey)}`;
             const res = await fetch(url, {
@@ -574,6 +688,13 @@
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
     function escapeAttr(s) { return escapeHtml(s); }
+    // CSS.escape exists in all evergreen browsers; this is a fallback for the
+    // unlikely case it's missing. We use it to safely quote a field-key (which
+    // can be any slug) into an attribute selector.
+    function cssEscape(s) {
+        if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(s);
+        return String(s).replace(/([^\w-])/g, '\\$1');
+    }
     function formatEmploymentType(t) {
         const map = { full_time: 'Full-time', part_time: 'Part-time', contract: 'Contract', intern: 'Internship', freelance: 'Freelance' };
         return map[t] || t;

@@ -871,6 +871,58 @@
         .apply-field input:hover, .apply-field textarea:hover, .apply-field select:hover {
             border-color: var(--text-2);
         }
+        /* Helper text shown under any field when HR set helper_text */
+        .apply-helper {
+            display: block;
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+        /* Checkbox group (multiselect) + radio group + yes/no buttons */
+        .apply-checkbox-group, .apply-radio-group {
+            display: flex; flex-direction: column; gap: 8px;
+            padding: 10px 12px;
+            border-radius: 11px;
+            border: 1px solid var(--line-strong);
+            background: var(--bg-2);
+        }
+        html[data-theme="light"] .apply-checkbox-group,
+        html[data-theme="light"] .apply-radio-group {
+            background: #fff; border-color: rgba(11,16,32,0.12);
+        }
+        .apply-checkbox-item, .apply-radio-item {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.92rem;
+            color: var(--text); cursor: pointer;
+            padding: 4px 0;
+        }
+        .apply-checkbox-item input, .apply-radio-item input {
+            width: 16px; height: 16px; padding: 0; margin: 0;
+            accent-color: var(--violet, #8b5cf6);
+        }
+        .apply-yesno { display: flex; gap: 10px; }
+        .apply-yesno-btn {
+            flex: 1; position: relative;
+            display: flex; align-items: center; justify-content: center;
+            padding: 12px 18px;
+            border: 1px solid var(--line-strong);
+            background: var(--bg-2);
+            border-radius: 11px;
+            color: var(--text); font-size: 0.95rem;
+            cursor: pointer; user-select: none;
+            transition: border-color 0.15s ease, background 0.15s ease, transform 0.05s ease;
+        }
+        html[data-theme="light"] .apply-yesno-btn {
+            background: #fff; border-color: rgba(11,16,32,0.12);
+        }
+        .apply-yesno-btn:hover { border-color: var(--text-2); }
+        .apply-yesno-btn input { position: absolute; opacity: 0; pointer-events: none; }
+        .apply-yesno-btn:has(input:checked) {
+            border-color: var(--violet, #8b5cf6);
+            background: rgba(139, 92, 246, 0.10);
+            color: var(--text);
+        }
         .apply-field select {
             appearance: none;
             -webkit-appearance: none;
@@ -1197,7 +1249,14 @@
                             </div>
                             <div class="form-divider"></div>
                             <div class="apply-error" id="applyError"></div>
-                            <form id="applyFormEl" onsubmit="submitApplication(event)">
+                            <form id="applyFormEl" onsubmit="submitApplication(event)" autocomplete="on">
+                                <!-- Honeypot: hidden field that real candidates
+                                     never fill. Bots that auto-complete every
+                                     input land themselves on the spam list. -->
+                                <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" tabindex="-1">
+                                    <label for="company_country">Country (leave blank)</label>
+                                    <input type="text" id="company_country" name="company_country" tabindex="-1" autocomplete="off">
+                                </div>
                                 <div id="applyFields"></div>
                                 <button type="submit" class="apply-submit" id="applySubmitBtn">
                                     Submit Application

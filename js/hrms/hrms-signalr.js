@@ -525,6 +525,20 @@ function registerHrmsEventHandlers() {
         showHrmsNotification('Structure Deleted', `${name} has been deleted`, 'warning');
     });
 
+    // ==================== Recruitment Events ====================
+    // Fired when a candidate submits an application AND the posting has
+    // notify_on_application = true. HR opts in per posting to avoid being
+    // buzzed 1000 times on a viral role.
+    hrmsHubConnection.on('RecruitmentApplicationReceived', (data) => {
+        console.log('[HRMS SignalR] RecruitmentApplicationReceived:', data);
+        const who = getProp(data, 'applicant_name') || getProp(data, 'ApplicantName') || 'A candidate';
+        const role = getProp(data, 'posting_title') || getProp(data, 'PostingTitle') || 'a role';
+        showHrmsNotification('New application', `${who} applied for ${role}`, 'info');
+        if (typeof onRecruitmentApplicationReceived === 'function') {
+            onRecruitmentApplicationReceived(data);
+        }
+    });
+
     // ==================== Generic Data Refresh ====================
     hrmsHubConnection.on('DataRefresh', (data) => {
         console.log('[HRMS SignalR] DataRefresh:', data);
