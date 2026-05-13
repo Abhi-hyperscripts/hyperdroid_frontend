@@ -11,6 +11,10 @@ window.EmployeeManagerBulk = (function () {
     let listRows = [];          // full prefill payload, cached for the table
     let filteredRows = [];
     let pagination = null;
+    // Tenant SUPERADMIN list. Cached at init so rows with no explicit
+    // manager can show the actual SUPERADMIN names instead of the generic
+    // "SUPERADMIN" placeholder. Empty array = endpoint failed / not loaded.
+    let tenantSuperadmins = [];
 
     const TEMPLATE_COLUMNS = [
         { key: 'full_name',            label: 'Name',                           readonly: true  },
@@ -25,7 +29,27 @@ window.EmployeeManagerBulk = (function () {
         if (initialized) return;
         initialized = true;
         wire();
+        // Fire both fetches in parallel — the SUPERADMIN list is small and
+        // the table renderer reads `tenantSuperadmins` directly. If the
+        // SUPERADMIN fetch resolves AFTER the prefill, we re-render once
+        // the list arrives.
+        loadSuperadmins();
         loadList();
+    }
+
+    async function loadSuperadmins() {
+        try {
+            const sas = await api.request('/hrms/employees/superadmins');
+            tenantSuperadmins = Array.isArray(sas)
+                ? sas.filter(u => u && u.user_id && u.is_active !== false)
+                : [];
+            // If the table already rendered (loadList finished first), redraw
+            // so the SUPERADMIN placeholder rows pick up the real names.
+            if (listRows && listRows.length) applyFilters();
+        } catch (err) {
+            console.warn('[MgrBulk] SUPERADMIN list fetch failed:', err?.message || err);
+            tenantSuperadmins = [];
+        }
     }
 
     function wire() {
@@ -302,13 +326,53 @@ window.EmployeeManagerBulk = (function () {
             return;
         }
         body.innerHTML = rows.map((r) => {
-            const mgrDisplay = r.reports_to_superadmin
-                ? `<span style="color:var(--brand-primary, #6366f1); font-weight:600;">SUPERADMIN</span>
-                   <span style="color:var(--text-secondary); font-size:0.78rem;"> (no explicit manager)</span>`
-                : escapeHtml(r.current_manager_name || '—');
-            const mgrEmail = r.reports_to_superadmin
-                ? `<span style="color:var(--text-secondary);">—</span>`
-                : `<span style="font-family:monospace; font-size:0.85rem;">${escapeHtml(r.current_manager_email || '—')}</span>`;
+            // Three cases for the manager column:
+            //   (a) reports_to_superadmin: no explicit manager — instead of
+            //       a generic placeholder, name the actual SUPERADMIN(s) in
+            //       the tenant so it's clear who the implicit reporting
+            //       line is. Single SUPERADMIN: show name + email. Multiple:
+            //       show first name + "+N more", with a SUPERADMIN badge.
+            //   (b) manager_is_superadmin: real SUPERADMIN user is the
+            //       explicit manager — show their actual name + badge
+            //   (c) regular employee manager: just the name
+            let mgrDisplay;
+            let mgrEmail;
+            if (r.reports_to_superadmin) {
+                if (tenantSuperadmins.length === 1) {
+                    const sa = tenantSuperadmins[0];
+                    const saName = (sa.display_name || sa.email || 'SUPERADMIN').trim();
+                    mgrDisplay = `${escapeHtml(saName)}
+                       <span style="background:rgba(139,92,246,0.15); color:#a78bfa; padding:2px 8px; border-radius:999px; font-size:0.68rem; font-weight:600; letter-spacing:0.04em; margin-left:6px;">SUPERADMIN</span>
+                       <div style="color:var(--text-secondary); font-size:0.74rem; margin-top:2px;">No explicit manager — defaults to this admin</div>`;
+                    mgrEmail = `<span style="font-family:monospace; font-size:0.85rem;">${escapeHtml(sa.email || '—')}</span>`;
+                } else if (tenantSuperadmins.length > 1) {
+                    const first = tenantSuperadmins[0];
+                    const firstName = (first.display_name || first.email || 'SUPERADMIN').trim();
+                    const extra = tenantSuperadmins.length - 1;
+                    const allNames = tenantSuperadmins
+                        .map(u => u.display_name || u.email || 'SUPERADMIN')
+                        .join(', ');
+                    mgrDisplay = `${escapeHtml(firstName)}
+                       <span style="background:rgba(139,92,246,0.15); color:#a78bfa; padding:2px 8px; border-radius:999px; font-size:0.68rem; font-weight:600; letter-spacing:0.04em; margin-left:6px;" title="${escapeHtml(allNames)}">SUPERADMIN</span>
+                       <span style="color:var(--text-secondary); font-size:0.74rem; margin-left:4px;" title="${escapeHtml(allNames)}">+${extra} more</span>
+                       <div style="color:var(--text-secondary); font-size:0.74rem; margin-top:2px;">No explicit manager — defaults to any tenant SUPERADMIN</div>`;
+                    mgrEmail = `<span style="font-family:monospace; font-size:0.85rem;">${escapeHtml(first.email || '—')}</span>`;
+                } else {
+                    // SUPERADMIN list not loaded yet OR none exist — show
+                    // the legacy placeholder so the row still renders.
+                    mgrDisplay = `<span style="color:var(--brand-primary, #6366f1); font-weight:600;">SUPERADMIN</span>
+                       <span style="color:var(--text-secondary); font-size:0.78rem;"> (no explicit manager)</span>`;
+                    mgrEmail = `<span style="color:var(--text-secondary);">—</span>`;
+                }
+            } else if (r.manager_is_superadmin) {
+                mgrDisplay = `${escapeHtml(r.current_manager_name || '—')}
+                   <span style="background:rgba(139,92,246,0.15); color:#a78bfa; padding:2px 8px; border-radius:999px; font-size:0.68rem; font-weight:600; letter-spacing:0.04em; margin-left:6px;">SUPERADMIN</span>`;
+                mgrEmail = `<span style="font-family:monospace; font-size:0.85rem;">${escapeHtml(r.current_manager_email || '—')}</span>`;
+            } else {
+                mgrDisplay = escapeHtml(r.current_manager_name || '—');
+                mgrEmail = `<span style="font-family:monospace; font-size:0.85rem;">${escapeHtml(r.current_manager_email || '—')}</span>`;
+            }
+
             return `
                 <tr>
                     <td>

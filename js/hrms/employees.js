@@ -3451,7 +3451,7 @@ async function prepareManagerList(employee) {
         return false;
     };
 
-    validManagersList = employees.filter(e => {
+    const employeeManagers = employees.filter(e => {
         // Exclude self
         if (e.id === employee.id) return false;
         // Exclude inactive employees
@@ -3472,9 +3472,50 @@ async function prepareManagerList(employee) {
         department: mgr.department_name || '',
         designation: mgr.designation_name || '',
         office: mgr.office_name || '',
+        is_superadmin: false,
         searchText: `${mgr.first_name} ${mgr.last_name} ${mgr.employee_code || ''} ${mgr.work_email || mgr.email || ''} ${mgr.designation_name || ''} ${mgr.office_name || ''}`.toLowerCase()
     }));
 
+    // Also surface the tenant's SUPERADMIN users — founders / owners often
+    // sit at the top of the org chart without an employee record, so HR
+    // needs to be able to pick them explicitly. We exclude any SUPERADMIN
+    // who's also the current manager (no-op change) and who's the employee
+    // themselves (Yogesh-the-superadmin can't be his own manager).
+    let superadminManagers = [];
+    try {
+        const sas = await api.request('/hrms/employees/superadmins');
+        if (Array.isArray(sas)) {
+            superadminManagers = sas
+                .filter(u => u.user_id && u.is_active !== false)
+                .filter(u => u.user_id !== employee.user_id)
+                .filter(u => u.user_id !== employee.manager_user_id)
+                .map(u => {
+                    const fn = (u.first_name || '').trim();
+                    const ln = (u.last_name || '').trim();
+                    const display = (fn || ln) ? `${fn} ${ln}`.trim() : (u.email || 'SUPERADMIN');
+                    return {
+                        user_id: u.user_id,
+                        name: display,
+                        code: 'SUPERADMIN',  // shown where employee_code normally is
+                        email: u.email || '',
+                        initials: ((fn[0] || '') + (ln[0] || '')).toUpperCase() || 'SA',
+                        department: '',
+                        designation: 'Super Admin',
+                        office: '',
+                        is_superadmin: true,
+                        searchText: `${display} ${u.email || ''} superadmin admin`.toLowerCase()
+                    };
+                });
+        }
+    } catch (err) {
+        // Non-fatal: if Auth is unreachable, the manager picker still shows
+        // employees. Log + continue.
+        console.warn('[managerPicker] could not fetch SUPERADMIN list:', err?.message || err);
+    }
+
+    // SUPERADMINs first (top-of-tree, smaller list, easier to scan), then
+    // the regular employee managers.
+    validManagersList = [...superadminManagers, ...employeeManagers];
     filteredManagersList = [...validManagersList];
 }
 
@@ -3625,11 +3666,14 @@ function renderVirtualList() {
             const line1 = [mgr.code, mgr.designation].filter(Boolean).join(' • ');
             const line2 = [mgr.department, mgr.office].filter(Boolean).join(' • ');
             const line3 = mgr.email;
+            const badge = mgr.is_superadmin
+                ? `<span style="background:rgba(139,92,246,0.15); color:#a78bfa; padding:2px 8px; border-radius:999px; font-size:0.68rem; font-weight:600; letter-spacing:0.04em; margin-left:8px; vertical-align:middle;">SUPERADMIN</span>`
+                : '';
             return `
-            <div class="dropdown-item" data-index="${index + 1}" data-value="${mgr.user_id}" onclick="selectManager('${mgr.user_id}', '${mgr.name.replace(/'/g, "\\'")}')">
+            <div class="dropdown-item${mgr.is_superadmin ? ' is-superadmin' : ''}" data-index="${index + 1}" data-value="${mgr.user_id}" onclick="selectManager('${mgr.user_id}', '${mgr.name.replace(/'/g, "\\'")}')">
                 <span class="item-avatar">${mgr.initials}</span>
                 <div class="item-name">
-                    <strong>${mgr.name}</strong>
+                    <strong>${mgr.name}${badge}</strong>
                     <small>${line1}${line2 ? '<br>' + line2 : ''}${line3 ? '<br>' + line3 : ''}</small>
                 </div>
             </div>
@@ -3660,13 +3704,16 @@ function renderVirtualScrollItems(container) {
         const line1 = [mgr.code, mgr.designation].filter(Boolean).join(' • ');
         const line2 = [mgr.department, mgr.office].filter(Boolean).join(' • ');
         const line3 = mgr.email;
+        const badge = mgr.is_superadmin
+            ? `<span style="background:rgba(139,92,246,0.15); color:#a78bfa; padding:2px 8px; border-radius:999px; font-size:0.68rem; font-weight:600; letter-spacing:0.04em; margin-left:8px; vertical-align:middle;">SUPERADMIN</span>`
+            : '';
         html += `
-            <div class="dropdown-item" style="position: absolute; top: ${top}px; left: 0; right: 0;"
+            <div class="dropdown-item${mgr.is_superadmin ? ' is-superadmin' : ''}" style="position: absolute; top: ${top}px; left: 0; right: 0;"
                  data-index="${i + 1}" data-value="${mgr.user_id}"
                  onclick="selectManager('${mgr.user_id}', '${mgr.name.replace(/'/g, "\\'")}')">
                 <span class="item-avatar">${mgr.initials}</span>
                 <div class="item-name">
-                    <strong>${mgr.name}</strong>
+                    <strong>${mgr.name}${badge}</strong>
                     <small>${line1}${line2 ? '<br>' + line2 : ''}${line3 ? '<br>' + line3 : ''}</small>
                 </div>
             </div>
