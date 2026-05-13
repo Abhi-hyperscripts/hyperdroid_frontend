@@ -212,7 +212,50 @@
        visible control on top. Keep the wrapper sized large enough for the
        longest rep name + team hint. */
     #repSelect { display: none !important; }
-    .md-rep-picker .searchable-dropdown { min-width: 220px; }
+    .md-rep-picker .searchable-dropdown { min-width: 260px; }
+
+    /* Override the default single-row option layout so each rep renders
+       on two lines: full name on top, team on the bottom in muted text.
+       The default flex-row layout truncates long names + crams the team
+       name on the right where it gets squashed. */
+    .md-rep-picker .searchable-dropdown-option {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        padding: 8px 12px;
+    }
+    .md-rep-picker .searchable-dropdown-option-label {
+        white-space: normal;       /* allow long names to wrap if needed */
+        overflow: visible;
+        text-overflow: clip;
+        font-weight: 500;
+        line-height: 1.25;
+    }
+    .md-rep-picker .searchable-dropdown-option-desc {
+        margin-left: 0;            /* drop the inline gap from the default */
+        font-size: 11px;
+        line-height: 1.2;
+        color: var(--text-secondary);
+        opacity: 0.85;
+    }
+    .md-rep-picker .searchable-dropdown-option.selected
+        .searchable-dropdown-option-desc {
+        color: var(--brand-primary);
+        opacity: 0.85;
+    }
+    /* Native check icon — push it to the right edge regardless of the
+       column layout so it doesn't end up underneath the team line. */
+    .md-rep-picker .searchable-dropdown-option {
+        position: relative;
+        padding-right: 28px;
+    }
+    .md-rep-picker .searchable-dropdown-option .searchable-dropdown-check {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
     @media (max-width: 640px) {
         .md-rep-picker { margin-right: 0; width: 100%; min-width: 0; }
         .md-rep-picker .searchable-dropdown { flex: 1; min-width: 0; }
