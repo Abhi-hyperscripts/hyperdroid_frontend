@@ -1245,7 +1245,7 @@ function renderCountrySection(country) {
                             <span class="cfg-currency-code">${escapeHtml(currencyCode)}</span>
                         </div>
                         ${country.currency?.decimal_places !== undefined ? `
-                        <span class="cfg-country-card-sub">${country.currency.decimal_places} decimal places</span>
+                        <span class="cfg-country-card-sub">${escapeHtml(String(country.currency.decimal_places))} decimal places</span>
                         ` : ''}
                     </div>
                 </div>
@@ -1263,9 +1263,9 @@ function renderCountrySection(country) {
                     <div class="cfg-country-card-content">
                         <span class="cfg-country-card-label">Fiscal Year</span>
                         <div class="cfg-country-card-value">
-                            <span class="cfg-fiscal-month">${fiscalMonth}</span>
+                            <span class="cfg-fiscal-month">${escapeHtml(String(fiscalMonth))}</span>
                         </div>
-                        <span class="cfg-country-card-sub">Starts on day ${fiscalDay}</span>
+                        <span class="cfg-country-card-sub">Starts on day ${escapeHtml(String(fiscalDay))}</span>
                     </div>
                 </div>
 
@@ -1338,7 +1338,7 @@ function renderTaxSystemSection(taxSystem) {
                     <div class="cfg-slabs-compact">
                         <table class="cfg-table">
                             <thead><tr><th>From</th><th>To</th><th>Rate</th></tr></thead>
-                            <tbody>${regime.slabs.map(s => `<tr><td>${formatCurrency(s.from)}</td><td>${s.to ? formatCurrency(s.to) : '∞'}</td><td>${s.rate_percent}%</td></tr>`).join('')}</tbody>
+                            <tbody>${regime.slabs.map(s => `<tr><td>${formatCurrency(s.from)}</td><td>${s.to ? formatCurrency(s.to) : '∞'}</td><td>${escapeHtml(String(s.rate_percent))}%</td></tr>`).join('')}</tbody>
                         </table>
                     </div>` : ''}
                     ${regime.rebate ? `<div class="cfg-field-inline"><label>Rebate (${regime.rebate.section || '87A'})</label><span>Up to ${formatCurrency(regime.rebate.max_income_threshold)}, Max ${formatCurrency(regime.rebate.max_rebate_amount)}</span></div>` : ''}
@@ -1351,13 +1351,13 @@ function renderTaxSystemSection(taxSystem) {
     if (taxSystem.surcharge?.slabs) {
         html += `<div class="cfg-subsection"><h5>Surcharge Slabs</h5>
             <table class="cfg-table"><thead><tr><th>From</th><th>To</th><th>Rate</th></tr></thead>
-            <tbody>${taxSystem.surcharge.slabs.map(s => `<tr><td>${formatCurrency(s.from)}</td><td>${s.to ? formatCurrency(s.to) : '∞'}</td><td>${s.rate_percent}%</td></tr>`).join('')}</tbody></table>
+            <tbody>${taxSystem.surcharge.slabs.map(s => `<tr><td>${formatCurrency(s.from)}</td><td>${s.to ? formatCurrency(s.to) : '∞'}</td><td>${escapeHtml(String(s.rate_percent))}%</td></tr>`).join('')}</tbody></table>
         </div>`;
     }
 
     // Cess
     if (taxSystem.cess) {
-        html += `<div class="cfg-field"><label>Cess</label><span>${taxSystem.cess.rate_percent}% on ${escapeHtml(taxSystem.cess.applies_on || 'tax')}</span></div>`;
+        html += `<div class="cfg-field"><label>Cess</label><span>${escapeHtml(String(taxSystem.cess.rate_percent))}% on ${escapeHtml(taxSystem.cess.applies_on || 'tax')}</span></div>`;
     }
 
     html += '</div>';
@@ -1380,11 +1380,11 @@ function renderSocialContributionsSection(social) {
                         <div class="cfg-contrib-rates">
                             <div class="cfg-rate-box employee">
                                 <span class="cfg-rate-label">Employee</span>
-                                <span class="cfg-rate-value">${c.employee_share?.rate_percent || 0}%</span>
+                                <span class="cfg-rate-value">${escapeHtml(String(c.employee_share?.rate_percent || 0))}%</span>
                             </div>
                             <div class="cfg-rate-box employer">
                                 <span class="cfg-rate-label">Employer</span>
-                                <span class="cfg-rate-value">${c.employer_share?.rate_percent || 0}%</span>
+                                <span class="cfg-rate-value">${escapeHtml(String(c.employer_share?.rate_percent || 0))}%</span>
                             </div>
                         </div>
                         ${c.wage_ceiling?.monthly ? `<div class="cfg-field-inline"><label>Wage Ceiling</label><span>${formatCurrency(c.wage_ceiling.monthly)}/mo</span></div>` : ''}
@@ -1443,7 +1443,7 @@ function renderCalculationMethod(calc) {
         html += calc.slabs.map(s => `<tr><td>${formatCurrency(s.from)}</td><td>${s.to ? formatCurrency(s.to) : '∞'}</td><td>${s.amount !== undefined ? formatCurrency(s.amount) : (s.rate_percent + '%')}</td></tr>`).join('');
         html += '</tbody></table>';
     } else if (calc.rate_percent !== undefined) {
-        html += ` <span class="cfg-rate">${calc.rate_percent}%</span>`;
+        html += ` <span class="cfg-rate">${escapeHtml(String(calc.rate_percent))}%</span>`;
         if (calc.basis) html += ` of ${formatLabel(calc.basis)}`;
     } else if (calc.fixed_amount !== undefined) {
         html += ` <span class="cfg-amount">${formatCurrency(calc.fixed_amount)}</span>`;
@@ -1496,10 +1496,10 @@ function renderDeductionOrderSection(dedOrder) {
                 <tbody>
                     ${dedOrder.sequence.map(d => `
                         <tr>
-                            <td class="cfg-order">${d.order}</td>
+                            <td class="cfg-order">${escapeHtml(String(d.order))}</td>
                             <td><span class="cfg-code">${escapeHtml(d.deduction_code)}</span></td>
                             <td>${escapeHtml(d.deduction_name || '-')}</td>
-                            <td><span class="cfg-badge-${d.category || 'other'}">${formatLabel(d.category || '-')}</span></td>
+                            <td><span class="cfg-badge-${escapeHtml(String(d.category || 'other'))}">${formatLabel(d.category || '-')}</span></td>
                             <td>${d.reduces_taxable_income ? '<span class="cfg-badge-yes">Reduces Tax</span>' : '<span class="cfg-badge-no">Post Tax</span>'}</td>
                         </tr>
                     `).join('')}
@@ -1516,7 +1516,7 @@ function renderYtdTrackingSection(ytd) {
         <div class="cfg-section">
             <div class="cfg-row-grid">
                 <div class="cfg-field"><label>Fiscal Reset</label><span>${ytd.fiscal_year_reset !== false ? 'Yes' : 'No'}</span></div>
-                ${ytd.calendar_year_components?.length ? `<div class="cfg-field"><label>Calendar Year</label><span>${ytd.calendar_year_components.join(', ')}</span></div>` : ''}
+                ${ytd.calendar_year_components?.length ? `<div class="cfg-field"><label>Calendar Year</label><span>${escapeHtml(ytd.calendar_year_components.join(', '))}</span></div>` : ''}
             </div>
             <table class="cfg-table">
                 <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Ceiling</th><th>Affects</th></tr></thead>
@@ -1621,10 +1621,13 @@ function formatCurrency(amount) {
 // Format label: convert snake_case/SCREAMING_SNAKE to Title Case for display
 function formatLabel(str) {
     if (!str) return '-';
-    return str
+    // Country configs are uploaded JSON; values can be anything. Render through
+    // escapeHtml so a tampered config can't smuggle `<script>` via a label.
+    const formatted = String(str)
         .replace(/_/g, ' ')
         .toLowerCase()
         .replace(/\b\w/g, c => c.toUpperCase());
+    return escapeHtml(formatted);
 }
 
 // Generic tax type icons - no country-specific logic, uses category from config or generic icons
@@ -1689,11 +1692,11 @@ function renderEngineSemanticsSection(engineSemantics) {
                 </div>
                 <div class="cfg-engine-card">
                     <div class="cfg-engine-label">Currency Precision</div>
-                    <div class="cfg-engine-value">${rr.currency_precision ?? 2} decimals</div>
+                    <div class="cfg-engine-value">${escapeHtml(String(rr.currency_precision ?? 2))} decimals</div>
                 </div>
                 <div class="cfg-engine-card">
                     <div class="cfg-engine-label">Intermediate Precision</div>
-                    <div class="cfg-engine-value">${rr.intermediate_precision ?? 4} decimals</div>
+                    <div class="cfg-engine-value">${escapeHtml(String(rr.intermediate_precision ?? 4))} decimals</div>
                 </div>
             </div>
         </div>`;
@@ -1984,7 +1987,7 @@ function renderJurisdictionPrecedenceSection(precedence) {
             <div class="cfg-precedence-card">
                 <div class="cfg-precedence-header">${escapeHtml(country)}</div>
                 <div class="cfg-field"><label>Hierarchy</label><span>${data.hierarchy?.map(escapeHtml).join(' → ') || '-'}</span></div>
-                <div class="cfg-field"><label>Default Lookup Depth</label><span>${data.default_lookup_depth ?? '-'}</span></div>
+                <div class="cfg-field"><label>Default Lookup Depth</label><span>${escapeHtml(String(data.default_lookup_depth ?? '-'))}</span></div>
             </div>`;
         });
         html += '</div>';
@@ -2056,7 +2059,7 @@ function renderEligibilityConstraintsSection(constraints) {
             </div>
             <div class="cfg-engine-card">
                 <div class="cfg-engine-label">Max Nesting Depth</div>
-                <div class="cfg-engine-value">${constraints.max_nesting_depth ?? 'Unlimited'}</div>
+                <div class="cfg-engine-value">${escapeHtml(String(constraints.max_nesting_depth ?? 'Unlimited'))}</div>
             </div>
             <div class="cfg-engine-card">
                 <div class="cfg-engine-label">Validate at Load</div>
@@ -2195,9 +2198,9 @@ function renderRequiredRolesSection(requiredRoles) {
                     ${requiredRoles.mandatory_mappings.map(m => `
                         <tr>
                             <td><span class="cfg-code">${escapeHtml(m.role_code)}</span></td>
-                            <td><span class="cfg-badge cfg-badge-${m.severity}">${formatLabel(m.severity)}</span></td>
-                            <td>${m.role_ratio_constraints?.min_percent_of_gross ?? '-'}%</td>
-                            <td>${m.role_ratio_constraints?.max_percent_of_gross ?? '-'}%</td>
+                            <td><span class="cfg-badge cfg-badge-${escapeHtml(String(m.severity))}">${formatLabel(m.severity)}</span></td>
+                            <td>${escapeHtml(String(m.role_ratio_constraints?.min_percent_of_gross ?? '-'))}%</td>
+                            <td>${escapeHtml(String(m.role_ratio_constraints?.max_percent_of_gross ?? '-'))}%</td>
                             <td>${formatLabel(m.role_ratio_constraints?.enforcement_mode) || '-'}</td>
                         </tr>
                     `).join('')}
@@ -2300,7 +2303,7 @@ function renderStatutoryChargesSection(charges, configData) {
                             const dimensionLabel = getEligibilityDimensionLabel(c.dimension);
                             const valueLabel = Array.isArray(c.value) ? c.value.join(', ') : c.value;
                             const operatorLabel = getOperatorLabel(c.operator);
-                            return `<li>${dimensionLabel} ${operatorLabel} ${valueLabel}</li>`;
+                            return `<li>${escapeHtml(String(dimensionLabel))} ${escapeHtml(String(operatorLabel))} ${escapeHtml(String(valueLabel))}</li>`;
                         }).join('')}
                     </ul>
                 </div>` : ''}
@@ -2546,7 +2549,7 @@ function renderTaxSlabs(slabs, regimeName) {
                         <tr>
                             <td>${formatCurrency(slab.income_from || slab.from || 0)}</td>
                             <td>${slab.income_to === null || slab.to === null ? 'No Limit' : formatCurrency(slab.income_to || slab.to)}</td>
-                            <td>${slab.rate_percent || slab.rate || 0}%</td>
+                            <td>${escapeHtml(String(slab.rate_percent || slab.rate || 0))}%</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -2608,7 +2611,7 @@ function renderSurchargesSection(surcharges) {
                                 <tr>
                                     <td>${formatCurrency(slab.income_from || 0)}</td>
                                     <td>${slab.income_to === null ? 'No Limit' : formatCurrency(slab.income_to)}</td>
-                                    <td>${slab.rate_percent || 0}%</td>
+                                    <td>${escapeHtml(String(slab.rate_percent || 0))}%</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -2635,7 +2638,7 @@ function renderCessSection(cess) {
             <h5>Cess</h5>
             <div class="cfg-cess-card">
                 ${cess.name ? `<div class="cfg-cess-name">${escapeHtml(cess.name)}</div>` : ''}
-                ${cess.rate_percent !== undefined ? `<div class="cfg-cess-rate">${cess.rate_percent}% on Tax + Surcharge</div>` : ''}
+                ${cess.rate_percent !== undefined ? `<div class="cfg-cess-rate">${escapeHtml(String(cess.rate_percent))}% on Tax + Surcharge</div>` : ''}
                 ${appliesTo ? `<div class="cfg-cess-applies">Applies to: ${appliesTo}</div>` : ''}
             </div>
         </div>
@@ -2784,23 +2787,23 @@ function renderCountryLevelTaxCard(jd) {
                 ${jd.employee_rate_percent !== undefined ? `
                 <div class="cfg-tax-rate-item">
                     <span class="cfg-tax-rate-label">Employee</span>
-                    <span class="cfg-tax-rate-value">${jd.employee_rate_percent}%</span>
+                    <span class="cfg-tax-rate-value">${escapeHtml(String(jd.employee_rate_percent))}%</span>
                 </div>` : ''}
                 ${jd.employer_rate_percent !== undefined ? `
                 <div class="cfg-tax-rate-item">
                     <span class="cfg-tax-rate-label">Employer</span>
-                    <span class="cfg-tax-rate-value">${jd.employer_rate_percent}%</span>
+                    <span class="cfg-tax-rate-value">${escapeHtml(String(jd.employer_rate_percent))}%</span>
                 </div>` : ''}
                 ${jd.rate_percent !== undefined ? `
                 <div class="cfg-tax-rate-item">
                     <span class="cfg-tax-rate-label">Rate</span>
-                    <span class="cfg-tax-rate-value">${jd.rate_percent}%</span>
+                    <span class="cfg-tax-rate-value">${escapeHtml(String(jd.rate_percent))}%</span>
                 </div>` : ''}
             </div>` : ''}
             ${jd.eligibility_overrides ? `
             <div class="cfg-tax-overrides-mini">
                 ${Object.entries(jd.eligibility_overrides).map(([k, v]) => `
-                <span class="cfg-tax-override-tag">${formatLabel(k)}: ${v}</span>
+                <span class="cfg-tax-override-tag">${formatLabel(k)}: ${escapeHtml(String(v))}</span>
                 `).join('')}
             </div>` : ''}
         </div>
@@ -2811,18 +2814,18 @@ function renderCountryLevelTaxCard(jd) {
 function getRateSummary(jd) {
     const parts = [];
     // Percentage rates
-    if (jd.employee_rate_percent !== undefined) parts.push(`Emp: ${jd.employee_rate_percent}%`);
-    if (jd.employer_rate_percent !== undefined) parts.push(`Empr: ${jd.employer_rate_percent}%`);
-    if (jd.rate_percent !== undefined && jd.employee_rate_percent === undefined) parts.push(`${jd.rate_percent}%`);
+    if (jd.employee_rate_percent !== undefined) parts.push(`Emp: ${escapeHtml(String(jd.employee_rate_percent))}%`);
+    if (jd.employer_rate_percent !== undefined) parts.push(`Empr: ${escapeHtml(String(jd.employer_rate_percent))}%`);
+    if (jd.rate_percent !== undefined && jd.employee_rate_percent === undefined) parts.push(`${escapeHtml(String(jd.rate_percent))}%`);
     // Fixed amounts at top level (no currency symbol - country agnostic)
-    if (jd.employee_amount !== undefined) parts.push(`Emp: ${jd.employee_amount}`);
-    if (jd.employer_amount !== undefined) parts.push(`Empr: ${jd.employer_amount}`);
+    if (jd.employee_amount !== undefined) parts.push(`Emp: ${escapeHtml(String(jd.employee_amount))}`);
+    if (jd.employer_amount !== undefined) parts.push(`Empr: ${escapeHtml(String(jd.employer_amount))}`);
     // Nested contribution_amounts (used by various regional taxes)
     if (jd.contribution_amounts) {
-        if (jd.contribution_amounts.employee_amount !== undefined) parts.push(`Emp: ${jd.contribution_amounts.employee_amount}`);
-        if (jd.contribution_amounts.employer_amount !== undefined) parts.push(`Empr: ${jd.contribution_amounts.employer_amount}`);
+        if (jd.contribution_amounts.employee_amount !== undefined) parts.push(`Emp: ${escapeHtml(String(jd.contribution_amounts.employee_amount))}`);
+        if (jd.contribution_amounts.employer_amount !== undefined) parts.push(`Empr: ${escapeHtml(String(jd.contribution_amounts.employer_amount))}`);
     }
-    if (jd.fixed_amount !== undefined) parts.push(`Fixed: ${jd.fixed_amount}`);
+    if (jd.fixed_amount !== undefined) parts.push(`Fixed: ${escapeHtml(String(jd.fixed_amount))}`);
     // Levy status
     if (jd.levy_status === 'non_levy') parts.push('Non-Levy');
     // Slabs
@@ -2874,17 +2877,17 @@ function renderRegionalTaxCard(jd) {
                 ${jd.employee_rate_percent !== undefined ? `
                 <div class="cfg-tax-rate-box">
                     <span class="cfg-tax-rate-label">Employee Rate</span>
-                    <span class="cfg-tax-rate-value">${jd.employee_rate_percent}%</span>
+                    <span class="cfg-tax-rate-value">${escapeHtml(String(jd.employee_rate_percent))}%</span>
                 </div>` : ''}
                 ${jd.employer_rate_percent !== undefined ? `
                 <div class="cfg-tax-rate-box">
                     <span class="cfg-tax-rate-label">Employer Rate</span>
-                    <span class="cfg-tax-rate-value">${jd.employer_rate_percent}%</span>
+                    <span class="cfg-tax-rate-value">${escapeHtml(String(jd.employer_rate_percent))}%</span>
                 </div>` : ''}
                 ${jd.rate_percent !== undefined && jd.employee_rate_percent === undefined ? `
                 <div class="cfg-tax-rate-box">
                     <span class="cfg-tax-rate-label">Rate</span>
-                    <span class="cfg-tax-rate-value">${jd.rate_percent}%</span>
+                    <span class="cfg-tax-rate-value">${escapeHtml(String(jd.rate_percent))}%</span>
                 </div>` : ''}
                 ${jd.employee_amount !== undefined ? `
                 <div class="cfg-tax-rate-box">
@@ -2929,10 +2932,10 @@ function renderRegionalTaxCard(jd) {
                     <tbody>
                         ${jd.slabs.map(s => `
                         <tr>
-                            <td>${s.from?.toLocaleString() || '0'}</td>
-                            <td>${s.to !== null && s.to !== undefined ? s.to.toLocaleString() : '∞'}</td>
+                            <td>${escapeHtml(String(s.from?.toLocaleString() || '0'))}</td>
+                            <td>${escapeHtml(s.to !== null && s.to !== undefined ? String(s.to.toLocaleString()) : '∞')}</td>
                             <td>${s.fixed_amount !== undefined ? formatCurrency(s.fixed_amount) : '-'}</td>
-                            <td>${s.rate_percent !== undefined ? s.rate_percent + '%' : '-'}</td>
+                            <td>${s.rate_percent !== undefined ? escapeHtml(String(s.rate_percent)) + '%' : '-'}</td>
                         </tr>`).join('')}
                     </tbody>
                 </table>
@@ -2945,7 +2948,7 @@ function renderRegionalTaxCard(jd) {
                 ${jd.period_overrides.applicable_months ? `
                 <div class="cfg-tax-override-row">
                     <span>Applicable Months:</span>
-                    <strong>${jd.period_overrides.applicable_months.map(m => getMonthName(m)).join(', ')}</strong>
+                    <strong>${escapeHtml(jd.period_overrides.applicable_months.map(m => String(getMonthName(m))).join(', '))}</strong>
                 </div>` : ''}
                 ${jd.period_overrides.special_month_amount !== undefined ? `
                 <div class="cfg-tax-override-row">
@@ -3725,24 +3728,24 @@ function createFormFieldHtml(field, savedValue, officeId) {
         helpHtml += `<small class="form-text text-muted">${escapeHtml(field.description)}</small>`;
     }
     if (field.required_for_artifacts && field.required_for_artifacts.length > 0) {
-        helpHtml += `<small class="form-text required-for">Required for: ${field.required_for_artifacts.join(', ')}</small>`;
+        helpHtml += `<small class="form-text required-for">Required for: ${escapeHtml(field.required_for_artifacts.join(', '))}</small>`;
     }
 
     return `
         <div class="form-group">
-            <label for="${inputId}">
+            <label for="${escapeHtml(inputId)}">
                 ${escapeHtml(field.display_label || field.key)}${isRequired ? ' *' : ''}
             </label>
             <input
                 type="text"
-                id="${inputId}"
-                name="${field.key}"
+                id="${escapeHtml(inputId)}"
+                name="${escapeHtml(field.key)}"
                 class="form-control registration-input ${officeId ? 'office-registration' : 'national-registration'}"
                 value="${escapeHtml(savedValue)}"
                 placeholder="${escapeHtml(field.format_example || `Enter ${field.display_label}`)}"
                 ${field.format_regex ? `data-pattern="${escapeHtml(field.format_regex)}"` : ''}
                 ${isRequired ? 'data-required="true"' : ''}
-                ${officeId ? `data-office-id="${officeId}"` : ''}
+                ${officeId ? `data-office-id="${escapeHtml(officeId)}"` : ''}
             >
             ${helpHtml}
         </div>
