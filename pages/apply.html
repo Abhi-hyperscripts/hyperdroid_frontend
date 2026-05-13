@@ -15,10 +15,15 @@
         *, *::before, *::after { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; }
         :root {
-            /* Dark theme (default) */
-            --bg: #07090f;
-            --bg-rgb: 7, 9, 15;
-            --bg-2: #0c1018;
+            /* Dark theme (default) — premium navy-black with depth.
+               The flat #07090f read as cheap-black on big monitors; we now
+               layer a deep navy base, a slightly cooler card surface, and
+               an ambient radial wash that tints the top-of-page blue and
+               the bottom-of-page violet. */
+            --bg: #06080d;             /* deepest layer, almost-black with cool tilt */
+            --bg-rgb: 6, 8, 13;
+            --bg-2: #0d1320;            /* card / input surface — distinct lift from bg */
+            --bg-3: #131a2a;            /* hover / pressed surface */
             --text: #eef0f4;
             --text-2: #b8bdc7;
             --muted: #6b7280;
@@ -34,16 +39,26 @@
             --indigo: #6366f1;
             --cyan: #22d3ee;
             --rose: #f43f5e;
+            /* Ambient page wash — drawn behind everything via body::before.
+               Each layer is a soft elliptical glow; no pure black anywhere. */
+            --ambient-wash:
+                radial-gradient(ellipse 90% 55% at 50% -10%, rgba(99, 102, 241, 0.22) 0%, transparent 55%),
+                radial-gradient(ellipse 70% 45% at 0% 30%,   rgba(139, 92, 246, 0.14) 0%, transparent 60%),
+                radial-gradient(ellipse 80% 55% at 100% 65%, rgba(34, 211, 238, 0.10) 0%, transparent 60%),
+                radial-gradient(ellipse 90% 60% at 50% 105%, rgba(139, 92, 246, 0.18) 0%, transparent 55%);
             /* Wider canvas — older 1200px max wasted ~120px gutters at common
                1440px+ viewports. Edge padding kept at 28px for breathing room. */
             --max-page: 1440px;
             --edge: 28px;
         }
-        /* Light theme — flips the palette while keeping the brand accents */
+        /* Light theme — flips to a creamy off-white with the same ambient
+           treatment, just toned way down so it reads as a subtle warmth
+           rather than a wash. Brand accents stay identical. */
         html[data-theme="light"] {
-            --bg: #fafaf7;
-            --bg-rgb: 250, 250, 247;
+            --bg: #f7f7f3;             /* warm off-white, NOT flat #fff */
+            --bg-rgb: 247, 247, 243;
             --bg-2: #ffffff;
+            --bg-3: #f0eee7;
             --text: #0b1020;
             --text-2: #4b5263;
             --muted: #6b7280;
@@ -55,6 +70,10 @@
             --grain-color: rgba(0,0,0,0.5);
             --grain-blend: multiply;
             --logo-filter: none;  /* the brand_logo is dark on transparent — no invert needed */
+            --ambient-wash:
+                radial-gradient(ellipse 90% 55% at 50% -10%, rgba(99, 102, 241, 0.10) 0%, transparent 55%),
+                radial-gradient(ellipse 70% 45% at 0% 30%,   rgba(139, 92, 246, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 80% 55% at 100% 65%, rgba(34, 211, 238, 0.06) 0%, transparent 60%);
         }
         html { scroll-behavior: smooth; }
         body {
@@ -65,6 +84,37 @@
             -webkit-font-smoothing: antialiased;
             line-height: 1.55;
             overflow-x: hidden;
+            position: relative;
+        }
+        /* Ambient wash — fixed so it tracks the viewport, not the page.
+           Layered behind every other body content via z-index:0; main + nav
+           sit above via their own stacking context. */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background: var(--ambient-wash);
+            pointer-events: none;
+            z-index: 0;
+        }
+        /* Subtle blueprint grid overlay — only visible where the wash is
+           present (opacity is low and mask fades it at the edges). Adds
+           the "this is a serious tool" vibe without making the page noisy. */
+        body::after {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 64px 64px;
+            mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 0%, transparent 75%);
+            -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 0%, transparent 75%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        html[data-theme="light"] body::after {
+            background-image:
+                linear-gradient(to right, rgba(11,16,32,0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(11,16,32,0.04) 1px, transparent 1px);
         }
         a { color: var(--text); text-decoration: none; }
         ::selection { background: var(--violet); color: #fff; }
@@ -207,9 +257,9 @@
         /* ── Top status strip ─────────────────────────────────────────── */
         .status-strip {
             position: sticky; top: 0; z-index: 70;
-            background: rgba(var(--bg-rgb), 0.9);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
+            background: rgba(var(--bg-rgb), 0.55);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
             border-bottom: 1px solid var(--line);
         }
         .status-strip-inner {
@@ -228,9 +278,9 @@
         /* ── Top header (logo + nav + apply CTA) ──────────────────────── */
         .header {
             position: sticky; top: 36px; z-index: 60;
-            background: rgba(var(--bg-rgb), 0.78);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(var(--bg-rgb), 0.50);
+            backdrop-filter: blur(24px) saturate(170%);
+            -webkit-backdrop-filter: blur(24px) saturate(170%);
             border-bottom: 1px solid var(--line);
         }
         .header-inner {
@@ -283,13 +333,34 @@
         /* Unified hero card: optional banner on top + content body below.
            No padding on .hud-frame itself — sections inside handle their own
            padding so the banner can be flush to the card edges. */
+        /* Bento glass — translucent surface with backdrop blur so the
+           ambient page wash bleeds through the panel. The double
+           gradient gives the top edge a subtle highlight (catches
+           "light from above" feel). */
         .hud-frame {
             position: relative;
             padding: 0;
-            border: 1px solid var(--line);
+            border: 1px solid rgba(255,255,255,0.10);
             border-radius: 22px;
-            background: var(--surface);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%),
+                rgba(13, 19, 32, 0.55);
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
             overflow: hidden;
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.08) inset,
+                0 30px 80px -30px rgba(0,0,0,0.55),
+                0 8px 24px -12px rgba(99,102,241,0.22);
+        }
+        html[data-theme="light"] .hud-frame {
+            border-color: rgba(11,16,32,0.08);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.65) 100%);
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.7) inset,
+                0 24px 60px -28px rgba(11,16,32,0.18),
+                0 6px 18px -10px rgba(99,102,241,0.12);
         }
         .hud-body { padding: 18px 24px 16px; position: relative; }
         @media (min-width: 768px) {
@@ -373,6 +444,17 @@
         @media (min-width: 768px) {
             .hud-corner:not(:empty) { display: flex; align-items: center; gap: 6px; }
         }
+        /* HUD corner overlays only make visual sense when there's a banner
+           image to layer them onto. Without a banner they pile onto the
+           hero text (the 3-line crowding bug — "RAGENAIZER.COM" badge
+           landing right above the "at RAGENAIZER" company line). When no
+           banner, hide the overlays — the same info still appears inline
+           in the hero meta row / share row. */
+        .hud-frame:not(.has-banner) .hud-corner.tl,
+        .hud-frame:not(.has-banner) .hud-corner.tr,
+        .hud-frame:not(.has-banner) .hud-corner.br {
+            display: none !important;
+        }
         .hud-corner.tl { top: 12px; left: 24px; z-index: 5; }
         .hud-corner.tr { top: 12px; right: 24px; z-index: 5; }
         .hud-corner.br { bottom: 12px; right: 24px; z-index: 5; }
@@ -407,16 +489,22 @@
         }
         .hero-eyebrow .rule { flex: none; height: 1px; width: 80px; background: var(--line); }
 
-        /* "At Wisetrack Technologies" line above the title (when company name set) */
+        /* "At Wisetrack Technologies" — now lives INLINE inside .hero-eyebrow
+           on the same row as "§ Careers / We're hiring". The legacy stacked
+           variant is preserved if heroCompanyLine is ever used standalone,
+           but the apply-page markup now puts it inline. */
         .hero-company-line {
-            display: flex; align-items: center; gap: 10px;
+            display: inline-flex; align-items: center; gap: 10px;
             color: var(--text-2);
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.78rem;
             letter-spacing: 0.06em;
             text-transform: uppercase;
-            margin: 0 0 4px;
         }
+        /* When inline inside the eyebrow row, push it to the far right of
+           the rule so it sits opposite the slug. */
+        .hero-eyebrow > .hero-company-line { margin-left: auto; }
+        .hero-eyebrow .rule { flex: 1; max-width: 80px; }
         .hero-company-line .at {
             color: var(--rose);
             font-family: 'Fraunces', serif;
@@ -434,7 +522,11 @@
             line-height: 1.05;
             letter-spacing: -0.022em;
             margin: 0 0 10px;
-            max-width: 32ch;
+            /* Realistic job titles run 45–55 chars; the old 32ch cap forced
+               an ugly wrap on anything longer ("Senior Full-Stack Engineer
+               (Diagnostic Posting)" → 46 chars, wrapped at "Posting"). 56ch
+               keeps editorial readability while letting normal titles breathe. */
+            max-width: 56ch;
             color: var(--text);
         }
         .hero-title .serif-italic { font-weight: 400; }
@@ -517,33 +609,70 @@
 
         /* ── Body grid (description + sticky form) ────────────────────── */
         .body-section {
-            padding: 24px 0 60px;
+            padding: 24px 0 28px;
             position: relative;
         }
+        /* Tab-driven layout — Tab 1 = "About the role" (description),
+           Tab 2 = "Apply". Both panes inherit the same max width as the
+           top banner so the page reads as one editorial column rather than
+           a narrower content shrink-wrap. (The banner sits in .max-page
+           which caps at 1440px. We let body content fill the same span.) */
         .body-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 56px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            width: 100%;        /* fill .max-page (matches banner width) */
+            margin: 0 auto;
         }
-        @media (min-width: 980px) {
-            .body-grid {
-                grid-template-columns: minmax(0, 1fr) 480px;
-                gap: 64px;
-                align-items: start;
-            }
-            .form-card-wrap { position: sticky; top: 130px; }
+
+        /* ── Tab strip ────────────────────────────────────────────────── */
+        .apply-tabs {
+            display: flex;
+            gap: 4px;
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 32px;
+            /* No background, no sticky — let the tabs sit flush with the
+               page so the ambient wash carries straight through. The tab
+               nav is for orientation only and only used once per visit, so
+               sticky behavior wasn't earning its visual weight. */
+            background: transparent;
+            padding-top: 6px;
+            padding-bottom: 0;
         }
-        @media (min-width: 1280px) {
-            .body-grid {
-                grid-template-columns: minmax(0, 1fr) 520px;
-                gap: 72px;
-            }
+        .apply-tab {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', ui-monospace, monospace;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 12px 20px 14px;
+            cursor: pointer;
+            margin-bottom: -1px;
+            transition: color 0.15s ease, border-color 0.15s ease;
+            position: relative;
         }
-        @media (min-width: 1440px) {
-            .body-grid {
-                grid-template-columns: minmax(0, 1fr) 560px;
-                gap: 88px;
-            }
+        .apply-tab:hover { color: var(--text-2); }
+        .apply-tab.active {
+            color: var(--text);
+            border-bottom-color: var(--violet, #8b5cf6);
+        }
+        .apply-tab .tab-symbol { color: var(--rose); margin-right: 6px; font-family: 'Fraunces', serif; font-style: italic; }
+        .apply-tab .tab-cta-pill {
+            display: inline-block; margin-left: 8px;
+            font-size: 0.62rem; padding: 2px 7px; border-radius: 999px;
+            background: linear-gradient(135deg, var(--violet, #8b5cf6), var(--cyan, #06b6d4));
+            color: #fff; letter-spacing: 0.04em;
+            transform: translateY(-1px);
+        }
+        .apply-tab-pane { display: none; }
+        .apply-tab-pane.active { display: block; }
+
+        .form-card-wrap {
+            width: 100%;
+            margin: 0;          /* fill body-grid; no narrower cap */
         }
 
         /* Description column */
@@ -736,51 +865,102 @@
            inside, not from chrome around the edge. */
         .form-card {
             position: relative;
-            padding: 36px 36px 28px;
-            background: var(--surface);
-            border: 1px solid var(--line);
+            padding: 36px 36px 22px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.015) 100%),
+                rgba(13, 19, 32, 0.55);
+            border: 1px solid rgba(255,255,255,0.10);
             border-radius: 24px;
+            backdrop-filter: blur(24px) saturate(160%);
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
             overflow: hidden;
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.08) inset,
+                0 30px 80px -30px rgba(0,0,0,0.55),
+                0 12px 32px -16px rgba(139,92,246,0.30);
         }
-        /* Subtle radial wash in the top-left corner — adds depth without a
-           hard accent bar. Sits behind content via z-index. */
+        html[data-theme="light"] .form-card {
+            border-color: rgba(11,16,32,0.08);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.78) 100%);
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.8) inset,
+                0 22px 60px -24px rgba(11,16,32,0.16),
+                0 10px 28px -14px rgba(139,92,246,0.18);
+        }
+        /* Two soft glows behind content — top-left violet + bottom-right cyan
+           — give the card a quietly luminous feel without any decorative bar. */
         .form-card::before {
             content: '';
             position: absolute;
-            top: -120px; left: -80px;
-            width: 320px; height: 320px;
-            background: radial-gradient(circle, rgba(139,92,246,0.10) 0%, transparent 60%);
+            top: -140px; left: -100px;
+            width: 380px; height: 380px;
+            background: radial-gradient(circle, rgba(139,92,246,0.18) 0%, transparent 60%);
             pointer-events: none;
             z-index: 0;
         }
+        .form-card::after {
+            content: '';
+            position: absolute;
+            bottom: -80px; right: -80px;
+            width: 280px; height: 280px;
+            background: radial-gradient(circle, rgba(34,211,238,0.10) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        html[data-theme="light"] .form-card::before {
+            background: radial-gradient(circle, rgba(139,92,246,0.10) 0%, transparent 60%);
+        }
+        html[data-theme="light"] .form-card::after {
+            background: radial-gradient(circle, rgba(34,211,238,0.08) 0%, transparent 60%);
+        }
         .form-card > * { position: relative; z-index: 1; }
 
-        .form-header { display: flex; flex-direction: column; gap: 10px; margin: 0 0 4px; }
+        /* Horizontal: title block on left, lede on right baseline.
+           Stops the right half of the form card sitting empty for ~150px
+           on big monitors. Stacks back to vertical on narrow viewports. */
+        .form-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 24px;
+            margin: 0 0 4px;
+            flex-wrap: wrap;
+        }
+        .form-header-titleblock {
+            display: flex; flex-direction: column; gap: 6px;
+            flex: 1 1 auto; min-width: 0;
+        }
         .form-header-eyebrow {
             font-family: 'Fraunces', serif;
             font-style: italic;
             font-weight: 400;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             color: var(--rose);
-            letter-spacing: 0;
-            text-transform: none;
             line-height: 1;
         }
         .form-header h3 {
             margin: 0;
             font-family: 'Fraunces', serif;
             font-weight: 350;
-            font-size: 2rem;
+            font-size: 1.7rem;
             line-height: 1.05;
             letter-spacing: -0.015em;
             color: var(--text);
         }
         .form-header .form-lede {
             color: var(--text-2);
-            font-size: 0.92rem;
-            margin: 6px 0 0;
-            line-height: 1.55;
-            max-width: 32ch;
+            font-size: 0.86rem;
+            margin: 0;
+            line-height: 1.5;
+            max-width: 38ch;
+            text-align: right;
+            flex: 0 1 38ch;
+            padding-bottom: 2px;
+        }
+        @media (max-width: 720px) {
+            .form-header { align-items: flex-start; }
+            .form-header .form-lede { text-align: left; max-width: none; flex: 1 1 100%; }
         }
         .form-divider {
             height: 1px;
@@ -807,8 +987,22 @@
         /* Single-column form rows — wider fields, easier to fill on mobile and
            more readable on desktop. Multi-column rows would just create
            cramped half-width inputs. */
-        .apply-form-row { display: flex; flex-direction: column; gap: 14px; }
-        .apply-field { display: flex; flex-direction: column; gap: 6px; }
+        /* Two-column field grid on roomy viewports — short fields (text,
+           email, tel, url, number, age, date, dob, select, radio with ≤4
+           opts, yesno, country) sit side-by-side; full-width fields opt
+           in via the .apply-field--full modifier (textarea, multiselect,
+           and any radio with many options). On mobile / narrow it stacks. */
+        .apply-form-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+        @media (min-width: 760px) {
+            .apply-form-row { grid-template-columns: 1fr 1fr; gap: 18px 22px; }
+        }
+        .apply-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .apply-field--full { grid-column: 1 / -1; }
         .apply-field label {
             font-size: 0.8rem;
             color: var(--text);
@@ -837,14 +1031,15 @@
         .apply-field textarea,
         .apply-field select {
             width: 100%;
-            padding: 11px 14px;
+            padding: 12px 14px;
             border-radius: 11px;
             border: 1px solid var(--line-strong);
-            background: var(--bg-2);
+            background: rgba(255,255,255,0.02);
             color: var(--text);
             font: inherit;
             font-size: 0.94rem;
             line-height: 1.4;
+            box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.18);
             transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, transform 0.05s ease;
         }
         html[data-theme="light"] .apply-field input,
@@ -852,6 +1047,7 @@
         html[data-theme="light"] .apply-field select {
             background: #ffffff;
             border-color: rgba(11,16,32,0.12);
+            box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset, 0 1px 2px rgba(11,16,32,0.04);
         }
         .apply-field input::placeholder, .apply-field textarea::placeholder { color: var(--dim); }
         .apply-field textarea { resize: vertical; min-height: 120px; line-height: 1.6; padding-top: 12px; }
@@ -859,14 +1055,16 @@
         .apply-field textarea:focus,
         .apply-field select:focus {
             outline: none;
-            border-color: var(--text);
-            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.16);
+            border-color: var(--violet);
+            background: rgba(139,92,246,0.04);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.20), 0 1px 0 rgba(255,255,255,0.05) inset;
         }
         html[data-theme="light"] .apply-field input:focus,
         html[data-theme="light"] .apply-field textarea:focus,
         html[data-theme="light"] .apply-field select:focus {
             border-color: var(--violet);
-            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.14);
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.14), 0 1px 0 rgba(255,255,255,0.8) inset;
         }
         .apply-field input:hover, .apply-field textarea:hover, .apply-field select:hover {
             border-color: var(--text-2);
@@ -881,26 +1079,83 @@
         }
         /* Checkbox group (multiselect) + radio group + yes/no buttons */
         .apply-checkbox-group, .apply-radio-group {
-            display: flex; flex-direction: column; gap: 8px;
-            padding: 10px 12px;
+            display: flex; flex-direction: column; gap: 2px;
+            padding: 6px 14px;
             border-radius: 11px;
             border: 1px solid var(--line-strong);
-            background: var(--bg-2);
+            background: rgba(255,255,255,0.02);
+            box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.18);
         }
         html[data-theme="light"] .apply-checkbox-group,
         html[data-theme="light"] .apply-radio-group {
             background: #fff; border-color: rgba(11,16,32,0.12);
+            box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset, 0 1px 2px rgba(11,16,32,0.04);
         }
-        .apply-checkbox-item, .apply-radio-item {
+        .apply-radio-item {
             display: flex; align-items: center; gap: 10px;
             font-size: 0.92rem;
             color: var(--text); cursor: pointer;
             padding: 4px 0;
         }
-        .apply-checkbox-item input, .apply-radio-item input {
+        .apply-radio-item input {
             width: 16px; height: 16px; padding: 0; margin: 0;
             accent-color: var(--violet, #8b5cf6);
         }
+        /* Multiselect rendered as iOS-style toggle switches per option, one
+           per row. The native checkbox is hidden but stays in the form so
+           the submit handler picks up checked values; the visible track +
+           knob are pure CSS driven by :checked. */
+        .apply-checkbox-item {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px;
+            font-size: 0.92rem;
+            color: var(--text); cursor: pointer;
+            padding: 8px 4px;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.12s ease;
+        }
+        .apply-checkbox-item:not(:last-child) { border-bottom-color: rgba(255,255,255,0.04); }
+        html[data-theme="light"] .apply-checkbox-item:not(:last-child) {
+            border-bottom-color: rgba(11,16,32,0.06);
+        }
+        .apply-checkbox-item input[type="checkbox"] {
+            position: absolute; opacity: 0; pointer-events: none;
+            width: 0; height: 0;
+        }
+        .apply-checkbox-item .toggle-track {
+            position: relative;
+            flex: none;
+            width: 38px; height: 22px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid var(--line-strong);
+            transition: background 0.18s ease, border-color 0.18s ease;
+        }
+        html[data-theme="light"] .apply-checkbox-item .toggle-track {
+            background: rgba(11,16,32,0.08);
+            border-color: rgba(11,16,32,0.14);
+        }
+        .apply-checkbox-item .toggle-track::after {
+            content: '';
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--text);
+            transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.18s ease;
+        }
+        .apply-checkbox-item input:checked + .toggle-track {
+            background: linear-gradient(135deg, var(--violet, #8b5cf6), var(--cyan, #06b6d4));
+            border-color: transparent;
+        }
+        .apply-checkbox-item input:checked + .toggle-track::after {
+            transform: translateX(16px);
+            background: #fff;
+        }
+        .apply-checkbox-item input:focus-visible + .toggle-track {
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.28);
+        }
+        .apply-checkbox-item .toggle-label { flex: 1; }
         .apply-yesno { display: flex; gap: 10px; }
         .apply-yesno-btn {
             flex: 1; position: relative;
@@ -934,44 +1189,63 @@
         }
         .apply-field select option { background: var(--bg-2); color: var(--text); }
 
-        /* Submit button — generous, with a depth-creating dark gradient */
+        /* Submit button — the page's primary CTA. Uses the brand
+           violet→indigo→cyan gradient so it actually reads as "click me"
+           instead of a dark panel that blends into the form card. */
         .apply-submit {
             margin-top: 30px;
-            background: linear-gradient(135deg, #1a1d28 0%, #0b0d14 100%);
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #22d3ee 100%);
+            background-size: 180% 180%;
+            background-position: 0% 50%;
             color: #fff;
-            border: 1px solid rgba(255,255,255,0.06);
-            padding: 16px 22px;
+            border: none;
+            padding: 18px 22px;
             border-radius: 14px;
             font: inherit;
-            font-size: 0.96rem; font-weight: 500;
+            font-size: 1rem; font-weight: 600;
             cursor: pointer; width: 100%;
-            transition: transform 0.15s ease, box-shadow 0.25s ease, background 0.25s ease;
+            transition: transform 0.15s ease, box-shadow 0.25s ease, background-position 0.45s ease;
             display: inline-flex; align-items: center; justify-content: center; gap: 12px;
             letter-spacing: -0.005em;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.08);
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.20) inset,
+                0 -1px 0 rgba(0,0,0,0.12) inset,
+                0 12px 32px -8px rgba(99,102,241,0.55),
+                0 4px 12px -2px rgba(34,211,238,0.30);
         }
         html[data-theme="light"] .apply-submit {
-            background: linear-gradient(135deg, #1f2330 0%, #0b1020 100%);
-            border-color: transparent;
-            color: #fff;
-            box-shadow: 0 8px 24px rgba(11,16,32,0.18), inset 0 1px 0 rgba(255,255,255,0.10);
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.30) inset,
+                0 -1px 0 rgba(0,0,0,0.08) inset,
+                0 12px 32px -8px rgba(99,102,241,0.45),
+                0 4px 12px -2px rgba(34,211,238,0.25);
         }
+        /* Sweeping shine on hover */
         .apply-submit::after {
             content: '';
             position: absolute;
             top: 0; left: -150%; width: 100%; height: 100%;
-            background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.16) 50%, transparent 70%);
+            background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.30) 50%, transparent 70%);
             transition: left 0.6s ease;
         }
         .apply-submit:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 14px 36px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.10);
+            transform: translateY(-2px);
+            background-position: 100% 50%;
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.20) inset,
+                0 -1px 0 rgba(0,0,0,0.12) inset,
+                0 18px 44px -10px rgba(99,102,241,0.70),
+                0 8px 20px -4px rgba(34,211,238,0.40);
         }
         .apply-submit:hover::after { left: 150%; }
         .apply-submit:active { transform: translateY(0); }
-        .apply-submit[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .apply-submit[disabled] {
+            opacity: 0.6; cursor: not-allowed; transform: none;
+            background: linear-gradient(135deg, #4b5263 0%, #2d3142 100%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.20);
+        }
         .apply-submit svg { width: 16px; height: 16px; transition: transform 0.2s ease; }
         .apply-submit:hover svg { transform: translateX(3px); }
 
@@ -1104,12 +1378,49 @@
         @keyframes rev { to { opacity: 1; transform: translateY(0); } }
 
         @media (max-width: 640px) {
-            :root { --edge: 18px; }
-            .hero { padding: 64px 0 40px; }
-            .hud-frame { padding: 32px 22px 28px; }
-            .body-section { padding: 40px 0 60px; }
-            .form-card { padding: 28px 22px 22px; }
-            .form-divider { margin: 22px -22px; }
+            :root { --edge: 16px; }
+            .hero { padding: 14px 0 12px; }
+            .hud-body { padding: 18px 18px 14px; }
+            .body-section { padding: 18px 0 24px; }
+            .form-card { padding: 24px 18px 18px; }
+            .form-divider { margin: 22px -18px; }
+            /* Status strip: tight, ditch the location block — it spills off the
+               edge on narrow phones. Keep the OPEN dot + clock only. */
+            .status-strip-inner { font-size: 0.62rem; letter-spacing: 0.04em; }
+            .status-strip-inner #statusLocation { display: none !important; }
+            /* Header: hide the "Careers" tag pill so the brand has room.
+               Shrink the Apply now CTA to "Apply" to keep it on-row. */
+            .header-inner { height: 60px; }
+            .header-brand .careers-tag { display: none; }
+            .header-brand img.brand-logo { height: 22px; }
+            #topBarCta { padding: 9px 14px; font-size: 0.82rem; }
+            #topBarCta svg { display: none; }
+            /* Hero typography: the title was clamp-ing to ~1.9rem at narrow
+               viewports which is still too big when wrapped onto 3 lines. */
+            .hero-title { font-size: 1.55rem; line-height: 1.1; max-width: none; }
+            .hero-eyebrow { gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+            .hero-eyebrow .rule { display: none; }
+            .hero-eyebrow > .hero-company-line { margin-left: 0; flex-basis: 100%; font-size: 0.7rem; }
+            .hero-meta-row { gap: 6px; }
+            .stat-box { padding: 6px 10px; font-size: 0.78rem; }
+            .stat-box .label { font-size: 0.58rem; }
+            .stat-box .value { font-size: 0.85rem; }
+            /* HUD banner — was 140px, fine; but the floating logo overlapped
+               the title at narrow widths. Shrink + sit it tighter. */
+            .hud-banner { height: 110px; }
+            .hud-banner-logo { width: 44px; height: 44px; left: 16px; bottom: -16px; padding: 5px; border-radius: 10px; }
+            .hud-frame.has-banner .hud-body { padding-top: 30px; }
+            /* Tabs: tighter padding so both fit on a 360px line. */
+            .apply-tab { padding: 10px 12px 12px; font-size: 0.7rem; letter-spacing: 0.06em; }
+            .apply-tab .tab-cta-pill { font-size: 0.55rem; padding: 1px 5px; margin-left: 5px; }
+            /* Form-header: full vertical stack on mobile so the lede fits. */
+            .form-header { gap: 10px; }
+            .form-header h3 { font-size: 1.4rem; }
+            .form-header .form-lede { text-align: left; max-width: none; flex: 1 1 100%; font-size: 0.82rem; }
+            /* Form fields already collapse to 1-col below 760px. */
+            .apply-submit { padding: 16px 18px; font-size: 0.94rem; }
+            /* Footer */
+            .footer-inner { flex-direction: column; gap: 12px; padding: 18px 0; text-align: center; }
         }
     </style>
 </head>
@@ -1131,7 +1442,7 @@
                 <img src="../assets/brand_logo.png" alt="Ragenaizer" class="brand-logo">
                 <span class="careers-tag">Careers</span>
             </a>
-            <a href="#applyForm" class="btn-primary" id="topBarCta" style="display:none;">
+            <a href="#applyForm" class="btn-primary" id="topBarCta" style="display:none;" onclick="event.preventDefault(); switchApplyTab('apply', true);">
                 Apply now
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>
             </a>
@@ -1193,11 +1504,14 @@
                         <div class="hero-eyebrow reveal">
                             <span class="slug"><span class="slug-symbol">§</span> Careers / We're hiring</span>
                             <span class="rule"></span>
-                        </div>
-
-                        <div class="hero-company-line reveal" id="heroCompanyLine" style="display:none;">
-                            <span class="at">at</span>
-                            <span id="heroCompanyName"></span>
+                            <!-- Company name lives on the SAME row as the
+                                 "Careers / We're hiring" eyebrow now — used to
+                                 be a stacked second line which read as visual
+                                 duplication of the same mono-uppercase style. -->
+                            <span class="hero-company-line" id="heroCompanyLine" style="display:none;">
+                                <span class="at">at</span>
+                                <span id="heroCompanyName"></span>
+                            </span>
                         </div>
 
                         <h1 class="hero-title reveal delay-1" id="applyTitle"></h1>
@@ -1210,10 +1524,20 @@
             </div>
         </section>
 
-        <!-- Body: description + sticky form -->
+        <!-- Body: tabs (About the role | Apply) -->
         <section class="body-section">
             <div class="max-page">
                 <div class="body-grid">
+                    <div class="apply-tabs" role="tablist">
+                        <button type="button" class="apply-tab active" id="tabBtnRole" role="tab" aria-selected="true" aria-controls="paneRole" onclick="switchApplyTab('role')">
+                            <span class="tab-symbol">§</span>About the role
+                        </button>
+                        <button type="button" class="apply-tab" id="tabBtnApply" role="tab" aria-selected="false" aria-controls="paneApply" onclick="switchApplyTab('apply')">
+                            <span class="tab-symbol">§</span>Apply<span class="tab-cta-pill">Apply now</span>
+                        </button>
+                    </div>
+
+                    <div class="apply-tab-pane active" id="paneRole" role="tabpanel" aria-labelledby="tabBtnRole">
                     <div class="description-section reveal">
                         <div class="description-divider-row">
                             <span class="slug"><span class="slug-symbol">§</span> The role</span>
@@ -1239,12 +1563,16 @@
                             </div>
                         </div>
                     </div>
+                    </div><!-- /paneRole -->
 
+                    <div class="apply-tab-pane" id="paneApply" role="tabpanel" aria-labelledby="tabBtnApply">
                     <aside class="form-card-wrap" id="applyForm">
                         <div class="form-card">
                             <div class="form-header">
-                                <span class="form-header-eyebrow">Apply</span>
-                                <h3>Tell us about <span class="serif-italic text-gradient-cool">you</span>.</h3>
+                                <div class="form-header-titleblock">
+                                    <span class="form-header-eyebrow">Apply</span>
+                                    <h3>Tell us about <span class="serif-italic text-gradient-cool">you</span>.</h3>
+                                </div>
                                 <p class="form-lede">No resume needed. Just a few details so the hiring team can reach out.</p>
                             </div>
                             <div class="form-divider"></div>
@@ -1270,6 +1598,7 @@
                             </form>
                         </div>
                     </aside>
+                    </div><!-- /paneApply -->
                 </div>
             </div>
         </section>
@@ -1290,13 +1619,10 @@
 
         <footer class="footer">
             <div class="footer-inner">
-                <div class="footer-brand">
-                    <span>POWERED BY</span>
+                <a class="footer-brand" href="/" aria-label="Ragenaizer">
                     <img src="../assets/brand_logo.png" alt="Ragenaizer">
-                    <span>·</span>
-                    <a href="/">RAGENAIZER.COM</a>
-                </div>
-                <div class="footer-brand" id="footerRev">© 2026 · ragenaizer careers</div>
+                </a>
+                <div class="footer-brand" id="footerRev">© 2026</div>
             </div>
         </footer>
     </main>

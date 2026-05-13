@@ -59,6 +59,12 @@
             border-bottom: 1px solid var(--border-color);
             margin-bottom: 14px;
             overflow-x: auto;
+            /* When overflow-x is non-visible, the spec forces overflow-y to
+               also be auto. The tabs are 37px tall vs a 36px client height
+               (1px subpixel rounding), which trips macOS's always-on
+               scrollbar setting into rendering a vertical track. Pin Y to
+               hidden so only the intended horizontal scroll appears. */
+            overflow-y: hidden;
             scrollbar-width: thin;
         }
         .rec-status-tab {

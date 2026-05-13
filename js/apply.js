@@ -249,31 +249,26 @@
     }
 
     function renderStatGrid(cfg) {
+        // Stats now flow INTO the hero-meta-row alongside the location +
+        // employment-type chips so we don't waste a whole second row on
+        // a single OPENINGS pill. The standalone .stat-grid is hidden.
         const grid = document.getElementById('applyStatGrid');
-        if (!grid) return;
+        if (grid) grid.style.display = 'none';
 
-        // Only render stats that aren't already shown elsewhere on the page.
-        //   - location + employment_type → already in chips above
-        //   - posted_at → already in HUD bottom-right
-        // OPENINGS is the only piece of meta that has no other slot, so it
-        // gets the stat box — but only when there are multiple positions.
-        const stats = [];
+        const meta = document.getElementById('applyHeroMeta');
+        if (!meta) return;
+
+        // OPENINGS is the only piece of meta that has no other slot — and
+        // only meaningful when there are multiple positions.
         if (cfg.openings && cfg.openings > 1) {
-            stats.push({ label: 'OPENINGS', value: String(cfg.openings) });
+            const stat = document.createElement('span');
+            stat.className = 'stat-box';
+            stat.innerHTML = `
+                <span class="label">${escapeHtml('OPENINGS')}</span>
+                <span class="value">${escapeHtml(String(cfg.openings))}</span>
+            `;
+            meta.appendChild(stat);
         }
-
-        if (stats.length === 0) {
-            grid.style.display = 'none';
-            return;
-        }
-        grid.style.display = '';
-        grid.style.gridTemplateColumns = `repeat(${Math.min(stats.length, 4)}, minmax(0, 200px))`;
-        grid.innerHTML = stats.map(s => `
-            <div class="stat-box">
-                <span class="label">${escapeHtml(s.label)}</span>
-                <span class="value">${escapeHtml(s.value)}</span>
-            </div>
-        `).join('');
     }
 
     /**
@@ -440,6 +435,19 @@
     function renderField(f) {
         const wrap = document.createElement('div');
         wrap.className = 'apply-field';
+        // Wide fields take the full row in the 2-col grid:
+        //   - textarea / multiselect always (need vertical space)
+        //   - radio when there are more than 3 options (otherwise crowded)
+        // The backend defaults `width: 'full'` on every field as a legacy
+        // fallback, so we DO NOT honour it here — type-based rules only,
+        // otherwise every field would span full and the 2-col grid wouldn't
+        // do anything.
+        const optsLen = (f.options || []).length;
+        const spansFull =
+            f.type === 'textarea' ||
+            f.type === 'multiselect' ||
+            (f.type === 'radio' && optsLen > 3);
+        if (spansFull) wrap.classList.add('apply-field--full');
         // (We no longer honour f.width === 'half'; every field renders full-width
         // so candidates always get the full form width to type into.)
 
@@ -488,13 +496,17 @@
                 break;
             case 'multiselect':
                 {
-                    // Render as a checkbox group. The submit handler picks them
-                    // up by name and posts an array.
+                    // iOS-style toggle switch per option. Native checkbox
+                    // is hidden but kept inside the form so the submit
+                    // handler still picks up checked values via name.
+                    // The visible track + knob are CSS-only, driven by
+                    // input:checked + .toggle-track in apply.html.
                     const items = (f.options || []).map(o => {
                         const optId = `${id}__${slugifyClient(o.value)}`;
                         return `<label class="apply-checkbox-item" for="${optId}">
+                                    <span class="toggle-label">${escapeHtml(o.label || o.value)}</span>
                                     <input id="${optId}" type="checkbox" name="${escapeAttr(f.key)}" value="${escapeAttr(o.value)}">
-                                    <span>${escapeHtml(o.label || o.value)}</span>
+                                    <span class="toggle-track" aria-hidden="true"></span>
                                 </label>`;
                     }).join('');
                     control = `<div class="apply-checkbox-group" id="${id}" data-multiselect="1" data-required="${required ? '1' : '0'}">${items}</div>`;
@@ -642,14 +654,41 @@
             let msg = 'Submission failed';
             try { const body = await res.json(); msg = body?.error || msg; } catch { /* keep generic */ }
             errBox.textContent = msg;
-            errBox.style.display = '';
+            // CSS default is display:none — clearing the inline style drops back
+            // to none (the bug). Force block so the message is visible.
+            errBox.style.display = 'block';
+            errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } catch (err) {
             console.error('submit failed', err);
             errBox.textContent = err?.message || 'Submission failed. Please try again.';
-            errBox.style.display = '';
+            errBox.style.display = 'block';
+            errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
         } finally {
             btn.disabled = false;
             btn.innerHTML = origHTML;
+        }
+    };
+
+    // Tab switcher: "About the role" / "Apply". Single-pane visibility, kept
+    // accessible via aria-selected. The optional `scroll` arg is true when the
+    // user hits the top-bar "Apply now" button — we then ease the page up to
+    // the tab strip so they don't land mid-form on long descriptions.
+    window.switchApplyTab = function (which, scroll) {
+        const map = {
+            role:  { btn: 'tabBtnRole',  pane: 'paneRole'  },
+            apply: { btn: 'tabBtnApply', pane: 'paneApply' }
+        };
+        const target = map[which]; if (!target) return;
+        for (const k of Object.keys(map)) {
+            const isActive = k === which;
+            const btn  = document.getElementById(map[k].btn);
+            const pane = document.getElementById(map[k].pane);
+            if (btn)  { btn.classList.toggle('active', isActive); btn.setAttribute('aria-selected', String(isActive)); }
+            if (pane) pane.classList.toggle('active', isActive);
+        }
+        if (scroll) {
+            const tabs = document.querySelector('.apply-tabs');
+            if (tabs) tabs.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     };
 
