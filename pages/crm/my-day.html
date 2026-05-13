@@ -191,6 +191,63 @@
     }
 
     .md-loading { text-align:center; padding: 40px 0; color: var(--text-secondary); }
+
+    /* Rep picker — admin/manager-only. Lives in the header next to the
+       period selector. Hidden by default; revealed when the viewable-reps
+       endpoint returns more than just self. */
+    .md-rep-picker {
+        display: none; align-items: center; gap: 8px;
+        margin-right: 10px;
+    }
+    .md-rep-picker.visible { display: inline-flex; }
+    .md-rep-picker label {
+        font-size: 0.85em; color: var(--text-secondary);
+        font-weight: 500;
+    }
+    .md-rep-picker select {
+        appearance: none;
+        background: rgba(var(--bg-card-rgb, 15,23,42), 0.55);
+        backdrop-filter: blur(16px) saturate(1.4);
+        -webkit-backdrop-filter: blur(16px) saturate(1.4);
+        border: 1px solid rgba(var(--brand-primary-rgb, 99,102,241), 0.25);
+        color: var(--text-primary);
+        padding: 7px 30px 7px 12px;
+        border-radius: 8px;
+        font-size: 0.88em; font-weight: 500;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23999'%3e%3cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 16px;
+        max-width: 240px;
+    }
+    .md-rep-picker select:focus {
+        outline: none;
+        border-color: var(--brand-primary);
+    }
+    [data-theme="light"] .md-rep-picker select {
+        background-color: rgba(255,255,255,0.7);
+    }
+    /* On mobile, picker stacks above period selector */
+    @media (max-width: 640px) {
+        .md-rep-picker { margin-right: 0; }
+        .md-rep-picker select { max-width: 100%; flex: 1; }
+    }
+
+    /* Viewing-other banner — small badge under the title that makes it
+       obvious you're looking at someone else's report, not your own. */
+    .md-viewing-other {
+        display: none; align-items: center; gap: 6px;
+        margin-top: 6px;
+        padding: 4px 10px;
+        background: rgba(var(--brand-primary-rgb, 99,102,241), 0.12);
+        border: 1px solid rgba(var(--brand-primary-rgb, 99,102,241), 0.3);
+        color: var(--brand-primary);
+        border-radius: 999px;
+        font-size: 0.78em; font-weight: 600;
+        width: fit-content;
+    }
+    .md-viewing-other.visible { display: inline-flex; }
     </style>
 </head>
 <body>
@@ -206,13 +263,22 @@
     <main class="md-container">
         <div class="md-header">
             <div class="md-title">
-                <h1>My Day</h1>
-                <p>Your activity, outcomes, and what needs your attention.</p>
+                <h1 id="reportTitle">My Day</h1>
+                <p id="reportSubtitle">Your activity, outcomes, and what needs your attention.</p>
+                <span class="md-viewing-other" id="viewingOtherBadge">
+                    <span id="viewingOtherText"></span>
+                </span>
             </div>
-            <div class="md-period" id="periodSelector">
-                <button data-period="today" class="active">Today</button>
-                <button data-period="week">This Week</button>
-                <button data-period="month">This Month</button>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <div class="md-rep-picker" id="repPicker">
+                    <label for="repSelect">Rep:</label>
+                    <select id="repSelect" aria-label="Select rep to view report for"></select>
+                </div>
+                <div class="md-period" id="periodSelector">
+                    <button data-period="today" class="active">Today</button>
+                    <button data-period="week">This Week</button>
+                    <button data-period="month">This Month</button>
+                </div>
             </div>
         </div>
 
@@ -222,12 +288,14 @@
                 What is this page?
             </summary>
             <p style="color: var(--text-secondary); font-size: 0.85em; margin-top: 6px; line-height: 1.5;">
-                A daily snapshot of your work in the CRM, scoped only to <strong>you</strong>.
+                A daily snapshot of CRM work — by default scoped to <strong>you</strong>.
                 The three sections answer three questions: <strong>what did I do</strong>
                 (calls, emails, meetings, notes, leads worked), <strong>what came out of it</strong>
                 (calls connected, deals won), and <strong>what still needs my attention</strong>
                 (overdue tasks, overdue follow-ups, leads that have gone cold).
-                Managers and admins see everyone's report on the Team Day page (coming soon).
+                If you're a manager or admin, the <strong>Rep</strong> picker (top-right) lets
+                you switch the report target — managers see members of their teams; admins
+                see everyone in the tenant.
             </p>
         </details>
 
