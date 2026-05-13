@@ -1,4 +1,6 @@
 // HRMS Dashboard JavaScript
+function escapeHtml(t) { if (t == null) return ''; return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
 let currentEmployee = null;
 let isClockedIn = false;
 let isSetupComplete = false;
@@ -131,7 +133,7 @@ async function checkSetupStatus() {
             }
 
             if (missingList && status.compliance_missing_items && status.compliance_missing_items.length > 0) {
-                missingList.innerHTML = status.compliance_missing_items.map(item => `<li>${item}</li>`).join('');
+                missingList.innerHTML = status.compliance_missing_items.map(item => `<li>${escapeHtml(item)}</li>`).join('');
             }
 
             // Disable ALL cards except Compliance until compliance is done
@@ -172,7 +174,7 @@ async function checkSetupStatus() {
             }
 
             if (missingList && status.missing_items && status.missing_items.length > 0) {
-                missingList.innerHTML = status.missing_items.map(item => `<li>${item}</li>`).join('');
+                missingList.innerHTML = status.missing_items.map(item => `<li>${escapeHtml(item)}</li>`).join('');
             }
 
             // Enable Compliance card (it's complete)
@@ -555,17 +557,17 @@ async function loadRecentLeaveRequests() {
             <tr>
                 <td>
                     <div class="employee-info">
-                        <div class="employee-avatar">${getInitials(req.employee_name || 'User')}</div>
+                        <div class="employee-avatar">${escapeHtml(getInitials(req.employee_name || 'User'))}</div>
                         <div>
-                            <div class="employee-name">${req.employee_name || 'Employee'}</div>
+                            <div class="employee-name">${escapeHtml(req.employee_name || 'Employee')}</div>
                         </div>
                     </div>
                 </td>
-                <td>${req.leave_type_name || '-'}</td>
+                <td>${escapeHtml(req.leave_type_name || '-')}</td>
                 <td>${formatDate(req.start_date)}</td>
                 <td>${formatDate(req.end_date)}</td>
-                <td>${req.number_of_days || '-'}</td>
-                <td><span class="status-badge ${req.status || 'pending'}">${capitalizeFirst(req.status || 'pending')}</span></td>
+                <td>${escapeHtml(String(req.number_of_days || '-'))}</td>
+                <td><span class="status-badge ${escapeHtml(req.status || 'pending')}">${escapeHtml(capitalizeFirst(req.status || 'pending'))}</span></td>
             </tr>
         `).join('');
 
@@ -618,7 +620,7 @@ async function loadUpcomingEvents() {
             if (upcomingHolidays.length > 0) {
                 holidaysContainer.innerHTML = upcomingHolidays.map(h => `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-color-light);">
-                        <span style="font-size: 0.85rem;">${h.holiday_name}</span>
+                        <span style="font-size: 0.85rem;">${escapeHtml(h.holiday_name)}</span>
                         <span class="text-muted" style="font-size: 0.8rem;">${formatDate(h.holiday_date)}</span>
                     </div>
                 `).join('');

@@ -225,7 +225,7 @@ function populateOfficeFilterDropdown(selectedOfficeId) {
         const select = document.getElementById('officeFilter');
         if (select && select.tagName === 'SELECT') {
             select.innerHTML = options.map(opt =>
-                `<option value="${opt.value}"${opt.value === selectedOfficeId ? ' selected' : ''}>${opt.label}</option>`
+                `<option value="${escapeHtml(opt.value)}"${opt.value === selectedOfficeId ? ' selected' : ''}>${escapeHtml(opt.label)}</option>`
             ).join('');
         }
     }
@@ -256,7 +256,7 @@ function updateDepartmentFilterForOffice(officeId) {
         const select = document.getElementById('departmentFilter');
         if (select && select.tagName === 'SELECT') {
             select.innerHTML = '<option value="">All Departments</option>' +
-                filteredDepts.map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
+                filteredDepts.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.department_name)}</option>`).join('');
         }
     }
 }
@@ -355,7 +355,7 @@ function populateSelect(elementId, items, labelField, isFilter = false) {
 
     const defaultOption = isFilter ? '<option value="">All</option>' : '<option value="">Select...</option>';
     select.innerHTML = defaultOption + items.map(item =>
-        `<option value="${item.id}">${item[labelField]}</option>`
+        `<option value="${escapeHtml(item.id)}">${escapeHtml(item[labelField])}</option>`
     ).join('');
 }
 
@@ -395,7 +395,7 @@ async function preloadEmployeePhotos() {
             employeePhotoCache[emp.id] = photoUrl;
             const photoCell = document.getElementById(`emp-photo-${emp.id}`);
             if (photoCell) {
-                photoCell.innerHTML = `<img class="employee-avatar-img" src="${photoUrl}" alt="${emp.first_name}" onerror="this.outerHTML='<div class=\\'employee-avatar\\'>${getInitials(emp.first_name, emp.last_name)}</div>'">`;
+                photoCell.innerHTML = `<img class="employee-avatar-img" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(emp.first_name)}" onerror="this.outerHTML='<div class=\\'employee-avatar\\'>${escapeHtml(getInitials(emp.first_name, emp.last_name))}</div>'">`;
             }
         } catch (e) {
             // Silent fail — row keeps showing initials.
@@ -494,14 +494,14 @@ function renderEmployeesRows(filtered) {
         // Find manager by user_id
         const manager = emp.manager_user_id ? employees.find(e => e.user_id === emp.manager_user_id) : null;
         const managerDisplay = manager
-            ? `<div class="manager-info"><div class="manager-name">${manager.first_name} ${manager.last_name}</div><div class="manager-email">${manager.work_email || ''}</div></div>`
+            ? `<div class="manager-info"><div class="manager-name">${escapeHtml(manager.first_name)} ${escapeHtml(manager.last_name)}</div><div class="manager-email">${escapeHtml(manager.work_email || '')}</div></div>`
             : '<span class="text-muted">-</span>';
 
         // Get photo from cache if available
         const photoUrl = employeePhotoCache[emp.id];
         const photoHtml = photoUrl
-            ? `<img class="employee-avatar-img" src="${photoUrl}" alt="${emp.first_name}" onerror="this.outerHTML='<div class=\\'employee-avatar\\'>${getInitials(emp.first_name, emp.last_name)}</div>'">`
-            : `<div class="employee-avatar">${getInitials(emp.first_name, emp.last_name)}</div>`;
+            ? `<img class="employee-avatar-img" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(emp.first_name)}" onerror="this.outerHTML='<div class=\\'employee-avatar\\'>${escapeHtml(getInitials(emp.first_name, emp.last_name))}</div>'">`
+            : `<div class="employee-avatar">${escapeHtml(getInitials(emp.first_name, emp.last_name))}</div>`;
 
         return `
             <tr class="clickable-row" onclick="openEmployeePanel('${emp.id}')" data-employee-id="${emp.id}">
@@ -509,17 +509,17 @@ function renderEmployeesRows(filtered) {
                     <div class="employee-info">
                         <div id="emp-photo-${emp.id}">${photoHtml}</div>
                         <div>
-                            <div class="employee-name">${emp.first_name} ${emp.last_name}</div>
-                            <div class="employee-code">${emp.employee_code || '-'}</div>
+                            <div class="employee-name">${escapeHtml(emp.first_name)} ${escapeHtml(emp.last_name)}</div>
+                            <div class="employee-code">${escapeHtml(emp.employee_code || '-')}</div>
                         </div>
                     </div>
                 </td>
-                <td>${dept?.department_name || '-'}</td>
-                <td>${desig?.designation_name || '-'}</td>
-                <td>${office?.office_name || '-'}</td>
+                <td>${escapeHtml(dept?.department_name || '-')}</td>
+                <td>${escapeHtml(desig?.designation_name || '-')}</td>
+                <td>${escapeHtml(office?.office_name || '-')}</td>
                 <td>${managerDisplay}</td>
                 <td>${formatDate(emp.hire_date)}</td>
-                <td><span class="status-badge ${emp.employment_status}">${capitalizeFirst(emp.employment_status)}</span></td>
+                <td><span class="status-badge ${escapeHtml(emp.employment_status || '')}">${escapeHtml(capitalizeFirst(emp.employment_status))}</span></td>
                 <td onclick="event.stopPropagation()">
                     <button class="view-employee-btn" onclick="openEmployeePanel('${emp.id}')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -571,9 +571,19 @@ async function openCreateEmployeeModal() {
     // Initialize/reset blood group dropdown (using SearchableDropdown component)
     initBloodGroupDropdown();
 
-    // Clear emergency contact fields
-    document.getElementById('emergencyContactName').value = '';
-    document.getElementById('emergencyContactPhone').value = '';
+    // Clear emergency contact fields (now in a separate flow — only clear
+    // if the inputs still exist on the page).
+    const ecName = document.getElementById('emergencyContactName');
+    if (ecName) ecName.value = '';
+    const ecPhone = document.getElementById('emergencyContactPhone');
+    if (ecPhone) ecPhone.value = '';
+
+    // Clear new Step-1 personal info fields (home address + personal email).
+    ['personalEmail', 'addressLine1', 'addressLine2', 'addressCity',
+     'addressState', 'addressPostalCode'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
 
     // Load available users
     try {
@@ -686,11 +696,11 @@ function displayUserList(users, append = false) {
         const isSelected = selectedUserId === user.id;
         return `
             <div class="user-select-item ${isSelected ? 'selected' : ''}"
-                 data-user-id="${user.id}"
+                 data-user-id="${escapeHtml(user.id)}"
                  onclick="selectUser('${user.id}')">
                 <div class="user-info-compact">
-                    <span class="user-name-compact">${user.firstName} ${user.lastName}</span>
-                    <span class="user-email-compact">${user.email}</span>
+                    <span class="user-name-compact">${escapeHtml(user.firstName)} ${escapeHtml(user.lastName)}</span>
+                    <span class="user-email-compact">${escapeHtml(user.email)}</span>
                 </div>
             </div>
         `;
@@ -810,9 +820,13 @@ async function editEmployee(id) {
     const personalInfo = emp.personal_info || emp;
     setBloodGroupValue(personalInfo.blood_group || '');
 
-    // Set emergency contact fields (from personal_info if available)
-    document.getElementById('emergencyContactName').value = personalInfo.emergency_contact_name || '';
-    document.getElementById('emergencyContactPhone').value = personalInfo.emergency_contact_phone || '';
+    // Set emergency contact fields (from personal_info if available).
+    // Inputs were removed from the wizard during the bulk-import-parity
+    // trim — only set if they still exist.
+    const ecName = document.getElementById('emergencyContactName');
+    if (ecName) ecName.value = personalInfo.emergency_contact_name || '';
+    const ecPhone = document.getElementById('emergencyContactPhone');
+    if (ecPhone) ecPhone.value = personalInfo.emergency_contact_phone || '';
 
     // Initialize and set employment type dropdown (using SearchableDropdown component)
     initEmploymentTypeDropdown();
@@ -839,17 +853,83 @@ async function editEmployee(id) {
     resetDocumentsAndBanking();
     await Promise.all([
         loadEmployeeDocuments(id),
-        loadEmployeeBankAccount(id)
+        loadEmployeeBankAccount(id),
+        loadEmployeePersonalInfo(id)
     ]);
 
     openModal('employeeModal');
+}
+
+// Push the Step-1 personal-info fields (home address + personal email) to
+// the backend via PUT /api/employees/{id}/personal-info. Skips entirely if
+// every field is blank (don't write empty values onto an existing row).
+// The backend already merges DOB/gender/blood_group/marital_status from
+// the main employee record, so we send them too as a safety belt — keeps
+// `employee_personal_info` in sync with `employees`.
+async function savePersonalInfoFields(employeeId) {
+    const personalEmailEl = document.getElementById('personalEmail');
+    if (!personalEmailEl) return;
+
+    const get = id => document.getElementById(id)?.value?.trim() || '';
+    const personalEmail = get('personalEmail');
+    const addressLine1  = get('addressLine1');
+    const addressLine2  = get('addressLine2');
+    const city          = get('addressCity');
+    const state         = get('addressState');
+    const postalCode    = get('addressPostalCode');
+
+    // No-op if HR didn't fill any of the new fields.
+    if (!personalEmail && !addressLine1 && !addressLine2 && !city && !state && !postalCode) return;
+
+    const payload = {
+        employee_id: employeeId,
+        // Carry the Step-1 personal toggles too so the row stays consistent
+        // with the main employees table (date_of_birth/gender/blood_group
+        // are duplicated there for fast directory lookups).
+        date_of_birth: get('dateOfBirth') || null,
+        gender: getGenderValue() || null,
+        blood_group: getBloodGroupValue() || null,
+        marital_status: getMaritalStatusValue() || null,
+        personal_email: personalEmail || null,
+        address_line1: addressLine1 || null,
+        address_line2: addressLine2 || null,
+        city: city || null,
+        state: state || null,
+        postal_code: postalCode || null
+    };
+
+    await api.request(`/hrms/employees/${employeeId}/personal-info`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+    });
+}
+
+// Pull personal_info row (home address + personal email) and pre-fill the
+// Step 1 fields. Empty if the employee has no personal_info row yet.
+async function loadEmployeePersonalInfo(employeeId) {
+    const personalEmailEl = document.getElementById('personalEmail');
+    if (!personalEmailEl) return;
+    try {
+        const info = await api.request(`/hrms/employees/${employeeId}/personal-info`);
+        if (!info) return;
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+        set('personalEmail', info.personal_email);
+        set('addressLine1', info.address_line1);
+        set('addressLine2', info.address_line2);
+        set('addressCity', info.city);
+        set('addressState', info.state);
+        set('addressPostalCode', info.postal_code);
+    } catch (err) {
+        // Personal info may not exist for older employees — don't crash.
+        console.warn('[Employee] No personal info to preload:', err?.message || err);
+    }
 }
 
 async function saveEmployee() {
     const id = document.getElementById('employeeId').value;
     const isEdit = !!id;
 
-    // Validate all steps before saving
+    // Validate all three visible steps before saving.
     if (!validatePersonalStep()) {
         goToEmployeeStep(1);
         return;
@@ -860,10 +940,6 @@ async function saveEmployee() {
     }
     if (!validateBankingStep()) {
         goToEmployeeStep(3);
-        return;
-    }
-    if (!validateDocumentsStep()) {
-        goToEmployeeStep(4);
         return;
     }
 
@@ -922,13 +998,16 @@ async function saveEmployeeAtomic() {
     const gender = getGenderValue();
     if (gender) formData.append('gender', gender);
 
+    // Marital status + emergency contact moved to a separate flow — the
+    // wizard no longer collects them. getMaritalStatusValue tolerates a
+    // missing select (returns ''). The emergency contact getElementById's
+    // already use optional chaining.
     const maritalStatus = getMaritalStatusValue();
     if (maritalStatus) formData.append('marital_status', maritalStatus);
 
     const bloodGroup = getBloodGroupValue();
     if (bloodGroup) formData.append('blood_group', bloodGroup);
 
-    // Emergency contact (optional)
     const emergencyContactName = document.getElementById('emergencyContactName')?.value;
     if (emergencyContactName) formData.append('emergency_contact_name', emergencyContactName);
 
@@ -1001,27 +1080,44 @@ async function saveEmployeeAtomic() {
         formData.append('passport', pendingDocuments.passport);
     }
 
-    // Bank account info
-    const bankName = document.getElementById('bankName').value;
-    const accountNumber = document.getElementById('accountNumber').value;
+    // Bank account info from Step 3. Banking is optional — if account
+    // number is blank, skip the whole section. Defensive ?. reads keep
+    // this safe if the wizard markup ever changes.
+    const bankName = document.getElementById('bankName')?.value;
+    const accountNumber = document.getElementById('accountNumber')?.value;
     if (bankName && accountNumber) {
         formData.append('bank_name', bankName);
         formData.append('account_number', accountNumber);
 
-        const accountHolderName = document.getElementById('accountHolderName').value;
+        const accountHolderName = document.getElementById('accountHolderName')?.value;
         if (accountHolderName) formData.append('account_holder_name', accountHolderName);
 
-        const ifscCode = document.getElementById('ifscCode').value;
+        const ifscCode = document.getElementById('ifscCode')?.value;
         if (ifscCode) formData.append('ifsc_code', ifscCode.toUpperCase());
 
-        const branchName = document.getElementById('branchName').value;
+        const branchName = document.getElementById('branchName')?.value;
         if (branchName) formData.append('branch_name', branchName);
 
-        formData.append('account_type', 'savings');
+        // Read from the new Account Type select; default to 'savings' if
+        // the user didn't touch the dropdown.
+        const accountType = document.getElementById('accountType')?.value || 'savings';
+        formData.append('account_type', accountType);
     }
 
     // Make the atomic request
     const result = await api.createHrmsEmployeeAtomic(formData);
+
+    // Personal info (home address + personal email) — atomic create doesn't
+    // accept these fields directly; push via the dedicated endpoint after the
+    // employee record exists. Non-blocking: log if it fails so the create
+    // success isn't masked by a separate-request failure.
+    try {
+        const newEmployeeId = result?.employee?.id || result?.id || result?.employee_id;
+        if (newEmployeeId) await savePersonalInfoFields(newEmployeeId);
+    } catch (piErr) {
+        console.error('Error saving personal info on create:', piErr);
+        showToast('Employee created but personal info save failed: ' + piErr.message, 'warning');
+    }
 
     // Remove the user from availableUsers to prevent re-selection
     availableUsers = availableUsers.filter(u => u.user_id !== userId);
@@ -1065,6 +1161,16 @@ async function saveEmployeeEdit(id) {
 
     // Update employee record
     await api.updateHrmsEmployee(id, data);
+
+    // Personal info (home address + personal email) — separate endpoint
+    // because UpdateEmployeeRequest doesn't carry these fields. Non-blocking
+    // so a failure here doesn't lose the main employee update.
+    try {
+        await savePersonalInfoFields(id);
+    } catch (piErr) {
+        console.error('Error saving personal info:', piErr);
+        showToast('Employee saved but personal info failed: ' + piErr.message, 'warning');
+    }
 
     // Save bank account (non-blocking - continue even if fails)
     try {
@@ -1129,11 +1235,11 @@ async function viewEmployee(id) {
         const shift = shifts.find(s => s.id === emp.shift_id);
 
         // Try to get employee photo
-        let photoHtml = `<div class="employee-avatar-large">${getInitials(emp.first_name, emp.last_name)}</div>`;
+        let photoHtml = `<div class="employee-avatar-large">${escapeHtml(getInitials(emp.first_name, emp.last_name))}</div>`;
 
         // Check cache first, then fetch
         if (employeePhotoCache[id]) {
-            photoHtml = `<img class="employee-avatar-large-img" src="${employeePhotoCache[id]}" alt="${emp.first_name}" onerror="this.outerHTML='<div class=\\'employee-avatar-large\\'>${getInitials(emp.first_name, emp.last_name)}</div>'">`;
+            photoHtml = `<img class="employee-avatar-large-img" src="${escapeHtml(employeePhotoCache[id])}" alt="${escapeHtml(emp.first_name)}" onerror="this.outerHTML='<div class=\\'employee-avatar-large\\'>${escapeHtml(getInitials(emp.first_name, emp.last_name))}</div>'">`;
         } else {
             // Try to fetch photo from documents
             try {
@@ -1143,7 +1249,7 @@ async function viewEmployee(id) {
                     const downloadUrl = await api.getEmployeeDocumentDownloadUrl(id, photoDoc.id);
                     const photoUrl = downloadUrl.url || downloadUrl;
                     employeePhotoCache[id] = photoUrl;
-                    photoHtml = `<img class="employee-avatar-large-img" src="${photoUrl}" alt="${emp.first_name}" onerror="this.outerHTML='<div class=\\'employee-avatar-large\\'>${getInitials(emp.first_name, emp.last_name)}</div>'">`;
+                    photoHtml = `<img class="employee-avatar-large-img" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(emp.first_name)}" onerror="this.outerHTML='<div class=\\'employee-avatar-large\\'>${escapeHtml(getInitials(emp.first_name, emp.last_name))}</div>'">`;
                 }
             } catch (e) {
                 console.log('Could not load photo:', e);
@@ -1154,10 +1260,10 @@ async function viewEmployee(id) {
             <div class="employee-view-header">
                 ${photoHtml}
                 <div>
-                    <h2>${emp.first_name} ${emp.last_name}</h2>
-                    <p>${emp.employee_code || '-'} | ${desig?.designation_name || '-'}</p>
+                    <h2>${escapeHtml(emp.first_name)} ${escapeHtml(emp.last_name)}</h2>
+                    <p>${escapeHtml(emp.employee_code || '-')} | ${escapeHtml(desig?.designation_name || '-')}</p>
                 </div>
-                <span class="status-badge ${emp.employment_status}">${capitalizeFirst(emp.employment_status)}</span>
+                <span class="status-badge ${escapeHtml(emp.employment_status || '')}">${escapeHtml(capitalizeFirst(emp.employment_status))}</span>
             </div>
 
             <div class="employee-view-sections">
@@ -1166,11 +1272,11 @@ async function viewEmployee(id) {
                     <div class="view-grid">
                         <div class="view-item">
                             <span class="label">Email</span>
-                            <span class="value">${emp.work_email}</span>
+                            <span class="value">${escapeHtml(emp.work_email)}</span>
                         </div>
                         <div class="view-item">
                             <span class="label">Phone</span>
-                            <span class="value">${emp.work_phone || '-'}</span>
+                            <span class="value">${escapeHtml(emp.work_phone || '-')}</span>
                         </div>
                         <div class="view-item">
                             <span class="label">Date of Birth</span>
@@ -1178,7 +1284,7 @@ async function viewEmployee(id) {
                         </div>
                         <div class="view-item">
                             <span class="label">Gender</span>
-                            <span class="value">${capitalizeFirst(emp.gender) || '-'}</span>
+                            <span class="value">${escapeHtml(capitalizeFirst(emp.gender) || '-')}</span>
                         </div>
                     </div>
                 </div>
@@ -1188,23 +1294,23 @@ async function viewEmployee(id) {
                     <div class="view-grid">
                         <div class="view-item">
                             <span class="label">Department</span>
-                            <span class="value">${dept?.department_name || '-'}</span>
+                            <span class="value">${escapeHtml(dept?.department_name || '-')}</span>
                         </div>
                         <div class="view-item">
                             <span class="label">Designation</span>
-                            <span class="value">${desig?.designation_name || '-'}</span>
+                            <span class="value">${escapeHtml(desig?.designation_name || '-')}</span>
                         </div>
                         <div class="view-item">
                             <span class="label">Office</span>
-                            <span class="value">${office?.office_name || '-'}</span>
+                            <span class="value">${escapeHtml(office?.office_name || '-')}</span>
                         </div>
                         <div class="view-item">
                             <span class="label">Shift</span>
-                            <span class="value">${shift?.shift_name || 'Default'}</span>
+                            <span class="value">${escapeHtml(shift?.shift_name || 'Default')}</span>
                         </div>
                         <div class="view-item">
                             <span class="label">Employment Type</span>
-                            <span class="value">${capitalizeFirst(emp.employment_type?.replace('_', ' '))}</span>
+                            <span class="value">${escapeHtml(capitalizeFirst(emp.employment_type?.replace('_', ' ')))}</span>
                         </div>
                         <div class="view-item">
                             <span class="label">Joining Date</span>
@@ -1262,9 +1368,9 @@ async function openEmployeePanel(id) {
         const manager = emp.manager_user_id ? employees.find(e => e.user_id === emp.manager_user_id) : null;
 
         // Get photo
-        let photoHtml = `<div class="panel-employee-avatar">${getInitials(emp.first_name, emp.last_name)}</div>`;
+        let photoHtml = `<div class="panel-employee-avatar">${escapeHtml(getInitials(emp.first_name, emp.last_name))}</div>`;
         if (employeePhotoCache[id]) {
-            photoHtml = `<div class="panel-employee-avatar"><img src="${employeePhotoCache[id]}" alt="${emp.first_name}" onerror="this.parentElement.innerHTML='${getInitials(emp.first_name, emp.last_name)}'"></div>`;
+            photoHtml = `<div class="panel-employee-avatar"><img src="${escapeHtml(employeePhotoCache[id])}" alt="${escapeHtml(emp.first_name)}" onerror="this.parentElement.innerHTML='${escapeHtml(getInitials(emp.first_name, emp.last_name))}'"></div>`;
         } else {
             // Try to fetch photo
             try {
@@ -1274,23 +1380,32 @@ async function openEmployeePanel(id) {
                     const downloadUrl = await api.getEmployeeDocumentDownloadUrl(id, photoDoc.id);
                     const photoUrl = downloadUrl.url || downloadUrl;
                     employeePhotoCache[id] = photoUrl;
-                    photoHtml = `<div class="panel-employee-avatar"><img src="${photoUrl}" alt="${emp.first_name}" onerror="this.parentElement.innerHTML='${getInitials(emp.first_name, emp.last_name)}'"></div>`;
+                    photoHtml = `<div class="panel-employee-avatar"><img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(emp.first_name)}" onerror="this.parentElement.innerHTML='${escapeHtml(getInitials(emp.first_name, emp.last_name))}'"></div>`;
                 }
             } catch (e) {
                 console.log('Could not load photo:', e);
             }
         }
 
+        // R4-6: every user-supplied string in this panel runs through escapeHtml
+        // so a malicious emergency_contact_name like `<img src=x onerror=...>`
+        // (which the backend now rejects on write but may exist in legacy rows)
+        // can't escape the value cell. Enums are passed through capitalizeFirst
+        // which is also a string-only op, but we wrap to be safe.
+        const _ec  = emp.personal_info?.emergency_contact_name || emp.emergency_contact_name || '';
+        const _ecp = emp.personal_info?.emergency_contact_phone || emp.emergency_contact_phone || '';
+        const _bg  = emp.personal_info?.blood_group || emp.blood_group || '';
+        const _ms  = emp.personal_info?.marital_status || emp.marital_status || '';
         body.innerHTML = `
             <div class="panel-employee-header">
                 ${photoHtml}
                 <div class="panel-employee-info">
-                    <h2 class="panel-employee-name">${emp.first_name} ${emp.last_name}</h2>
+                    <h2 class="panel-employee-name">${escapeHtml(emp.first_name || '')} ${escapeHtml(emp.last_name || '')}</h2>
                     <div class="panel-employee-meta">
-                        <span>${emp.employee_code || '-'}</span>
+                        <span>${escapeHtml(emp.employee_code || '-')}</span>
                         <span>•</span>
-                        <span>${desig?.designation_name || '-'}</span>
-                        <span class="status-badge ${emp.employment_status}">${capitalizeFirst(emp.employment_status)}</span>
+                        <span>${escapeHtml(desig?.designation_name || '-')}</span>
+                        <span class="status-badge ${escapeHtml(emp.employment_status || '')}">${escapeHtml(capitalizeFirst(emp.employment_status) || '')}</span>
                     </div>
                 </div>
             </div>
@@ -1308,36 +1423,36 @@ async function openEmployeePanel(id) {
                 <div class="panel-info-grid">
                     <div class="panel-info-item">
                         <span class="panel-info-label">Email</span>
-                        <span class="panel-info-value">${emp.work_email || '-'}</span>
+                        <span class="panel-info-value">${escapeHtml(emp.work_email || '-')}</span>
                     </div>
                     <div class="panel-info-item">
                         <span class="panel-info-label">Phone</span>
-                        <span class="panel-info-value">${emp.work_phone || '-'}</span>
+                        <span class="panel-info-value">${escapeHtml(emp.work_phone || '-')}</span>
                     </div>
                     <div class="panel-info-item">
                         <span class="panel-info-label">Date of Birth</span>
-                        <span class="panel-info-value">${formatDate(emp.date_of_birth) || '-'}</span>
+                        <span class="panel-info-value">${escapeHtml(formatDate(emp.date_of_birth) || '-')}</span>
                     </div>
                     <div class="panel-info-item">
                         <span class="panel-info-label">Gender</span>
-                        <span class="panel-info-value">${capitalizeFirst(emp.gender) || '-'}</span>
+                        <span class="panel-info-value">${escapeHtml(capitalizeFirst(emp.gender) || '-')}</span>
                     </div>
-                    ${(emp.personal_info?.blood_group || emp.blood_group) ? `
+                    ${_bg ? `
                     <div class="panel-info-item">
                         <span class="panel-info-label">Blood Group</span>
-                        <span class="panel-info-value">${emp.personal_info?.blood_group || emp.blood_group}</span>
+                        <span class="panel-info-value">${escapeHtml(_bg)}</span>
                     </div>
                     ` : ''}
-                    ${(emp.personal_info?.marital_status || emp.marital_status) ? `
+                    ${_ms ? `
                     <div class="panel-info-item">
                         <span class="panel-info-label">Marital Status</span>
-                        <span class="panel-info-value">${capitalizeFirst(emp.personal_info?.marital_status || emp.marital_status)}</span>
+                        <span class="panel-info-value">${escapeHtml(capitalizeFirst(_ms))}</span>
                     </div>
                     ` : ''}
-                    ${(emp.personal_info?.emergency_contact_name || emp.emergency_contact_name) ? `
+                    ${_ec ? `
                     <div class="panel-info-item panel-info-item-full">
                         <span class="panel-info-label">Emergency Contact</span>
-                        <span class="panel-info-value">${emp.personal_info?.emergency_contact_name || emp.emergency_contact_name || '-'}${(emp.personal_info?.emergency_contact_phone || emp.emergency_contact_phone) ? ` • ${emp.personal_info?.emergency_contact_phone || emp.emergency_contact_phone}` : ''}</span>
+                        <span class="panel-info-value">${escapeHtml(_ec)}${_ecp ? ` • ${escapeHtml(_ecp)}` : ''}</span>
                     </div>
                     ` : ''}
                 </div>
@@ -1356,35 +1471,35 @@ async function openEmployeePanel(id) {
                 <div class="panel-info-grid">
                     <div class="panel-info-item">
                         <span class="panel-info-label">Department</span>
-                        <span class="panel-info-value">${dept?.department_name || '-'}</span>
+                        <span class="panel-info-value">${escapeHtml(dept?.department_name || '-')}</span>
                     </div>
                     <div class="panel-info-item">
                         <span class="panel-info-label">Designation</span>
-                        <span class="panel-info-value">${desig?.designation_name || '-'}</span>
+                        <span class="panel-info-value">${escapeHtml(desig?.designation_name || '-')}</span>
                     </div>
                     <div class="panel-info-item">
                         <span class="panel-info-label">Office</span>
-                        <span class="panel-info-value">${office?.office_name || '-'}</span>
+                        <span class="panel-info-value">${escapeHtml(office?.office_name || '-')}</span>
                     </div>
                     <div class="panel-info-item">
                         <span class="panel-info-label">Shift</span>
-                        <span class="panel-info-value">${shift?.shift_name || 'Default'}</span>
+                        <span class="panel-info-value">${escapeHtml(shift?.shift_name || 'Default')}</span>
                     </div>
                     <div class="panel-info-item">
                         <span class="panel-info-label">Manager</span>
-                        <span class="panel-info-value">${manager ? `${manager.first_name} ${manager.last_name}` : '-'}</span>
+                        <span class="panel-info-value">${manager ? `${escapeHtml(manager.first_name || '')} ${escapeHtml(manager.last_name || '')}` : '-'}</span>
                     </div>
                     <div class="panel-info-item">
                         <span class="panel-info-label">Joining Date</span>
-                        <span class="panel-info-value">${formatDate(emp.hire_date)}</span>
+                        <span class="panel-info-value">${escapeHtml(formatDate(emp.hire_date) || '-')}</span>
                     </div>
                     <div class="panel-info-item">
                         <span class="panel-info-label">Employment Type</span>
-                        <span class="panel-info-value">${capitalizeFirst(emp.employment_type?.replace('_', ' ')) || '-'}</span>
+                        <span class="panel-info-value">${escapeHtml(capitalizeFirst(emp.employment_type?.replace('_', ' ')) || '-')}</span>
                     </div>
                     <div class="panel-info-item">
                         <span class="panel-info-label">Probation End</span>
-                        <span class="panel-info-value">${formatDate(emp.probation_end_date) || '-'}</span>
+                        <span class="panel-info-value">${escapeHtml(formatDate(emp.probation_end_date) || '-')}</span>
                     </div>
                 </div>
             </div>
@@ -1545,7 +1660,7 @@ async function openMeetingsModal() {
                     </div>
                     <div class="gm-title-group">
                         <h3 class="gm-title">Meetings</h3>
-                        <p class="gm-subtitle">${empName}</p>
+                        <p class="gm-subtitle">${escapeHtml(empName)}</p>
                     </div>
                 </div>
                 <button class="gm-close" onclick="closeMeetingsModal()">
@@ -1651,13 +1766,13 @@ function renderMeetingsList(meetings, employeeId, empName) {
         return `
             <div class="gm-card">
                 <div class="gm-card-info">
-                    <div class="gm-card-title" title="${m.meeting_name || ''}">${m.meeting_name || 'Untitled Meeting'}</div>
+                    <div class="gm-card-title" title="${escapeHtml(m.meeting_name || '')}">${escapeHtml(m.meeting_name || 'Untitled Meeting')}</div>
                     <div class="gm-card-meta">
                         <span>${date} ${time}</span>
-                        ${m.created_by_name ? `<span>by ${m.created_by_name}</span>` : ''}
-                        <span class="gm-badge ${badgeVariant}">${m.status || 'scheduled'}</span>
+                        ${m.created_by_name ? `<span>by ${escapeHtml(m.created_by_name)}</span>` : ''}
+                        <span class="gm-badge ${badgeVariant}">${escapeHtml(m.status || 'scheduled')}</span>
                     </div>
-                    ${m.notes ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${m.notes}</div>` : ''}
+                    ${m.notes ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${escapeHtml(m.notes)}</div>` : ''}
                 </div>
                 <div class="gm-card-actions">
                     <button class="gm-btn gm-btn-secondary" onclick="copyMeetingLink(this, '${lobbyUrl}')" title="Copy link">
@@ -1743,7 +1858,7 @@ async function handleCreateNewMeeting(employeeId, empName) {
 
     footer.innerHTML = `
         <div style="width:100%;padding:4px 0;">
-            <div style="font-weight:600;font-size:13px;margin-bottom:10px;color:var(--text-primary);">Schedule Meeting with ${empName}</div>
+            <div style="font-weight:600;font-size:13px;margin-bottom:10px;color:var(--text-primary);">Schedule Meeting with ${escapeHtml(empName)}</div>
             <div style="display:flex;gap:8px;margin-bottom:8px;">
                 <div style="flex:1;">
                     <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:3px;">Date</label>
@@ -1916,7 +2031,7 @@ function updateDepartmentsForOffice(officeId) {
     }
 
     deptSelect.innerHTML = '<option value="">Select department...</option>' +
-        filteredDepts.map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
+        filteredDepts.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.department_name)}</option>`).join('');
 
     // Keep previous selection if still valid
     if (currentDeptId && filteredDepts.some(d => d.id === currentDeptId)) {
@@ -1939,7 +2054,7 @@ function updateShiftsForOffice(officeId) {
     const filteredShifts = shifts.filter(s => !s.office_id || s.office_id === officeId);
 
     shiftSelect.innerHTML = '<option value="">Default shift</option>' +
-        filteredShifts.map(s => `<option value="${s.id}">${s.shift_name}</option>`).join('');
+        filteredShifts.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.shift_name)}</option>`).join('');
 
     // Keep previous selection if still valid
     if (currentShiftId && filteredShifts.some(s => s.id === currentShiftId)) {
@@ -1969,7 +2084,7 @@ function updateDesignationsForDepartment(departmentId) {
     }
 
     desigSelect.innerHTML = '<option value="">Select designation...</option>' +
-        filteredDesigs.map(d => `<option value="${d.id}">${d.designation_name}</option>`).join('');
+        filteredDesigs.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.designation_name)}</option>`).join('');
 
     // Keep previous selection if still valid
     if (currentDesigId && filteredDesigs.some(d => d.id === currentDesigId)) {
@@ -2383,19 +2498,23 @@ async function loadEmployeeDocuments(employeeId) {
 // ============================================
 
 async function loadEmployeeBankAccount(employeeId) {
+    // Bank inputs were removed from the create/edit wizard — banking
+    // lives in the dedicated "Employee Banking" sidebar tab now. If the
+    // DOM elements aren't there, this is a no-op (don't crash on null).
+    const idEl = document.getElementById('bankAccountId');
+    if (!idEl) return;
     try {
         const accounts = await api.getEmployeeBankAccounts(employeeId);
         if (accounts && accounts.length > 0) {
-            // Use the primary account or first account
             const account = accounts.find(a => a.is_primary) || accounts[0];
-
-            document.getElementById('bankAccountId').value = account.id;
-            document.getElementById('accountHolderName').value = account.account_holder_name || '';
-            document.getElementById('bankName').value = account.bank_name || '';
-            document.getElementById('accountNumber').value = account.account_number || '';
-            document.getElementById('confirmAccountNumber').value = account.account_number || '';
-            document.getElementById('ifscCode').value = account.ifsc_code || '';
-            document.getElementById('branchName').value = account.branch_name || '';
+            idEl.value = account.id;
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+            set('accountHolderName', account.account_holder_name);
+            set('bankName', account.bank_name);
+            set('accountNumber', account.account_number);
+            set('confirmAccountNumber', account.account_number);
+            set('ifscCode', account.ifsc_code);
+            set('branchName', account.branch_name);
         }
     } catch (error) {
         console.error('Error loading bank account:', error);
@@ -2419,12 +2538,15 @@ function validateBankDetails() {
 }
 
 async function saveBankAccount(employeeId) {
-    const accountHolderName = document.getElementById('accountHolderName').value;
-    const bankName = document.getElementById('bankName').value;
-    const accountNumber = document.getElementById('accountNumber').value;
-    const ifscCode = document.getElementById('ifscCode').value?.toUpperCase();
-    const branchName = document.getElementById('branchName').value;
-    const bankAccountId = document.getElementById('bankAccountId').value;
+    // Bank inputs no longer in the wizard. Skip silently if absent.
+    const accountNumberEl = document.getElementById('accountNumber');
+    if (!accountNumberEl) return;
+    const accountHolderName = document.getElementById('accountHolderName')?.value;
+    const bankName = document.getElementById('bankName')?.value;
+    const accountNumber = accountNumberEl.value;
+    const ifscCode = document.getElementById('ifscCode')?.value?.toUpperCase();
+    const branchName = document.getElementById('branchName')?.value;
+    const bankAccountId = document.getElementById('bankAccountId')?.value;
 
     // Skip if no bank details provided
     if (!accountHolderName && !bankName && !accountNumber) {
@@ -2507,14 +2629,13 @@ function resetDocumentsAndBanking() {
     if (photoPlaceholder) photoPlaceholder.style.display = 'flex';
     if (photoPreview) photoPreview.style.display = 'none';
 
-    // Reset bank fields
-    document.getElementById('bankAccountId').value = '';
-    document.getElementById('accountHolderName').value = '';
-    document.getElementById('bankName').value = '';
-    document.getElementById('accountNumber').value = '';
-    document.getElementById('confirmAccountNumber').value = '';
-    document.getElementById('ifscCode').value = '';
-    document.getElementById('branchName').value = '';
+    // Reset bank fields — these inputs were removed when the wizard was
+    // trimmed to mirror the bulk-import template. Skip silently if absent.
+    ['bankAccountId', 'accountHolderName', 'bankName', 'accountNumber',
+     'confirmAccountNumber', 'ifscCode', 'branchName'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
 }
 
 // ============================================
@@ -2537,7 +2658,7 @@ async function openTransferModal(employeeId) {
     const photoUrl = employeePhotoCache[employeeId];
     const avatarEl = document.getElementById('transferEmployeeAvatar');
     if (photoUrl) {
-        avatarEl.innerHTML = `<img src="${photoUrl}" alt="${employee.first_name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='${initials}'">`;
+        avatarEl.innerHTML = `<img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(employee.first_name)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='${escapeHtml(initials)}'">`;
     } else {
         avatarEl.textContent = initials || '-';
     }
@@ -2587,7 +2708,7 @@ function populateTransferDropdowns(employee) {
     const officeSelect = document.getElementById('newOfficeId');
     officeSelect.innerHTML = '<option value="">Select new office...</option>' +
         offices.filter(o => o.id !== employee.office_id)
-            .map(o => `<option value="${o.id}">${o.office_name}</option>`).join('');
+            .map(o => `<option value="${escapeHtml(o.id)}">${escapeHtml(o.office_name)}</option>`).join('');
 
     // Populate department dropdown filtered by employee's office
     populateTransferDepartments(employee.office_id);
@@ -2697,11 +2818,11 @@ function renderTransferManagerList() {
         const line1 = [mgr.code, mgr.designation].filter(Boolean).join(' \u2022 ');
         const line2 = [mgr.office].filter(Boolean).join(' \u2022 ');
         return `
-        <div class="dropdown-item" data-value="${mgr.user_id}" onclick="selectTransferManager('${mgr.user_id}', '${mgr.name.replace(/'/g, "\\'")}')">
-            <span class="item-avatar">${mgr.initials}</span>
+        <div class="dropdown-item" data-value="${mgr.user_id}" onclick="selectTransferManager('${mgr.user_id}', '${escapeHtml(String(mgr.name).replace(/'/g, "\\'"))}')">
+            <span class="item-avatar">${escapeHtml(mgr.initials)}</span>
             <div class="item-name">
-                <strong>${mgr.name}</strong>
-                <small>${line1}${line2 ? '<br>' + line2 : ''}</small>
+                <strong>${escapeHtml(mgr.name)}</strong>
+                <small>${escapeHtml(line1)}${line2 ? '<br>' + escapeHtml(line2) : ''}</small>
             </div>
         </div>`;
     }).join('');
@@ -2728,7 +2849,7 @@ function populateTransferDepartments(officeId) {
         (!d.office_id || d.office_id === officeId)
     );
     deptSelect.innerHTML = '<option value="">Select new department...</option>' +
-        deptsWithDesignations.map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
+        deptsWithDesignations.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.department_name)}</option>`).join('');
 
     // Reset designation
     document.getElementById('newDesignationId').innerHTML = '<option value="">Select department first...</option>';
@@ -2825,7 +2946,7 @@ function onNewDepartmentChange() {
     const filteredDesigs = designations.filter(d => !d.department_id || d.department_id === deptId);
 
     desigSelect.innerHTML = '<option value="">Select new designation...</option>' +
-        filteredDesigs.map(d => `<option value="${d.id}">${d.designation_name}</option>`).join('');
+        filteredDesigs.map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.designation_name)}</option>`).join('');
     refreshTransferDropdown('newDesignationId');
 }
 
@@ -3134,15 +3255,15 @@ async function viewTransferHistory(employeeId) {
         const photoUrl = employeePhotoCache[employeeId];
         const initials = getInitials(employee?.first_name, employee?.last_name);
         const avatarHtml = photoUrl
-            ? `<img src="${photoUrl}" alt="${employee?.first_name}" class="employee-avatar-large-img" style="width:60px;height:60px;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='<div class=\\'employee-avatar-large\\'>${initials}</div>'">`
-            : `<div class="employee-avatar-large">${initials}</div>`;
+            ? `<img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(employee?.first_name)}" class="employee-avatar-large-img" style="width:60px;height:60px;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='<div class=\\'employee-avatar-large\\'>${escapeHtml(initials)}</div>'">`
+            : `<div class="employee-avatar-large">${escapeHtml(initials)}</div>`;
 
         let html = `
             <div class="transfer-history-header">
                 ${avatarHtml}
                 <div>
-                    <h3>${employee?.first_name || ''} ${employee?.last_name || ''}</h3>
-                    <p>${employee?.employee_code || ''}</p>
+                    <h3>${escapeHtml(employee?.first_name || '')} ${escapeHtml(employee?.last_name || '')}</h3>
+                    <p>${escapeHtml(employee?.employee_code || '')}</p>
                 </div>
             </div>
 
@@ -3176,13 +3297,13 @@ async function viewTransferHistory(employeeId) {
                                     <div class="timeline-marker"></div>
                                     <div class="timeline-content">
                                         <div class="timeline-header">
-                                            <span class="timeline-title">${office?.office_name || 'Unknown Office'}</span>
+                                            <span class="timeline-title">${escapeHtml(office?.office_name || 'Unknown Office')}</span>
                                             ${isCurrent ? '<span class="current-badge">Current</span>' : ''}
                                         </div>
                                         <div class="timeline-date">
                                             ${formatDate(item.effective_from)} - ${item.effective_to ? formatDate(item.effective_to) : 'Present'}
                                         </div>
-                                        ${item.transfer_reason ? `<div class="timeline-reason">${item.transfer_reason}</div>` : ''}
+                                        ${item.transfer_reason ? `<div class="timeline-reason">${escapeHtml(item.transfer_reason)}</div>` : ''}
                                     </div>
                                 </div>
                             `;
@@ -3207,15 +3328,15 @@ async function viewTransferHistory(employeeId) {
                                     <div class="timeline-marker"></div>
                                     <div class="timeline-content">
                                         <div class="timeline-header">
-                                            <span class="timeline-title">${dept?.department_name || 'Unknown'}</span>
-                                            ${desig ? `<span class="timeline-subtitle">${desig.designation_name}</span>` : ''}
+                                            <span class="timeline-title">${escapeHtml(dept?.department_name || 'Unknown')}</span>
+                                            ${desig ? `<span class="timeline-subtitle">${escapeHtml(desig.designation_name)}</span>` : ''}
                                             ${isCurrent ? '<span class="current-badge">Current</span>' : ''}
                                         </div>
                                         <div class="timeline-date">
                                             ${formatDate(item.effective_from)} - ${item.effective_to ? formatDate(item.effective_to) : 'Present'}
                                         </div>
-                                        ${item.transfer_type ? `<span class="transfer-type-badge ${item.transfer_type}">${capitalizeFirst(item.transfer_type)}</span>` : ''}
-                                        ${item.transfer_reason ? `<div class="timeline-reason">${item.transfer_reason}</div>` : ''}
+                                        ${item.transfer_type ? `<span class="transfer-type-badge ${escapeHtml(item.transfer_type)}">${escapeHtml(capitalizeFirst(item.transfer_type))}</span>` : ''}
+                                        ${item.transfer_reason ? `<div class="timeline-reason">${escapeHtml(item.transfer_reason)}</div>` : ''}
                                     </div>
                                 </div>
                             `;
@@ -3239,13 +3360,13 @@ async function viewTransferHistory(employeeId) {
                                     <div class="timeline-marker"></div>
                                     <div class="timeline-content">
                                         <div class="timeline-header">
-                                            <span class="timeline-title">${manager ? `${manager.first_name} ${manager.last_name}` : (item.manager_user_id ? 'Unknown Manager' : 'No Manager')}</span>
+                                            <span class="timeline-title">${manager ? `${escapeHtml(manager.first_name)} ${escapeHtml(manager.last_name)}` : (item.manager_user_id ? 'Unknown Manager' : 'No Manager')}</span>
                                             ${isCurrent ? '<span class="current-badge">Current</span>' : ''}
                                         </div>
                                         <div class="timeline-date">
                                             ${formatDate(item.effective_from)} - ${item.effective_to ? formatDate(item.effective_to) : 'Present'}
                                         </div>
-                                        ${item.change_reason ? `<div class="timeline-reason">${item.change_reason}</div>` : ''}
+                                        ${item.change_reason ? `<div class="timeline-reason">${escapeHtml(item.change_reason)}</div>` : ''}
                                     </div>
                                 </div>
                             `;
@@ -3352,11 +3473,11 @@ async function loadManagerHistory(employeeId, employee) {
         html += `
             <div class="manager-history-item current">
                 <div class="manager-avatar">${currentManager
-                    ? `${(currentManager.first_name || '')[0] || ''}${(currentManager.last_name || '')[0] || ''}`.toUpperCase()
+                    ? escapeHtml(`${(currentManager.first_name || '')[0] || ''}${(currentManager.last_name || '')[0] || ''}`.toUpperCase())
                     : '—'}</div>
                 <div class="manager-info">
                     <div class="manager-name">${currentManager
-                        ? `${currentManager.first_name} ${currentManager.last_name}`
+                        ? `${escapeHtml(currentManager.first_name)} ${escapeHtml(currentManager.last_name)}`
                         : 'No Manager (Top level)'}</div>
                     <div class="manager-period">${formatDate(currentEffectiveDate)} → Present</div>
                 </div>
@@ -3382,9 +3503,9 @@ async function loadManagerHistory(employeeId, employee) {
 
                 html += `
                     <div class="manager-history-item">
-                        <div class="manager-avatar">${prevManagerInitials}</div>
+                        <div class="manager-avatar">${escapeHtml(prevManagerInitials)}</div>
                         <div class="manager-info">
-                            <div class="manager-name">${prevManager === 'No Manager' ? 'No Manager (Top level)' : prevManager}</div>
+                            <div class="manager-name">${prevManager === 'No Manager' ? 'No Manager (Top level)' : escapeHtml(prevManager)}</div>
                             <div class="manager-period">${formatDate(periodStart)} → ${formatDate(periodEnd)}</div>
                         </div>
                     </div>
@@ -3412,11 +3533,11 @@ async function loadManagerHistory(employeeId, employee) {
         historyContainer.innerHTML = `
             <div class="manager-history-item current">
                 <div class="manager-avatar">${currentManager
-                    ? `${(currentManager.first_name || '')[0] || ''}${(currentManager.last_name || '')[0] || ''}`.toUpperCase()
+                    ? escapeHtml(`${(currentManager.first_name || '')[0] || ''}${(currentManager.last_name || '')[0] || ''}`.toUpperCase())
                     : '—'}</div>
                 <div class="manager-info">
                     <div class="manager-name">${currentManager
-                        ? `${currentManager.first_name} ${currentManager.last_name}`
+                        ? `${escapeHtml(currentManager.first_name)} ${escapeHtml(currentManager.last_name)}`
                         : 'No Manager (Top level)'}</div>
                     <div class="manager-period">${formatDate(joiningDate)} → Present</div>
                 </div>
@@ -3670,11 +3791,11 @@ function renderVirtualList() {
                 ? `<span style="background:rgba(139,92,246,0.15); color:#a78bfa; padding:2px 8px; border-radius:999px; font-size:0.68rem; font-weight:600; letter-spacing:0.04em; margin-left:8px; vertical-align:middle;">SUPERADMIN</span>`
                 : '';
             return `
-            <div class="dropdown-item${mgr.is_superadmin ? ' is-superadmin' : ''}" data-index="${index + 1}" data-value="${mgr.user_id}" onclick="selectManager('${mgr.user_id}', '${mgr.name.replace(/'/g, "\\'")}')">
-                <span class="item-avatar">${mgr.initials}</span>
+            <div class="dropdown-item${mgr.is_superadmin ? ' is-superadmin' : ''}" data-index="${index + 1}" data-value="${mgr.user_id}" onclick="selectManager('${mgr.user_id}', '${escapeHtml(String(mgr.name).replace(/'/g, "\\'"))}')">
+                <span class="item-avatar">${escapeHtml(mgr.initials)}</span>
                 <div class="item-name">
-                    <strong>${mgr.name}${badge}</strong>
-                    <small>${line1}${line2 ? '<br>' + line2 : ''}${line3 ? '<br>' + line3 : ''}</small>
+                    <strong>${escapeHtml(mgr.name)}${badge}</strong>
+                    <small>${escapeHtml(line1)}${line2 ? '<br>' + escapeHtml(line2) : ''}${line3 ? '<br>' + escapeHtml(line3) : ''}</small>
                 </div>
             </div>
         `;
@@ -3710,11 +3831,11 @@ function renderVirtualScrollItems(container) {
         html += `
             <div class="dropdown-item${mgr.is_superadmin ? ' is-superadmin' : ''}" style="position: absolute; top: ${top}px; left: 0; right: 0;"
                  data-index="${i + 1}" data-value="${mgr.user_id}"
-                 onclick="selectManager('${mgr.user_id}', '${mgr.name.replace(/'/g, "\\'")}')">
-                <span class="item-avatar">${mgr.initials}</span>
+                 onclick="selectManager('${mgr.user_id}', '${escapeHtml(String(mgr.name).replace(/'/g, "\\'"))}')">
+                <span class="item-avatar">${escapeHtml(mgr.initials)}</span>
                 <div class="item-name">
-                    <strong>${mgr.name}${badge}</strong>
-                    <small>${line1}${line2 ? '<br>' + line2 : ''}${line3 ? '<br>' + line3 : ''}</small>
+                    <strong>${escapeHtml(mgr.name)}${badge}</strong>
+                    <small>${escapeHtml(line1)}${line2 ? '<br>' + escapeHtml(line2) : ''}${line3 ? '<br>' + escapeHtml(line3) : ''}</small>
                 </div>
             </div>
         `;
@@ -3849,7 +3970,13 @@ async function submitReassignManager() {
 // ============================================
 
 let currentEmployeeStep = 1;
-const totalEmployeeSteps = 4; // Always 4 steps (NFC management moved to separate tab)
+// Three steps. Each maps to one bulk-import template:
+//   1 + 2 → Employee bulk (Personal + Employment columns)
+//   3     → Banking bulk
+// Reporting Manager bulk is covered by the manager picker on Step 2.
+// Photo + ID-card scans are NOT in any bulk template — they have their own
+// dedicated screens (will be added separately).
+const totalEmployeeSteps = 3;
 
 function goToEmployeeStep(stepNumber) {
     // Validate current step before moving forward
@@ -3910,10 +4037,8 @@ function validateEmployeeStep(stepNumber) {
             return validatePersonalStep();
         case 2: // Employment Details
             return validateEmploymentStep();
-        case 3: // Banking Details
+        case 3: // Banking Details (optional — see validateBankingStep)
             return validateBankingStep();
-        case 4: // Documents
-            return validateDocumentsStep();
         default:
             return true;
     }
@@ -4090,16 +4215,16 @@ function showTerminateModal(employeeId) {
         // Get photo from cache if available
         const photoUrl = employeePhotoCache[employee.id];
         const photoHtml = photoUrl
-            ? `<img class="terminate-employee-avatar-img" src="${photoUrl}" alt="${employee.first_name}" onerror="this.outerHTML='<div class=\\'terminate-employee-avatar\\'>${getInitials(employee.first_name, employee.last_name)}</div>'">`
-            : `<div class="terminate-employee-avatar">${getInitials(employee.first_name, employee.last_name)}</div>`;
+            ? `<img class="terminate-employee-avatar-img" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(employee.first_name)}" onerror="this.outerHTML='<div class=\\'terminate-employee-avatar\\'>${escapeHtml(getInitials(employee.first_name, employee.last_name))}</div>'">`
+            : `<div class="terminate-employee-avatar">${escapeHtml(getInitials(employee.first_name, employee.last_name))}</div>`;
 
         employeeInfoEl.innerHTML = `
             <div class="terminate-employee-card">
                 ${photoHtml}
                 <div class="terminate-employee-details">
-                    <h4>${employee.first_name} ${employee.last_name}</h4>
-                    <p class="employee-code">${employee.employee_code || '-'}</p>
-                    <p>${desig?.designation_name || '-'} • ${dept?.department_name || '-'}</p>
+                    <h4>${escapeHtml(employee.first_name)} ${escapeHtml(employee.last_name)}</h4>
+                    <p class="employee-code">${escapeHtml(employee.employee_code || '-')}</p>
+                    <p>${escapeHtml(desig?.designation_name || '-')} • ${escapeHtml(dept?.department_name || '-')}</p>
                     <p class="join-date">Joined: ${formatDate(employee.hire_date)}</p>
                 </div>
             </div>
@@ -4423,6 +4548,10 @@ let maritalStatusDropdown = null;
  * Initialize marital status dropdown using SearchableDropdown component
  */
 function initMaritalStatusDropdown() {
+    // Marital status dropdown was removed from the wizard. Bail out silently
+    // if the source <select> isn't in the DOM — keeps the init pipeline (which
+    // also wires gender + blood group) from throwing on the missing element.
+    if (!document.getElementById('maritalStatus')) return;
     // Check if already converted
     const existingContainer = document.getElementById('maritalStatus-searchable-container');
     if (existingContainer) {
@@ -4918,19 +5047,19 @@ function renderDropdownItems(field, append = false) {
             // Manager shows: Name, Email, Office, Designation, Level
             itemContent = `
                 <div class="dropdown-item-main">
-                    <span class="dropdown-item-name">${item.displayName}</span>
-                    <span class="dropdown-item-code">${item.code || ''}</span>
+                    <span class="dropdown-item-name">${escapeHtml(item.displayName)}</span>
+                    <span class="dropdown-item-code">${escapeHtml(item.code || '')}</span>
                 </div>
                 <div class="dropdown-item-details">
-                    <span class="dropdown-item-email">${item.email || ''}</span>
-                    <span class="dropdown-item-meta">${item.officeName || ''} • ${item.designationName || ''} • L${item.level || 0}</span>
+                    <span class="dropdown-item-email">${escapeHtml(item.email || '')}</span>
+                    <span class="dropdown-item-meta">${escapeHtml(item.officeName || '')} • ${escapeHtml(item.designationName || '')} • L${item.level || 0}</span>
                 </div>
             `;
         } else if (field === 'designation') {
             // Designation shows level
             itemContent = `
                 <div class="dropdown-item-main">
-                    <span class="dropdown-item-name">${item.name}</span>
+                    <span class="dropdown-item-name">${escapeHtml(item.name)}</span>
                     ${item.level ? `<span class="dropdown-item-level">Level ${item.level}</span>` : ''}
                 </div>
             `;
@@ -4938,16 +5067,21 @@ function renderDropdownItems(field, append = false) {
             // Default: just show name and code
             itemContent = `
                 <div class="dropdown-item-main">
-                    <span class="dropdown-item-name">${item.name}</span>
-                    ${item.code ? `<span class="dropdown-item-code">${item.code}</span>` : ''}
+                    <span class="dropdown-item-name">${escapeHtml(item.name)}</span>
+                    ${item.code ? `<span class="dropdown-item-code">${escapeHtml(item.code)}</span>` : ''}
                 </div>
             `;
         }
 
+        // SUPERADMIN entries from /hrms/employees/superadmins may have a
+        // blank first/last name when an Auth user was created with email only.
+        // Fall back through displayName → name → email → '—' so the click
+        // handler never receives `undefined` (which would crash on .replace).
+        const itemLabel = String(item.displayName || item.name || item.email || '—');
         return `
             <div class="searchable-dropdown-item ${isSelected ? 'selected' : ''}"
-                 data-id="${item.id}"
-                 onclick="selectSearchableDropdownItem('${field}', '${item.id}', '${(item.displayName || item.name).replace(/'/g, "\\'")}', '${(item.code || '').replace(/'/g, "\\'")}')">
+                 data-id="${escapeHtml(item.id)}"
+                 onclick="selectSearchableDropdownItem('${field}', '${item.id}', '${escapeHtml(itemLabel.replace(/'/g, "\\'"))}', '${escapeHtml(String(item.code || '').replace(/'/g, "\\'"))}')">
                 ${itemContent}
             </div>
         `;

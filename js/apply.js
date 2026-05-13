@@ -157,7 +157,9 @@
             // appears as the first paragraph because users naturally retype the
             // section name; the page already labels the column.
             html = html.replace(/^\s*<p[^>]*>About the role<\/p>\s*/i, '');
-            descEl.innerHTML = html;
+            // Sanitize Quill-authored HTML before innerHTML — DOMPurify loaded
+            // from CDN in apply.html. Public page = highest-blast XSS surface.
+            descEl.innerHTML = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(html) : '';
             enhanceDescription(descEl);
         } else {
             descEl.innerHTML = '<p style="color: var(--muted); font-style: italic;">No description provided. Reach out to the hiring team if you have questions.</p>';

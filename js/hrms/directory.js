@@ -34,13 +34,13 @@ async function loadFilters() {
         const uniqueDeptNames = [...new Set((departments || []).map(d => d.department_name || '').filter(Boolean))].sort();
         const deptSelect = document.getElementById('departmentFilter');
         deptSelect.innerHTML = '<option value="">All Departments</option>' +
-            uniqueDeptNames.map(name => `<option value="${name}">${escapeHtml(name)}</option>`).join('');
+            uniqueDeptNames.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
 
         const sortedOffices = (offices || []).slice().sort((a, b) =>
             (a.office_name || '').localeCompare(b.office_name || ''));
         const officeSelect = document.getElementById('officeFilter');
         officeSelect.innerHTML = '<option value="">All Offices</option>' +
-            sortedOffices.map(o => `<option value="${o.id}">${escapeHtml(o.office_name)}</option>`).join('');
+            sortedOffices.map(o => `<option value="${escapeHtml(o.id)}">${escapeHtml(o.office_name)}</option>`).join('');
     } catch (e) {
         console.error('Error loading filters:', e);
     }
@@ -132,8 +132,8 @@ function renderDirectory() {
             <div class="directory-card-left">
                 <div class="directory-card-avatar">
                     ${emp.profile_photo_url
-                        ? `<img src="${emp.profile_photo_url}" alt="${displayName}">`
-                        : `<span>${getInitialsFromName(displayName)}</span>`
+                        ? `<img src="${escapeHtml(emp.profile_photo_url)}" alt="${escapeHtml(displayName)}">`
+                        : `<span>${escapeHtml(getInitialsFromName(displayName))}</span>`
                     }
                 </div>
             </div>
@@ -169,14 +169,14 @@ function renderDirectory() {
                 </div>
                 <div class="directory-card-contact">
                     ${emp.work_email ? `<div class="contact-item">
-                        <a href="mailto:${emp.work_email}" onclick="event.stopPropagation()" class="contact-link">
+                        <a href="mailto:${escapeHtml(emp.work_email)}" onclick="event.stopPropagation()" class="contact-link">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                                 <polyline points="22,6 12,13 2,6"/>
                             </svg>
-                            <span>${emp.work_email}</span>
+                            <span>${escapeHtml(emp.work_email)}</span>
                         </a>
-                        <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${emp.work_email}', this)" title="Copy email">
+                        <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(String(emp.work_email).replace(/'/g, "\\'"))}', this)" title="Copy email">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
@@ -184,13 +184,13 @@ function renderDirectory() {
                         </button>
                     </div>` : ''}
                     ${emp.work_phone ? `<div class="contact-item">
-                        <a href="tel:${emp.work_phone}" onclick="event.stopPropagation()" class="contact-link">
+                        <a href="tel:${escapeHtml(emp.work_phone)}" onclick="event.stopPropagation()" class="contact-link">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                             </svg>
-                            <span>${emp.work_phone}</span>
+                            <span>${escapeHtml(emp.work_phone)}</span>
                         </a>
-                        <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${emp.work_phone}', this)" title="Copy phone">
+                        <button class="copy-btn" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(String(emp.work_phone).replace(/'/g, "\\'"))}', this)" title="Copy phone">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
@@ -227,13 +227,13 @@ function showEmployeeDetails(id) {
         <div class="employee-detail-header">
             <div class="employee-detail-avatar">
                 ${emp.profile_photo_url
-                    ? `<img src="${emp.profile_photo_url}" alt="${displayName}">`
-                    : `<span>${getInitialsFromName(displayName)}</span>`
+                    ? `<img src="${escapeHtml(emp.profile_photo_url)}" alt="${escapeHtml(displayName)}">`
+                    : `<span>${escapeHtml(getInitialsFromName(displayName))}</span>`
                 }
             </div>
             <div class="employee-detail-info">
                 <h2>${escapeHtml(displayName)}</h2>
-                <p class="employee-code">${emp.employee_code || ''}</p>
+                <p class="employee-code">${escapeHtml(emp.employee_code || '')}</p>
             </div>
         </div>
         <div class="employee-detail-body">
@@ -251,11 +251,11 @@ function showEmployeeDetails(id) {
             </div>
             <div class="detail-row">
                 <span class="detail-label">Email</span>
-                <span class="detail-value">${emp.work_email ? `<a href="mailto:${emp.work_email}">${emp.work_email}</a>` : '--'}</span>
+                <span class="detail-value">${emp.work_email ? `<a href="mailto:${escapeHtml(emp.work_email)}">${escapeHtml(emp.work_email)}</a>` : '--'}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Phone</span>
-                <span class="detail-value">${emp.work_phone ? `<a href="tel:${emp.work_phone}">${emp.work_phone}</a>` : '--'}</span>
+                <span class="detail-value">${emp.work_phone ? `<a href="tel:${escapeHtml(emp.work_phone)}">${escapeHtml(emp.work_phone)}</a>` : '--'}</span>
             </div>
             ${emp.reporting_manager_name ? `
             <div class="detail-row">

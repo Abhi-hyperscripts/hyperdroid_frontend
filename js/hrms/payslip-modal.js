@@ -1312,7 +1312,7 @@ const PayslipModal = (function() {
                 const earningsHtml = earnings.length > 0 ?
                     earnings.map(i => `
                         <tr>
-                            <td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
+                            <td>${escapeHtml(i.component_name)}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
                             <td class="text-right">${fmtCurrency(i.amount)}</td>
                             <td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                         </tr>
@@ -1326,7 +1326,7 @@ const PayslipModal = (function() {
                         const proratedTag = i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : '';
                         return `
                             <tr>
-                                <td>${eligibilityIcon}${i.component_name}${proratedTag}</td>
+                                <td>${eligibilityIcon}${escapeHtml(i.component_name)}${proratedTag}</td>
                                 <td class="text-right">${fmtCurrency(i.amount)}</td>
                                 <td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                             </tr>
@@ -1342,7 +1342,7 @@ const PayslipModal = (function() {
                 if (payslip.voluntary_deductions > 0 && payslip.voluntary_deduction_items && payslip.voluntary_deduction_items.length > 0) {
                     additionalDeductionsHtml += payslip.voluntary_deduction_items.map(vd => `
                         <tr>
-                            <td>${vd.deduction_type_name}${vd.is_prorated ? ` <span style="font-size:0.7rem;color:var(--text-muted);">(${vd.days_applicable || '-'}/${vd.total_days_in_period || '-'} days)</span>` : ''}</td>
+                            <td>${escapeHtml(vd.deduction_type_name)}${vd.is_prorated ? ` <span style="font-size:0.7rem;color:var(--text-muted);">(${vd.days_applicable || '-'}/${vd.total_days_in_period || '-'} days)</span>` : ''}</td>
                             <td class="text-right">${fmtCurrency(vd.deducted_amount)}</td>
                             <td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${vd.is_prorated ? `${(vd.proration_factor * 100).toFixed(0)}%` : ''}</td>
                         </tr>
@@ -1413,7 +1413,7 @@ const PayslipModal = (function() {
             contentDiv.innerHTML = `
                 <div class="payslip-header">
                     <div>
-                        <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem;">${payslip.employee_name || 'Employee'} ${multiLocationBadge}</h4>
+                        <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem;">${escapeHtml(payslip.employee_name || 'Employee')} ${multiLocationBadge}</h4>
                         <p style="margin: 0; color: var(--text-muted); font-size: 0.75rem;">Payslip - ${formatDate(payslip.pay_period_start)} to ${formatDate(payslip.pay_period_end)}</p>
                     </div>
                     <div style="padding: 0.5rem 1rem; background: var(--brand-primary); color: var(--text-inverse); border-radius: 6px; text-align: right;">
@@ -1425,11 +1425,11 @@ const PayslipModal = (function() {
                 <div class="payslip-summary">
                     <div class="summary-item">
                         <div style="font-size: 0.65rem; color: var(--text-muted);">Employee ID</div>
-                        <div style="font-size: 0.9rem; font-weight: 600;">${payslip.employee_code || 'N/A'}</div>
+                        <div style="font-size: 0.9rem; font-weight: 600;">${escapeHtml(payslip.employee_code || 'N/A')}</div>
                     </div>
                     <div class="summary-item">
                         <div style="font-size: 0.65rem; color: var(--text-muted);">Department</div>
-                        <div style="font-size: 0.9rem; font-weight: 600;">${payslip.department_name || 'N/A'}</div>
+                        <div style="font-size: 0.9rem; font-weight: 600;">${escapeHtml(payslip.department_name || 'N/A')}</div>
                     </div>
                     <div class="summary-item">
                         <div style="font-size: 0.65rem; color: var(--text-muted);">Working Days</div>
@@ -1444,7 +1444,7 @@ const PayslipModal = (function() {
                 ${structureBreakdownHtml}
 
                 <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: center;">
-                    <button class="btn btn-secondary" onclick="${isEssMode ? `PayslipModal.viewCalculationProofEss('${payslipId}', false)` : `PayslipModal.viewCalculationProof('${payslipId}', false)`}" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button class="btn btn-secondary" onclick="${isEssMode ? `PayslipModal.viewCalculationProofEss('${escapeHtml(payslipId)}', false)` : `PayslipModal.viewCalculationProof('${escapeHtml(payslipId)}', false)`}" style="display: flex; align-items: center; gap: 0.5rem;">
                         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
@@ -1488,7 +1488,7 @@ const PayslipModal = (function() {
             html += `
                 <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-subtle);">
                     <div style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
-                        <h5 style="margin: 0; color: var(--brand-primary);">${group.structure_name || 'Salary Structure'}</h5>
+                        <h5 style="margin: 0; color: var(--brand-primary);">${escapeHtml(group.structure_name || 'Salary Structure')}</h5>
                         ${periodText ? `<p style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: var(--text-muted);">Period: ${periodText}</p>` : ''}
                     </div>
 
@@ -1507,7 +1507,7 @@ const PayslipModal = (function() {
                                     ${groupEarnings.length > 0
                                         ? groupEarnings.map(i => `
                                             <tr>
-                                                <td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
+                                                <td>${escapeHtml(i.component_name)}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
                                                 <td class="text-right">${fmtCurrency(i.amount)}</td>
                                                 <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                                             </tr>
@@ -1538,7 +1538,7 @@ const PayslipModal = (function() {
                                     ${groupDeductions.length > 0
                                         ? groupDeductions.map(i => `
                                             <tr>
-                                                <td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
+                                                <td>${escapeHtml(i.component_name)}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
                                                 <td class="text-right">${fmtCurrency(i.amount)}</td>
                                                 <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                                             </tr>
@@ -1689,7 +1689,7 @@ const PayslipModal = (function() {
                             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right: 8px; vertical-align: middle;">
                                 <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
-                            Calculation - ${proof.employeeName || response.employee_name} (${proof.employeeCode || response.employee_code})
+                            Calculation - ${escapeHtml(proof.employeeName || response.employee_name)} (${escapeHtml(proof.employeeCode || response.employee_code)})
                         </h5>
                         <button class="close-btn" onclick="PayslipModal.closeProof()">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -1755,27 +1755,27 @@ const PayslipModal = (function() {
                                         <div class="cp-info-grid">
                                             <div class="cp-info-item">
                                                 <span class="info-label">Name</span>
-                                                <span class="info-value">${proof.employeeName || '-'}</span>
+                                                <span class="info-value">${escapeHtml(proof.employeeName || '-')}</span>
                                             </div>
                                             <div class="cp-info-item">
                                                 <span class="info-label">Employee Code</span>
-                                                <span class="info-value">${proof.employeeCode || '-'}</span>
+                                                <span class="info-value">${escapeHtml(proof.employeeCode || '-')}</span>
                                             </div>
                                             <div class="cp-info-item">
                                                 <span class="info-label">Department</span>
-                                                <span class="info-value">${proof.departmentName || '-'}</span>
+                                                <span class="info-value">${escapeHtml(proof.departmentName || '-')}</span>
                                             </div>
                                             <div class="cp-info-item">
                                                 <span class="info-label">Designation</span>
-                                                <span class="info-value">${proof.designationName || '-'}</span>
+                                                <span class="info-value">${escapeHtml(proof.designationName || '-')}</span>
                                             </div>
                                             <div class="cp-info-item">
                                                 <span class="info-label">Office</span>
-                                                <span class="info-value">${proof.officeName || '-'} (${proof.officeCode || '-'})</span>
+                                                <span class="info-value">${escapeHtml(proof.officeName || '-')} (${escapeHtml(proof.officeCode || '-')})</span>
                                             </div>
                                             <div class="cp-info-item">
                                                 <span class="info-label">Location</span>
-                                                <span class="info-value">${proof.stateName || '-'}, ${proof.countryName || proof.countryCode || '-'}</span>
+                                                <span class="info-value">${escapeHtml(proof.stateName || '-')}, ${escapeHtml(proof.countryName || proof.countryCode || '-')}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1796,7 +1796,7 @@ const PayslipModal = (function() {
                                             </div>
                                             <div class="cp-info-item">
                                                 <span class="info-label">Financial Year</span>
-                                                <span class="info-value">${proof.financialYear || '-'}</span>
+                                                <span class="info-value">${escapeHtml(proof.financialYear || '-')}</span>
                                             </div>
                                             <div class="cp-info-item">
                                                 <span class="info-label">Total Working Days</span>
@@ -1839,7 +1839,7 @@ const PayslipModal = (function() {
                                         </div>
                                         <div class="comp-item">
                                             <span class="comp-label">Salary Structure</span>
-                                            <span class="comp-value">${proof.salaryStructureName || '-'}</span>
+                                            <span class="comp-value">${escapeHtml(proof.salaryStructureName || '-')}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1903,8 +1903,8 @@ const PayslipModal = (function() {
                                 <div class="footer-info">
                                     <span>Generated: ${new Date(proof.generatedAt || Date.now()).toLocaleString()}</span>
                                     <span>•</span>
-                                    <span>Ragenaizer HRMS ${proof.taxCalculation?.engineVersion || 'v3.0'}</span>
-                                    ${proof.countryConfigVersion ? `<span>•</span><span>Config: ${proof.countryConfigVersion}</span>` : ''}
+                                    <span>Ragenaizer HRMS ${escapeHtml(proof.taxCalculation?.engineVersion || 'v3.0')}</span>
+                                    ${proof.countryConfigVersion ? `<span>•</span><span>Config: ${escapeHtml(proof.countryConfigVersion)}</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -1983,7 +1983,7 @@ const PayslipModal = (function() {
                                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                                     <circle cx="12" cy="10" r="3"></circle>
                                 </svg>
-                                <span class="location-name">${group.officeName}</span>
+                                <span class="location-name">${escapeHtml(group.officeName)}</span>
                                 <span class="location-days">${daysInfo} ${prorateInfo}</span>
                             </div>
                         </td>
@@ -1995,7 +1995,7 @@ const PayslipModal = (function() {
                 group.items.forEach(item => {
                     rows += `
                         <tr class="location-item-row">
-                            <td class="component-name" style="padding-left: 24px;">${item.componentName || item.componentCode || '-'}</td>
+                            <td class="component-name" style="padding-left: 24px;">${escapeHtml(item.componentName || item.componentCode || '-')}</td>
                             <td class="text-right">${fmt(item.baseAmount || item.amount)}</td>
                             <td class="text-center">${item.isProrated ? `${(item.proratedFactor * 100).toFixed(1)}%` : '100%'}</td>
                             <td class="text-right amount-cell">${fmt(item.amount)}</td>
@@ -2007,7 +2007,7 @@ const PayslipModal = (function() {
             // Single location - flat list as before
             rows = items.map(item => `
                 <tr>
-                    <td class="component-name">${item.componentName || item.componentCode || '-'}</td>
+                    <td class="component-name">${escapeHtml(item.componentName || item.componentCode || '-')}</td>
                     <td class="text-right">${fmt(item.baseAmount || item.amount)}</td>
                     <td class="text-center">${item.isProrated ? `${(item.proratedFactor * 100).toFixed(1)}%` : '100%'}</td>
                     <td class="text-right amount-cell">${fmt(item.amount)}</td>
@@ -2078,15 +2078,15 @@ const PayslipModal = (function() {
 
             const componentName = item.componentName || item.componentCode || '-';
             const jurisdictionLabel = item.jurisdictionName
-                ? `<span class="jurisdiction-label">(${item.jurisdictionName})</span>`
+                ? `<span class="jurisdiction-label">(${escapeHtml(item.jurisdictionName)})</span>`
                 : '';
 
             return `
                 <tr class="${eligibilityClass}">
                     <td class="component-name">
-                        ${componentName}
+                        ${escapeHtml(componentName)}
                         ${jurisdictionLabel}
-                        ${eligibilityReason ? `<span class="eligibility-reason" title="${eligibilityReason}">ℹ</span>` : ''}
+                        ${eligibilityReason ? `<span class="eligibility-reason" title="${escapeHtml(eligibilityReason)}">ℹ</span>` : ''}
                     </td>
                     <td class="text-center">
                         <span class="eligibility-badge ${isEligible ? 'eligible' : 'not-eligible'}">${eligibilityIcon}</span>
@@ -2148,10 +2148,10 @@ const PayslipModal = (function() {
             return `
                 <tr>
                     <td class="component-name">
-                        ${item.deductionTypeName || '-'}
+                        ${escapeHtml(item.deductionTypeName || '-')}
                         ${proratedBadge}
                     </td>
-                    <td class="text-center">${item.category || 'Other'}</td>
+                    <td class="text-center">${escapeHtml(item.category || 'Other')}</td>
                     <td class="text-right amount-cell">${fmt(item.fullAmount)}</td>
                     <td class="text-right amount-cell ${isProrated ? 'prorated' : ''}">${fmt(item.deductedAmount)}</td>
                 </tr>
@@ -2213,9 +2213,9 @@ const PayslipModal = (function() {
             ? additions.map(item => `
                 <tr>
                     <td class="component-name">
-                        <span class="adjustment-type addition">${item.displayType || item.adjustmentType || 'Adjustment'}</span>
+                        <span class="adjustment-type addition">${escapeHtml(item.displayType || item.adjustmentType || 'Adjustment')}</span>
                     </td>
-                    <td class="text-left adjustment-reason">${item.reason || '-'}</td>
+                    <td class="text-left adjustment-reason">${escapeHtml(item.reason || '-')}</td>
                     <td class="text-right amount-cell addition-amount">+${fmt(item.amount)}</td>
                 </tr>
             `).join('')
@@ -2225,9 +2225,9 @@ const PayslipModal = (function() {
             ? deductions.map(item => `
                 <tr>
                     <td class="component-name">
-                        <span class="adjustment-type deduction">${item.displayType || item.adjustmentType || 'Adjustment'}</span>
+                        <span class="adjustment-type deduction">${escapeHtml(item.displayType || item.adjustmentType || 'Adjustment')}</span>
                     </td>
-                    <td class="text-left adjustment-reason">${item.reason || '-'}</td>
+                    <td class="text-left adjustment-reason">${escapeHtml(item.reason || '-')}</td>
                     <td class="text-right amount-cell deduction-amount">-${fmt(item.amount)}</td>
                 </tr>
             `).join('')
@@ -2441,7 +2441,7 @@ const PayslipModal = (function() {
         if (tax.preTaxDeductionItems && tax.preTaxDeductionItems.length > 0) {
             const preTaxRows = tax.preTaxDeductionItems.map(item => `
                 <div class="pretax-item">
-                    <span class="pretax-name">${item.chargeName || item.chargeCode}</span>
+                    <span class="pretax-name">${escapeHtml(item.chargeName || item.chargeCode)}</span>
                     <span class="pretax-amount">${fmt(item.annualAmount)}</span>
                 </div>
             `).join('');
@@ -2473,7 +2473,7 @@ const PayslipModal = (function() {
                             : '';
                         return `
                             <div class="declaration-item">
-                                <span class="declaration-item-name">${item.itemName || item.itemCode}</span>
+                                <span class="declaration-item-name">${escapeHtml(item.itemName || item.itemCode)}</span>
                                 <span class="declaration-item-declared">${fmt(item.declaredAmount)}</span>
                                 <span class="declaration-item-allowed">${fmt(item.allowedAmount)} ${cappedNote}</span>
                             </div>
@@ -2488,8 +2488,8 @@ const PayslipModal = (function() {
                     return `
                         <div class="declaration-section-group">
                             <div class="declaration-section-header">
-                                <span class="declaration-section-name">${section.sectionName}</span>
-                                <span class="declaration-section-code">${section.sectionCode}</span>
+                                <span class="declaration-section-name">${escapeHtml(section.sectionName)}</span>
+                                <span class="declaration-section-code">${escapeHtml(section.sectionCode)}</span>
                             </div>
                             <div class="declaration-items-header">
                                 <span>Item</span>
@@ -2514,7 +2514,7 @@ const PayslipModal = (function() {
                         <div class="declaration-warnings">
                             <div class="declaration-warning-title">⚠️ Declaration Notes</div>
                             ${tax.declarationValidation.validationWarnings.map(w => `
-                                <div class="declaration-warning-item">${w}</div>
+                                <div class="declaration-warning-item">${escapeHtml(w)}</div>
                             `).join('')}
                         </div>
                     `;
@@ -2551,8 +2551,8 @@ const PayslipModal = (function() {
                     <!-- Tax Regime -->
                     <div class="tax-regime-banner">
                         <span class="regime-label">Tax Regime:</span>
-                        <span class="regime-value">${tax.taxRegime || 'New'} Regime</span>
-                        ${tax.taxRegimeLegalSection ? `<span class="regime-section">(${tax.taxRegimeLegalSection})</span>` : ''}
+                        <span class="regime-value">${escapeHtml(tax.taxRegime || 'New')} Regime</span>
+                        ${tax.taxRegimeLegalSection ? `<span class="regime-section">(${escapeHtml(tax.taxRegimeLegalSection)})</span>` : ''}
                     </div>
 
                     <!-- Tax Calculation Flow -->
@@ -2715,7 +2715,7 @@ const PayslipModal = (function() {
 
         let rows = items.map(item => `
             <tr>
-                <td class="component-name">${item.componentName || item.componentCode || '-'}</td>
+                <td class="component-name">${escapeHtml(item.componentName || item.componentCode || '-')}</td>
                 <td class="text-right amount-cell">${fmt(item.amount)}</td>
             </tr>
         `).join('');
@@ -2785,15 +2785,15 @@ const PayslipModal = (function() {
             return `
                 <tr class="${isFirst ? 'first-version' : ''}">
                     <td class="version-code">
-                        <span class="version-badge">${version.versionCode || `V${index + 1}`}</span>
+                        <span class="version-badge">${escapeHtml(version.versionCode || `V${index + 1}`)}</span>
                     </td>
-                    <td class="structure-name">${version.structureName || '-'}</td>
+                    <td class="structure-name">${escapeHtml(version.structureName || '-')}</td>
                     <td class="text-center">${effectiveFrom} - ${effectiveTo}</td>
                     <td class="text-center">
                         <span class="days-badge">${version.daysApplied || 0} days</span>
                     </td>
                     <td class="text-center">
-                        <span class="reason-badge ${version.changeReason || 'default'}">${reasonDisplay}</span>
+                        <span class="reason-badge ${escapeHtml(version.changeReason || 'default')}">${escapeHtml(reasonDisplay)}</span>
                     </td>
                 </tr>
             `;
@@ -2852,8 +2852,8 @@ const PayslipModal = (function() {
             return `
                 <tr class="${isFirst ? 'primary-location' : ''}">
                     <td class="location-name">
-                        ${loc.officeName || '-'}
-                        <span class="office-code">(${loc.officeCode || '-'})</span>
+                        ${escapeHtml(loc.officeName || '-')}
+                        <span class="office-code">(${escapeHtml(loc.officeCode || '-')})</span>
                     </td>
                     <td class="text-center">
                         <span class="days-badge">${loc.workedDays || 0} days</span>

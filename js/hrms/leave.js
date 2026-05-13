@@ -551,7 +551,7 @@ async function loadLeaveTypes() {
                 leaveTypes.filter(t => t.is_active !== false && t.isActive !== false).forEach(type => {
                     // Backend returns leave_name in snake_case
                     const displayName = type.leave_name || type.name || type.leaveName || 'Unknown';
-                    select.innerHTML += `<option value="${type.id}">${displayName}</option>`;
+                    select.innerHTML += `<option value="${type.id}">${escapeHtml(displayName)}</option>`;
                 });
             }
         });
@@ -693,12 +693,12 @@ function updateMyLeaveTable(requests) {
 
     tbody.innerHTML = requests.map(req => `
         <tr>
-            <td>${req.leave_type_name || req.leaveTypeName || 'N/A'}</td>
+            <td>${escapeHtml(req.leave_type_name || req.leaveTypeName || 'N/A')}</td>
             <td>${formatDate(req.start_date || req.fromDate)}</td>
             <td>${formatDate(req.end_date || req.toDate)}</td>
-            <td>${req.total_days || req.numberOfDays || 'N/A'}</td>
-            <td class="reason-cell" title="${escapeHtml(req.reason)}">${truncate(req.reason, 30)}</td>
-            <td><span class="status-badge status-${req.status?.toLowerCase()}">${req.status}</span></td>
+            <td>${escapeHtml(String(req.total_days || req.numberOfDays || 'N/A'))}</td>
+            <td class="reason-cell" title="${escapeHtml(req.reason)}">${escapeHtml(truncate(req.reason, 30))}</td>
+            <td><span class="status-badge status-${escapeHtml(String(req.status || '').toLowerCase())}">${escapeHtml(req.status)}</span></td>
             <td>${formatDate(req.created_at || req.appliedOn)}</td>
             <td>
                 <div class="action-buttons">
@@ -830,19 +830,19 @@ function renderLeaveRequestsRows(requests) {
         <tr>
             <td class="employee-cell">
                 <div class="employee-info">
-                    <div class="avatar">${getInitials(employeeName)}</div>
+                    <div class="avatar">${escapeHtml(getInitials(employeeName))}</div>
                     <div class="details">
-                        <span class="name">${employeeName}${isOwnRequest ? ' (You)' : ''}</span>
-                        <span class="email">${employeeEmail}</span>
+                        <span class="name">${escapeHtml(employeeName)}${isOwnRequest ? ' (You)' : ''}</span>
+                        <span class="email">${escapeHtml(employeeEmail)}</span>
                     </div>
                 </div>
             </td>
-            <td>${leaveTypeName}</td>
+            <td>${escapeHtml(leaveTypeName)}</td>
             <td>${formatDate(startDate)}</td>
             <td>${formatDate(endDate)}</td>
-            <td>${totalDays}</td>
-            <td class="reason-cell" title="${escapeHtml(req.reason)}">${truncate(req.reason, 25)}</td>
-            <td><span class="status-badge status-${status.toLowerCase()}">${status}</span></td>
+            <td>${escapeHtml(String(totalDays))}</td>
+            <td class="reason-cell" title="${escapeHtml(req.reason)}">${escapeHtml(truncate(req.reason, 25))}</td>
+            <td><span class="status-badge status-${escapeHtml(status.toLowerCase())}">${escapeHtml(status)}</span></td>
             <td>
                 <div class="action-buttons">
                     ${canApprove ? `
@@ -924,7 +924,7 @@ function transformLeaveBalancesToAggregated(rawBalances) {
         thead.innerHTML = `<tr>
             <th class="text-left">Employee</th>
             <th>Department</th>
-            ${leaveTypeColumns.map(lt => `<th>${lt.name}</th>`).join('')}
+            ${leaveTypeColumns.map(lt => `<th>${escapeHtml(lt.name)}</th>`).join('')}
             <th>Actions</th>
         </tr>`;
     }
@@ -1025,14 +1025,14 @@ function renderLeaveBalanceRows(balances) {
         <tr>
             <td class="employee-cell text-left">
                 <div class="employee-info">
-                    <div class="avatar">${getInitials(employeeName)}</div>
+                    <div class="avatar">${escapeHtml(getInitials(employeeName))}</div>
                     <div class="details">
-                        <span class="name">${employeeName}</span>
+                        <span class="name">${escapeHtml(employeeName)}</span>
                     </div>
                 </div>
             </td>
-            <td>${departmentName}</td>
-            ${leaveTypeColumns.map(lt => `<td>${emp.balances[lt.code] ?? '-'}</td>`).join('')}
+            <td>${escapeHtml(departmentName)}</td>
+            ${leaveTypeColumns.map(lt => `<td>${escapeHtml(String(emp.balances[lt.code] ?? '-'))}</td>`).join('')}
             <td>
                 <div class="action-buttons">
                     <button class="action-btn" onclick="viewEmployeeBalance('${employeeId}')" title="View Details">
@@ -1119,12 +1119,12 @@ function renderLeaveTypesRows(filtered) {
 
         return `
         <tr>
-            <td><strong>${type.leave_name}</strong></td>
-            <td><code>${type.leave_code}</code></td>
-            <td>${countryDisplay}</td>
-            <td>${type.default_days_per_year}</td>
+            <td><strong>${escapeHtml(type.leave_name)}</strong></td>
+            <td><code>${escapeHtml(type.leave_code)}</code></td>
+            <td>${escapeHtml(countryDisplay)}</td>
+            <td>${escapeHtml(String(type.default_days_per_year))}</td>
             <td>${type.carry_forward_enabled ? 'Yes' : 'No'}</td>
-            <td>${type.max_carry_forward_days ?? '-'}</td>
+            <td>${escapeHtml(String(type.max_carry_forward_days ?? '-'))}</td>
             <td>${type.is_paid ? 'Yes' : 'No'}</td>
             <td>${type.prorate_on_joining ? 'Yes' : 'No'}</td>
             <td><span class="status-badge status-${type.is_active ? 'active' : 'inactive'}">${type.is_active ? 'Active' : 'Inactive'}</span></td>
@@ -1190,7 +1190,7 @@ async function loadDepartments() {
             const element = document.getElementById(id);
             if (element && element.tagName === 'SELECT') {
                 element.innerHTML = deptOptions
-                    .map(opt => `<option value="${opt.value}">${opt.label}</option>`)
+                    .map(opt => `<option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>`)
                     .join('');
             }
         });
@@ -1333,10 +1333,10 @@ function displayEmployeeList(empList, append = false) {
                  data-employee-id="${emp.id}"
                  onclick="selectEmployee('${emp.id}')">
                 <div class="employee-info-compact">
-                    <span class="employee-name-compact">${fullName}</span>
+                    <span class="employee-name-compact">${escapeHtml(fullName)}</span>
                     <div class="employee-meta-compact">
-                        <span class="employee-email-compact">${email}</span>
-                        ${deptName ? `<span class="employee-dept-compact">${deptName}</span>` : ''}
+                        <span class="employee-email-compact">${escapeHtml(email)}</span>
+                        ${deptName ? `<span class="employee-dept-compact">${escapeHtml(deptName)}</span>` : ''}
                     </div>
                 </div>
             </div>
@@ -1817,19 +1817,19 @@ async function viewLeaveDetails(requestId) {
         document.getElementById('leaveDetails').innerHTML = `
             <div class="leave-detail-card">
                 <div class="leave-detail-header">
-                    <div class="leave-type-badge">${leaveTypeName}</div>
-                    <span class="status-badge status-${status.toLowerCase()}">${status}</span>
+                    <div class="leave-type-badge">${escapeHtml(leaveTypeName)}</div>
+                    <span class="status-badge status-${escapeHtml(status.toLowerCase())}">${escapeHtml(status)}</span>
                 </div>
 
                 <div class="leave-detail-grid">
                     <div class="leave-detail-row">
                         <div class="leave-detail-item">
                             <span class="detail-label">Employee</span>
-                            <span class="detail-value">${employeeName}</span>
+                            <span class="detail-value">${escapeHtml(employeeName)}</span>
                         </div>
                         <div class="leave-detail-item">
                             <span class="detail-label">Duration</span>
-                            <span class="detail-value">${numberOfDays} day${numberOfDays !== 1 ? 's' : ''}</span>
+                            <span class="detail-value">${escapeHtml(String(numberOfDays))} day${numberOfDays !== 1 ? 's' : ''}</span>
                         </div>
                     </div>
 
@@ -1858,7 +1858,7 @@ async function viewLeaveDetails(requestId) {
                     <div class="leave-detail-row full-width">
                         <div class="leave-detail-item">
                             <span class="detail-label">Reason</span>
-                            <span class="detail-value reason-text">${reason || '-'}</span>
+                            <span class="detail-value reason-text">${escapeHtml(reason) || '-'}</span>
                         </div>
                     </div>
 
@@ -1866,7 +1866,7 @@ async function viewLeaveDetails(requestId) {
                     <div class="leave-detail-row full-width">
                         <div class="leave-detail-item">
                             <span class="detail-label">Contact During Leave</span>
-                            <span class="detail-value">${contactDuringLeave}</span>
+                            <span class="detail-value">${escapeHtml(contactDuringLeave)}</span>
                         </div>
                     </div>
                     ` : ''}
@@ -1876,7 +1876,7 @@ async function viewLeaveDetails(requestId) {
                     <div class="leave-detail-row">
                         <div class="leave-detail-item">
                             <span class="detail-label">${status.toLowerCase() === 'approved' ? 'Approved' : 'Reviewed'} By</span>
-                            <span class="detail-value">${approverName || approvedBy}</span>
+                            <span class="detail-value">${escapeHtml(approverName || approvedBy)}</span>
                         </div>
                         <div class="leave-detail-item">
                             <span class="detail-label">${status.toLowerCase() === 'approved' ? 'Approved' : 'Reviewed'} On</span>
@@ -1889,7 +1889,7 @@ async function viewLeaveDetails(requestId) {
                     <div class="leave-detail-row full-width">
                         <div class="leave-detail-item">
                             <span class="detail-label">${status.toLowerCase() === 'rejected' ? 'Rejection Reason' : 'Comments'}</span>
-                            <span class="detail-value reason-text">${comments}</span>
+                            <span class="detail-value reason-text">${escapeHtml(comments)}</span>
                         </div>
                     </div>
                     ` : ''}
@@ -2055,8 +2055,8 @@ async function viewEmployeeBalance(employeeId) {
             return `
                 <div class="balance-card">
                     <div class="balance-card-header">
-                        <span class="leave-type-name">${leaveTypeName}</span>
-                        <span class="leave-type-code">${leaveTypeCode}</span>
+                        <span class="leave-type-name">${escapeHtml(leaveTypeName)}</span>
+                        <span class="leave-type-code">${escapeHtml(leaveTypeCode)}</span>
                     </div>
                     <div class="balance-card-body">
                         <div class="balance-main">
@@ -2098,15 +2098,15 @@ async function viewEmployeeBalance(employeeId) {
             <div class="employee-balance-card compact">
                 <div class="employee-balance-header compact">
                     ${profilePhotoUrl ?
-                        `<img src="${profilePhotoUrl}" class="employee-avatar-img-modal" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" alt="${employeeName}">
-                         <div class="employee-avatar-modal" style="display:none;">${getInitials(employeeName)}</div>` :
-                        `<div class="employee-avatar-modal">${getInitials(employeeName)}</div>`
+                        `<img src="${profilePhotoUrl}" class="employee-avatar-img-modal" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" alt="${escapeHtml(employeeName)}">
+                         <div class="employee-avatar-modal" style="display:none;">${escapeHtml(getInitials(employeeName))}</div>` :
+                        `<div class="employee-avatar-modal">${escapeHtml(getInitials(employeeName))}</div>`
                     }
                     <div class="employee-info-modal">
-                        <span class="employee-name-modal">${employeeName}</span>
-                        <span class="department-badge-modal">${departmentName}</span>
+                        <span class="employee-name-modal">${escapeHtml(employeeName)}</span>
+                        <span class="department-badge-modal">${escapeHtml(departmentName)}</span>
                     </div>
-                    <div class="year-badge-modal">${year}</div>
+                    <div class="year-badge-modal">${escapeHtml(String(year))}</div>
                 </div>
                 <div class="balance-cards-grid compact">
                     ${balanceCardsHtml}
@@ -2212,7 +2212,7 @@ async function showEncashLeaveModal() {
         } else {
             encashableBalances.forEach(b => {
                 if (b.encashable_days > 0) {
-                    select.innerHTML += `<option value="${b.leave_type_id}" data-balance="${b.encashable_days}" data-rate="${b.daily_rate || 0}">${b.leave_type_name} (${b.encashable_days} days available)</option>`;
+                    select.innerHTML += `<option value="${b.leave_type_id}" data-balance="${b.encashable_days}" data-rate="${b.daily_rate || 0}">${escapeHtml(b.leave_type_name)} (${b.encashable_days} days available)</option>`;
                 }
             });
 

@@ -615,9 +615,14 @@
         if (p.openings > 1) metaBits.push(`${p.openings} openings`);
         if (fieldCount) metaBits.push(`${fieldCount} form field${fieldCount === 1 ? '' : 's'}`);
 
-        // p.description is HTML (Quill output). Render directly. Source is the
-        // tenant's own admin UI — same trust boundary as everything else here.
-        const desc = p.description ? `<div class="rec-description-rendered">${p.description}</div>` : '';
+        // p.description is HTML (Quill output). Sanitize via DOMPurify (loaded
+        // from CDN in recruitment.html) before innerHTML insertion — any HR who
+        // pastes raw `<img src=x onerror=...>` from a Word doc would otherwise
+        // get persistent XSS against every reader of the posting drawer.
+        const descSafe = p.description
+            ? (typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(p.description) : '')
+            : '';
+        const desc = descSafe ? `<div class="rec-description-rendered">${descSafe}</div>` : '';
 
         document.getElementById('detailPostingCard').innerHTML = `
             <div class="rec-posting-top">

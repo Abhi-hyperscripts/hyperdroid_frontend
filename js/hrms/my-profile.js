@@ -185,8 +185,8 @@ async function loadBankAccounts() {
                     <div class="bank-name">${escapeHtml(acc.bank_name || '--')}</div>
                     <div class="account-number">A/C: ${maskAccountNumber(acc.account_number)}</div>
                     <div class="bank-meta">
-                        <span>IFSC: ${acc.ifsc_code || '--'}</span>
-                        <span>Branch: ${acc.branch_name || '--'}</span>
+                        <span>IFSC: ${escapeHtml(acc.ifsc_code || '--')}</span>
+                        <span>Branch: ${escapeHtml(acc.branch_name || '--')}</span>
                     </div>
                 </div>
             </div>
@@ -251,7 +251,7 @@ async function loadDocuments() {
                             ${getDocumentIcon(doc.document_type)}
                         </div>
                         <div class="document-info">
-                            <span class="document-name">${formatDocumentType(doc.document_type)}</span>
+                            <span class="document-name">${escapeHtml(formatDocumentType(doc.document_type))}</span>
                             <span class="document-status ${doc.is_verified ? 'verified' : 'pending'}">
                                 ${doc.is_verified ? 'Verified' : 'Pending Verification'}
                             </span>
@@ -299,13 +299,13 @@ async function loadUpdateRequests() {
         container.innerHTML = requests.map(req => `
             <div class="update-request-item">
                 <div class="request-header">
-                    <span class="request-type">${formatRequestType(req.request_type)}</span>
-                    <span class="request-status status-${req.status}">${capitalizeFirst(req.status)}</span>
+                    <span class="request-type">${escapeHtml(formatRequestType(req.request_type))}</span>
+                    <span class="request-status status-${escapeHtml(req.status)}">${escapeHtml(capitalizeFirst(req.status))}</span>
                 </div>
                 <div class="request-details">
                     <div class="request-field">
                         <span class="field-label">Field:</span>
-                        <span class="field-value">${formatFieldName(req.field_name)}</span>
+                        <span class="field-value">${escapeHtml(formatFieldName(req.field_name))}</span>
                     </div>
                     <div class="request-field">
                         <span class="field-label">Current:</span>
@@ -378,7 +378,7 @@ function openUpdateRequestModal(requestType) {
     // Populate field options
     const fields = fieldMappings[requestType] || [];
     fieldSelect.innerHTML = '<option value="">Select field...</option>' +
-        fields.map(f => `<option value="${f.value}" data-key="${f.dataKey}">${f.label}</option>`).join('');
+        fields.map(f => `<option value="${escapeHtml(f.value)}" data-key="${escapeHtml(f.dataKey)}">${escapeHtml(f.label)}</option>`).join('');
 
     // Clear form
     document.getElementById('currentValue').value = '';
@@ -686,8 +686,8 @@ function createMyNfcCardElement(card) {
             </svg>
         </div>
         <div class="card-details">
-            <div class="card-uid">${formatNfcCardUid(card.card_uid)}</div>
-            <div class="card-label">${card.card_label || 'Access Card'}</div>
+            <div class="card-uid">${escapeHtml(formatNfcCardUid(card.card_uid))}</div>
+            <div class="card-label">${escapeHtml(card.card_label || 'Access Card')}</div>
             <div class="card-badges">
                 <span class="badge ${statusClass}">${statusText}</span>
                 ${primaryBadge}

@@ -367,7 +367,7 @@ function renderAttendanceRows(attendance) {
 
     tbody.innerHTML = attendance.map(a => {
         // Build status display - show Late badge if late_by_minutes > 0
-        let statusHtml = `<span class="status-badge ${escapeHtml(a.status)}">${capitalizeFirst(a.status)}</span>`;
+        let statusHtml = `<span class="status-badge ${escapeHtml(a.status)}">${escapeHtml(capitalizeFirst(a.status))}</span>`;
         if (a.late_by_minutes > 0) {
             const lateText = a.late_by_minutes >= 60
                 ? `${Math.floor(a.late_by_minutes / 60)}h ${a.late_by_minutes % 60}m`
@@ -387,7 +387,7 @@ function renderAttendanceRows(attendance) {
             <td>${formatTime(a.check_out_time)}</td>
             <td>${a.total_hours ? a.total_hours.toFixed(1) + 'h' : '-'}</td>
             <td>${statusHtml}</td>
-            <td>${capitalizeFirst(a.attendance_type) || '-'}</td>
+            <td>${escapeHtml(capitalizeFirst(a.attendance_type)) || '-'}</td>
         </tr>
     `;
     }).join('');
@@ -479,7 +479,7 @@ function renderRegularizationRows(filtered) {
             <td>${formatTime(r.requested_check_in)}</td>
             <td>${formatTime(r.requested_check_out)}</td>
             <td class="reason-cell">${escapeHtml(r.reason) || '-'}</td>
-            <td><span class="status-badge ${escapeHtml(r.status)}">${capitalizeFirst(r.status)}</span></td>
+            <td><span class="status-badge ${escapeHtml(r.status)}">${escapeHtml(capitalizeFirst(r.status))}</span></td>
             <td>
                 ${r.status?.toLowerCase() === 'pending' && canApprove ? `
                     <div class="action-buttons">
@@ -581,7 +581,7 @@ function renderOvertimeRows(filtered) {
             <td>${formatTime(r.planned_end_time)}</td>
             <td class="reason-cell">${escapeHtml(r.reason) || '-'}</td>
             <td>${escapeHtml(r.task_project) || '-'}</td>
-            <td><span class="status-badge status-${r.status?.toLowerCase()}">${capitalizeFirst(r.status)}</span></td>
+            <td><span class="status-badge status-${escapeHtml(String(r.status || '').toLowerCase())}">${escapeHtml(capitalizeFirst(r.status))}</span></td>
             <td>
                 ${r.status?.toLowerCase() === 'pending' && canApprove ? `
                     <div class="action-buttons">
@@ -636,7 +636,7 @@ async function loadMyAttendance() {
                 <td>${formatTime(a.check_in_time)}</td>
                 <td>${formatTime(a.check_out_time)}</td>
                 <td>${a.total_hours ? a.total_hours.toFixed(1) + 'h' : '-'}</td>
-                <td><span class="status-badge ${a.status}">${capitalizeFirst(a.status)}</span></td>
+                <td><span class="status-badge ${escapeHtml(a.status)}">${escapeHtml(capitalizeFirst(a.status))}</span></td>
             </tr>
         `).join('');
 
@@ -664,7 +664,7 @@ async function loadRegularizations() {
                 <td>${formatTime(r.requested_check_in)}</td>
                 <td>${formatTime(r.requested_check_out)}</td>
                 <td>${escapeHtml(r.reason) || '-'}</td>
-                <td><span class="status-badge ${escapeHtml(r.status)}">${capitalizeFirst(r.status)}</span></td>
+                <td><span class="status-badge ${escapeHtml(r.status)}">${escapeHtml(capitalizeFirst(r.status))}</span></td>
                 <td>
                     ${r.status === 'pending' ? `
                         <button class="action-btn danger" onclick="cancelRegularization('${r.id}')" data-tooltip="Cancel">
@@ -703,7 +703,7 @@ async function loadOvertimeRequests() {
                 <td>${formatTime(r.planned_end_time)}</td>
                 <td>${r.actual_start_time ? formatTime(r.actual_start_time) : '-'}</td>
                 <td>${r.actual_end_time ? formatTime(r.actual_end_time) : '-'}</td>
-                <td><span class="status-badge status-${r.status?.toLowerCase()}">${capitalizeFirst(r.status)}</span></td>
+                <td><span class="status-badge status-${escapeHtml(String(r.status || '').toLowerCase())}">${escapeHtml(capitalizeFirst(r.status))}</span></td>
                 <td>
                     ${r.status?.toLowerCase() === 'approved' ? `
                     <button class="action-btn primary" onclick="openCompleteOvertimeModal('${r.id}')" data-tooltip="Mark Complete">

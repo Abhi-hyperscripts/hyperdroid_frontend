@@ -126,7 +126,7 @@ function renderAnnouncements() {
                 ` : ''}
             </div>
             <h2>${escapeHtml(a.title)}</h2>
-            <div class="announcement-card-content">${a.content}</div>
+            <div class="announcement-card-content" style="white-space: pre-wrap">${escapeHtml(a.content || '')}</div>
             <div class="announcement-card-footer">
                 <div class="announcement-meta">
                     <span>${formatDate(a.publish_date)}</span>

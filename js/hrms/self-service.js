@@ -1032,11 +1032,11 @@ async function loadAnnouncements() {
         container.innerHTML = announcements.map(a => `
             <div class="ess-announcement-item ${a.is_read ? '' : 'unread'}" onclick="viewAnnouncement('${a.id}')">
                 <div class="announcement-header">
-                    <span class="announcement-priority ${a.priority || 'normal'}">${a.priority || 'Normal'}</span>
+                    <span class="announcement-priority ${escapeHtml(a.priority || 'normal')}">${escapeHtml(a.priority || 'Normal')}</span>
                     <span class="announcement-date">${formatDate(a.publish_date)}</span>
                 </div>
                 <h4 class="announcement-title">${escapeHtml(a.title)}</h4>
-                <p class="announcement-preview">${truncateText(a.content, 100)}</p>
+                <p class="announcement-preview">${escapeHtml(truncateText(a.content, 100))}</p>
             </div>
         `).join('');
 
@@ -1101,7 +1101,7 @@ async function loadUpcomingHolidays() {
                 </div>
                 <div class="ess-upcoming-info">
                     <span class="ess-upcoming-name">${escapeHtml(h.holiday_name)}</span>
-                    <span class="ess-upcoming-detail">${h.holiday_type || ''}</span>
+                    <span class="ess-upcoming-detail">${escapeHtml(h.holiday_type || '')}</span>
                 </div>
             </div>
         `).join('');
@@ -1132,8 +1132,8 @@ async function loadUpcomingBirthdays() {
             <div class="ess-upcoming-item">
                 <div class="ess-upcoming-avatar">
                     ${b.profile_photo_url
-                        ? `<img src="${b.profile_photo_url}" alt="${b.first_name}">`
-                        : `<span>${getInitials(b.first_name, b.last_name)}</span>`
+                        ? `<img src="${encodeURI(b.profile_photo_url)}" alt="${escapeHtml(b.first_name)}">`
+                        : `<span>${escapeHtml(getInitials(b.first_name, b.last_name))}</span>`
                     }
                 </div>
                 <div class="ess-upcoming-info">
@@ -1169,8 +1169,8 @@ async function loadUpcomingAnniversaries() {
             <div class="ess-upcoming-item">
                 <div class="ess-upcoming-avatar">
                     ${a.profile_photo_url
-                        ? `<img src="${a.profile_photo_url}" alt="${a.first_name}">`
-                        : `<span>${getInitials(a.first_name, a.last_name)}</span>`
+                        ? `<img src="${encodeURI(a.profile_photo_url)}" alt="${escapeHtml(a.first_name)}">`
+                        : `<span>${escapeHtml(getInitials(a.first_name, a.last_name))}</span>`
                     }
                 </div>
                 <div class="ess-upcoming-info">
@@ -1423,7 +1423,7 @@ async function loadMyAttendance() {
                     <td>${checkIn}</td>
                     <td>${checkOut}</td>
                     <td>${hours}</td>
-                    <td><span class="status-badge status-${status}">${capitalizeFirst(status)}</span></td>
+                    <td><span class="status-badge status-${escapeHtml(status)}">${escapeHtml(capitalizeFirst(status))}</span></td>
                 </tr>
             `;
         }).join('');
@@ -1464,7 +1464,7 @@ async function loadRegularizationRequests() {
                     <td>${checkIn}</td>
                     <td>${checkOut}</td>
                     <td>${escapeHtml(truncateText(r.reason, 50))}</td>
-                    <td><span class="status-badge status-${status}">${capitalizeFirst(status)}</span></td>
+                    <td><span class="status-badge status-${escapeHtml(status)}">${escapeHtml(capitalizeFirst(status))}</span></td>
                     <td>
                         ${status === 'pending' ? `<button class="action-btn" onclick="cancelRegularization('${r.id}')" title="Cancel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : '--'}
                     </td>
@@ -1507,7 +1507,7 @@ async function loadOvertimeRequests() {
                     <td>${formatTime(r.planned_end_time)}</td>
                     <td>${formatTime(r.actual_start_time)}</td>
                     <td>${formatTime(r.actual_end_time)}</td>
-                    <td><span class="status-badge status-${status}">${capitalizeFirst(status)}</span></td>
+                    <td><span class="status-badge status-${escapeHtml(status)}">${escapeHtml(capitalizeFirst(status))}</span></td>
                     <td>
                         ${status === 'approved' && !r.actual_start_time ? `<button class="action-btn" onclick="openCompleteOvertimeModal('${r.id}')" title="Complete">Complete</button>` : '--'}
                     </td>
@@ -1579,9 +1579,9 @@ async function loadMyLeaves() {
                     <td>${escapeHtml(r.leave_type_name || r.leaveTypeName || 'Leave')}</td>
                     <td>${formatDate(r.start_date || r.from_date || r.fromDate)}</td>
                     <td>${formatDate(r.end_date || r.to_date || r.toDate)}</td>
-                    <td>${r.total_days || r.totalDays || 1}</td>
+                    <td>${escapeHtml(String(r.total_days || r.totalDays || 1))}</td>
                     <td>${escapeHtml(truncateText(r.reason, 30))}</td>
-                    <td><span class="status-badge status-${reqStatus}">${capitalizeFirst(reqStatus)}</span></td>
+                    <td><span class="status-badge status-${escapeHtml(reqStatus)}">${escapeHtml(capitalizeFirst(reqStatus))}</span></td>
                     <td>
                         <div style="display: flex; gap: 8px; align-items: center; justify-content: center;">
                             <button class="action-btn" onclick="viewLeaveRequest('${r.id}')" title="View">
@@ -1702,9 +1702,9 @@ async function loadTeamApprovals() {
                     <td>${escapeHtml(r.leave_type_name || r.leaveTypeName || 'Leave')}</td>
                     <td>${formatDate(r.start_date || r.from_date || r.fromDate)}</td>
                     <td>${formatDate(r.end_date || r.to_date || r.toDate)}</td>
-                    <td>${r.total_days || r.totalDays || 1}</td>
+                    <td>${escapeHtml(String(r.total_days || r.totalDays || 1))}</td>
                     <td>${escapeHtml(truncateText(r.reason, 30))}</td>
-                    <td><span class="status-badge status-${reqStatus}">${capitalizeFirst(reqStatus)}</span></td>
+                    <td><span class="status-badge status-${escapeHtml(reqStatus)}">${escapeHtml(capitalizeFirst(reqStatus))}</span></td>
                     <td>
                         <div style="display: flex; gap: 8px; align-items: center; justify-content: center;">
                             ${isPending ? `
@@ -1814,11 +1814,11 @@ async function viewLeaveRequest(requestId) {
                         <div class="ess-detail-row">
                             <div class="ess-detail-group">
                                 <label>Total Days</label>
-                                <p>${r.total_days ?? r.days ?? 0}</p>
+                                <p>${escapeHtml(String(r.total_days ?? r.days ?? 0))}</p>
                             </div>
                             <div class="ess-detail-group">
                                 <label>Status</label>
-                                <p><span class="ess-badge ${statusClass}">${status.charAt(0).toUpperCase() + status.slice(1)}</span></p>
+                                <p><span class="ess-badge ${statusClass}">${escapeHtml(status.charAt(0).toUpperCase() + status.slice(1))}</span></p>
                             </div>
                         </div>
                         <div class="ess-detail-group">
@@ -1828,7 +1828,7 @@ async function viewLeaveRequest(requestId) {
                         ${r.half_day ? `
                         <div class="ess-detail-group">
                             <label>Half Day</label>
-                            <p>${r.half_day_type || 'Yes'}</p>
+                            <p>${escapeHtml(r.half_day_type || 'Yes')}</p>
                         </div>
                         ` : ''}
                         ${r.approved_by || r.rejected_by ? `
@@ -2036,7 +2036,7 @@ async function loadHolidays() {
                     </div>
                     <div class="holiday-info">
                         <span class="holiday-name">${escapeHtml(h.holiday_name || h.name)}</span>
-                        <span class="holiday-type">${h.holiday_type || h.type || 'Public Holiday'}</span>
+                        <span class="holiday-type">${escapeHtml(h.holiday_type || h.type || 'Public Holiday')}</span>
                     </div>
                 </div>
             `;
@@ -2163,7 +2163,7 @@ async function loadMeetings() {
                         ${meeting.notes ? `<div class="ess-meeting-notes">${escapeHtml(meeting.notes)}</div>` : ''}
                     </div>
                     <div class="ess-meeting-actions">
-                        <span class="ess-status-badge ${statusClass}">${statusLabel}</span>
+                        <span class="ess-status-badge ${statusClass}">${escapeHtml(statusLabel)}</span>
                         ${meeting.status === 'scheduled' || meeting.status === 'active' ? `
                             <a href="/pages/vision/lobby.html?meetingId=${meeting.join_id}" target="_blank" class="btn btn-primary btn-sm">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2215,8 +2215,8 @@ async function loadMyProfile() {
                 <div class="profile-photo-section">
                     <div class="profile-photo-large">
                         ${emp.profile_photo_url
-                            ? `<img src="${emp.profile_photo_url}" alt="${emp.first_name}">`
-                            : `<span class="photo-initials">${getInitials(emp.first_name, emp.last_name)}</span>`
+                            ? `<img src="${encodeURI(emp.profile_photo_url)}" alt="${escapeHtml(emp.first_name)}">`
+                            : `<span class="photo-initials">${escapeHtml(getInitials(emp.first_name, emp.last_name))}</span>`
                         }
                     </div>
                     <h2>${escapeHtml(emp.first_name)} ${escapeHtml(emp.last_name || '')}</h2>
@@ -2231,7 +2231,7 @@ async function loadMyProfile() {
                             <div class="info-item"><label>Email</label><span>${escapeHtml(emp.work_email || emp.email || '--')}</span></div>
                             <div class="info-item"><label>Phone</label><span>${escapeHtml(emp.work_phone || emp.phone || '--')}</span></div>
                             <div class="info-item"><label>Date of Birth</label><span>${formatDate(emp.date_of_birth) || '--'}</span></div>
-                            <div class="info-item"><label>Gender</label><span>${capitalizeFirst(emp.gender) || '--'}</span></div>
+                            <div class="info-item"><label>Gender</label><span>${escapeHtml(capitalizeFirst(emp.gender)) || '--'}</span></div>
                         </div>
                     </div>
                     <div class="profile-section">
@@ -2242,7 +2242,7 @@ async function loadMyProfile() {
                             <div class="info-item"><label>Department</label><span>${escapeHtml(emp.department_name || '--')}</span></div>
                             <div class="info-item"><label>Designation</label><span>${escapeHtml(emp.designation_name || '--')}</span></div>
                             <div class="info-item"><label>Reporting To</label><span>${escapeHtml(emp.manager_name || '--')}</span></div>
-                            <div class="info-item"><label>Employment Type</label><span>${capitalizeFirst(emp.employment_type) || 'Full-time'}</span></div>
+                            <div class="info-item"><label>Employment Type</label><span>${escapeHtml(capitalizeFirst(emp.employment_type)) || 'Full-time'}</span></div>
                         </div>
                     </div>
                 </div>
@@ -2579,7 +2579,7 @@ function formatLoanTypeBadge(type) {
         'emergency_loan': 'Emergency Loan'
     };
     const label = types[type] || capitalizeFirst(type.replace(/_/g, ' '));
-    return `<span class="type-badge earning">${label}</span>`;
+    return `<span class="type-badge earning">${escapeHtml(label)}</span>`;
 }
 
 /**
@@ -2594,7 +2594,7 @@ function getLoanStatusBadge(status) {
         'rejected': '<span class="status-badge rejected">Rejected</span>',
         'cancelled': '<span class="status-badge inactive">Cancelled</span>'
     };
-    return badges[status] || `<span class="status-badge">${capitalizeFirst(status)}</span>`;
+    return badges[status] || `<span class="status-badge">${escapeHtml(capitalizeFirst(status))}</span>`;
 }
 
 /**
@@ -2688,7 +2688,7 @@ function getReimbursementStatusBadge(status) {
         'rejected': '<span class="status-badge rejected">Rejected</span>',
         'applied': '<span class="status-badge processing">Applied</span>'
     };
-    return badges[status] || `<span class="status-badge">${capitalizeFirst(status)}</span>`;
+    return badges[status] || `<span class="status-badge">${escapeHtml(capitalizeFirst(status))}</span>`;
 }
 
 /**
@@ -2764,15 +2764,15 @@ function renderDirectoryPage() {
             <div class="ess-directory-card">
                 <div class="ess-directory-avatar">
                     ${e.profile_photo_url
-                        ? `<img src="${e.profile_photo_url}" alt="${displayName}">`
-                        : `<span>${getInitials(firstName, lastName)}</span>`
+                        ? `<img src="${encodeURI(e.profile_photo_url)}" alt="${escapeHtml(displayName)}">`
+                        : `<span>${escapeHtml(getInitials(firstName, lastName))}</span>`
                     }
                 </div>
                 <div class="ess-directory-info">
                     <h4 class="ess-directory-name">${escapeHtml(displayName)}</h4>
                     <p class="ess-directory-role">${escapeHtml(e.designation || e.designation_name || 'Employee')}</p>
                     <p class="ess-directory-dept">${escapeHtml(e.department || e.department_name || '')}</p>
-                    ${e.work_email ? `<a href="mailto:${e.work_email}" class="ess-directory-email">${escapeHtml(e.work_email)}</a>` : ''}
+                    ${e.work_email ? `<a href="mailto:${encodeURIComponent(e.work_email)}" class="ess-directory-email">${escapeHtml(e.work_email)}</a>` : ''}
                 </div>
             </div>
         `}).join('');
@@ -2844,11 +2844,11 @@ async function loadAnnouncementsFull() {
         container.innerHTML = announcements.map(a => `
             <div class="ess-announcement-full ${a.is_read ? '' : 'unread'}">
                 <div class="announcement-meta">
-                    <span class="announcement-priority ${a.priority || 'normal'}">${a.priority || 'Normal'}</span>
+                    <span class="announcement-priority ${escapeHtml(a.priority || 'normal')}">${escapeHtml(a.priority || 'Normal')}</span>
                     <span class="announcement-date">${formatDate(a.publish_date)}</span>
                 </div>
                 <h3>${escapeHtml(a.title)}</h3>
-                <div class="announcement-content">${a.content || ''}</div>
+                <div class="announcement-content" style="white-space: pre-wrap">${escapeHtml(a.content || '')}</div>
             </div>
         `).join('');
 
@@ -2949,12 +2949,12 @@ function updateMyPayslipsTable(payslips) {
 
         return `
             <tr>
-                <td><strong>${getMonthName(month)} ${year}</strong></td>
+                <td><strong>${escapeHtml(getMonthName(month))} ${escapeHtml(String(year))}</strong></td>
                 <td>${formatPayslipDate(periodStart)} - ${formatPayslipDate(periodEnd)}</td>
                 <td>${formatCurrency(grossSalary)}</td>
                 <td>${formatCurrency(totalDeductions)}</td>
                 <td><strong>${formatCurrency(netSalary)}</strong></td>
-                <td><span class="status-badge status-${status.toLowerCase()}">${capitalizeFirst(status)}</span></td>
+                <td><span class="status-badge status-${escapeHtml(status.toLowerCase())}">${escapeHtml(capitalizeFirst(status))}</span></td>
                 <td>
                     <div class="action-buttons">
                         <button class="action-btn" onclick="viewPayslipEss('${slip.id}')" title="View Payslip">
@@ -3906,8 +3906,8 @@ async function loadDeclarations() {
                         </svg>
                     </span>
                     <div class="regime-info">
-                        <span class="regime-name">${regimeInfo.name}</span>
-                        <span class="regime-desc">${regimeInfo.description}</span>
+                        <span class="regime-name">${escapeHtml(regimeInfo.name)}</span>
+                        <span class="regime-desc">${escapeHtml(regimeInfo.description)}</span>
                     </div>
                 </div>
             </div>
@@ -3942,7 +3942,7 @@ async function loadDeclarations() {
                 </div>
                 <div class="summary-card">
                     <div class="summary-label">Tax Regime</div>
-                    <div class="summary-value">${regimeInfo.name}</div>
+                    <div class="summary-value">${escapeHtml(regimeInfo.name)}</div>
                 </div>
             </div>
         `;
@@ -4061,8 +4061,8 @@ async function openDeclarationModal() {
                 </div>
                 <div class="regime-info-content">
                     <div class="regime-info-label">Your Tax Regime</div>
-                    <div class="regime-info-value">${regimeInfo.name}</div>
-                    <div class="regime-info-desc">${regimeInfo.description}</div>
+                    <div class="regime-info-value">${escapeHtml(regimeInfo.name)}</div>
+                    <div class="regime-info-desc">${escapeHtml(regimeInfo.description)}</div>
                 </div>
             </div>
             <p class="regime-info-note">Tax regime is set by HR. Contact HR if you need to change it.</p>
@@ -5250,7 +5250,7 @@ function buildCalculationProofUIESS(proof, response) {
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-right: 8px; vertical-align: middle;">
                             <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                        Calculation - ${proof.employeeName || response.employee_name} (${proof.employeeCode || response.employee_code})
+                        Calculation - ${escapeHtml(proof.employeeName || response.employee_name)} (${escapeHtml(proof.employeeCode || response.employee_code)})
                     </h5>
                     <button class="close-btn" onclick="closeModal('calculationProofModal')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -5743,15 +5743,15 @@ function buildDeductionsSectionESS(proof, fmt) {
 
         const componentName = item.componentName || item.componentCode || '-';
         const jurisdictionLabel = item.jurisdictionName
-            ? `<span class="jurisdiction-label">(${item.jurisdictionName})</span>`
+            ? `<span class="jurisdiction-label">(${escapeHtml(item.jurisdictionName)})</span>`
             : '';
 
         return `
             <tr class="${eligibilityClass}">
                 <td class="component-name">
-                    ${componentName}
+                    ${escapeHtml(componentName)}
                     ${jurisdictionLabel}
-                    ${eligibilityReason ? `<span class="eligibility-reason" title="${eligibilityReason}">ℹ</span>` : ''}
+                    ${eligibilityReason ? `<span class="eligibility-reason" title="${escapeHtml(eligibilityReason)}">ℹ</span>` : ''}
                 </td>
                 <td class="text-center">
                     <span class="eligibility-badge ${isEligible ? 'eligible' : 'not-eligible'}">${eligibilityIcon}</span>
@@ -5809,16 +5809,16 @@ function buildVoluntaryDeductionsSectionESS(proof, fmt) {
     let rows = items.map(item => {
         const isProrated = item.isProrated === true;
         const proratedBadge = isProrated
-            ? `<span class="proration-badge" title="${formatProratedReasonESS(item.proratedReason)}">${(item.proratedFactor * 100).toFixed(0)}%</span>`
+            ? `<span class="proration-badge" title="${escapeHtml(formatProratedReasonESS(item.proratedReason))}">${(item.proratedFactor * 100).toFixed(0)}%</span>`
             : '';
 
         return `
             <tr>
                 <td class="component-name">
-                    ${item.deductionTypeName || '-'}
+                    ${escapeHtml(item.deductionTypeName || '-')}
                     ${proratedBadge}
                 </td>
-                <td class="text-center">${formatVoluntaryCategoryESS(item.category)}</td>
+                <td class="text-center">${escapeHtml(formatVoluntaryCategoryESS(item.category))}</td>
                 <td class="text-right amount-cell">${fmt(item.fullAmount)}</td>
                 <td class="text-right amount-cell ${isProrated ? 'prorated' : ''}">${fmt(item.deductedAmount)}</td>
             </tr>
@@ -5918,10 +5918,10 @@ function buildAdjustmentsSectionESS(proof, fmt) {
                         <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 4px;">
                             <path d="M12 4v16m8-8H4"/>
                         </svg>
-                        ${item.displayType || formatAdjType(item.adjustmentType)}
+                        ${escapeHtml(item.displayType || formatAdjType(item.adjustmentType))}
                     </span>
                 </td>
-                <td class="text-left" style="font-size: 0.85rem; color: var(--text-secondary);">${item.reason || '-'}</td>
+                <td class="text-left" style="font-size: 0.85rem; color: var(--text-secondary);">${escapeHtml(item.reason || '-')}</td>
                 <td class="text-right amount-cell addition-amount">+${fmt(item.amount)}</td>
             </tr>
         `).join('') :
@@ -5935,10 +5935,10 @@ function buildAdjustmentsSectionESS(proof, fmt) {
                         <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 4px;">
                             <path d="M20 12H4"/>
                         </svg>
-                        ${item.displayType || formatAdjType(item.adjustmentType)}
+                        ${escapeHtml(item.displayType || formatAdjType(item.adjustmentType))}
                     </span>
                 </td>
-                <td class="text-left" style="font-size: 0.85rem; color: var(--text-secondary);">${item.reason || '-'}</td>
+                <td class="text-left" style="font-size: 0.85rem; color: var(--text-secondary);">${escapeHtml(item.reason || '-')}</td>
                 <td class="text-right amount-cell deduction-amount">-${fmt(item.amount)}</td>
             </tr>
         `).join('') :
@@ -6140,13 +6140,13 @@ function buildTaxCalculationSectionESS(proof, fmt, pct) {
                     <div class="rebate-section ${tax.rebate.isApplicable ? 'applicable' : 'not-applicable'}">
                         <div class="rebate-header">
                             <span class="rebate-icon">${tax.rebate.isApplicable ? '✓' : '✗'}</span>
-                            <span class="rebate-title">${tax.rebate.section || 'Tax Rebate'}</span>
+                            <span class="rebate-title">${escapeHtml(tax.rebate.section || 'Tax Rebate')}</span>
                         </div>
                         <div class="rebate-details">
                             <span>Threshold: ${fmt(tax.rebate.incomeThreshold)} | Max Rebate: ${fmt(tax.rebate.maxRebate)}</span>
                             ${tax.rebate.isApplicable ? `<span class="rebate-amount">Applied: ${fmt(tax.rebate.actualRebate)}</span>` : ''}
                         </div>
-                        ${tax.rebate.reason ? `<div class="rebate-reason">${tax.rebate.reason}</div>` : ''}
+                        ${tax.rebate.reason ? `<div class="rebate-reason">${escapeHtml(tax.rebate.reason)}</div>` : ''}
                     </div>
                 ` : ''}
 

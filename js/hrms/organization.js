@@ -848,7 +848,7 @@ function renderCountryOptions(filter = '') {
         <div class="dropdown-option ${c.value === selectedValue ? 'selected' : ''}"
              onclick="selectCountry('${escapeHtml(c.value)}', '${escapeHtml(c.code)}', '${c.id || ''}')">
             <span class="dropdown-option-text">${escapeHtml(c.value)}</span>
-            <span class="dropdown-option-subtext">${c.code}</span>
+            <span class="dropdown-option-subtext">${escapeHtml(c.code)}</span>
         </div>
     `).join('');
 }
@@ -935,7 +935,7 @@ function renderStateOptions(filter = '') {
         <div class="dropdown-option ${s.state_name === selectedValue ? 'selected' : ''}"
              onclick="selectState('${escapeHtml(s.state_name)}', '${escapeHtml(s.state_code || '')}', '${s.id || ''}')">
             <span class="dropdown-option-text">${escapeHtml(s.state_name)}</span>
-            <span class="dropdown-option-subtext">${s.state_code || ''}</span>
+            <span class="dropdown-option-subtext">${escapeHtml(s.state_code || '')}</span>
         </div>
     `).join('');
 }
@@ -3843,7 +3843,7 @@ function showBulkHolidayModal() {
         if (officeSelect && officeSelect.tagName === 'SELECT') {
             officeSelect.innerHTML = '<option value="">All Offices</option>';
             offices.forEach(office => {
-                officeSelect.innerHTML += `<option value="${office.id}">${office.office_name || office.name}</option>`;
+                officeSelect.innerHTML += `<option value="${escapeHtml(office.id)}">${escapeHtml(office.office_name || office.name)}</option>`;
             });
         }
     }
@@ -4024,7 +4024,7 @@ async function showBulkRosterModal() {
         if (shiftSelect && shiftSelect.tagName === 'SELECT') {
             shiftSelect.innerHTML = '<option value="">Select Shift</option>';
             shifts.forEach(shift => {
-                shiftSelect.innerHTML += `<option value="${shift.id}">${shift.shift_name || shift.name}</option>`;
+                shiftSelect.innerHTML += `<option value="${escapeHtml(shift.id)}">${escapeHtml(shift.shift_name || shift.name)}</option>`;
             });
         }
     }
@@ -4072,7 +4072,7 @@ async function showBulkRosterModal() {
         if (deptFilter && deptFilter.tagName === 'SELECT') {
             deptFilter.innerHTML = '<option value="">All Departments</option>';
             Array.from(deptGroupMap.values()).forEach(g => {
-                deptFilter.innerHTML += `<option value="${g.ids.join(',')}">${g.label}</option>`;
+                deptFilter.innerHTML += `<option value="${escapeHtml(g.ids.join(','))}">${escapeHtml(g.label)}</option>`;
             });
         }
     }

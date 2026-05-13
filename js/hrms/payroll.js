@@ -85,7 +85,7 @@ class PayrollSearchableDropdown {
         this.container.innerHTML = `
             <div class="searchable-dropdown" id="${this.id}">
                 <div class="searchable-dropdown-trigger" tabindex="0">
-                    <span class="dropdown-selection ${!displayText ? 'placeholder' : ''}">${displayText || this.placeholder}</span>
+                    <span class="dropdown-selection ${!displayText ? 'placeholder' : ''}">${escapeHtml(displayText || this.placeholder)}</span>
                     <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
@@ -96,7 +96,7 @@ class PayrollSearchableDropdown {
                             <circle cx="11" cy="11" r="8"/>
                             <path d="m21 21-4.35-4.35"/>
                         </svg>
-                        <input type="text" class="dropdown-search-input" placeholder="${this.searchPlaceholder}" autocomplete="off">
+                        <input type="text" class="dropdown-search-input" placeholder="${escapeHtml(this.searchPlaceholder)}" autocomplete="off">
                     </div>
                     <div class="dropdown-options">
                         ${this.renderOptions()}
@@ -1182,23 +1182,23 @@ function updatePayrollDraftsTable(draftsList) {
 
     tbody.innerHTML = draftsList.map(draft => `
         <tr>
-            <td><strong>${draft.draft_name || 'Draft'}</strong> #${draft.draft_number || 1}</td>
+            <td><strong>${escapeHtml(draft.draft_name || 'Draft')}</strong> #${draft.draft_number || 1}</td>
             <td>${getMonthName(draft.payroll_month)} ${draft.payroll_year}</td>
-            <td>${draft.office_name || 'All Offices'}</td>
+            <td>${escapeHtml(draft.office_name || 'All Offices')}</td>
             <td>${draft.total_employees || 0}</td>
             <td style="white-space:nowrap">${formatCurrency(draft.total_gross, draft.currency_code, draft.currency_symbol)}</td>
             <td style="white-space:nowrap">${formatCurrency(draft.total_net, draft.currency_code, draft.currency_symbol)}</td>
-            <td><span class="status-badge status-${draft.status?.toLowerCase()}">${formatDraftStatus(draft.status)}</span></td>
+            <td><span class="status-badge status-${escapeHtml(String(draft.status || '').toLowerCase())}">${escapeHtml(formatDraftStatus(draft.status))}</span></td>
             <td>${formatDate(draft.created_at)}</td>
             <td>
                 <div class="action-buttons">
                     ${draft.status === 'pending' ? `
-                    <button class="action-btn success" onclick="processDraft('${draft.id}')" title="Process All Employees">
+                    <button class="action-btn success" onclick="processDraft('${escapeHtml(draft.id)}')" title="Process All Employees">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polygon points="5 3 19 12 5 21 5 3"></polygon>
                         </svg>
                     </button>
-                    <button class="action-btn" onclick="showProcessSelectedModal('${draft.id}')" title="Process Selected Employees">
+                    <button class="action-btn" onclick="showProcessSelectedModal('${escapeHtml(draft.id)}')" title="Process Selected Employees">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                             <circle cx="8.5" cy="7" r="4"></circle>
@@ -1207,31 +1207,31 @@ function updatePayrollDraftsTable(draftsList) {
                     </button>
                     ` : ''}
                     ${draft.status === 'processed' ? `
-                    <button class="action-btn" onclick="viewDraftDetails('${draft.id}')" title="View Details">
+                    <button class="action-btn" onclick="viewDraftDetails('${escapeHtml(draft.id)}')" title="View Details">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                     </button>
-                    <button class="action-btn warning" onclick="recalculateDraft('${draft.id}')" title="Recalculate">
+                    <button class="action-btn warning" onclick="recalculateDraft('${escapeHtml(draft.id)}')" title="Recalculate">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="23 4 23 10 17 10"></polyline>
                             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                         </svg>
                     </button>
-                    <button class="action-btn success" onclick="finalizeDraft('${draft.id}')" title="Finalize Draft">
+                    <button class="action-btn success" onclick="finalizeDraft('${escapeHtml(draft.id)}')" title="Finalize Draft">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                     </button>
                     ` : ''}
-                    <button class="action-btn" onclick="renameDraft('${draft.id}', '${draft.draft_name || 'Draft'}')" title="Rename">
+                    <button class="action-btn" onclick="renameDraft('${escapeHtml(draft.id)}', '${escapeHtml(String(draft.draft_name || 'Draft').replace(/'/g, '&#39;'))}')" title="Rename">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
-                    <button class="action-btn danger" onclick="deleteDraft('${draft.id}')" title="Delete">
+                    <button class="action-btn danger" onclick="deleteDraft('${escapeHtml(draft.id)}')" title="Delete">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -1424,7 +1424,7 @@ async function showProcessSelectedModal(draftId) {
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
                 <p>Failed to load employees</p>
-                <small>${error.message || 'Please try again'}</small>
+                <small>${escapeHtml(error.message || 'Please try again')}</small>
             </div>
         `;
     }
@@ -1454,18 +1454,18 @@ function renderProcessSelectedEmployeeList() {
 
     container.innerHTML = processSelectedEmployees_filtered.map(emp => `
         <div class="employee-selection-item ${processSelectedEmployees_selected.has(emp.id) ? 'selected' : ''}"
-             onclick="toggleProcessSelectedEmployee('${emp.id}')">
+             onclick="toggleProcessSelectedEmployee('${escapeHtml(emp.id)}')">
             <div class="employee-checkbox">
-                <input type="checkbox" id="pse-emp-${emp.id}"
+                <input type="checkbox" id="pse-emp-${escapeHtml(emp.id)}"
                        ${processSelectedEmployees_selected.has(emp.id) ? 'checked' : ''}
-                       onchange="toggleProcessSelectedEmployee('${emp.id}', event)">
+                       onchange="toggleProcessSelectedEmployee('${escapeHtml(emp.id)}', event)">
             </div>
             <div class="employee-info">
-                <div class="employee-name">${emp.employee_name || 'Unknown'}</div>
+                <div class="employee-name">${escapeHtml(emp.employee_name || 'Unknown')}</div>
                 <div class="employee-details">
-                    <span class="emp-code">${emp.employee_code || '-'}</span>
+                    <span class="emp-code">${escapeHtml(emp.employee_code || '-')}</span>
                     <span class="separator">•</span>
-                    <span class="emp-dept">${emp.department_name || '-'}</span>
+                    <span class="emp-dept">${escapeHtml(emp.department_name || '-')}</span>
                 </div>
             </div>
             <div class="employee-salary">
@@ -1684,17 +1684,17 @@ async function viewDraftDetails(draftId) {
         } else {
             tbody.innerHTML = payslips.map(p => `
                 <tr class="draft-payslip-row"
-                    data-code="${(p.employee_code || '').toLowerCase()}"
-                    data-name="${(p.employee_name || '').toLowerCase()}"
-                    data-dept="${(p.department_name || '').toLowerCase()}">
-                    <td><code>${p.employee_code || '-'}</code></td>
-                    <td>${p.employee_name || 'Unknown'}</td>
-                    <td>${p.department_name || '-'}</td>
+                    data-code="${escapeHtml(String(p.employee_code || '').toLowerCase())}"
+                    data-name="${escapeHtml(String(p.employee_name || '').toLowerCase())}"
+                    data-dept="${escapeHtml(String(p.department_name || '').toLowerCase())}">
+                    <td><code>${escapeHtml(p.employee_code || '-')}</code></td>
+                    <td>${escapeHtml(p.employee_name || 'Unknown')}</td>
+                    <td>${escapeHtml(p.department_name || '-')}</td>
                     <td style="white-space:nowrap">${formatCurrency(p.gross_earnings, p.currency_code, p.currency_symbol)}</td>
                     <td style="white-space:nowrap">${formatCurrency(p.total_deductions, p.currency_code, p.currency_symbol)}</td>
                     <td style="white-space:nowrap"><strong>${formatCurrency(p.net_pay, p.currency_code, p.currency_symbol)}</strong></td>
                     <td>
-                        <button class="action-btn" onclick="viewDraftPayslip('${p.id}')" title="View Details">
+                        <button class="action-btn" onclick="viewDraftPayslip('${escapeHtml(p.id)}')" title="View Details">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                 <circle cx="12" cy="12" r="3"></circle>
@@ -1746,8 +1746,8 @@ async function viewDraftPayslip(payslipId) {
         // Local currency formatter using backend-provided currency
         // v3.0.20: Added space between symbol and number for readability
         const fmtCurrency = (amt) => {
-            if (amt === null || amt === undefined) return `${currencySymbol}\u00A00`;
-            return `${currencySymbol}\u00A0${Number(amt).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+            if (amt === null || amt === undefined) return `${escapeHtml(currencySymbol)}\u00A00`;
+            return `${escapeHtml(currencySymbol)}\u00A0${Number(amt).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
         };
 
         const items = payslip.items || [];
@@ -1800,7 +1800,7 @@ async function viewDraftPayslip(payslipId) {
                 structureBreakdownHtml += `
                     <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-subtle);">
                         <div style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
-                            <h5 style="margin: 0; color: var(--brand-primary);">${group.structure_name || 'Salary Structure'}</h5>
+                            <h5 style="margin: 0; color: var(--brand-primary);">${escapeHtml(group.structure_name || 'Salary Structure')}</h5>
                             ${periodText ? `<p style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: var(--text-muted);">Period: ${periodText}</p>` : ''}
                         </div>
 
@@ -1819,7 +1819,7 @@ async function viewDraftPayslip(payslipId) {
                                         ${groupEarnings.length > 0
                                             ? groupEarnings.map(i => `
                                                 <tr>
-                                                    <td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
+                                                    <td>${escapeHtml(i.component_name)}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
                                                     <td class="text-right">${fmtCurrency(i.amount)}</td>
                                                     <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                                                 </tr>
@@ -1850,7 +1850,7 @@ async function viewDraftPayslip(payslipId) {
                                         ${groupDeductions.length > 0
                                             ? groupDeductions.map(i => `
                                                 <tr>
-                                                    <td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
+                                                    <td>${escapeHtml(i.component_name)}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
                                                     <td class="text-right">${fmtCurrency(i.amount)}</td>
                                                     <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                                                 </tr>
@@ -1906,13 +1906,13 @@ async function viewDraftPayslip(payslipId) {
                                     <tbody>
                                         ${payslip.arrears_breakdown.map(arr => `
                                             <tr>
-                                                <td style="padding: 0.25rem 0.5rem;">${arr.period_display || getMonthName(arr.payroll_month) + ' ' + arr.payroll_year}</td>
+                                                <td style="padding: 0.25rem 0.5rem;">${escapeHtml(arr.period_display || getMonthName(arr.payroll_month) + ' ' + arr.payroll_year)}</td>
                                                 <td style="padding: 0.25rem 0.5rem;">
                                                     <span class="badge ${arr.source_type === 'ctc_revision' ? 'badge-info' : 'badge-secondary'}" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">
                                                         ${arr.source_type === 'ctc_revision' ? 'CTC Revision' : 'Structure'}
                                                     </span>
                                                     ${arr.source_type === 'ctc_revision' && arr.revision_type ? `
-                                                        <span style="font-size: 0.6rem; color: var(--text-muted); display: block;">${formatRevisionType(arr.revision_type)}</span>
+                                                        <span style="font-size: 0.6rem; color: var(--text-muted); display: block;">${escapeHtml(formatRevisionType(arr.revision_type))}</span>
                                                     ` : ''}
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; text-align: right; color: var(--text-muted);">
@@ -1965,8 +1965,8 @@ async function viewDraftPayslip(payslipId) {
                                         ${payslip.voluntary_deduction_items.map(vd => `
                                             <tr>
                                                 <td style="padding: 0.25rem 0.5rem;">
-                                                    <span style="font-weight: 500;">${vd.deduction_type_name}</span>
-                                                    <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">${vd.deduction_type_code}</span>
+                                                    <span style="font-weight: 500;">${escapeHtml(vd.deduction_type_name)}</span>
+                                                    <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">${escapeHtml(vd.deduction_type_code)}</span>
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; text-align: right; color: var(--text-muted);">
                                                     ${fmtCurrency(vd.full_amount)}
@@ -2006,7 +2006,7 @@ async function viewDraftPayslip(payslipId) {
                             <div style="font-size: 0.7rem; color: var(--color-success); margin-bottom: 0.4rem; font-weight: 600;">Within CTC</div>
                             ${ctcIncludedItemsAll.map(i => `
                                 <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
-                                    <span>${i.component_name}</span>
+                                    <span>${escapeHtml(i.component_name)}</span>
                                     <span style="font-weight: 500;">${fmtCurrency(i.amount)}</span>
                                 </div>
                             `).join('')}
@@ -2021,7 +2021,7 @@ async function viewDraftPayslip(payslipId) {
                             <div style="font-size: 0.7rem; color: var(--color-info); margin-bottom: 0.4rem; font-weight: 600;">Beyond CTC (Overhead)</div>
                             ${overheadItemsAll.map(i => `
                                 <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
-                                    <span>${i.component_name}</span>
+                                    <span>${escapeHtml(i.component_name)}</span>
                                     <span style="font-weight: 500;">${fmtCurrency(i.amount)}</span>
                                 </div>
                             `).join('')}
@@ -2060,7 +2060,7 @@ async function viewDraftPayslip(payslipId) {
                 i.ctc_classification === 'organizational_overhead' || i.cost_classification_employer === 'organizational_overhead');
 
             const earningsHtml = earnings.length > 0 ?
-                earnings.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${fmtCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${fmtCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
+                earnings.map(i => `<tr><td>${escapeHtml(i.component_name)}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${fmtCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${fmtCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
                 '<tr><td colspan="3" class="text-muted">No earnings</td></tr>';
 
             const deductionsHtml = deductions.length > 0 ?
@@ -2068,11 +2068,11 @@ async function viewDraftPayslip(payslipId) {
                     const isEligible = i.is_eligible !== false;
                     const eligibilityIcon = i.amount === 0 && !isEligible ? '<span style="color:var(--color-warning);" title="Not eligible">⚠</span> ' : '';
                     const eligibilityReason = !isEligible && i.eligibility_reason ?
-                        `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;max-width:180px;">${i.eligibility_reason}</div>` : '';
+                        `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;max-width:180px;">${escapeHtml(i.eligibility_reason)}</div>` : '';
                     const proratedTag = i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : '';
                     return `<tr>
                         <td>
-                            ${eligibilityIcon}${i.component_name}${proratedTag}
+                            ${eligibilityIcon}${escapeHtml(i.component_name)}${proratedTag}
                             ${eligibilityReason}
                         </td>
                         <td class="text-right">${fmtCurrency(i.amount)}</td>
@@ -2096,7 +2096,7 @@ async function viewDraftPayslip(payslipId) {
                             <div style="font-size: 0.7rem; color: var(--color-success); margin-bottom: 0.4rem; font-weight: 600;">Within CTC</div>
                             ${ctcIncludedItems.map(i => `
                                 <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
-                                    <span>${i.component_name}</span>
+                                    <span>${escapeHtml(i.component_name)}</span>
                                     <span style="font-weight: 500;">${fmtCurrency(i.amount)}</span>
                                 </div>
                             `).join('')}
@@ -2111,7 +2111,7 @@ async function viewDraftPayslip(payslipId) {
                             <div style="font-size: 0.7rem; color: var(--color-info); margin-bottom: 0.4rem; font-weight: 600;">Beyond CTC (Overhead)</div>
                             ${overheadItems.map(i => `
                                 <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
-                                    <span>${i.component_name}</span>
+                                    <span>${escapeHtml(i.component_name)}</span>
                                     <span style="font-weight: 500;">${fmtCurrency(i.amount)}</span>
                                 </div>
                             `).join('')}
@@ -2164,7 +2164,7 @@ async function viewDraftPayslip(payslipId) {
                                     payslip.voluntary_deduction_items.map(vd => `
                                         <tr>
                                             <td>
-                                                ${vd.deduction_type_name}
+                                                ${escapeHtml(vd.deduction_type_name)}
                                                 ${vd.is_prorated ? `<span style="font-size:0.7rem;color:var(--text-muted);"> (${vd.days_applicable || '-'}/${vd.total_days_in_period || '-'} days)</span>` : ''}
                                             </td>
                                             <td class="text-right">${fmtCurrency(vd.deducted_amount)}</td>
@@ -2192,7 +2192,7 @@ async function viewDraftPayslip(payslipId) {
         contentDiv.innerHTML = `
             <div class="payslip-header" style="margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem;">${payslip.employee_name || 'Employee'}</h4>
+                    <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem;">${escapeHtml(payslip.employee_name || 'Employee')}</h4>
                     <p style="margin: 0; color: var(--text-muted); font-size: 0.75rem;">Draft Payslip - ${formatDate(payslip.pay_period_start)} to ${formatDate(payslip.pay_period_end)}</p>
                 </div>
                 <div style="padding: 0.5rem 1rem; background: var(--brand-primary); color: var(--text-inverse); border-radius: 6px; text-align: right;">
@@ -2598,23 +2598,23 @@ function updatePayrollRunsTable(runs) {
     // v3.0.20: Use currency from run (enriched by backend from country config)
     tbody.innerHTML = runs.map(run => `
         <tr>
-            <td><code>${run.run_number || run.id.substring(0, 8)}</code></td>
+            <td><code>${escapeHtml(run.run_number || run.id.substring(0, 8))}</code></td>
             <td>${getMonthName(run.payroll_month)} ${run.payroll_year}</td>
-            <td>${run.office_name || 'All Offices'}</td>
+            <td>${escapeHtml(run.office_name || 'All Offices')}</td>
             <td>${run.total_employees || 0}</td>
             <td style="white-space:nowrap">${formatCurrency(run.total_gross, run.currency_code, run.currency_symbol)}</td>
             <td style="white-space:nowrap">${formatCurrency(run.total_net, run.currency_code, run.currency_symbol)}</td>
-            <td><span class="status-badge status-${run.status?.toLowerCase()}">${run.status}</span></td>
+            <td><span class="status-badge status-${escapeHtml(String(run.status || '').toLowerCase())}">${escapeHtml(run.status)}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="viewPayrollRun('${run.id}')" title="View Details">
+                    <button class="action-btn" onclick="viewPayrollRun('${escapeHtml(run.id)}')" title="View Details">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                     </button>
                     ${run.status === 'draft' ? `
-                    <button class="action-btn success" onclick="processPayrollRun('${run.id}')" title="Process">
+                    <button class="action-btn success" onclick="processPayrollRun('${escapeHtml(run.id)}')" title="Process">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
@@ -2668,7 +2668,7 @@ function updateOfficeStructureStatusCards(statusList) {
     container.innerHTML = statusList.map(status => `
         <div class="office-status-card ${status.has_salary_structure ? 'complete' : 'incomplete'}">
             <div class="office-status-header">
-                <span class="office-name">${status.office_name}</span>
+                <span class="office-name">${escapeHtml(status.office_name)}</span>
                 <span class="status-icon">
                     ${status.has_salary_structure ?
                         '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>' :
@@ -2733,9 +2733,9 @@ function renderSalaryStructuresRows(filtered) {
 
     tbody.innerHTML = filtered.map(s => `
         <tr>
-            <td><strong>${s.office_name || 'N/A'}</strong></td>
-            <td><strong>${s.structure_name}</strong></td>
-            <td><code>${s.structure_code || '-'}</code></td>
+            <td><strong>${escapeHtml(s.office_name || 'N/A')}</strong></td>
+            <td><strong>${escapeHtml(s.structure_name)}</strong></td>
+            <td><code>${escapeHtml(s.structure_code || '-')}</code></td>
             <td>${s.component_count || 0} component${s.component_count !== 1 ? 's' : ''}</td>
             <td>${s.employee_count || 0}</td>
             <td>
@@ -2747,14 +2747,14 @@ function renderSalaryStructuresRows(filtered) {
             <td><span class="status-badge status-${s.is_active ? 'active' : 'inactive'}">${s.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="viewStructureVersions('${s.id}')" title="Version History">
+                    <button class="action-btn" onclick="viewStructureVersions('${escapeHtml(s.id)}')" title="Version History">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"></circle>
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
                     </button>
                     ${canManageStructures ? (!s.has_processed_payroll ? `
-                    <button class="action-btn" onclick="editSalaryStructure('${s.id}')" title="Edit">
+                    <button class="action-btn" onclick="editSalaryStructure('${escapeHtml(s.id)}')" title="Edit">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -2769,7 +2769,7 @@ function renderSalaryStructuresRows(filtered) {
                     </span>
                     `) : ''}
                     ${canManageStructures ? ((s.employee_count || 0) === 0 ? `
-                    <button class="action-btn danger" onclick="deleteSalaryStructure('${s.id}')" title="Delete">
+                    <button class="action-btn danger" onclick="deleteSalaryStructure('${escapeHtml(s.id)}')" title="Delete">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -3321,7 +3321,7 @@ function updateStatutoryContributionsSection(statutoryComponents, benefitCompone
                             <span class="contributor-badge employee">Employee</span>
                             <div class="component-info">
                                 <span class="component-name">${escapeHtml(displayName)}</span>
-                                <span class="component-code">${code}</span>
+                                <span class="component-code">${escapeHtml(code)}</span>
                             </div>
                             <div class="ctc-badge-cell"></div>
                             <div class="contribution-details">
@@ -3347,7 +3347,7 @@ function updateStatutoryContributionsSection(statutoryComponents, benefitCompone
                             <span class="contributor-badge employer">Employer</span>
                             <div class="component-info">
                                 <span class="component-name">${escapeHtml(displayName)}</span>
-                                <span class="component-code">${code}</span>
+                                <span class="component-code">${escapeHtml(code)}</span>
                             </div>
                             <div class="ctc-badge-cell">${ctcBadge}</div>
                             <div class="contribution-details">
@@ -3405,12 +3405,12 @@ function formatStatutoryValue(component) {
     } else if (calcType === 'percentage') {
         const pct = component.percentage || component.percentage_of_basic || 0;
         const base = component.calculation_base || 'basic';
-        return `${pct}% of ${base.toUpperCase()}`;
+        return `${pct}% of ${escapeHtml(String(base).toUpperCase())}`;
     } else if (calcType === 'fixed') {
         const amt = component.fixed_amount || component.default_value || 0;
         if (amt) {
             const { symbol } = getSelectedCurrency();
-            return `${symbol}${Number(amt).toLocaleString('en-IN')}`;
+            return `${escapeHtml(symbol)}${Number(amt).toLocaleString('en-IN')}`;
         }
         return 'Per structure';
     }
@@ -3430,13 +3430,13 @@ function formatComponentValue(component) {
 
         // Get the calculation base and format it nicely
         const base = component.calculation_base || 'basic';
-        const baseLabel = base.toUpperCase();
-        return `${value}% of ${baseLabel}`;
+        const baseLabel = String(base).toUpperCase();
+        return `${value}% of ${escapeHtml(baseLabel)}`;
     } else if (calcType === 'fixed') {
         const value = component.fixed_amount || component.default_value || 0;
         if (value) {
             const { symbol } = getSelectedCurrency();
-            return `${symbol}${Number(value).toLocaleString('en-IN')}`;
+            return `${escapeHtml(symbol)}${Number(value).toLocaleString('en-IN')}`;
         }
         // For fixed type without a value, show descriptive text
         if (component.is_basic_component) {
@@ -3454,7 +3454,7 @@ function formatComponentValue(component) {
         // Compliance-linked components get their rates from statutory compliance rules at runtime
         const statutoryType = component.statutory_type || '';
         const typeLabel = formatStatutoryType(statutoryType, component.component_name);
-        return `<span class="text-muted compliance-linked-value" title="Rate from ${typeLabel} compliance rules">From compliance rules</span>`;
+        return `<span class="text-muted compliance-linked-value" title="Rate from ${escapeHtml(typeLabel)} compliance rules">From compliance rules</span>`;
     } else {
         const value = component.default_value || component.fixed_amount || component.percentage || 0;
         return value ? value.toString() : '-';
@@ -3501,7 +3501,7 @@ function updateEarningsTable(earnings) {
         const isImmutable = isImmutableComponent(c);
         if (isImmutable) {
             const statutoryLabel = formatStatutoryType(c.statutory_type, c.component_name || c.name);
-            badges += `<span class="component-badge statutory-badge" title="Linked to ${statutoryLabel} compliance rules">
+            badges += `<span class="component-badge statutory-badge" title="Linked to ${escapeHtml(statutoryLabel)} compliance rules">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -3527,13 +3527,13 @@ function updateEarningsTable(earnings) {
             <td>
                 ${!isSystemManaged ? `
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="editComponent('${c.id}')" title="Edit">
+                    <button class="action-btn" onclick="editComponent('${escapeHtml(c.id)}')" title="Edit">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
-                    <button class="action-btn danger" onclick="deleteComponent('${c.id}')" title="Delete">
+                    <button class="action-btn danger" onclick="deleteComponent('${escapeHtml(c.id)}')" title="Delete">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -3568,7 +3568,7 @@ function updateDeductionsTable(deductions) {
         let badges = '';
         if (isImmutable) {
             const statutoryLabel = formatStatutoryType(c.statutory_type, c.component_name || c.name);
-            badges = `<span class="component-badge statutory-badge" title="Linked to ${statutoryLabel} compliance rules">
+            badges = `<span class="component-badge statutory-badge" title="Linked to ${escapeHtml(statutoryLabel)} compliance rules">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -3591,13 +3591,13 @@ function updateDeductionsTable(deductions) {
             <td>
                 ${!isImmutable ? `
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="editComponent('${c.id}')" title="Edit">
+                    <button class="action-btn" onclick="editComponent('${escapeHtml(c.id)}')" title="Edit">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                         </svg>
                     </button>
-                    <button class="action-btn danger" onclick="deleteComponent('${c.id}')" title="Delete">
+                    <button class="action-btn danger" onclick="deleteComponent('${escapeHtml(c.id)}')" title="Delete">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -3699,7 +3699,7 @@ function updateLoansTable(loans) {
 
         // Build action buttons based on status and role
         let actionButtons = `
-            <button class="action-btn" onclick="viewLoan('${loan.id}')" title="View">
+            <button class="action-btn" onclick="viewLoan('${escapeHtml(loan.id)}')" title="View">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
@@ -3712,12 +3712,12 @@ function updateLoansTable(loans) {
 
         if (isAdmin && status === 'pending') {
             actionButtons += `
-                <button class="action-btn success" onclick="approveLoan('${loan.id}')" title="Approve">
+                <button class="action-btn success" onclick="approveLoan('${escapeHtml(loan.id)}')" title="Approve">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
                 </button>
-                <button class="action-btn danger" onclick="showRejectLoanModal('${loan.id}')" title="Reject">
+                <button class="action-btn danger" onclick="showRejectLoanModal('${escapeHtml(loan.id)}')" title="Reject">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -3726,7 +3726,7 @@ function updateLoansTable(loans) {
             `;
         } else if (isAdmin && status === 'approved') {
             actionButtons += `
-                <button class="action-btn primary" onclick="showDisburseLoanModal('${loan.id}')" title="Disburse">
+                <button class="action-btn primary" onclick="showDisburseLoanModal('${escapeHtml(loan.id)}')" title="Disburse">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="1" x2="12" y2="23"></line>
                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
@@ -3738,7 +3738,7 @@ function updateLoansTable(loans) {
         // v3.0.30: Add Edit button for editable loans
         if (isAdmin && isEditable) {
             actionButtons += `
-                <button class="action-btn" onclick="showEditLoanModal('${loan.id}')" title="Edit Loan">
+                <button class="action-btn" onclick="showEditLoanModal('${escapeHtml(loan.id)}')" title="Edit Loan">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -3750,7 +3750,7 @@ function updateLoansTable(loans) {
         // Cancel button only for approved/active loans (not pending — use Reject instead)
         if (isAdmin && isEditable && status !== 'pending') {
             actionButtons += `
-                <button class="action-btn danger" onclick="confirmCancelLoan('${loan.id}')" title="Cancel Loan">
+                <button class="action-btn danger" onclick="confirmCancelLoan('${escapeHtml(loan.id)}')" title="Cancel Loan">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -3763,19 +3763,19 @@ function updateLoansTable(loans) {
             <tr>
                 <td class="employee-cell">
                     <div class="employee-info">
-                        <div class="avatar">${getInitials(loan.employee_name || loan.employee_code)}</div>
+                        <div class="avatar">${escapeHtml(getInitials(loan.employee_name || loan.employee_code))}</div>
                         <div class="details">
-                            <span class="name">${loan.employee_name || loan.employee_code || 'Unknown'}</span>
+                            <span class="name">${escapeHtml(loan.employee_name || loan.employee_code || 'Unknown')}</span>
                         </div>
                     </div>
                 </td>
-                <td>${formatLoanType(loan.loan_type)}</td>
+                <td>${escapeHtml(formatLoanType(loan.loan_type))}</td>
                 <td>${formatCurrency(loan.principal_amount, null, loan.currency_symbol)}</td>
                 <td>${formatCurrency(loan.emi_amount, null, loan.currency_symbol)}</td>
                 <td>${formatCurrency(loan.outstanding_amount, null, loan.currency_symbol)}</td>
                 <td>${formatDate(loan.start_date)}</td>
                 <td>
-                    <span class="status-badge status-${status}">${loan.status}</span>
+                    <span class="status-badge status-${escapeHtml(String(status || ''))}">${escapeHtml(loan.status)}</span>
                     ${loan.emis_paid > 0 ? '<span class="status-badge status-secondary" style="margin-left:4px;" title="Loan is locked after EMI deduction">Locked</span>' : ''}
                 </td>
                 <td>
@@ -3813,7 +3813,7 @@ async function loadOffices() {
                     }))
                 ];
                 select.innerHTML = options.map(opt =>
-                    `<option value="${opt.value}"${opt.value === '' ? ' selected' : ''}>${opt.label}</option>`
+                    `<option value="${escapeHtml(opt.value)}"${opt.value === '' ? ' selected' : ''}>${escapeHtml(opt.label)}</option>`
                 ).join('');
 
                 // Update SearchableDropdown instance if exists - default to "All Offices"
@@ -3839,7 +3839,7 @@ async function loadOffices() {
                     }))
                 ];
                 select.innerHTML = officeOptions.map(opt =>
-                    `<option value="${opt.value}"${opt.value === '' ? ' selected' : ''}>${opt.label}</option>`
+                    `<option value="${escapeHtml(opt.value)}"${opt.value === '' ? ' selected' : ''}>${escapeHtml(opt.label)}</option>`
                 ).join('');
 
                 // Update SearchableDropdown instance if exists - default to "All Offices"
@@ -3868,7 +3868,7 @@ async function loadOffices() {
                     options[0].label = config.placeholder;
                 }
                 select.innerHTML = options.map(opt =>
-                    `<option value="${opt.value}">${opt.label}</option>`
+                    `<option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>`
                 ).join('');
             }
         });
@@ -3905,7 +3905,7 @@ async function loadEmployees() {
         if (select) {
             select.innerHTML = '<option value="">Select Employee</option>';
             employees.forEach(emp => {
-                select.innerHTML += `<option value="${emp.id}">${emp.first_name} ${emp.last_name}</option>`;
+                select.innerHTML += `<option value="${escapeHtml(emp.id)}">${escapeHtml(emp.first_name)} ${escapeHtml(emp.last_name)}</option>`;
             });
         }
     } catch (error) {
@@ -4139,21 +4139,21 @@ function refreshAllComponentDropdowns() {
             let calcLabel = calcType === 'fixed' ? 'Fixed' : '% ' + (isBasic ? 'CTC' : (calcBase === 'ctc' ? 'CTC' : calcBase === 'gross' ? 'Gross' : 'Basic'));
             return `
             <div class="dropdown-option"
-                 data-value="${c.id}"
-                 data-type="${c.component_type || c.category}"
-                 data-calc-type="${calcType}"
-                 data-calc-base="${calcBase}"
+                 data-value="${escapeHtml(c.id)}"
+                 data-type="${escapeHtml(c.component_type || c.category)}"
+                 data-calc-type="${escapeHtml(calcType)}"
+                 data-calc-base="${escapeHtml(calcBase)}"
                  data-is-basic="${isBasic}"
                  data-is-balance="${c.is_balance_component || false}"
                  data-percentage="${c.percentage || c.default_percentage || ''}"
                  data-fixed="${c.fixed_amount || ''}"
                  data-name="${escapeHtml(c.component_name || c.name)}"
                  data-code="${escapeHtml(c.component_code || c.code)}"
-                 data-calc-label="${calcLabel}"
-                 onclick="selectDropdownOption('${dropdown.id}', this, '${componentId}')">
+                 data-calc-label="${escapeHtml(calcLabel)}"
+                 onclick="selectDropdownOption('${escapeHtml(dropdown.id)}', this, '${escapeHtml(componentId)}')">
                 <span class="option-name">${escapeHtml(c.component_name || c.name)}</span>
                 <span class="option-code">${escapeHtml(c.component_code || c.code)}</span>
-                <span class="option-calc-type badge badge-${calcType === 'fixed' ? 'info' : 'primary'}">${calcLabel}</span>
+                <span class="option-calc-type badge badge-${calcType === 'fixed' ? 'info' : 'primary'}">${escapeHtml(calcLabel)}</span>
             </div>
         `}).join('');
 
@@ -4587,7 +4587,7 @@ function filterOfficesByCountry(countryCode) {
                 }))
             ];
             select.innerHTML = options.map(opt =>
-                `<option value="${opt.value}"${opt.value === '' ? ' selected' : ''}>${opt.label}</option>`
+                `<option value="${escapeHtml(opt.value)}"${opt.value === '' ? ' selected' : ''}>${escapeHtml(opt.label)}</option>`
             ).join('');
 
             // Update SearchableDropdown instance if exists - default to "All Offices"
@@ -4612,7 +4612,7 @@ function filterOfficesByCountry(countryCode) {
                 }))
             ];
             select.innerHTML = officeOptions.map(opt =>
-                `<option value="${opt.value}"${opt.value === '' ? ' selected' : ''}>${opt.label}</option>`
+                `<option value="${escapeHtml(opt.value)}"${opt.value === '' ? ' selected' : ''}>${escapeHtml(opt.label)}</option>`
             ).join('');
 
             // Update SearchableDropdown instance if exists - default to "All Offices"
@@ -4643,7 +4643,7 @@ function filterOfficesByCountry(countryCode) {
                 }))
             ];
             select.innerHTML = options.map(opt =>
-                `<option value="${opt.value}">${opt.label}</option>`
+                `<option value="${escapeHtml(opt.value)}">${escapeHtml(opt.label)}</option>`
             ).join('');
 
             // Update PayrollSearchableDropdown instance if exists (used for structureOffice)
@@ -4885,15 +4885,15 @@ async function viewLoan(loanId) {
                     <h4>Applicant Information</h4>
                     <div class="info-row">
                         <span class="label">Employee:</span>
-                        <span class="value">${loan.employee_name || loan.employee_code || 'N/A'}</span>
+                        <span class="value">${escapeHtml(loan.employee_name || loan.employee_code || 'N/A')}</span>
                     </div>
                     <div class="info-row">
                         <span class="label">Employee ID:</span>
-                        <span class="value">${loan.employee_code || 'N/A'}</span>
+                        <span class="value">${escapeHtml(loan.employee_code || 'N/A')}</span>
                     </div>
                     <div class="info-row">
                         <span class="label">Department:</span>
-                        <span class="value">${loan.department_name || 'N/A'}</span>
+                        <span class="value">${escapeHtml(loan.department_name || 'N/A')}</span>
                     </div>
                 </div>
 
@@ -4901,7 +4901,7 @@ async function viewLoan(loanId) {
                     <h4>Loan Details</h4>
                     <div class="info-row">
                         <span class="label">Loan Type:</span>
-                        <span class="value">${formatLoanType(loan.loan_type)}</span>
+                        <span class="value">${escapeHtml(formatLoanType(loan.loan_type))}</span>
                     </div>
                     <div class="info-row">
                         <span class="label">Principal Amount:</span>
@@ -4913,7 +4913,7 @@ async function viewLoan(loanId) {
                     </div>
                     <div class="info-row">
                         <span class="label">Interest Type:</span>
-                        <span class="value">${formatInterestCalculationType(loan.interest_calculation_type)}</span>
+                        <span class="value">${escapeHtml(formatInterestCalculationType(loan.interest_calculation_type))}</span>
                     </div>
                     <div class="info-row">
                         <span class="label">EMI Amount:</span>
@@ -4933,7 +4933,7 @@ async function viewLoan(loanId) {
                     <h4>Status & Dates</h4>
                     <div class="info-row">
                         <span class="label">Status:</span>
-                        <span class="value"><span class="status-badge status-${loan.status?.toLowerCase()}">${loan.status}</span></span>
+                        <span class="value"><span class="status-badge status-${escapeHtml(String(loan.status || '').toLowerCase())}">${escapeHtml(loan.status)}</span></span>
                     </div>
                     <div class="info-row">
                         <span class="label">Applied Date:</span>
@@ -4958,13 +4958,13 @@ async function viewLoan(loanId) {
                 ${loan.reason ? `
                 <div class="detail-section full-width">
                     <h4>Reason</h4>
-                    <p>${loan.reason}</p>
+                    <p>${escapeHtml(loan.reason)}</p>
                 </div>` : ''}
 
                 ${loan.rejection_reason ? `
                 <div class="detail-section full-width">
                     <h4>Rejection Reason</h4>
-                    <p class="text-danger">${loan.rejection_reason}</p>
+                    <p class="text-danger">${escapeHtml(loan.rejection_reason)}</p>
                 </div>` : ''}
 
                 ${(loan.status === 'active' || loan.status === 'disbursed' || loan.status === 'closed') ? `
@@ -4984,13 +4984,13 @@ async function viewLoan(loanId) {
         if (hrmsRoles.isHRAdmin()) {
             if (status === 'pending') {
                 actionsHtml = `
-                    <button type="button" class="btn btn-success" onclick="approveLoan('${loanId}')">
+                    <button type="button" class="btn btn-success" onclick="approveLoan('${escapeHtml(loanId)}')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                         Approve
                     </button>
-                    <button type="button" class="btn btn-danger" onclick="showRejectLoanModal('${loanId}')">
+                    <button type="button" class="btn btn-danger" onclick="showRejectLoanModal('${escapeHtml(loanId)}')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -5000,7 +5000,7 @@ async function viewLoan(loanId) {
                 `;
             } else if (status === 'approved') {
                 actionsHtml = `
-                    <button type="button" class="btn btn-primary" onclick="showDisburseLoanModal('${loanId}')">
+                    <button type="button" class="btn btn-primary" onclick="showDisburseLoanModal('${escapeHtml(loanId)}')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="12" y1="1" x2="12" y2="23"></line>
                             <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
@@ -5323,8 +5323,8 @@ async function viewPayslip(payslipId) {
         // Local currency formatter using backend-provided currency
         // v3.0.20: Added space between symbol and number for readability
         const fmtCurrency = (amt) => {
-            if (amt === null || amt === undefined) return `${currencySymbol}\u00A00`;
-            return `${currencySymbol}\u00A0${Number(amt).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+            if (amt === null || amt === undefined) return `${escapeHtml(currencySymbol)}\u00A00`;
+            return `${escapeHtml(currencySymbol)}\u00A0${Number(amt).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
         };
 
         const items = payslip.items || [];
@@ -5365,7 +5365,7 @@ async function viewPayslip(payslipId) {
                 structureBreakdownHtml += `
                     <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-subtle);">
                         <div style="margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color);">
-                            <h5 style="margin: 0; color: var(--brand-primary);">${group.structure_name || 'Salary Structure'}</h5>
+                            <h5 style="margin: 0; color: var(--brand-primary);">${escapeHtml(group.structure_name || 'Salary Structure')}</h5>
                             ${periodText ? `<p style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: var(--text-muted);">Period: ${periodText}</p>` : ''}
                         </div>
 
@@ -5384,7 +5384,7 @@ async function viewPayslip(payslipId) {
                                         ${groupEarnings.length > 0
                                             ? groupEarnings.map(i => `
                                                 <tr>
-                                                    <td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
+                                                    <td>${escapeHtml(i.component_name)}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
                                                     <td class="text-right">${fmtCurrency(i.amount)}</td>
                                                     <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                                                 </tr>
@@ -5415,7 +5415,7 @@ async function viewPayslip(payslipId) {
                                         ${groupDeductions.length > 0
                                             ? groupDeductions.map(i => `
                                                 <tr>
-                                                    <td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
+                                                    <td>${escapeHtml(i.component_name)}${i.is_prorated ? ' <span style="font-size:0.7rem;color:var(--text-muted);">(prorated)</span>' : ''}</td>
                                                     <td class="text-right">${fmtCurrency(i.amount)}</td>
                                                     <td class="text-right" style="color:var(--text-muted);font-size:0.8rem;">${fmtCurrency(i.ytd_amount || 0)}</td>
                                                 </tr>
@@ -5471,13 +5471,13 @@ async function viewPayslip(payslipId) {
                                     <tbody>
                                         ${payslip.arrears_breakdown.map(arr => `
                                             <tr>
-                                                <td style="padding: 0.25rem 0.5rem;">${arr.period_display || getMonthName(arr.payroll_month) + ' ' + arr.payroll_year}</td>
+                                                <td style="padding: 0.25rem 0.5rem;">${escapeHtml(arr.period_display || getMonthName(arr.payroll_month) + ' ' + arr.payroll_year)}</td>
                                                 <td style="padding: 0.25rem 0.5rem;">
                                                     <span class="badge ${arr.source_type === 'ctc_revision' ? 'badge-info' : 'badge-secondary'}" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">
                                                         ${arr.source_type === 'ctc_revision' ? 'CTC Revision' : 'Structure'}
                                                     </span>
                                                     ${arr.source_type === 'ctc_revision' && arr.revision_type ? `
-                                                        <span style="font-size: 0.6rem; color: var(--text-muted); display: block;">${formatRevisionType(arr.revision_type)}</span>
+                                                        <span style="font-size: 0.6rem; color: var(--text-muted); display: block;">${escapeHtml(formatRevisionType(arr.revision_type))}</span>
                                                     ` : ''}
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; text-align: right; color: var(--text-muted);">
@@ -5530,8 +5530,8 @@ async function viewPayslip(payslipId) {
                                         ${payslip.voluntary_deduction_items.map(vd => `
                                             <tr>
                                                 <td style="padding: 0.25rem 0.5rem;">
-                                                    <span style="font-weight: 500;">${vd.deduction_type_name}</span>
-                                                    <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">${vd.deduction_type_code}</span>
+                                                    <span style="font-weight: 500;">${escapeHtml(vd.deduction_type_name)}</span>
+                                                    <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">${escapeHtml(vd.deduction_type_code)}</span>
                                                 </td>
                                                 <td style="padding: 0.25rem 0.5rem; text-align: right; color: var(--text-muted);">
                                                     ${fmtCurrency(vd.full_amount)}
@@ -5583,7 +5583,7 @@ async function viewPayslip(payslipId) {
                 i.ctc_classification === 'organizational_overhead' || i.cost_classification_employer === 'organizational_overhead');
 
             const earningsHtml = earnings.length > 0 ?
-                earnings.map(i => `<tr><td>${i.component_name}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${fmtCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${fmtCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
+                earnings.map(i => `<tr><td>${escapeHtml(i.component_name)}${i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : ''}</td><td class="text-right">${fmtCurrency(i.amount)}</td><td class="text-right" style="color:var(--text-muted);font-size:0.85rem;">${fmtCurrency(i.ytd_amount || 0)}</td></tr>`).join('') :
                 '<tr><td colspan="3" class="text-muted">No earnings</td></tr>';
 
             const deductionsHtml = deductions.length > 0 ?
@@ -5591,11 +5591,11 @@ async function viewPayslip(payslipId) {
                     const isEligible = i.is_eligible !== false;
                     const eligibilityIcon = i.amount === 0 && !isEligible ? '<span style="color:var(--color-warning);" title="Not eligible">⚠</span> ' : '';
                     const eligibilityReason = !isEligible && i.eligibility_reason ?
-                        `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;max-width:180px;">${i.eligibility_reason}</div>` : '';
+                        `<div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;max-width:180px;">${escapeHtml(i.eligibility_reason)}</div>` : '';
                     const proratedTag = i.is_prorated ? ' <span style="font-size:0.75rem;color:var(--text-muted);">(prorated)</span>' : '';
                     return `<tr>
                         <td>
-                            ${eligibilityIcon}${i.component_name}${proratedTag}
+                            ${eligibilityIcon}${escapeHtml(i.component_name)}${proratedTag}
                             ${eligibilityReason}
                         </td>
                         <td class="text-right">${fmtCurrency(i.amount)}</td>
@@ -5624,7 +5624,7 @@ async function viewPayslip(payslipId) {
                         <tbody>
                             ${payslip.arrears_breakdown.map(arr => `
                                 <tr>
-                                    <td style="padding: 0.25rem 0.5rem;">${arr.period_display || getMonthName(arr.payroll_month) + ' ' + arr.payroll_year}</td>
+                                    <td style="padding: 0.25rem 0.5rem;">${escapeHtml(arr.period_display || getMonthName(arr.payroll_month) + ' ' + arr.payroll_year)}</td>
                                     <td style="padding: 0.25rem 0.5rem;">
                                         <span class="badge ${arr.source_type === 'ctc_revision' ? 'badge-info' : 'badge-secondary'}" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">
                                             ${arr.source_type === 'ctc_revision' ? 'CTC Revision' : 'Structure'}
@@ -5683,7 +5683,7 @@ async function viewPayslip(payslipId) {
                                     payslip.voluntary_deduction_items.map(vd => `
                                         <tr>
                                             <td>
-                                                ${vd.deduction_type_name}
+                                                ${escapeHtml(vd.deduction_type_name)}
                                                 ${vd.is_prorated ? `<span style="font-size:0.7rem;color:var(--text-muted);"> (${vd.days_applicable || '-'}/${vd.total_days_in_period || '-'} days)</span>` : ''}
                                             </td>
                                             <td class="text-right">${fmtCurrency(vd.deducted_amount)}</td>
@@ -5719,7 +5719,7 @@ async function viewPayslip(payslipId) {
                             <div style="font-size: 0.7rem; color: var(--color-success); margin-bottom: 0.4rem; font-weight: 600;">Within CTC</div>
                             ${ctcIncludedItems.map(i => `
                                 <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
-                                    <span>${i.component_name}</span>
+                                    <span>${escapeHtml(i.component_name)}</span>
                                     <span style="font-weight: 500;">${fmtCurrency(i.amount)}</span>
                                 </div>
                             `).join('')}
@@ -5734,7 +5734,7 @@ async function viewPayslip(payslipId) {
                             <div style="font-size: 0.7rem; color: var(--color-info); margin-bottom: 0.4rem; font-weight: 600;">Beyond CTC (Overhead)</div>
                             ${overheadItems.map(i => `
                                 <div style="display: flex; justify-content: space-between; padding: 0.2rem 0;">
-                                    <span>${i.component_name}</span>
+                                    <span>${escapeHtml(i.component_name)}</span>
                                     <span style="font-weight: 500;">${fmtCurrency(i.amount)}</span>
                                 </div>
                             `).join('')}
@@ -5764,7 +5764,7 @@ async function viewPayslip(payslipId) {
         contentDiv.innerHTML = `
             <div class="payslip-header" style="margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem;">${payslip.employee_name || 'Employee'} ${multiLocationBadge}</h4>
+                    <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem;">${escapeHtml(payslip.employee_name || 'Employee')} ${multiLocationBadge}</h4>
                     <p style="margin: 0; color: var(--text-muted); font-size: 0.75rem;">Payslip - ${formatDate(payslip.pay_period_start)} to ${formatDate(payslip.pay_period_end)}</p>
                 </div>
                 <div style="padding: 0.5rem 1rem; background: var(--brand-primary); color: var(--text-inverse); border-radius: 6px; text-align: right;">
@@ -5776,11 +5776,11 @@ async function viewPayslip(payslipId) {
             <div class="payslip-summary" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; margin-bottom: 0.75rem;">
                 <div class="summary-item" style="padding: 0.5rem; background: var(--bg-subtle); border-radius: 6px;">
                     <div style="font-size: 0.65rem; color: var(--text-muted);">Employee ID</div>
-                    <div style="font-size: 0.9rem; font-weight: 600;">${payslip.employee_code || 'N/A'}</div>
+                    <div style="font-size: 0.9rem; font-weight: 600;">${escapeHtml(payslip.employee_code || 'N/A')}</div>
                 </div>
                 <div class="summary-item" style="padding: 0.5rem; background: var(--bg-subtle); border-radius: 6px;">
                     <div style="font-size: 0.65rem; color: var(--text-muted);">Department</div>
-                    <div style="font-size: 0.9rem; font-weight: 600;">${payslip.department_name || 'N/A'}</div>
+                    <div style="font-size: 0.9rem; font-weight: 600;">${escapeHtml(payslip.department_name || 'N/A')}</div>
                 </div>
                 <div class="summary-item" style="padding: 0.5rem; background: var(--bg-subtle); border-radius: 6px;">
                     <div style="font-size: 0.65rem; color: var(--text-muted);">Working Days</div>
@@ -5832,9 +5832,9 @@ async function viewPayslip(payslipId) {
                                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                                     <polyline points="9 22 9 12 15 12 15 22"></polyline>
                                 </svg>
-                                ${officeName}
+                                ${escapeHtml(officeName)}
                             </div>
-                            <span class="location-code">${officeCode}</span>
+                            <span class="location-code">${escapeHtml(officeCode)}</span>
                         </div>
                         <div class="location-period">
                             ${formatDate(periodStart)} - ${formatDate(periodEnd)}
@@ -5858,7 +5858,7 @@ async function viewPayslip(payslipId) {
                                 <div class="tax-label">Location Taxes: ${fmtCurrency(locationTaxes)}</div>
                                 ${taxItems.map(tax => `
                                     <div class="tax-item">
-                                        <span>${tax.tax_name || tax.taxName} ${tax.jurisdiction_code ? `(${tax.jurisdiction_code})` : ''}</span>
+                                        <span>${escapeHtml(tax.tax_name || tax.taxName)} ${tax.jurisdiction_code ? `(${escapeHtml(tax.jurisdiction_code)})` : ''}</span>
                                         <span>${fmtCurrency(tax.tax_amount || tax.taxAmount)}</span>
                                     </div>
                                 `).join('')}
@@ -6058,16 +6058,16 @@ function renderAllPayslipsRows(payslips) {
 
         return `
             <tr>
-                <td>${employeeName}</td>
-                <td>${employeeCode}</td>
-                <td>${departmentName}</td>
-                <td>${monthYearDisplay}</td>
+                <td>${escapeHtml(employeeName)}</td>
+                <td>${escapeHtml(employeeCode)}</td>
+                <td>${escapeHtml(departmentName)}</td>
+                <td>${escapeHtml(monthYearDisplay)}</td>
                 <td>${formatCurrency(grossSalary, currencyCode, currencySymbol)}</td>
                 <td>${formatCurrency(deductions, currencyCode, currencySymbol)}</td>
                 <td>${formatCurrency(netSalary, currencyCode, currencySymbol)}</td>
-                <td><span class="status-badge ${statusClass}">${formatPayslipStatus(status)}</span></td>
+                <td><span class="status-badge ${escapeHtml(statusClass)}">${escapeHtml(formatPayslipStatus(status))}</span></td>
                 <td>
-                    <button class="action-btn" onclick="viewPayslip('${p.id}')" title="View Payslip">
+                    <button class="action-btn" onclick="viewPayslip('${escapeHtml(p.id)}')" title="View Payslip">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
@@ -6391,16 +6391,16 @@ function generatePayslipPdfContent(payslip) {
     // Format earnings rows
     const earningsRows = earnings.map((e, i) => `
         <tr style="background: ${i % 2 === 0 ? '#ffffff' : '#f8fafc'};">
-            <td style="padding: 10px 12px; font-size: 12px; color: #374151; border-bottom: 1px solid #e5e7eb;">${e.component_name}</td>
-            <td style="padding: 10px 12px; text-align: right; font-size: 12px; color: #059669; font-weight: 600; border-bottom: 1px solid #e5e7eb;">${currSymbol}${formatNumber(e.amount)}</td>
+            <td style="padding: 10px 12px; font-size: 12px; color: #374151; border-bottom: 1px solid #e5e7eb;">${escapeHtml(e.component_name)}</td>
+            <td style="padding: 10px 12px; text-align: right; font-size: 12px; color: #059669; font-weight: 600; border-bottom: 1px solid #e5e7eb;">${escapeHtml(currSymbol)}${formatNumber(e.amount)}</td>
         </tr>
     `).join('');
 
     // Format deductions rows
     const deductionsRows = deductions.map((d, i) => `
         <tr style="background: ${i % 2 === 0 ? '#ffffff' : '#fef2f2'};">
-            <td style="padding: 10px 12px; font-size: 12px; color: #374151; border-bottom: 1px solid #e5e7eb;">${d.component_name}</td>
-            <td style="padding: 10px 12px; text-align: right; font-size: 12px; color: #dc2626; font-weight: 600; border-bottom: 1px solid #e5e7eb;">${currSymbol}${formatNumber(d.amount)}</td>
+            <td style="padding: 10px 12px; font-size: 12px; color: #374151; border-bottom: 1px solid #e5e7eb;">${escapeHtml(d.component_name)}</td>
+            <td style="padding: 10px 12px; text-align: right; font-size: 12px; color: #dc2626; font-weight: 600; border-bottom: 1px solid #e5e7eb;">${escapeHtml(currSymbol)}${formatNumber(d.amount)}</td>
         </tr>
     `).join('');
 
@@ -6430,7 +6430,7 @@ function generatePayslipPdfContent(payslip) {
                                 <td style="text-align: right; vertical-align: middle;">
                                     <div style="background: rgba(255,255,255,0.2); padding: 10px 16px; border-radius: 6px; display: inline-block;">
                                         <div style="color: rgba(255,255,255,0.8); font-size: 10px; text-transform: uppercase;">Payslip</div>
-                                        <div style="color: white; font-size: 16px; font-weight: bold; margin-top: 2px;">${payMonth}</div>
+                                        <div style="color: white; font-size: 16px; font-weight: bold; margin-top: 2px;">${escapeHtml(payMonth)}</div>
                                     </div>
                                 </td>
                             </tr>
@@ -6444,11 +6444,11 @@ function generatePayslipPdfContent(payslip) {
                 <tr>
                     <td style="padding: 10px 25px;">
                         <span style="color: #64748b; font-size: 11px;">Payslip No: </span>
-                        <span style="background: #1a73e8; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: bold;">${payslip.payslip_number || 'N/A'}</span>
+                        <span style="background: #1a73e8; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: bold;">${escapeHtml(payslip.payslip_number || 'N/A')}</span>
                     </td>
                     <td style="padding: 10px 25px; text-align: right;">
                         <span style="color: #64748b; font-size: 11px;">Pay Period: </span>
-                        <span style="color: #1e293b; font-size: 11px; font-weight: 600;">${periodStart} to ${periodEnd}</span>
+                        <span style="color: #1e293b; font-size: 11px; font-weight: 600;">${escapeHtml(periodStart)} to ${escapeHtml(periodEnd)}</span>
                     </td>
                 </tr>
             </table>
@@ -6463,19 +6463,19 @@ function generatePayslipPdfContent(payslip) {
                 <tr>
                     <td style="padding: 8px 25px; width: 25%;">
                         <div style="color: #64748b; font-size: 10px; text-transform: uppercase;">Employee Name</div>
-                        <div style="color: #0f172a; font-size: 13px; font-weight: 600; margin-top: 3px;">${payslip.employee_name || 'N/A'}</div>
+                        <div style="color: #0f172a; font-size: 13px; font-weight: 600; margin-top: 3px;">${escapeHtml(payslip.employee_name || 'N/A')}</div>
                     </td>
                     <td style="padding: 8px 10px; width: 25%;">
                         <div style="color: #64748b; font-size: 10px; text-transform: uppercase;">Employee ID</div>
-                        <div style="color: #0f172a; font-size: 13px; font-weight: 600; margin-top: 3px;">${payslip.employee_code || 'N/A'}</div>
+                        <div style="color: #0f172a; font-size: 13px; font-weight: 600; margin-top: 3px;">${escapeHtml(payslip.employee_code || 'N/A')}</div>
                     </td>
                     <td style="padding: 8px 10px; width: 25%;">
                         <div style="color: #64748b; font-size: 10px; text-transform: uppercase;">Department</div>
-                        <div style="color: #0f172a; font-size: 13px; font-weight: 600; margin-top: 3px;">${payslip.department_name || 'N/A'}</div>
+                        <div style="color: #0f172a; font-size: 13px; font-weight: 600; margin-top: 3px;">${escapeHtml(payslip.department_name || 'N/A')}</div>
                     </td>
                     <td style="padding: 8px 25px; width: 25%;">
                         <div style="color: #64748b; font-size: 10px; text-transform: uppercase;">Designation</div>
-                        <div style="color: #0f172a; font-size: 13px; font-weight: 600; margin-top: 3px;">${payslip.designation_name || 'N/A'}</div>
+                        <div style="color: #0f172a; font-size: 13px; font-weight: 600; margin-top: 3px;">${escapeHtml(payslip.designation_name || 'N/A')}</div>
                     </td>
                 </tr>
             </table>
@@ -6500,7 +6500,7 @@ function generatePayslipPdfContent(payslip) {
                                 </td>
                                 <td style="text-align: center; padding: 5px 15px;">
                                     <div style="color: #854d0e; font-size: 10px; text-transform: uppercase;">Status</div>
-                                    <div style="color: #166534; font-size: 12px; font-weight: 600; margin-top: 4px; text-transform: capitalize; background: #dcfce7; padding: 3px 10px; border-radius: 4px; display: inline-block;">${payslip.status || 'N/A'}</div>
+                                    <div style="color: #166534; font-size: 12px; font-weight: 600; margin-top: 4px; text-transform: capitalize; background: #dcfce7; padding: 3px 10px; border-radius: 4px; display: inline-block;">${escapeHtml(payslip.status || 'N/A')}</div>
                                 </td>
                             </tr>
                         </table>
@@ -6522,7 +6522,7 @@ function generatePayslipPdfContent(payslip) {
                             ${earningsRows}
                             <tr style="background: #dcfce7;">
                                 <td style="padding: 12px; font-size: 13px; font-weight: bold; color: #166534; border-top: 2px solid #22c55e;">Total Earnings</td>
-                                <td style="padding: 12px; text-align: right; font-size: 14px; font-weight: bold; color: #166534; border-top: 2px solid #22c55e;">${currSymbol}${formatNumber(payslip.gross_earnings || 0)}</td>
+                                <td style="padding: 12px; text-align: right; font-size: 14px; font-weight: bold; color: #166534; border-top: 2px solid #22c55e;">${escapeHtml(currSymbol)}${formatNumber(payslip.gross_earnings || 0)}</td>
                             </tr>
                         </table>
                     </td>
@@ -6537,7 +6537,7 @@ function generatePayslipPdfContent(payslip) {
                             ${deductionsRows}
                             <tr style="background: #fee2e2;">
                                 <td style="padding: 12px; font-size: 13px; font-weight: bold; color: #991b1b; border-top: 2px solid #ef4444;">Total Deductions</td>
-                                <td style="padding: 12px; text-align: right; font-size: 14px; font-weight: bold; color: #991b1b; border-top: 2px solid #ef4444;">${currSymbol}${formatNumber(payslip.total_deductions || 0)}</td>
+                                <td style="padding: 12px; text-align: right; font-size: 14px; font-weight: bold; color: #991b1b; border-top: 2px solid #ef4444;">${escapeHtml(currSymbol)}${formatNumber(payslip.total_deductions || 0)}</td>
                             </tr>
                         </table>
                     </td>
@@ -6549,8 +6549,8 @@ function generatePayslipPdfContent(payslip) {
                 <tr>
                     <td style="background: #1a73e8; border-radius: 10px; padding: 25px; text-align: center;">
                         <div style="color: rgba(255,255,255,0.85); font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">Net Pay</div>
-                        <div style="color: white; font-size: 36px; font-weight: bold; margin: 8px 0;">${currSymbol}${formatNumber(payslip.net_pay || 0)}</div>
-                        <div style="color: rgba(255,255,255,0.7); font-size: 11px; font-style: italic;">${netPayInWords} Only</div>
+                        <div style="color: white; font-size: 36px; font-weight: bold; margin: 8px 0;">${escapeHtml(currSymbol)}${formatNumber(payslip.net_pay || 0)}</div>
+                        <div style="color: rgba(255,255,255,0.7); font-size: 11px; font-style: italic;">${escapeHtml(netPayInWords)} Only</div>
                     </td>
                 </tr>
             </table>
@@ -7502,21 +7502,21 @@ function populateStructureComponents(structureComponents) {
 
                         const newOptionHtml = `
                             <div class="dropdown-option"
-                                 data-value="${sc.component_id}"
-                                 data-type="${componentType}"
-                                 data-calc-type="${calcType}"
-                                 data-calc-base="${calcBase}"
-                                 data-calc-label="${calcLabel}"
+                                 data-value="${escapeHtml(sc.component_id)}"
+                                 data-type="${escapeHtml(componentType)}"
+                                 data-calc-type="${escapeHtml(calcType)}"
+                                 data-calc-base="${escapeHtml(calcBase)}"
+                                 data-calc-label="${escapeHtml(calcLabel)}"
                                  data-is-basic="${isBasic}"
                                  data-is-balance="${sc.is_balance_component || false}"
-                                 data-percentage="${sc.percentage || sc.default_percentage || ''}"
-                                 data-fixed="${sc.fixed_amount || ''}"
+                                 data-percentage="${escapeHtml(String(sc.percentage || sc.default_percentage || ''))}"
+                                 data-fixed="${escapeHtml(String(sc.fixed_amount || ''))}"
                                  data-name="${escapeHtml(componentName)}"
                                  data-code="${escapeHtml(componentCode)}"
-                                 onclick="selectDropdownOption('${dropdown.id}', this, '${lastRow.id}')">
+                                 onclick="selectDropdownOption('${escapeHtml(dropdown.id)}', this, '${escapeHtml(lastRow.id)}')">
                                 <span class="option-name">${escapeHtml(componentName)}</span>
                                 <span class="option-code">${escapeHtml(componentCode)}</span>
-                                <span class="option-calc-type badge badge-${calcType === 'fixed' ? 'info' : 'primary'}">${calcLabel}</span>
+                                <span class="option-calc-type badge badge-${calcType === 'fixed' ? 'info' : 'primary'}">${escapeHtml(calcLabel)}</span>
                             </div>
                         `;
                         optionsContainer.insertAdjacentHTML('afterbegin', newOptionHtml);
@@ -7761,7 +7761,7 @@ function generateRepaymentScheduleHtml(loan) {
                     <td>${formatCurrency(r.interest_component, null, currencySymbol)}</td>
                     <td>${formatCurrency(r.total_amount, null, currencySymbol)}</td>
                     <td>${formatCurrency(r.balance_after, null, currencySymbol)}</td>
-                    <td><span class="status-badge status-${statusClass}">${statusLabel}</span></td>
+                    <td><span class="status-badge status-${escapeHtml(statusClass)}">${escapeHtml(statusLabel)}</span></td>
                 </tr>
             `;
         });
@@ -7947,11 +7947,11 @@ async function viewPayrollRun(runId) {
                     <div class="pr-stat"><span class="pr-stat-val">${formatCurrency(summary.total_deductions, currencyCode, currencySymbol)}</span><span class="pr-stat-lbl">Deductions</span></div>
                     <div class="pr-stat pr-stat-highlight"><span class="pr-stat-val">${formatCurrency(summary.total_net, currencyCode, currencySymbol)}</span><span class="pr-stat-lbl">Net Pay</span></div>
                     <div class="pr-stat-badge">
-                        <span class="status-badge status-${run.status?.toLowerCase()}">${run.status}</span>
+                        <span class="status-badge status-${escapeHtml(String(run.status || '').toLowerCase())}">${escapeHtml(run.status)}</span>
                     </div>
                 </div>
                 <div class="pr-meta-row">
-                    <span>${run.office_name || 'All Offices'}</span>
+                    <span>${escapeHtml(run.office_name || 'All Offices')}</span>
                     <span class="pr-meta-sep">|</span>
                     <span>${formatDate(run.pay_period_start)} - ${formatDate(run.pay_period_end)}</span>
                 </div>
@@ -8084,7 +8084,7 @@ function extractDynamicColumns(payslips) {
 function buildDynamicHeaders() {
     return payrollModalState.dynamicColumns.map(col => {
         const shortName = col.name.length > 8 ? col.code : col.name;
-        return `<th class="pr-col-num text-right" title="${col.name}">${shortName}</th>`;
+        return `<th class="pr-col-num text-right" title="${escapeHtml(col.name)}">${escapeHtml(shortName)}</th>`;
     }).join('');
 }
 
@@ -8171,18 +8171,18 @@ function renderVisiblePayslips() {
             <tr class="clickable-row" title="Click to view payslip details">
                 <td class="pr-col-emp">
                     <div class="pr-emp-cell">
-                        <span class="pr-emp-name">${slip.employee_name || 'Unknown'}</span>
-                        <span class="pr-emp-code">${slip.employee_code || ''}</span>
+                        <span class="pr-emp-name">${escapeHtml(slip.employee_name || 'Unknown')}</span>
+                        <span class="pr-emp-code">${escapeHtml(slip.employee_code || '')}</span>
                     </div>
                 </td>
-                <td class="pr-col-dept pr-cell-muted">${(slip.department_name || '-').substring(0, 12)}</td>
+                <td class="pr-col-dept pr-cell-muted">${escapeHtml((slip.department_name || '-').substring(0, 12))}</td>
                 ${buildDynamicCells(slip)}
                 <td class="pr-col-num text-right pr-cell-bold">${formatCurrencyCompact(slip.gross_earnings, payrollModalState.currencyCode)}</td>
                 <td class="pr-col-num text-right pr-cell-muted">${formatCurrencyCompact(slip.total_deductions, payrollModalState.currencyCode)}</td>
                 <td class="pr-col-num text-right pr-cell-net">${formatCurrencyCompact(slip.net_pay, payrollModalState.currencyCode)}</td>
                 <td class="pr-col-days text-center">${Math.round(slip.days_worked || 0)}/${slip.total_working_days || 0}</td>
                 <td class="pr-col-actions text-center">
-                    <button class="action-btn action-btn-sm" onclick="event.stopPropagation(); viewPayslip('${slip.id}')" title="View Payslip">
+                    <button class="action-btn action-btn-sm" onclick="event.stopPropagation(); viewPayslip('${escapeHtml(slip.id)}')" title="View Payslip">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
@@ -8575,17 +8575,17 @@ function updateVersionHistoryTable(versions) {
             <td>${formatDate(v.effective_from)}</td>
             <td>${v.effective_to ? formatDate(v.effective_to) : '<span class="text-muted">Ongoing</span>'}</td>
             <td>${v.components?.length || 0} components</td>
-            <td>${v.change_reason || '-'}</td>
+            <td>${escapeHtml(v.change_reason || '-')}</td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="viewVersionDetails('${v.id}')" title="View Details">
+                    <button class="action-btn" onclick="viewVersionDetails('${escapeHtml(v.id)}')" title="View Details">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                     </button>
                     ${v.version_number > 1 ? `
-                    <button class="action-btn" onclick="compareVersions('${currentVersionStructureId}', ${v.version_number - 1}, ${v.version_number})" title="Compare with Previous">
+                    <button class="action-btn" onclick="compareVersions('${escapeHtml(currentVersionStructureId)}', ${v.version_number - 1}, ${v.version_number})" title="Compare with Previous">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="20" x2="18" y2="10"></line>
                             <line x1="12" y1="20" x2="12" y2="4"></line>
@@ -8624,7 +8624,7 @@ async function viewVersionDetails(versionId) {
                 <span class="detail-label">EFFECTIVE TO:</span>
                 <span class="detail-value">${version.effective_to ? formatDate(version.effective_to) : 'Ongoing'}</span>
                 <span class="detail-label">CHANGE REASON:</span>
-                <span class="detail-value">${version.change_reason || 'Initial version created with salary structure'}</span>
+                <span class="detail-value">${escapeHtml(version.change_reason || 'Initial version created with salary structure')}</span>
             </div>
         `;
 
@@ -8648,11 +8648,11 @@ async function viewVersionDetails(versionId) {
                 if (calcType === 'compliance_linked') {
                     valueStr = '<span class="compliance-tag">From Compliance Rules</span>';
                 } else if (calcType === 'percentage') {
-                    valueStr = `${c.percentage || c.percentage_of_basic || 0}% of ${c.calculation_base || 'basic'}`;
+                    valueStr = `${c.percentage || c.percentage_of_basic || 0}% of ${escapeHtml(c.calculation_base || 'basic')}`;
                 } else if (calcType === 'balance') {
                     valueStr = '<span style="color: var(--text-secondary);">Balance amount</span>';
                 } else {
-                    valueStr = `${currSymbol}${(c.fixed_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                    valueStr = `${escapeHtml(currSymbol)}${(c.fixed_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
                 }
                 const badgeClass = c.component_type === 'earning' ? 'badge-earning' :
                                    c.component_type === 'employer_contribution' ? 'badge-employer_contribution' : 'badge-deduction';
@@ -8660,8 +8660,8 @@ async function viewVersionDetails(versionId) {
 
                 visualContent += `
                     <tr>
-                        <td><strong>${c.component_name}</strong> <span style="color: var(--text-tertiary)">(${c.component_code})</span></td>
-                        <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
+                        <td><strong>${escapeHtml(c.component_name)}</strong> <span style="color: var(--text-tertiary)">(${escapeHtml(c.component_code)})</span></td>
+                        <td><span class="badge ${badgeClass}">${escapeHtml(badgeLabel)}</span></td>
                         <td class="amount">${valueStr}</td>
                     </tr>
                 `;
@@ -8801,7 +8801,7 @@ async function compareVersions(structureId, fromVersion, toVersion) {
         // Build styled HTML comparison
         let htmlContent = `
             <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
-                <strong>Version ${fromVersion}</strong> → <strong>Version ${toVersion}</strong>
+                <strong>Version ${escapeHtml(fromVersion)}</strong> → <strong>Version ${escapeHtml(toVersion)}</strong>
             </div>
         `;
 
@@ -8811,7 +8811,7 @@ async function compareVersions(structureId, fromVersion, toVersion) {
                 htmlContent += `
                     <div class="diff-item">
                         <div class="diff-icon added">+</div>
-                        <span><strong>${c.component_name}</strong> <span style="color: var(--text-tertiary)">(${c.component_code})</span></span>
+                        <span><strong>${escapeHtml(c.component_name)}</strong> <span style="color: var(--text-tertiary)">(${escapeHtml(c.component_code)})</span></span>
                     </div>
                 `;
             });
@@ -8823,7 +8823,7 @@ async function compareVersions(structureId, fromVersion, toVersion) {
                 htmlContent += `
                     <div class="diff-item">
                         <div class="diff-icon removed">−</div>
-                        <span><strong>${c.component_name}</strong> <span style="color: var(--text-tertiary)">(${c.component_code})</span></span>
+                        <span><strong>${escapeHtml(c.component_name)}</strong> <span style="color: var(--text-tertiary)">(${escapeHtml(c.component_code)})</span></span>
                     </div>
                 `;
             });
@@ -8836,10 +8836,10 @@ async function compareVersions(structureId, fromVersion, toVersion) {
                     <div class="diff-item">
                         <div class="diff-icon modified">~</div>
                         <span>
-                            <strong>${c.component_name}</strong>
+                            <strong>${escapeHtml(c.component_name)}</strong>
                             <br>
                             <span style="color: var(--text-tertiary); font-size: 12px;">
-                                ${c.old_value} → ${c.new_value}
+                                ${escapeHtml(c.old_value)} → ${escapeHtml(c.new_value)}
                             </span>
                         </span>
                     </div>
@@ -9692,7 +9692,7 @@ async function previewVersionedSalary() {
                 <div class="sp-header">
                     <div class="sp-header-item">
                         <div class="sp-header-label">CTC (Annual)</div>
-                        <div class="sp-header-value">${currencySymbol}\u00A0${formatAmt(ctc)}</div>
+                        <div class="sp-header-value">${escapeHtml(currencySymbol)}\u00A0${formatAmt(ctc)}</div>
                     </div>
                     <div class="sp-header-item">
                         <div class="sp-header-label">Period</div>
@@ -9717,7 +9717,7 @@ async function previewVersionedSalary() {
             const displayAmount = Math.abs(amount);
             const amtClass = isNegative ? 'ded' : 'earn';  // Use red for negative, green for positive
             const prefix = isNegative ? '−' : '+';  // Minus sign for negative
-            htmlContent += `<div class="sp-row"><span class="sp-row-name" title="${cb.component_name}">${cb.component_name}</span><span class="sp-row-amt ${amtClass}">${prefix}${currencySymbol}\u00A0${formatAmt(displayAmount)}</span></div>`;
+            htmlContent += `<div class="sp-row"><span class="sp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="sp-row-amt ${amtClass}">${prefix}${escapeHtml(currencySymbol)}\u00A0${formatAmt(displayAmount)}</span></div>`;
         });
 
         // v3.0.53: If there's a discrepancy between displayed earnings and gross, show explanation
@@ -9728,11 +9728,11 @@ async function previewVersionedSalary() {
             const adjAmount = Math.abs(earningsDiscrepancy);
             const adjClass = earningsDiscrepancy > 0 ? 'ded' : 'earn';
             const adjPrefix = earningsDiscrepancy > 0 ? '−' : '+';
-            htmlContent += `<div class="sp-row" style="font-style: italic; opacity: 0.85;"><span class="sp-row-name" title="Auto-calculated to match CTC allocation">${adjustmentLabel}</span><span class="sp-row-amt ${adjClass}">${adjPrefix}${currencySymbol}\u00A0${formatAmt(adjAmount)}</span></div>`;
+            htmlContent += `<div class="sp-row" style="font-style: italic; opacity: 0.85;"><span class="sp-row-name" title="Auto-calculated to match CTC allocation">${escapeHtml(adjustmentLabel)}</span><span class="sp-row-amt ${adjClass}">${adjPrefix}${escapeHtml(currencySymbol)}\u00A0${formatAmt(adjAmount)}</span></div>`;
         }
 
         htmlContent += `
-                            <div class="sp-row sp-total-row"><span>Gross</span><span class="sp-row-amt earn">${currencySymbol}\u00A0${formatAmt(totalGross)}</span></div>
+                            <div class="sp-row sp-total-row"><span>Gross</span><span class="sp-row-amt earn">${escapeHtml(currencySymbol)}\u00A0${formatAmt(totalGross)}</span></div>
                         </div>
                     </div>
                     <div class="sp-column">
@@ -9744,10 +9744,10 @@ async function previewVersionedSalary() {
         activeDeductions.forEach(cb => {
             const amount = cb.total_amount || cb.prorated_amount || 0;
             const zeroClass = amount === 0 ? ' sp-row-zero' : '';
-            htmlContent += `<div class="sp-row${zeroClass}"><span class="sp-row-name" title="${cb.component_name}">${cb.component_name}</span><span class="sp-row-amt ded">${amount > 0 ? '−' : ''}${currencySymbol}\u00A0${formatAmt(amount)}</span></div>`;
+            htmlContent += `<div class="sp-row${zeroClass}"><span class="sp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="sp-row-amt ded">${amount > 0 ? '−' : ''}${escapeHtml(currencySymbol)}\u00A0${formatAmt(amount)}</span></div>`;
         });
         htmlContent += `
-                            <div class="sp-row sp-total-row"><span>Total</span><span class="sp-row-amt ded">−${currencySymbol}\u00A0${formatAmt(totalDeductions)}</span></div>
+                            <div class="sp-row sp-total-row"><span>Total</span><span class="sp-row-amt ded">−${escapeHtml(currencySymbol)}\u00A0${formatAmt(totalDeductions)}</span></div>
                         </div>
                     </div>
                 </div>
@@ -9755,15 +9755,15 @@ async function previewVersionedSalary() {
                 <div class="sp-summary">
                     <div class="sp-summary-item sp-summary-gross">
                         <div class="sp-summary-label">Gross</div>
-                        <div class="sp-summary-value">${currencySymbol}\u00A0${formatAmt(totalGross)}</div>
+                        <div class="sp-summary-value">${escapeHtml(currencySymbol)}\u00A0${formatAmt(totalGross)}</div>
                     </div>
                     <div class="sp-summary-item sp-summary-ded">
                         <div class="sp-summary-label">Deductions</div>
-                        <div class="sp-summary-value">−${currencySymbol}\u00A0${formatAmt(totalDeductions)}</div>
+                        <div class="sp-summary-value">−${escapeHtml(currencySymbol)}\u00A0${formatAmt(totalDeductions)}</div>
                     </div>
                     <div class="sp-summary-item sp-summary-net">
                         <div class="sp-summary-label">Net Pay</div>
-                        <div class="sp-summary-value">${currencySymbol}\u00A0${formatAmt(netPay)}</div>
+                        <div class="sp-summary-value">${escapeHtml(currencySymbol)}\u00A0${formatAmt(netPay)}</div>
                     </div>
                 </div>
         `;
@@ -9773,10 +9773,10 @@ async function previewVersionedSalary() {
             const activeEmployer = employerContributions.filter(e => (e.total_amount || e.prorated_amount || 0) > 0);
             if (activeEmployer.length > 0) {
                 const totalEmployer = activeEmployer.reduce((sum, e) => sum + (e.total_amount || e.prorated_amount || 0), 0);
-                htmlContent += `<div class="sp-employer"><div class="sp-employer-title">Employer Contributions (${currencySymbol}\u00A0${formatAmt(totalEmployer)})</div>`;
+                htmlContent += `<div class="sp-employer"><div class="sp-employer-title">Employer Contributions (${escapeHtml(currencySymbol)}\u00A0${formatAmt(totalEmployer)})</div>`;
                 activeEmployer.forEach(cb => {
                     const amount = cb.total_amount || cb.prorated_amount || 0;
-                    htmlContent += `<div class="sp-employer-row"><span>${cb.component_name}</span><span>${currencySymbol}\u00A0${formatAmt(amount)}</span></div>`;
+                    htmlContent += `<div class="sp-employer-row"><span>${escapeHtml(cb.component_name)}</span><span>${escapeHtml(currencySymbol)}\u00A0${formatAmt(amount)}</span></div>`;
                 });
                 htmlContent += `</div>`;
             }
@@ -9961,14 +9961,14 @@ function updateModalArrearsTable() {
         return `
         <tr class="${isPending ? '' : 'text-muted'}">
             <td>
-                <input type="checkbox" class="arrears-checkbox" value="${a.id}"
+                <input type="checkbox" class="arrears-checkbox" value="${escapeHtml(a.id)}"
                        ${isPending ? '' : 'disabled'}
                        ${selectedArrearsIds.has(a.id) ? 'checked' : ''}
-                       onchange="toggleArrearsSelection('${a.id}')">
+                       onchange="toggleArrearsSelection('${escapeHtml(a.id)}')">
             </td>
             <td>
-                <strong>${a.employee_name || 'Unknown'}</strong>
-                <br><small class="text-muted">${a.employee_code || ''}</small>
+                <strong>${escapeHtml(a.employee_name || 'Unknown')}</strong>
+                <br><small class="text-muted">${escapeHtml(a.employee_code || '')}</small>
             </td>
             <td>${getMonthName(a.payroll_month)} ${a.payroll_year}</td>
             <td>${fmtCurr(a.old_gross || 0)}</td>
@@ -9980,12 +9980,12 @@ function updateModalArrearsTable() {
             <td>
                 ${isPending ? `
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="applySingleArrears('${a.id}')" title="Apply">
+                    <button class="action-btn" onclick="applySingleArrears('${escapeHtml(a.id)}')" title="Apply">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                     </button>
-                    <button class="action-btn" onclick="cancelSingleArrears('${a.id}')" title="Cancel">
+                    <button class="action-btn" onclick="cancelSingleArrears('${escapeHtml(a.id)}')" title="Cancel">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -10295,19 +10295,19 @@ async function loadBulkAssignFilters() {
         const officesData = await api.getHrmsOffices();
         const officeSelect = document.getElementById('bulkOfficeId');
         officeSelect.innerHTML = '<option value="">All Offices</option>' +
-            (officesData || []).map(o => `<option value="${o.id}">${o.office_name}</option>`).join('');
+            (officesData || []).map(o => `<option value="${escapeHtml(o.id)}">${escapeHtml(o.office_name)}</option>`).join('');
 
         // Load departments
         const departmentsData = await api.getHrmsDepartments();
         const deptSelect = document.getElementById('bulkDepartmentId');
         deptSelect.innerHTML = '<option value="">All Departments</option>' +
-            (departmentsData || []).map(d => `<option value="${d.id}">${d.department_name}</option>`).join('');
+            (departmentsData || []).map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.department_name)}</option>`).join('');
 
         // Load designations
         const designationsData = await api.getHrmsDesignations();
         const desigSelect = document.getElementById('bulkDesignationId');
         desigSelect.innerHTML = '<option value="">All Designations</option>' +
-            (designationsData || []).map(d => `<option value="${d.id}">${d.designation_name}</option>`).join('');
+            (designationsData || []).map(d => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.designation_name)}</option>`).join('');
     } catch (error) {
         console.error('Error loading bulk assign filters:', error);
     }
@@ -10413,14 +10413,14 @@ async function previewBulkAssignment() {
             tbody.innerHTML = employees.slice(0, 20).map(e => `
                 <tr class="${e.status !== 'skipped' ? '' : 'text-muted'}">
                     <td>
-                        <strong>${e.employee_name || 'N/A'}</strong>
-                        <br><small class="text-muted">${e.employee_code || ''}</small>
+                        <strong>${escapeHtml(e.employee_name || 'N/A')}</strong>
+                        <br><small class="text-muted">${escapeHtml(e.employee_code || '')}</small>
                     </td>
-                    <td>${e.current_structure_name || e.current_structure || '-'}</td>
+                    <td>${escapeHtml(e.current_structure_name || e.current_structure || '-')}</td>
                     <td>${currSymbol}${(e.current_ctc || 0).toLocaleString('en-IN')}</td>
                     <td>${e.status !== 'skipped' ?
                         `${currSymbol}${(e.arrears_amount || e.estimated_arrears || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}` :
-                        `<span class="text-muted">${e.error_message || 'Skipped'}</span>`}</td>
+                        `<span class="text-muted">${escapeHtml(e.error_message || 'Skipped')}</span>`}</td>
                 </tr>
             `).join('');
 
@@ -10588,7 +10588,7 @@ async function showVersionComparison(fromVersionId, toVersionId) {
             addedSection.style.display = 'block';
             addedList.innerHTML = comparison.added_components.map(c => `
                 <div style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">
-                    <strong>${c.component_name}</strong> (${c.component_code})
+                    <strong>${escapeHtml(c.component_name)}</strong> (${escapeHtml(c.component_code)})
                     <br><small class="text-muted">
                         ${c.new_values?.percentage_of_basic ? `${c.new_values.percentage_of_basic}% of Basic` : ''}
                         ${c.new_values?.fixed_amount ? `${currSymbol}${c.new_values.fixed_amount}` : ''}
@@ -10606,7 +10606,7 @@ async function showVersionComparison(fromVersionId, toVersionId) {
             removedSection.style.display = 'block';
             removedList.innerHTML = comparison.removed_components.map(c => `
                 <div style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">
-                    <strong>${c.component_name}</strong> (${c.component_code})
+                    <strong>${escapeHtml(c.component_name)}</strong> (${escapeHtml(c.component_code)})
                 </div>
             `).join('');
         } else {
@@ -10620,14 +10620,14 @@ async function showVersionComparison(fromVersionId, toVersionId) {
             modifiedSection.style.display = 'block';
             modifiedList.innerHTML = comparison.modified_components.map(c => `
                 <div style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">
-                    <strong>${c.component_name}</strong> (${c.component_code})
+                    <strong>${escapeHtml(c.component_name)}</strong> (${escapeHtml(c.component_code)})
                     ${(c.changes || []).map(change => `
                         <div style="margin-left: 16px; margin-top: 4px;">
                             <small>
-                                <span class="text-muted">${change.field}:</span>
-                                <span class="text-danger-dark" style="text-decoration: line-through;">${formatChangeValue(change.old_value)}</span>
+                                <span class="text-muted">${escapeHtml(change.field)}:</span>
+                                <span class="text-danger-dark" style="text-decoration: line-through;">${escapeHtml(formatChangeValue(change.old_value))}</span>
                                 →
-                                <span class="text-success-dark" style="font-weight: 600;">${formatChangeValue(change.new_value)}</span>
+                                <span class="text-success-dark" style="font-weight: 600;">${escapeHtml(formatChangeValue(change.new_value))}</span>
                             </small>
                         </div>
                     `).join('')}
@@ -10642,7 +10642,7 @@ async function showVersionComparison(fromVersionId, toVersionId) {
         const unchangedList = document.getElementById('unchangedList');
         if (comparison.unchanged_components?.length > 0) {
             unchangedSection.style.display = 'block';
-            unchangedList.innerHTML = `<small class="text-muted">${comparison.unchanged_components.join(', ')}</small>`;
+            unchangedList.innerHTML = `<small class="text-muted">${escapeHtml(comparison.unchanged_components.join(', '))}</small>`;
         } else {
             unchangedSection.style.display = 'none';
         }
@@ -11071,32 +11071,32 @@ function renderArrearsRows(arrearsItems) {
         <tr>
             <td>
                 <div class="employee-info">
-                    <span class="employee-name">${arr.employee_name || 'N/A'}</span>
-                    <span class="employee-code">${arr.employee_code || ''}</span>
+                    <span class="employee-name">${escapeHtml(arr.employee_name || 'N/A')}</span>
+                    <span class="employee-code">${escapeHtml(arr.employee_code || '')}</span>
                 </div>
             </td>
-            <td>${arr.structure_name || 'N/A'}</td>
+            <td>${escapeHtml(arr.structure_name || 'N/A')}</td>
             <td>v${arr.version_number || '?'}</td>
             <td>${getMonthName(arr.payroll_month)} ${arr.payroll_year}</td>
             <td class="text-right">${formatCurrency(arr.old_gross, currCode, currSymbol)}</td>
             <td class="text-right">${formatCurrency(arr.new_gross, currCode, currSymbol)}</td>
             <td class="text-right text-success-dark"><strong>${formatCurrency(arr.arrears_amount, currCode, currSymbol)}</strong></td>
-            <td><span class="status-badge status-${arr.status}">${arr.status}</span></td>
+            <td><span class="status-badge status-${escapeHtml(arr.status)}">${escapeHtml(arr.status)}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="viewArrearsDetails('${arr.id}')" title="View Details">
+                    <button class="action-btn" onclick="viewArrearsDetails('${escapeHtml(arr.id)}')" title="View Details">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                     </button>
                     ${arr.status === 'pending' ? `
-                        <button class="action-btn text-success" onclick="applyArrearsQuick('${arr.id}')" title="Apply">
+                        <button class="action-btn text-success" onclick="applyArrearsQuick('${escapeHtml(arr.id)}')" title="Apply">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
                         </button>
-                        <button class="action-btn text-danger" onclick="cancelArrearsQuick('${arr.id}')" title="Cancel">
+                        <button class="action-btn text-danger" onclick="cancelArrearsQuick('${escapeHtml(arr.id)}')" title="Cancel">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -11135,15 +11135,15 @@ async function viewArrearsDetails(arrearsId) {
         const content = `
             <div class="arrears-details" style="font-size: 13px;">
                 <div class="detail-header" style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--gray-200);">
-                    <h4 style="margin: 0 0 4px 0; font-size: 15px;">${arrears.employee_name || 'Unknown Employee'}</h4>
-                    <span class="employee-code" style="color: var(--gray-500); font-size: 12px;">${arrears.employee_code || ''}</span>
-                    <span class="status-badge status-${arrears.status}" style="margin-left: 10px; font-size: 11px;">${arrears.status}</span>
+                    <h4 style="margin: 0 0 4px 0; font-size: 15px;">${escapeHtml(arrears.employee_name || 'Unknown Employee')}</h4>
+                    <span class="employee-code" style="color: var(--gray-500); font-size: 12px;">${escapeHtml(arrears.employee_code || '')}</span>
+                    <span class="status-badge status-${escapeHtml(arrears.status)}" style="margin-left: 10px; font-size: 11px;">${escapeHtml(arrears.status)}</span>
                 </div>
 
                 <div class="detail-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;">
                     <div class="detail-item">
                         <label style="color: var(--gray-500); font-size: 11px; display: block; margin-bottom: 2px;">Structure</label>
-                        <strong style="font-size: 13px;">${arrears.structure_name || 'N/A'}</strong>
+                        <strong style="font-size: 13px;">${escapeHtml(arrears.structure_name || 'N/A')}</strong>
                     </div>
                     <div class="detail-item">
                         <label style="color: var(--gray-500); font-size: 11px; display: block; margin-bottom: 2px;">Version</label>
@@ -11199,7 +11199,7 @@ async function viewArrearsDetails(arrearsId) {
                             <tbody>
                                 ${arrears.items.map(item => `
                                     <tr>
-                                        <td style="padding: 6px 8px;">${item.component_name || item.component_code}</td>
+                                        <td style="padding: 6px 8px;">${escapeHtml(item.component_name || item.component_code)}</td>
                                         <td class="text-right" style="padding: 6px 8px;">${formatCurrency(item.old_amount)}</td>
                                         <td class="text-right" style="padding: 6px 8px;">${formatCurrency(item.new_amount)}</td>
                                         <td class="text-right ${item.difference > 0 ? 'text-success' : item.difference < 0 ? 'text-danger' : ''}" style="padding: 6px 8px;">${formatCurrency(item.difference)}</td>
@@ -11212,7 +11212,7 @@ async function viewArrearsDetails(arrearsId) {
 
                 ${arrears.applied_in_payslip_id ? `
                     <div class="applied-info" style="margin-top: 12px; padding: 10px; background: var(--color-success-light); border-radius: 8px; font-size: 12px;">
-                        <strong>Applied in Payslip:</strong> ${arrears.applied_in_payslip_number || arrears.applied_in_payslip_id}
+                        <strong>Applied in Payslip:</strong> ${escapeHtml(arrears.applied_in_payslip_number || arrears.applied_in_payslip_id)}
                     </div>
                 ` : ''}
             </div>
@@ -11551,14 +11551,14 @@ function renderPendingCalculations() {
         const effectiveDate = rev.effective_date ? new Date(rev.effective_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
 
         return `
-        <div class="pending-calc-card" data-revision-id="${rev.revision_id}">
+        <div class="pending-calc-card" data-revision-id="${escapeHtml(rev.revision_id)}">
             <div class="pending-calc-info">
                 <div class="pending-calc-employee">
                     ${escapeHtml(rev.employee_name || 'Unknown')}
                     <span class="employee-code">${escapeHtml(rev.employee_code || '')}</span>
                 </div>
                 <div class="pending-calc-details">
-                    <span class="revision-type-badge ${rev.revision_type}">${formatRevisionType(rev.revision_type)}</span>
+                    <span class="revision-type-badge ${escapeHtml(rev.revision_type)}">${escapeHtml(formatRevisionType(rev.revision_type))}</span>
                     <span class="ctc-change">
                         ${oldCtc}
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -11586,7 +11586,7 @@ function renderPendingCalculations() {
                 </div>
             </div>
             <div class="pending-calc-actions">
-                <button class="btn-calculate" onclick="calculateCtcArrearsForRevision('${rev.revision_id}', '${rev.employee_id}', this)">
+                <button class="btn-calculate" onclick="calculateCtcArrearsForRevision('${escapeHtml(rev.revision_id)}', '${escapeHtml(rev.employee_id)}', this)">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
                         <line x1="8" y1="6" x2="16" y2="6"></line>
@@ -11758,12 +11758,12 @@ function updateCtcArrearsTable() {
         const fmtCurr = (amt) => formatCurrency(amt, currCode, currSymbol);
 
         return `
-        <tr class="${isPending ? 'pending' : ''}" data-id="${arr.id}">
+        <tr class="${isPending ? 'pending' : ''}" data-id="${escapeHtml(arr.id)}">
             <td>
-                <input type="checkbox" class="ctc-arrears-checkbox" value="${arr.id}"
+                <input type="checkbox" class="ctc-arrears-checkbox" value="${escapeHtml(arr.id)}"
                     ${selectedCtcArrearsIds.includes(arr.id) ? 'checked' : ''}
                     ${isPending ? '' : 'disabled'}
-                    onchange="toggleCtcArrearsSelection('${arr.id}', this.checked)">
+                    onchange="toggleCtcArrearsSelection('${escapeHtml(arr.id)}', this.checked)">
             </td>
             <td>
                 <div class="employee-info">
@@ -11772,7 +11772,7 @@ function updateCtcArrearsTable() {
                 </div>
             </td>
             <td>
-                <span class="revision-type-badge ${revisionType}">${formatRevisionType(revisionType)}</span>
+                <span class="revision-type-badge ${escapeHtml(revisionType)}">${escapeHtml(formatRevisionType(revisionType))}</span>
             </td>
             <td>${getMonthName(arr.payroll_month)} ${arr.payroll_year}</td>
             <td class="text-right">${fmtCurr(arr.old_ctc)}</td>
@@ -11780,22 +11780,22 @@ function updateCtcArrearsTable() {
             <td class="text-right ${arr.arrears_amount > 0 ? 'arrears-positive' : 'arrears-negative'}">
                 ${fmtCurr(arr.arrears_amount)}
             </td>
-            <td><span class="status-badge status-${arr.status}">${arr.status}</span></td>
+            <td><span class="status-badge status-${escapeHtml(arr.status)}">${escapeHtml(arr.status)}</span></td>
             <td>
                 <div class="action-buttons">
-                    <button class="action-btn" onclick="viewCtcArrearsDetails('${arr.id}')" title="View Details">
+                    <button class="action-btn" onclick="viewCtcArrearsDetails('${escapeHtml(arr.id)}')" title="View Details">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
                         </svg>
                     </button>
                     ${isPending ? `
-                        <button class="action-btn text-success" onclick="applyCtcArrearsQuick('${arr.id}')" title="Apply">
+                        <button class="action-btn text-success" onclick="applyCtcArrearsQuick('${escapeHtml(arr.id)}')" title="Apply">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
                         </button>
-                        <button class="action-btn text-danger" onclick="cancelCtcArrearsQuick('${arr.id}')" title="Cancel">
+                        <button class="action-btn text-danger" onclick="cancelCtcArrearsQuick('${escapeHtml(arr.id)}')" title="Cancel">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -11887,8 +11887,8 @@ async function viewCtcArrearsDetails(arrearsId) {
                 <div class="detail-header" style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
                     <h4 style="margin: 0 0 4px 0;">${escapeHtml(arrears.employee_name || 'Unknown Employee')}</h4>
                     <span class="employee-code" style="color: var(--text-secondary);">${escapeHtml(arrears.employee_code || '')}</span>
-                    <span class="status-badge status-${arrears.status}" style="margin-left: 10px;">${arrears.status}</span>
-                    <span class="revision-type-badge ${arrears.revision_type}" style="margin-left: 10px;">${formatRevisionType(arrears.revision_type)}</span>
+                    <span class="status-badge status-${escapeHtml(arrears.status)}" style="margin-left: 10px;">${escapeHtml(arrears.status)}</span>
+                    <span class="revision-type-badge ${escapeHtml(arrears.revision_type)}" style="margin-left: 10px;">${escapeHtml(formatRevisionType(arrears.revision_type))}</span>
                 </div>
 
                 <div class="ctc-arrears-summary">
@@ -11966,7 +11966,7 @@ async function viewCtcArrearsDetails(arrearsId) {
 
                 ${arrears.applied_in_payslip_id ? `
                     <div style="margin-top: 16px; padding: 12px; background: var(--color-success-light); border-radius: 8px;">
-                        <strong style="color: var(--color-success);">Applied in Payslip:</strong> ${arrears.applied_in_payslip_number || arrears.applied_in_payslip_id}
+                        <strong style="color: var(--color-success);">Applied in Payslip:</strong> ${escapeHtml(arrears.applied_in_payslip_number || arrears.applied_in_payslip_id)}
                     </div>
                 ` : ''}
             </div>
@@ -12272,7 +12272,7 @@ function updateVDTypesTable() {
             <td>${type.enrolled_count || 0}</td>
             <td><span class="badge ${type.is_active ? 'badge-success' : 'badge-secondary'}">${type.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
-                <button class="btn btn-icon btn-ghost" onclick="editVDType('${type.id}')" title="Edit">
+                <button class="btn btn-icon btn-ghost" onclick="editVDType('${escapeHtml(type.id)}')" title="Edit">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -12521,13 +12521,13 @@ function getVDStatusBadge(status) {
         'opted_out': '<span class="badge badge-secondary">Opted Out</span>',
         'rejected': '<span class="badge badge-danger">Rejected</span>'
     };
-    return badges[status] || `<span class="badge badge-secondary">${status}</span>`;
+    return badges[status] || `<span class="badge badge-secondary">${escapeHtml(status)}</span>`;
 }
 
 // Get VD enrollment actions based on status
 function getVDEnrollmentActions(enrollment) {
     let actions = `
-        <button class="btn btn-icon btn-ghost" onclick="viewVDEnrollment('${enrollment.id}')" title="View Details">
+        <button class="btn btn-icon btn-ghost" onclick="viewVDEnrollment('${escapeHtml(enrollment.id)}')" title="View Details">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
@@ -12541,7 +12541,7 @@ function getVDEnrollmentActions(enrollment) {
     const canEdit = ['pending', 'approved', 'active'].includes(enrollment.status);
     if (canEdit) {
         actions += `
-            <button class="btn btn-icon btn-ghost text-primary" onclick="showEditVDModal('${enrollment.id}')" title="Edit Amount">
+            <button class="btn btn-icon btn-ghost text-primary" onclick="showEditVDModal('${escapeHtml(enrollment.id)}')" title="Edit Amount">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -12551,12 +12551,12 @@ function getVDEnrollmentActions(enrollment) {
 
     if (enrollment.status === 'pending') {
         actions += `
-            <button class="btn btn-icon btn-ghost text-success" onclick="approveVDEnrollment('${enrollment.id}')" title="Approve">
+            <button class="btn btn-icon btn-ghost text-success" onclick="approveVDEnrollment('${escapeHtml(enrollment.id)}')" title="Approve">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
             </button>
-            <button class="btn btn-icon btn-ghost text-danger" onclick="showRejectVDModal('${enrollment.id}')" title="Reject">
+            <button class="btn btn-icon btn-ghost text-danger" onclick="showRejectVDModal('${escapeHtml(enrollment.id)}')" title="Reject">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -12564,7 +12564,7 @@ function getVDEnrollmentActions(enrollment) {
             </button>`;
     } else if (enrollment.status === 'active' && !enrollment.end_date) {
         actions += `
-            <button class="btn btn-icon btn-ghost text-warning" onclick="showOptOutModal('${enrollment.id}')" title="Opt-Out">
+            <button class="btn btn-icon btn-ghost text-warning" onclick="showOptOutModal('${escapeHtml(enrollment.id)}')" title="Opt-Out">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                     <polyline points="16 17 21 12 16 7"></polyline>
@@ -12585,7 +12585,7 @@ function getVDEnrollmentActions(enrollment) {
 
     if (canShowDelete) {
         actions += `
-            <button class="btn btn-icon btn-ghost text-danger" onclick="confirmDeleteVDEnrollment('${enrollment.id}')" title="Delete Enrollment">
+            <button class="btn btn-icon btn-ghost text-danger" onclick="confirmDeleteVDEnrollment('${escapeHtml(enrollment.id)}')" title="Delete Enrollment">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -12759,7 +12759,7 @@ async function viewVDEnrollment(enrollmentId) {
     if (enrollment.status === 'pending') {
         footer.innerHTML = `
             <button type="button" class="btn btn-secondary" onclick="closeVDViewModal()">Close</button>
-            <button type="button" class="btn btn-danger" onclick="closeVDViewModal(); showRejectVDModal('${enrollment.id}')">
+            <button type="button" class="btn btn-danger" onclick="closeVDViewModal(); showRejectVDModal('${escapeHtml(enrollment.id)}')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="15" y1="9" x2="9" y2="15"></line>
@@ -12767,7 +12767,7 @@ async function viewVDEnrollment(enrollmentId) {
                 </svg>
                 Reject
             </button>
-            <button type="button" class="btn btn-success" onclick="closeVDViewModal(); approveVDEnrollment('${enrollment.id}')">
+            <button type="button" class="btn btn-success" onclick="closeVDViewModal(); approveVDEnrollment('${escapeHtml(enrollment.id)}')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                     <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -13234,14 +13234,14 @@ function renderAdjustmentsRows(filtered) {
                 <td>${statusBadge}</td>
                 <td>
                     <div class="action-buttons">
-                        <button class="action-btn" onclick="viewAdjustment('${adj.id}')" title="View Details">
+                        <button class="action-btn" onclick="viewAdjustment('${escapeHtml(adj.id)}')" title="View Details">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                 <circle cx="12" cy="12" r="3"></circle>
                             </svg>
                         </button>
                         ${adj.status === 'pending' ? `
-                        <button class="action-btn success" onclick="quickApproveAdjustment('${adj.id}')" title="Approve">
+                        <button class="action-btn success" onclick="quickApproveAdjustment('${escapeHtml(adj.id)}')" title="Approve">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
@@ -13269,7 +13269,7 @@ function getAdjustmentStatusBadge(status) {
         'rejected': '<span class="status-badge danger">Rejected</span>',
         'applied': '<span class="status-badge info">Applied</span>'
     };
-    return badges[status] || `<span class="status-badge">${status}</span>`;
+    return badges[status] || `<span class="status-badge">${escapeHtml(status)}</span>`;
 }
 
 // Get adjustment type badge
@@ -13453,8 +13453,8 @@ function displayAdjustmentEmployeeList(empList, append = false) {
 
         return `
             <div class="employee-select-item ${isSelected ? 'selected' : ''}"
-                 data-employee-id="${emp.id}"
-                 onclick="selectAdjustmentEmployee('${emp.id}')">
+                 data-employee-id="${escapeHtml(emp.id)}"
+                 onclick="selectAdjustmentEmployee('${escapeHtml(emp.id)}')">
                 <div class="employee-info-compact">
                     <span class="employee-name-compact">${escapeHtml(fullName)}</span>
                     <div class="employee-badges">
@@ -14057,7 +14057,7 @@ async function populateSalaryReportFilters() {
                 // Build options using HrmsOfficeSelection (no "All" for filters)
                 const options = HrmsOfficeSelection.buildOfficeOptions(officesData, { isFormDropdown: false });
                 officeSelect.innerHTML = options.map(opt =>
-                    `<option value="${opt.value}"${opt.value === selectedOfficeId ? ' selected' : ''}>${opt.label}</option>`
+                    `<option value="${escapeHtml(opt.value)}"${opt.value === selectedOfficeId ? ' selected' : ''}>${escapeHtml(opt.label)}</option>`
                 ).join('');
 
                 // Update SearchableDropdown instance if exists
@@ -14571,14 +14571,14 @@ function renderEmployeeSalariesTable(employees) {
             : '<span class="badge badge-warning">Pending</span>';
 
         const actionBtn = hasSalary
-            ? `<button class="btn btn-sm btn-outline" onclick="openEmployeeSalaryModal('${emp.id}')" title="Revise Salary">
+            ? `<button class="btn btn-sm btn-outline" onclick="openEmployeeSalaryModal('${escapeHtml(emp.id)}')" title="Revise Salary">
                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                    </svg>
                    Revise
                </button>`
-            : `<button class="btn btn-sm btn-primary" onclick="openEmployeeSalaryModal('${emp.id}')" title="Assign Salary">
+            : `<button class="btn btn-sm btn-primary" onclick="openEmployeeSalaryModal('${escapeHtml(emp.id)}')" title="Assign Salary">
                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                        <line x1="12" y1="5" x2="12" y2="19"></line>
                        <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -14940,7 +14940,7 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
             <div class="esp-header">
                 <div class="esp-header-item">
                     <div class="esp-header-label">CTC (Annual)</div>
-                    <div class="esp-header-value">${currencySymbol}\u00A0${formatAmt(annualCtc || 0)}</div>
+                    <div class="esp-header-value">${escapeHtml(currencySymbol)}\u00A0${formatAmt(annualCtc || 0)}</div>
                 </div>
                 <div class="esp-header-item">
                     <div class="esp-header-label">Period</div>
@@ -14965,7 +14965,7 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
         const displayAmount = Math.abs(amount);
         const amtClass = isNegative ? 'ded' : 'earn';  // Use red for negative, green for positive
         const prefix = isNegative ? '−' : '+';  // Minus sign for negative
-        htmlContent += `<div class="esp-row"><span class="esp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="esp-row-amt ${amtClass}">${prefix}${currencySymbol}\u00A0${formatAmt(displayAmount)}</span></div>`;
+        htmlContent += `<div class="esp-row"><span class="esp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="esp-row-amt ${amtClass}">${prefix}${escapeHtml(currencySymbol)}\u00A0${formatAmt(displayAmount)}</span></div>`;
     });
 
     // v3.0.53: If there's a discrepancy between displayed earnings and gross, show explanation
@@ -14975,11 +14975,11 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
         const adjAmount = Math.abs(earningsDiscrepancy);
         const adjClass = earningsDiscrepancy > 0 ? 'ded' : 'earn';
         const adjPrefix = earningsDiscrepancy > 0 ? '−' : '+';
-        htmlContent += `<div class="esp-row" style="font-style: italic; opacity: 0.85;"><span class="esp-row-name" title="Auto-calculated to match CTC allocation">${adjustmentLabel}</span><span class="esp-row-amt ${adjClass}">${adjPrefix}${currencySymbol}\u00A0${formatAmt(adjAmount)}</span></div>`;
+        htmlContent += `<div class="esp-row" style="font-style: italic; opacity: 0.85;"><span class="esp-row-name" title="Auto-calculated to match CTC allocation">${adjustmentLabel}</span><span class="esp-row-amt ${adjClass}">${adjPrefix}${escapeHtml(currencySymbol)}\u00A0${formatAmt(adjAmount)}</span></div>`;
     }
 
     htmlContent += `
-                        <div class="esp-row esp-total-row"><span>Gross</span><span class="esp-row-amt earn">${currencySymbol}\u00A0${formatAmt(totalGross)}</span></div>
+                        <div class="esp-row esp-total-row"><span>Gross</span><span class="esp-row-amt earn">${escapeHtml(currencySymbol)}\u00A0${formatAmt(totalGross)}</span></div>
                     </div>
                 </div>
                 <div class="esp-column">
@@ -14991,10 +14991,10 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
     activeDeductions.forEach(cb => {
         const amount = cb.total_amount || cb.prorated_amount || 0;
         const zeroClass = amount === 0 ? ' esp-row-zero' : '';
-        htmlContent += `<div class="esp-row${zeroClass}"><span class="esp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="esp-row-amt ded">${amount > 0 ? '−' : ''}${currencySymbol}\u00A0${formatAmt(amount)}</span></div>`;
+        htmlContent += `<div class="esp-row${zeroClass}"><span class="esp-row-name" title="${escapeHtml(cb.component_name)}">${escapeHtml(cb.component_name)}</span><span class="esp-row-amt ded">${amount > 0 ? '−' : ''}${escapeHtml(currencySymbol)}\u00A0${formatAmt(amount)}</span></div>`;
     });
     htmlContent += `
-                        <div class="esp-row esp-total-row"><span>Total</span><span class="esp-row-amt ded">−${currencySymbol}\u00A0${formatAmt(totalDeductions)}</span></div>
+                        <div class="esp-row esp-total-row"><span>Total</span><span class="esp-row-amt ded">−${escapeHtml(currencySymbol)}\u00A0${formatAmt(totalDeductions)}</span></div>
                     </div>
                 </div>
             </div>
@@ -15002,15 +15002,15 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
             <div class="esp-summary">
                 <div class="esp-summary-item esp-summary-gross">
                     <div class="esp-summary-label">Gross</div>
-                    <div class="esp-summary-value">${currencySymbol}\u00A0${formatAmt(totalGross)}</div>
+                    <div class="esp-summary-value">${escapeHtml(currencySymbol)}\u00A0${formatAmt(totalGross)}</div>
                 </div>
                 <div class="esp-summary-item esp-summary-ded">
                     <div class="esp-summary-label">Deductions</div>
-                    <div class="esp-summary-value">−${currencySymbol}\u00A0${formatAmt(totalDeductions)}</div>
+                    <div class="esp-summary-value">−${escapeHtml(currencySymbol)}\u00A0${formatAmt(totalDeductions)}</div>
                 </div>
                 <div class="esp-summary-item esp-summary-net">
                     <div class="esp-summary-label">Net Pay</div>
-                    <div class="esp-summary-value">${currencySymbol}\u00A0${formatAmt(netPay)}</div>
+                    <div class="esp-summary-value">${escapeHtml(currencySymbol)}\u00A0${formatAmt(netPay)}</div>
                 </div>
             </div>
     `;
@@ -15023,13 +15023,13 @@ function renderEmpSalaryBreakdown(breakdown, annualCtc) {
             htmlContent += `
                 <div class="esp-employer">
                     <div class="esp-employer-title" onclick="this.nextElementSibling.classList.toggle('show')">
-                        <span>▶</span> Employer Contributions (${currencySymbol}\u00A0${formatAmt(totalEmployer)})
+                        <span>▶</span> Employer Contributions (${escapeHtml(currencySymbol)}\u00A0${formatAmt(totalEmployer)})
                     </div>
                     <div class="esp-employer-body">
             `;
             activeEmployer.forEach(cb => {
                 const amount = cb.total_amount || cb.prorated_amount || 0;
-                htmlContent += `<div class="esp-employer-row"><span>${escapeHtml(cb.component_name)}</span><span>${currencySymbol}\u00A0${formatAmt(amount)}</span></div>`;
+                htmlContent += `<div class="esp-employer-row"><span>${escapeHtml(cb.component_name)}</span><span>${escapeHtml(currencySymbol)}\u00A0${formatAmt(amount)}</span></div>`;
             });
             htmlContent += `</div></div>`;
         }
@@ -15334,7 +15334,7 @@ function renderTaxConfigContent() {
         infoBanner.className = 'tax-config-info-banner tax-config-banner-info';
         infoBanner.innerHTML = `
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <div><strong>Single tax regime: ${regimeName}.</strong> All employees are automatically assigned to this regime. No switching is required.</div>
+            <div><strong>Single tax regime: ${escapeHtml(regimeName)}.</strong> All employees are automatically assigned to this regime. No switching is required.</div>
         `;
         stats.style.display = 'none';
         tableContainer.style.display = 'none';
@@ -15400,7 +15400,7 @@ async function loadTaxConfigEmployees(countryCode, readOnly) {
         }
     } catch (error) {
         console.error('Error loading tax config employees:', error);
-        tableBody.innerHTML = `<tr class="empty-state"><td colspan="7"><div class="empty-message"><p>Error loading employees</p><p class="hint">${error.message || 'Unknown error'}</p></div></td></tr>`;
+        tableBody.innerHTML = `<tr class="empty-state"><td colspan="7"><div class="empty-message"><p>Error loading employees</p><p class="hint">${escapeHtml(error.message || 'Unknown error')}</p></div></td></tr>`;
     }
 }
 
@@ -15500,7 +15500,7 @@ function renderTaxConfigTable(employees, readOnly) {
 
         const actionBtn = readOnly
             ? ''
-            : `<button class="btn btn-sm btn-outline" onclick="openTaxRegimeModal('${emp.id}')" title="Change Regime">
+            : `<button class="btn btn-sm btn-outline" onclick="openTaxRegimeModal('${escapeHtml(emp.id)}')" title="Change Regime">
                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -15585,8 +15585,8 @@ function openTaxRegimeModal(employeeId) {
     // Employee info header
     document.getElementById('taxRegimeEmployeeInfo').innerHTML = `
         <div class="tax-regime-emp-header">
-            <div class="tax-regime-emp-name">${empName} ${empCode ? `<span class="emp-code">${empCode}</span>` : ''}</div>
-            <div class="tax-regime-emp-details">${deptName} &middot; ${officeName}</div>
+            <div class="tax-regime-emp-name">${escapeHtml(empName)} ${empCode ? `<span class="emp-code">${escapeHtml(empCode)}</span>` : ''}</div>
+            <div class="tax-regime-emp-details">${escapeHtml(deptName)} &middot; ${escapeHtml(officeName)}</div>
         </div>
     `;
 
@@ -15610,7 +15610,7 @@ function openTaxRegimeModal(employeeId) {
         const regimeKeys = Object.keys(taxConfigRegimes);
         const currentRegime = taxConfigRegimes[currentRegimeCode];
         const lockRules = currentRegime?.lock_in_rules || '';
-        document.getElementById('taxRegimeLockText').innerHTML = `<strong>Regime is locked.</strong> ${lockRules ? `Legal reference: ${lockRules}` : 'This employee\'s tax regime selection is locked for the current financial year.'}`;
+        document.getElementById('taxRegimeLockText').innerHTML = `<strong>Regime is locked.</strong> ${lockRules ? `Legal reference: ${escapeHtml(lockRules)}` : 'This employee\'s tax regime selection is locked for the current financial year.'}`;
     } else {
         lockWarning.style.display = 'none';
     }
@@ -15665,12 +15665,12 @@ function renderRegimeCards(currentRegimeCode, isLocked) {
         const cardClass = `regime-card ${isCurrent ? 'selected' : ''} ${isLocked ? 'locked' : ''}`;
 
         return `
-            <div class="${cardClass}" data-regime-code="${key}" onclick="${isLocked ? '' : `selectRegimeCard('${key}')`}">
+            <div class="${cardClass}" data-regime-code="${escapeHtml(key)}" onclick="${isLocked ? '' : `selectRegimeCard('${escapeHtml(key)}')`}">
                 <div class="regime-card-header">
-                    <div class="regime-card-name">${regimeName}</div>
+                    <div class="regime-card-name">${escapeHtml(regimeName)}</div>
                     <div class="regime-card-badges">${badges.join(' ')}</div>
                 </div>
-                ${description ? `<div class="regime-card-description">${description}</div>` : ''}
+                ${description ? `<div class="regime-card-description">${escapeHtml(description)}</div>` : ''}
                 ${standardDeduction != null ? `<div class="regime-card-detail">Standard Deduction: <strong>${formatSlabAmount(standardDeduction)}</strong></div>` : ''}
                 ${slabsHtml}
             </div>
@@ -15735,7 +15735,7 @@ function renderRegimeComparison() {
     let headerRow = '<tr><th>Slab</th>';
     regimeKeys.forEach(k => {
         const name = taxConfigRegimes[k]?.regime_name || k;
-        headerRow += `<th colspan="2">${name}</th>`;
+        headerRow += `<th colspan="2">${escapeHtml(name)}</th>`;
     });
     headerRow += '</tr>';
 
@@ -16035,7 +16035,7 @@ function renderAvailableReports() {
     if (!sfAvailableReports || sfAvailableReports.length === 0) {
         grid.innerHTML = `
             <div class="empty-state" style="grid-column: 1 / -1;">
-                <p style="color: var(--text-tertiary);">No report types configured for ${selectedGlobalCountry}</p>
+                <p style="color: var(--text-tertiary);">No report types configured for ${escapeHtml(selectedGlobalCountry)}</p>
             </div>
         `;
         return;
@@ -16047,7 +16047,7 @@ function renderAvailableReports() {
             <div class="report-card-compact-name">${escapeHtml(report.report_name)}</div>
             <div class="report-card-compact-meta">
                 <span class="report-code">${escapeHtml(report.report_code)}</span>
-                <span class="report-badge">${(report.format || 'txt').toUpperCase()}</span>
+                <span class="report-badge">${escapeHtml(String(report.format || 'txt').toUpperCase())}</span>
                 <span class="report-freq">${escapeHtml(report.frequency || 'monthly')}</span>
             </div>
         </div>
@@ -16117,7 +16117,7 @@ function renderGeneratedArtifacts() {
             </td>
             <td>${getMonthNameShort(filterMonth)} ${filterYear}</td>
             <td>${escapeHtml(artifact.establishment_code || 'All')}</td>
-            <td><span class="badge badge-info">${(artifact.format || 'txt').toUpperCase()}</span></td>
+            <td><span class="badge badge-info">${escapeHtml(String(artifact.format || 'txt').toUpperCase())}</span></td>
             <td>${artifact.row_count || 0}</td>
             <td>
                 <div style="font-size: 13px;">${formatDateTimeShort(artifact.generated_at)}</div>
@@ -16128,14 +16128,14 @@ function renderGeneratedArtifacts() {
             </td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn btn-icon btn-ghost" onclick="downloadArtifact('${artifact.id}')" title="Download">
+                    <button class="btn btn-icon btn-ghost" onclick="downloadArtifact('${escapeHtml(artifact.id)}')" title="Download">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="7 10 12 15 17 10"></polyline>
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
                     </button>
-                    <button class="btn btn-icon btn-ghost" onclick="viewArtifactDetails('${artifact.id}')" title="Details">
+                    <button class="btn btn-icon btn-ghost" onclick="viewArtifactDetails('${escapeHtml(artifact.id)}')" title="Details">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="10"></circle>
                             <path d="M12 16v-4"></path>
@@ -16247,7 +16247,7 @@ async function onGenerateModalPayrollRunChange() {
                     <span class="toggle-slider"></span>
                 </label>
                 <span style="flex: 1; font-size: 13px; font-weight: 500; color: var(--text-primary);">${escapeHtml(report.report_name)}</span>
-                <span class="badge badge-info" style="font-size: 10px;">${(report.format || 'txt').toUpperCase()}</span>
+                <span class="badge badge-info" style="font-size: 10px;">${escapeHtml(String(report.format || 'txt').toUpperCase())}</span>
             </div>
         `).join('');
     } catch (error) {
@@ -16424,7 +16424,7 @@ async function viewArtifactDetails(artifactId) {
                     </div>
                     <div class="detail-group">
                         <label style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Format</label>
-                        <div style="font-size: 14px; margin-top: 4px;"><span class="badge badge-info">${format.toUpperCase()}</span></div>
+                        <div style="font-size: 14px; margin-top: 4px;"><span class="badge badge-info">${escapeHtml(String(format).toUpperCase())}</span></div>
                     </div>
                     <div class="detail-group">
                         <label style="font-weight: 600; color: var(--text-secondary); font-size: 12px; text-transform: uppercase;">Period</label>

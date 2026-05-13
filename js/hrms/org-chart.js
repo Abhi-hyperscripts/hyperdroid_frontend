@@ -376,8 +376,8 @@ function renderTreeRow(node, index) {
                 ` : '<div class="tree-toggle-placeholder"></div>'}
                 <div class="tree-avatar ${node.profile_photo_url ? 'has-photo' : ''}">
                     ${node.profile_photo_url
-                        ? `<img src="${node.profile_photo_url}" alt="${escapeHtml(displayName)}">`
-                        : `<span>${getInitialsFromName(displayName)}</span>`
+                        ? `<img src="${escapeHtml(node.profile_photo_url)}" alt="${escapeHtml(displayName)}">`
+                        : `<span>${escapeHtml(getInitialsFromName(displayName))}</span>`
                     }
                 </div>
                 <div class="tree-name-info">
@@ -505,8 +505,8 @@ function showEmployeeDetails(id) {
         <div class="detail-header">
             <div class="detail-avatar ${emp.profile_photo_url ? 'has-photo' : ''}">
                 ${emp.profile_photo_url
-                    ? `<img src="${emp.profile_photo_url}" alt="${escapeHtml(displayName)}">`
-                    : `<span>${getInitialsFromName(displayName)}</span>`
+                    ? `<img src="${escapeHtml(emp.profile_photo_url)}" alt="${escapeHtml(displayName)}">`
+                    : `<span>${escapeHtml(getInitialsFromName(displayName))}</span>`
                 }
             </div>
             <div class="detail-name-section">
@@ -534,8 +534,8 @@ function showEmployeeDetails(id) {
                 <div class="manager-card" onclick="focusOnEmployee('${manager.id}')">
                     <div class="manager-avatar ${manager.profile_photo_url ? 'has-photo' : ''}">
                         ${manager.profile_photo_url
-                            ? `<img src="${manager.profile_photo_url}" alt="${escapeHtml(getDisplayName(manager))}">`
-                            : `<span>${getInitialsFromName(getDisplayName(manager))}</span>`
+                            ? `<img src="${escapeHtml(manager.profile_photo_url)}" alt="${escapeHtml(getDisplayName(manager))}">`
+                            : `<span>${escapeHtml(getInitialsFromName(getDisplayName(manager)))}</span>`
                         }
                     </div>
                     <div class="manager-info">
@@ -553,13 +553,13 @@ function showEmployeeDetails(id) {
             ${emp.email || emp.work_email ? `
             <div class="detail-info-item">
                 <label>Email</label>
-                <span><a href="mailto:${emp.email || emp.work_email}">${escapeHtml(emp.email || emp.work_email)}</a></span>
+                <span><a href="mailto:${escapeHtml(emp.email || emp.work_email)}">${escapeHtml(emp.email || emp.work_email)}</a></span>
             </div>
             ` : ''}
             ${emp.work_phone ? `
             <div class="detail-info-item">
                 <label>Phone</label>
-                <span><a href="tel:${emp.work_phone}">${escapeHtml(emp.work_phone)}</a></span>
+                <span><a href="tel:${escapeHtml(emp.work_phone)}">${escapeHtml(emp.work_phone)}</a></span>
             </div>
             ` : ''}
         </div>
@@ -590,8 +590,8 @@ function showEmployeeDetails(id) {
                     <div class="detail-report-item" onclick="focusOnEmployee('${report.id}')">
                         <div class="mini-avatar">
                             ${report.profile_photo_url
-                                ? `<img src="${report.profile_photo_url}" alt="">`
-                                : `<span>${getInitialsFromName(getDisplayName(report))}</span>`
+                                ? `<img src="${escapeHtml(report.profile_photo_url)}" alt="">`
+                                : `<span>${escapeHtml(getInitialsFromName(getDisplayName(report)))}</span>`
                             }
                         </div>
                         <div class="mini-info">
