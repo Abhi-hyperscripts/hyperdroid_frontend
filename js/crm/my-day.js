@@ -278,6 +278,7 @@
         renderMissed(data.missed || {});
         renderActivityMixChart(data.effort || {});
         renderCallsFunnelChart(data.effort || {}, data.outcome || {});
+        renderTimelineChart(data.timeline || []);
 
         // Total-actions pill
         const totalBubble = document.getElementById('effortTotal');
@@ -394,6 +395,98 @@
                     legend: { position: 'bottom' }
                 }
             }]
+        });
+    }
+
+    // Daily Activity — stacked column timeseries showing effort per day for
+    // the selected period. Only renders for Week / Month — for Today there's
+    // a single bucket so the chart adds no value over the tiles themselves.
+    // When every day in the window is empty (e.g. a brand new rep), we still
+    // show the chart wrapper with a friendly empty state.
+    function renderTimelineChart(timeline) {
+        const card = document.getElementById('timelineCard');
+        const sub = document.getElementById('timelineSub');
+        const body = document.getElementById('chartTimeline');
+        if (!card || !body) return;
+
+        // Hide for single-day windows entirely. The tile values + the
+        // donut/funnel already show the same information.
+        if (!Array.isArray(timeline) || timeline.length <= 1) {
+            card.style.display = 'none';
+            return;
+        }
+        card.style.display = '';
+
+        const days = timeline.map(b => b.day);
+        const totalActions = timeline.reduce((s, b) => s + (b.total || 0), 0);
+        if (sub) sub.textContent = totalActions === 0
+            ? 'no actions logged in this window'
+            : `${totalActions} action${totalActions === 1 ? '' : 's'} across ${timeline.length} days`;
+
+        if (totalActions === 0) {
+            if (_charts['chartTimeline']) {
+                try { _charts['chartTimeline'].destroy(); } catch (_) {}
+                delete _charts['chartTimeline'];
+            }
+            body.innerHTML = '<div class="md-chart-empty">Nothing logged in this window — log a call, email, meeting, or task on a day to see it bloom here.</div>';
+            return;
+        }
+
+        // Series order is intentional: dense "loud" metrics (calls, emails)
+        // first so the eye lands on them. Subtle inputs (deal moves, notes)
+        // last because they're rarer but still meaningful.
+        const series = [
+            { name: 'Calls',     color: '#6366f1', key: 'calls_logged' },
+            { name: 'Emails',    color: '#3b82f6', key: 'emails_logged' },
+            { name: 'Meetings',  color: '#a855f7', key: 'meetings_held' },
+            { name: 'Notes',     color: '#eab308', key: 'notes_logged' },
+            { name: 'New leads', color: '#14b8a6', key: 'new_leads' },
+            { name: 'Tasks',     color: '#22c55e', key: 'tasks_completed' },
+            { name: 'Follow-ups',color: '#f97316', key: 'followups_completed' },
+            { name: 'Deal moves',color: '#ec4899', key: 'deals_stage_changes' }
+        ].map(s => ({
+            name: s.name,
+            color: s.color,
+            data: timeline.map(b => Number(b[s.key] || 0))
+        }));
+
+        renderChart('chartTimeline', {
+            chart: {
+                type: 'bar', height: 300, stacked: true,
+                toolbar: { show: false }
+            },
+            series: series.map(s => ({ name: s.name, data: s.data })),
+            colors: series.map(s => s.color),
+            xaxis: {
+                categories: days,
+                labels: {
+                    style: { fontSize: '11px' },
+                    formatter: (val) => {
+                        // Format "2026-05-08" → "May 8". Cheap + readable.
+                        if (!val) return '';
+                        try {
+                            const d = new Date(val + 'T00:00:00');
+                            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                        } catch { return val; }
+                    }
+                }
+            },
+            yaxis: {
+                labels: { style: { fontSize: '11px' } },
+                title: { text: 'actions', style: { fontSize: '10px', fontWeight: 500 } }
+            },
+            plotOptions: {
+                bar: { columnWidth: '60%', borderRadius: 3, borderRadiusApplication: 'end' }
+            },
+            stroke: { width: 0 },
+            dataLabels: { enabled: false },
+            legend: {
+                position: 'top', horizontalAlign: 'center',
+                fontSize: '11px', itemMargin: { vertical: 0, horizontal: 6 },
+                markers: { width: 10, height: 10, radius: 3 }
+            },
+            grid: { padding: { top: 0, right: 10, bottom: 0, left: 10 } },
+            tooltip: { y: { formatter: (v) => v + (v === 1 ? ' action' : ' actions') } }
         });
     }
 

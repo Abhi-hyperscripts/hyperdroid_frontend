@@ -397,6 +397,18 @@
                 <!-- Tiles injected by JS -->
             </div>
 
+            <!-- ── Daily activity chart ──────────────────────────────────
+                 Stacked-column timeseries showing effort per day across the
+                 selected period. Only renders for Week/Month — for Today,
+                 the report is one bucket so the chart would be pointless. -->
+            <div class="md-chart-card md-timeline-card" id="timelineCard" style="display:none; margin-top:14px;">
+                <div class="md-chart-head">
+                    <h3>Daily Activity</h3>
+                    <span class="md-chart-sub" id="timelineSub">all actions per day</span>
+                </div>
+                <div class="md-chart-body" id="chartTimeline"></div>
+            </div>
+
             <!-- ── Charts row ─────────────────────────────────────────── -->
             <!-- Two charts side-by-side beneath the effort tiles:
                  • Activity Mix donut — how the rep allocated effort across
