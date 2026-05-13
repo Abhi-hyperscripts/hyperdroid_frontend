@@ -869,14 +869,43 @@ async function executeUnifiedImport(validRows) {
             document.getElementById('phase2').style.opacity = '1';
             document.getElementById('phase2Status').textContent = 'Import failed';
 
-            const errorMsg = response.message || 'Unknown error during import';
+            const summaryMsg = response.message || 'Unknown error during import';
+
+            // Seed every row with the summary so nothing is left blank, then
+            // overwrite with the per-row reason from validationErrors. Without
+            // this step every row read "Created 0 of N users" — the audit
+            // complaint that triggered this fix.
             validRows.forEach(row => {
                 row.user_created = false;
                 row.employee_created = false;
-                row.user_error = errorMsg;
+                row.user_error = summaryMsg;
             });
 
-            showToast(errorMsg, 'error', 8000);
+            if (Array.isArray(response.validationErrors)) {
+                response.validationErrors.forEach(err => {
+                    const match = err.match(/Row (\d+)/);
+                    if (match) {
+                        const rowNum = parseInt(match[1], 10);
+                        const row = validRows.find(r => r.RowNumber === rowNum);
+                        if (row) row.user_error = err;
+                    }
+                });
+            }
+
+            // Surface the specific reasons in the toast too — first 3 + an
+            // overflow hint — so HR sees the actionable info at a glance.
+            const errs = response.validationErrors || [];
+            if (errs.length > 0) {
+                const preview = errs.slice(0, 3).join('\n');
+                const more = errs.length > 3 ? `\n…and ${errs.length - 3} more (see table)` : '';
+                showToast(`${summaryMsg}\n\n${preview}${more}`, 'error', 10000);
+            } else {
+                showToast(summaryMsg, 'error', 8000);
+            }
+
+            // Switch to the Results step so the per-row table is visible.
+            showStep(3);
+            displayImportResults();
             return;
         }
 
