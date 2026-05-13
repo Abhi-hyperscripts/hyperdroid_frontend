@@ -105,7 +105,14 @@
         dropdown.appendChild(optionsList);
         wrapper.appendChild(trigger);
 
-        // Append dropdown to body to avoid overflow clipping
+        // Append dropdown to body to avoid overflow clipping. Tagged as
+        // belonging to a single Flatpickr instance so onDestroy can remove
+        // it — without this, every modal-reopen leaks one new dropdown into
+        // <body> and clicks on year options can land on a stale node from a
+        // prior modal session (the bug HR hit on Salary Structure edit).
+        dropdown.dataset.fpOwnerId = fp._fpInstanceId
+            = fp._fpInstanceId || ('fp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8));
+        dropdown.classList.add('fp-detached-dropdown');
         document.body.appendChild(dropdown);
 
         // Insert trigger after the hidden select
@@ -305,7 +312,10 @@
         dropdown.appendChild(optionsList);
         wrapper.appendChild(trigger);
 
-        // Append dropdown to body to avoid overflow clipping
+        // Same body-attached dropdown leak protection as the month selector.
+        dropdown.dataset.fpOwnerId = fp._fpInstanceId
+            = fp._fpInstanceId || ('fp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8));
+        dropdown.classList.add('fp-detached-dropdown');
         document.body.appendChild(dropdown);
 
         // Insert trigger after the hidden input
@@ -476,6 +486,22 @@
             if (instance._customYearWrapper && instance._customYearWrapper._updateYear) {
                 instance._customYearWrapper._updateYear(instance.currentYear);
             }
+        },
+        // BUG FIX: prevent body-attached dropdown leaks. The custom month +
+        // year dropdowns are appended to <body> so they escape modal overflow
+        // clipping; without this cleanup, every Flatpickr re-init (modal
+        // reopen, page navigation, MutationObserver re-trigger) leaves the
+        // old dropdown nodes in <body>. After enough cycles, year-option
+        // clicks land on a stale dropdown that's no longer wired to the
+        // visible input — silent failure where the date picker "doesn't
+        // work". Tag dropdowns with the instance id and remove on destroy.
+        onDestroy: function(selectedDates, dateStr, instance) {
+            const id = instance._fpInstanceId;
+            if (id) {
+                document.querySelectorAll(
+                    `.fp-detached-dropdown[data-fp-owner-id="${id}"]`
+                ).forEach(node => node.remove());
+            }
         }
     };
 
@@ -485,6 +511,22 @@
      * @param {Object} options - Additional Flatpickr options
      * @returns {Object} Flatpickr instance
      */
+    // Garbage-collect body-attached dropdowns whose owning input is no
+    // longer in the DOM (or has lost its _flatpickr reference). Runs once
+    // per init so we don't accumulate stale dropdowns across re-renders.
+    function sweepOrphanedDropdowns() {
+        const live = new Set();
+        document.querySelectorAll('input').forEach(inp => {
+            if (inp._flatpickr && inp._flatpickr._fpInstanceId) {
+                live.add(inp._flatpickr._fpInstanceId);
+            }
+        });
+        document.querySelectorAll('.fp-detached-dropdown').forEach(node => {
+            const id = node.dataset.fpOwnerId;
+            if (!id || !live.has(id)) node.remove();
+        });
+    }
+
     function initDatePicker(element, options = {}) {
         if (typeof element === 'string') {
             element = document.querySelector(element);
@@ -496,6 +538,9 @@
         if (element._flatpickr) {
             return element._flatpickr;
         }
+
+        // Clear out any stale dropdowns left over from prior renders.
+        sweepOrphanedDropdowns();
 
         // Skip the custom searchable month / year selectors for inputs that
         // ask for the plain Flatpickr UI. Those are useful in HRMS forms

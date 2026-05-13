@@ -1265,6 +1265,28 @@ const InfoModal = (() => {
             });
 
             document.body.appendChild(overlay);
+
+            // Z-index hardening: when InfoModal is opened from inside another
+            // already-open modal (e.g., "Version Details" launched from the
+            // Version History popup), the parent modal's stacking context
+            // can sit above us if its inner content has its own positioned
+            // children. Compute the highest z-index currently in use across
+            // any visible overlay/popup on the page and step above it. Also
+            // promote the overlay to its own stacking context with isolation
+            // so child styles can't drag it under.
+            try {
+                let maxZ = 10001;
+                document.querySelectorAll(
+                    '.modal.active, .modal-overlay.active, .info-modal-overlay, .gm-overlay.active'
+                ).forEach(el => {
+                    if (el === overlay) return;
+                    const z = parseInt(window.getComputedStyle(el).zIndex, 10);
+                    if (!isNaN(z) && z > maxZ) maxZ = z;
+                });
+                overlay.style.zIndex = String(maxZ + 10);
+                overlay.style.isolation = 'isolate';
+            } catch (_) { /* defensive: never block the modal opening */ }
+
             requestAnimationFrame(() => overlay.classList.add('show'));
 
             // Focus the OK button

@@ -2066,9 +2066,23 @@
                                 <label for="structureDescription">Description</label>
                                 <input type="text" id="structureDescription" name="description" class="form-control" placeholder="e.g. Standard pay structure for full-time staff">
                             </div>
-                            <div class="form-group">
+                            <!-- Wrapper toggled by JS: shown on CREATE (this is the
+                                 V1 effective_from), hidden on EDIT (versions own
+                                 the date, not the structure). -->
+                            <div class="form-group" id="structureEffectiveFromGroup">
                                 <label for="structureEffectiveFrom">Effective From *</label>
                                 <input type="date" id="structureEffectiveFrom" name="effective_from" class="form-control" required>
+                                <small style="color: var(--text-secondary); font-size: 0.78rem; margin-top: 4px; display: block;">
+                                    Becomes the effective date of <strong>Version 1</strong>. To introduce a new effective date later, create a new version from the structure's history.
+                                </small>
+                            </div>
+                            <!-- Read-only stand-in shown on EDIT instead of the date input.
+                                 Effective dates can only be changed by creating a new version. -->
+                            <div class="form-group" id="structureEffectiveFromEditNotice" style="display:none;">
+                                <label>Effective From</label>
+                                <div style="padding: 8px 12px; background: var(--bg-card-subtle, rgba(99,102,241,0.08)); border: 1px dashed var(--border-color); border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                                    Managed by <strong>Versions</strong>. To change when a salary structure takes effect, open <strong>Version History</strong> on the structure row and create a new version.
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="structureIsDefault">Default for Office</label>

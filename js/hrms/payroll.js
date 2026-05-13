@@ -3961,13 +3961,38 @@ async function showCreateStructureModal() {
     if (isDefaultDropdown && typeof isDefaultDropdown.setValue === 'function') {
         isDefaultDropdown.setValue('false');
     }
-    // Set default effective date to 1st of current month (avoids proration issues)
+    // CREATE flow: show the date input (this becomes V1.effective_from),
+    // hide the "managed via versions" notice. Default to the 1st of the
+    // current month to avoid proration surprises in the same payroll run.
+    const fromGroup = document.getElementById('structureEffectiveFromGroup');
+    const editNotice = document.getElementById('structureEffectiveFromEditNotice');
+    if (fromGroup) fromGroup.style.display = '';
+    if (editNotice) editNotice.style.display = 'none';
+
     const effectiveFromInput = document.getElementById('structureEffectiveFrom');
     if (effectiveFromInput) {
+        // Re-enable the date input and its Flatpickr altInput, and re-arm
+        // `required` on the original input. (Don't auto-add required to
+        // every input in the group — only the date input is required, and
+        // we don't want to over-zealously re-arm flatpickr internals.)
+        effectiveFromInput.disabled = false;
+        effectiveFromInput.setAttribute('required', 'required');
+        const fpAlt = effectiveFromInput._flatpickr && effectiveFromInput._flatpickr.altInput;
+        if (fpAlt) {
+            fpAlt.disabled = false;
+            // altInput stays without `required` — flatpickr forwards
+            // validity through the original input. Don't add it to the
+            // alt, since its name="" trips form.reportValidity.
+        }
         const today = new Date();
         const year = today.getFullYear();
         const month = String(today.getMonth() + 1).padStart(2, '0');
-        effectiveFromInput.value = `${year}-${month}-01`;
+        const dateStr = `${year}-${month}-01`;
+        if (effectiveFromInput._flatpickr) {
+            effectiveFromInput._flatpickr.setDate(dateStr, true);
+        } else {
+            effectiveFromInput.value = dateStr;
+        }
     }
     // Reset is_default select
     const isDefaultSelect = document.getElementById('structureIsDefault');
@@ -4212,6 +4237,31 @@ async function editSalaryStructure(structureId) {
         const isActiveCheckbox = document.getElementById('structureIsActive');
         if (isActiveCheckbox) {
             isActiveCheckbox.checked = structure.is_active !== false; // Default to true if not set
+        }
+
+        // EDIT flow: hide the date input entirely. The structure itself has
+        // no effective_from column — that's owned by salary_structure_versions.
+        // Showing a date picker here misleads HR into thinking they can edit
+        // it; the previous behaviour silently dropped their pick because the
+        // backend's UpdateSalaryStructureRequest doesn't carry the field.
+        // Show a clear "Managed by Versions" notice in its place.
+        const fromGroup = document.getElementById('structureEffectiveFromGroup');
+        const editNotice = document.getElementById('structureEffectiveFromEditNotice');
+        if (fromGroup) fromGroup.style.display = 'none';
+        if (editNotice) editNotice.style.display = '';
+        // form.checkValidity() walks ALL [required] descendants of the form,
+        // including hidden ones. The Effective From group has TWO required
+        // controls — the original <input type=date> and Flatpickr's altInput
+        // (a sibling <input type=text> that mirrors required-state). Both
+        // must be neutralised or we'd hit the cryptic "An invalid form
+        // control with name='' is not focusable" error on save.
+        // Brute-force sweep the entire group instead of querying by id, so
+        // we catch flatpickr's altInput regardless of init order.
+        if (fromGroup) {
+            fromGroup.querySelectorAll('[required]').forEach(el => {
+                el.removeAttribute('required');
+                if ('disabled' in el) el.disabled = true;
+            });
         }
 
         // Load and populate structure components (excluding statutory/auto-attached)
