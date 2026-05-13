@@ -50,6 +50,12 @@
     // Plain CRM_USER never sees the picker so this stays null for them.
     let selectedRepId = null;
     let selfUserId = null;
+    // SearchableDropdown instance (created lazily after we have the rep list).
+    let _repDropdown = null;
+    // ApexCharts instances keyed by element id. Each render destroys the
+    // prior chart on that element first to avoid leaks when the period or
+    // rep changes.
+    const _charts = {};
 
     document.addEventListener('DOMContentLoaded', async () => {
         if (typeof Navigation !== 'undefined') Navigation.init('crm', '../');
@@ -149,6 +155,10 @@
     //   • plain CRM_USER         → just themselves
     // We only show the picker when there's more than one rep — for plain
     // members it stays hidden.
+    //
+    // The visible control is a SearchableDropdown (project convention —
+    // no native <select> in our UI). The hidden <select> still exists to
+    // hold the canonical value + drive Playwright tests.
     async function initRepPicker() {
         const wrap = document.getElementById('repPicker');
         const sel = document.getElementById('repSelect');
@@ -167,41 +177,75 @@
         const reps = Array.isArray(payload?.reps) ? payload.reps : [];
         if (reps.length <= 1) return;  // Just self → no picker needed.
 
-        // Build options. "Me" always sorts first; the rest are alpha by
-        // display_name (the server already orders by DisplayName, but we
-        // re-sort here so "Me" pins to the top of the dropdown).
+        // "Me" pins to the top so the rep selecting themselves is one click.
         const meRep = reps.find(r => r.user_id === selfUserId);
         const others = reps
             .filter(r => r.user_id !== selfUserId)
             .sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
 
-        sel.innerHTML = '';
+        // Build option list for SearchableDropdown. `value` = user_id;
+        // `label` = the visible name (with team hint for others).
+        const options = [];
         if (meRep) {
-            sel.appendChild(makeOption(meRep.user_id, 'Me (' + (meRep.display_name || 'self') + ')'));
+            options.push({
+                value: meRep.user_id,
+                label: 'Me (' + (meRep.display_name || 'self') + ')',
+                description: meRep.team_name ? meRep.team_name : null
+            });
         }
         others.forEach(r => {
-            const teamHint = r.team_name ? ` — ${r.team_name}` : '';
-            sel.appendChild(makeOption(r.user_id, (r.display_name || r.email) + teamHint));
+            options.push({
+                value: r.user_id,
+                label: r.display_name || r.email,
+                description: r.team_name || null
+            });
         });
 
-        // Default selection = self.
-        sel.value = selfUserId || (meRep ? meRep.user_id : reps[0].user_id);
-        selectedRepId = sel.value;
-
-        sel.addEventListener('change', async () => {
-            selectedRepId = sel.value;
-            updateHeader(sel.options[sel.selectedIndex]?.text || '');
-            await loadReport();
+        // Also populate the (hidden) native <select> so the value can be
+        // read by anything (Playwright tests, accessibility tooling) that
+        // looks at it.
+        sel.innerHTML = '';
+        options.forEach(o => {
+            const opt = document.createElement('option');
+            opt.value = o.value;
+            opt.textContent = o.label;
+            sel.appendChild(opt);
         });
+
+        const initial = selfUserId || (meRep ? meRep.user_id : reps[0].user_id);
+        selectedRepId = initial;
+        sel.value = initial;
+
+        // Wrap with SearchableDropdown. Virtual scroll kicks in for >50 reps
+        // — the admin case where the picker shows the whole tenant roster.
+        if (typeof SearchableDropdown !== 'undefined') {
+            _repDropdown = new SearchableDropdown(wrap, {
+                options,
+                value: initial,
+                placeholder: 'Select rep…',
+                searchPlaceholder: 'Search reps…',
+                virtualScroll: options.length > 50,
+                onChange: async (value, option) => {
+                    selectedRepId = value;
+                    sel.value = value;
+                    updateHeader(option?.label || '');
+                    await loadReport();
+                }
+            });
+        } else {
+            // Defensive fallback — should never hit in practice because the
+            // page-level script tag pulls searchable-dropdown.js before
+            // my-day.js. If we ever do hit this, surface the native select.
+            console.warn('[my-day] SearchableDropdown not loaded, falling back to <select>');
+            sel.style.display = '';
+            sel.addEventListener('change', async () => {
+                selectedRepId = sel.value;
+                updateHeader(sel.options[sel.selectedIndex]?.text || '');
+                await loadReport();
+            });
+        }
 
         wrap.classList.add('visible');
-    }
-
-    function makeOption(value, label) {
-        const opt = document.createElement('option');
-        opt.value = value;
-        opt.textContent = label;
-        return opt;
     }
 
     // When a non-self rep is selected, update the page title + badge so it's
@@ -232,6 +276,8 @@
         renderTileSection('effortGrid', tileDefs.effort, data.effort || {});
         renderTileSection('outcomeGrid', tileDefs.outcome, data.outcome || {});
         renderMissed(data.missed || {});
+        renderActivityMixChart(data.effort || {});
+        renderCallsFunnelChart(data.effort || {}, data.outcome || {});
 
         // Total-actions pill
         const totalBubble = document.getElementById('effortTotal');
@@ -240,6 +286,187 @@
             totalBubble.textContent = `${total} action${total === 1 ? '' : 's'}`;
             totalBubble.style.display = total > 0 ? 'inline-block' : 'none';
         }
+    }
+
+    // ── Charts ─────────────────────────────────────────────────────────
+    // ApexCharts theming follows dashboard.js — transparent bg, foreColor
+    // and grid colours derived from the current theme so light/dark mode
+    // both look right without a re-render.
+    function apexTheme() {
+        const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+        return {
+            mode: isDark ? 'dark' : 'light',
+            foreColor: isDark ? '#94a3b8' : '#475569',
+            grid: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'
+        };
+    }
+
+    function renderChart(id, options) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (_charts[id]) {
+            try { _charts[id].destroy(); } catch (_) {}
+            delete _charts[id];
+        }
+        // Inject themed defaults.
+        const t = apexTheme();
+        options.chart = Object.assign({}, options.chart, {
+            background: 'transparent',
+            foreColor: t.foreColor,
+            fontFamily: 'inherit'
+        });
+        options.theme = { mode: t.mode };
+        if (options.grid) options.grid.borderColor = t.grid;
+        if (typeof ApexCharts === 'undefined') {
+            el.innerHTML = '<div class="md-chart-empty">Charts library failed to load</div>';
+            return;
+        }
+        _charts[id] = new ApexCharts(el, options);
+        _charts[id].render();
+    }
+
+    // Donut showing how the rep allocated their time/effort across the
+    // logged categories. Empty bucket → friendly message instead of an
+    // empty chart.
+    function renderActivityMixChart(effort) {
+        const mix = [
+            { key: 'calls_logged',        label: 'Calls',     color: '#6366f1' },
+            { key: 'emails_logged',       label: 'Emails',    color: '#3b82f6' },
+            { key: 'meetings_held',       label: 'Meetings',  color: '#a855f7' },
+            { key: 'notes_logged',        label: 'Notes',     color: '#eab308' },
+            { key: 'tasks_completed',     label: 'Tasks',     color: '#22c55e' },
+            { key: 'followups_completed', label: 'Follow-ups',color: '#f97316' },
+            { key: 'deals_stage_changes', label: 'Deal moves',color: '#ec4899' }
+        ];
+        const data = mix.map(m => Number(effort[m.key] || 0));
+        const total = data.reduce((a, b) => a + b, 0);
+        const el = document.getElementById('chartActivityMix');
+        const sub = document.getElementById('activityMixSub');
+
+        if (total === 0) {
+            if (_charts['chartActivityMix']) {
+                try { _charts['chartActivityMix'].destroy(); } catch (_) {}
+                delete _charts['chartActivityMix'];
+            }
+            if (el) el.innerHTML = '<div class="md-chart-empty">No activity in this period yet — log a call, email, or meeting to see the split here.</div>';
+            if (sub) sub.textContent = '0 actions logged';
+            return;
+        }
+        if (sub) sub.textContent = `${total} action${total === 1 ? '' : 's'} logged`;
+
+        renderChart('chartActivityMix', {
+            chart: { type: 'donut', height: 280, toolbar: { show: false } },
+            series: data,
+            labels: mix.map(m => m.label),
+            colors: mix.map(m => m.color),
+            stroke: { width: 2, colors: ['transparent'] },
+            fill: { opacity: 0.9 },
+            legend: {
+                position: 'right', fontSize: '12px',
+                itemMargin: { vertical: 2 }
+            },
+            dataLabels: {
+                enabled: true,
+                formatter: (val) => Math.round(val) + '%',
+                style: { fontSize: '11px', fontWeight: 600 }
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '62%',
+                        labels: {
+                            show: true,
+                            total: {
+                                show: true, label: 'Total',
+                                fontSize: '12px',
+                                formatter: () => String(total)
+                            },
+                            value: { fontSize: '20px', fontWeight: 700 }
+                        }
+                    }
+                }
+            },
+            tooltip: { y: { formatter: v => v + (v === 1 ? ' action' : ' actions') } },
+            responsive: [{
+                breakpoint: 600,
+                options: {
+                    chart: { height: 260 },
+                    legend: { position: 'bottom' }
+                }
+            }]
+        });
+    }
+
+    // Calls Funnel — three-step horizontal funnel from raw calls logged →
+    // calls that connected → deals that closed. Visualises the rep's
+    // top-of-funnel efficiency and is the report's most actionable view:
+    // wide gap between "logged" and "connected" means dialing isn't
+    // landing; wide gap between "connected" and "won" means conversations
+    // aren't closing.
+    function renderCallsFunnelChart(effort, outcome) {
+        const calls = Number(effort.calls_logged || 0);
+        const connected = Number(outcome.calls_connected || 0);
+        const won = Number(outcome.deals_won || 0);
+        const el = document.getElementById('chartCallsFunnel');
+
+        if (calls === 0 && connected === 0 && won === 0) {
+            if (_charts['chartCallsFunnel']) {
+                try { _charts['chartCallsFunnel'].destroy(); } catch (_) {}
+                delete _charts['chartCallsFunnel'];
+            }
+            if (el) el.innerHTML = '<div class="md-chart-empty">No calls or deals yet — once you log a call, the funnel will show how it converts.</div>';
+            return;
+        }
+
+        renderChart('chartCallsFunnel', {
+            chart: { type: 'bar', height: 280, toolbar: { show: false } },
+            series: [{ name: 'Count', data: [calls, connected, won] }],
+            xaxis: {
+                categories: ['Calls Logged', 'Connected', 'Deals Won'],
+                labels: { style: { fontSize: '11px' } }
+            },
+            colors: ['#6366f1', '#3b82f6', '#10b981'],
+            plotOptions: {
+                bar: {
+                    horizontal: true,
+                    distributed: true,
+                    borderRadius: 4,
+                    barHeight: '55%',
+                    dataLabels: { position: 'top' }
+                }
+            },
+            dataLabels: {
+                enabled: true,
+                offsetX: 35,
+                style: { fontSize: '12px', fontWeight: 700, colors: ['var(--text-primary)'] },
+                formatter: (val, opts) => {
+                    // Show absolute count + conversion-from-top label
+                    if (val === 0) return '0';
+                    if (opts.dataPointIndex === 0) return String(val);
+                    const denom = calls;
+                    if (!denom) return String(val);
+                    const pct = Math.round((val / denom) * 1000) / 10;
+                    return `${val} (${pct}%)`;
+                }
+            },
+            legend: { show: false },
+            grid: {
+                xaxis: { lines: { show: true } },
+                yaxis: { lines: { show: false } },
+                padding: { left: 10, right: 30 }
+            },
+            tooltip: {
+                y: {
+                    formatter: (val, opts) => {
+                        if (opts.dataPointIndex === 0) return `${val} calls logged`;
+                        const denom = calls;
+                        if (!denom) return `${val}`;
+                        const pct = Math.round((val / denom) * 1000) / 10;
+                        return `${val} (${pct}% of dialed)`;
+                    }
+                }
+            }
+        });
     }
 
     function renderTileSection(gridId, defs, src) {

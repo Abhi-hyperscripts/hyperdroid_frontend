@@ -18,6 +18,8 @@
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js"></script>
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <style>
     /* My Day page chrome — matches analytics.html convention so the nav
@@ -194,44 +196,83 @@
 
     /* Rep picker — admin/manager-only. Lives in the header next to the
        period selector. Hidden by default; revealed when the viewable-reps
-       endpoint returns more than just self. */
+       endpoint returns more than just self. The actual control is a
+       SearchableDropdown (convertSelectToSearchable wraps it); we just size
+       the wrapper here. */
     .md-rep-picker {
         display: none; align-items: center; gap: 8px;
-        margin-right: 10px;
+        margin-right: 10px; min-width: 240px;
     }
     .md-rep-picker.visible { display: inline-flex; }
     .md-rep-picker label {
         font-size: 0.85em; color: var(--text-secondary);
-        font-weight: 500;
+        font-weight: 500; white-space: nowrap;
     }
-    .md-rep-picker select {
-        appearance: none;
-        background: rgba(var(--bg-card-rgb, 15,23,42), 0.55);
+    /* The hidden native <select> drives state; SearchableDropdown renders the
+       visible control on top. Keep the wrapper sized large enough for the
+       longest rep name + team hint. */
+    #repSelect { display: none !important; }
+    .md-rep-picker .searchable-dropdown { min-width: 220px; }
+    @media (max-width: 640px) {
+        .md-rep-picker { margin-right: 0; width: 100%; min-width: 0; }
+        .md-rep-picker .searchable-dropdown { flex: 1; min-width: 0; }
+    }
+
+    /* ── Charts section ─────────────────────────────────────────────── */
+    .md-charts-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+        gap: 14px;
+        margin-top: 14px;
+    }
+    @media (max-width: 900px) {
+        .md-charts-grid { grid-template-columns: 1fr; }
+    }
+    .md-chart-card {
+        background:
+            linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 50%),
+            rgba(var(--bg-card-rgb, 15,23,42), 0.55);
         backdrop-filter: blur(16px) saturate(1.4);
         -webkit-backdrop-filter: blur(16px) saturate(1.4);
-        border: 1px solid rgba(var(--brand-primary-rgb, 99,102,241), 0.25);
+        border: 1px solid rgba(var(--brand-primary-rgb, 99,102,241), 0.18);
+        border-radius: 12px;
+        padding: 16px 18px;
+        min-width: 0; /* allow shrink inside grid */
+    }
+    [data-theme="light"] .md-chart-card {
+        background:
+            linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%),
+            rgba(255,255,255,0.55);
+        border-color: rgba(var(--brand-primary-rgb, 99,102,241), 0.25);
+    }
+    .md-chart-head {
+        display:flex; align-items:baseline; justify-content:space-between;
+        gap: 10px; margin-bottom: 6px;
+    }
+    .md-chart-head h3 {
+        margin: 0; font-size: 0.95rem; font-weight: 600;
         color: var(--text-primary);
-        padding: 7px 30px 7px 12px;
-        border-radius: 8px;
-        font-size: 0.88em; font-weight: 500;
-        cursor: pointer;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23999'%3e%3cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 8px center;
-        background-size: 16px;
-        max-width: 240px;
     }
-    .md-rep-picker select:focus {
-        outline: none;
-        border-color: var(--brand-primary);
+    .md-chart-head .md-chart-sub {
+        font-size: 0.78em; color: var(--text-secondary);
     }
-    [data-theme="light"] .md-rep-picker select {
-        background-color: rgba(255,255,255,0.7);
+    .md-chart-body { min-height: 240px; }
+    .md-chart-empty {
+        display:flex; align-items:center; justify-content:center;
+        height: 240px; color: var(--text-secondary); font-size: 0.88em;
+        text-align: center; padding: 0 20px;
     }
-    /* On mobile, picker stacks above period selector */
-    @media (max-width: 640px) {
-        .md-rep-picker { margin-right: 0; }
-        .md-rep-picker select { max-width: 100%; flex: 1; }
+    /* ApexCharts tooltip needs to be readable in dark mode. */
+    [data-theme="dark"] .apexcharts-tooltip,
+    .apexcharts-tooltip {
+        background: rgba(15, 23, 42, 0.95) !important;
+        color: #f1f5f9 !important;
+        border: 1px solid rgba(var(--brand-primary-rgb, 99,102,241), 0.4) !important;
+    }
+    .apexcharts-tooltip-title {
+        background: rgba(var(--brand-primary-rgb, 99,102,241), 0.18) !important;
+        border-bottom-color: rgba(var(--brand-primary-rgb, 99,102,241), 0.3) !important;
+        color: #f1f5f9 !important;
     }
 
     /* Viewing-other banner — small badge under the title that makes it
@@ -313,6 +354,31 @@
                 <!-- Tiles injected by JS -->
             </div>
 
+            <!-- ── Charts row ─────────────────────────────────────────── -->
+            <!-- Two charts side-by-side beneath the effort tiles:
+                 • Activity Mix donut — how the rep allocated effort across
+                   logged calls, emails, meetings, notes, tasks, follow-ups.
+                 • Connect Rate gauge — radial bar showing connect-rate %
+                   with deal-won + calls-connected counts as supporting
+                   stats. Hidden together when there's no activity at all
+                   so we don't render an empty donut. -->
+            <div class="md-charts-grid" id="chartsRow">
+                <div class="md-chart-card">
+                    <div class="md-chart-head">
+                        <h3>Activity Mix</h3>
+                        <span class="md-chart-sub" id="activityMixSub">How effort was split</span>
+                    </div>
+                    <div class="md-chart-body" id="chartActivityMix"></div>
+                </div>
+                <div class="md-chart-card">
+                    <div class="md-chart-head">
+                        <h3>Calls Funnel</h3>
+                        <span class="md-chart-sub">logged → connected → won</span>
+                    </div>
+                    <div class="md-chart-body" id="chartCallsFunnel"></div>
+                </div>
+            </div>
+
             <!-- ── What I got ─────────────────────────────────────────── -->
             <div class="md-section-head">
                 <h2>What I got</h2>
@@ -339,6 +405,7 @@
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/my-day.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>
