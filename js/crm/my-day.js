@@ -28,15 +28,20 @@
         ]
     };
 
+    // Each "see all" footer link points the rep at the leads page narrowed
+    // to their own pipeline. `ownerUserId=me` is resolved client-side from
+    // the JWT in leads.js — no manager can craft a URL to see someone else's
+    // data. Bucket-specific filters (staleDays, hasOverdueTask, etc.) need
+    // new backend filter modes; tracked for Phase 2.
     const missedDefs = [
-        { key: 'overdue_tasks',         countKey: 'overdue_tasks_count',         title: 'Overdue Tasks',         empty: 'No overdue tasks. Clear!',         emptyLine: '— nothing past due',
-          linkText: 'View all in Tasks',  link: 'leads.html' },
-        { key: 'overdue_followups',     countKey: 'overdue_followups_count',     title: 'Overdue Follow-ups',    empty: 'No overdue follow-ups.',           emptyLine: '— nothing past due',
-          linkText: 'See on leads',       link: 'leads.html' },
-        { key: 'stale_leads',           countKey: 'stale_leads_count',           title: 'Stale Leads',           empty: 'No stale leads.',                  emptyLine: '— all touched recently',
-          linkText: 'See on leads',       link: 'leads.html' },
-        { key: 'untouched_new_leads',   countKey: 'untouched_new_leads_count',   title: 'Untouched New Leads',   empty: 'No untouched new leads today.',    emptyLine: '— all touched',
-          linkText: 'See on leads',       link: 'leads.html' }
+        { key: 'overdue_tasks',       countKey: 'overdue_tasks_count',       title: 'Overdue Tasks',
+          empty: 'No overdue tasks. Clear!',      linkText: 'See my leads',  link: 'leads.html?ownerUserId=me' },
+        { key: 'overdue_followups',   countKey: 'overdue_followups_count',   title: 'Overdue Follow-ups',
+          empty: 'No overdue follow-ups.',        linkText: 'See my leads',  link: 'leads.html?ownerUserId=me' },
+        { key: 'stale_leads',         countKey: 'stale_leads_count',         title: 'Stale Leads',
+          empty: 'No stale leads.',               linkText: 'See my leads',  link: 'leads.html?ownerUserId=me' },
+        { key: 'untouched_new_leads', countKey: 'untouched_new_leads_count', title: 'Untouched New Leads',
+          empty: 'No untouched new leads today.', linkText: 'See my leads',  link: 'leads.html?ownerUserId=me&status=new' }
     ];
 
     let currentPeriod = 'today';
@@ -182,8 +187,16 @@
     function renderMissedItem(item) {
         const title = item.title || '(untitled)';
         const due = item.due_at ? formatDueMeta(item.due_at) : '';
+        // Each row uses sessionStorage to hand off the target lead id, then
+        // navigates to leads.html?ownerUserId=me. leads.js reads the handoff
+        // after init and opens the detail panel — avoids the race we had with
+        // a URL-param auto-open that fired before the page was ready.
+        const leadId = item.related_lead_id;
+        const onclick = leadId
+            ? `sessionStorage.setItem('crm_openLeadId','${encodeURIComponent(leadId)}'); window.location='leads.html?ownerUserId=me'; return false;`
+            : `window.location='leads.html?ownerUserId=me'; return false;`;
         return `
-            <li>
+            <li onclick="${onclick}">
                 <span class="md-item-title" title="${escapeAttr(title)}">${escapeHtml(title)}</span>
                 <span class="md-item-meta">${escapeHtml(due)}</span>
             </li>

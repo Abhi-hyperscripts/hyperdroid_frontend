@@ -147,8 +147,16 @@
     .md-missed-list li {
         padding: 8px 0; border-top: 1px solid rgba(var(--brand-primary-rgb, 99,102,241), 0.10);
         font-size: 0.86em; display: flex; justify-content: space-between; gap: 10px;
+        cursor: pointer; transition: background 0.12s;
+        border-radius: 4px;
     }
     .md-missed-list li:first-child { border-top: none; }
+    .md-missed-list li:hover {
+        background: rgba(var(--brand-primary-rgb, 99,102,241), 0.06);
+    }
+    .md-missed-list li:hover .md-item-title {
+        color: var(--brand-primary);
+    }
     .md-missed-list .md-item-title {
         color: var(--text-primary); overflow: hidden;
         text-overflow: ellipsis; white-space: nowrap;

@@ -45,7 +45,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     // can't actually send. Cached on window so renderLeadsTable +
     // openLeadDetailPanel can read it synchronously.
     loadTenantMailboxFlag();
-    loadLeads();
+    // Deep-link from My Day: /pages/crm/leads.html?ownerUserId=<uuid>
+    // pre-fills the Owner filter dropdown and triggers loadLeads so the
+    // rep lands on a page already narrowed to their own pipeline. A
+    // sessionStorage handoff key ('crm_openLeadId') opens the detail panel
+    // for a specific lead AFTER loadLeads completes — sessionStorage avoids
+    // the URL-param race condition where openLeadDetailPanel fired before
+    // the table state was ready and got the user logged out.
+    applyDeepLinkFilters();
+    loadLeads().then(() => {
+        const openId = sessionStorage.getItem('crm_openLeadId');
+        if (openId && typeof window.openLeadDetailPanel === 'function') {
+            sessionStorage.removeItem('crm_openLeadId');
+            try { window.openLeadDetailPanel(decodeURIComponent(openId)); }
+            catch (e) { console.warn('[leads] deep-link auto-open failed', e); }
+        }
+    }).catch(() => {});
     loadLeadStats();
     loadSourceFilter();
     loadCampaignFilter();
@@ -60,6 +75,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.refreshHelpInboxBanner();
     }
 });
+
+// My Day deep-link: read URL params and pre-fill the matching filter widgets.
+// Supported today: ?ownerUserId=<uuid|me>, ?status=<csv>, ?hasFollowup=true.
+// If 'me', resolve to the current authenticated user's id via the JWT claim.
+// Pre-filling the <select> + dispatching 'change' lets the existing filter
+// pipeline (applyFilters → loadLeads) do its job without any backend changes.
+function applyDeepLinkFilters() {
+    const params = new URLSearchParams(window.location.search);
+    if (![...params.keys()].length) return;
+
+    let ownerUserId = params.get('ownerUserId');
+    if (ownerUserId === 'me' && typeof api !== 'undefined' && typeof api.getUser === 'function') {
+        ownerUserId = api.getUser()?.id || api.getUser()?.userId || null;
+    }
+
+    // Wait one tick — the filter dropdowns are SearchableDropdown wrappers
+    // that initialize after DOMContentLoaded. Setting before they're ready
+    // is a no-op.
+    setTimeout(() => {
+        if (ownerUserId) {
+            const ownerEl = document.getElementById('filterOwner');
+            if (ownerEl) {
+                ownerEl.value = ownerUserId;
+                ownerEl.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            // SearchableDropdown wrappers carry their own display state.
+            // We trigger applyFilters explicitly in case the change handler
+            // didn't propagate (some wrappers swallow it).
+        }
+        if (typeof applyFilters === 'function') applyFilters();
+    }, 250);
+}
 
 // Polls the reassign-queue count endpoint. The button + badge stay hidden
 // when count is 0 (regular tenants never see them) and pop in red the
