@@ -80,6 +80,11 @@ function applyDashboardRBAC() {
     // Reports - HR users and managers only
     hrmsRoles.setElementVisibility('cardReports', hrmsRoles.canAccessReports());
 
+    // Recruitment - any HR role or SUPERADMIN. Basic HRMS_USER and HRMS_MANAGER
+    // (line managers, not HR managers) don't see the tile.
+    hrmsRoles.setElementVisibility('cardRecruitment',
+        hrmsRoles.hasAnyRole(['HRMS_HR_USER', 'HRMS_HR_MANAGER', 'HRMS_HR_ADMIN', 'SUPERADMIN']));
+
     // Attendance - all users can view (own or team)
     // But change behavior based on role
     const attendanceCard = document.getElementById('cardAttendance');

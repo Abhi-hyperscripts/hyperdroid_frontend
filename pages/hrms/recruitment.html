@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <title>Recruitment - HRMS | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/hrms-payroll.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+    <style>
+        /* Make hidden attribute win over .gm-overlay's display:flex !important */
+        .gm-overlay[hidden] { display: none !important; }
+
+        /* ── Stats row ───────────────────────────────────────────────── */
+        .rec-stat-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .rec-stat-card {
+            padding: 16px 18px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+        .rec-stat-label {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+        .rec-stat-value { font-size: 1.8rem; font-weight: 600; margin-top: 6px; color: var(--text-primary); }
+
+        /* ── Status tabs ─────────────────────────────────────────────── */
+        .rec-status-tabs {
+            display: flex;
+            gap: 2px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 14px;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+        .rec-status-tab {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 9px 16px;
+            font: inherit;
+            font-size: 0.88rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            white-space: nowrap;
+            transition: color 0.15s, border-color 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .rec-status-tab:hover { color: var(--text-primary); }
+        .rec-status-tab.active {
+            color: var(--brand-primary);
+            border-bottom-color: var(--brand-primary);
+        }
+        .rec-tab-count {
+            display: inline-block;
+            min-width: 20px;
+            padding: 1px 7px;
+            background: var(--hover-overlay, rgba(255,255,255,0.06));
+            border-radius: 10px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .rec-status-tab.active .rec-tab-count {
+            background: rgba(99,102,241,0.18);
+            color: var(--brand-primary);
+        }
+
+        /* ── Filter bar ──────────────────────────────────────────────── */
+        .rec-filter-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+        .rec-filter-bar .rec-search { flex: 1 1 240px; max-width: 360px; }
+        .rec-filter-bar .rec-filters { display: flex; gap: 8px; }
+        .rec-filter-bar .rec-filters .searchable-dropdown-container { min-width: 160px; }
+
+        /* ── Bulk action bar ─────────────────────────────────────────── */
+        .rec-bulkbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: rgba(99,102,241,0.10);
+            border: 1px solid rgba(99,102,241,0.32);
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-size: 0.88rem;
+            color: var(--text-primary);
+        }
+        .rec-bulkbar-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        /* ── Dense table for postings list ───────────────────────────── */
+        .rec-table-postings thead th[data-sort] { cursor: pointer; user-select: none; }
+        .rec-table-postings thead th[data-sort]:hover { color: var(--text-primary); }
+        .rec-table-postings thead th[data-sort].sort-asc::after { content: ' ↑'; opacity: 0.7; }
+        .rec-table-postings thead th[data-sort].sort-desc::after { content: ' ↓'; opacity: 0.7; }
+        .rec-table-postings tbody td { vertical-align: middle; padding: 11px 14px; }
+        .rec-table-postings tbody tr.selected { background: rgba(99,102,241,0.08); }
+        .rec-row-title { font-weight: 600; color: var(--text-primary); }
+        .rec-row-title small {
+            display: block;
+            color: var(--text-secondary);
+            font-weight: 400;
+            font-size: 0.78rem;
+            margin-top: 2px;
+        }
+        .rec-applicants-cell { text-align: right; white-space: nowrap; }
+        .rec-applicants-cell .new-pill {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 1px 7px;
+            background: rgba(99,102,241,0.18);
+            color: #818cf8;
+            border-radius: 10px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+        .rec-kebab-trigger {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            width: 28px; height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+        .rec-kebab-trigger:hover {
+            background: var(--hover-overlay, rgba(255,255,255,0.06));
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        /* ── Kebab menu popover (floating) ──────────────────────────── */
+        /* JS hoists this to <body> on first open and switches to position:
+           absolute. The initial `position: fixed` is just so it doesn't
+           reserve flow space pre-hoist. z-index above sidebar (1000). */
+        .rec-kebab-menu {
+            position: fixed;
+            z-index: 2000;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.20);
+            min-width: 180px;
+            padding: 4px;
+        }
+        .rec-kebab-menu button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: none;
+            padding: 7px 12px;
+            font: inherit;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .rec-kebab-menu button:hover { background: var(--hover-overlay, rgba(255,255,255,0.06)); }
+        .rec-kebab-menu button.rec-kebab-danger { color: #f87171; }
+        .rec-kebab-menu button.rec-kebab-danger:hover { background: rgba(239,68,68,0.10); }
+        .rec-kebab-divider {
+            height: 1px; background: var(--border-color); margin: 4px 0;
+        }
+
+        /* ── Pagination ──────────────────────────────────────────────── */
+        .rec-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 4px 0;
+            margin-top: 12px;
+            border-top: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .rec-pagination-info { color: var(--text-secondary); font-size: 0.85rem; }
+        .rec-pagination-controls { display: flex; gap: 6px; align-items: center; }
+        .rec-pagination-pages { display: inline-flex; gap: 4px; align-items: center; }
+        .rec-pagination-pages button {
+            min-width: 32px; height: 32px; padding: 0 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .rec-pagination-pages button.active {
+            background: var(--brand-primary);
+            border-color: var(--brand-primary);
+            color: #fff;
+        }
+        .rec-pagination-pages button:disabled,
+        .rec-pagination .rec-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .rec-pagination-pages .ellipsis { color: var(--text-secondary); padding: 0 4px; }
+
+        /* Status badge inline-clickable */
+        .rec-badge.clickable { cursor: pointer; user-select: none; }
+        .rec-badge.clickable:hover { filter: brightness(1.2); }
+
+        /* ── Toolbar (legacy — kept for the detail view) ─────────────── */
+        .rec-toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .rec-search { flex: 1 1 280px; max-width: 400px; }
+        .rec-search input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input, var(--bg-card));
+            color: var(--text-primary);
+            font: inherit;
+            font-size: 0.9rem;
+        }
+        .rec-search input:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.16);
+        }
+        .rec-filters { display: flex; gap: 8px; align-items: center; }
+        .rec-filters .searchable-dropdown-container { min-width: 180px; }
+
+        /* ── Posting cards ───────────────────────────────────────────── */
+        .rec-postings-list { display: flex; flex-direction: column; gap: 14px; }
+        .rec-posting-card {
+            padding: 18px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .rec-posting-card:hover {
+            border-color: var(--brand-primary);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        .rec-posting-top { display: flex; gap: 16px; align-items: flex-start; }
+        .rec-posting-main { flex: 1 1 0; min-width: 0; }
+        .rec-posting-title-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+        .rec-posting-title-row h3 { margin: 0; font-size: 1.05rem; color: var(--text-primary); }
+        .rec-posting-meta { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; }
+        .rec-posting-actions { display: flex; flex-direction: column; gap: 6px; min-width: 130px; }
+
+        /* ── Public-link strip ───────────────────────────────────────── */
+        .rec-link-strip {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding: 10px 12px;
+            background: rgba(99,102,241,0.06);
+            border: 1px dashed rgba(99,102,241,0.28);
+            border-radius: 8px;
+            margin-top: 6px;
+        }
+        .rec-link-strip code {
+            flex: 1 1 0;
+            min-width: 0;
+            word-break: break-all;
+            font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background: transparent;
+        }
+
+        /* ── Status badges ───────────────────────────────────────────── */
+        .rec-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            line-height: 1.4;
+        }
+        .rec-badge-open       { background: rgba(16,185,129,0.18); color: #34d399; }
+        .rec-badge-paused     { background: rgba(245,158,11,0.18); color: #fbbf24; }
+        .rec-badge-closed     { background: rgba(148,163,184,0.18); color: #cbd5e1; }
+        .rec-badge-new        { background: rgba(99,102,241,0.18); color: #818cf8; }
+        .rec-badge-reviewing  { background: rgba(59,130,246,0.18); color: #60a5fa; }
+        .rec-badge-shortlisted{ background: rgba(168,85,247,0.18); color: #c084fc; }
+        .rec-badge-interview  { background: rgba(245,158,11,0.18); color: #fbbf24; }
+        .rec-badge-offered    { background: rgba(20,184,166,0.18); color: #5eead4; }
+        .rec-badge-hired      { background: rgba(16,185,129,0.22); color: #34d399; }
+        .rec-badge-rejected   { background: rgba(239,68,68,0.18); color: #f87171; }
+
+        /* ── Buttons ─────────────────────────────────────────────────── */
+        .rec-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font: inherit;
+            font-size: 0.88rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .rec-btn:hover { background: var(--hover-overlay, rgba(255,255,255,0.06)); border-color: var(--brand-primary); }
+        .rec-btn-primary {
+            background: var(--brand-primary);
+            border-color: var(--brand-primary);
+            color: #fff;
+        }
+        .rec-btn-primary:hover { background: var(--brand-primary-hover, #4f46e5); border-color: var(--brand-primary-hover, #4f46e5); color: #fff; }
+        .rec-btn-danger:hover { background: rgba(239,68,68,0.10); border-color: #ef4444; color: #f87171; }
+        .rec-btn-sm { padding: 5px 10px; font-size: 0.82rem; }
+
+        /* ── Applications table ──────────────────────────────────────── */
+        .rec-table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .rec-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .rec-table thead th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--hover-overlay, rgba(255,255,255,0.02));
+        }
+        .rec-table tbody td {
+            padding: 13px 16px;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .rec-table tbody tr:last-child td { border-bottom: none; }
+        .rec-table tbody tr { cursor: pointer; transition: background 0.1s; }
+        .rec-table tbody tr:hover { background: var(--hover-overlay, rgba(255,255,255,0.04)); }
+        .rec-table .applicant-name { font-weight: 600; color: var(--text-primary); }
+
+        /* ── Empty / loading states ──────────────────────────────────── */
+        .rec-empty, .rec-loading {
+            padding: 60px 24px;
+            text-align: center;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+        }
+        .rec-empty svg { width: 36px; height: 36px; margin-bottom: 10px; opacity: 0.5; }
+
+        /* ── Form-builder rows in modal ──────────────────────────────── */
+        .ff-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; margin-bottom: 8px;
+            background: var(--hover-overlay, rgba(255,255,255,0.03));
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        .ff-row-handle { cursor: grab; opacity: 0.4; user-select: none; font-size: 0.9rem; }
+        .ff-row-label {
+            flex: 1; padding: 6px 10px; border-radius: 6px;
+            border: 1px solid var(--border-color); background: transparent;
+            color: var(--text-primary); font: inherit; min-width: 0;
+        }
+        .ff-type-pill {
+            font-size: 0.72rem; padding: 2px 8px; border-radius: 10px;
+            background: rgba(99,102,241,0.18); color: #818cf8;
+        }
+        .ff-required-pill {
+            font-size: 0.72rem; padding: 2px 8px; border-radius: 10px;
+            background: rgba(239,68,68,0.16); color: #f87171;
+        }
+        .ff-row-actions { display: flex; gap: 4px; }
+        .ff-icon-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; padding: 0; border-radius: 6px;
+            background: transparent; border: 1px solid var(--border-color);
+            color: var(--text-primary); cursor: pointer; font-size: 0.9rem;
+        }
+        .ff-icon-btn:hover { background: var(--hover-overlay, rgba(255,255,255,0.06)); }
+        .ff-icon-btn.ff-danger:hover { background: rgba(239,68,68,0.16); color: #f87171; border-color: #f87171; }
+
+        /* ── Modal form controls ─────────────────────────────────────── */
+        /* Inputs and SearchableDropdown triggers in this modal share an exact
+           32px height so the grid of fields lines up cleanly across rows. */
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+        .form-group label { font-size: 0.85rem; color: var(--text-primary); font-weight: 500; }
+        .form-control {
+            box-sizing: border-box;
+            height: 32px;
+            padding: 0 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input, var(--bg-card));
+            color: var(--text-primary);
+            font: inherit;
+            font-size: 0.88rem;
+            line-height: 30px; /* 32px box minus 1px borders */
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.16);
+        }
+        /* Multi-line fields opt-out of the fixed 32px height. */
+        textarea.form-control {
+            height: auto;
+            line-height: 1.5;
+            padding: 8px 10px;
+            resize: vertical;
+            min-height: 80px;
+        }
+        /* Force SearchableDropdown triggers inside this modal to match the
+           input height exactly. searchable-dropdown.css ships a min-height of
+           38px which beats `height: 32px`, so we override min-height too. */
+        #postingModal .searchable-dropdown-trigger,
+        #fieldSettingsModal .searchable-dropdown-trigger,
+        #applicationDrawer .searchable-dropdown-trigger {
+            box-sizing: border-box;
+            height: 32px;
+            min-height: 32px;
+            padding: 0 10px;
+            font-size: 0.88rem;
+            line-height: 30px;
+            min-width: 0;
+        }
+        /* The little chevron + text inside the trigger should sit centred. */
+        #postingModal .searchable-dropdown-trigger > *,
+        #fieldSettingsModal .searchable-dropdown-trigger > *,
+        #applicationDrawer .searchable-dropdown-trigger > * {
+            display: inline-flex; align-items: center;
+        }
+
+        /* ── Quill editor inside posting modal ───────────────────────── */
+        /* .quill-host is the single flex child inside .form-group; isolating
+           Quill's toolbar+editor pair from the form-group's flex `gap`. */
+        .quill-host { display: block; }
+        .ql-toolbar.ql-snow {
+            border-color: var(--border-color);
+            border-bottom: 0; /* share the edge with the container below */
+            border-radius: 8px 8px 0 0;
+            background: var(--bg-input, var(--bg-card));
+        }
+        .ql-container.ql-snow {
+            border-color: var(--border-color);
+            border-radius: 0 0 8px 8px;
+            background: var(--bg-input, var(--bg-card));
+            min-height: 180px;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+        .ql-editor { color: var(--text-primary); min-height: 180px; }
+        .ql-editor.ql-blank::before { color: var(--text-secondary); font-style: normal; }
+        .ql-snow .ql-stroke { stroke: var(--text-primary); }
+        .ql-snow .ql-fill { fill: var(--text-primary); }
+        .ql-snow .ql-picker { color: var(--text-primary); }
+        .ql-snow .ql-picker-options {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+        }
+        .ql-snow.ql-toolbar button:hover .ql-stroke,
+        .ql-snow.ql-toolbar button.ql-active .ql-stroke { stroke: var(--brand-primary); }
+        .ql-snow.ql-toolbar button:hover .ql-fill,
+        .ql-snow.ql-toolbar button.ql-active .ql-fill { fill: var(--brand-primary); }
+
+        /* Description rendering in posting detail card (raw HTML from Quill) */
+        .rec-description-rendered {
+            margin-top: 12px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .rec-description-rendered p { margin: 0 0 8px; }
+        .rec-description-rendered ul, .rec-description-rendered ol { padding-left: 20px; margin: 6px 0; }
+        .rec-description-rendered h1, .rec-description-rendered h2, .rec-description-rendered h3 {
+            margin: 12px 0 6px; color: var(--text-primary); line-height: 1.3;
+        }
+        .rec-description-rendered a { color: var(--brand-primary); }
+        .rec-description-rendered strong { color: var(--text-primary); }
+        .rec-description-rendered blockquote {
+            border-left: 3px solid var(--brand-primary);
+            padding-left: 12px;
+            margin: 8px 0;
+            color: var(--text-secondary);
+        }
+        .rec-description-rendered pre {
+            background: var(--bg-input, rgba(255,255,255,0.05));
+            padding: 10px; border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+            font-size: 0.85rem;
+        }
+        .rec-description-rendered code {
+            background: var(--bg-input, rgba(255,255,255,0.05));
+            padding: 2px 5px; border-radius: 3px;
+            font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+            font-size: 0.88em;
+        }
+
+        /* ── Application drawer body rows ────────────────────────────── */
+        .rec-app-field-row {
+            display: grid; grid-template-columns: 180px 1fr;
+            gap: 16px; padding: 10px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        .rec-app-field-key { color: var(--text-secondary); font-size: 0.85rem; }
+        .rec-app-field-val { color: var(--text-primary); word-break: break-word; }
+
+        @media (max-width: 720px) {
+            .rec-posting-top { flex-direction: column; }
+            .rec-posting-actions { flex-direction: row; min-width: 0; flex-wrap: wrap; }
+        }
+    </style>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard">
+    <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html"><img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo"></a>
+        </div>
+        <div class="navbar-menu"><!-- Navigation links injected by Navigation.init() --></div>
+    </nav>
+
+    <div class="hrms-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">HRMS</a>
+                    <span class="separator">/</span>
+                    <span class="current">Recruitment</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation menu">
+                        <span class="hamburger-icon">
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                            <span class="hamburger-line"></span>
+                        </span>
+                        <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5"></path>
+                            <path d="M12 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <h1>Recruitment</h1>
+                </div>
+                <div class="active-tab-title" id="activeTabTitle">
+                    <span class="tab-indicator"></span>
+                    <span id="activeTabName">Job Postings</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <div class="organization-layout">
+            <aside class="sidebar-nav-panel" id="recruitmentSidebar">
+                <div class="sidebar-header">
+                    <h3>Recruitment</h3>
+                    <p>Jobs and applicants</p>
+                </div>
+                <nav class="sidebar-nav">
+                    <div class="nav-group" data-group="hiring">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 13.255A23.931 23.931 0 0 1 12 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2m4 7h.01M5 20h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z"/>
+                                </svg>
+                                Hiring Pipeline
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn active" data-tab="postings" id="postingsTab">
+                                <span class="nav-number">1</span><span class="nav-label">Job Postings</span>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+
+            <main class="organization-content">
+                <!-- Help panel -->
+                <details class="mailbox-help" style="margin-bottom: 16px;">
+                    <summary>
+                        <svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        What is Recruitment?
+                        <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </summary>
+                    <div class="mailbox-help-body">
+                        <p>Post a job, define the application form, share the public link on LinkedIn or anywhere. Candidates fill the form — no resume needed — and applications land here automatically.</p>
+                        <ol style="padding-left: 20px; line-height: 1.6;">
+                            <li>Click <strong>+ New Posting</strong>, fill the job details, and customise the form fields (text, email, phone, dropdown, etc.).</li>
+                            <li>Copy the public apply link from the posting card and share it.</li>
+                            <li>Switch to the <strong>Applications</strong> tab to review and move applicants through the pipeline.</li>
+                        </ol>
+                    </div>
+                </details>
+
+                <!-- ─── Postings tab (contains both list and detail views) ─── -->
+                <div class="tab-content active" id="postings">
+
+                    <!-- ─── List view ──────────────────────────────────── -->
+                    <div id="postingsListView">
+                        <div class="rec-stat-row">
+                            <div class="rec-stat-card">
+                                <div class="rec-stat-label">Open postings</div>
+                                <div class="rec-stat-value" id="statOpenPostings">—</div>
+                            </div>
+                            <div class="rec-stat-card">
+                                <div class="rec-stat-label">Applications received</div>
+                                <div class="rec-stat-value" id="statTotalApps">—</div>
+                            </div>
+                            <div class="rec-stat-card">
+                                <div class="rec-stat-label">New (unreviewed)</div>
+                                <div class="rec-stat-value" id="statNewApps">—</div>
+                            </div>
+                        </div>
+
+                        <!-- Status tabs with count badges -->
+                        <div class="rec-status-tabs" id="recStatusTabs" role="tablist">
+                            <button class="rec-status-tab active" data-status="" role="tab">All <span class="rec-tab-count" data-count="all">0</span></button>
+                            <button class="rec-status-tab" data-status="open" role="tab">Open <span class="rec-tab-count" data-count="open">0</span></button>
+                            <button class="rec-status-tab" data-status="paused" role="tab">Paused <span class="rec-tab-count" data-count="paused">0</span></button>
+                            <button class="rec-status-tab" data-status="closed" role="tab">Closed <span class="rec-tab-count" data-count="closed">0</span></button>
+                            <button class="rec-status-tab" data-status="archived" role="tab">Archived <span class="rec-tab-count" data-count="archived">0</span></button>
+                        </div>
+
+                        <!-- Filter / sort bar -->
+                        <div class="rec-filter-bar">
+                            <div class="rec-search">
+                                <input id="postingSearch" type="text" placeholder="Search by title or location...">
+                            </div>
+                            <div class="rec-filters">
+                                <select id="filterEmploymentType" data-searchable="true" data-placeholder="All types">
+                                    <option value="">All types</option>
+                                    <option value="full_time">Full-time</option>
+                                    <option value="part_time">Part-time</option>
+                                    <option value="contract">Contract</option>
+                                    <option value="intern">Internship</option>
+                                    <option value="freelance">Freelance</option>
+                                </select>
+                                <select id="filterSort" data-searchable="true" data-placeholder="Sort">
+                                    <option value="created_at:desc">Newest first</option>
+                                    <option value="created_at:asc">Oldest first</option>
+                                    <option value="title:asc">Title A → Z</option>
+                                    <option value="title:desc">Title Z → A</option>
+                                    <option value="application_count:desc">Most applicants</option>
+                                    <option value="updated_at:desc">Recently updated</option>
+                                </select>
+                            </div>
+                            <button class="rec-btn rec-btn-primary" onclick="openNewPostingModal()">+ New Posting</button>
+                        </div>
+
+                        <!-- Bulk-action toolbar appears when 1+ rows selected -->
+                        <div class="rec-bulkbar" id="recBulkbar" style="display:none;">
+                            <span><strong id="recBulkCount">0</strong> selected</span>
+                            <div class="rec-bulkbar-actions">
+                                <button class="rec-btn rec-btn-sm" onclick="bulkSetStatus('paused')">Pause</button>
+                                <button class="rec-btn rec-btn-sm" onclick="bulkSetStatus('open')">Reopen</button>
+                                <button class="rec-btn rec-btn-sm" onclick="bulkSetStatus('closed')">Close</button>
+                                <button class="rec-btn rec-btn-sm" onclick="bulkSetStatus('archived')">Archive</button>
+                                <button class="rec-btn rec-btn-sm rec-btn-danger" onclick="bulkDelete()">Delete</button>
+                                <button class="rec-btn rec-btn-sm" onclick="clearBulkSelection()">Clear</button>
+                            </div>
+                        </div>
+
+                        <!-- Table -->
+                        <div id="postingsLoading" class="rec-loading">Loading postings...</div>
+                        <div id="postingsEmpty" class="rec-empty" style="display:none;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+                            <div><strong>No postings match.</strong></div>
+                            <div style="margin-top: 4px; font-size: 0.9rem;">Try clearing filters, or create a new posting.</div>
+                        </div>
+                        <div id="postingsTableWrap" class="rec-table-card" style="display:none;">
+                            <table class="rec-table rec-table-postings">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 36px;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this.checked)"></th>
+                                        <th data-sort="title">Title</th>
+                                        <th data-sort="status">Status</th>
+                                        <th data-sort="location">Location</th>
+                                        <th>Type</th>
+                                        <th data-sort="application_count" style="text-align: right;">Applicants</th>
+                                        <th data-sort="created_at">Posted</th>
+                                        <th data-sort="updated_at">Updated</th>
+                                        <th style="width: 40px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="postingsTbody"></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination footer -->
+                        <div class="rec-pagination" id="recPagination" style="display:none;">
+                            <div class="rec-pagination-info" id="recPaginationInfo"></div>
+                            <div class="rec-pagination-controls">
+                                <select id="pageSizeSelect" data-searchable="true" data-placeholder="25 / page" style="width: 110px;">
+                                    <option value="25">25 / page</option>
+                                    <option value="50">50 / page</option>
+                                    <option value="100">100 / page</option>
+                                </select>
+                                <button class="rec-btn rec-btn-sm" id="prevPageBtn" onclick="goToPage(currentPage - 1)">← Prev</button>
+                                <span class="rec-pagination-pages" id="recPaginationPages"></span>
+                                <button class="rec-btn rec-btn-sm" id="nextPageBtn" onclick="goToPage(currentPage + 1)">Next →</button>
+                            </div>
+                        </div>
+
+                        <!-- Kebab-menu popover (single instance reused per row) -->
+                        <div class="rec-kebab-menu" id="recKebabMenu" style="display:none;">
+                            <button data-action="open">Open</button>
+                            <button data-action="edit">Edit</button>
+                            <button data-action="copy-link">Copy apply link</button>
+                            <button data-action="preview">Preview public page</button>
+                            <button data-action="regen">Regenerate link</button>
+                            <div class="rec-kebab-divider"></div>
+                            <button data-action="pause">Pause</button>
+                            <button data-action="resume">Reopen</button>
+                            <button data-action="close">Close</button>
+                            <button data-action="archive">Archive</button>
+                            <button data-action="delete" class="rec-kebab-danger">Delete</button>
+                        </div>
+                    </div>
+
+                    <!-- ─── Detail view (hidden until a posting is opened) ─ -->
+                    <div id="postingDetailView" style="display:none;">
+                        <button class="rec-btn rec-btn-sm" onclick="closePostingDetail()" style="margin-bottom: 14px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                            All postings
+                        </button>
+
+                        <!-- Posting hero -->
+                        <div class="rec-posting-card" id="detailPostingCard" style="margin-bottom: 18px;">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <!-- Applications toolbar -->
+                        <div class="rec-toolbar" style="margin-top: 24px;">
+                            <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">
+                                Candidate Applications <span id="detailAppCount" style="color: var(--text-secondary); font-weight: 400; font-size: 0.92rem;"></span>
+                            </h3>
+                            <div class="rec-filters">
+                                <select id="detailAppStatusFilter" data-searchable="true" data-placeholder="All statuses">
+                                    <option value="">All statuses</option>
+                                    <option value="new">New</option>
+                                    <option value="reviewing">Reviewing</option>
+                                    <option value="shortlisted">Shortlisted</option>
+                                    <option value="interview">Interview</option>
+                                    <option value="offered">Offered</option>
+                                    <option value="hired">Hired</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="detailAppsLoading" class="rec-loading">Loading applications...</div>
+                        <div id="detailAppsEmpty" class="rec-empty" style="display:none;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 11h-6"/></svg>
+                            <div><strong>No applications yet for this posting.</strong></div>
+                            <div style="margin-top: 4px; font-size: 0.9rem;">Share the apply link above to start receiving applicants.</div>
+                        </div>
+                        <div id="detailAppsTableWrap" class="rec-table-card" style="display:none;">
+                            <table class="rec-table">
+                                <thead>
+                                    <tr>
+                                        <th>Applicant</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Status</th>
+                                        <th>Received</th>
+                                        <th style="width: 80px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detailAppsTbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ─── Posting Modal ───────────────────────────────────────────────── -->
+    <div class="gm-overlay" id="postingModal" hidden>
+        <div class="gm-modal" style="max-width: 960px; width: 92vw;">
+            <div class="gm-header">
+                <h3 id="postingModalTitle">New Posting</h3>
+                <button class="gm-close" onclick="closePostingModal()">×</button>
+            </div>
+            <div class="gm-body">
+                <form id="postingForm" onsubmit="savePosting(event)">
+                    <input type="hidden" id="postingId">
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Job title<span style="color:#f87171">*</span></label>
+                            <input type="text" id="postingTitle" class="form-control" required maxlength="255" placeholder="e.g., Senior Frontend Engineer">
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="postingLocation" class="form-control" maxlength="255" placeholder="e.g., Bengaluru, Remote">
+                        </div>
+                        <div class="form-group">
+                            <label>Employment type</label>
+                            <select id="postingEmploymentType" data-searchable="true" data-placeholder="Select type">
+                                <option value="">—</option>
+                                <option value="full_time">Full-time</option>
+                                <option value="part_time">Part-time</option>
+                                <option value="contract">Contract</option>
+                                <option value="intern">Internship</option>
+                                <option value="freelance">Freelance</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Openings</label>
+                            <input type="number" id="postingOpenings" class="form-control" min="1" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select id="postingStatus" data-searchable="true" data-placeholder="Open">
+                                <option value="open">Open</option>
+                                <option value="paused">Paused</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Job description</label>
+                            <!-- The wrapper isolates Quill's toolbar+editor pair from the
+                                 .form-group's flex `gap: 6px` (which would otherwise put a
+                                 gap between Quill's toolbar and editor since Quill prepends
+                                 the toolbar as a sibling of this div). -->
+                            <div class="quill-host">
+                                <div id="postingDescriptionEditor"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Company name <span style="color: var(--text-secondary); font-weight: 400;">— optional</span></label>
+                            <input type="text" id="postingCompanyName" class="form-control" maxlength="200" placeholder="e.g., WiseTrack Technologies">
+                        </div>
+                        <div class="form-group">
+                            <label>Company website <span style="color: var(--text-secondary); font-weight: 400;">— optional</span></label>
+                            <input type="url" id="postingCompanyWebsite" class="form-control" maxlength="500" placeholder="https://example.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Apply page theme</label>
+                            <select id="postingTheme" data-searchable="true" data-placeholder="Dark">
+                                <option value="dark">Dark</option>
+                                <option value="light">Light</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display: flex; gap: 8px; align-items: end;">
+                            <div style="flex: 1;">
+                                <label>Office latitude <span style="color: var(--text-secondary); font-weight: 400;">— optional</span></label>
+                                <input type="number" id="postingLatitude" class="form-control" step="0.0000001" min="-90" max="90" placeholder="28.6139">
+                            </div>
+                            <div style="flex: 1;">
+                                <label>Longitude</label>
+                                <input type="number" id="postingLongitude" class="form-control" step="0.0000001" min="-180" max="180" placeholder="77.2090">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Company logo URL <span style="color: var(--text-secondary); font-weight: 400;">— optional</span></label>
+                            <input type="url" id="postingLogoUrl" class="form-control" maxlength="500" placeholder="https://example.com/logo.png">
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Banner image URL <span style="color: var(--text-secondary); font-weight: 400;">— optional, shown at the top of the apply page</span></label>
+                            <input type="url" id="postingBannerUrl" class="form-control" maxlength="500" placeholder="https://example.com/banner.jpg">
+                        </div>
+
+                        <!-- Social-share metadata: drives the link-preview card on
+                             Slack/X/LinkedIn/Facebook. The summary is also baked
+                             INTO the auto-generated OG image so the headline +
+                             tagline render on the image itself. -->
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>
+                                Share summary
+                                <span style="color: var(--text-secondary); font-weight: 400;">
+                                    — 1-2 lines for the link preview &amp; social image
+                                </span>
+                            </label>
+                            <textarea
+                                id="postingSummary"
+                                class="form-control"
+                                rows="2"
+                                maxlength="220"
+                                oninput="updateSummaryCounter()"
+                                placeholder="e.g., Build the platform that powers every Ragenaizer module. Hands-on senior IC role, India + remote."
+                                style="resize: vertical; min-height: 64px;"></textarea>
+                            <div style="display:flex; justify-content: space-between; gap: 8px; margin-top: 4px;">
+                                <span style="color: var(--text-secondary); font-size: 0.78rem;">
+                                    Shows in Slack, X, LinkedIn previews and overlaid on the auto-generated image.
+                                </span>
+                                <span id="postingSummaryCounter" style="color: var(--text-secondary); font-size: 0.78rem;">0 / 220</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>
+                                Custom OG image URL
+                                <span style="color: var(--text-secondary); font-weight: 400;">
+                                    — optional, overrides the auto-generated image (1200×630)
+                                </span>
+                            </label>
+                            <input type="url" id="postingOgImageUrl" class="form-control" maxlength="500" placeholder="https://example.com/og-image.png">
+                            <span style="color: var(--text-secondary); font-size: 0.78rem; margin-top: 4px; display: block;">
+                                If you've designed a custom 1200×630 share image in Figma, paste the URL here.
+                                Leave blank to use the auto-generated branded card with the headline above.
+                            </span>
+                        </div>
+                    </div>
+
+                    <hr style="margin: 18px 0; border: 0; border-top: 1px solid var(--border-color);">
+                    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h4 style="margin: 0; color: var(--text-primary);">Application form</h4>
+                        <button type="button" class="rec-btn rec-btn-sm" onclick="addFormField()">+ Add field</button>
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0 0 12px;">
+                        What information should candidates fill in? Click the ⚙ to edit type, placeholder, and required flag.
+                    </p>
+                    <div id="formFieldsList"></div>
+
+                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px;">
+                        <button type="button" class="rec-btn" onclick="closePostingModal()">Cancel</button>
+                        <button type="submit" class="rec-btn rec-btn-primary" id="postingSubmitBtn">Save Posting</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Field-settings sub-modal ────────────────────────────────────── -->
+    <div class="gm-overlay" id="fieldSettingsModal" hidden>
+        <div class="gm-modal" style="max-width: 520px;">
+            <div class="gm-header">
+                <h3>Field settings</h3>
+                <button class="gm-close" onclick="closeFieldSettings()">×</button>
+            </div>
+            <div class="gm-body">
+                <div class="form-group">
+                    <label>Label<span style="color:#f87171">*</span></label>
+                    <input type="text" id="fsLabel" class="form-control" maxlength="255">
+                </div>
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="fsType" data-searchable="true" data-placeholder="Single-line text">
+                        <option value="text">Single-line text</option>
+                        <option value="textarea">Multi-line text</option>
+                        <option value="email">Email</option>
+                        <option value="tel">Phone</option>
+                        <option value="number">Number</option>
+                        <option value="date">Date</option>
+                        <option value="select">Dropdown</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Placeholder</label>
+                    <input type="text" id="fsPlaceholder" class="form-control" maxlength="255">
+                </div>
+                <div class="form-group">
+                    <label>Key (internal)</label>
+                    <input type="text" id="fsKey" class="form-control" maxlength="100" placeholder="auto-generated from label">
+                    <small style="color: var(--text-secondary);">JSON key on submissions. Auto-derived from label if left blank.</small>
+                </div>
+                <div class="form-group">
+                    <label><input type="checkbox" id="fsRequired"> Required</label>
+                </div>
+                <div class="form-group" id="fsOptionsWrap" style="display:none;">
+                    <label>Dropdown options (one per line, use <code>value|label</code> if they differ)</label>
+                    <textarea id="fsOptions" class="form-control" rows="6" placeholder="0-2_years|0-2 years&#10;3-5_years|3-5 years&#10;5+_years|5+ years"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px;">
+                    <button type="button" class="rec-btn" onclick="closeFieldSettings()">Cancel</button>
+                    <button type="button" class="rec-btn rec-btn-primary" onclick="saveFieldSettings()">Save Field</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Application Detail Drawer ───────────────────────────────────── -->
+    <div class="gm-overlay" id="applicationDrawer" hidden>
+        <div class="gm-modal" style="max-width: 720px;">
+            <div class="gm-header">
+                <h3 id="appDrawerTitle">Application</h3>
+                <button class="gm-close" onclick="closeApplicationDrawer()">×</button>
+            </div>
+            <div class="gm-body">
+                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
+                    <span class="rec-badge rec-badge-new" id="appDrawerStatus">new</span>
+                    <div style="min-width: 200px;">
+                        <select id="appDrawerStatusSelect" data-searchable="true" data-placeholder="Set status">
+                            <option value="new">New</option>
+                            <option value="reviewing">Reviewing</option>
+                            <option value="shortlisted">Shortlisted</option>
+                            <option value="interview">Interview</option>
+                            <option value="offered">Offered</option>
+                            <option value="hired">Hired</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <span style="margin-left: auto; color: var(--text-secondary); font-size: 0.85rem;" id="appDrawerMeta"></span>
+                </div>
+                <div id="appDrawerFields"></div>
+                <div class="form-group" style="margin-top: 16px;">
+                    <label>Internal notes (visible to HR only)</label>
+                    <textarea id="appDrawerNotes" class="form-control" rows="3" placeholder="Notes for the hiring team..."></textarea>
+                    <button class="rec-btn rec-btn-sm" style="margin-top: 8px; align-self: flex-start;" onclick="saveApplicationNotes()">Save notes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    <script>document.write('<script src="../../js/hrms/recruitment.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</body>
+</html>

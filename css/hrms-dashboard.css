@@ -454,6 +454,19 @@ body.hrms-dashboard::before {
     border-color: var(--color-info);
 }
 
+/* Recruitment - Rose/Pink gradient. Hardcoded RGB pair so it stays
+   visually distinct even when --brand-secondary (purple) is the active
+   theme on neighbouring tiles like Employees and Self-Service. */
+#cardRecruitment .action-icon {
+    background: linear-gradient(135deg, #f43f5e 0%, #be185d 100%);
+}
+#cardRecruitment .action-icon svg {
+    color: var(--text-inverse, #ffffff);
+}
+#cardRecruitment:hover {
+    border-color: #f43f5e;
+}
+
 /* Self-Service Portal - Featured card with accent background */
 .action-card[onclick*="self-service"] {
     background: var(--accent-bg-light);
