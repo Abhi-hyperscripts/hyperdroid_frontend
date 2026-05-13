@@ -1,0 +1,301 @@
+/* PaymentPlans — page-specific styles only. Anything generic lives in
+   theme.css / styles.css / sidebar-nav.css / table-cards.css / glass-cards.css /
+   glassmorphic-modal.css / searchable-dropdown.css / flatpickr-custom.css. */
+
+/* Layout — mirrors HRMS payroll page so content shifts right when sidebar opens. */
+.hrms-container { padding: 52px 16px 32px; max-width: 100%; overflow-x: hidden; }
+.payroll-layout { display: block; position: relative; transition: all 0.3s ease; }
+.payroll-content {
+    width: 100%;
+    padding: 16px 20px;
+    background: var(--bg-page);
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+.hrms-header {
+    padding: 16px 20px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+    margin-bottom: 0;
+    display: block;
+}
+.hrms-header .header-content { display: block; width: 100%; }
+.hrms-header .breadcrumb-nav { margin-bottom: 8px; }
+.hrms-header .hrms-header-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: flex-start;
+}
+.hrms-header .active-tab-title { margin-top: 4px; }
+.hrms-container.sidebar-open .hrms-header,
+.hrms-container.sidebar-open .payroll-layout {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+}
+@media (max-width: 768px) {
+    /* On mobile the sidebar overlays — content doesn't shift. */
+    .hrms-container.sidebar-open .hrms-header,
+    .hrms-container.sidebar-open .payroll-layout {
+        margin-left: 0;
+        width: 100%;
+    }
+    .payroll-content { padding: 16px; }
+}
+
+/* Tab visibility (mirrors HRMS pattern) */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* "What is this?" helper details panel */
+.pp-helper {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+}
+.pp-helper > summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-primary);
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    user-select: none;
+}
+.pp-helper > summary::-webkit-details-marker { display: none; }
+.pp-helper > summary::before {
+    content: '?';
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    color: var(--text-inverse, #fff);
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.pp-helper[open] > summary { margin-bottom: 8px; }
+.pp-helper p { margin: 6px 0; }
+.pp-helper ul { margin: 6px 0 6px 18px; padding: 0; }
+.pp-helper li { margin-bottom: 4px; }
+.pp-helper code {
+    background: var(--bg-tertiary, var(--gray-100, rgba(0,0,0,0.06)));
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+}
+
+/* Page section heading */
+.pp-section {
+    margin-bottom: 24px;
+}
+.pp-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.pp-section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+.pp-section-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 2px 0 0;
+}
+
+/* KPI cards (aging dashboard) */
+.pp-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.pp-kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+}
+.pp-kpi-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+.pp-kpi-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.pp-kpi-foot {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+/* Empty state */
+.pp-empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-secondary);
+    border: 1px dashed var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-card);
+}
+.pp-empty h3 {
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+.pp-empty p { font-size: 0.9rem; margin-bottom: 16px; }
+
+/* Skeleton loader */
+.pp-skeleton {
+    background: linear-gradient(90deg,
+        var(--bg-tertiary, rgba(0,0,0,0.04)) 25%,
+        var(--bg-card, rgba(0,0,0,0.08)) 50%,
+        var(--bg-tertiary, rgba(0,0,0,0.04)) 75%);
+    background-size: 200% 100%;
+    animation: pp-skel 1.4s ease-in-out infinite;
+    border-radius: 6px;
+}
+@keyframes pp-skel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.pp-skel-row { height: 18px; margin: 8px 0; }
+
+/* Error banner inside a tab */
+.pp-error {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--color-error, #dc2626);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+}
+
+/* Toolbar above tables / lists */
+.pp-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.pp-toolbar-left, .pp-toolbar-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.pp-search-box {
+    position: relative;
+    min-width: 220px;
+}
+.pp-search-box input {
+    width: 100%;
+    padding: 8px 12px 8px 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 13px;
+}
+.pp-search-box::before {
+    content: '🔍';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+/* Status badge */
+.pp-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    line-height: 1.5;
+    background: rgba(107, 114, 128, 0.12);
+    color: var(--text-primary);
+}
+.pp-status::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.85;
+}
+
+/* Form controls (compact) */
+.pp-form-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 200px) 1fr;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+.pp-form-row > label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    padding-top: 8px;
+}
+.pp-form-row .pp-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+.pp-form-row input,
+.pp-form-row textarea,
+.pp-form-row select {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 13px;
+}
+.pp-form-row input:focus,
+.pp-form-row textarea:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: var(--focus-ring, 0 0 0 3px rgba(99, 102, 241, 0.15));
+}
+
+/* Inline button group */
+.pp-btn-group { display: flex; gap: 8px; }
+
+/* Mobile: 1-col forms */
+@media (max-width: 768px) {
+    .pp-form-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+    .pp-form-row > label { padding-top: 0; }
+}

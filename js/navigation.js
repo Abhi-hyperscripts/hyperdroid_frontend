@@ -20,6 +20,7 @@ const Navigation = {
         procurement: 'PROCUREMENT_USER',
         accounts: 'ACCOUNTS_USER',
         email: 'EMAILSERVICE_USER',
+        paymentplans: 'PAYMENTPLANS_USER',
         admin: 'SUPERADMIN'
     },
 
@@ -153,6 +154,18 @@ const Navigation = {
             requiresRole: 'ACCOUNTS_USER'
         },
         {
+            id: 'paymentplans',
+            label: 'Payment Plans',
+            icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="6" width="20" height="14" rx="2"/>
+                <line x1="2" y1="11" x2="22" y2="11"/>
+                <path d="M7 16h2"/>
+                <path d="M12 16h6"/>
+            </svg>`,
+            href: 'payment-plans/dashboard.html',
+            requiresRole: 'PAYMENTPLANS_USER'
+        },
+        {
             id: 'news',
             label: 'KIP',
             icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -270,6 +283,7 @@ const Navigation = {
         'lms': 'LMS',
         'procurement': 'Procurement',
         'accounts': 'Accounts',
+        'paymentplans': 'PaymentPlans',
         'news': 'KIP'
         // 'admin' and 'home' don't require service licensing
     },
@@ -1016,6 +1030,12 @@ async function loadNavigation() {
         basePath = '../';
     } else if (path.includes('/procurement/')) {
         currentPageId = 'procurement';
+        basePath = '../';
+    } else if (path.includes('/accounts/')) {
+        currentPageId = 'accounts';
+        basePath = '../';
+    } else if (path.includes('/payment-plans/')) {
+        currentPageId = 'paymentplans';
         basePath = '../';
     } else if (path.includes('/auth/')) {
         currentPageId = 'admin';

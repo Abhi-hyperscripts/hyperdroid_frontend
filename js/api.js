@@ -152,6 +152,10 @@ class API {
         if (endpoint.startsWith('/notifications/')) {
             return CONFIG.notificationApiBaseUrl;
         }
+        // PaymentPlans endpoints go to PaymentPlans service
+        if (endpoint.startsWith('/payment-plans/')) {
+            return CONFIG.paymentplansApiBaseUrl;
+        }
         // Vision endpoints (projects, meetings) go to Vision service
         return CONFIG.visionApiBaseUrl;
     }
