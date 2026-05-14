@@ -46,11 +46,18 @@ let hudLastCardShownAt = 0;
 let hudInsightQueue = [];
 
 const HUD_TYPE_CONFIG = {
+    // \u2500\u2500 Sales-mode types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     objection:  { label: 'OBJECTION',  glyph: '\u25B2', color: '#ff4757' },  // red triangle
     suggestion: { label: 'SUGGEST',    glyph: '\u25C6', color: '#00d4ff' },  // neon cyan diamond
     sentiment:  { label: 'SENTIMENT',  glyph: '\u25CF', color: '#ffa502' },  // amber circle
     key_moment: { label: 'KEY MOMENT', glyph: '\u2605', color: '#00d4ff' },  // cyan star
-    summary:    { label: 'SUMMARY',    glyph: '\u2500', color: '#94a3b8' }   // light slate line
+    summary:    { label: 'SUMMARY',    glyph: '\u2500', color: '#94a3b8' },  // light slate line
+    // \u2500\u2500 Interview-mode types (drill-down state machine) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    next_question:        { label: 'NEXT Q',         glyph: '\u00BB',     color: '#00d4ff' },  // \u00BB double angle
+    follow_up:            { label: 'FOLLOW-UP',      glyph: '\u21AA',     color: '#a78bfa' },  // \u21AA hooked arrow
+    move_on:              { label: 'MOVE ON',        glyph: '\u2705',     color: '#22c55e' },  // \u2705
+    depth_signal_strong:  { label: 'STRONG ANSWER',  glyph: '\u2731',     color: '#22c55e' },  // \u2731
+    depth_signal_weak:    { label: 'WEAK ANSWER',    glyph: '\u26A0',     color: '#fbbf24' }   // \u26A0
 };
 
 /**
@@ -223,11 +230,33 @@ function showInsightCard(data) {
     const hasSuggested = data.suggestedResponse && data.suggestedResponse.trim().length > 0;
     const tacticalPreview = hasSuggested ? extractTacticalPreview(data.suggestedResponse) : '';
 
+    // Interview-mode drill-down chip — shown only when meeting is in interview
+    // mode AND the insight carries a topic_label. Camel/snake handled because
+    // SignalR may serialize either way depending on backend config.
+    const topicLabel = data.topicLabel || data.topic_label || '';
+    const followUpDepth = (typeof data.followUpDepth === 'number' ? data.followUpDepth :
+                          (typeof data.follow_up_depth === 'number' ? data.follow_up_depth : 0));
+    const topicExhausted = data.topicExhausted === true || data.topic_exhausted === true;
+    const isInterview = copilotMeetingMode === 'interview';
+    let depthChip = '';
+    if (isInterview && topicLabel) {
+        // Colour ramps as drill depth grows: 0=cool/cyan, 1=neutral, 2=amber, 3=red
+        // → host can see at a glance "we've drilled hard, time to wrap up".
+        const depthColors = ['#00d4ff', '#94a3b8', '#fbbf24', '#ff4757'];
+        const dotColor = topicExhausted ? '#22c55e' : depthColors[Math.min(followUpDepth, 3)];
+        const depthText = topicExhausted ? '✓ done' : `drill ${followUpDepth}/3`;
+        depthChip = `<span class="hud-topic-chip" title="Topic: ${escapeAttr(topicLabel)} — ${depthText}">` +
+                      `<span class="hud-topic-dot" style="background:${dotColor}"></span>` +
+                      `${escapeHtml(topicLabel)} · ${depthText}` +
+                    `</span>`;
+    }
+
     el.innerHTML =
         `<div class="hud-insight-header">` +
             `<span class="hud-glyph" style="color:${config.color}">${config.glyph}</span>` +
             `<span class="hud-type" style="color:${config.color}">${config.label}</span>` +
             (isHigh ? `<span class="hud-priority-tag">HIGH</span>` : '') +
+            depthChip +
             `<span class="hud-time">${time}</span>` +
         `</div>` +
         `<div class="hud-insight-text">${escapeHtml(data.content)}</div>` +
@@ -525,6 +554,14 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// HTML attribute escape — used for title="..." tooltips on the topic chip.
+// Quote chars must be HTML-encoded inside attribute values.
+function escapeAttr(text) {
+    return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 /**

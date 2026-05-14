@@ -1313,6 +1313,25 @@
                     <span style="margin-left: auto; color: var(--text-secondary); font-size: 0.85rem;" id="appDrawerMeta"></span>
                 </div>
                 <div id="appDrawerFields"></div>
+
+                <!-- ─── Recruit Copilot panel ─────────────────────────────
+                     Loaded lazily by openApplicationDrawer. Shows the
+                     "Schedule Interview" CTA when no interview exists, the
+                     meeting link + status when one is in progress, and the
+                     full post-interview report when status='completed'. -->
+                <details class="rec-posting-card rec-analytics-details" id="appDrawerInterviewDetails" style="margin-top: 18px;" open>
+                    <summary class="rec-analytics-summary">
+                        <div class="rec-analytics-summary-label">
+                            <svg class="rec-analytics-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 6 15 12 9 18"/></svg>
+                            <span style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary);">Recruit Copilot</span>
+                            <span style="color: var(--text-secondary); font-weight: 400; font-size: 0.82rem; margin-left: 8px;">· AI-driven interview</span>
+                        </div>
+                    </summary>
+                    <div id="appDrawerInterviewBody" style="padding: 16px 18px 18px;">
+                        <div class="rec-loading">Loading interview state…</div>
+                    </div>
+                </details>
+
                 <div class="form-group" style="margin-top: 16px;">
                     <label>Internal notes (visible to HR only)</label>
                     <textarea id="appDrawerNotes" class="form-control" rows="3" placeholder="Notes for the hiring team..."></textarea>

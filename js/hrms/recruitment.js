@@ -1168,9 +1168,176 @@
             document.getElementById('appDrawerMeta').textContent = `For "${activeApplication.job_title}" · ${formatDate(activeApplication.created_at, true)}`;
             document.getElementById('appDrawerNotes').value = activeApplication.notes || '';
             renderApplicationFields(activeApplication);
+            // Reset + load the Recruit Copilot panel for this application
+            const ivBody = document.getElementById('appDrawerInterviewBody');
+            if (ivBody) ivBody.innerHTML = '<div class="rec-loading">Loading interview state…</div>';
             openModal('applicationDrawer');
+            loadApplicationInterviews(id);
         } catch (err) {
             Toast?.error?.(err?.message || 'Failed to open application');
+        }
+    };
+
+    // ─── Recruit Copilot panel ─────────────────────────────────────────
+    async function loadApplicationInterviews(applicationId) {
+        const body = document.getElementById('appDrawerInterviewBody');
+        if (!body) return;
+        try {
+            const list = await api.request(`/hrms/job-applications/${encodeURIComponent(applicationId)}/interviews`);
+            renderInterviewPanel(applicationId, list || []);
+        } catch (err) {
+            console.error('loadApplicationInterviews failed', err);
+            body.innerHTML = `<div class="rec-empty"><div>Failed to load interview state. ${escapeHtml(err?.message || '')}</div></div>`;
+        }
+    }
+
+    function renderInterviewPanel(applicationId, interviews) {
+        const body = document.getElementById('appDrawerInterviewBody');
+        if (!body) return;
+        // Newest first; UI shows the latest interview's state + a fold-down list of older ones
+        const sorted = [...interviews].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const latest = sorted[0];
+
+        // No interview yet → big primary CTA
+        if (!latest) {
+            body.innerHTML = `
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0 0 6px; font-size: 1rem; color: var(--text-primary);">No interview scheduled yet</h4>
+                        <p style="margin: 0 0 12px; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">
+                            Launches a hosted Vision meeting with the AI interviewer attached.
+                            The Copilot reads the job description + this candidate's submitted answers,
+                            then drives the topic-by-topic interview for you with drill-down follow-ups.
+                            Even if you don't know the domain, the Copilot will whisper the next question
+                            (with a "listen for" hint) at every turn.
+                        </p>
+                        <button class="rec-btn rec-btn-primary" onclick="scheduleInterviewNow('${escapeAttr(applicationId)}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            Schedule with AI Copilot
+                        </button>
+                    </div>
+                </div>`;
+            return;
+        }
+
+        // Render latest interview state
+        body.innerHTML = renderInterviewRow(latest, true) +
+            (sorted.length > 1
+                ? `<details style="margin-top: 14px;"><summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.86rem;">${sorted.length - 1} earlier interview(s)</summary>
+                   <div style="margin-top: 10px;">${sorted.slice(1).map(iv => renderInterviewRow(iv, false)).join('')}</div></details>`
+                : '');
+    }
+
+    function renderInterviewRow(iv, isLatest) {
+        const status = iv.status || 'scheduled';
+        const statusBadge = `<span class="rec-badge rec-badge-${escapeAttr(status)}">${escapeHtml(status)}</span>`;
+        let topicsSeeded = [];
+        try { topicsSeeded = JSON.parse(iv.topics_seeded || '[]'); } catch { /* ignore */ }
+        const meta = `Scheduled ${formatDate(iv.scheduled_at || iv.created_at, true)} · ${topicsSeeded.length} topic${topicsSeeded.length===1?'':'s'} seeded`;
+
+        // Top row: status + meta + meeting CTA
+        const topRow = `
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px;">
+                ${statusBadge}
+                <span style="color: var(--text-secondary); font-size: 0.85rem;">${escapeHtml(meta)}</span>
+                ${iv.meeting_url
+                    ? `<button class="rec-btn rec-btn-sm" style="margin-left: auto;" onclick="window.open('${escapeAttr(iv.meeting_url)}','_blank')">
+                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+                         Open meeting</button>`
+                    : ''}
+            </div>`;
+
+        // Topics seeded chips
+        const topicChips = topicsSeeded.length
+            ? `<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
+                 ${topicsSeeded.map(t => `<span class="rec-badge rec-badge-new" style="font-weight: 400;">${escapeHtml(t)}</span>`).join('')}
+               </div>` : '';
+
+        // Report block — only when complete
+        let reportBlock = '';
+        if (status === 'completed' && isLatest) {
+            let topicsCovered = [], redFlags = [], strengths = [];
+            try { topicsCovered = JSON.parse(iv.topics_covered || '[]'); } catch { /* ignore */ }
+            try { redFlags = JSON.parse(iv.red_flags || '[]'); } catch { /* ignore */ }
+            try { strengths = JSON.parse(iv.strengths || '[]'); } catch { /* ignore */ }
+            const recColors = { proceed: '#22c55e', second_round: '#fbbf24', reject: '#ff4757', inconclusive: '#94a3b8' };
+            const rec = iv.overall_recommendation || 'inconclusive';
+            const recColor = recColors[rec] || '#94a3b8';
+
+            const topicBars = topicsCovered.length
+                ? `<table class="rec-mini-table" style="margin-top: 8px;">
+                     <thead><tr><th>Topic</th><th>Depth reached</th><th>Score</th><th>Notes</th></tr></thead>
+                     <tbody>${topicsCovered.map(t => `
+                        <tr>
+                          <td>${escapeHtml(t.label || '')}</td>
+                          <td>${(t.depth_reached || 0)}/3</td>
+                          <td>${(t.depth_score_1_5 || '')}/5</td>
+                          <td style="color: var(--text-secondary);">${escapeHtml(t.notes || '')}</td>
+                        </tr>`).join('')}</tbody>
+                   </table>` : '';
+
+            reportBlock = `
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px;">
+                    <div class="rec-stat-card" style="border-left: 4px solid ${recColor};">
+                        <div class="rec-stat-label">RECOMMENDATION</div>
+                        <div class="rec-stat-value" style="font-size: 1.2rem; font-weight: 600; text-transform: uppercase; color: ${recColor};">
+                            ${escapeHtml((rec || '').replace(/_/g, ' '))}
+                        </div>
+                        <div class="rec-stat-sub">Overall score ${(iv.overall_score || '?')}/10</div>
+                    </div>
+                    <div class="rec-stat-card">
+                        <div class="rec-stat-label">SUMMARY</div>
+                        <div style="font-size: 0.88rem; line-height: 1.5; color: var(--text-primary); margin-top: 4px;">
+                            ${escapeHtml(iv.summary_text || '(No summary text)')}
+                        </div>
+                    </div>
+                </div>
+                ${topicBars}
+                ${strengths.length ? `<h5 style="margin: 14px 0 6px; font-size: 0.86rem; color: #22c55e;">STRENGTHS</h5>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--text-primary); font-size: 0.88rem;">${strengths.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>` : ''}
+                ${redFlags.length ? `<h5 style="margin: 14px 0 6px; font-size: 0.86rem; color: #ff4757;">RED FLAGS</h5>
+                    <ul style="margin: 0; padding-left: 20px; color: var(--text-primary); font-size: 0.88rem;">${redFlags.map(f => `<li>${escapeHtml(f)}</li>`).join('')}</ul>` : ''}
+            `;
+        } else if (status === 'scheduled' || status === 'in_progress') {
+            // Show seeded topic queue as a preview of what the Copilot will probe
+            reportBlock = topicChips
+                ? `<h5 style="margin: 6px 0; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); font-weight: 600;">Topics the AI will probe</h5>${topicChips}`
+                : '';
+        }
+
+        // Wrap in a card border for older interviews so the panel is scannable
+        const wrapStyle = isLatest ? '' : 'border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 8px;';
+        return `<div style="${wrapStyle}">${topRow}${reportBlock}</div>`;
+    }
+
+    window.scheduleInterviewNow = async function (applicationId) {
+        const btn = event?.target?.closest('button');
+        if (btn) { btn.disabled = true; btn.textContent = 'Scheduling…'; }
+        try {
+            // No specific datetime → backend schedules for "now". Keep the
+            // first version one-click; calendar picker can come later.
+            const result = await api.request(`/hrms/job-applications/${encodeURIComponent(applicationId)}/schedule-interview`, {
+                method: 'POST',
+                body: JSON.stringify({ send_invite_email: true })
+            });
+            Toast?.success?.('Interview scheduled — meeting created with AI Copilot attached');
+            // Re-load panel + status badge (status was bumped to 'interview')
+            await loadApplicationInterviews(applicationId);
+            try {
+                const refreshed = await api.request(`/hrms/job-applications/${encodeURIComponent(applicationId)}`);
+                activeApplication = refreshed;
+                const badge = document.getElementById('appDrawerStatus');
+                if (badge) {
+                    badge.textContent = refreshed.status;
+                    badge.className = 'rec-badge rec-badge-' + (refreshed.status || 'new');
+                }
+                dd.appDrawerStatusSelect?.setValue(refreshed.status || 'new');
+            } catch { /* non-fatal */ }
+            // Auto-open the meeting in a new tab so the host lands in the lobby straight away
+            if (result?.meeting_url) window.open(result.meeting_url, '_blank');
+        } catch (err) {
+            Toast?.error?.(err?.message || 'Failed to schedule interview');
+            if (btn) { btn.disabled = false; btn.textContent = 'Schedule with AI Copilot'; }
         }
     };
 

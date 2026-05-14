@@ -2447,6 +2447,37 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     letter-spacing: 0.05em;
 }
 
+/* ── Recruit Copilot drill-down chip ──────────────────────────────────
+   Renders next to the type label inside the insight card header. The dot
+   colour rises with drill depth (cyan → grey → amber → red); turns green
+   when the topic is exhausted. Truncates topic label so a long one
+   ("Distributed systems and microservice patterns") doesn't overflow the
+   card on narrow HUD widths. */
+.hud-topic-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    padding: 1px 7px;
+    border-radius: 999px;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.hud-topic-dot {
+    flex: none;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    box-shadow: 0 0 4px currentColor;
+}
+
 .hud-insight-text {
     font-size: 14px;
     line-height: 1.5;
