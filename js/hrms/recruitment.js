@@ -1179,9 +1179,44 @@
     };
 
     // ─── Recruit Copilot panel ─────────────────────────────────────────
+    // Cached per-tab so we don't hit Auth on every drawer open. The settings
+    // page is the only place that flips these flags, and it forces a reload.
+    let _copilotReadinessCache = null;
+    async function getRecruitCopilotReadiness() {
+        if (_copilotReadinessCache) return _copilotReadinessCache;
+        try {
+            const r = await api.request('/tenant-settings/copilot/HRMS');
+            _copilotReadinessCache = {
+                hasAnthropic: !!r.has_anthropic_key,
+                hasGladia:    !!r.has_gladia_key,
+                enabled:      r.enabled !== false,
+            };
+        } catch (err) {
+            console.warn('copilot readiness fetch failed — assuming OFF', err);
+            _copilotReadinessCache = { hasAnthropic: false, hasGladia: false, enabled: false, error: err?.message };
+        }
+        return _copilotReadinessCache;
+    }
+
     async function loadApplicationInterviews(applicationId) {
         const body = document.getElementById('appDrawerInterviewBody');
+        const wrapper = document.getElementById('appDrawerInterviewDetails');
         if (!body) return;
+
+        // Gate: hide the entire Copilot section unless BOTH the Anthropic LLM
+        // key AND the Gladia STT key are configured + active for this tenant.
+        // The interview Copilot needs both to function (LLM drives questioning,
+        // Gladia transcribes the live audio). We render a small inline CTA
+        // pointing the admin to /pages/admin/settings.html (API Keys tab) so
+        // the gap is discoverable rather than silent.
+        const ready = await getRecruitCopilotReadiness();
+        if (!ready.hasAnthropic || !ready.hasGladia) {
+            body.innerHTML = renderCopilotKeysMissing(ready);
+            // Keep the section visible so HR sees WHY the Copilot is unavailable.
+            if (wrapper) wrapper.open = true;
+            return;
+        }
+
         try {
             const list = await api.request(`/hrms/job-applications/${encodeURIComponent(applicationId)}/interviews`);
             renderInterviewPanel(applicationId, list || []);
@@ -1189,6 +1224,40 @@
             console.error('loadApplicationInterviews failed', err);
             body.innerHTML = `<div class="rec-empty"><div>Failed to load interview state. ${escapeHtml(err?.message || '')}</div></div>`;
         }
+    }
+
+    // Inline "configure your AI keys" notice. Mirrors the look of the empty
+    // states elsewhere on this page so it doesn't read as an error.
+    function renderCopilotKeysMissing(ready) {
+        const missing = [];
+        if (!ready.hasAnthropic) missing.push('<strong>Anthropic API key</strong> (drives the AI interviewer)');
+        if (!ready.hasGladia)    missing.push('<strong>Gladia API key</strong> (transcribes the live meeting)');
+        return `
+        <div style="padding: 22px 24px; border: 1px dashed var(--border-color); border-radius: 10px; background: rgba(139,92,246,0.06);">
+            <div style="display:flex; align-items:flex-start; gap: 14px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" stroke-width="2" style="flex-shrink:0; margin-top: 2px;">
+                    <path d="M12 8v4M12 16h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                </svg>
+                <div style="flex: 1;">
+                    <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">
+                        Recruit Copilot is not yet configured for this tenant
+                    </div>
+                    <div style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.55; margin-bottom: 14px;">
+                        AI-driven interview support requires:
+                        <ul style="margin: 8px 0 0; padding-left: 18px;">
+                            ${missing.map(m => `<li style="margin-bottom: 4px;">${m}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <a href="../admin/settings.html#api-keys" class="rec-btn rec-btn-primary rec-btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        Open settings → API Keys
+                    </a>
+                    <div style="margin-top: 12px; font-size: 0.78rem; color: var(--text-tertiary, var(--text-secondary)); line-height: 1.5;">
+                        Once both keys are saved, refresh this page and the Copilot will be ready to schedule interviews.
+                    </div>
+                </div>
+            </div>
+        </div>`;
     }
 
     function renderInterviewPanel(applicationId, interviews) {
@@ -1215,49 +1284,49 @@
 
         let timelineHtml = '';
         if (sorted.length > 0) {
-            timelineHtml = `<h4 style="margin: 0 0 10px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); font-weight: 600;">Interview Rounds</h4>
-                <div class="rec-iv-timeline">${sorted.map(iv => renderInterviewRow(iv, iv === sorted[0])).join('')}</div>`;
+            timelineHtml = `<h4 style="margin: 0 0 16px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); font-weight: 600;">Interview Rounds</h4>
+                <div class="rec-iv-timeline" style="display:flex; flex-direction:column; gap:14px;">${sorted.map(iv => renderInterviewRow(iv, iv === sorted[0])).join('')}</div>`;
         }
 
         // Hide the form entirely when an in-progress meeting exists — host
         // should finish it before scheduling the next round.
         const showForm = !inProgress;
         const formHtml = !showForm
-            ? `<p style="margin: 18px 0 0; color: var(--text-secondary); font-size: 0.86rem; font-style: italic;">An interview is already scheduled. Finish it before scheduling the next round.</p>`
+            ? `<p style="margin: 24px 0 0; padding: 14px 16px; background: var(--bg-card-elevated, rgba(255,255,255,0.02)); border-left: 3px solid var(--brand-primary); border-radius: 6px; color: var(--text-secondary); font-size: 0.88rem; font-style: italic; line-height: 1.55;">An interview is already scheduled. Finish it before scheduling the next round.</p>`
             : `
-            <div style="margin-top: ${sorted.length > 0 ? '20px' : '0'}; padding-top: ${sorted.length > 0 ? '18px' : '0'}; border-top: ${sorted.length > 0 ? '1px solid var(--border-color)' : 'none'};">
-                <h4 style="margin: 0 0 6px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); font-weight: 600;">${sorted.length > 0 ? 'Schedule the next round' : 'Schedule the first interview'}</h4>
+            <div style="margin-top: ${sorted.length > 0 ? '32px' : '0'}; padding-top: ${sorted.length > 0 ? '28px' : '0'}; border-top: ${sorted.length > 0 ? '1px solid var(--border-color)' : 'none'};">
+                <h4 style="margin: 0 0 14px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); font-weight: 600;">${sorted.length > 0 ? 'Schedule the next round' : 'Schedule the first interview'}</h4>
                 ${sorted.length === 0
-                    ? `<p style="margin: 0 0 12px; color: var(--text-secondary); font-size: 0.86rem; line-height: 1.5;">
+                    ? `<p style="margin: 0 0 24px; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; max-width: 760px;">
                         AI Copilot reads the JD + the candidate's answers and drives a topic-by-topic interview with drill-down follow-ups.
                         On round 2+, prior round summaries are auto-fed in so the Copilot doesn't re-ask covered topics.
                        </p>`
                     : ''}
-                <div style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr; gap: 10px; max-width: 720px; margin-bottom: 10px;">
+                <div style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr; gap: 18px; max-width: 760px; margin-bottom: 22px;">
                     <div>
-                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em;">Round type</label>
+                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Round type</label>
                         <select id="ivRoundType" class="form-control" style="width: 100%;">
                             ${ROUND_TYPES.map(rt => `<option value="${rt.value}" ${rt.value === nextRoundType ? 'selected' : ''}>${rt.label}</option>`).join('')}
                         </select>
                     </div>
                     <div>
-                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em;">Optional label (e.g. "CTO + 2 staff engineers")</label>
+                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Optional label (e.g. "CTO + 2 staff engineers")</label>
                         <input type="text" id="ivRoundLabel" class="form-control" placeholder="(auto)" maxlength="120" style="width: 100%;">
                     </div>
                     <div>
-                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em;">When</label>
+                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">When</label>
                         <input type="datetime-local" id="ivScheduleAt" class="form-control" value="${localIso}" style="width: 100%;">
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-primary); cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 4px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--text-primary); cursor: pointer; user-select: none;">
                         <input type="checkbox" id="ivSendInvite" checked> Email candidate the invite
                     </label>
-                    <button class="rec-btn rec-btn-primary" onclick="scheduleInterviewWithPicker('${escapeAttr(applicationId)}', false)">
+                    <button class="rec-btn rec-btn-primary" style="padding: 9px 18px;" onclick="scheduleInterviewWithPicker('${escapeAttr(applicationId)}', false)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         Schedule
                     </button>
-                    <button class="rec-btn" onclick="scheduleInterviewWithPicker('${escapeAttr(applicationId)}', true)" title="Skip the picker — create the meeting and open it now">
+                    <button class="rec-btn" style="padding: 9px 18px;" onclick="scheduleInterviewWithPicker('${escapeAttr(applicationId)}', true)" title="Skip the picker — create the meeting and open it now">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                         Start now
                     </button>
@@ -1337,25 +1406,46 @@
             const base = labels[iv.round_type] || 'Interview';
             return iv.round_index > 1 ? `${base} #${iv.round_index}` : base;
         })();
-        const roundChip = `<span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; background: rgba(139,92,246,0.16); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.28);">${escapeHtml(roundLabel)}</span>`;
+        const roundChip = `<span style="display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; border-radius: 999px; font-size: 0.76rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; background: rgba(139,92,246,0.16); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.28);">${escapeHtml(roundLabel)}</span>`;
 
-        // Top row: round chip + status + meta + meeting CTA
+        // Top row: round chip + status + meta + Join+Copy+Email trio.
+        // The dropdown markup mirrors PMS (.pms-meeting-dropdown / .pms-meeting-menu)
+        // so the styles + JS hooks are shared. Per-row menuId so multiple rounds
+        // in the timeline don't collide on toggle.
+        const menuId = `recIvMenu_${iv.id}`;
+        const meetingCta = iv.meeting_id
+            ? `<div class="pms-meeting-dropdown" style="margin-left: auto;">
+                 <a class="rec-btn rec-btn-sm rec-btn-primary" href="${escapeAttr(iv.meeting_url || '#')}" target="_blank" rel="noopener" style="padding: 7px 14px;">
+                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                   Join Meeting
+                 </a>
+                 <button type="button" class="rec-btn rec-btn-sm rec-btn-primary pms-meeting-dropdown-toggle" onclick="toggleRecruitMeetingDropdown(event, '${menuId}')" title="Share">
+                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                 </button>
+                 <div class="pms-meeting-menu" id="${menuId}">
+                   <button type="button" onclick="recruitCopyMeetingLink('${escapeAttr(iv.meeting_id)}')">
+                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                     Copy Guest Link
+                   </button>
+                   <button type="button" onclick="recruitCopyEmailCard('${escapeAttr(iv.meeting_id)}', '${escapeAttr(iv.candidate_name || activeApplication?.applicant_name || 'Candidate')}', '${escapeAttr(iv.posting_title || activeApplication?.job_title || 'Interview')}', '${escapeAttr(roundLabel)}')">
+                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                     Guest Email Card
+                   </button>
+                 </div>
+               </div>`
+            : '';
         const topRow = `
-            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px;">
                 ${roundChip}
                 ${statusBadge}
-                <span style="color: var(--text-secondary); font-size: 0.85rem;">${escapeHtml(meta)}</span>
-                ${iv.meeting_url
-                    ? `<button class="rec-btn rec-btn-sm" style="margin-left: auto;" onclick="window.open('${escapeAttr(iv.meeting_url)}','_blank')">
-                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
-                         Open meeting</button>`
-                    : ''}
+                <span style="color: var(--text-secondary); font-size: 0.86rem;">${escapeHtml(meta)}</span>
+                ${meetingCta}
             </div>`;
 
         // Topics seeded chips
         const topicChips = topicsSeeded.length
-            ? `<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
-                 ${topicsSeeded.map(t => `<span class="rec-badge rec-badge-new" style="font-weight: 400;">${escapeHtml(t)}</span>`).join('')}
+            ? `<div style="display: flex; gap: 8px; flex-wrap: wrap; margin: 0;">
+                 ${topicsSeeded.map(t => `<span class="rec-badge rec-badge-new" style="font-weight: 400; padding: 5px 12px;">${escapeHtml(t)}</span>`).join('')}
                </div>` : '';
 
         // Report block — only when complete
@@ -1409,12 +1499,15 @@
         } else if (status === 'scheduled' || status === 'in_progress') {
             // Show seeded topic queue as a preview of what the Copilot will probe
             reportBlock = topicChips
-                ? `<h5 style="margin: 6px 0; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); font-weight: 600;">Topics the AI will probe</h5>${topicChips}`
+                ? `<h5 style="margin: 0 0 12px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); font-weight: 600;">Topics the AI will probe</h5>${topicChips}`
                 : '';
         }
 
-        // Wrap in a card border for older interviews so the panel is scannable
-        const wrapStyle = isLatest ? '' : 'border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-top: 8px;';
+        // Wrap every interview row in a soft card so the panel is scannable.
+        // Older rounds get a slightly muted border to recede visually.
+        const wrapStyle = isLatest
+            ? 'background: var(--bg-card-elevated, rgba(255,255,255,0.02)); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px 20px;'
+            : 'background: rgba(0,0,0,0.10); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px 18px; opacity: 0.92;';
         return `<div style="${wrapStyle}">${topRow}${reportBlock}</div>`;
     }
 
@@ -1480,6 +1573,67 @@
 
     // Back-compat shim — anything that called the old name still works.
     window.scheduleInterviewNow = (applicationId) => window.scheduleInterviewWithPicker(applicationId, true);
+
+    // ─── Per-row Join+Copy+Email dropdown (matches PMS pattern) ────────
+    // Each interview row in the Copilot timeline renders a primary "Join Meeting"
+    // button + a 3-dot kebab opening "Copy Guest Link" / "Guest Email Card".
+    // Mirrors the PMS implementation so the UX feels identical across modules.
+    window.toggleRecruitMeetingDropdown = function (e, menuId) {
+        e.stopPropagation();
+        const menu = document.getElementById(menuId);
+        if (!menu) return;
+        // Close any other open menus first (page-wide)
+        document.querySelectorAll('.pms-meeting-menu.active').forEach(m => {
+            if (m.id !== menuId) m.classList.remove('active');
+        });
+        menu.classList.toggle('active');
+    };
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.pms-meeting-menu.active').forEach(m => m.classList.remove('active'));
+    });
+
+    function _recruitGuestLink(meetingId) {
+        // Same shape as PMS: guest-join page in Vision, deep-linked by meeting id.
+        return `${window.location.origin}/pages/vision/guest-join.html?id=${encodeURIComponent(meetingId)}`;
+    }
+
+    window.recruitCopyMeetingLink = function (meetingId) {
+        const link = _recruitGuestLink(meetingId);
+        navigator.clipboard.writeText(link).then(() => {
+            Toast?.success?.('Guest link copied!');
+        }).catch(() => {
+            // Fallback for older browsers / non-secure contexts
+            const ta = document.createElement('textarea');
+            ta.value = link; document.body.appendChild(ta); ta.select();
+            document.execCommand('copy'); document.body.removeChild(ta);
+            Toast?.success?.('Guest link copied!');
+        });
+        document.querySelectorAll('.pms-meeting-menu.active').forEach(m => m.classList.remove('active'));
+    };
+
+    window.recruitCopyEmailCard = function (meetingId, candidateName, postingTitle, roundLabel) {
+        if (typeof ShareWidget === 'undefined' || !ShareWidget.buildEmailCard) {
+            Toast?.error?.('Email card helper not loaded');
+            return;
+        }
+        const url = _recruitGuestLink(meetingId);
+        const title = `${postingTitle} — ${roundLabel || 'Interview'}`;
+        const description = `Hi ${candidateName}, here's the link to join your interview on Ragenaizer Vision. The room opens 5 minutes before the scheduled time.`;
+        const ogImage = `${window.location.origin}/assets/og-vision.png`;
+        const html = ShareWidget.buildEmailCard({ url, title, description, ogImage, btnText: 'Join Interview →' });
+        try {
+            const blob = new Blob([html], { type: 'text/html' });
+            const plainBlob = new Blob([html], { type: 'text/plain' });
+            navigator.clipboard.write([
+                new ClipboardItem({ 'text/html': blob, 'text/plain': plainBlob })
+            ]).then(() => Toast?.success?.('Email card copied — paste into Outlook or Gmail!'))
+              .catch(() => navigator.clipboard.writeText(html).then(() => Toast?.success?.('Email card copied!')));
+        } catch (err) {
+            navigator.clipboard.writeText(html).then(() => Toast?.success?.('Email card copied!'))
+                .catch(() => Toast?.error?.('Could not copy'));
+        }
+        document.querySelectorAll('.pms-meeting-menu.active').forEach(m => m.classList.remove('active'));
+    };
 
     window.closeApplicationDrawer = function () { closeModal('applicationDrawer'); activeApplicationId = null; activeApplication = null; };
 

@@ -25,6 +25,8 @@
     <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
+    <!-- Reuse PMS's join-meeting dropdown styles (.pms-meeting-dropdown / .pms-meeting-menu) for the per-row Copilot row CTA. -->
+    <script>document.write('<link rel="stylesheet" href="../../css/pms-detail.css?v=' + CACHE_VERSION + '">');</script>
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
     <style>
         /* Make hidden attribute win over .gm-overlay's display:flex !important */
@@ -1327,7 +1329,7 @@
                             <span style="color: var(--text-secondary); font-weight: 400; font-size: 0.82rem; margin-left: 8px;">· AI-driven interview</span>
                         </div>
                     </summary>
-                    <div id="appDrawerInterviewBody" style="padding: 16px 18px 18px;">
+                    <div id="appDrawerInterviewBody" style="padding: 26px 28px 30px;">
                         <div class="rec-loading">Loading interview state…</div>
                     </div>
                 </details>
@@ -1346,6 +1348,8 @@
     <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <!-- Provides ShareWidget.buildEmailCard for the per-row "Guest Email Card" CTA. -->
+    <script>document.write('<script src="../../js/share-widget.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
     <script>document.write('<script src="../../js/hrms/recruitment.js?v=' + CACHE_VERSION + '"><\/script>');</script>

@@ -24,6 +24,80 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <!-- Inline styles for the redesigned Meeting Settings modal (May 2026):
+         tabbed layout, wider dialog, two-column rows, and the "what is
+         this" intro under each AI tab. Kept inline to avoid spawning a
+         new stylesheet for one modal — move to a partial if it grows. -->
+    <style>
+        /* Wider dialog so two-column rows breathe. */
+        .meeting-settings-dialog { max-width: 920px; width: 92vw; }
+        @media (max-width: 720px) {
+            .meeting-settings-dialog { max-width: 100%; width: 100%; }
+        }
+
+        /* Tab strip ─────────────────────────────────────────── */
+        .ms-tabs {
+            display: flex;
+            gap: 4px;
+            margin: -4px 0 18px;
+            padding: 4px;
+            background: var(--bg-elevated, rgba(255,255,255,0.04));
+            border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+            border-radius: 12px;
+        }
+        .ms-tab {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-secondary, #94a3b8);
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .ms-tab:hover { color: var(--text-primary, #fff); background: rgba(255,255,255,0.04); }
+        .ms-tab.active {
+            background: var(--brand-primary, #3b82f6);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+        }
+        .ms-tab svg { flex-shrink: 0; }
+
+        /* Tab panes ─────────────────────────────────────────── */
+        .ms-tab-pane[hidden] { display: none !important; }
+
+        /* Tab intro paragraph (shown above the AI controls) */
+        .ms-tab-intro {
+            margin: 0 0 18px;
+            padding: 12px 14px;
+            font-size: 0.86rem;
+            line-height: 1.55;
+            color: var(--text-secondary, #94a3b8);
+            background: rgba(139, 92, 246, 0.06);
+            border-left: 3px solid var(--brand-primary, #3b82f6);
+            border-radius: 6px;
+        }
+        .ms-tab-intro a { color: var(--brand-primary, #3b82f6); text-decoration: none; font-weight: 500; }
+        .ms-tab-intro a:hover { text-decoration: underline; }
+
+        /* Two-column row helper used inside tab panes */
+        .ms-row-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            align-items: start;
+        }
+        @media (max-width: 720px) { .ms-row-2col { grid-template-columns: 1fr; gap: 14px; } }
+
+        /* Action row at bottom (Save Settings) — sits flush with rest. */
+        .ms-actions { margin-top: 22px; }
+    </style>
     <!-- Flatpickr — datetime-local has no time picker on macOS Safari. -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
@@ -475,9 +549,17 @@
         </div>
     </div>
 
-    <!-- Meeting Settings Modal -->
+    <!-- Meeting Settings Modal — tabbed layout (May 2026 redesign) -->
+    <!-- Tabs split a previously-tall single-column form into two panes:
+         "General" (project, name, schedule, host, participants, notes, guest+recording)
+         "AI & Transcription" (auto-transcription, language, multi-language, Copilot, mode).
+         Why tabs: the modal had grown long enough that SearchableDropdown
+         menus could open behind / outside the visible scroll area. Tabs
+         keep the modal at a fixed comfortable height while giving each
+         section room to breathe — and frees the Notes textarea for a
+         taller visible area. -->
     <div id="meetingSettingsModal" class="modal">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-dialog modal-dialog-centered modal-lg meeting-settings-dialog">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Meeting Settings <span class="meeting-type-display" id="settingsMeetingTypeDisplay"><span class="badge badge-type">Open</span></span></h5>
@@ -496,177 +578,172 @@
                         <span>Settings locked while meeting is in progress</span>
                     </div>
 
-                    <!-- Project Selection -->
-                    <div id="settingsProjectGroup" class="form-group settings-row">
-                        <label>Project</label>
-                        <div id="settingsProjectDropdownContainer"></div>
+                    <!-- Tab strip — switching is handled in dashboard.js (switchMeetingSettingsTab). -->
+                    <div class="ms-tabs" role="tablist" aria-label="Meeting settings sections">
+                        <button type="button" class="ms-tab active" role="tab" aria-selected="true" data-ms-tab="general" onclick="switchMeetingSettingsTab('general')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                            General
+                        </button>
+                        <button type="button" class="ms-tab" role="tab" aria-selected="false" data-ms-tab="ai" onclick="switchMeetingSettingsTab('ai')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v1.05A8 8 0 0 0 4 14a8 8 0 0 0 16 0 8 8 0 0 0-5-7.95V5a3 3 0 0 0-3-3z"/><circle cx="9" cy="13" r="1.2"/><circle cx="15" cy="13" r="1.2"/><path d="M9 17c1 1 2 1.5 3 1.5s2-.5 3-1.5"/></svg>
+                            AI &amp; Transcription
+                        </button>
                     </div>
 
-                    <!-- Meeting Name -->
-                    <div class="form-group settings-row">
-                        <label for="settingsMeetingName">Meeting Name</label>
-                        <input type="text" id="settingsMeetingName" class="form-control" placeholder="Meeting name...">
-                    </div>
+                    <!-- ── General tab ───────────────────────────────────── -->
+                    <div class="ms-tab-pane active" data-ms-pane="general" role="tabpanel">
+                        <!-- Two-column row for Project + Meeting Name on wide screens. -->
+                        <div class="ms-row ms-row-2col">
+                            <div id="settingsProjectGroup" class="form-group settings-row">
+                                <label>Project</label>
+                                <div id="settingsProjectDropdownContainer"></div>
+                            </div>
+                            <div class="form-group settings-row">
+                                <label for="settingsMeetingName">Meeting Name</label>
+                                <input type="text" id="settingsMeetingName" class="form-control" placeholder="Meeting name...">
+                            </div>
+                        </div>
 
-                    <!-- Schedule -->
-                    <div class="form-group settings-row settings-schedule-row">
-                        <label>Schedule</label>
-                        <div class="settings-schedule-inputs">
-                            <div class="schedule-field">
-                                <small>Start</small>
-                                <!-- Date + native time input pair (read via HRMSDatePicker.getDateTimeValue). -->
-                                <div style="display:grid;grid-template-columns:1fr 110px;gap:6px;">
-                                    <input type="date" id="settingsStartTime" class="form-control">
-                                    <select id="settingsStartTimeTime" class="form-select" data-time-picker="true" data-time-step="15"></select>
+                        <!-- Schedule -->
+                        <div class="form-group settings-row settings-schedule-row">
+                            <label>Schedule</label>
+                            <div class="settings-schedule-inputs">
+                                <div class="schedule-field">
+                                    <small>Start</small>
+                                    <div style="display:grid;grid-template-columns:1fr 110px;gap:6px;">
+                                        <input type="date" id="settingsStartTime" class="form-control">
+                                        <select id="settingsStartTimeTime" class="form-select" data-time-picker="true" data-time-step="15"></select>
+                                    </div>
+                                </div>
+                                <div class="schedule-field">
+                                    <small>End</small>
+                                    <div style="display:grid;grid-template-columns:1fr 110px;gap:6px;">
+                                        <input type="date" id="settingsEndTime" class="form-control">
+                                        <select id="settingsEndTimeTime" class="form-select" data-time-picker="true" data-time-step="15"></select>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="schedule-field">
-                                <small>End</small>
-                                <div style="display:grid;grid-template-columns:1fr 110px;gap:6px;">
-                                    <input type="date" id="settingsEndTime" class="form-control">
-                                    <select id="settingsEndTimeTime" class="form-select" data-time-picker="true" data-time-step="15"></select>
+                        </div>
+
+                        <!-- Host Selection -->
+                        <div id="hostSettingGroup" class="form-group settings-row">
+                            <label>Meeting Host</label>
+                            <div class="searchable-dropdown" id="settingsHostDropdown">
+                                <input type="hidden" id="settingsHost" value="">
+                                <div class="dropdown-selected" id="settingsHostSelected" onclick="toggleHostDropdown()">
+                                    <span class="selected-text">No host (open meeting)</span>
+                                    <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                 </div>
+                                <div class="dropdown-menu" id="settingsHostMenu">
+                                    <div class="dropdown-search">
+                                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                                        <input type="text" id="settingsHostSearch" placeholder="Search users..." oninput="filterHostOptions()">
+                                    </div>
+                                    <div class="dropdown-options" id="settingsHostOptions"></div>
+                                </div>
+                            </div>
+                            <small id="hostSettingHelp">The host must start the meeting before others can join</small>
+                        </div>
+
+                        <!-- Participants Section (for Private meetings) -->
+                        <div id="settingsParticipantsGroup" class="form-group settings-row" style="display: none;">
+                            <label>Allowed Participants</label>
+                            <div class="searchable-dropdown multi-select" id="settingsParticipantsDropdown">
+                                <div class="dropdown-selected" id="settingsParticipantsSelected" onclick="toggleSettingsParticipantsDropdown()">
+                                    <span class="selected-text"><span id="settingsParticipantsCount">0</span> participants allowed</span>
+                                    <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                </div>
+                                <div class="dropdown-menu" id="settingsParticipantsMenu">
+                                    <div class="dropdown-search">
+                                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                                        <input type="text" id="settingsParticipantsSearch" placeholder="Search users..." oninput="filterSettingsParticipantsOptions()">
+                                    </div>
+                                    <div class="dropdown-options multi-select-options" id="settingsParticipantsOptions"></div>
+                                </div>
+                            </div>
+                            <small>Only selected users can join this meeting</small>
+                        </div>
+
+                        <!-- Notes — taller textarea now that there's no AI noise crowding it. -->
+                        <div class="form-group settings-row">
+                            <label for="settingsNotes">Notes</label>
+                            <textarea id="settingsNotes" rows="6" placeholder="Meeting notes, agenda, candidate context..."></textarea>
+                        </div>
+
+                        <!-- Two toggles side-by-side: guest access + auto-recording. -->
+                        <div class="ms-row ms-row-2col ms-row-toggles">
+                            <div id="allowGuestsSettingGroup" class="form-group settings-row">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="settingsAllowGuests">
+                                    <span class="toggle-switch-track"><span class="toggle-switch-thumb"></span></span>
+                                    <span class="toggle-switch-label">Allow guest access</span>
+                                </label>
+                                <small>When enabled, anyone with the guest link can join without signing in</small>
+                            </div>
+                            <div class="form-group settings-row">
+                                <label class="toggle-switch" id="settingsAutoRecordingToggle">
+                                    <input type="checkbox" id="settingsAutoRecording">
+                                    <span class="toggle-switch-track"><span class="toggle-switch-thumb"></span></span>
+                                    <span class="toggle-switch-label">Auto-recording</span>
+                                </label>
+                                <small>Automatically record the meeting when it starts</small>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Host Selection -->
-                    <div id="hostSettingGroup" class="form-group settings-row">
-                        <label>Meeting Host</label>
-                        <div class="searchable-dropdown" id="settingsHostDropdown">
-                            <input type="hidden" id="settingsHost" value="">
-                            <div class="dropdown-selected" id="settingsHostSelected" onclick="toggleHostDropdown()">
-                                <span class="selected-text">No host (open meeting)</span>
-                                <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="6 9 12 15 18 9"/>
-                                </svg>
+                    <!-- ── AI & Transcription tab ────────────────────────── -->
+                    <div class="ms-tab-pane" data-ms-pane="ai" role="tabpanel" hidden>
+                        <p class="ms-tab-intro">Speech-to-text + AI Copilot for this meeting. Requires the tenant's Anthropic and Gladia API keys to be configured in <a href="../admin/settings.html#api-keys">Admin Settings</a>.</p>
+
+                        <!-- Auto-transcription -->
+                        <div class="form-group settings-row" id="settingsAutoTranscriptionGroup">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingsAutoTranscription">
+                                <span class="toggle-switch-track"><span class="toggle-switch-thumb"></span></span>
+                                <span class="toggle-switch-label">Auto-transcription</span>
+                            </label>
+                            <small>Automatically transcribe audio when the meeting starts</small>
+                        </div>
+
+                        <!-- Transcription Language + multi-language as a 2-col row. -->
+                        <div class="ms-row ms-row-2col">
+                            <div class="form-group settings-row hidden" id="settingsTranscriptionLanguageGroup">
+                                <label class="form-label">Transcription Language</label>
+                                <select id="settingsTranscriptionLanguage" class="form-control"></select>
+                                <small>Language used for speech-to-text transcription</small>
                             </div>
-                            <div class="dropdown-menu" id="settingsHostMenu">
-                                <div class="dropdown-search">
-                                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="11" cy="11" r="8"/>
-                                        <path d="m21 21-4.35-4.35"/>
-                                    </svg>
-                                    <input type="text" id="settingsHostSearch" placeholder="Search users..." oninput="filterHostOptions()">
-                                </div>
-                                <div class="dropdown-options" id="settingsHostOptions">
-                                    <!-- Options will be populated dynamically with virtual scrolling -->
-                                </div>
+                            <div class="form-group settings-row hidden" id="settingsCodeSwitchingGroup">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="settingsCodeSwitching">
+                                    <span class="toggle-switch-track"><span class="toggle-switch-thumb"></span></span>
+                                    <span class="toggle-switch-label">Multi-language detection</span>
+                                </label>
+                                <small>Allow detecting multiple languages mid-sentence (e.g., Hindi + English mix)</small>
                             </div>
                         </div>
-                        <small id="hostSettingHelp">The host must start the meeting before others can join</small>
-                    </div>
 
-                    <!-- Participants Section (for Private meetings) -->
-                    <div id="settingsParticipantsGroup" class="form-group settings-row" style="display: none;">
-                        <label>Allowed Participants</label>
-                        <div class="searchable-dropdown multi-select" id="settingsParticipantsDropdown">
-                            <div class="dropdown-selected" id="settingsParticipantsSelected" onclick="toggleSettingsParticipantsDropdown()">
-                                <span class="selected-text"><span id="settingsParticipantsCount">0</span> participants allowed</span>
-                                <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="6 9 12 15 18 9"/>
-                                </svg>
-                            </div>
-                            <div class="dropdown-menu" id="settingsParticipantsMenu">
-                                <div class="dropdown-search">
-                                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="11" cy="11" r="8"/>
-                                        <path d="m21 21-4.35-4.35"/>
-                                    </svg>
-                                    <input type="text" id="settingsParticipantsSearch" placeholder="Search users..." oninput="filterSettingsParticipantsOptions()">
-                                </div>
-                                <div class="dropdown-options multi-select-options" id="settingsParticipantsOptions">
-                                    <!-- Options populated by JavaScript -->
-                                </div>
-                            </div>
+                        <!-- AI Copilot toggle -->
+                        <div id="aiCopilotSettingGroup" class="form-group settings-row" style="display: none !important;">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="settingsAiCopilot">
+                                <span class="toggle-switch-track"><span class="toggle-switch-thumb"></span></span>
+                                <span class="toggle-switch-label">AI Copilot</span>
+                            </label>
+                            <small>Enables AI features — auto-enables guest access and transcription</small>
                         </div>
-                        <small>Only selected users can join this meeting</small>
+
+                        <!-- Meeting Mode (Copilot prompt selection) -->
+                        <div id="meetingModeSettingGroup" class="form-group settings-row" style="display: none !important;">
+                            <label class="form-label">Meeting Mode</label>
+                            <select id="settingsMeetingMode" class="form-control">
+                                <option value="sales">Sales</option>
+                                <option value="interview">Interview / Recruit</option>
+                            </select>
+                            <small>Determines the AI copilot behavior for this meeting</small>
+                        </div>
                     </div>
 
-                    <!-- Notes -->
-                    <div class="form-group settings-row">
-                        <label for="settingsNotes">Notes</label>
-                        <textarea id="settingsNotes" rows="2" placeholder="Meeting notes..."></textarea>
-                    </div>
-
-                    <!-- Allow Guests Toggle -->
-                    <div id="allowGuestsSettingGroup" class="form-group settings-row">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="settingsAllowGuests">
-                            <span class="toggle-switch-track">
-                                <span class="toggle-switch-thumb"></span>
-                            </span>
-                            <span class="toggle-switch-label">Allow guest access</span>
-                        </label>
-                        <small>When enabled, anyone with the guest link can join without signing in</small>
-                    </div>
-
-                    <!-- Auto Recording Toggle -->
-                    <div class="form-group settings-row">
-                        <label class="toggle-switch" id="settingsAutoRecordingToggle">
-                            <input type="checkbox" id="settingsAutoRecording">
-                            <span class="toggle-switch-track">
-                                <span class="toggle-switch-thumb"></span>
-                            </span>
-                            <span class="toggle-switch-label">Auto-recording</span>
-                        </label>
-                        <small>Automatically record the meeting when it starts</small>
-                    </div>
-
-                    <!-- Auto Transcription Toggle -->
-                    <div class="form-group settings-row" id="settingsAutoTranscriptionGroup">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="settingsAutoTranscription">
-                            <span class="toggle-switch-track">
-                                <span class="toggle-switch-thumb"></span>
-                            </span>
-                            <span class="toggle-switch-label">Auto-transcription</span>
-                        </label>
-                        <small>Automatically transcribe audio when meeting starts</small>
-                    </div>
-
-                    <!-- Transcription Language -->
-                    <div class="form-group settings-row hidden" id="settingsTranscriptionLanguageGroup">
-                        <label class="form-label">Transcription Language</label>
-                        <select id="settingsTranscriptionLanguage" class="form-control"></select>
-                        <small>Language used for speech-to-text transcription</small>
-                    </div>
-
-                    <!-- Code Switching Toggle -->
-                    <div class="form-group settings-row hidden" id="settingsCodeSwitchingGroup">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="settingsCodeSwitching">
-                            <span class="toggle-switch-track">
-                                <span class="toggle-switch-thumb"></span>
-                            </span>
-                            <span class="toggle-switch-label">Multi-language detection</span>
-                        </label>
-                        <small>Allow detecting multiple languages mid-sentence (e.g., Hindi + English mix)</small>
-                    </div>
-
-                    <!-- AI Copilot Toggle -->
-                    <div id="aiCopilotSettingGroup" class="form-group settings-row" style="display: none !important;">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="settingsAiCopilot">
-                            <span class="toggle-switch-track">
-                                <span class="toggle-switch-thumb"></span>
-                            </span>
-                            <span class="toggle-switch-label">AI Copilot</span>
-                        </label>
-                        <small>Enables AI features — auto-enables guest access and transcription</small>
-                    </div>
-
-                    <!-- Meeting Mode Dropdown (shown when AI Copilot is ON) -->
-                    <div id="meetingModeSettingGroup" class="form-group settings-row" style="display: none !important;">
-                        <label class="form-label">Meeting Mode</label>
-                        <select id="settingsMeetingMode" class="form-control">
-                            <option value="sales">Sales</option>
-                            <option value="interview">Interview</option>
-                        </select>
-                        <small>Determines the AI copilot behavior for this meeting</small>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 20px;">
+                    <div class="form-group ms-actions">
                         <button type="button" class="btn btn-primary btn-full" onclick="saveMeetingSettings()">Save Settings</button>
                     </div>
                 </div>

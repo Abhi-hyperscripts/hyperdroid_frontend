@@ -4397,6 +4397,40 @@ function selectCreateHostOption(userId) {
     closeCreateHostDropdown();
 }
 
+// Tab switcher for the redesigned Meeting Settings modal (May 2026).
+// Toggles `.active` on the tab buttons + `hidden` on the panes. Defensive
+// against being called before the tab DOM exists (e.g., from a stale
+// onclick after a hot-reload) — silently no-ops in that case.
+function switchMeetingSettingsTab(name) {
+    const root = document.getElementById('meetingSettingsModal');
+    if (!root) return;
+    root.querySelectorAll('.ms-tab').forEach(btn => {
+        const isActive = btn.dataset.msTab === name;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    root.querySelectorAll('.ms-tab-pane').forEach(pane => {
+        const isActive = pane.dataset.msPane === name;
+        pane.classList.toggle('active', isActive);
+        if (isActive) pane.removeAttribute('hidden');
+        else pane.setAttribute('hidden', '');
+    });
+}
+// Reset to General tab whenever the settings modal is opened so each
+// open is predictable (rather than landing on whichever tab the host
+// last clicked, which would be confusing in a meeting-row context).
+window.switchMeetingSettingsTab = switchMeetingSettingsTab;
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('meetingSettingsModal');
+    if (!modal) return;
+    // MutationObserver catches both class-toggle openers and direct .style.display flips.
+    new MutationObserver(() => {
+        if (modal.classList.contains('show') || modal.style.display === 'flex' || modal.style.display === 'block') {
+            switchMeetingSettingsTab('general');
+        }
+    }).observe(modal, { attributes: true, attributeFilter: ['class', 'style'] });
+});
+
 async function saveMeetingSettings() {
     const meetingId = document.getElementById('settingsMeetingId').value;
     const type = document.getElementById('settingsMeetingType').value;

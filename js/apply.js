@@ -444,7 +444,23 @@
         return null;
     }
 
+    // The HRMS form-builder stores `options` as a plain string array
+     // (`["A", "B", "C"]`), but the historical apply-page renderer expects
+    // each option to be an object with `{value, label}`. Normalise here so
+    // every code path below can read `o.value` / `o.label` uniformly.
+    // Pass-through if the option is already an object — that's how the
+    // legacy callers (country picker, multi-tenant lookups) ship them.
+    function _normOpts(opts) {
+        return (opts || []).map(o => {
+            if (o == null) return null;
+            if (typeof o === 'string' || typeof o === 'number') return { value: String(o), label: String(o) };
+            return { value: o.value ?? o.label ?? '', label: o.label ?? o.value ?? '' };
+        }).filter(o => o && o.value !== '');
+    }
+
     function renderField(f) {
+        // Mutate-once: every renderer below reads f.options as a normalised list.
+        if (Array.isArray(f.options)) f.options = _normOpts(f.options);
         const wrap = document.createElement('div');
         wrap.className = 'apply-field';
         // Wide fields take the full row in the 2-col grid:
