@@ -641,6 +641,13 @@
                                     <textarea id="profileFooterText" rows="3" placeholder="Thank you for your business."></textarea>
                                 </div>
                             </section>
+
+                            <!-- Sticky action bar at the bottom so the Save button is
+                                 always visible no matter how long the form scrolls. -->
+                            <div class="profile-sticky-actions">
+                                <button type="button" class="btn btn-secondary" onclick="resetTenantProfileForm()">Reset</button>
+                                <button type="submit" class="btn btn-primary" id="profileSaveBtnBottom">Save Changes</button>
+                            </div>
                         </form>
                     </div>
                 </div>
