@@ -482,11 +482,20 @@ async function openEditTaskModal(taskId) {
     await populateTaskDropdowns();
     document.getElementById('taskSubProject').value = task.sub_project_id || '';
     if (taskSubProjectDropdown) taskSubProjectDropdown.setValue(task.sub_project_id || '');
+    // Re-filter assignees against the just-restored sub-project so the
+    // existing assignee renders (or, if access has since been revoked, the
+    // assignee field falls back to Unassigned and the user is forced to
+    // pick someone eligible before saving).
+    refreshTaskAssigneeOptions();
     document.getElementById('taskAssignee').value = task.assigned_to || '';
     if (taskAssigneeDropdown) taskAssigneeDropdown.setValue(task.assigned_to || '');
 
     openModal('taskModal');
 }
+
+// Cached sub-project access map for the current project, keyed by user_id.
+// Populated once per modal open; consumed by refreshTaskAssigneeOptions.
+let taskSubProjectAccessMap = {};
 
 async function populateTaskDropdowns() {
     // Sub-projects
@@ -506,25 +515,72 @@ async function populateTaskDropdowns() {
     // Refresh searchable dropdown
     if (typeof convertSelectToSearchable === 'function') {
         if (taskSubProjectDropdown) taskSubProjectDropdown.destroy();
-        taskSubProjectDropdown = convertSelectToSearchable('taskSubProject', { placeholder: 'None', searchPlaceholder: 'Search sub-projects...' });
+        // Re-filter the assignee list every time the sub-project changes so
+        // an admin can't quietly assign work to someone excluded from the
+        // selected sub-project. Backend enforces the same gate on POST/PUT,
+        // but the dropdown must mirror it or the demo looks broken.
+        taskSubProjectDropdown = convertSelectToSearchable('taskSubProject', {
+            placeholder: 'None',
+            searchPlaceholder: 'Search sub-projects...',
+            onChange: () => refreshTaskAssigneeOptions()
+        });
     }
 
     // Members
-    const mSelect = document.getElementById('taskAssignee');
-    mSelect.innerHTML = '<option value="">Unassigned</option>';
     const members = projectMembers.length ? projectMembers :
         await api.request(`/pms/project-members?projectId=${projectId}`, { _skipSpinner: true }).then(r => r.data || r || []).catch(() => []);
     projectMembers = members;
-    members.forEach(m => {
+
+    // Pull per-user sub-project access in one shot so refreshTaskAssigneeOptions
+    // can filter client-side as the user toggles the sub-project picker.
+    try {
+        const resp = await api.request(`/pms/project-members/sub-project-access?projectId=${projectId}`, { _skipSpinner: true });
+        taskSubProjectAccessMap = (resp && resp.access) ? resp.access : {};
+    } catch (_) {
+        taskSubProjectAccessMap = {};
+    }
+
+    refreshTaskAssigneeOptions();
+}
+
+/**
+ * Repopulate the task-assignee dropdown to reflect the currently-selected
+ * sub-project. With sub-project = None, every project member is allowed.
+ * With a specific sub-project, only members who either have explicit access
+ * to that sub-project or have no per-sub-project restrictions are listed.
+ * If the previously-selected assignee is no longer eligible, reset it.
+ */
+function refreshTaskAssigneeOptions() {
+    const mSelect = document.getElementById('taskAssignee');
+    if (!mSelect) return;
+    const previousValue = mSelect.value;
+    const selectedSubProjectId = (document.getElementById('taskSubProject') || { value: '' }).value || '';
+
+    mSelect.innerHTML = '<option value="">Unassigned</option>';
+    (projectMembers || []).forEach(m => {
+        const uid = m.user_id || m.id;
+        if (!uid) return;
+        if (selectedSubProjectId) {
+            const allowed = taskSubProjectAccessMap[uid];
+            // Missing entry → user isn't even a root member (defensive); skip.
+            // Empty array → unrestricted (full access). Non-empty → allowlist.
+            if (!allowed) return;
+            if (allowed.length > 0 && !allowed.includes(selectedSubProjectId)) return;
+        }
         const opt = document.createElement('option');
-        opt.value = m.user_id || m.id;
-        opt.textContent = m.user_name || m.user_email || m.user_id || '';
+        opt.value = uid;
+        opt.textContent = m.user_name || m.user_email || uid;
         mSelect.appendChild(opt);
     });
-    // Refresh searchable dropdown
+
+    // Preserve the previous selection if still valid; otherwise clear it.
+    const stillValid = Array.from(mSelect.options).some(o => o.value === previousValue);
+    mSelect.value = stillValid ? previousValue : '';
+
     if (typeof convertSelectToSearchable === 'function') {
         if (taskAssigneeDropdown) taskAssigneeDropdown.destroy();
         taskAssigneeDropdown = convertSelectToSearchable('taskAssignee', { placeholder: 'Unassigned', searchPlaceholder: 'Search members...' });
+        if (mSelect.value) taskAssigneeDropdown.setValue(mSelect.value);
     }
 }
 
