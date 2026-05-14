@@ -3586,11 +3586,18 @@ input.readonly-field,
 .pr-table-container {
     border: 1px solid var(--border-color-light);
     border-radius: 6px;
-    overflow: hidden;
+    /* Horizontal scroll lives on the outer wrapper so the header table and
+       the virtual body table scroll together. The inner .pr-virtual-scroll
+       still handles vertical scrolling. min-width on .pr-table forces the
+       columns to a sane width and triggers the scrollbar when the modal
+       isn't wide enough (statutory configs add 6-12 dynamic columns). */
+    overflow-x: auto;
+    overflow-y: hidden;
 }
 
 .pr-table {
     width: 100%;
+    min-width: 1200px;
     border-collapse: collapse;
     font-size: 0.72rem;
     table-layout: fixed;

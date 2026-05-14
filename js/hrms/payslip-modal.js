@@ -1409,11 +1409,20 @@ const PayslipModal = (function() {
                    </span>`
                 : '';
 
+            // Heading — show real name when distinct from code, otherwise just the code.
+            // Backend falls back to employee_code for employee_name when the Auth gRPC
+            // name lookup fails, which would otherwise render "EMP00002" as both the
+            // heading and the Employee ID below it (visible duplicate).
+            const _name = (payslip.employee_name || '').trim();
+            const _code = (payslip.employee_code || '').trim();
+            const _hasRealName = _name && _name.toLowerCase() !== _code.toLowerCase();
+            const _heading = _hasRealName ? _name : (_code || 'Employee');
+
             // Build the complete payslip HTML
             contentDiv.innerHTML = `
                 <div class="payslip-header">
                     <div>
-                        <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem;">${escapeHtml(payslip.employee_name || 'Employee')} ${multiLocationBadge}</h4>
+                        <h4 style="margin: 0 0 0.25rem 0; font-size: 1rem;">${escapeHtml(_heading)} ${multiLocationBadge}</h4>
                         <p style="margin: 0; color: var(--text-muted); font-size: 0.75rem;">Payslip - ${formatDate(payslip.pay_period_start)} to ${formatDate(payslip.pay_period_end)}</p>
                     </div>
                     <div style="padding: 0.5rem 1rem; background: var(--brand-primary); color: var(--text-inverse); border-radius: 6px; text-align: right;">
@@ -3700,17 +3709,25 @@ const PayslipModal = (function() {
     // ==========================================
 
     /**
-     * Download payslip as PDF
+     * Download payslip as PDF.
+     *
+     * Delegates to payroll.js's downloadPayslipById() which is the working
+     * client-side jsPDF generator. The previous implementation opened a
+     * backend HTML route that 404'd because the URL was double-prefixed
+     * (api.getBaseUrl returned ".../api/hrms" then we appended "/hrms/..."
+     * again). Using the existing jsPDF flow avoids that whole class of
+     * issue and ships a real PDF, not an HTML preview.
      */
     function downloadPdf() {
         if (!currentPayslipId) {
             showToast('No payslip selected', 'warning');
             return;
         }
-
-        showToast('Generating payslip PDF...', 'info');
-        const baseUrl = typeof api !== 'undefined' && api.getBaseUrl ? api.getBaseUrl('/hrms') : '';
-        window.open(`${baseUrl}/hrms/payroll-processing/payslips/${currentPayslipId}/download`, '_blank');
+        if (typeof window.downloadPayslipById !== 'function') {
+            showToast('PDF generator not loaded — refresh the page and try again', 'error');
+            return;
+        }
+        window.downloadPayslipById(currentPayslipId);
     }
 
     // ==========================================

@@ -8222,14 +8222,25 @@ function renderVisiblePayslips() {
         const slip = filteredPayslips[i];
         if (!slip) continue;
 
+        // Render name on top + code below ONLY when the backend gave us a real name.
+        // It falls back employee_name=employee_code when the Auth gRPC lookup fails,
+        // which would render "EMP00002 / EMP00002" stacked. Detect that and show the
+        // code on its own.
+        const _slipName = (slip.employee_name || '').trim();
+        const _slipCode = (slip.employee_code || '').trim();
+        const _slipHasRealName = _slipName && _slipName.toLowerCase() !== _slipCode.toLowerCase();
+        const _slipEmpCell = _slipHasRealName
+            ? `<div class="pr-emp-cell">
+                   <span class="pr-emp-name">${escapeHtml(_slipName)}</span>
+                   <span class="pr-emp-code">${escapeHtml(_slipCode)}</span>
+               </div>`
+            : `<div class="pr-emp-cell">
+                   <span class="pr-emp-name">${escapeHtml(_slipCode || 'Unknown')}</span>
+               </div>`;
+
         html += `
             <tr class="clickable-row" title="Click to view payslip details">
-                <td class="pr-col-emp">
-                    <div class="pr-emp-cell">
-                        <span class="pr-emp-name">${escapeHtml(slip.employee_name || 'Unknown')}</span>
-                        <span class="pr-emp-code">${escapeHtml(slip.employee_code || '')}</span>
-                    </div>
-                </td>
+                <td class="pr-col-emp">${_slipEmpCell}</td>
                 <td class="pr-col-dept pr-cell-muted">${escapeHtml((slip.department_name || '-').substring(0, 12))}</td>
                 ${buildDynamicCells(slip)}
                 <td class="pr-col-num text-right pr-cell-bold">${formatCurrencyCompact(slip.gross_earnings, payrollModalState.currencyCode)}</td>
