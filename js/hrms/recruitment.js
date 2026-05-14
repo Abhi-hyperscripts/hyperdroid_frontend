@@ -1277,10 +1277,16 @@
         // logical step. HR screen → Technical → Hiring manager → CEO → Negotiation.
         const lastRoundType = sorted[0]?.round_type || null;
         const nextRoundType = SUGGESTED_NEXT_ROUND[lastRoundType] || 'hr_screen';
-        // Default datetime = round UP to next quarter-hour
+        // Default datetime = round UP to next quarter-hour. Split into a
+        // local date (yyyy-mm-dd for <input type="date">) and a local time
+        // (hh:mm for <input type="time">) — matches the HRMS employee
+        // meeting picker's formatting (the previous combined datetime-local
+        // input read as one ugly cell).
         const now = new Date();
         const roundedDt = new Date(Math.ceil(now.getTime() / (15 * 60 * 1000)) * (15 * 60 * 1000));
-        const localIso = roundedDt.toISOString().slice(0, 16);
+        const pad = n => String(n).padStart(2, '0');
+        const defaultDate = `${roundedDt.getFullYear()}-${pad(roundedDt.getMonth()+1)}-${pad(roundedDt.getDate())}`;
+        const defaultTime = `${pad(roundedDt.getHours())}:${pad(roundedDt.getMinutes())}`;
 
         let timelineHtml = '';
         if (sorted.length > 0) {
@@ -1302,7 +1308,7 @@
                         On round 2+, prior round summaries are auto-fed in so the Copilot doesn't re-ask covered topics.
                        </p>`
                     : ''}
-                <div style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr; gap: 18px; max-width: 760px; margin-bottom: 22px;">
+                <div style="display: grid; grid-template-columns: 1.1fr 1.6fr; gap: 18px; max-width: 760px; margin-bottom: 18px;">
                     <div>
                         <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Round type</label>
                         <select id="ivRoundType" class="form-control" style="width: 100%;">
@@ -1313,9 +1319,19 @@
                         <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Optional label (e.g. "CTO + 2 staff engineers")</label>
                         <input type="text" id="ivRoundLabel" class="form-control" placeholder="(auto)" maxlength="120" style="width: 100%;">
                     </div>
+                </div>
+                <!-- Date + time pair (matches the HRMS employee meeting picker — date in
+                     "14 May 2026" format and time in "05:00 PM" format come from the
+                     browser's native rendering of date / time inputs). Single
+                     datetime-local was uglier and hid the time field. -->
+                <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; max-width: 540px; margin-bottom: 22px;">
                     <div>
-                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">When</label>
-                        <input type="datetime-local" id="ivScheduleAt" class="form-control" value="${localIso}" style="width: 100%;">
+                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Date</label>
+                        <input type="date" id="ivScheduleDate" class="form-control" value="${defaultDate}" style="width: 100%;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Start time</label>
+                        <input type="time" id="ivScheduleTime" class="form-control" value="${defaultTime}" step="900" style="width: 100%;">
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 4px;">
@@ -1527,15 +1543,23 @@
         if (roundTypeInput?.value) roundType = roundTypeInput.value;
         if (roundLabelInput?.value && roundLabelInput.value.trim()) roundLabel = roundLabelInput.value.trim();
         if (!startNow) {
-            const dtInput = document.getElementById('ivScheduleAt');
+            // Date + time pair (matches HRMS employee meeting picker).
+            const dateInput = document.getElementById('ivScheduleDate');
+            const timeInput = document.getElementById('ivScheduleTime');
             const inviteInput = document.getElementById('ivSendInvite');
             sendInvite = !!inviteInput?.checked;
-            if (dtInput?.value) {
-                // Convert browser local "YYYY-MM-DDTHH:MM" to UTC ISO. The
-                // datetime-local input gives us a naive (no-tz) string; treat
-                // it as the user's local timezone, then serialize as UTC.
-                const d = new Date(dtInput.value);
+            const dateVal = dateInput?.value;
+            const timeVal = timeInput?.value;
+            if (dateVal && timeVal) {
+                // Combine into a naive local datetime, then serialise as UTC.
+                // Browser's `new Date("YYYY-MM-DDTHH:mm")` interprets that
+                // string as the user's local timezone — exactly what we want
+                // since the user picked the time in their own clock.
+                const d = new Date(`${dateVal}T${timeVal}`);
                 if (!Number.isNaN(d.getTime())) scheduledAtIso = d.toISOString();
+            } else if (dateVal || timeVal) {
+                Toast?.warning?.('Please pick BOTH a date and a time');
+                return;
             }
         }
         try {
