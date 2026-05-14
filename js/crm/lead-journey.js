@@ -114,17 +114,82 @@
 
     // ─── Log Activity Modal ─────────────────────────────────────────────
 
-    function openLogActivityModal(leadId) {
+    async function openLogActivityModal(leadId) {
         _logActivityLeadId = leadId;
         document.getElementById('activityType').value = 'call';
         document.getElementById('activityOutcome').value = '';
         document.getElementById('activitySummary').value = '';
-        document.getElementById('activityDisposition').value = '';
+        // Pre-fill the Disposition dropdown with whatever the lead currently
+        // shows — so the rep sees the existing value and can choose to keep
+        // / override it instead of leaving the field blank (which used to
+        // leave a stale value silently sticky on the lead).
+        let currentDisp = '';
+        try {
+            const lead = await api.request(`/crm/leads/${leadId}`);
+            currentDisp = lead?.disposition || '';
+        } catch (_) { /* best-effort */ }
+        const dispSel = document.getElementById('activityDisposition');
+        if (dispSel) {
+            dispSel.value = currentDisp;
+            // Trigger change so SearchableDropdown wrapper picks it up.
+            dispSel.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        // Stash so the outcome-change handler can decide whether to
+        // auto-suggest (only when the current disposition is empty or stale).
+        _logActivityInitialDisposition = currentDisp;
         // activityNextFollowup is a Flatpickr-managed input — use the helper
         // so the visible altInput clears too.
         HRMSDatePicker.setDateTimeValue('activityNextFollowup', '');
         document.getElementById('activityCallDuration').value = '';
+        // Idempotent: attach the outcome→disposition auto-suggest listener
+        // once. Multiple opens of the same modal won't stack handlers because
+        // _onActivityOutcomeChanged is a stable function reference.
+        const outSel = document.getElementById('activityOutcome');
+        if (outSel && !outSel.__autoSuggestWired) {
+            outSel.addEventListener('change', _onActivityOutcomeChanged);
+            outSel.__autoSuggestWired = true;
+        }
         document.getElementById('logActivityOverlay').classList.add('active');
+    }
+
+    // Tracks the disposition value the lead had when the modal was opened.
+    // The outcome-change handler uses this to know whether the dropdown is
+    // showing a fresh empty state (auto-suggest is welcome) or carrying the
+    // rep's recently-picked value (don't clobber).
+    let _logActivityInitialDisposition = '';
+
+    // When the rep picks an Outcome, suggest a matching Disposition — but only
+    // when the field is empty or still shows the stale value the lead had on
+    // modal open. The rep can always change/clear the suggestion before
+    // submitting; their explicit pick wins both client- and server-side.
+    function _onActivityOutcomeChanged() {
+        const outSel  = document.getElementById('activityOutcome');
+        const dispSel = document.getElementById('activityDisposition');
+        if (!outSel || !dispSel) return;
+        const outcome = outSel.value;
+        const current = dispSel.value;
+        // Suggest disposition based on outcome — mirrors the backend
+        // DispositionFromOutcome mapping (BusinessLayer_Activities.cs).
+        const map = {
+            'callback_requested': 'callback_later',
+            'meeting_set':        'meeting_scheduled',
+            'wrong_number':       'wrong_number',
+            'not_reachable':      'not_responding',
+            'busy':               'not_responding',
+            'voicemail':          'not_responding'
+        };
+        const suggested = map[outcome];
+        if (!suggested) return;
+        // Don't overwrite a higher-commitment disposition the rep already
+        // explicitly chose during THIS session.
+        const stronger = ['hot_lead','proposal_sent','deal_in_progress','meeting_scheduled'];
+        if (current && stronger.includes(current) && current !== _logActivityInitialDisposition) return;
+        // Only fill in when the field is blank OR still holds the initial
+        // stale value (rep hasn't touched it yet).
+        if (!current || current === _logActivityInitialDisposition) {
+            dispSel.value = suggested;
+            dispSel.dispatchEvent(new Event('change', { bubbles: true }));
+        }
     }
 
     function closeLogActivityModal() {
