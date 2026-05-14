@@ -51,6 +51,124 @@
             font-weight: 600;
         }
         .rec-stat-value { font-size: 1.8rem; font-weight: 600; margin-top: 6px; color: var(--text-primary); }
+        .rec-stat-sub { font-size: 0.78rem; color: var(--text-secondary); margin-top: 4px; }
+        .rec-stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        @media (max-width: 900px) {
+            .rec-stats-row { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* ── Analytics tab ────────────────────────────────────────────── */
+        .rec-analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 20px;
+        }
+        @media (max-width: 800px) {
+            .rec-analytics-grid { grid-template-columns: 1fr; }
+        }
+        .rec-analytics-block {
+            padding: 14px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+        .rec-analytics-block h4 {
+            margin: 0 0 12px;
+            font-size: 0.86rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .rec-analytics-sub {
+            text-transform: none;
+            letter-spacing: 0;
+            font-weight: 400;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+        }
+        .rec-empty-mini {
+            color: var(--text-secondary);
+            font-style: italic;
+            font-size: 0.86rem;
+            padding: 8px 0;
+        }
+        .rec-mini-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.86rem;
+        }
+        .rec-mini-table th, .rec-mini-table td {
+            text-align: left;
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .rec-mini-table th {
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .rec-mini-table tr:last-child td { border-bottom: none; }
+        .rec-mini-table code {
+            background: var(--bg-tertiary);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+        }
+
+        /* Daily activity sparkbar (per-day stacked bar: views in muted, submits in violet) */
+        .rec-spark-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 80px;
+            padding: 0 4px;
+        }
+        .rec-spark-day {
+            flex: 1 1 0;
+            position: relative;
+            height: 100%;
+            min-width: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px 2px 0 0;
+            cursor: help;
+        }
+        .rec-spark-fill {
+            position: absolute;
+            left: 0; right: 0; bottom: 0;
+            background: var(--brand-primary);
+            opacity: 0.4;
+            border-radius: 2px 2px 0 0;
+            transition: opacity 0.2s ease;
+        }
+        .rec-spark-day:hover .rec-spark-fill { opacity: 0.6; }
+        .rec-spark-fill.rec-spark-submit {
+            background: linear-gradient(180deg, #22d3ee, #8b5cf6);
+            opacity: 1;
+        }
+        .rec-spark-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+        }
+        .rec-spark-legend-views, .rec-spark-legend-submits {
+            display: inline-block;
+            width: 9px; height: 9px;
+            border-radius: 2px;
+            vertical-align: middle;
+            margin-right: 3px;
+        }
+        .rec-spark-legend-views { background: var(--brand-primary); opacity: 0.4; }
+        .rec-spark-legend-submits { background: linear-gradient(180deg, #22d3ee, #8b5cf6); }
 
         /* ── Status tabs ─────────────────────────────────────────────── */
         .rec-status-tabs {
@@ -791,6 +909,25 @@
                         <!-- Posting hero -->
                         <div class="rec-posting-card" id="detailPostingCard" style="margin-bottom: 18px;">
                             <!-- Populated by JS -->
+                        </div>
+
+                        <!-- ─── Analytics section (populated by loadDetailAnalytics) ─── -->
+                        <div class="rec-posting-card" id="detailAnalyticsCard" style="margin-bottom: 18px;">
+                            <div class="rec-toolbar" style="padding: 0; margin-bottom: 14px; border: none;">
+                                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">
+                                    Engagement Analytics
+                                    <span id="detailAnalyticsRangeLabel" style="color: var(--text-secondary); font-weight: 400; font-size: 0.92rem;"> · last 30 days</span>
+                                </h3>
+                                <select id="detailAnalyticsRange">
+                                    <option value="1">Last 24h</option>
+                                    <option value="7">Last 7 days</option>
+                                    <option value="30" selected>Last 30 days</option>
+                                    <option value="90">Last 90 days</option>
+                                </select>
+                            </div>
+                            <div id="detailAnalyticsBody">
+                                <div class="rec-loading" id="detailAnalyticsLoading">Loading analytics…</div>
+                            </div>
                         </div>
 
                         <!-- Applications toolbar -->

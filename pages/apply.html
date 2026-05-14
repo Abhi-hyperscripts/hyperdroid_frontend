@@ -1629,6 +1629,10 @@
 
     <script>document.write('<script src="../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+    <!-- Analytics tracker — loaded BEFORE apply.js so window.ApplyAnalytics
+         exists when apply.js calls .init() after form-config loads. The tracker
+         is a no-op when navigator.doNotTrack === '1'. -->
+    <script>document.write('<script src="../js/apply-analytics.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../js/apply.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>
         // Live IST clock for the status strip

@@ -22,6 +22,12 @@
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             formConfig = await res.json();
             renderForm(formConfig);
+            // Kick off analytics tracker AFTER the page is rendered so the
+            // visit-open event represents real engagement (not a 404 / error
+            // state). Tracker no-ops if DNT is set or webhook is missing.
+            if (window.ApplyAnalytics) {
+                try { window.ApplyAnalytics.init({ webhookKey }); } catch (e) { /* never block */ }
+            }
         } catch (err) {
             console.error('loadConfig failed', err);
             showNotFound();
@@ -165,13 +171,19 @@
             descEl.innerHTML = '<p style="color: var(--muted); font-style: italic;">No description provided. Reach out to the hiring team if you have questions.</p>';
         }
 
-        // Share links
-        const url = window.location.href;
+        // Share links — decorate with ?via= so we can attribute inbound
+        // visits back to the original sharer (the analytics tracker reads
+        // ?via= on its next page-open and stores referred_by_visitor_id).
+        // Decorator is idempotent + safe when analytics disabled (returns
+        // the URL unchanged).
+        const decorate = (u) => (window.ApplyAnalytics && window.ApplyAnalytics.appendViaParam)
+            ? window.ApplyAnalytics.appendViaParam(u) : u;
+        const sharedUrl = decorate(window.location.href);
         const text = `${cfg.title || 'A role at Ragenaizer'} — ${cfg.location || ''}`.trim();
         document.getElementById('shareLinkedIn').href =
-            `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+            `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(sharedUrl)}`;
         document.getElementById('shareTwitter').href =
-            `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+            `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(sharedUrl)}`;
 
         const wrap = document.getElementById('applyFields');
         wrap.innerHTML = '';
@@ -587,6 +599,31 @@
             ? `<small class="apply-helper">${escapeHtml(f.helper_text)}</small>` : '';
 
         wrap.innerHTML = labelHtml + inputWrap + helperHtml;
+
+        // Wire focus / blur tracking for analytics. Single delegated handler
+        // per .apply-field — handles all child inputs/textareas/selects/radios
+        // /checkboxes uniformly. The tracker only ever sees field KEYS, not
+        // values (privacy guardrail).
+        wrap.addEventListener('focusin', (ev) => {
+            if (window.ApplyAnalytics) window.ApplyAnalytics.notifyFieldFocus(f.key);
+        }, { capture: true });
+        wrap.addEventListener('focusout', (ev) => {
+            if (!window.ApplyAnalytics) return;
+            // "Has value" is computed from the wrap, not the raw event target,
+            // so multiselect/radio groups report based on whether *any* option
+            // was selected by the candidate.
+            let hasValue = false;
+            const inputs = wrap.querySelectorAll('input, textarea, select');
+            for (const el of inputs) {
+                if (el.type === 'checkbox' || el.type === 'radio') {
+                    if (el.checked) { hasValue = true; break; }
+                } else if (el.value && String(el.value).trim()) {
+                    hasValue = true; break;
+                }
+            }
+            window.ApplyAnalytics.notifyFieldBlur(f.key, hasValue);
+        }, { capture: true });
+
         return wrap;
     }
 
@@ -648,16 +685,36 @@
                 hideAllStates();
                 document.getElementById('applySuccess').style.display = '';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+                // Report outcome to analytics — backend correlates by visit_id
+                // and joins the application_id back into the visit row.
+                if (window.ApplyAnalytics) {
+                    let appId = null;
+                    try { const j = await res.clone().json(); appId = j.application_id || null; } catch { /* ignore */ }
+                    window.ApplyAnalytics.notifySubmitOutcome({ outcome: 'success', applicationId: appId });
+                }
                 return;
             }
 
             let msg = 'Submission failed';
-            try { const body = await res.json(); msg = body?.error || msg; } catch { /* keep generic */ }
+            let errBody = null;
+            try { errBody = await res.json(); msg = errBody?.error || msg; } catch { /* keep generic */ }
             errBox.textContent = msg;
             // CSS default is display:none — clearing the inline style drops back
             // to none (the bug). Force block so the message is visible.
             errBox.style.display = 'block';
             errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Classify outcome by the server's response so analytics can
+            // bucket failures (dedup vs validation vs rate-limit).
+            if (window.ApplyAnalytics) {
+                let outcome = 'error', errorField = null;
+                if (res.status === 429) outcome = 'rate_limit';
+                else if (res.status === 400) {
+                    outcome = /already applied/i.test(msg) ? 'dedup' : 'validation_error';
+                    const m = msg.match(/Field '([^']+)'/);
+                    if (m) errorField = m[1];
+                }
+                window.ApplyAnalytics.notifySubmitOutcome({ outcome, errorField });
+            }
         } catch (err) {
             console.error('submit failed', err);
             errBox.textContent = err?.message || 'Submission failed. Please try again.';
@@ -694,8 +751,13 @@
 
     window.copyShareLink = async function () {
         const btn = event?.target?.closest('button.share-btn');
+        // Decorate with ?via= for attribution. The recipient's tracker reads
+        // it on page-open and stores referred_by_visitor_id on their visit row.
+        const decorate = (u) => (window.ApplyAnalytics && window.ApplyAnalytics.appendViaParam)
+            ? window.ApplyAnalytics.appendViaParam(u) : u;
+        const url = decorate(window.location.href);
         try {
-            await navigator.clipboard.writeText(window.location.href);
+            await navigator.clipboard.writeText(url);
             if (btn) {
                 const orig = btn.textContent;
                 btn.textContent = 'Copied!';
@@ -703,11 +765,21 @@
             }
         } catch {
             const ta = document.createElement('textarea');
-            ta.value = window.location.href;
+            ta.value = url;
             document.body.appendChild(ta); ta.select();
             document.execCommand('copy'); document.body.removeChild(ta);
         }
+        if (window.ApplyAnalytics) window.ApplyAnalytics.notifyShare('copy_link');
     };
+
+    // Hook the LinkedIn / Twitter <a> click events to log the share. The
+    // anchor's href already has ?via= baked in via decorate() above.
+    document.addEventListener('click', (ev) => {
+        const a = ev.target.closest('#shareLinkedIn, #shareTwitter');
+        if (!a || !window.ApplyAnalytics) return;
+        const channel = a.id === 'shareLinkedIn' ? 'linkedin' : 'twitter';
+        window.ApplyAnalytics.notifyShare(channel);
+    }, { capture: true });
 
     function showNotFound() {
         hideAllStates();

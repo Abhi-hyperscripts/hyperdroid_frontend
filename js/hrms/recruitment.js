@@ -598,7 +598,13 @@
         document.getElementById('activeTabName').textContent = activePosting?.title || 'Posting detail';
 
         renderPostingDetailCard();
-        await loadDetailApps();
+        // Wire range selector once per drawer open
+        const sel = document.getElementById('detailAnalyticsRange');
+        if (sel && !sel.dataset.bound) {
+            sel.addEventListener('change', () => loadDetailAnalytics());
+            sel.dataset.bound = '1';
+        }
+        await Promise.all([loadDetailApps(), loadDetailAnalytics()]);
     };
 
     window.closePostingDetail = function () {
@@ -1255,5 +1261,217 @@
             ? { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
             : { year: 'numeric', month: 'short', day: 'numeric' };
         return d.toLocaleDateString(undefined, opts);
+    }
+
+    // ─── Analytics tab ─────────────────────────────────────────────────
+    async function loadDetailAnalytics() {
+        if (!activePostingId) return;
+        const body = document.getElementById('detailAnalyticsBody');
+        const sel = document.getElementById('detailAnalyticsRange');
+        const label = document.getElementById('detailAnalyticsRangeLabel');
+        const range = parseInt(sel?.value || '30', 10);
+        if (label) label.textContent = ' · last ' + range + ' day' + (range === 1 ? '' : 's');
+        body.innerHTML = '<div class="rec-loading" id="detailAnalyticsLoading">Loading analytics…</div>';
+        try {
+            const data = await api.request(`/hrms/job-postings/${encodeURIComponent(activePostingId)}/analytics?rangeDays=${range}`);
+            renderDetailAnalytics(data, range);
+        } catch (err) {
+            console.error('loadDetailAnalytics failed', err);
+            body.innerHTML = `<div class="rec-empty"><div>Failed to load analytics. ${escapeHtml(err?.message || '')}</div></div>`;
+        }
+    }
+
+    function renderDetailAnalytics(d, rangeDays) {
+        const s = d.summary || {};
+        const fmt = (n) => (n == null ? '0' : Number(n).toLocaleString());
+        const fmtMs = (ms) => {
+            if (!ms) return '0s';
+            const sec = Math.round(ms / 1000);
+            if (sec < 60) return sec + 's';
+            const m = Math.floor(sec / 60), r = sec % 60;
+            return r ? `${m}m ${r}s` : `${m}m`;
+        };
+        const conversionPct = s.total_views > 0
+            ? ((s.submitted_success / s.total_views) * 100).toFixed(1) + '%' : '—';
+        const formStartPct = s.total_views > 0
+            ? ((s.form_started_count / s.total_views) * 100).toFixed(1) + '%' : '—';
+        const bouncePct = s.total_views > 0
+            ? ((s.bounce_count / s.total_views) * 100).toFixed(1) + '%' : '—';
+
+        // KPI cards (3-row × 4-col layout, falls to 2-col on mobile via the
+        // existing rec-stat-grid styling).
+        const kpis = `
+          <div class="rec-stats-row">
+            <div class="rec-stat-card">
+                <div class="rec-stat-label">TOTAL VIEWS</div>
+                <div class="rec-stat-value">${fmt(s.total_views)}</div>
+                <div class="rec-stat-sub"><span style="color:#22c55e">●</span> ${fmt(s.active_now)} active now · ${fmt(s.unique_today)} today</div>
+            </div>
+            <div class="rec-stat-card">
+                <div class="rec-stat-label">UNIQUE VISITORS</div>
+                <div class="rec-stat-value">${fmt(s.unique_visitors)}</div>
+                <div class="rec-stat-sub">${fmt(s.unique_ips)} unique IP${s.unique_ips === 1 ? '' : 's'}</div>
+            </div>
+            <div class="rec-stat-card">
+                <div class="rec-stat-label">FORM START RATE</div>
+                <div class="rec-stat-value">${formStartPct}</div>
+                <div class="rec-stat-sub">${fmt(s.form_started_count)} of ${fmt(s.total_views)} started filling</div>
+            </div>
+            <div class="rec-stat-card">
+                <div class="rec-stat-label">CONVERSION</div>
+                <div class="rec-stat-value">${conversionPct}</div>
+                <div class="rec-stat-sub">${fmt(s.submitted_success)} applied · ${fmt(s.submitted_total - s.submitted_success)} failed</div>
+            </div>
+          </div>
+          <div class="rec-stats-row" style="margin-top: 12px;">
+            <div class="rec-stat-card">
+                <div class="rec-stat-label">AVG TIME ON PAGE</div>
+                <div class="rec-stat-value">${fmtMs(s.avg_duration_ms)}</div>
+                <div class="rec-stat-sub">p50 ${fmtMs(s.p50_duration_ms)} · p95 ${fmtMs(s.p95_duration_ms)}</div>
+            </div>
+            <div class="rec-stat-card">
+                <div class="rec-stat-label">BOUNCE RATE</div>
+                <div class="rec-stat-value">${bouncePct}</div>
+                <div class="rec-stat-sub">&lt;15s and didn't start</div>
+            </div>
+            <div class="rec-stat-card">
+                <div class="rec-stat-label">SHARES</div>
+                <div class="rec-stat-value">${fmt(s.share_count)}</div>
+                <div class="rec-stat-sub">${fmt(s.referred_visits)} inbound via ?via=</div>
+            </div>
+            <div class="rec-stat-card">
+                <div class="rec-stat-label">DEVICES</div>
+                <div class="rec-stat-value" style="font-size: 1rem; font-weight: 500; line-height: 1.4;">${renderDeviceMix(d.device_breakdown)}</div>
+                <div class="rec-stat-sub">&nbsp;</div>
+            </div>
+          </div>
+        `;
+
+        const dailyChart = renderDailySparkBars(d.daily || []);
+        const ipsTable = renderIpsTable(d.top_ips || []);
+        const refTable = renderListTable('Referrer', d.top_referrers || [], 'referrer', 'count');
+        const utmTable = renderUtmTable(d.top_utm_sources || []);
+        const shareTable = renderKVPairs('Channel', d.share_channels || {}, true);
+        const outcomeTable = renderKVPairs('Outcome', d.submit_outcomes || {});
+        const dropOff = renderKVPairs('Last field touched', d.drop_off_fields || {});
+
+        document.getElementById('detailAnalyticsBody').innerHTML = `
+            ${kpis}
+            <div class="rec-analytics-grid">
+                <div class="rec-analytics-block" style="grid-column: 1 / -1;">
+                    <h4>Daily activity</h4>
+                    ${dailyChart}
+                </div>
+                <div class="rec-analytics-block">
+                    <h4>Top IPs <span class="rec-analytics-sub">(${(d.top_ips || []).length})</span></h4>
+                    ${ipsTable}
+                </div>
+                <div class="rec-analytics-block">
+                    <h4>Top referrers</h4>
+                    ${refTable}
+                </div>
+                <div class="rec-analytics-block">
+                    <h4>UTM sources</h4>
+                    ${utmTable}
+                </div>
+                <div class="rec-analytics-block">
+                    <h4>Share channels</h4>
+                    ${shareTable}
+                </div>
+                <div class="rec-analytics-block">
+                    <h4>Submit outcomes</h4>
+                    ${outcomeTable}
+                </div>
+                <div class="rec-analytics-block">
+                    <h4>Drop-off fields <span class="rec-analytics-sub">(last field touched before leaving without submitting)</span></h4>
+                    ${dropOff}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderDeviceMix(map) {
+        const order = ['desktop', 'mobile', 'tablet'];
+        const total = Object.values(map || {}).reduce((a, b) => a + b, 0);
+        if (!total) return '<span style="color: var(--text-secondary);">—</span>';
+        return order
+            .filter(k => map[k])
+            .map(k => `${escapeHtml(k)} <strong>${Math.round(map[k] / total * 100)}%</strong>`)
+            .join(' · ') || '—';
+    }
+
+    function renderDailySparkBars(daily) {
+        if (!daily.length) return '<div class="rec-empty-mini">No visits yet.</div>';
+        const max = Math.max(1, ...daily.map(d => d.views));
+        const bars = daily.map(d => {
+            const h = Math.round((d.views / max) * 100);
+            const submitH = Math.round((d.submits / max) * 100);
+            return `<div class="rec-spark-day" title="${escapeAttr(d.day)}: ${d.views} view${d.views===1?'':'s'}, ${d.unique_visitors} unique, ${d.submits} submit${d.submits===1?'':'s'}">
+                <div class="rec-spark-fill" style="height:${h}%"></div>
+                <div class="rec-spark-fill rec-spark-submit" style="height:${submitH}%"></div>
+            </div>`;
+        }).join('');
+        // Date range labels under the bars (first + last)
+        const first = daily[0]?.day || '';
+        const last = daily[daily.length - 1]?.day || '';
+        return `
+            <div class="rec-spark-bars">${bars}</div>
+            <div class="rec-spark-labels">
+                <span>${escapeHtml(first)}</span>
+                <span style="font-size: 0.7rem;"><span class="rec-spark-legend-views"></span> views &nbsp;<span class="rec-spark-legend-submits"></span> submits</span>
+                <span>${escapeHtml(last)}</span>
+            </div>`;
+    }
+
+    function renderIpsTable(rows) {
+        if (!rows.length) return '<div class="rec-empty-mini">No IPs recorded yet.</div>';
+        return `<table class="rec-mini-table">
+            <thead><tr><th>IP</th><th>Visits</th><th>Visitors</th><th>Last seen</th></tr></thead>
+            <tbody>${rows.map(r => `
+                <tr>
+                    <td><code>${escapeHtml(r.source_ip)}</code></td>
+                    <td>${r.visits}</td>
+                    <td>${r.distinct_visitors}</td>
+                    <td>${formatDate(r.last_seen, true)}</td>
+                </tr>`).join('')}</tbody>
+        </table>`;
+    }
+
+    function renderListTable(col, rows, keyField, valueField) {
+        if (!rows.length) return '<div class="rec-empty-mini">None recorded yet.</div>';
+        return `<table class="rec-mini-table">
+            <thead><tr><th>${col}</th><th>Count</th></tr></thead>
+            <tbody>${rows.map(r => `
+                <tr><td>${escapeHtml(String(r[keyField] || '').slice(0, 80))}</td><td>${r[valueField]}</td></tr>
+            `).join('')}</tbody>
+        </table>`;
+    }
+
+    function renderUtmTable(rows) {
+        if (!rows.length) return '<div class="rec-empty-mini">No UTM-tagged inbound traffic yet.</div>';
+        return `<table class="rec-mini-table">
+            <thead><tr><th>Source</th><th>Medium</th><th>Campaign</th><th>Count</th></tr></thead>
+            <tbody>${rows.map(r => `
+                <tr>
+                    <td>${escapeHtml(r.utm_source || '')}</td>
+                    <td>${escapeHtml(r.utm_medium || '—')}</td>
+                    <td>${escapeHtml(r.utm_campaign || '—')}</td>
+                    <td>${r.count}</td>
+                </tr>`).join('')}</tbody>
+        </table>`;
+    }
+
+    function renderKVPairs(col, dict, prettyChannel) {
+        const entries = Object.entries(dict || {});
+        if (!entries.length) return '<div class="rec-empty-mini">None recorded yet.</div>';
+        const labelize = (k) => prettyChannel
+            ? ({copy_link:'Copy link', linkedin:'LinkedIn', twitter:'X / Twitter', native_share:'Native share', email:'Email'}[k] || k)
+            : k;
+        return `<table class="rec-mini-table">
+            <thead><tr><th>${col}</th><th>Count</th></tr></thead>
+            <tbody>${entries.map(([k, v]) => `
+                <tr><td>${escapeHtml(labelize(k))}</td><td>${v}</td></tr>
+            `).join('')}</tbody>
+        </table>`;
     }
 })();
