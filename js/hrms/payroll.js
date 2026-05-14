@@ -1326,17 +1326,13 @@ async function processDraft(draftId) {
         const result = await api.request(`/hrms/payroll-drafts/${draftId}/process`, {
             method: 'POST'
         });
-
-        let message = `Draft processed! ${result.payslips_generated || 0} payslips generated`;
-        if (result.errors && result.errors.length > 0) {
-            message += ` (${result.errors.length} errors)`;
-        }
-        showToast(message, result.errors?.length > 0 ? 'warning' : 'success');
-        await loadPayrollDrafts();
         hideLoading();
+        await loadPayrollDrafts();
+        await showProcessOutcome(result);
 
-        // Show details after processing
-        if (result.draft_id) {
+        // Show details only when payslips were actually generated. If errors
+        // blocked everything, the outcome modal already explains what to fix.
+        if (result.draft_id && (result.payslips_generated || 0) > 0) {
             await viewDraftDetails(result.draft_id);
         }
     } catch (error) {
@@ -1344,6 +1340,65 @@ async function processDraft(draftId) {
         showToast(error.message || error.error || 'Failed to process draft', 'error');
         hideLoading();
     }
+}
+
+// Show the backend's payroll-processing outcome with the actual errors[] /
+// warnings[] surfaced. The old code just toasted "(1 errors)" and swallowed
+// the detail, leaving HR with no clue why a draft processed 0 payslips. Now
+// each error / warning line is rendered into an InfoModal so HR can read it
+// and act (e.g. "Salary structure 'X' is missing required statutory components
+// — open Payroll → Salary Structures and re-attach them").
+async function showProcessOutcome(result) {
+    const generated = result.payslips_generated || 0;
+    const errors    = Array.isArray(result.errors) ? result.errors : [];
+    const warnings  = Array.isArray(result.warnings) ? result.warnings : [];
+
+    // Pure-success case → toast only, no modal interruption.
+    if (errors.length === 0 && warnings.length === 0) {
+        showToast(`Draft processed! ${generated} payslips generated`, 'success');
+        return;
+    }
+
+    const escapeHtmlLocal = (t) => {
+        const d = document.createElement('div');
+        d.textContent = String(t == null ? '' : t);
+        return d.innerHTML;
+    };
+    const renderList = (items, colour) => items.map(it =>
+        `<li style="margin: 6px 0; line-height: 1.5; color: ${colour};">${escapeHtmlLocal(it)}</li>`
+    ).join('');
+
+    let html = `
+        <div style="margin-bottom: 14px; font-size: 14px;">
+            <strong>${generated}</strong> payslip${generated === 1 ? '' : 's'} generated
+            from ${result.employees_processed || 0} employee${result.employees_processed === 1 ? '' : 's'}.
+        </div>`;
+    if (errors.length > 0) {
+        html += `
+            <div style="margin-top: 14px;">
+                <div style="font-weight: 600; color: var(--color-danger, #ef4444); margin-bottom: 8px;">
+                    Errors (${errors.length})
+                </div>
+                <ul style="margin: 0; padding-left: 20px;">${renderList(errors, 'var(--text-primary)')}</ul>
+            </div>`;
+    }
+    if (warnings.length > 0) {
+        html += `
+            <div style="margin-top: 14px;">
+                <div style="font-weight: 600; color: var(--color-warning, #f59e0b); margin-bottom: 8px;">
+                    Warnings (${warnings.length})
+                </div>
+                <ul style="margin: 0; padding-left: 20px;">${renderList(warnings, 'var(--text-secondary)')}</ul>
+            </div>`;
+    }
+
+    await InfoModal.show({
+        title: errors.length > 0 ? 'Payroll processing blocked' : 'Payroll processed with warnings',
+        message: html,
+        type: errors.length > 0 ? 'danger' : 'warning',
+        html: true,
+        maxWidth: '640px'
+    });
 }
 
 // =====================================================
