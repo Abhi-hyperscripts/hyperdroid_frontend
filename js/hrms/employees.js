@@ -1573,6 +1573,45 @@ async function openEmployeePanel(id) {
                     </div>
                 </div>
             </div>
+
+            ${(emp.termination_date || emp.employment_status === 'terminated' || emp.employment_status === 'resigned') ? `
+            <div class="panel-section">
+                <div class="panel-section-header">
+                    <div class="panel-section-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="15" y1="9" x2="9" y2="15"/>
+                            <line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                    </div>
+                    <h4 class="panel-section-title">Termination Details</h4>
+                </div>
+                <div class="panel-info-grid">
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Last Working Date</span>
+                        <span class="panel-info-value">${escapeHtml(formatDate(emp.termination_date) || '-')}</span>
+                    </div>
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Reason</span>
+                        <span class="panel-info-value">${escapeHtml(capitalizeFirst((emp.termination_reason || '').replace(/_/g, ' ')) || '-')}</span>
+                    </div>
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">Exit Interview</span>
+                        <span class="panel-info-value">${escapeHtml(formatDate(emp.exit_interview_date) || '-')}</span>
+                    </div>
+                    <div class="panel-info-item">
+                        <span class="panel-info-label">F&amp;F Settlement</span>
+                        <span class="panel-info-value">${escapeHtml(formatDate(emp.full_final_settlement_date) || '-')}</span>
+                    </div>
+                    ${emp.exit_notes ? `
+                    <div class="panel-info-item panel-info-item-full">
+                        <span class="panel-info-label">Exit Notes</span>
+                        <span class="panel-info-value" style="white-space: pre-wrap;">${escapeHtml(emp.exit_notes)}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+            ` : ''}
         `;
 
         // Render action buttons
