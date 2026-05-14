@@ -121,6 +121,22 @@ function _loadPersistedFilters() {
     } catch (_) { return {}; }
 }
 
+// SearchableDropdown wrappers keep their own `selectedValue` separate from
+// the underlying <select>.value. buildFilterParams reads the WRAPPER's
+// value (line 690), so a restore that only writes to the native select
+// silently fails to filter (Playwright caught this 2026-05-14: source
+// filter restored visually but rows stayed unfiltered). Map of widget
+// id → wrapper-getter so the restore path can sync the wrapper too.
+function _sdWrapperFor(id) {
+    switch (id) {
+        case 'filterStatus': return typeof filterStatusDropdown !== 'undefined' ? filterStatusDropdown : null;
+        case 'filterSource': return typeof filterSourceDropdown !== 'undefined' ? filterSourceDropdown : null;
+        case 'filterTeam':   return typeof filterTeamDropdown   !== 'undefined' ? filterTeamDropdown   : null;
+        case 'filterOwner':  return typeof filterOwnerDropdown  !== 'undefined' ? filterOwnerDropdown  : null;
+    }
+    return null;
+}
+
 // Idempotent: safe to call repeatedly after the async option-populating
 // loaders (source / campaign / team) finish. A saved <select> value is
 // only applied once the matching option exists; otherwise we skip and try
@@ -146,6 +162,29 @@ function _restorePersistedFilters() {
             if (!hit) continue;
         }
         if (el.value !== want) { el.value = want; changed = true; }
+        // Sync the SearchableDropdown wrapper if there is one — without
+        // this the wrapper's internal selectedValue stays empty and
+        // buildFilterParams reads '' instead of the restored value. We
+        // ALSO re-snapshot the wrapper's options from el.options first
+        // because the wrapper's own MutationObserver sync is async and
+        // hasn't run yet when this loader callback fires synchronously
+        // right after innerHTML is rewritten (Playwright caught this
+        // 2026-05-14: source value would silently drop to null).
+        const wrapper = _sdWrapperFor(id);
+        if (wrapper && typeof wrapper.setValue === 'function') {
+            if (typeof wrapper.setOptions === 'function') {
+                const opts = Array.from(el.options).map(o => ({
+                    value: o.value,
+                    label: o.textContent.trim(),
+                    description: o.dataset?.description || ''
+                }));
+                wrapper.setOptions(opts, /*preserveValue=*/true);
+            }
+            if (String(wrapper.getValue?.() ?? '') !== String(want)) {
+                wrapper.setValue(want, /*triggerChange=*/false);
+                changed = true;
+            }
+        }
     }
     return changed;
 }
