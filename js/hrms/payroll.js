@@ -1913,6 +1913,12 @@ async function viewDraftPayslip(payslipId) {
             return;
         }
 
+        // PDF download is only meaningful for FINALIZED payslips — drafts have no
+        // payslip_number / formal numbering and the PDF endpoint expects a real
+        // payslip id. Hide the button when this modal is opened from a draft.
+        const dlBtn = document.getElementById('payslipDownloadBtn');
+        if (dlBtn) dlBtn.style.display = 'none';
+
         // v3.0.18: COUNTRY-AGNOSTIC - Use currency from backend response
         const currencySymbol = payslip.currency_symbol || '₹';
         const currencyCode = payslip.currency_code || 'INR';
@@ -5489,6 +5495,11 @@ async function viewPayslip(payslipId) {
             showToast('Payslip modal not found', 'error');
             return;
         }
+
+        // Restore the PDF download button — viewDraftPayslip hides it because
+        // drafts can't generate a final PDF. Finalized payslips can.
+        const dlBtn = document.getElementById('payslipDownloadBtn');
+        if (dlBtn) dlBtn.style.display = '';
 
         // v3.0.18: COUNTRY-AGNOSTIC - Use currency from backend response
         const currencySymbol = payslip.currency_symbol || '₹';

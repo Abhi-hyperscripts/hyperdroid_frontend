@@ -2718,7 +2718,9 @@
                 <div class="modal-header">
                     <h5 class="modal-title">Payslip Details</h5>
                     <div class="modal-header-actions">
-                        <button type="button" class="btn btn-sm btn-outline" onclick="downloadPayslip()" title="Download PDF">
+                        <!-- payslipDownloadBtn: PDF download is only meaningful for FINALIZED
+                             payslips. viewDraftPayslip() hides this; viewPayslip() shows it. -->
+                        <button type="button" id="payslipDownloadBtn" class="btn btn-sm btn-outline" onclick="downloadPayslip()" title="Download PDF">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                 <polyline points="7 10 12 15 17 10"></polyline>
