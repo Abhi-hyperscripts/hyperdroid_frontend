@@ -10400,3 +10400,35 @@ body .pre-meeting-logo,
 [data-theme="dark"] img[src*="brand_logo"] {
     filter: brightness(0) invert(1) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35)) !important;
 }
+
+
+/* ─────────────────────────────────────────────────────────────────
+   Dark-card text fix (May 2026)
+
+   The five containers below hardcode a dark visual background
+   (.auth-container, .pre-meeting-container, .lobby-container,
+   .meeting-container, .meeting-container-with-nav). Their text
+   uses var(--text-primary) / --text-secondary which resolve to
+   the LIGHT-mode dark-slate tokens when the user has saved
+   theme=light or when iOS Safari respects prefers-color-scheme=
+   light. Result: dark text on a dark card → looks muted /
+   invisible (visible bug screenshot from Safari, May 14 2026).
+
+   Fix: scope dark-mode token values inside these containers so the
+   text is always readable regardless of the page-level theme. Has
+   no effect on theme-switchable app surfaces (CRM, HRMS, etc.).
+   ───────────────────────────────────────────────────────────── */
+.auth-container,
+.pre-meeting-container,
+.lobby-container,
+.meeting-container,
+.meeting-container-with-nav {
+    --text-primary:      #f1f5f9;
+    --text-secondary:    #94a3b8;
+    --text-muted:        #64748b;
+    --text-inverse:      #ffffff;
+    --border-color:      #334155;
+    --border-color-light:  #475569;
+    --border-color-strong: #64748b;
+}
+
