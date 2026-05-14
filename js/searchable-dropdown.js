@@ -459,7 +459,12 @@ const SearchableDropdown = (function() {
                 this.menuEl.style.position = 'fixed';
                 this.menuEl.style.top = `${top}px`;
                 this.menuEl.style.left = `${rect.left}px`;
-                this.menuEl.style.width = `${rect.width}px`;
+                // Match trigger width as the FLOOR (so wide triggers still get a
+                // wide menu) but never narrower than 240 px — same floor as the
+                // CSS rule, kept in sync here so portaled menus don't truncate
+                // labels like "Frontend Developer (2 yrs)" when the trigger is
+                // a compact toolbar pill.
+                this.menuEl.style.width = `${Math.max(rect.width, 240)}px`;
                 // Must beat every modal z-index in the app. The research custom-table
                 // modal alone uses 1000001; its code-include popover uses 1000010.
                 // Portaled menu has to sit above both so dropdowns inside those modals

@@ -3818,8 +3818,15 @@ async function showMeetingSettingsModal(meetingId, type) {
         }
         document.getElementById('settingsCodeSwitching').checked = meeting.code_switching || false;
         document.getElementById('settingsAiCopilot').checked = meeting.ai_support || false;
-        if (meeting.meeting_mode) {
-            document.getElementById('settingsMeetingMode').value = meeting.meeting_mode;
+        // HRMS sends meeting_mode="recruit" when scheduling interviews, but the
+        // dropdown's <option> values are "sales" / "interview". Map the alias
+        // here so the modal reflects the real persisted value (otherwise the
+        // select silently no-ops on .value="recruit" and falls back to the
+        // browser's "first option" — which looked like an unselected state).
+        const modeSel = document.getElementById('settingsMeetingMode');
+        if (modeSel && meeting.meeting_mode) {
+            const m = String(meeting.meeting_mode).toLowerCase();
+            modeSel.value = (m === 'recruit') ? 'interview' : m;
         }
 
         // Show/hide fields based on meeting type
@@ -4441,7 +4448,17 @@ async function saveMeetingSettings() {
     const autoRecording = document.getElementById('settingsAutoRecording').checked;
     const autoTranscription = document.getElementById('settingsAutoTranscription').checked;
     const aiSupport = document.getElementById('settingsAiCopilot').checked;
-    const meetingMode = aiSupport ? document.getElementById('settingsMeetingMode').value : null;
+    // Preserve "recruit" provenance: HRMS schedules persist meeting_mode="recruit"
+    // (HRMS-side terminology for what AIEngine still calls "interview"). The
+    // dropdown only carries "sales" / "interview" options, so if the persisted
+    // value was "recruit" and the user didn't change the selection (still maps
+    // to "interview"), keep "recruit". Only flip to "interview" or "sales" if
+    // the user explicitly picked something different.
+    let meetingMode = aiSupport ? document.getElementById('settingsMeetingMode').value : null;
+    const persistedMode = currentSettingsMeeting?.meeting_mode || null;
+    if (persistedMode === 'recruit' && meetingMode === 'interview') {
+        meetingMode = 'recruit';
+    }
     const newProjectId = settingsProjectSD ? settingsProjectSD.getValue() : null;
     // Flatpickr stores values as "YYYY-MM-DD HH:mm" — helper returns "YYYY-MM-DDTHH:mm".
     // Reject "time picked but date empty" (or vice versa) before reading

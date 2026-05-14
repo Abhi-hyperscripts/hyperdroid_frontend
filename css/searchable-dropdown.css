@@ -86,6 +86,11 @@
     top: calc(100% + 4px);
     left: 0;
     right: 0;
+    /* Floor: even when the trigger is narrow (e.g. compact toolbar
+       filters), the menu needs room to show full option labels. The
+       menu still grows to match wider triggers via right:0; but a
+       240 px floor stops "All Proj…" / "Frontend D…" truncation. */
+    min-width: 240px;
     background: var(--bg-card, var(--bg-secondary, #ffffff));
     border: 1px solid var(--border-primary, var(--gray-300, #d1d5db));
     border-radius: 8px;
