@@ -661,6 +661,12 @@
                 body: JSON.stringify({ completed_notes: 'Marked complete from lead timeline' })
             });
             if (window._leadDetailId) openLeadDetailPanel(window._leadDetailId);
+            // The leads list behind the panel caches next_followup_date; without
+            // a reload the "Follow-up today" badge keeps showing after the user
+            // marks today's only pending follow-up complete (real complaint,
+            // Subhi @ VBF, 2026-05-14). Refresh so the badge reflects the
+            // recomputed value.
+            if (typeof window.loadLeads === 'function') window.loadLeads();
         } catch (e) {
             btn.disabled = false;
             btn.textContent = originalText;
