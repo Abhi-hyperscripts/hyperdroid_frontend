@@ -12,6 +12,7 @@ let currentEditEntryId = null;
 
 // SearchableDropdown instances
 let entryProjectDropdown = null;
+let entrySubProjectDropdown = null;
 let entryTaskDropdown = null;
 
 // ==================== Initialization ====================
@@ -191,32 +192,61 @@ function populateProjectDropdown() {
 async function onProjectChange() {
     const projectId = document.getElementById('entryProject').value;
     const taskSelect = document.getElementById('entryTask');
+    const subSelect = document.getElementById('entrySubProject');
     taskSelect.innerHTML = '<option value="">Select Task</option>';
     projectTasks = [];
 
     if (!projectId) {
+        if (subSelect) subSelect.innerHTML = '<option value="">Select project first</option>';
         if (typeof convertSelectToSearchable === 'function') {
             if (entryTaskDropdown) entryTaskDropdown.destroy();
             entryTaskDropdown = convertSelectToSearchable('entryTask', { placeholder: 'Select Task', searchPlaceholder: 'Search tasks...' });
+            if (entrySubProjectDropdown) entrySubProjectDropdown.destroy();
+            entrySubProjectDropdown = convertSelectToSearchable('entrySubProject', { placeholder: 'Select project first', searchPlaceholder: 'Search sub-projects...' });
         }
         return;
     }
 
+    // Load tasks + the caller's accessible sub-projects in parallel. The
+    // sub-project picker is sourced from /sub-projects/member-assignments
+    // which already returns only the sub-projects the current user is
+    // allowed to log against (empty allowlist ⇒ all sub-projects).
     try {
-        const response = await api.request(`/pms/tasks?projectId=${projectId}`);
-        projectTasks = response.data || response || [];
+        const [tasksResp, subsResp] = await Promise.all([
+            api.request(`/pms/tasks?projectId=${projectId}`).catch(() => []),
+            api.request(`/pms/sub-projects/member-assignments?projectId=${projectId}`).catch(() => ({ sub_projects: [] }))
+        ]);
+        projectTasks = tasksResp.data || tasksResp || [];
         projectTasks.forEach(task => {
             const option = document.createElement('option');
             option.value = task.id;
             option.textContent = task.title || '';
             taskSelect.appendChild(option);
         });
+
+        const subs = (subsResp && subsResp.sub_projects) || [];
+        if (subSelect) {
+            // Required only when sub-projects exist on this project. If none
+            // exist the field stays optional and shows "(none)" placeholder.
+            if (subs.length > 0) {
+                subSelect.required = true;
+                subSelect.innerHTML = '<option value="">Select sub-project</option>';
+                subs.forEach(sp => {
+                    subSelect.innerHTML += `<option value="${sp.id}">${(sp.sub_project_name || '').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</option>`;
+                });
+            } else {
+                subSelect.required = false;
+                subSelect.innerHTML = '<option value="">(none)</option>';
+            }
+        }
     } catch (error) {
-        console.error('Failed to load tasks:', error);
+        console.error('Failed to load tasks/sub-projects:', error);
     }
     if (typeof convertSelectToSearchable === 'function') {
         if (entryTaskDropdown) entryTaskDropdown.destroy();
         entryTaskDropdown = convertSelectToSearchable('entryTask', { placeholder: 'Select Task', searchPlaceholder: 'Search tasks...' });
+        if (entrySubProjectDropdown) entrySubProjectDropdown.destroy();
+        entrySubProjectDropdown = convertSelectToSearchable('entrySubProject', { placeholder: 'Select sub-project', searchPlaceholder: 'Search sub-projects...' });
     }
 }
 
@@ -287,6 +317,7 @@ function renderTimeEntries() {
     const tbody = document.getElementById('timeEntriesTableBody');
 
     if (!timeEntries || timeEntries.length === 0) {
+        const canLog = Array.isArray(allProjects) && allProjects.length > 0;
         tbody.innerHTML = `
             <tr>
                 <td colspan="7" class="crm-empty-state">
@@ -296,11 +327,17 @@ function renderTimeEntries() {
                             <polyline points="12 6 12 12 16 14"/>
                         </svg>
                         <p>No time entries for this week</p>
-                        <button class="btn btn-sm btn-primary" onclick="openLogTimeModal()">Log your first entry</button>
+                        ${canLog
+                            ? '<button class="btn btn-sm btn-primary" onclick="openLogTimeModal()">Log your first entry</button>'
+                            : '<p style="color: var(--text-secondary); font-size: 0.85rem;">Ask a PMS administrator to add you to a project first.</p>'}
                     </div>
                 </td>
             </tr>
         `;
+        // Hide the header "+ Log Time" button when there's nowhere to log
+        // against — backend will 403 anyway, button is misleading.
+        const headerBtn = document.getElementById('logTimeBtn');
+        if (headerBtn) headerBtn.style.display = canLog ? '' : 'none';
         return;
     }
 
@@ -424,6 +461,14 @@ function formatEntryDate(dateStr) {
 // ==================== Modal Handling ====================
 
 function openLogTimeModal() {
+    // Defense in depth — the header CTA + empty-state CTA are hidden when
+    // the user has no projects, but stale page state could still call us.
+    if (!Array.isArray(allProjects) || allProjects.length === 0) {
+        if (typeof Toast !== 'undefined') {
+            Toast.error('You need to be a member of at least one project before logging time. Ask your admin.');
+        }
+        return;
+    }
     currentEditEntryId = null;
     document.getElementById('timeEntryModalTitle').textContent = 'Log Time';
     const submitBtn = document.getElementById('timeEntrySubmitBtn');
@@ -483,6 +528,7 @@ async function handleTimeEntrySubmit(event) {
 
     const formData = {
         project_id: document.getElementById('entryProject').value,
+        sub_project_id: document.getElementById('entrySubProject').value || null,
         task_id: document.getElementById('entryTask').value || null,
         log_date: document.getElementById('entryDate').value,
         hours: parseInt(document.getElementById('entryHours').value) || 0,

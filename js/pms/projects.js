@@ -201,7 +201,7 @@ function renderProjectsTable(projects) {
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
                         </svg>
                         <p>No projects found</p>
-                        <button class="btn btn-sm btn-primary" onclick="openNewProjectModal()">Create your first project</button>
+                        ${isPmsAdmin ? '<button class="btn btn-sm btn-primary" onclick="openNewProjectModal()">Create your first project</button>' : '<p style="color: var(--text-secondary); font-size: 0.85rem;">Ask a PMS administrator to add you to a project.</p>'}
                     </div>
                 </td>
             </tr>
@@ -303,6 +303,16 @@ function truncate(str, maxLen) {
 // ==================== Modal Handling ====================
 
 function openNewProjectModal() {
+    // Defense in depth — the empty-state CTA is only rendered for admins,
+    // but a non-admin could still hit this function via the browser console
+    // or stale page state. Tell them up-front rather than letting them fill
+    // a form that the backend will 403.
+    if (!isPmsAdmin) {
+        if (typeof Toast !== 'undefined') {
+            Toast.error('Only PMS admins can create projects. Ask your admin to add you to a project instead.');
+        }
+        return;
+    }
     currentEditProjectId = null;
     document.getElementById('projectModalTitle').textContent = 'New Project';
     const submitBtn = document.getElementById('projectSubmitBtn');

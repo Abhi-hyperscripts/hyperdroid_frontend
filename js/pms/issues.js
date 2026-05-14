@@ -129,6 +129,7 @@ function renderIssuesTable(issues) {
     const tbody = document.getElementById('issuesTableBody');
 
     if (!issues || issues.length === 0) {
+        const canReport = Array.isArray(allProjects) && allProjects.length > 0;
         tbody.innerHTML = `
             <tr><td colspan="10">
                 <div class="empty-state">
@@ -136,15 +137,23 @@ function renderIssuesTable(issues) {
                         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
                     <p>No issues found</p>
-                    <button class="btn btn-primary btn-sm" onclick="openNewIssueModal()">Report your first issue</button>
+                    ${canReport
+                        ? '<button class="btn btn-primary btn-sm" onclick="openNewIssueModal()">Report your first issue</button>'
+                        : '<p style="color: var(--text-secondary); font-size: 0.85rem;">Ask a PMS administrator to add you to a project first.</p>'}
                 </div>
             </td></tr>`;
+        const headerBtn = document.querySelector('button[onclick*="openNewIssueModal"]');
+        if (headerBtn) headerBtn.style.display = canReport ? '' : 'none';
         return;
     }
 
     tbody.innerHTML = issues.map(issue => {
-        const projectCode = issue.project_code || '???';
-        const issueRef = `${projectCode}-${issue.issue_number}`;
+        // project_code is optional in the schema. Fall back to a short slug
+        // built from project_name (first 4 chars, uppercased) so the table
+        // never shows the "???-1" placeholder we used to render.
+        const projectSlug = issue.project_code
+            || (issue.project_name ? issue.project_name.replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase() : null);
+        const issueRef = projectSlug ? `${projectSlug}-${issue.issue_number}` : `#${issue.issue_number}`;
         const age = getAge(issue.created_at);
         const typeIcon = getTypeIcon(issue.issue_type);
         const componentTag = issue.component ? `<span class="component-tag">${escapeHtml(issue.component)}</span>` : '';
@@ -322,6 +331,15 @@ function switchEditorTab(tab, btnEl) {
 // ==================== Modal ====================
 
 function openNewIssueModal() {
+    // Defense in depth — empty-state CTA + header button are hidden when
+    // there are no accessible projects, but a stale page or dev-console
+    // call could still reach here. Bail with a helpful toast.
+    if (!Array.isArray(allProjects) || allProjects.length === 0) {
+        if (typeof Toast !== 'undefined') {
+            Toast.error('You need to be a member of at least one project before reporting issues. Ask your admin.');
+        }
+        return;
+    }
     document.getElementById('issueForm').reset();
     document.getElementById('issueModalTitle').textContent = 'Report Issue';
     document.getElementById('issueSubmitBtn').textContent = 'Report Issue';

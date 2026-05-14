@@ -139,31 +139,102 @@ function populateProjectDropdowns() {
 /**
  * When project is selected in modal, load project members for assignee dropdown
  */
+// Cached sub-project access map for the currently-selected project,
+// keyed by user_id → list-of-accessible-sub-project-ids ([] = unrestricted).
+// Populated in onProjectChange; consumed by refreshTaskAssigneeOptions
+// so the assignee dropdown re-filters when the sub-project changes.
+let taskSubProjectAccessMap = {};
+
 async function onProjectChange() {
     const projectId = taskProjectDropdown ? taskProjectDropdown.getValue() : document.getElementById('taskProject').value;
     const assigneeEl = document.getElementById('taskAssignee');
+    const subProjectEl = document.getElementById('taskSubProject');
 
     if (!projectId) {
         assigneeEl.innerHTML = '<option value="">Select project first</option>';
         projectMembers = [];
+        taskSubProjectAccessMap = {};
+        if (subProjectEl) subProjectEl.innerHTML = '<option value="">None</option>';
+        if (taskSubProjectDropdown) { taskSubProjectDropdown.destroy(); taskSubProjectDropdown = convertSelectToSearchable('taskSubProject', { placeholder: 'None', searchPlaceholder: 'Search sub-projects...', onChange: () => refreshTaskAssigneeOptions() }); }
         if (taskAssigneeDropdown) { taskAssigneeDropdown.destroy(); taskAssigneeDropdown = convertSelectToSearchable('taskAssignee', { placeholder: 'Select assignee...', searchPlaceholder: 'Search members...' }); }
         return;
     }
 
     try {
-        const response = await api.request(`/pms/project-members?projectId=${projectId}`);
-        projectMembers = response.data || response || [];
+        // Load members + sub-projects + access map in parallel.
+        const [membersResp, subProjectsResp, accessResp] = await Promise.all([
+            api.request(`/pms/project-members?projectId=${projectId}`),
+            api.request(`/pms/sub-projects?projectId=${projectId}`).catch(() => []),
+            api.request(`/pms/project-members/sub-project-access?projectId=${projectId}`).catch(() => ({ access: {} }))
+        ]);
+        projectMembers = membersResp.data || membersResp || [];
+        const subProjects = Array.isArray(subProjectsResp) ? subProjectsResp : (subProjectsResp.data || []);
+        taskSubProjectAccessMap = (accessResp && accessResp.access) ? accessResp.access : {};
 
-        assigneeEl.innerHTML = '<option value="">Unassigned</option>';
-        projectMembers.forEach(m => {
-            const name = m.user_name || m.user_email || '';
-            assigneeEl.innerHTML += `<option value="${m.user_id || m.id}">${escapeHtml(name)}</option>`;
-        });
-        if (taskAssigneeDropdown) { taskAssigneeDropdown.destroy(); taskAssigneeDropdown = convertSelectToSearchable('taskAssignee', { placeholder: 'Select assignee...', searchPlaceholder: 'Search members...' }); }
+        // Populate the sub-project dropdown for the selected project.
+        if (subProjectEl) {
+            subProjectEl.innerHTML = '<option value="">None</option>';
+            subProjects.forEach(sp => {
+                subProjectEl.innerHTML += `<option value="${sp.id}">${escapeHtml(sp.sub_project_name || sp.name || '')}</option>`;
+            });
+            if (taskSubProjectDropdown) {
+                taskSubProjectDropdown.destroy();
+                taskSubProjectDropdown = convertSelectToSearchable('taskSubProject', {
+                    placeholder: 'None',
+                    searchPlaceholder: 'Search sub-projects...',
+                    onChange: () => refreshTaskAssigneeOptions()
+                });
+            }
+        }
+
+        refreshTaskAssigneeOptions();
     } catch (error) {
         console.error('Failed to load project members:', error);
         assigneeEl.innerHTML = '<option value="">Failed to load members</option>';
         if (taskAssigneeDropdown) { taskAssigneeDropdown.destroy(); taskAssigneeDropdown = convertSelectToSearchable('taskAssignee', { placeholder: 'Select assignee...', searchPlaceholder: 'Search members...' }); }
+    }
+}
+
+/**
+ * Re-populate the assignee dropdown based on the currently-selected
+ * sub-project. Mirrors project-detail.js's implementation so the two
+ * task-create surfaces (top-level Tasks page + project-detail Tasks
+ * tab) enforce the same visibility rules. Backend rejects the same
+ * combinations either way; this just keeps the UI honest.
+ */
+function refreshTaskAssigneeOptions() {
+    const assigneeEl = document.getElementById('taskAssignee');
+    if (!assigneeEl) return;
+    const previousValue = taskAssigneeDropdown ? taskAssigneeDropdown.getValue() : assigneeEl.value;
+    const selectedSubProjectId = taskSubProjectDropdown
+        ? taskSubProjectDropdown.getValue()
+        : (document.getElementById('taskSubProject') || { value: '' }).value;
+
+    assigneeEl.innerHTML = '<option value="">Unassigned</option>';
+    (projectMembers || []).forEach(m => {
+        const uid = m.user_id || m.id;
+        if (!uid) return;
+        if (selectedSubProjectId) {
+            const allowed = taskSubProjectAccessMap[uid];
+            // Missing entry → not a root member (defensive); skip.
+            // Empty array → unrestricted. Non-empty → allowlist.
+            if (!allowed) return;
+            if (allowed.length > 0 && !allowed.includes(selectedSubProjectId)) return;
+        }
+        const name = m.user_name || m.user_email || uid;
+        assigneeEl.innerHTML += `<option value="${uid}">${escapeHtml(name)}</option>`;
+    });
+
+    const stillValid = Array.from(assigneeEl.options).some(o => o.value === previousValue);
+    assigneeEl.value = stillValid ? previousValue : '';
+
+    if (taskAssigneeDropdown) {
+        taskAssigneeDropdown.destroy();
+        taskAssigneeDropdown = convertSelectToSearchable('taskAssignee', {
+            placeholder: 'Select assignee...',
+            searchPlaceholder: 'Search members...'
+        });
+        if (assigneeEl.value) taskAssigneeDropdown.setValue(assigneeEl.value);
     }
 }
 
@@ -228,6 +299,11 @@ function renderTasksTable(tasks) {
     const tbody = document.getElementById('tasksTableBody');
 
     if (!tasks || tasks.length === 0) {
+        // If the caller has zero accessible projects there's nothing they
+        // could legitimately add a task against — backend will 403 either
+        // way. Replace the misleading CTA with a hint pointing them at
+        // their admin.
+        const canCreate = Array.isArray(allProjects) && allProjects.length > 0;
         tbody.innerHTML = `
             <tr>
                 <td colspan="8" class="crm-empty-state">
@@ -238,11 +314,17 @@ function renderTasksTable(tasks) {
                             <path d="M9 14l2 2 4-4"/>
                         </svg>
                         <p>No tasks found</p>
-                        <button class="btn btn-sm btn-primary" onclick="openNewTaskModal()">Create your first task</button>
+                        ${canCreate
+                            ? '<button class="btn btn-sm btn-primary" onclick="openNewTaskModal()">Create your first task</button>'
+                            : '<p style="color: var(--text-secondary); font-size: 0.85rem;">Ask a PMS administrator to add you to a project first.</p>'}
                     </div>
                 </td>
             </tr>
         `;
+        // Hide the header "+ New Task" button when there's nowhere to file
+        // a task. Backend gates fire anyway, but the button is misleading.
+        const headerBtn = document.getElementById('newTaskBtn');
+        if (headerBtn) headerBtn.style.display = canCreate ? '' : 'none';
         return;
     }
 
@@ -381,6 +463,16 @@ function getInitials(name) {
 // ==================== Modal Handling ====================
 
 function openNewTaskModal() {
+    // Defense in depth — empty-state CTA + header button are hidden when
+    // the caller has no projects, but a stale page or dev-console call
+    // could still reach here. Bail with a helpful toast instead of
+    // opening a form the backend will 403.
+    if (!Array.isArray(allProjects) || allProjects.length === 0) {
+        if (typeof Toast !== 'undefined') {
+            Toast.error('You need to be a member of at least one project before creating tasks. Ask your admin.');
+        }
+        return;
+    }
     currentEditTaskId = null;
     document.getElementById('taskModalTitle').textContent = 'New Task';
     const submitBtn = document.getElementById('taskSubmitBtn');
@@ -594,7 +686,8 @@ function initSearchableDropdowns() {
     if (!taskSubProjectDropdown) {
         taskSubProjectDropdown = convertSelectToSearchable('taskSubProject', {
             placeholder: 'None',
-            searchPlaceholder: 'Search sub-projects...'
+            searchPlaceholder: 'Search sub-projects...',
+            onChange: () => refreshTaskAssigneeOptions()
         });
     }
 
