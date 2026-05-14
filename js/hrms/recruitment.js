@@ -1198,34 +1198,129 @@
         const sorted = [...interviews].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         const latest = sorted[0];
 
-        // No interview yet → big primary CTA
-        if (!latest) {
-            body.innerHTML = `
-                <div style="display: flex; gap: 16px; align-items: flex-start;">
-                    <div style="flex: 1;">
-                        <h4 style="margin: 0 0 6px; font-size: 1rem; color: var(--text-primary);">No interview scheduled yet</h4>
-                        <p style="margin: 0 0 12px; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">
-                            Launches a hosted Vision meeting with the AI interviewer attached.
-                            The Copilot reads the job description + this candidate's submitted answers,
-                            then drives the topic-by-topic interview for you with drill-down follow-ups.
-                            Even if you don't know the domain, the Copilot will whisper the next question
-                            (with a "listen for" hint) at every turn.
-                        </p>
-                        <button class="rec-btn rec-btn-primary" onclick="scheduleInterviewNow('${escapeAttr(applicationId)}')">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                            Schedule with AI Copilot
-                        </button>
-                    </div>
-                </div>`;
-            return;
+        // ── Render existing rounds (if any) as a vertical timeline ──────
+        // Each completed round shows its recommendation badge + score. The
+        // "Schedule next round" form sits below as a single picker.
+        const completedRounds = sorted.filter(iv => iv.status === 'completed');
+        const inProgress = sorted.find(iv => iv.status === 'scheduled' || iv.status === 'in_progress');
+
+        // Default round-type: if there's prior history, suggest the next
+        // logical step. HR screen → Technical → Hiring manager → CEO → Negotiation.
+        const lastRoundType = sorted[0]?.round_type || null;
+        const nextRoundType = SUGGESTED_NEXT_ROUND[lastRoundType] || 'hr_screen';
+        // Default datetime = round UP to next quarter-hour
+        const now = new Date();
+        const roundedDt = new Date(Math.ceil(now.getTime() / (15 * 60 * 1000)) * (15 * 60 * 1000));
+        const localIso = roundedDt.toISOString().slice(0, 16);
+
+        let timelineHtml = '';
+        if (sorted.length > 0) {
+            timelineHtml = `<h4 style="margin: 0 0 10px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); font-weight: 600;">Interview Rounds</h4>
+                <div class="rec-iv-timeline">${sorted.map(iv => renderInterviewRow(iv, iv === sorted[0])).join('')}</div>`;
         }
 
-        // Render latest interview state
-        body.innerHTML = renderInterviewRow(latest, true) +
-            (sorted.length > 1
-                ? `<details style="margin-top: 14px;"><summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.86rem;">${sorted.length - 1} earlier interview(s)</summary>
-                   <div style="margin-top: 10px;">${sorted.slice(1).map(iv => renderInterviewRow(iv, false)).join('')}</div></details>`
-                : '');
+        // Hide the form entirely when an in-progress meeting exists — host
+        // should finish it before scheduling the next round.
+        const showForm = !inProgress;
+        const formHtml = !showForm
+            ? `<p style="margin: 18px 0 0; color: var(--text-secondary); font-size: 0.86rem; font-style: italic;">An interview is already scheduled. Finish it before scheduling the next round.</p>`
+            : `
+            <div style="margin-top: ${sorted.length > 0 ? '20px' : '0'}; padding-top: ${sorted.length > 0 ? '18px' : '0'}; border-top: ${sorted.length > 0 ? '1px solid var(--border-color)' : 'none'};">
+                <h4 style="margin: 0 0 6px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); font-weight: 600;">${sorted.length > 0 ? 'Schedule the next round' : 'Schedule the first interview'}</h4>
+                ${sorted.length === 0
+                    ? `<p style="margin: 0 0 12px; color: var(--text-secondary); font-size: 0.86rem; line-height: 1.5;">
+                        AI Copilot reads the JD + the candidate's answers and drives a topic-by-topic interview with drill-down follow-ups.
+                        On round 2+, prior round summaries are auto-fed in so the Copilot doesn't re-ask covered topics.
+                       </p>`
+                    : ''}
+                <div style="display: grid; grid-template-columns: 1.2fr 1.5fr 1fr; gap: 10px; max-width: 720px; margin-bottom: 10px;">
+                    <div>
+                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em;">Round type</label>
+                        <select id="ivRoundType" class="form-control" style="width: 100%;">
+                            ${ROUND_TYPES.map(rt => `<option value="${rt.value}" ${rt.value === nextRoundType ? 'selected' : ''}>${rt.label}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em;">Optional label (e.g. "CTO + 2 staff engineers")</label>
+                        <input type="text" id="ivRoundLabel" class="form-control" placeholder="(auto)" maxlength="120" style="width: 100%;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em;">When</label>
+                        <input type="datetime-local" id="ivScheduleAt" class="form-control" value="${localIso}" style="width: 100%;">
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-primary); cursor: pointer;">
+                        <input type="checkbox" id="ivSendInvite" checked> Email candidate the invite
+                    </label>
+                    <button class="rec-btn rec-btn-primary" onclick="scheduleInterviewWithPicker('${escapeAttr(applicationId)}', false)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Schedule
+                    </button>
+                    <button class="rec-btn" onclick="scheduleInterviewWithPicker('${escapeAttr(applicationId)}', true)" title="Skip the picker — create the meeting and open it now">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Start now
+                    </button>
+                </div>
+            </div>`;
+
+        body.innerHTML = timelineHtml + formHtml;
+        // Lazy-load token-usage summary for the latest completed round
+        if (completedRounds.length > 0) {
+            loadTokenUsageForInterview(completedRounds[0].id);
+        }
+        return;
+    }
+
+    // Round-type options (matches HRMS BL allowlist)
+    const ROUND_TYPES = [
+        { value: 'hr_screen',      label: 'HR Screen' },
+        { value: 'technical',      label: 'Technical Round' },
+        { value: 'tech_panel',     label: 'Technical Panel' },
+        { value: 'hiring_manager', label: 'Hiring Manager' },
+        { value: 'ceo',            label: 'CEO Round' },
+        { value: 'negotiation',    label: 'Salary Negotiation' },
+        { value: 'final',          label: 'Final Round' },
+        { value: 'other',          label: 'Other' },
+    ];
+    // Heuristic next-round suggestion based on what just happened
+    const SUGGESTED_NEXT_ROUND = {
+        'hr_screen':      'technical',
+        'technical':      'tech_panel',
+        'tech_panel':     'hiring_manager',
+        'hiring_manager': 'ceo',
+        'ceo':            'negotiation',
+        'negotiation':    'final',
+        'final':          'final',
+    };
+
+    // (legacy single-latest renderer removed in v3 — the panel above now
+    // emits the full timeline of rounds + a single picker form.)
+
+    // Lazy-load token-usage summary for the most recent completed interview
+    // so the report card can show "1.2M tokens · $3.40 spent · Haiku 92%".
+    async function loadTokenUsageForInterview(interviewId) {
+        const target = document.getElementById('iv-tokens-' + interviewId);
+        if (!target) return;
+        try {
+            const summary = await api.request(`/hrms/job-applications/interviews/${encodeURIComponent(interviewId)}/token-usage`);
+            const totalIn = (summary.total_input || 0) + (summary.total_cache_read || 0) + (summary.total_cache_creation || 0);
+            const cachePct = totalIn > 0 ? Math.round((summary.total_cache_read / totalIn) * 100) : 0;
+            const cost = Number(summary.total_cost_usd || 0).toFixed(4);
+            const fmt = (n) => Number(n).toLocaleString();
+            const modelLines = Object.entries(summary.cost_by_model || {})
+                .map(([m, c]) => `${escapeHtml(m.replace(/-2025\d+|-2024\d+/g, ''))}: $${Number(c).toFixed(4)}`)
+                .join(' · ');
+            target.innerHTML = `
+                <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: baseline;">
+                    <div><strong>$${cost}</strong> spent · ${summary.total_calls || 0} LLM calls</div>
+                    <div style="color: var(--text-secondary);">${fmt(totalIn)} in / ${fmt(summary.total_output || 0)} out · ${cachePct}% cache hit</div>
+                    ${modelLines ? `<div style="color: var(--text-secondary); font-size: 0.78rem;">${modelLines}</div>` : ''}
+                </div>`;
+        } catch (err) {
+            // Non-fatal — usage may not have been flushed yet
+            target.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.78rem;">Token usage not yet available</div>`;
+        }
     }
 
     function renderInterviewRow(iv, isLatest) {
@@ -1234,10 +1329,20 @@
         let topicsSeeded = [];
         try { topicsSeeded = JSON.parse(iv.topics_seeded || '[]'); } catch { /* ignore */ }
         const meta = `Scheduled ${formatDate(iv.scheduled_at || iv.created_at, true)} · ${topicsSeeded.length} topic${topicsSeeded.length===1?'':'s'} seeded`;
+        // v3 — round chip (HR Screen / Tech Round #2 / etc.) shown left of status.
+        const roundLabel = iv.round_label || (function () {
+            const labels = { hr_screen:'HR Screen', technical:'Technical', tech_panel:'Tech Panel',
+                hiring_manager:'Hiring Manager', ceo:'CEO Round', negotiation:'Negotiation',
+                final:'Final Round', other:'Round' };
+            const base = labels[iv.round_type] || 'Interview';
+            return iv.round_index > 1 ? `${base} #${iv.round_index}` : base;
+        })();
+        const roundChip = `<span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; background: rgba(139,92,246,0.16); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.28);">${escapeHtml(roundLabel)}</span>`;
 
-        // Top row: status + meta + meeting CTA
+        // Top row: round chip + status + meta + meeting CTA
         const topRow = `
             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px;">
+                ${roundChip}
                 ${statusBadge}
                 <span style="color: var(--text-secondary); font-size: 0.85rem;">${escapeHtml(meta)}</span>
                 ${iv.meeting_url
@@ -1297,6 +1402,9 @@
                     <ul style="margin: 0; padding-left: 20px; color: var(--text-primary); font-size: 0.88rem;">${strengths.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>` : ''}
                 ${redFlags.length ? `<h5 style="margin: 14px 0 6px; font-size: 0.86rem; color: #ff4757;">RED FLAGS</h5>
                     <ul style="margin: 0; padding-left: 20px; color: var(--text-primary); font-size: 0.88rem;">${redFlags.map(f => `<li>${escapeHtml(f)}</li>`).join('')}</ul>` : ''}
+                <div id="iv-tokens-${escapeAttr(iv.id)}" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border-color); font-size: 0.84rem; color: var(--text-primary);">
+                    <div style="color: var(--text-secondary); font-size: 0.78rem;">Loading token usage…</div>
+                </div>
             `;
         } else if (status === 'scheduled' || status === 'in_progress') {
             // Show seeded topic queue as a preview of what the Copilot will probe
@@ -1310,18 +1418,46 @@
         return `<div style="${wrapStyle}">${topRow}${reportBlock}</div>`;
     }
 
-    window.scheduleInterviewNow = async function (applicationId) {
+    // Picker-aware schedule. `startNow=true` skips the picker entirely (legacy
+    // one-click flow). Otherwise reads the datetime input + invite checkbox.
+    window.scheduleInterviewWithPicker = async function (applicationId, startNow) {
         const btn = event?.target?.closest('button');
-        if (btn) { btn.disabled = true; btn.textContent = 'Scheduling…'; }
+        const origText = btn?.innerHTML;
+        if (btn) { btn.disabled = true; btn.innerHTML = 'Scheduling…'; }
+        let scheduledAtIso = null;
+        let sendInvite = true;
+        let roundType = null;
+        let roundLabel = null;
+        // The round picker is in the form regardless of startNow=true.
+        const roundTypeInput = document.getElementById('ivRoundType');
+        const roundLabelInput = document.getElementById('ivRoundLabel');
+        if (roundTypeInput?.value) roundType = roundTypeInput.value;
+        if (roundLabelInput?.value && roundLabelInput.value.trim()) roundLabel = roundLabelInput.value.trim();
+        if (!startNow) {
+            const dtInput = document.getElementById('ivScheduleAt');
+            const inviteInput = document.getElementById('ivSendInvite');
+            sendInvite = !!inviteInput?.checked;
+            if (dtInput?.value) {
+                // Convert browser local "YYYY-MM-DDTHH:MM" to UTC ISO. The
+                // datetime-local input gives us a naive (no-tz) string; treat
+                // it as the user's local timezone, then serialize as UTC.
+                const d = new Date(dtInput.value);
+                if (!Number.isNaN(d.getTime())) scheduledAtIso = d.toISOString();
+            }
+        }
         try {
-            // No specific datetime → backend schedules for "now". Keep the
-            // first version one-click; calendar picker can come later.
+            const body = { send_invite_email: sendInvite };
+            if (scheduledAtIso) body.scheduled_at = scheduledAtIso;
+            if (roundType) body.round_type = roundType;
+            if (roundLabel) body.round_label = roundLabel;
             const result = await api.request(`/hrms/job-applications/${encodeURIComponent(applicationId)}/schedule-interview`, {
                 method: 'POST',
-                body: JSON.stringify({ send_invite_email: true })
+                body: JSON.stringify(body)
             });
-            Toast?.success?.('Interview scheduled — meeting created with AI Copilot attached');
-            // Re-load panel + status badge (status was bumped to 'interview')
+            Toast?.success?.(startNow
+                ? 'Interview started — opening meeting now'
+                : 'Interview scheduled — invite sent to candidate');
+            // Refresh drawer state so the panel flips from form -> scheduled view
             await loadApplicationInterviews(applicationId);
             try {
                 const refreshed = await api.request(`/hrms/job-applications/${encodeURIComponent(applicationId)}`);
@@ -1333,13 +1469,17 @@
                 }
                 dd.appDrawerStatusSelect?.setValue(refreshed.status || 'new');
             } catch { /* non-fatal */ }
-            // Auto-open the meeting in a new tab so the host lands in the lobby straight away
-            if (result?.meeting_url) window.open(result.meeting_url, '_blank');
+            // Open the meeting in a new tab only on "start now". For a future-
+            // dated schedule, host doesn't want a window pop now.
+            if (startNow && result?.meeting_url) window.open(result.meeting_url, '_blank');
         } catch (err) {
             Toast?.error?.(err?.message || 'Failed to schedule interview');
-            if (btn) { btn.disabled = false; btn.textContent = 'Schedule with AI Copilot'; }
+            if (btn) { btn.disabled = false; btn.innerHTML = origText; }
         }
     };
+
+    // Back-compat shim — anything that called the old name still works.
+    window.scheduleInterviewNow = (applicationId) => window.scheduleInterviewWithPicker(applicationId, true);
 
     window.closeApplicationDrawer = function () { closeModal('applicationDrawer'); activeApplicationId = null; activeApplication = null; };
 
