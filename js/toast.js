@@ -1227,8 +1227,21 @@ const InfoModal = (() => {
             // Custom max-width if provided
             const modalStyle = maxWidth ? `style="max-width: ${maxWidth};"` : '';
 
+            // ── Singleton guard ─────────────────────────────────────────────
+            // Without this, every click on a re-opener (e.g. the eye icon on
+            // a Salary Structure version row) appends another full overlay to
+            // <body>, stacking modals on top of each other. Dedupe by removing
+            // any existing InfoModal overlay before creating the new one — and
+            // resolve their pending promises so callers don't hang.
+            document.querySelectorAll('.info-modal-overlay').forEach(prev => {
+                const r = prev._infoModalResolve;
+                prev.remove();
+                if (typeof r === 'function') r();
+            });
+
             const overlay = document.createElement('div');
             overlay.className = 'info-modal-overlay';
+            overlay._infoModalResolve = resolve;
             overlay.innerHTML = `
                 <div class="info-modal" ${modalStyle}>
                     <div class="info-modal-header">
@@ -1250,10 +1263,28 @@ const InfoModal = (() => {
                 </div>
             `;
 
+            // Lock body scroll while the modal is open. Two reasons:
+            //  1. UX — the body shouldn't move under a modal.
+            //  2. Safari quirk — when InfoModal is opened from inside another
+            //     fixed-positioned modal whose ancestor has transform/filter,
+            //     position:fixed children resolve relative to that ancestor
+            //     instead of the viewport (CSS containing-block rule). A body
+            //     with overflow:hidden can't be scrolled, so the modal stays
+            //     centered in the visible area regardless of where the parent
+            //     modal happens to live in document scroll-space.
+            const prevBodyOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+
             function close() {
                 overlay.classList.remove('show');
                 setTimeout(() => {
                     overlay.remove();
+                    // Restore body scroll ONLY if no other InfoModal is still up
+                    // (e.g. nested chain). Otherwise the next-up modal keeps
+                    // the lock until it closes.
+                    if (!document.querySelector('.info-modal-overlay')) {
+                        document.body.style.overflow = prevBodyOverflow;
+                    }
                     resolve();
                 }, 200);
             }
