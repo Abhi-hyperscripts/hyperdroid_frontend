@@ -139,6 +139,13 @@
         // Close any open popover on outside click / esc.
         document.addEventListener('click', onDocClick);
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAddFilterPopover(); });
+        // Tell late-binding consumers (filter-persistence in leads.js) that
+        // the field definitions are loaded and setLeadFieldsFilterValues is
+        // now safe to call. Includes a sticky flag so a listener that
+        // attaches AFTER this event still finds out — leads.js doesn't
+        // control script-load order.
+        window.__leadFieldsReady = true;
+        window.dispatchEvent(new CustomEvent('leadfields:ready'));
     }
 
     // ─── Filter bar (chip pattern) ──────────────────────────────────────────
@@ -475,6 +482,47 @@
             if (key) out[key] = val;
         }
         return out;
+    };
+
+    // Exposed for the leads-page filter persistence layer (localStorage).
+    // Returns the raw _filterValues map ({code: optionCode}) — covers BOTH
+    // tenant custom dropdowns and the built-in __type/__outcome/__disposition
+    // pseudo-filters in a single shape, which is what we want for round-trip
+    // storage (the getLeadFieldsFilter / getLeadFieldsBuiltinFilters splits
+    // are for the URL-param shape only).
+    window.getAllLeadFieldsFilterValues = function () {
+        return { ..._filterValues };
+    };
+
+    // Programmatically replace the active filter chips. Used by the leads-page
+    // localStorage restore path on reload. Codes whose field definition is
+    // not in _allFieldsByCode (archived / unknown) are skipped silently so a
+    // stale storage entry can never wedge the page. Returns true if any
+    // value actually changed, so the caller can decide whether to re-fetch.
+    // No-op (returns false) before init has populated the field map — caller
+    // should retry on the `leadfields:ready` event.
+    window.setLeadFieldsFilterValues = function (values) {
+        if (!values || typeof values !== 'object') return false;
+        if (_allFieldsByCode.size === 0) return false;
+        let changed = false;
+        const wanted = {};
+        for (const [code, val] of Object.entries(values)) {
+            if (!val) continue;
+            const f = _allFieldsByCode.get(code);
+            if (!f) continue;
+            // Validate the option still exists on the field, otherwise the
+            // chip would render its raw code instead of the human label.
+            const opt = (f.options || []).find(o => o.code === val);
+            if (!opt) continue;
+            wanted[code] = val;
+        }
+        // Diff vs current; replace wholesale if different.
+        if (JSON.stringify(wanted) !== JSON.stringify(_filterValues)) {
+            _filterValues = wanted;
+            changed = true;
+            renderActiveChips();
+        }
+        return changed;
     };
 
     // Exposed so the columns-picker in leads.js can include tenant-defined

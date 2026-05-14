@@ -53,10 +53,63 @@ function _persistFilters() {
             const el = document.getElementById(id);
             if (el && el.value) out[id] = el.value;
         }
+        // Custom-dropdown + built-in pseudo-filter chips owned by
+        // lead-fields-runtime.js. Stored as the raw {code: optionCode} map
+        // since that's exactly what setLeadFieldsFilterValues consumes.
+        if (typeof window.getAllLeadFieldsFilterValues === 'function') {
+            const lf = window.getAllLeadFieldsFilterValues();
+            if (lf && Object.keys(lf).length > 0) out.customFilters = lf;
+        }
+        // Form-answers filter is source-scoped — different sources have
+        // different questions, so we tag the snapshot with the source it
+        // was applied to. Restore only re-applies if the current source
+        // still matches.
+        if (typeof FormAnswersFilter !== 'undefined' &&
+            typeof FormAnswersFilter.getFilter === 'function') {
+            const fa = FormAnswersFilter.getFilter() || {};
+            if (Object.keys(fa).length > 0) {
+                const src = document.getElementById('filterSource')?.value;
+                if (src && !src.startsWith('__')) {
+                    out.formAnswers = { sourceId: src, filter: fa };
+                }
+            }
+        }
         const key = _filterStorageKey();
         if (Object.keys(out).length === 0) localStorage.removeItem(key);
         else localStorage.setItem(key, JSON.stringify(out));
     } catch (_) { /* quota / disabled — silent */ }
+}
+
+// Restore the lead-fields-runtime chips from the saved snapshot. No-op if
+// the runtime hasn't fired its `leadfields:ready` event yet. Returns true
+// when anything actually changed (caller refetches).
+function _restoreLeadFieldsChips() {
+    if (window.location.search) {
+        const urlParams = new URLSearchParams(window.location.search);
+        if ([...urlParams.keys()].length > 0) return false;
+    }
+    if (typeof window.setLeadFieldsFilterValues !== 'function') return false;
+    const saved = _loadPersistedFilters();
+    if (!saved.customFilters) return false;
+    return window.setLeadFieldsFilterValues(saved.customFilters) === true;
+}
+
+// Restore the form-answers selection — only if the saved snapshot is for
+// the currently-selected source (different sources have different
+// questions, so a cross-source restore would be nonsensical). Returns
+// true when anything actually changed.
+function _restoreFormAnswers() {
+    if (window.location.search) {
+        const urlParams = new URLSearchParams(window.location.search);
+        if ([...urlParams.keys()].length > 0) return false;
+    }
+    if (typeof FormAnswersFilter === 'undefined' ||
+        typeof FormAnswersFilter.setFilter !== 'function') return false;
+    const saved = _loadPersistedFilters();
+    if (!saved.formAnswers) return false;
+    const currentSource = document.getElementById('filterSource')?.value;
+    if (!currentSource || currentSource !== saved.formAnswers.sourceId) return false;
+    return FormAnswersFilter.setFilter(saved.formAnswers.filter || {}) === true;
 }
 
 function _loadPersistedFilters() {
@@ -102,8 +155,34 @@ function _restorePersistedFilters() {
 // (initial loadLeads fired before the options existed). Lazy: only if a
 // restore actually changed a value, so the common no-saved-filter case
 // stays single-fetch.
+// Folds basic-widget, custom-chip and form-answer restores into a single
+// refetch so we don't trigger three back-to-back loadLeads requests when
+// the user reloads a heavily-filtered view.
 function _restoreAndApplyIfChanged() {
-    if (_restorePersistedFilters()) applyFilters();
+    const a = _restorePersistedFilters();
+    const b = _restoreLeadFieldsChips();
+    const c = _restoreFormAnswers();
+    if (a || b || c) applyFilters();
+}
+
+// lead-fields-runtime.js loads its field definitions asynchronously. If
+// its init wins the race vs our initial loadLeads, the chips restore can
+// piggyback on the source/team loader callbacks. If it loses (more
+// common — async fetch is slower than localStorage read), we need a
+// separate trigger. The `leadfields:ready` event covers both cases. We
+// also check the sticky `__leadFieldsReady` flag so a listener attached
+// AFTER the event still kicks the restore on next tick.
+function _wireLeadFieldsReadyRestore() {
+    const tryRestore = () => {
+        if (_restoreLeadFieldsChips()) applyFilters();
+    };
+    if (window.__leadFieldsReady) {
+        // Already initialised — restore on next tick so the source dropdown
+        // has time to also be in place.
+        setTimeout(tryRestore, 0);
+    } else {
+        window.addEventListener('leadfields:ready', tryRestore, { once: true });
+    }
 }
 
 // ==================== Initialization ====================
@@ -127,8 +206,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Restore filter widgets from localStorage BEFORE the first loadLeads()
     // call so the user picks up where they left off. Async-populated
     // dropdowns (source / campaign / team) re-apply their saved value once
-    // their options finish loading.
+    // their options finish loading. The custom-dropdown chips owned by
+    // lead-fields-runtime.js restore on its own ready event (registered
+    // here so it fires regardless of script-load order).
     _restorePersistedFilters();
+    _wireLeadFieldsReadyRestore();
     // Deep-link from My Day: /pages/crm/leads.html?ownerUserId=<uuid>
     // pre-fills the Owner filter dropdown and triggers loadLeads so the
     // rep lands on a page already narrowed to their own pipeline. A

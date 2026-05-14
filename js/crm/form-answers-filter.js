@@ -382,9 +382,31 @@
         global.onFormAnswerSearch         = onSearch;
     }
 
+    // Used by the leads-page localStorage restore path on reload. The host
+    // page should already have restored the matching Source dropdown (this
+    // filter is source-scoped — different sources have different questions)
+    // before calling this; we don't re-validate against question metadata
+    // here because the questions are loaded lazily on modal open. The badge
+    // count + applied snapshot are kept in sync so the next modal open
+    // doesn't show stale state. Returns true if anything actually changed.
+    function setFilter(filter) {
+        if (!filter || typeof filter !== 'object') filter = {};
+        // Normalise: drop keys with empty value arrays so JSON-compare works.
+        const wanted = {};
+        for (const [k, v] of Object.entries(filter)) {
+            if (Array.isArray(v) && v.length > 0) wanted[k] = [...v];
+        }
+        if (JSON.stringify(wanted) === JSON.stringify(_filter)) return false;
+        _filter = wanted;
+        _applied = JSON.parse(JSON.stringify(wanted));
+        refreshButtonState();
+        return true;
+    }
+
     global.FormAnswersFilter = {
         init,
         getFilter,
+        setFilter,
         activeCount,
         reset,
         refreshButtonState,
