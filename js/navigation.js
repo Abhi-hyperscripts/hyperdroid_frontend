@@ -33,7 +33,7 @@ const Navigation = {
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                 <polyline points="9 22 9 12 15 12 15 22"/>
             </svg>`,
-            href: 'home.html',
+            href: '/pages/home.html',
             requiresRole: null // Always visible
         },
         {
@@ -43,7 +43,7 @@ const Navigation = {
                 <polygon points="23 7 16 12 23 17 23 7"/>
                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
             </svg>`,
-            href: 'vision/dashboard.html',
+            href: '/pages/vision/dashboard.html',
             requiresRole: 'VISION_USER'
         },
         {
@@ -52,7 +52,7 @@ const Navigation = {
             icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>`,
-            href: 'drive/drive.html',
+            href: '/pages/drive/drive.html',
             requiresRole: 'DRIVE_USER'
         },
         {
@@ -61,7 +61,7 @@ const Navigation = {
             icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>`,
-            href: 'chat/chat.html',
+            href: '/pages/chat/chat.html',
             requiresRole: 'CHAT_USER'
         },
         {
@@ -71,7 +71,7 @@ const Navigation = {
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                 <polyline points="22,6 12,13 2,6"/>
             </svg>`,
-            href: 'email/inbox.html',
+            href: '/pages/email/inbox.html',
             requiresRole: 'EMAILSERVICE_USER'
         },
         {
@@ -83,7 +83,7 @@ const Navigation = {
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>`,
-            href: 'hrms/dashboard.html',
+            href: '/pages/hrms/dashboard.html',
             requiresRole: 'HRMS_USER'
         },
         {
@@ -95,7 +95,7 @@ const Navigation = {
                 <line x1="23" y1="11" x2="17" y2="11"/>
                 <line x1="20" y1="8" x2="20" y2="14"/>
             </svg>`,
-            href: 'crm/dashboard.html',
+            href: '/pages/crm/dashboard.html',
             requiresRole: 'CRM_USER'
         },
         {
@@ -105,7 +105,7 @@ const Navigation = {
                 <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
                 <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
             </svg>`,
-            href: 'research/dashboard.html',
+            href: '/pages/research/dashboard.html',
             requiresRole: 'RESEARCH_USER'
         },
         {
@@ -116,7 +116,7 @@ const Navigation = {
                 <rect x="9" y="3" width="6" height="4" rx="1"/>
                 <path d="M9 14l2 2 4-4"/>
             </svg>`,
-            href: 'pms/dashboard.html',
+            href: '/pages/pms/dashboard.html',
             requiresRole: 'PMS_USER'
         },
         {
@@ -128,7 +128,7 @@ const Navigation = {
                 <path d="M8 7h8"/>
                 <path d="M8 11h6"/>
             </svg>`,
-            href: 'lms/dashboard.html',
+            href: '/pages/lms/dashboard.html',
             requiresRole: 'LMS_USER'
         },
         {
@@ -139,7 +139,7 @@ const Navigation = {
                 <line x1="3" y1="6" x2="21" y2="6"/>
                 <path d="M16 10a4 4 0 0 1-8 0"/>
             </svg>`,
-            href: 'procurement/dashboard.html',
+            href: '/pages/procurement/dashboard.html',
             requiresRole: 'PROCUREMENT_USER'
         },
         {
@@ -150,7 +150,7 @@ const Navigation = {
                 <path d="M8 10h8"/>
                 <path d="M8 14h4"/>
             </svg>`,
-            href: 'accounts/dashboard.html',
+            href: '/pages/accounts/dashboard.html',
             requiresRole: 'ACCOUNTS_USER'
         },
         {
@@ -162,7 +162,7 @@ const Navigation = {
                 <path d="M7 16h2"/>
                 <path d="M12 16h6"/>
             </svg>`,
-            href: 'payment-plans/dashboard.html',
+            href: '/pages/payment-plans/dashboard.html',
             requiresRole: 'PAYMENTPLANS_USER'
         },
         {
@@ -174,7 +174,7 @@ const Navigation = {
                 <line x1="7" y1="12" x2="11" y2="12"/>
                 <line x1="7" y1="16" x2="13" y2="16"/>
             </svg>`,
-            href: 'news/admin.html',
+            href: '/pages/news/admin.html',
             requiresRole: 'SUPERADMIN'
         },
         {
@@ -184,7 +184,7 @@ const Navigation = {
                 <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
             </svg>`,
-            href: 'auth/dashboard.html',
+            href: '/pages/auth/dashboard.html',
             requiresRole: 'SUPERADMIN'
         }
     ],
@@ -375,7 +375,7 @@ const Navigation = {
                 </div>
                 <div class="nav-links-section">
                     ${accessibleItems.map(item => `
-                        <a href="${basePath}${item.href}"
+                        <a href="${item.href.startsWith('/') ? item.href : (basePath + item.href)}"
                            class="nav-dropdown-link ${currentPageId === item.id ? 'active' : ''}"
                            data-nav-id="${item.id}">
                             <span class="nav-link-icon">${item.icon}</span>
