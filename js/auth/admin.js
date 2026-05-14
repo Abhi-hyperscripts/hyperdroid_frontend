@@ -1637,6 +1637,40 @@ async function _deletePriorBrandingFile(kind) {
     }
 }
 
+// Delete EVERY file in the branding folder whose name matches `filename` (case
+// insensitive). Catches orphans left behind by pre-fix failed attempts — the
+// `_deletePriorBrandingFile` path only knows about the fileId the current
+// session uploaded; this one scans the actual folder state and nukes anything
+// that would trigger Drive's same-name uniqueness check. Mirrors the user's
+// stated requirement: "ensure there is no orphan file before we upload new one".
+async function _purgeOrphansByName(filename) {
+    if (!filename) return 0;
+    try {
+        const folderId = await ensureTenantBrandingFolder();
+        const list = await api.listFiles(folderId);
+        const files = list.files || list.items || [];
+        const target = filename.toLowerCase();
+        const matches = files.filter(f =>
+            ((f.fileName || f.file_name || '') + '').toLowerCase() === target);
+        for (const m of matches) {
+            const fid = m.fileId || m.id || m.file_id;
+            if (!fid) continue;
+            try {
+                await api.deleteFile(fid);
+            } catch (e) {
+                console.warn(`[branding] purge orphan ${fid} (${filename}) failed`, e);
+            }
+        }
+        if (matches.length) {
+            console.info(`[branding] purged ${matches.length} orphan file(s) named ${filename}`);
+        }
+        return matches.length;
+    } catch (e) {
+        console.warn('[branding] _purgeOrphansByName failed', e);
+        return 0;
+    }
+}
+
 function resetTenantProfileForm() {
     if (_tenantProfileSnapshot) applyTenantProfileToForm(_tenantProfileSnapshot);
 }
@@ -1726,6 +1760,11 @@ async function uploadTenantProfileAsset(kind, inputEl) {
         // the user re-uploads a file that has the same name as a previous one
         // (most common when iterating on a single design file like wt-mark.png).
         await _deletePriorBrandingFile(kind);
+        // Belt-and-braces: also scan the folder for any orphan with the same
+        // filename. Catches files left behind by pre-fix failed attempts where
+        // the prior fileId wasn't recorded — without this, the very upload
+        // we're about to do hits Drive's 400 "already exists in this folder".
+        await _purgeOrphansByName(file.name);
 
         const result = await api.uploadDriveFileDirect(file, folderId);
         const driveKey = result.s3_key || result.s3Key || result.key || result.fileId || result.file_id;
