@@ -27,6 +27,85 @@ let filterSourceDropdown = null;
 let leadSourceDropdown = null;
 let leadStatusDropdown = null;
 
+// ==================== Filter persistence ====================
+// Real complaint (Subhi @ VBF, 2026-05-14): "auto-refresh removes all our
+// existing filters". Reps were losing their filter setup on every reload —
+// or whenever any code path triggered loadLeads() after the page mounted.
+// Persisted to localStorage, tenant-scoped so two tenants on the same
+// browser can't see each other's saved view.
+const _FILTER_STORAGE_KEY_BASE = 'crm.leads.filters.v1';
+const _PERSISTED_FILTER_IDS = [
+    'filterStatus', 'filterSource', 'filterSearch',
+    'filterEmailStatus', 'filterCampaign',
+    'filterDateFrom', 'filterDateTo', 'filterDateMode',
+    'filterTeam', 'filterOwner'
+];
+
+function _filterStorageKey() {
+    const u = (typeof getStoredUser === 'function') ? getStoredUser() : null;
+    return `${_FILTER_STORAGE_KEY_BASE}:${u?.tenantId || 'anon'}`;
+}
+
+function _persistFilters() {
+    try {
+        const out = {};
+        for (const id of _PERSISTED_FILTER_IDS) {
+            const el = document.getElementById(id);
+            if (el && el.value) out[id] = el.value;
+        }
+        const key = _filterStorageKey();
+        if (Object.keys(out).length === 0) localStorage.removeItem(key);
+        else localStorage.setItem(key, JSON.stringify(out));
+    } catch (_) { /* quota / disabled — silent */ }
+}
+
+function _loadPersistedFilters() {
+    try {
+        const raw = localStorage.getItem(_filterStorageKey());
+        if (!raw) return {};
+        const obj = JSON.parse(raw);
+        return (obj && typeof obj === 'object') ? obj : {};
+    } catch (_) { return {}; }
+}
+
+// Idempotent: safe to call repeatedly after the async option-populating
+// loaders (source / campaign / team) finish. A saved <select> value is
+// only applied once the matching option exists; otherwise we skip and try
+// again on the next loader callback. Deep-link URL params always win —
+// when any are present, we don't restore at all.
+// Returns true when any DOM input was actually changed, so the caller can
+// decide whether to re-run applyFilters() (e.g. async loaders that restored
+// a value AFTER the initial loadLeads already fired).
+function _restorePersistedFilters() {
+    if (window.location.search) {
+        const urlParams = new URLSearchParams(window.location.search);
+        if ([...urlParams.keys()].length > 0) return false;
+    }
+    const saved = _loadPersistedFilters();
+    let changed = false;
+    for (const id of _PERSISTED_FILTER_IDS) {
+        const want = saved[id];
+        if (!want) continue;
+        const el = document.getElementById(id);
+        if (!el) continue;
+        if (el.tagName === 'SELECT') {
+            const hit = Array.from(el.options).some(o => o.value === want);
+            if (!hit) continue;
+        }
+        if (el.value !== want) { el.value = want; changed = true; }
+    }
+    return changed;
+}
+
+// Called from async option-populating loaders AFTER they restore a saved
+// value — kicks a re-fetch so the table reflects the restored filter
+// (initial loadLeads fired before the options existed). Lazy: only if a
+// restore actually changed a value, so the common no-saved-filter case
+// stays single-fetch.
+function _restoreAndApplyIfChanged() {
+    if (_restorePersistedFilters()) applyFilters();
+}
+
 // ==================== Initialization ====================
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -45,6 +124,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // can't actually send. Cached on window so renderLeadsTable +
     // openLeadDetailPanel can read it synchronously.
     loadTenantMailboxFlag();
+    // Restore filter widgets from localStorage BEFORE the first loadLeads()
+    // call so the user picks up where they left off. Async-populated
+    // dropdowns (source / campaign / team) re-apply their saved value once
+    // their options finish loading.
+    _restorePersistedFilters();
     // Deep-link from My Day: /pages/crm/leads.html?ownerUserId=<uuid>
     // pre-fills the Owner filter dropdown and triggers loadLeads so the
     // rep lands on a page already narrowed to their own pipeline. A
@@ -172,12 +256,20 @@ async function loadMyTeamsFilter() {
         // Hide the team filter if the user is only on one team (or none) —
         // keeps the filter bar lean for single-team tenants.
         if (list.length >= 2) group.style.display = '';
+        // Restore saved Team selection now options exist; do NOT re-fetch
+        // here because refreshOwnerFilter() below depends on the team value
+        // and will run a second restore + refetch pass.
+        _restorePersistedFilters();
         if (filterTeamDropdown && typeof filterTeamDropdown.rebuild === 'function') {
             filterTeamDropdown.rebuild();
         }
         // Owner filter: only shown to admins/managers/teamleads because
         // regular members can only see their own leads regardless.
         await refreshOwnerFilter();
+        // refreshOwnerFilter populates the owner <select> options — re-apply
+        // saved owner now that they exist, and trigger a single refetch if
+        // either team or owner was restored.
+        _restoreAndApplyIfChanged();
     } catch (e) {
         console.warn('Failed to load team filter:', e?.message || e);
     }
@@ -674,6 +766,11 @@ async function loadSourceFilter() {
         console.warn('Using legacy source filter:', e?.message || e);
     }
 
+    // Re-apply any saved Source selection now that the options exist, then
+    // re-fetch leads if the restore actually changed the value. Rebuild
+    // the SearchableDropdown wrapper afterwards so its visible label
+    // matches the restored value.
+    _restoreAndApplyIfChanged();
     if (filterSourceDropdown && typeof filterSourceDropdown.rebuild === 'function') {
         filterSourceDropdown.rebuild();
     }
@@ -837,6 +934,7 @@ async function loadCampaignFilter() {
         items.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
         sel.innerHTML = '<option value="">All campaigns</option>' +
             items.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${c.status})</option>`).join('');
+        _restoreAndApplyIfChanged();
     } catch (_) { /* silent fallback */ }
 }
 
@@ -845,6 +943,9 @@ async function loadCampaignFilter() {
  */
 function applyFilters() {
     currentPage = 1;
+    // Snapshot the current filter widgets to localStorage so a reload or any
+    // refresh-triggering action restores the same view. See _persistFilters.
+    _persistFilters();
     loadLeads();
     // Stats card mirrors the filtered list — kick a fresh stats load on every
     // filter change so KPIs reflect whatever the user is currently looking at.
