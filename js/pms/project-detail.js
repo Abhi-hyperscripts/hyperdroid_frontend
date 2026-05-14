@@ -1980,32 +1980,64 @@ async function handleIssueSubmit(e) {
         };
 
         let issueId;
+        let issueNumber = null;
         if (editId) {
             await api.request(`/pms/issues/${editId}`, { method: 'PUT', body: JSON.stringify(payload) });
             issueId = editId;
-            Toast.success('Issue updated');
         } else {
             const result = await api.request('/pms/issues', { method: 'POST', body: JSON.stringify(payload) });
             issueId = result.id;
-            Toast.success(`Issue #${result.issue_number} created`);
+            issueNumber = result.issue_number;
         }
 
-        // Upload pending attachments
+        // Upload pending attachments and track every per-file outcome. Bug
+        // history: this used to fire a "saved" toast before uploads and
+        // wrap them in `catch (_) {}`, so a 403/400/500 from the server
+        // looked identical to success — users would land on the detail
+        // page and the attachment they "saved" wouldn't be there. We now
+        // hold the success toast until the attachment loop finishes and
+        // surface each failure with its server-provided reason.
+        const attachOutcome = { ok: 0, failed: [] };
         if (modalPendingFiles.length > 0 && issueId) {
             const baseUrl = CONFIG.pmsApiBaseUrl;
             const token = getAuthToken();
             for (const file of modalPendingFiles) {
+                let reason = null;
                 try {
                     const formData = new FormData();
                     formData.append('file', file);
-                    await fetch(`${baseUrl}/issue-attachments/${issueId}`, {
+                    const resp = await fetch(`${baseUrl}/issue-attachments/${issueId}`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${token}` },
                         body: formData
                     });
-                } catch (_) {}
+                    if (!resp.ok) {
+                        reason = `HTTP ${resp.status}`;
+                        try {
+                            const body = await resp.json();
+                            if (body && body.error) reason = body.error;
+                        } catch (_) { /* non-JSON body — keep status code */ }
+                    }
+                } catch (netErr) {
+                    reason = netErr && netErr.message ? netErr.message : 'Network error';
+                }
+                if (reason) attachOutcome.failed.push({ name: file.name, reason });
+                else attachOutcome.ok++;
             }
             modalPendingFiles = [];
+        }
+
+        // Surface a truthful summary toast now that we know what landed.
+        const savedLabel = editId ? 'Issue updated' : `Issue #${issueNumber} created`;
+        if (attachOutcome.failed.length === 0) {
+            Toast.success(savedLabel);
+        } else if (attachOutcome.ok > 0) {
+            Toast.error(`${savedLabel}, but ${attachOutcome.failed.length} attachment(s) failed`);
+        } else {
+            Toast.error(`${savedLabel}, but attachment upload failed`);
+        }
+        for (const f of attachOutcome.failed) {
+            Toast.error(`"${f.name}": ${f.reason}`);
         }
 
         closeIssueModal();
