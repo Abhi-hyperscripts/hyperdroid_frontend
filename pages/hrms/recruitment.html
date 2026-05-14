@@ -61,6 +61,47 @@
             .rec-stats-row { grid-template-columns: repeat(2, 1fr); }
         }
 
+        /* ── Collapsible analytics container ─────────────────────────── */
+        /* Defaults to collapsed; the chevron rotates 90° on open. Native
+           <details> handles toggle keyboard accessibility for free. */
+        .rec-analytics-details {
+            padding: 0;        /* summary handles its own padding */
+        }
+        .rec-analytics-details > summary {
+            padding: 14px 18px;
+            cursor: pointer;
+            list-style: none;       /* drop the native disclosure triangle */
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border-radius: 12px;
+        }
+        .rec-analytics-details > summary::-webkit-details-marker { display: none; }
+        .rec-analytics-details > summary:hover { background: var(--bg-tertiary); }
+        .rec-analytics-summary-label {
+            display: flex; align-items: center; gap: 8px;
+            min-width: 0;
+        }
+        .rec-analytics-chevron {
+            transition: transform 0.18s ease;
+            color: var(--text-secondary);
+            flex: none;
+        }
+        .rec-analytics-details[open] > summary > .rec-analytics-summary-label > .rec-analytics-chevron {
+            transform: rotate(90deg);
+        }
+        .rec-analytics-details[open] > summary {
+            border-bottom: 1px solid var(--border-color);
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        /* Body content padding when expanded */
+        .rec-analytics-details > div#detailAnalyticsBody {
+            padding: 16px 18px 18px;
+        }
+
         /* ── Analytics tab ────────────────────────────────────────────── */
         .rec-analytics-grid {
             display: grid;
@@ -918,24 +959,31 @@
                             <!-- Populated by JS -->
                         </div>
 
-                        <!-- ─── Analytics section (populated by loadDetailAnalytics) ─── -->
-                        <div class="rec-posting-card" id="detailAnalyticsCard" style="margin-bottom: 18px;">
-                            <div class="rec-toolbar" style="padding: 0; margin-bottom: 14px; border: none;">
-                                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">
-                                    Engagement Analytics
-                                    <span id="detailAnalyticsRangeLabel" style="color: var(--text-secondary); font-weight: 400; font-size: 0.92rem;"> · last 30 days</span>
-                                </h3>
-                                <select id="detailAnalyticsRange">
+                        <!-- ─── Analytics section ──────────────────────────────────────
+                             Collapsed by default — most HR sessions are about
+                             reviewing applicants, not analytics. The first
+                             expand triggers the API call (lazy load); after
+                             that we keep the data in the DOM for fast re-open.
+                             Range selector lives in the summary row so HR
+                             can re-pick without expanding/collapsing. -->
+                        <details class="rec-posting-card rec-analytics-details" id="detailAnalyticsDetails" style="margin-bottom: 18px;">
+                            <summary class="rec-analytics-summary">
+                                <div class="rec-analytics-summary-label">
+                                    <svg class="rec-analytics-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 6 15 12 9 18"/></svg>
+                                    <span style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary);">Engagement Analytics</span>
+                                    <span id="detailAnalyticsRangeLabel" style="color: var(--text-secondary); font-weight: 400; font-size: 0.88rem; margin-left: 8px;">· last 30 days</span>
+                                </div>
+                                <select id="detailAnalyticsRange" onclick="event.stopPropagation()">
                                     <option value="1">Last 24h</option>
                                     <option value="7">Last 7 days</option>
                                     <option value="30" selected>Last 30 days</option>
                                     <option value="90">Last 90 days</option>
                                 </select>
-                            </div>
-                            <div id="detailAnalyticsBody">
+                            </summary>
+                            <div id="detailAnalyticsBody" style="padding-top: 16px;">
                                 <div class="rec-loading" id="detailAnalyticsLoading">Loading analytics…</div>
                             </div>
-                        </div>
+                        </details>
 
                         <!-- Applications toolbar -->
                         <div class="rec-toolbar" style="margin-top: 24px;">

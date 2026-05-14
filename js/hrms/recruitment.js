@@ -598,13 +598,34 @@
         document.getElementById('activeTabName').textContent = activePosting?.title || 'Posting detail';
 
         renderPostingDetailCard();
-        // Wire range selector once per drawer open
+        // Reset analytics-loaded flag for the new posting + collapse the
+        // panel so HR consciously opts in to seeing the dashboard.
+        const det = document.getElementById('detailAnalyticsDetails');
+        if (det) {
+            det.open = false;
+            det.dataset.loaded = '';
+        }
+        // Wire the toggle + range selector once per session. The toggle
+        // triggers loadDetailAnalytics on first expand only; range changes
+        // re-fetch only when the panel is currently open.
         const sel = document.getElementById('detailAnalyticsRange');
         if (sel && !sel.dataset.bound) {
-            sel.addEventListener('change', () => loadDetailAnalytics());
+            sel.addEventListener('change', () => {
+                const d = document.getElementById('detailAnalyticsDetails');
+                if (d?.open) loadDetailAnalytics();
+            });
             sel.dataset.bound = '1';
         }
-        await Promise.all([loadDetailApps(), loadDetailAnalytics()]);
+        if (det && !det.dataset.bound) {
+            det.addEventListener('toggle', () => {
+                if (det.open && !det.dataset.loaded) {
+                    det.dataset.loaded = '1';
+                    loadDetailAnalytics();
+                }
+            });
+            det.dataset.bound = '1';
+        }
+        await loadDetailApps();
     };
 
     window.closePostingDetail = function () {
