@@ -7,6 +7,24 @@
 let currentWeekStart = getMondayOfWeek(new Date());
 let weeklyView = null;
 let timesheetHistory = [];
+let pendingTimesheets = [];
+let reviewSubmitting = false;
+
+// ==================== Role detection ====================
+
+/**
+ * True when the logged-in user can review (approve/reject) team timesheets.
+ * The backend gates POST /timesheets/review and GET /timesheets/pending on
+ * PMS_ADMIN/SUPERADMIN, so we use the same allowlist client-side to decide
+ * whether the Pending Approvals section renders.
+ */
+function isTimesheetReviewer() {
+    try {
+        const user = JSON.parse(localStorage.getItem('ragenaizer_user') || '{}');
+        const roles = user.roles || [];
+        return roles.includes('PMS_ADMIN') || roles.includes('SUPERADMIN');
+    } catch { return false; }
+}
 
 // ==================== Initialization ====================
 
@@ -21,6 +39,13 @@ document.addEventListener('DOMContentLoaded', () => {
     updateWeekDisplay();
     loadWeeklyView();
     loadTimesheetHistory();
+
+    // Reviewer-only: show pending approvals section + load it.
+    if (isTimesheetReviewer()) {
+        const section = document.getElementById('pendingApprovalsSection');
+        if (section) section.style.display = '';
+        loadPendingTimesheets();
+    }
 });
 
 // ==================== Week Navigation ====================
@@ -338,4 +363,190 @@ function setTextContent(id, value) {
 function getInitials(name) {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+}
+
+// ==================== Pending Approvals (admin) ====================
+
+async function loadPendingTimesheets() {
+    const tbody = document.getElementById('pendingTimesheetsBody');
+    try {
+        const response = await api.request('/pms/timesheets/pending');
+        pendingTimesheets = Array.isArray(response) ? response : (response?.data ?? []);
+        renderPendingTable();
+    } catch (error) {
+        console.error('Error loading pending timesheets:', error);
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="crm-empty-state">
+                        <div class="crm-empty-content"><p>Failed to load pending timesheets</p></div>
+                    </td>
+                </tr>`;
+        }
+    }
+}
+
+function renderPendingTable() {
+    const tbody = document.getElementById('pendingTimesheetsBody');
+    const badge = document.getElementById('pendingCountBadge');
+    if (!tbody) return;
+
+    if (badge) badge.textContent = String(pendingTimesheets.length);
+
+    if (!pendingTimesheets || pendingTimesheets.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="crm-empty-state">
+                    <div class="crm-empty-content"><p>No timesheets awaiting review</p></div>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    tbody.innerHTML = pendingTimesheets.map(ts => {
+        const weekEnd = new Date(ts.week_start);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        const weekStr = `${formatDate(ts.week_start)} - ${formatDate(weekEnd.toISOString())}`;
+        const totalMins = ts.total_minutes || 0;
+        const hours = Math.floor(totalMins / 60);
+        const mins = totalMins % 60;
+        const hoursStr = totalMins === 0 ? '0h' : (mins > 0 ? `${hours}h ${mins}m` : `${hours}h`);
+        const submittedDate = ts.submitted_at ? formatDate(ts.submitted_at) : '-';
+        const userName = ts.user_name || ts.user_id || 'Unknown';
+
+        return `
+        <tr>
+            <td><span class="crm-cell-primary">${escapeHtml(userName)}</span></td>
+            <td><span class="crm-cell-secondary">${weekStr}</span></td>
+            <td><span class="crm-cell-primary" style="font-weight: 600; color: var(--brand-primary);">${hoursStr}</span></td>
+            <td><span class="crm-cell-secondary">${submittedDate}</span></td>
+            <td style="text-align: right;">
+                <button class="btn btn-sm btn-primary" onclick="openReviewModal('${ts.id}')">Review</button>
+            </td>
+        </tr>
+        `;
+    }).join('');
+}
+
+// ==================== Review Modal ====================
+
+async function openReviewModal(timesheetId) {
+    const modal = document.getElementById('reviewTimesheetModal');
+    if (!modal) return;
+    document.getElementById('reviewTimesheetId').value = timesheetId;
+    document.getElementById('reviewComment').value = '';
+    document.getElementById('reviewSummary').innerHTML = '<p style="margin:0;">Loading...</p>';
+    document.getElementById('reviewEntriesBody').innerHTML =
+        '<tr><td colspan="5" class="crm-empty-state"><div class="crm-empty-content"><p>Loading entries...</p></div></td></tr>';
+    modal.classList.add('gm-animating');
+    requestAnimationFrame(() => modal.classList.add('active'));
+
+    try {
+        const ts = await api.request(`/pms/timesheets/${timesheetId}`);
+        if (!ts) throw new Error('Timesheet not found');
+
+        const weekEnd = new Date(ts.week_start);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        const totalMins = ts.total_minutes || 0;
+        const h = Math.floor(totalMins / 60);
+        const m = totalMins % 60;
+        const totalStr = totalMins === 0 ? '0h' : (m > 0 ? `${h}h ${m}m` : `${h}h`);
+
+        document.getElementById('reviewSummary').innerHTML = `
+            <div style="display:flex; gap:1.5rem; flex-wrap:wrap;">
+                <div><strong>Submitted by:</strong> ${escapeHtml(ts.user_name || ts.user_id)}</div>
+                <div><strong>Week:</strong> ${formatDate(ts.week_start)} – ${formatDate(weekEnd.toISOString())}</div>
+                <div><strong>Total:</strong> <span style="color: var(--brand-primary); font-weight: 600;">${totalStr}</span></div>
+            </div>
+        `;
+
+        // Fetch the linked entries via admin-scoped list endpoint
+        const fromDate = formatDateParam(new Date(ts.week_start));
+        const toDate = formatDateParam(weekEnd);
+        const entries = await api.request(
+            `/pms/time-entries?userId=${encodeURIComponent(ts.user_id)}&fromDate=${fromDate}&toDate=${toDate}`
+        );
+        renderReviewEntries(Array.isArray(entries) ? entries : []);
+    } catch (error) {
+        console.error('Error loading timesheet detail:', error);
+        document.getElementById('reviewSummary').innerHTML =
+            `<p style="margin:0; color: var(--color-error);">Failed to load timesheet: ${escapeHtml(error.message || 'unknown error')}</p>`;
+    }
+}
+
+function renderReviewEntries(entries) {
+    const tbody = document.getElementById('reviewEntriesBody');
+    if (!tbody) return;
+
+    if (!entries || entries.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="crm-empty-state"><div class="crm-empty-content"><p>No entries on this timesheet</p></div></td></tr>';
+        return;
+    }
+
+    // Order chronologically.
+    const sorted = [...entries].sort((a, b) => new Date(a.log_date) - new Date(b.log_date));
+
+    tbody.innerHTML = sorted.map(e => {
+        const date = new Date(e.log_date);
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+        const totalMins = e.total_minutes || ((e.hours || 0) * 60 + (e.minutes || 0));
+        const h = Math.floor(totalMins / 60);
+        const m = totalMins % 60;
+        const hoursStr = m > 0 ? `${h}h ${m}m` : `${h}h`;
+        return `
+        <tr>
+            <td>${dayName}</td>
+            <td>${formatDate(e.log_date)}</td>
+            <td>${escapeHtml(e.project_name || '-')}</td>
+            <td>${hoursStr}</td>
+            <td>${escapeHtml(e.comment || '-')}</td>
+        </tr>
+        `;
+    }).join('');
+}
+
+function closeReviewModal() {
+    const modal = document.getElementById('reviewTimesheetModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    setTimeout(() => modal.classList.remove('gm-animating'), 200);
+}
+
+async function reviewTimesheet(action) {
+    if (reviewSubmitting) return;
+    if (action !== 'approve' && action !== 'reject') return;
+
+    const tsId = document.getElementById('reviewTimesheetId').value;
+    const comment = (document.getElementById('reviewComment').value || '').trim();
+
+    if (action === 'reject' && comment.length === 0) {
+        if (typeof Toast !== 'undefined') Toast.error('Please add a comment so the team member knows what to fix.');
+        document.getElementById('reviewComment').focus();
+        return;
+    }
+
+    const btn = document.getElementById(action === 'approve' ? 'reviewApproveBtn' : 'reviewRejectBtn');
+    const spinner = document.getElementById(action === 'approve' ? 'reviewApproveSpinner' : 'reviewRejectSpinner');
+    reviewSubmitting = true;
+    if (btn) btn.disabled = true;
+    if (spinner) spinner.style.display = '';
+
+    try {
+        await api.request('/pms/timesheets/review', {
+            method: 'POST',
+            body: JSON.stringify({ timesheet_id: tsId, action, comment: comment || null })
+        });
+        if (typeof Toast !== 'undefined') {
+            Toast.success(action === 'approve' ? 'Timesheet approved' : 'Timesheet rejected');
+        }
+        closeReviewModal();
+        await loadPendingTimesheets();
+    } catch (error) {
+        console.error('Review failed:', error);
+        if (typeof Toast !== 'undefined') Toast.error(error.message || 'Failed to review timesheet');
+    } finally {
+        reviewSubmitting = false;
+        if (btn) btn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+    }
 }

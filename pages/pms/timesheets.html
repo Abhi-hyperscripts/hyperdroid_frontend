@@ -150,6 +150,44 @@
             </table>
         </div>
 
+        <!-- Pending Approvals (admin only — section toggles via JS based on role) -->
+        <div id="pendingApprovalsSection" style="display: none; margin-top: 2.5rem;">
+            <div class="section-header">
+                <h3 class="section-title">
+                    Pending Approvals
+                    <span class="crm-status-badge status-qualified" id="pendingCountBadge" style="margin-left: 0.5rem; vertical-align: middle;">0</span>
+                </h3>
+            </div>
+            <details class="kb-help" style="margin: 0.5rem 0 1rem;">
+                <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.9rem;">What is this?</summary>
+                <div style="padding: 0.5rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+                    Timesheets submitted by team members appear here for your review. Click <b>Review</b> to see the per-day breakdown,
+                    then approve or reject. Rejecting unlocks the entries so the team member can edit and resubmit; approving locks
+                    them and rolls them into billing/payroll.
+                </div>
+            </details>
+            <div class="crm-table-wrapper data-table-container">
+                <table class="crm-table data-table" id="pendingTimesheetsTable">
+                    <thead>
+                        <tr>
+                            <th>Submitted By</th>
+                            <th>Week</th>
+                            <th>Total Hours</th>
+                            <th>Submitted</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingTimesheetsBody">
+                        <tr>
+                            <td colspan="5" class="crm-empty-state">
+                                <div class="crm-empty-content"><p>Loading pending timesheets...</p></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- My Timesheets History -->
         <div class="section-header" style="margin-top: 2rem;">
             <h3 class="section-title">Timesheet History</h3>
@@ -175,6 +213,64 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Review Timesheet Modal -->
+    <div class="modal" id="reviewTimesheetModal">
+        <div class="modal-backdrop" onclick="closeReviewModal()"></div>
+        <div class="modal-dialog" style="max-width: 760px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Review Timesheet</h5>
+                    <button class="close-btn" onclick="closeReviewModal()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="reviewTimesheetId" value="">
+                    <div id="reviewSummary" style="margin-bottom: 1rem; color: var(--text-primary);">
+                        <p style="margin: 0;">Loading...</p>
+                    </div>
+                    <div class="crm-table-wrapper data-table-container">
+                        <table class="crm-table data-table">
+                            <thead>
+                                <tr>
+                                    <th>Day</th>
+                                    <th>Date</th>
+                                    <th>Project</th>
+                                    <th>Hours</th>
+                                    <th>Comment</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reviewEntriesBody">
+                                <tr><td colspan="5" class="crm-empty-state"><div class="crm-empty-content"><p>Loading entries...</p></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <label for="reviewComment" class="form-label">
+                            Reviewer Comment
+                            <span class="text-secondary" id="reviewCommentHint" style="font-weight: normal; font-size: 0.85rem;">(required when rejecting)</span>
+                        </label>
+                        <textarea class="form-control" id="reviewComment" rows="3" placeholder="Note for the team member..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeReviewModal()">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="reviewRejectBtn" onclick="reviewTimesheet('reject')">
+                        <span class="btn-spinner" id="reviewRejectSpinner" style="display:none;"></span>
+                        Reject
+                    </button>
+                    <button type="button" class="btn btn-primary" id="reviewApproveBtn" onclick="reviewTimesheet('approve')">
+                        <span class="btn-spinner" id="reviewApproveSpinner" style="display:none;"></span>
+                        Approve
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
