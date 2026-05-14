@@ -1,4 +1,9 @@
 let employees = [];
+// Tenant SUPERADMINs that may be assigned as a manager but don't have an
+// employee row of their own. Loaded once from /hrms/employees/superadmins,
+// merged into the manager-name lookup so the directory + slide-out can show
+// "Abhishek Anand SUPERADMIN" instead of "—" when an employee reports to one.
+let tenantSuperadmins = [];
 let departments = [];
 let designations = [];
 let offices = [];
@@ -21,6 +26,52 @@ let statusFilterDropdown = null;
 // Pagination instances
 let employeesPagination = null;
 let nfcCardsPagination = null;
+
+// Resolve manager_user_id → display info, falling back to tenantSuperadmins
+// when the employees list doesn't contain the user. Returns null when the
+// user_id is empty or not found anywhere.
+//
+// Returns shape (consumed by both the table renderer and the slide-out):
+//   { name, email, isSuperadmin, first_name, last_name, is_superadmin }
+function resolveManagerDisplay(managerUserId) {
+    if (!managerUserId) return null;
+    const fromEmp = employees.find(e => e.user_id === managerUserId);
+    if (fromEmp) {
+        return {
+            name: `${fromEmp.first_name || ''} ${fromEmp.last_name || ''}`.trim() || (fromEmp.work_email || ''),
+            email: fromEmp.work_email || '',
+            isSuperadmin: false,
+        };
+    }
+    const fromSa = tenantSuperadmins.find(u => u.user_id === managerUserId);
+    if (fromSa) {
+        return {
+            name: fromSa.display_name || `${fromSa.first_name || ''} ${fromSa.last_name || ''}`.trim() || (fromSa.email || ''),
+            email: fromSa.email || '',
+            isSuperadmin: true,
+        };
+    }
+    return null;
+}
+
+// Same lookup but returning a shape compatible with the legacy slide-out
+// code that reads `.first_name` / `.last_name` / `.is_superadmin` directly.
+function resolveManagerLookup(managerUserId) {
+    if (!managerUserId) return null;
+    const fromEmp = employees.find(e => e.user_id === managerUserId);
+    if (fromEmp) return { ...fromEmp, is_superadmin: false };
+    const fromSa = tenantSuperadmins.find(u => u.user_id === managerUserId);
+    if (fromSa) {
+        return {
+            user_id: fromSa.user_id,
+            first_name: fromSa.first_name || (fromSa.display_name || '').split(' ')[0] || '',
+            last_name: fromSa.last_name || (fromSa.display_name || '').split(' ').slice(1).join(' ') || '',
+            work_email: fromSa.email || '',
+            is_superadmin: true,
+        };
+    }
+    return null;
+}
 
 // Utility function to escape HTML special characters
 function escapeHtml(text) {
@@ -364,7 +415,20 @@ async function loadEmployees() {
     tbody.innerHTML = '<tr><td colspan="8"><div class="loading-spinner"><div class="spinner"></div></div></td></tr>';
 
     try {
-        employees = await api.getHrmsEmployees(true);
+        // Fetch employees + tenant SUPERADMINs in parallel. SUPERADMINs are a
+        // valid manager target (founder, owner) without an employee row, so we
+        // need them for the manager-name lookup in renderEmployees / the slide-out.
+        // The /superadmins call is cheap (small list, Auth-side enrichment) and
+        // gracefully degrades if it fails — we just lose the SUPERADMIN labels.
+        const [emps, sas] = await Promise.all([
+            api.getHrmsEmployees(true),
+            api.request('/hrms/employees/superadmins').catch(err => {
+                console.warn('superadmins list fetch failed; SUPERADMIN managers will show as —', err);
+                return [];
+            }),
+        ]);
+        employees = emps;
+        tenantSuperadmins = Array.isArray(sas) ? sas : [];
 
         updateStats();
         renderEmployees();
@@ -491,10 +555,14 @@ function renderEmployeesRows(filtered) {
         const desig = designations.find(d => d.id === emp.designation_id);
         const office = offices.find(o => o.id === emp.office_id);
 
-        // Find manager by user_id
-        const manager = emp.manager_user_id ? employees.find(e => e.user_id === emp.manager_user_id) : null;
-        const managerDisplay = manager
-            ? `<div class="manager-info"><div class="manager-name">${escapeHtml(manager.first_name)} ${escapeHtml(manager.last_name)}</div><div class="manager-email">${escapeHtml(manager.work_email || '')}</div></div>`
+        // Find manager by user_id. Falls through to tenantSuperadmins when the
+        // employees list doesn't contain the user — this handles the founder /
+        // owner case where the SUPERADMIN is assigned as a manager but doesn't
+        // have an employee row of their own. Without this fallback the column
+        // shows "—" even though the data is correct in the DB.
+        const managerInfo = resolveManagerDisplay(emp.manager_user_id);
+        const managerDisplay = managerInfo
+            ? `<div class="manager-info"><div class="manager-name">${escapeHtml(managerInfo.name)}${managerInfo.isSuperadmin ? ' <span class="rec-badge rec-badge-new" style="font-size:0.65rem;padding:1px 6px;margin-left:4px;">SUPERADMIN</span>' : ''}</div><div class="manager-email">${escapeHtml(managerInfo.email)}</div></div>`
             : '<span class="text-muted">-</span>';
 
         // Get photo from cache if available
@@ -1365,7 +1433,9 @@ async function openEmployeePanel(id) {
         const desig = designations.find(d => d.id === emp.designation_id);
         const office = offices.find(o => o.id === emp.office_id);
         const shift = shifts.find(s => s.id === emp.shift_id);
-        const manager = emp.manager_user_id ? employees.find(e => e.user_id === emp.manager_user_id) : null;
+        // Same logic as the directory table — falls through to tenantSuperadmins
+        // when an employee reports to a SUPERADMIN that has no employee row.
+        const manager = resolveManagerLookup(emp.manager_user_id);
 
         // Get photo
         let photoHtml = `<div class="panel-employee-avatar">${escapeHtml(getInitials(emp.first_name, emp.last_name))}</div>`;
@@ -1487,7 +1557,7 @@ async function openEmployeePanel(id) {
                     </div>
                     <div class="panel-info-item">
                         <span class="panel-info-label">Manager</span>
-                        <span class="panel-info-value">${manager ? `${escapeHtml(manager.first_name || '')} ${escapeHtml(manager.last_name || '')}` : '-'}</span>
+                        <span class="panel-info-value">${manager ? `${escapeHtml(manager.first_name || '')} ${escapeHtml(manager.last_name || '')}${manager.is_superadmin ? ' <span class="rec-badge rec-badge-new" style="font-size:0.65rem;padding:1px 6px;margin-left:4px;">SUPERADMIN</span>' : ''}` : '-'}</span>
                     </div>
                     <div class="panel-info-item">
                         <span class="panel-info-label">Joining Date</span>
