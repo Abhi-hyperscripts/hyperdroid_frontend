@@ -519,6 +519,10 @@
                                             <button type="button" class="btn btn-sm btn-secondary" id="profileLogoClearBtn" onclick="clearTenantProfileAsset('logo')" style="display:none;">Remove</button>
                                         </div>
                                         <input type="hidden" id="profileLogoDriveKey">
+                                        <!-- Track the Drive fileId alongside the s3 key so we
+                                             can call /drive/files/{fileId} DELETE before each
+                                             re-upload — keeps "just one logo per tenant" true. -->
+                                        <input type="hidden" id="profileLogoDriveFileId">
                                     </div>
                                     <div class="profile-asset">
                                         <div class="profile-asset-preview" id="profileSignaturePreview">
@@ -531,6 +535,7 @@
                                             <button type="button" class="btn btn-sm btn-secondary" id="profileSignatureClearBtn" onclick="clearTenantProfileAsset('signature')" style="display:none;">Remove</button>
                                         </div>
                                         <input type="hidden" id="profileSignatureDriveKey">
+                                        <input type="hidden" id="profileSignatureDriveFileId">
                                     </div>
                                 </div>
                             </section>

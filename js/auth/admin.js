@@ -1577,8 +1577,64 @@ function applyTenantProfileToForm(p) {
     const sigKey  = p.signatureDriveKey ?? p.signature_drive_key ?? '';
     document.getElementById('profileLogoDriveKey').value = logoKey;
     document.getElementById('profileSignatureDriveKey').value = sigKey;
+    // The DB only stores the s3 key; the fileId (needed for DELETE) is reconciled
+    // lazily once the branding folder loads. Clear any stale value first so a
+    // re-load doesn't reuse the previous tenant's fileId.
+    document.getElementById('profileLogoDriveFileId').value = '';
+    document.getElementById('profileSignatureDriveFileId').value = '';
     renderTenantAssetPreview('logo', logoKey);
     renderTenantAssetPreview('signature', sigKey);
+    // Fire-and-forget: if a stored key exists, resolve it to a fileId so the
+    // first "Remove" or "Upload" click can DELETE the prior Drive row.
+    if (logoKey) reconcileAssetFileId('logo', logoKey);
+    if (sigKey)  reconcileAssetFileId('signature', sigKey);
+}
+
+// Resolve a saved s3 key → Drive fileId by listing the branding folder and
+// matching the key field. Idempotent + cheap: a single list call covers
+// both logo + signature for the tenant. Failures are silent — the upload
+// flow will still work; only the implicit-delete optimisation is lost.
+async function reconcileAssetFileId(kind, s3Key) {
+    if (!s3Key) return;
+    try {
+        const folderId = await ensureTenantBrandingFolder();
+        const list = await api.listFiles(folderId);
+        const files = list.files || list.items || [];
+        const match = files.find(f =>
+            (f.s3_key === s3Key) ||
+            (f.s3Key === s3Key) ||
+            (f.key === s3Key) ||
+            (f.s3_file_id === s3Key)
+        );
+        if (match) {
+            const fileId = match.id || match.fileId || match.file_id;
+            if (fileId) {
+                const tgtId = kind === 'logo' ? 'profileLogoDriveFileId' : 'profileSignatureDriveFileId';
+                const el = document.getElementById(tgtId);
+                if (el) el.value = fileId;
+            }
+        }
+    } catch (e) {
+        console.warn(`[branding] reconcile ${kind} fileId failed`, e);
+    }
+}
+
+// Best-effort: delete the current Drive file backing this asset. Swallows
+// errors — if the file was already removed, the next upload still proceeds.
+// `kind` is 'logo' | 'signature'.
+async function _deletePriorBrandingFile(kind) {
+    const idField = kind === 'logo' ? 'profileLogoDriveFileId' : 'profileSignatureDriveFileId';
+    const fileId = (document.getElementById(idField)?.value || '').trim();
+    if (!fileId) return false;
+    try {
+        await api.deleteFile(fileId);
+        document.getElementById(idField).value = '';
+        return true;
+    } catch (e) {
+        console.warn(`[branding] delete prior ${kind} (fileId=${fileId}) failed — continuing`, e);
+        document.getElementById(idField).value = '';
+        return false;
+    }
 }
 
 function resetTenantProfileForm() {
@@ -1664,11 +1720,21 @@ async function uploadTenantProfileAsset(kind, inputEl) {
     try {
         if (typeof showToast === 'function') showToast(`Uploading ${kind}…`, 'info');
         const folderId = await ensureTenantBrandingFolder();
+
+        // Always purge the prior Drive file first — keeps "just one logo per
+        // tenant" true AND sidesteps Drive's same-name uniqueness check when
+        // the user re-uploads a file that has the same name as a previous one
+        // (most common when iterating on a single design file like wt-mark.png).
+        await _deletePriorBrandingFile(kind);
+
         const result = await api.uploadDriveFileDirect(file, folderId);
         const driveKey = result.s3_key || result.s3Key || result.key || result.fileId || result.file_id;
+        const fileId   = result.fileId  || result.file_id || result.id;
         if (!driveKey) throw new Error('Upload returned no key');
-        const targetId = kind === 'logo' ? 'profileLogoDriveKey' : 'profileSignatureDriveKey';
+        const targetId = kind === 'logo' ? 'profileLogoDriveKey'    : 'profileSignatureDriveKey';
+        const idFldId  = kind === 'logo' ? 'profileLogoDriveFileId' : 'profileSignatureDriveFileId';
         document.getElementById(targetId).value = driveKey;
+        if (fileId) document.getElementById(idFldId).value = fileId;
         renderTenantAssetPreview(kind, driveKey, file);
         if (typeof showToast === 'function') showToast(`${kind === 'logo' ? 'Logo' : 'Signature'} uploaded — click Save Changes to persist`, 'success');
     } catch (e) {
@@ -1679,7 +1745,12 @@ async function uploadTenantProfileAsset(kind, inputEl) {
     }
 }
 
-function clearTenantProfileAsset(kind) {
+async function clearTenantProfileAsset(kind) {
+    // Actually delete the Drive row so the file doesn't linger in S3 — saved
+    // profile keys point at a now-vanished blob, which is fine because saving
+    // the profile right after will store an empty key. Without this, every
+    // "Remove → Upload" cycle leaks an orphaned S3 object.
+    await _deletePriorBrandingFile(kind);
     const targetId = kind === 'logo' ? 'profileLogoDriveKey' : 'profileSignatureDriveKey';
     document.getElementById(targetId).value = '';
     renderTenantAssetPreview(kind, '');
