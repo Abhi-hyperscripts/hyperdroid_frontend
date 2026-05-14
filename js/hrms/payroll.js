@@ -6160,6 +6160,73 @@ async function downloadPayslip() {
     }
 }
 
+// Cached tenant branding for the payslip PDF — { companyName, tagline, logoDataUrl, logoFormat, logoWH }.
+// Single fetch per page session; rotated when the page reloads. Failures are
+// non-fatal — the PDF still generates, just without the logo / company name.
+let _payslipTenantBranding = null;
+
+async function loadTenantBrandingForPdf() {
+    if (_payslipTenantBranding !== null) return _payslipTenantBranding;
+    const empty = { companyName: 'Ragenaizer', tagline: 'HUMAN RESOURCE MANAGEMENT', logoDataUrl: null, logoFormat: null, logoWH: null };
+    try {
+        const token = getAuthToken();
+        if (!token || !CONFIG.authApiBaseUrl) { _payslipTenantBranding = empty; return empty; }
+
+        const profResp = await fetch(`${CONFIG.authApiBaseUrl}/tenant-profile`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!profResp.ok) { _payslipTenantBranding = empty; return empty; }
+        const profJson = await profResp.json();
+        const p = profJson.profile || {};
+        const branding = {
+            companyName: (p.companyName || '').trim() || empty.companyName,
+            tagline: (p.tagline || '').trim() || empty.tagline,
+            logoDataUrl: null,
+            logoFormat: null,
+            logoWH: null
+        };
+
+        const logoKey = (p.logoDriveKey || '').trim();
+        if (logoKey && CONFIG.driveApiBaseUrl) {
+            try {
+                const psUrl = `${CONFIG.driveApiBaseUrl}/drive/tenant-asset/presign?key=${encodeURIComponent(logoKey)}&expiry_minutes=15`;
+                const psResp = await fetch(psUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (psResp.ok) {
+                    const psJson = await psResp.json();
+                    const url = psJson.url;
+                    if (url) {
+                        const imgResp = await fetch(url);
+                        if (imgResp.ok) {
+                            const blob = await imgResp.blob();
+                            const dataUrl = await new Promise((res, rej) => {
+                                const r = new FileReader();
+                                r.onload = () => res(r.result);
+                                r.onerror = rej;
+                                r.readAsDataURL(blob);
+                            });
+                            branding.logoDataUrl = dataUrl;
+                            branding.logoFormat = (blob.type || '').includes('jpeg') ? 'JPEG' : 'PNG';
+                            // Get intrinsic dimensions so jsPDF can preserve aspect ratio
+                            branding.logoWH = await new Promise(res => {
+                                const img = new Image();
+                                img.onload = () => res({ w: img.naturalWidth, h: img.naturalHeight });
+                                img.onerror = () => res(null);
+                                img.src = dataUrl;
+                            });
+                        }
+                    }
+                }
+            } catch (logoErr) {
+                console.warn('[payslip-pdf] tenant logo load failed (non-fatal):', logoErr);
+            }
+        }
+        _payslipTenantBranding = branding;
+        return branding;
+    } catch (e) {
+        console.warn('[payslip-pdf] tenant branding load failed:', e);
+        _payslipTenantBranding = empty;
+        return empty;
+    }
+}
+
 async function downloadPayslipById(payslipId) {
     try {
         showToast('Generating PDF...', 'info');
@@ -6177,6 +6244,10 @@ async function downloadPayslipById(payslipId) {
         }
 
         const payslip = await response.json();
+
+        // Tenant branding — company name + logo for top-right of the PDF.
+        // Falls back to "Ragenaizer / HRMS" when tenant hasn't set up branding.
+        const branding = await loadTenantBrandingForPdf();
 
         // v3.0.25: Get currency symbol from payslip (country-agnostic)
         const currSymbol = payslip.currency_symbol || '₹';
@@ -6207,24 +6278,41 @@ async function downloadPayslipById(payslipId) {
         // Header background
         addRect(0, 0, pageWidth, 35, primaryColor);
 
-        // Company name
+        // Company name (left)
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(20);
         doc.setFont('helvetica', 'bold');
-        doc.text('Ragenaizer', margin, 18);
+        doc.text(branding.companyName, margin, 18);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text('HUMAN RESOURCE MANAGEMENT', margin, 25);
+        doc.text((branding.tagline || '').toUpperCase().slice(0, 60), margin, 25);
 
-        // Payslip month - right side
+        // Top-right cluster: tenant logo (if present) + payslip month
         const payMonth = payslip.payroll_month && payslip.payroll_year
             ? new Date(payslip.payroll_year, payslip.payroll_month - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
             : 'N/A';
+
+        if (branding.logoDataUrl && branding.logoWH) {
+            // Cap the logo at 18mm tall and proportionally narrow, anchor to top-right
+            const maxH = 18;
+            const maxW = 35;
+            const ratio = branding.logoWH.w / branding.logoWH.h;
+            let h = maxH;
+            let w = h * ratio;
+            if (w > maxW) { w = maxW; h = w / ratio; }
+            try {
+                doc.addImage(branding.logoDataUrl, branding.logoFormat || 'PNG', pageWidth - margin - w, 8, w, h);
+            } catch (e) {
+                console.warn('[payslip-pdf] addImage failed, skipping logo:', e);
+            }
+        }
+
+        doc.setTextColor(255, 255, 255);
         doc.setFontSize(8);
-        doc.text('PAYSLIP', pageWidth - margin - 30, 15);
-        doc.setFontSize(14);
+        doc.text('PAYSLIP', pageWidth - margin - 30, 30);
+        doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text(payMonth, pageWidth - margin - 30, 23);
+        doc.text(payMonth, pageWidth - margin, 30, { align: 'right' });
 
         y = 42;
 
