@@ -1095,10 +1095,131 @@ function setupTabs() {
             } else if (tabId === 'statutory-filing') {
                 initStatutoryFilingTab();
                 await loadStatutoryFilingData();
+            } else if (tabId === 'payroll-policy') {
+                await loadPayrollPolicy();
             }
         });
     });
 
+}
+
+// =====================================================
+// PAYROLL POLICY (proration basis)
+// =====================================================
+
+let _policyCurrentBasis = 'calendar_days';
+
+async function loadPayrollPolicy() {
+    const radios = document.querySelectorAll('input[name="prorationBasis"]');
+    const saveBtn = document.getElementById('savePolicyBtn');
+    const resetBtn = document.getElementById('resetPolicyBtn');
+    const status = document.getElementById('policySaveStatus');
+    const auditValue = document.getElementById('policyAuditValue');
+    if (!radios.length || !saveBtn) return;
+
+    status.textContent = 'Loading…';
+    status.className = 'policy-save-status';
+
+    try {
+        const res = await api.request('/hrms/payroll/policy');
+        _policyCurrentBasis = res.proration_basis || 'calendar_days';
+
+        radios.forEach(r => { r.checked = (r.value === _policyCurrentBasis); });
+        highlightActiveExampleRow(_policyCurrentBasis);
+        saveBtn.disabled = true;
+        resetBtn.disabled = true;
+        status.textContent = '';
+
+        auditValue.textContent = formatPolicyAudit(res);
+    } catch (err) {
+        console.error('[payroll-policy] load failed', err);
+        status.textContent = 'Could not load policy. Try again.';
+        status.className = 'policy-save-status is-error';
+    }
+
+    radios.forEach(r => {
+        r.onchange = () => {
+            const dirty = (r.value !== _policyCurrentBasis);
+            saveBtn.disabled = !dirty;
+            resetBtn.disabled = !dirty;
+            highlightActiveExampleRow(r.value);
+            status.textContent = dirty ? 'Unsaved change — Save to apply to future payrolls.' : '';
+            status.className = 'policy-save-status';
+        };
+    });
+
+    resetBtn.onclick = () => {
+        radios.forEach(r => { r.checked = (r.value === _policyCurrentBasis); });
+        highlightActiveExampleRow(_policyCurrentBasis);
+        saveBtn.disabled = true;
+        resetBtn.disabled = true;
+        status.textContent = '';
+    };
+
+    saveBtn.onclick = async () => {
+        const selected = document.querySelector('input[name="prorationBasis"]:checked');
+        if (!selected) return;
+        const newBasis = selected.value;
+        if (newBasis === _policyCurrentBasis) return;
+
+        const ok = await Confirm.show({
+            title: 'Change Payroll Proration Basis?',
+            message:
+                `Switching from "${prettyBasis(_policyCurrentBasis)}" to "${prettyBasis(newBasis)}". ` +
+                `This affects every payslip processed after this change. ` +
+                `Drafts in "processed" status must be re-processed to pick up the new basis; ` +
+                `drafts in "pending" status will use the new basis automatically. ` +
+                `This change is logged for audit.`,
+            type: 'warning',
+            confirmText: `Switch to ${prettyBasis(newBasis)}`,
+            cancelText: 'Keep current'
+        });
+        if (!ok) return;
+
+        saveBtn.disabled = true;
+        resetBtn.disabled = true;
+        status.textContent = 'Saving…';
+        status.className = 'policy-save-status';
+
+        try {
+            await api.request('/hrms/payroll/policy', {
+                method: 'PUT',
+                body: JSON.stringify({ proration_basis: newBasis })
+            });
+            _policyCurrentBasis = newBasis;
+            status.textContent = 'Saved. New basis applies to all future payroll runs.';
+            status.className = 'policy-save-status is-success';
+            // Refresh audit footer
+            const refreshed = await api.request('/hrms/payroll/policy');
+            document.getElementById('policyAuditValue').textContent = formatPolicyAudit(refreshed);
+        } catch (err) {
+            console.error('[payroll-policy] save failed', err);
+            status.textContent = `Save failed: ${err.message || 'unknown error'}`;
+            status.className = 'policy-save-status is-error';
+            saveBtn.disabled = false;
+            resetBtn.disabled = false;
+        }
+    };
+}
+
+function prettyBasis(basis) {
+    return basis === 'calendar_days' ? 'Calendar Days' : 'Working Days';
+}
+
+function formatPolicyAudit(res) {
+    if (!res || !res.updated_at) return 'Never (using default value)';
+    const dt = new Date(res.updated_at);
+    // Prefer human label → email → raw user_id
+    const who = res.updated_by_name || res.updated_by_email || res.updated_by;
+    return who ? `${dt.toLocaleString()} by ${who}` : dt.toLocaleString();
+}
+
+function highlightActiveExampleRow(basis) {
+    const w = document.getElementById('exampleWorking');
+    const c = document.getElementById('exampleCalendar');
+    if (!w || !c) return;
+    w.classList.toggle('row-active', basis === 'working_days');
+    c.classList.toggle('row-active', basis === 'calendar_days');
 }
 
 function setDefaultPayrollDates() {
@@ -8937,6 +9058,10 @@ async function viewVersionDetails(versionId) {
             </div>
         `;
 
+        // Hide spinner BEFORE awaiting the modal — InfoModal.show() resolves only
+        // when the user closes it, so leaving hideLoading() after the await would
+        // pin the global spinner behind the modal until OK is clicked.
+        hideLoading();
         await InfoModal.show({
             title: `Version ${version.version_number} Details`,
             message: htmlContent,
@@ -8944,8 +9069,6 @@ async function viewVersionDetails(versionId) {
             html: true,
             maxWidth: '800px'
         });
-
-        hideLoading();
     } catch (error) {
         console.error('Error loading version details:', error);
         showToast(error.message || 'Failed to load version details', 'error');
@@ -9090,13 +9213,16 @@ async function compareVersions(structureId, fromVersion, toVersion) {
             `;
         }
 
+        // Hide spinner BEFORE awaiting the modal — InfoModal.show() resolves only
+        // when the user closes it, so leaving hideLoading() after the await would
+        // pin the global spinner behind the modal until OK is clicked.
+        hideLoading();
         await InfoModal.show({
             title: 'Version Comparison',
             message: htmlContent,
             type: 'info',
             html: true
         });
-        hideLoading();
     } catch (error) {
         console.error('Error comparing versions:', error);
         showToast(error.message || 'Failed to compare versions', 'error');
@@ -10005,6 +10131,10 @@ async function previewVersionedSalary() {
 
         htmlContent += `</div>`;
 
+        // Hide spinner BEFORE awaiting the modal — InfoModal.show() resolves only
+        // when the user closes it, so leaving hideLoading() after the await would
+        // pin the global spinner behind the modal until OK is clicked.
+        hideLoading();
         await InfoModal.show({
             title: 'Salary Preview',
             message: htmlContent,
@@ -10012,7 +10142,6 @@ async function previewVersionedSalary() {
             html: true,
             maxWidth: '720px'
         });
-        hideLoading();
     } catch (error) {
         console.error('Error previewing versioned salary:', error);
         showToast(error.message || 'Failed to preview calculation', 'error');

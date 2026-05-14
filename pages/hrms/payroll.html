@@ -118,6 +118,9 @@
                             <button class="sidebar-btn" data-tab="salary-structures" id="salaryStructuresTab">
                                 <span class="nav-number">2</span><span class="nav-label">Salary Structures</span>
                             </button>
+                            <button class="sidebar-btn" data-tab="payroll-policy" id="payrollPolicyTab">
+                                <span class="nav-number">3</span><span class="nav-label">Payroll Policy</span>
+                            </button>
                         </div>
                     </div>
 
@@ -137,22 +140,22 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="employee-salaries" id="employeeSalariesTab">
-                                <span class="nav-number">3</span><span class="nav-label">Employee Salaries</span>
+                                <span class="nav-number">4</span><span class="nav-label">Employee Salaries</span>
                             </button>
                             <button class="sidebar-btn" data-tab="loans" id="loansTab">
-                                <span class="nav-number">4</span><span class="nav-label">Loans & Advances</span>
+                                <span class="nav-number">5</span><span class="nav-label">Loans & Advances</span>
                             </button>
                             <button class="sidebar-btn" data-tab="voluntary-deductions" id="voluntaryDeductionsTab">
-                                <span class="nav-number">5</span><span class="nav-label">Voluntary Deductions</span>
+                                <span class="nav-number">6</span><span class="nav-label">Voluntary Deductions</span>
                             </button>
                             <button class="sidebar-btn" data-tab="adjustments" id="adjustmentsTab">
-                                <span class="nav-number">6</span><span class="nav-label">Adjustments</span>
+                                <span class="nav-number">7</span><span class="nav-label">Adjustments</span>
                             </button>
                             <button class="sidebar-btn" data-tab="arrears" id="arrearsTab">
-                                <span class="nav-number">7</span><span class="nav-label">Arrears</span>
+                                <span class="nav-number">8</span><span class="nav-label">Arrears</span>
                             </button>
                             <button class="sidebar-btn" data-tab="tax-configuration" id="taxConfigTab">
-                                <span class="nav-number">8</span><span class="nav-label">Tax Configuration</span>
+                                <span class="nav-number">9</span><span class="nav-label">Tax Configuration</span>
                             </button>
                         </div>
                     </div>
@@ -173,19 +176,19 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="payroll-drafts" id="payrollDraftsTab">
-                                <span class="nav-number">9</span><span class="nav-label">Payroll Drafts</span>
+                                <span class="nav-number">10</span><span class="nav-label">Payroll Drafts</span>
                             </button>
                             <button class="sidebar-btn" data-tab="payroll-runs" id="payrollRunsTab">
-                                <span class="nav-number">10</span><span class="nav-label">Finalized Runs</span>
+                                <span class="nav-number">11</span><span class="nav-label">Finalized Runs</span>
                             </button>
                             <button class="sidebar-btn" data-tab="all-payslips" id="allPayslipsTab">
-                                <span class="nav-number">11</span><span class="nav-label">All Payslips</span>
+                                <span class="nav-number">12</span><span class="nav-label">All Payslips</span>
                             </button>
                             <button class="sidebar-btn" data-tab="salary-reports" id="salaryReportsTab">
-                                <span class="nav-number">12</span><span class="nav-label">Salary Reports</span>
+                                <span class="nav-number">13</span><span class="nav-label">Salary Reports</span>
                             </button>
                             <button class="sidebar-btn" data-tab="statutory-filing" id="statutoryFilingTab">
-                                <span class="nav-number">13</span><span class="nav-label">Statutory Filing</span>
+                                <span class="nav-number">14</span><span class="nav-label">Statutory Filing</span>
                             </button>
                         </div>
                     </div>
@@ -392,6 +395,66 @@
                     </tbody>
                 </table>
                 <div id="salaryStructuresPagination" class="pagination-container"></div>
+            </div>
+        </div>
+
+        <!-- Payroll Policy Tab -->
+        <div class="tab-content" id="payroll-policy">
+            <div class="payroll-policy-wrap">
+                <details class="glass-card kb-helper">
+                    <summary>What is this?</summary>
+                    <div class="kb-helper-body">
+                        <p><b>Proration basis</b> decides how a partial-month payslip is computed — e.g. for a mid-month joiner, leaver, or someone who took unpaid leave.</p>
+                        <p><b>Working Days</b> uses the days the employee was actually scheduled to work (per their shift) as the numerator. Common in factories and labour-law-driven payroll.</p>
+                        <p><b>Calendar Days</b> uses the count of calendar days the employee was on roll (Apr 1–8 = 8 days regardless of weekends). Common in Indian IT and many service-sector companies.</p>
+                        <p>The denominator is always the total working days in the month, so no policy ever pays more than one full monthly CTC.</p>
+                        <p><b>This setting is global to your company</b> — every payslip generated after you save uses the new basis. Drafts that are already in <i>processed</i> status need to be re-processed to pick up the change.</p>
+                    </div>
+                </details>
+
+                <div class="glass-card payroll-policy-card">
+                    <h3 class="card-title">Proration Basis</h3>
+                    <p class="card-subtitle">How partial-month pay is computed (mid-month joiners, leavers, unpaid leave).</p>
+
+                    <div class="proration-options" id="prorationOptions">
+                        <label class="glass-card-sm proration-option" data-value="calendar_days">
+                            <input type="radio" name="prorationBasis" value="calendar_days">
+                            <div class="proration-option-body">
+                                <div class="proration-option-title">Calendar Days <span class="proration-option-default">default</span></div>
+                                <div class="proration-option-help">Numerator = calendar days the employee was on roll. <b>Apr 1–8 = 8 days regardless of weekends.</b> Convention used by most Indian salaried payrolls.</div>
+                            </div>
+                        </label>
+                        <label class="glass-card-sm proration-option" data-value="working_days">
+                            <input type="radio" name="prorationBasis" value="working_days">
+                            <div class="proration-option-body">
+                                <div class="proration-option-title">Working Days</div>
+                                <div class="proration-option-help">Numerator = days the employee's shift had them scheduled. <b>Apr 1–8 on a Mon–Sat shift = 7 days.</b> Common for factory / labour-law-driven payroll.</div>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="glass-card-sm worked-example" id="workedExample">
+                        <div class="worked-example-header">Worked example — employee on ₹15,000/mo Mon–Sat shift, terminated Apr 8</div>
+                        <table class="worked-example-table">
+                            <thead><tr><th>Basis</th><th>Numerator</th><th>Denominator</th><th>Pay</th></tr></thead>
+                            <tbody>
+                                <tr id="exampleWorking"><td>Working Days</td><td>7</td><td>26</td><td>₹4,038.46</td></tr>
+                                <tr id="exampleCalendar"><td>Calendar Days</td><td>8</td><td>26</td><td>₹4,615.38</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="policy-actions">
+                        <button id="savePolicyBtn" class="btn btn-primary" disabled>Save Policy</button>
+                        <button id="resetPolicyBtn" class="btn btn-secondary" disabled>Discard Changes</button>
+                        <span id="policySaveStatus" class="policy-save-status"></span>
+                    </div>
+
+                    <div class="policy-audit-footer" id="policyAuditFooter">
+                        <span class="audit-label">Last changed:</span>
+                        <span id="policyAuditValue">—</span>
+                    </div>
+                </div>
             </div>
         </div>
 

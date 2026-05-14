@@ -960,7 +960,12 @@ const InfoModal = (() => {
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
+                /* Slightly frosted dim layer behind the glass card so the page
+                   reads through but stays muted. backdrop-filter on the overlay
+                   gives the page-level blur the rest of the modals use. */
+                background: rgba(0, 0, 0, 0.45);
+                backdrop-filter: blur(8px) saturate(1.2);
+                -webkit-backdrop-filter: blur(8px) saturate(1.2);
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -971,10 +976,17 @@ const InfoModal = (() => {
             .info-modal-overlay.show {
                 opacity: 1;
             }
+            /* Frosted glass card — matches the .modal-content recipe used by
+               every other Ragenaizer modal (Bootstrap-overridden). Dark slate
+               at 75% opacity gives the bluish tint, 24px blur saturates the
+               page beneath, subtle white border keeps the edge readable. */
             .info-modal {
-                background: var(--bg-card);
-                border-radius: var(--border-radius-lg, 12px);
-                box-shadow: var(--shadow-xl);
+                background: rgba(15, 23, 42, 0.75);
+                backdrop-filter: blur(24px) saturate(1.5);
+                -webkit-backdrop-filter: blur(24px) saturate(1.5);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: var(--border-radius-lg, 14px);
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
                 max-width: 500px;
                 width: 90%;
                 max-height: 80vh;
@@ -982,6 +994,14 @@ const InfoModal = (() => {
                 flex-direction: column;
                 transform: scale(0.9);
                 transition: transform 0.2s ease;
+            }
+            /* Light-mode variant: invert the slate to a warm white at the
+               same opacity so the page still reads through but the modal
+               stays legible against bright backgrounds. */
+            [data-theme="light"] .info-modal {
+                background: rgba(255, 255, 255, 0.78);
+                border: 1px solid rgba(0, 0, 0, 0.08);
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
             }
             .info-modal-overlay.show .info-modal {
                 transform: scale(1);

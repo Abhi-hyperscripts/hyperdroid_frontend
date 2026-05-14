@@ -2437,3 +2437,177 @@
 .artifact-details-grid .detail-group {
     padding: 8px 0;
 }
+
+/* ============================================================
+ * Payroll Policy Tab (proration basis)
+ * ============================================================ */
+.payroll-policy-wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* glass-card.kb-helper supplies the frosted background; we only set spacing/typography */
+.kb-helper {
+    padding: 14px 18px;
+}
+.kb-helper > summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-primary);
+    list-style: none;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.kb-helper > summary::before {
+    content: "▸";
+    font-size: 11px;
+    color: var(--text-muted);
+    transition: transform 0.15s ease;
+}
+.kb-helper[open] > summary::before { transform: rotate(90deg); }
+.kb-helper-body {
+    margin-top: 12px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.55;
+}
+.kb-helper-body p { margin: 0 0 10px 0; }
+.kb-helper-body p:last-child { margin-bottom: 0; }
+
+/* glass-card.payroll-policy-card supplies the bento card background */
+.payroll-policy-card {
+    padding: 28px;
+}
+.payroll-policy-card .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+}
+.payroll-policy-card .card-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 24px 0;
+}
+
+.proration-options {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 20px;
+}
+@media (max-width: 720px) {
+    .proration-options { grid-template-columns: 1fr; }
+}
+/* glass-card-sm.proration-option = inner bento tile */
+.proration-option {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 16px;
+    cursor: pointer;
+}
+.proration-option input[type="radio"] {
+    margin-top: 4px;
+    accent-color: var(--brand-primary);
+    cursor: pointer;
+}
+.proration-option:has(input:checked) {
+    border-color: var(--brand-primary) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        0 0 0 2px color-mix(in srgb, var(--brand-primary) 25%, transparent),
+        0 0 16px rgba(var(--brand-primary-rgb), 0.18) !important;
+}
+.proration-option-body { flex: 1; }
+.proration-option-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 15px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.proration-option-default {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 2px 8px;
+    background: color-mix(in srgb, var(--text-muted) 15%, transparent);
+    border-radius: 999px;
+    letter-spacing: 0.04em;
+}
+.proration-option-help {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* glass-card-sm.worked-example = inner bento tile for the proof example */
+.worked-example {
+    margin: 8px 0 24px 0;
+    padding: 16px;
+}
+.worked-example-header {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+.worked-example-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.worked-example-table th,
+.worked-example-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+.worked-example-table th {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.worked-example-table tr:last-child td { border-bottom: none; }
+.worked-example-table tr.row-active td {
+    background: color-mix(in srgb, var(--brand-primary) 8%, transparent);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.policy-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+.policy-save-status {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+.policy-save-status.is-success { color: var(--color-success, #16a34a); }
+.policy-save-status.is-error { color: var(--color-error, #dc2626); }
+
+.policy-audit-footer {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border-color);
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 8px;
+}
+.policy-audit-footer .audit-label { font-weight: 600; }
