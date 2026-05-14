@@ -1294,20 +1294,22 @@
                 <div class="rec-iv-timeline" style="display:flex; flex-direction:column; gap:14px;">${sorted.map(iv => renderInterviewRow(iv, iv === sorted[0])).join('')}</div>`;
         }
 
-        // Hide the form entirely when an in-progress meeting exists — host
-        // should finish it before scheduling the next round.
-        const showForm = !inProgress;
-        const formHtml = !showForm
-            ? `<p style="margin: 24px 0 0; padding: 14px 16px; background: var(--bg-card-elevated, rgba(255,255,255,0.02)); border-left: 3px solid var(--brand-primary); border-radius: 6px; color: var(--text-secondary); font-size: 0.88rem; font-style: italic; line-height: 1.55;">An interview is already scheduled. Finish it before scheduling the next round.</p>`
-            : `
+        // Always show the schedule form — HR can create any number of
+        // meetings on a single application regardless of round status. If a
+        // duplicate (round_type, round_index) would conflict, the BL's retry-
+        // on-23505 loop auto-bumps round_index so a second "HR Screen" lands
+        // as HR Screen #2, third as #3, etc.
+        const formHtml = `
             <div style="margin-top: ${sorted.length > 0 ? '32px' : '0'}; padding-top: ${sorted.length > 0 ? '28px' : '0'}; border-top: ${sorted.length > 0 ? '1px solid var(--border-color)' : 'none'};">
-                <h4 style="margin: 0 0 14px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); font-weight: 600;">${sorted.length > 0 ? 'Schedule the next round' : 'Schedule the first interview'}</h4>
+                <h4 style="margin: 0 0 14px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); font-weight: 600;">${sorted.length > 0 ? 'Schedule another interview' : 'Schedule the first interview'}</h4>
                 ${sorted.length === 0
                     ? `<p style="margin: 0 0 24px; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; max-width: 760px;">
                         AI Copilot reads the JD + the candidate's answers and drives a topic-by-topic interview with drill-down follow-ups.
                         On round 2+, prior round summaries are auto-fed in so the Copilot doesn't re-ask covered topics.
                        </p>`
-                    : ''}
+                    : `<p style="margin: 0 0 22px; color: var(--text-secondary); font-size: 0.86rem; line-height: 1.55; max-width: 760px;">
+                        Schedule freely — repeats of the same round type get auto-numbered (#2, #3…) and all prior rounds feed into the Copilot's context.
+                       </p>`}
                 <div style="display: grid; grid-template-columns: 1.1fr 1.6fr; gap: 18px; max-width: 760px; margin-bottom: 18px;">
                     <div>
                         <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Round type</label>
