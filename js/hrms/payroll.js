@@ -6187,32 +6187,32 @@ async function loadTenantBrandingForPdf() {
         const logoKey = (p.logoDriveKey || '').trim();
         if (logoKey && CONFIG.driveApiBaseUrl) {
             try {
-                const psUrl = `${CONFIG.driveApiBaseUrl}/drive/tenant-asset/presign?key=${encodeURIComponent(logoKey)}&expiry_minutes=15`;
-                const psResp = await fetch(psUrl, { headers: { 'Authorization': `Bearer ${token}` } });
-                if (psResp.ok) {
-                    const psJson = await psResp.json();
-                    const url = psJson.url;
-                    if (url) {
-                        const imgResp = await fetch(url);
-                        if (imgResp.ok) {
-                            const blob = await imgResp.blob();
-                            const dataUrl = await new Promise((res, rej) => {
-                                const r = new FileReader();
-                                r.onload = () => res(r.result);
-                                r.onerror = rej;
-                                r.readAsDataURL(blob);
-                            });
-                            branding.logoDataUrl = dataUrl;
-                            branding.logoFormat = (blob.type || '').includes('jpeg') ? 'JPEG' : 'PNG';
-                            // Get intrinsic dimensions so jsPDF can preserve aspect ratio
-                            branding.logoWH = await new Promise(res => {
-                                const img = new Image();
-                                img.onload = () => res({ w: img.naturalWidth, h: img.naturalHeight });
-                                img.onerror = () => res(null);
-                                img.src = dataUrl;
-                            });
-                        }
-                    }
+                // Use the server-side blob proxy instead of fetching the presigned URL
+                // directly. The presigned URL is on the S3/MinIO origin which:
+                //   (a) is HTTP on a localhost dev box → mixed-content blocked when
+                //       the page is on HTTPS
+                //   (b) often lacks CORS for browser fetches
+                // The proxy endpoint streams bytes back over the same Drive origin
+                // so neither concern applies. Same tenant-prefix scoping as presign.
+                const blobUrl = `${CONFIG.driveApiBaseUrl}/drive/tenant-asset/blob?key=${encodeURIComponent(logoKey)}`;
+                const imgResp = await fetch(blobUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (imgResp.ok) {
+                    const blob = await imgResp.blob();
+                    const dataUrl = await new Promise((res, rej) => {
+                        const r = new FileReader();
+                        r.onload = () => res(r.result);
+                        r.onerror = rej;
+                        r.readAsDataURL(blob);
+                    });
+                    branding.logoDataUrl = dataUrl;
+                    branding.logoFormat = (blob.type || '').includes('jpeg') ? 'JPEG' : 'PNG';
+                    // Get intrinsic dimensions so jsPDF can preserve aspect ratio
+                    branding.logoWH = await new Promise(res => {
+                        const img = new Image();
+                        img.onload = () => res({ w: img.naturalWidth, h: img.naturalHeight });
+                        img.onerror = () => res(null);
+                        img.src = dataUrl;
+                    });
                 }
             } catch (logoErr) {
                 console.warn('[payslip-pdf] tenant logo load failed (non-fatal):', logoErr);
@@ -6245,262 +6245,329 @@ async function downloadPayslipById(payslipId) {
 
         const payslip = await response.json();
 
-        // Tenant branding — company name + logo for top-right of the PDF.
-        // Falls back to "Ragenaizer / HRMS" when tenant hasn't set up branding.
+        // Tenant branding — company name + logo. Falls back gracefully when missing.
         const branding = await loadTenantBrandingForPdf();
 
-        // v3.0.25: Get currency symbol from payslip (country-agnostic)
-        const currSymbol = payslip.currency_symbol || '₹';
+        // Currency: use ISO code (INR / USD / GBP …). The ₹ glyph isn't in jsPDF's
+        // default WinAnsi-encoded Helvetica and renders as a superscript "¹". The
+        // code is country-agnostic, prints correctly in every font, and is what the
+        // backend already provides via payslip.currency_code.
+        const currCode = (payslip.currency_code || 'INR').toUpperCase();
+        const fmtMoney = (n) => `${currCode} ${formatNumber(n || 0)}`;
 
-        // Generate PDF using jsPDF directly
+        // ── Generate PDF
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
 
         const pageWidth = 210;
         const pageHeight = 297;
-        const margin = 15;
+        const margin = 18;
         const contentWidth = pageWidth - (margin * 2);
+
+        // Single accent color (deep navy — matches market-standard payslip templates).
+        // No bright greens/reds/yellows — earnings vs deductions are differentiated by
+        // section heading + position alone, the way commercial templates do it.
+        const ACCENT  = [31, 56, 100];   // #1F3864
+        const TEXT    = [33, 33, 33];
+        const MUTED   = [110, 110, 110];
+        const HEADBG  = [217, 217, 217]; // grey table header bar
+        const ROWALT  = [248, 248, 248]; // zebra row stripe
+        const BORDER  = [224, 224, 224];
+
+        const setFill = (rgb) => doc.setFillColor(...rgb);
+        const setText = (rgb) => doc.setTextColor(...rgb);
+        const setDraw = (rgb) => doc.setDrawColor(...rgb);
+
+        // ── HEADER — responsive layout that survives any combination of:
+        // long/short/missing company name + tall/wide/missing logo.
+        //
+        // Strategy: split the header into two zones.
+        //   Left zone:  company name (auto-wrapped, font auto-shrinks if very
+        //               long) + tagline truncated to 1 line.
+        //   Right zone: logo on top (aspect-preserved, capped to 22×40 box)
+        //               + "PAYSLIP" word right-aligned below it.
+        //
+        // The header height is computed from whichever zone is taller, so the
+        // accent rule + everything below it shifts down accordingly. No overlap
+        // possible. No-logo / no-company-name combos still produce a clean header.
+
         let y = margin;
+        const HEADER_TOP = y;
 
-        // Colors
-        const primaryColor = [26, 115, 232];  // #1a73e8
-        const greenColor = [34, 197, 94];     // #22c55e
-        const redColor = [239, 68, 68];       // #ef4444
-        const grayColor = [100, 116, 139];    // #64748b
-        const darkColor = [15, 23, 42];       // #0f172a
+        // ── Right zone: logo + PAYSLIP
+        const rightZoneW = 45;          // mm reserved on the right
+        const rightZoneX = pageWidth - margin - rightZoneW;
+        const logoMaxH = 18;
+        const logoMaxW = rightZoneW;
+        let rightBlockH = 0;             // accumulated height of the right zone
 
-        // Helper to add colored rectangle
-        const addRect = (x, y, w, h, color, fill = true) => {
-            doc.setFillColor(...color);
-            if (fill) doc.rect(x, y, w, h, 'F');
-        };
-
-        // Header background
-        addRect(0, 0, pageWidth, 35, primaryColor);
-
-        // Company name (left)
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(20);
-        doc.setFont('helvetica', 'bold');
-        doc.text(branding.companyName, margin, 18);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.text((branding.tagline || '').toUpperCase().slice(0, 60), margin, 25);
-
-        // Top-right cluster: tenant logo (if present) + payslip month
-        const payMonth = payslip.payroll_month && payslip.payroll_year
-            ? new Date(payslip.payroll_year, payslip.payroll_month - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
-            : 'N/A';
-
-        if (branding.logoDataUrl && branding.logoWH) {
-            // Cap the logo at 18mm tall and proportionally narrow, anchor to top-right
-            const maxH = 18;
-            const maxW = 35;
+        if (branding.logoDataUrl && branding.logoWH && branding.logoWH.w > 0 && branding.logoWH.h > 0) {
             const ratio = branding.logoWH.w / branding.logoWH.h;
-            let h = maxH;
+            let h = logoMaxH;
             let w = h * ratio;
-            if (w > maxW) { w = maxW; h = w / ratio; }
+            if (w > logoMaxW) { w = logoMaxW; h = w / ratio; }
             try {
-                doc.addImage(branding.logoDataUrl, branding.logoFormat || 'PNG', pageWidth - margin - w, 8, w, h);
+                // Anchor logo to the top-right, then place PAYSLIP just below it.
+                doc.addImage(
+                    branding.logoDataUrl,
+                    branding.logoFormat || 'PNG',
+                    pageWidth - margin - w, HEADER_TOP,
+                    w, h
+                );
+                rightBlockH = h + 2;     // logo + small gap
             } catch (e) {
                 console.warn('[payslip-pdf] addImage failed, skipping logo:', e);
             }
         }
 
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(8);
-        doc.text('PAYSLIP', pageWidth - margin - 30, 30);
-        doc.setFontSize(12);
+        // PAYSLIP word — always shown, right-aligned, sits under the logo (if any)
+        // or at the top of the right zone.
+        setText(ACCENT);
+        doc.setFontSize(rightBlockH > 0 ? 14 : 22);
         doc.setFont('helvetica', 'bold');
-        doc.text(payMonth, pageWidth - margin, 30, { align: 'right' });
+        const payslipWordY = HEADER_TOP + rightBlockH + (rightBlockH > 0 ? 5 : 8);
+        doc.text('PAYSLIP', pageWidth - margin, payslipWordY, { align: 'right' });
+        rightBlockH += (rightBlockH > 0 ? 7 : 12);
 
-        y = 42;
+        // ── Left zone: company name + tagline. Width is the remaining space
+        // minus a 5mm gutter so the longest name can't collide with the logo.
+        const leftZoneW = (rightZoneX - margin) - 5;
 
-        // Payslip info bar
-        addRect(0, 35, pageWidth, 12, [241, 245, 249]);
-        doc.setTextColor(...grayColor);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Payslip No:', margin, 42);
-        doc.setTextColor(...primaryColor);
+        // Company name — auto-shrink + auto-wrap so long names always fit.
+        // Try 20pt; if even the wrapped first line doesn't fit, drop to 14pt.
+        let companyFontSize = 20;
+        setText(ACCENT);
         doc.setFont('helvetica', 'bold');
-        doc.text(payslip.payslip_number || 'N/A', margin + 22, 42);
+        doc.setFontSize(companyFontSize);
+        let nameLines = doc.splitTextToSize(branding.companyName || 'Company', leftZoneW);
+        if (nameLines.length > 2) {
+            companyFontSize = 14;
+            doc.setFontSize(companyFontSize);
+            nameLines = doc.splitTextToSize(branding.companyName || 'Company', leftZoneW);
+            // hard cap at 2 lines — append ellipsis to the last visible line
+            if (nameLines.length > 2) {
+                nameLines = [nameLines[0], (nameLines[1] || '').replace(/.{0,3}$/, '...')];
+            }
+        }
+        // jsPDF's text Y is the baseline, so first-line baseline ≈ top + (font * 0.36mm/pt).
+        // Empirically, 20pt baseline ≈ top + 6mm; 14pt baseline ≈ top + 4.5mm.
+        const firstBaseline = HEADER_TOP + (companyFontSize === 20 ? 6 : 4.8);
+        const lineH = companyFontSize === 20 ? 7 : 5.5;
+        nameLines.forEach((line, i) => doc.text(line, margin, firstBaseline + i * lineH));
 
-        const periodStart = payslip.pay_period_start ? new Date(payslip.pay_period_start).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
-        const periodEnd = payslip.pay_period_end ? new Date(payslip.pay_period_end).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
-        doc.setTextColor(...grayColor);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Pay Period: ${periodStart} to ${periodEnd}`, pageWidth - margin - 70, 42);
-
-        y = 55;
-
-        // Employee Details Section
-        doc.setTextColor(...darkColor);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('EMPLOYEE DETAILS', margin, y);
-        doc.setDrawColor(...primaryColor);
-        doc.setLineWidth(0.5);
-        doc.line(margin, y + 2, margin + 40, y + 2);
-
-        y += 10;
-        const colWidth = contentWidth / 4;
-
-        // Employee details grid
-        const details = [
-            { label: 'Employee Name', value: payslip.employee_name || 'N/A' },
-            { label: 'Employee ID', value: payslip.employee_code || 'N/A' },
-            { label: 'Department', value: payslip.department_name || 'N/A' },
-            { label: 'Designation', value: payslip.designation_name || 'N/A' }
-        ];
-
-        details.forEach((d, i) => {
-            const x = margin + (i * colWidth);
-            doc.setTextColor(...grayColor);
-            doc.setFontSize(8);
+        // Tagline — single line, truncated to fit. Optional.
+        let leftBlockH = firstBaseline - HEADER_TOP + (nameLines.length - 1) * lineH;
+        if (branding.tagline) {
+            setText(MUTED);
             doc.setFont('helvetica', 'normal');
-            doc.text(d.label.toUpperCase(), x, y);
-            doc.setTextColor(...darkColor);
-            doc.setFontSize(11);
-            doc.setFont('helvetica', 'bold');
-            doc.text(d.value, x, y + 6);
-        });
+            doc.setFontSize(8);
+            const taglineLines = doc.splitTextToSize(branding.tagline, leftZoneW);
+            const tagline = (taglineLines[0] || '').slice(0, 110);
+            const taglineY = firstBaseline + nameLines.length * lineH;
+            doc.text(tagline, margin, taglineY);
+            leftBlockH = (taglineY - HEADER_TOP) + 2;
+        }
 
-        y += 20;
+        y = HEADER_TOP + Math.max(leftBlockH, rightBlockH) + 4;
 
-        // Attendance Summary
-        addRect(margin, y, contentWidth, 22, [254, 249, 195]);
-        doc.setDrawColor(253, 224, 71);
-        doc.setLineWidth(0.3);
-        doc.rect(margin, y, contentWidth, 22, 'S');
+        // Thin accent rule under the header
+        setDraw(ACCENT);
+        doc.setLineWidth(0.6);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 6;
 
-        const attCols = [
-            { label: 'Working Days', value: (payslip.working_days || 0).toString(), color: [113, 63, 18] },
-            { label: 'Days Worked', value: (payslip.days_worked || 0).toString(), color: [22, 101, 52] },
-            { label: 'LOP Days', value: (payslip.lop_days || 0).toString(), color: (payslip.lop_days || 0) > 0 ? [220, 38, 38] : [22, 101, 52] },
-            { label: 'Status', value: (payslip.status || 'N/A').charAt(0).toUpperCase() + (payslip.status || '').slice(1), color: [22, 101, 52] }
+        // ── PAYSLIP / PERIOD INFO STRIP — 4 short cells fit any A4 width.
+        // Avoid Unicode arrows (U+2192) — jsPDF's default Helvetica is WinAnsi
+        // encoded and renders them as "!". Use ASCII " - " or " to ".
+        const periodStart = payslip.pay_period_start ? new Date(payslip.pay_period_start).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'N/A';
+        const periodEnd   = payslip.pay_period_end   ? new Date(payslip.pay_period_end).toLocaleDateString('en-IN',   { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+        const payMonth    = payslip.payroll_month && payslip.payroll_year
+            ? new Date(payslip.payroll_year, payslip.payroll_month - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+            : 'N/A';
+        const payDate     = payslip.pay_period_end ? new Date(payslip.pay_period_end).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+
+        const periodCells = [
+            ['PAYSLIP NO',  payslip.payslip_number || 'N/A'],
+            ['PAY MONTH',   payMonth],
+            ['PAY PERIOD',  `${periodStart} - ${periodEnd}`],
+            ['PAY DATE',    payDate]
         ];
-
-        const attColWidth = contentWidth / 4;
-        attCols.forEach((col, i) => {
-            const x = margin + (i * attColWidth) + (attColWidth / 2);
-            doc.setTextColor(133, 77, 14);
+        const _cellW = contentWidth / 4;
+        periodCells.forEach(([lbl, val], i) => {
+            const x = margin + (i * _cellW);
+            setText(MUTED);
             doc.setFontSize(7);
             doc.setFont('helvetica', 'normal');
-            doc.text(col.label.toUpperCase(), x, y + 7, { align: 'center' });
-            doc.setTextColor(...col.color);
-            doc.setFontSize(14);
+            doc.text(lbl, x, y);
+            setText(TEXT);
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.text(col.value, x, y + 16, { align: 'center' });
+            doc.text(String(val), x, y + 5);
         });
 
-        y += 30;
+        y += 12;
 
-        // Earnings and Deductions side by side
-        const tableWidth = (contentWidth - 10) / 2;
-        const earnings = (payslip.items || []).filter(i => i.component_type === 'earning');
+        // ── EMPLOYEE INFORMATION (4-up grid of label/value pairs)
+        // Section header
+        setFill(HEADBG);
+        doc.rect(margin, y, contentWidth, 6, 'F');
+        setText(TEXT);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('EMPLOYEE INFORMATION', margin + 2, y + 4.2);
+        y += 10;
+
+        const empName = (payslip.employee_name || '').trim();
+        const empCode = (payslip.employee_code || '').trim();
+        const _empNameDisp = (empName && empName.toLowerCase() !== empCode.toLowerCase()) ? empName : (empCode || 'N/A');
+
+        const empGrid = [
+            ['Employee', _empNameDisp],
+            ['Employee ID', empCode || 'N/A'],
+            ['Department', payslip.department_name || 'N/A'],
+            ['Designation', payslip.designation_name || 'N/A']
+        ];
+
+        const cellW = contentWidth / 4;
+        empGrid.forEach(([lbl, val], i) => {
+            const x = margin + (i * cellW);
+            setText(MUTED);
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'normal');
+            doc.text(lbl.toUpperCase(), x, y);
+            setText(TEXT);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(String(val), x, y + 5);
+        });
+        y += 12;
+
+        // Attendance row — 4 small label/value pairs, no colored box
+        // Backend returns total_working_days; legacy field working_days may be null.
+        const _workingDays = payslip.total_working_days ?? payslip.working_days ?? 0;
+        const _daysWorked  = payslip.days_worked ?? 0;
+        const _lopDays     = payslip.lop_days ?? 0;
+        const _status      = (payslip.status || 'N/A').replace(/^\w/, c => c.toUpperCase());
+
+        const attGrid = [
+            ['Working Days', _workingDays],
+            ['Days Worked', _daysWorked],
+            ['LOP Days', _lopDays],
+            ['Status', _status]
+        ];
+        attGrid.forEach(([lbl, val], i) => {
+            const x = margin + (i * cellW);
+            setText(MUTED);
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'normal');
+            doc.text(lbl.toUpperCase(), x, y);
+            setText(TEXT);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text(String(val), x, y + 5);
+        });
+        y += 12;
+
+        // ── EARNINGS TABLE (3 columns: COMPONENT | CURRENT | YTD)
+        const earnings   = (payslip.items || []).filter(i => i.component_type === 'earning');
         const deductions = (payslip.items || []).filter(i => i.component_type === 'deduction');
 
-        // Earnings Table
-        let earningsY = y;
-        addRect(margin, earningsY, tableWidth, 10, greenColor);
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('EARNINGS', margin + 5, earningsY + 7);
-        earningsY += 10;
+        const colCompW = contentWidth * 0.55;
+        const colCurW  = contentWidth * 0.225;
+        const colYtdW  = contentWidth * 0.225;
+        const colCurX  = margin + colCompW;
+        const colYtdX  = colCurX + colCurW;
 
-        earnings.forEach((e, i) => {
-            const bgColor = i % 2 === 0 ? [255, 255, 255] : [248, 250, 252];
-            addRect(margin, earningsY, tableWidth, 8, bgColor);
-            doc.setTextColor(...darkColor);
+        const drawTableHeader = (label) => {
+            setFill(HEADBG);
+            doc.rect(margin, y, contentWidth, 7, 'F');
+            setText(TEXT);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text(label, margin + 2, y + 4.8);
+            doc.setFontSize(8);
+            doc.text('CURRENT', colCurX + colCurW - 2, y + 4.8, { align: 'right' });
+            doc.text('YTD',     colYtdX + colYtdW - 2, y + 4.8, { align: 'right' });
+            y += 7;
+        };
+
+        const drawRow = (label, current, ytd, alt) => {
+            if (alt) {
+                setFill(ROWALT);
+                doc.rect(margin, y, contentWidth, 6, 'F');
+            }
+            setText(TEXT);
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.text(e.component_name, margin + 3, earningsY + 5.5);
-            doc.setTextColor(...[5, 150, 105]);
+            doc.text(String(label || ''), margin + 2, y + 4.2);
+            doc.text(fmtMoney(current), colCurX + colCurW - 2, y + 4.2, { align: 'right' });
+            doc.text(ytd === null || ytd === undefined ? '—' : fmtMoney(ytd),
+                     colYtdX + colYtdW - 2, y + 4.2, { align: 'right' });
+            y += 6;
+        };
+
+        const drawTotalRow = (label, current, ytd) => {
+            setDraw(BORDER);
+            doc.setLineWidth(0.4);
+            doc.line(margin, y, pageWidth - margin, y);
+            y += 1;
+            setText(ACCENT);
+            doc.setFontSize(10);
             doc.setFont('helvetica', 'bold');
-            doc.text(`${currSymbol}${formatNumber(e.amount)}`, margin + tableWidth - 5, earningsY + 5.5, { align: 'right' });
-            earningsY += 8;
-        });
+            doc.text(String(label), margin + 2, y + 5);
+            doc.text(fmtMoney(current), colCurX + colCurW - 2, y + 5, { align: 'right' });
+            doc.text(ytd === null || ytd === undefined ? '—' : fmtMoney(ytd),
+                     colYtdX + colYtdW - 2, y + 5, { align: 'right' });
+            y += 8;
+        };
 
-        // Earnings Total
-        addRect(margin, earningsY, tableWidth, 10, [220, 252, 231]);
-        doc.setDrawColor(...greenColor);
-        doc.setLineWidth(0.5);
-        doc.line(margin, earningsY, margin + tableWidth, earningsY);
-        doc.setTextColor(22, 101, 52);
-        doc.setFontSize(10);
+        drawTableHeader('EARNINGS');
+        earnings.forEach((e, i) => drawRow(e.component_name, e.amount, e.ytd_amount ?? e.ytdAmount, i % 2 === 1));
+        drawTotalRow('Gross Pay', payslip.gross_earnings || 0,
+                     payslip.ytd_gross_earnings ?? null);
+
+        y += 4;
+
+        // ── DEDUCTIONS TABLE
+        drawTableHeader('DEDUCTIONS');
+        deductions.forEach((d, i) => drawRow(d.component_name, d.amount, d.ytd_amount ?? d.ytdAmount, i % 2 === 1));
+        drawTotalRow('Total Deductions', payslip.total_deductions || 0,
+                     payslip.ytd_total_deductions ?? null);
+
+        y += 6;
+
+        // ── NET PAY (single solid bar, accent color, white text)
+        setFill(ACCENT);
+        doc.rect(margin, y, contentWidth, 14, 'F');
+        setText([255, 255, 255]);
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.text('Total Earnings', margin + 3, earningsY + 7);
-        doc.text(`${currSymbol}${formatNumber(payslip.gross_earnings || 0)}`, margin + tableWidth - 5, earningsY + 7, { align: 'right' });
+        doc.text('NET PAY', margin + 2, y + 9);
+        doc.setFontSize(13);
+        doc.text(fmtMoney(payslip.net_pay || 0), pageWidth - margin - 2, y + 9, { align: 'right' });
+        y += 14;
 
-        // Deductions Table
-        let deductionsY = y;
-        const dedX = margin + tableWidth + 10;
-        addRect(dedX, deductionsY, tableWidth, 10, redColor);
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DEDUCTIONS', dedX + 5, deductionsY + 7);
-        deductionsY += 10;
-
-        deductions.forEach((d, i) => {
-            const bgColor = i % 2 === 0 ? [255, 255, 255] : [254, 242, 242];
-            addRect(dedX, deductionsY, tableWidth, 8, bgColor);
-            doc.setTextColor(...darkColor);
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
-            doc.text(d.component_name, dedX + 3, deductionsY + 5.5);
-            doc.setTextColor(220, 38, 38);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`${currSymbol}${formatNumber(d.amount)}`, dedX + tableWidth - 5, deductionsY + 5.5, { align: 'right' });
-            deductionsY += 8;
-        });
-
-        // Deductions Total
-        addRect(dedX, deductionsY, tableWidth, 10, [254, 226, 226]);
-        doc.setDrawColor(...redColor);
-        doc.setLineWidth(0.5);
-        doc.line(dedX, deductionsY, dedX + tableWidth, deductionsY);
-        doc.setTextColor(153, 27, 27);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Total Deductions', dedX + 3, deductionsY + 7);
-        doc.text(`${currSymbol}${formatNumber(payslip.total_deductions || 0)}`, dedX + tableWidth - 5, deductionsY + 7, { align: 'right' });
-
-        y = Math.max(earningsY, deductionsY) + 20;
-
-        // Net Pay Section
-        addRect(margin, y, contentWidth, 35, primaryColor);
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.text('NET PAY', pageWidth / 2, y + 10, { align: 'center' });
-        doc.setFontSize(28);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`${currSymbol}${formatNumber(payslip.net_pay || 0)}`, pageWidth / 2, y + 24, { align: 'center' });
-
-        const netPayInWords = numberToWords(payslip.net_pay || 0);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'italic');
-        doc.text(`${netPayInWords} Only`, pageWidth / 2, y + 32, { align: 'center' });
-
-        y += 45;
-
-        // Footer
-        doc.setDrawColor(226, 232, 240);
-        doc.setLineWidth(0.3);
-        doc.line(margin, y, pageWidth - margin, y);
-        y += 8;
-        doc.setTextColor(...grayColor);
+        // Net pay in words
+        setText(MUTED);
         doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text('This is a computer-generated payslip and does not require a signature.', margin, y);
+        doc.setFont('helvetica', 'italic');
+        const netInWords = numberToWords(payslip.net_pay || 0);
+        doc.text(`(${netInWords} Only)`, margin + 2, y + 4);
+        y += 10;
+
+        // ── FOOTER
+        const footerY = pageHeight - 18;
+        setDraw(BORDER);
+        doc.setLineWidth(0.3);
+        doc.line(margin, footerY - 3, pageWidth - margin, footerY - 3);
+        setText(MUTED);
         doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.text('This is a computer-generated payslip and does not require a signature.', margin, footerY + 1);
         const genDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        doc.text(`Generated on ${genDate}`, margin, y + 5);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Ragenaizer HRMS', pageWidth - margin, y + 3, { align: 'right' });
+        doc.text(`Generated ${genDate}`, margin, footerY + 5);
+        doc.text(branding.companyName, pageWidth - margin, footerY + 1, { align: 'right' });
+        doc.text(`Payslip ${payslip.payslip_number || ''}`, pageWidth - margin, footerY + 5, { align: 'right' });
 
         // Save PDF
         doc.save(`payslip_${payslip.payslip_number || payslipId}.pdf`);
