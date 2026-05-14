@@ -671,13 +671,20 @@
         }
 
         /* ── Application drawer body rows ────────────────────────────── */
+        /* Wider modal (1280px) means the label column can be smaller and the
+           value gets a comfortable max-width for long cover letters without
+           feeling like a giant block of text. */
         .rec-app-field-row {
-            display: grid; grid-template-columns: 180px 1fr;
-            gap: 16px; padding: 10px 0;
+            display: grid; grid-template-columns: 200px 1fr;
+            gap: 24px; padding: 12px 0;
             border-bottom: 1px dashed var(--border-color);
         }
-        .rec-app-field-key { color: var(--text-secondary); font-size: 0.85rem; }
-        .rec-app-field-val { color: var(--text-primary); word-break: break-word; }
+        .rec-app-field-key { color: var(--text-secondary); font-size: 0.85rem; padding-top: 1px; }
+        .rec-app-field-val { color: var(--text-primary); word-break: break-word; line-height: 1.55; }
+        /* Stack label above value on narrow viewports for readability. */
+        @media (max-width: 720px) {
+            .rec-app-field-row { grid-template-columns: 1fr; gap: 4px; }
+        }
 
         @media (max-width: 720px) {
             .rec-posting-top { flex-direction: column; }
@@ -1232,7 +1239,11 @@
 
     <!-- ─── Application Detail Drawer ───────────────────────────────────── -->
     <div class="gm-overlay" id="applicationDrawer" hidden>
-        <div class="gm-modal" style="max-width: 720px;">
+        <!-- Wide modal so the candidate's submitted_data + cover letter +
+             internal notes have room to breathe on big monitors. The 92vw
+             upper bound prevents it from touching the screen edge on small
+             desktops. -->
+        <div class="gm-modal" style="max-width: 1280px; width: 92vw;">
             <div class="gm-header">
                 <h3 id="appDrawerTitle">Application</h3>
                 <button class="gm-close" onclick="closeApplicationDrawer()">×</button>
