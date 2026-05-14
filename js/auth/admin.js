@@ -1817,13 +1817,25 @@ function renderTenantAssetPreview(kind, driveKey, fileObj) {
     }
 
     // Otherwise fetch a presigned download URL from Drive (best-effort; degrades to label).
+    // The download endpoint takes a fileId (Drive's DB row id), NOT the s3
+    // key — so we first need the fileId. Use the hidden field if it's already
+    // populated (reconcileAssetFileId fills it on profile load); fall back to
+    // listing the branding folder and matching by s3 key if it's still empty.
     previewEl.innerHTML = `<span class="profile-asset-empty">${driveKey.split('/').pop()}</span>`;
     (async () => {
         try {
-            const dl = await api.getDownloadUrl(driveKey, 60);
+            const idFieldId = kind === 'logo' ? 'profileLogoDriveFileId' : 'profileSignatureDriveFileId';
+            let fileId = (document.getElementById(idFieldId)?.value || '').trim();
+            if (!fileId) {
+                // Reconcile inline — synchronous-ish: list the folder once.
+                await reconcileAssetFileId(kind, driveKey);
+                fileId = (document.getElementById(idFieldId)?.value || '').trim();
+            }
+            if (!fileId) return;  // Couldn't resolve — keep the filename label.
+            const dl = await api.getDownloadUrl(fileId, 60);
             const url = dl.url || dl.downloadUrl || dl.download_url;
             if (url) previewEl.innerHTML = `<img src="${url}" alt="${kind}">`;
-        } catch { /* leave label */ }
+        } catch (e) { console.warn(`[branding] preview ${kind} fetch failed`, e); }
     })();
 }
 
