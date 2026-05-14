@@ -1812,7 +1812,7 @@ let modalPendingFiles = [];
 function handleModalFileSelect(input) {
     const files = Array.from(input.files);
     files.forEach(f => {
-        if (f.size > 10 * 1024 * 1024) { Toast.error(`${f.name} exceeds 10MB`); return; }
+        if (f.size > 100 * 1024 * 1024) { Toast.error(`${f.name} exceeds 100MB`); return; }
         if (!modalPendingFiles.some(p => p.name === f.name && p.size === f.size))
             modalPendingFiles.push(f);
     });

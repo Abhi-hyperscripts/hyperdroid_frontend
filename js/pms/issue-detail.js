@@ -839,8 +839,8 @@ async function handleAttachFiles(files) {
     const progress = document.getElementById('attachUploadProgress');
 
     for (const file of files) {
-        if (file.size > 10 * 1024 * 1024) {
-            Toast.error(`${file.name} exceeds 10MB limit`);
+        if (file.size > 100 * 1024 * 1024) {
+            Toast.error(`${file.name} exceeds 100MB limit`);
             continue;
         }
 
