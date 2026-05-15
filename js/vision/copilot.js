@@ -69,10 +69,15 @@ function initCopilot(connection, meetingMode, meetingIdParam) {
     copilotMeetingId = meetingIdParam || null;
     copilotStartTime = Date.now();
 
-    // Set mode badge
+    // Set mode badge. HRMS persists meeting_mode='recruit' for hiring
+    // interviews; AIEngine still calls them 'interview'. Both should
+    // surface as INTERVIEW on the HUD so a recruiter doesn't see "SALES"
+    // mid-interview (which has happened — confusing/embarrassing in front
+    // of candidates). Anything else falls back to SALES.
     const badge = document.getElementById('copilotModeBadge');
     if (badge) {
-        badge.textContent = (copilotMeetingMode === 'interview' ? 'INTERVIEW' : 'SALES');
+        const isInterview = copilotMeetingMode === 'interview' || copilotMeetingMode === 'recruit';
+        badge.textContent = isInterview ? 'INTERVIEW' : 'SALES';
     }
 
     // Register SignalR handlers
@@ -162,6 +167,16 @@ function updateBotStatusUI(active) {
             label.classList.add('hud-bot-inactive');
             label.classList.remove('hud-bot-active');
         }
+        // Surface meaning on hover — without this, users see "STANDBY · 0 INSIGHTS"
+        // mid-meeting and can't tell whether the bot crashed, the audio isn't being
+        // captured, or it just hasn't generated anything yet. Same for LIVE — the
+        // recruiter wants confirmation it's actually listening to the candidate.
+        const tip = active
+            ? 'Copilot is LIVE and listening to the conversation. Insights will appear as the model spots them.'
+            : 'Copilot is on STANDBY. Audio is not being processed yet — the bot joins automatically once the meeting starts and at least one other participant is speaking.';
+        label.title = tip;
+        const dotEl = document.getElementById('hudBotDot');
+        if (dotEl) dotEl.title = tip;
     }
 }
 
@@ -438,9 +453,11 @@ function updateModeToggleUI(mode) {
     if (freqSeparator?.classList.contains('hud-separator')) freqSeparator.style.display = mode === 'autonomous' ? 'none' : '';
 
     // Update the HUD mode badge to show current copilot mode
+    // (mirrors the same recruit↔interview alias as initCopilot)
     const badge = document.getElementById('copilotModeBadge');
     if (badge) {
-        const modeLabel = copilotMeetingMode === 'interview' ? 'INTERVIEW' : 'SALES';
+        const isInterview = copilotMeetingMode === 'interview' || copilotMeetingMode === 'recruit';
+        const modeLabel = isInterview ? 'INTERVIEW' : 'SALES';
         const modeIndicator = mode === 'manual' ? '' : mode === 'earpiece' ? ' | EAR' : ' | AUTO';
         badge.textContent = modeLabel + modeIndicator;
     }
