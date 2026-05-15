@@ -318,17 +318,30 @@ async function ensureFcmTokenRegistered(force = false) {
             return null;
         }
 
-        // Force re-registration when SW version changes (ensures platform/browser info is updated)
+        // SW version bump: refresh the backend's sw_version/updated_at on
+        // next register call, but DO NOT force-rotate the FCM token. The
+        // previous behaviour (deleteToken() on every SW bump) caused real
+        // push loss for Subhi/Shreya @ VBF 2026-05-15 — tokens churn every
+        // few minutes during active development, and any in-flight push
+        // targeting the just-deactivated row was silently dropped.
+        // Firebase keeps the same FCM token across SW upgrades; the only
+        // case where rotation is legitimately needed is when the push
+        // subscription itself was revoked, which the probe below catches
+        // directly without needing the version heuristic.
         const lastRegisteredVersion = localStorage.getItem(`${STORAGE_PREFIX}fcm_version`);
-        if (lastRegisteredVersion !== String(SW_VERSION)) {
-            console.log(`[FCM] Version changed (${lastRegisteredVersion} → ${SW_VERSION}), forcing re-registration`);
-            force = true;
+        const swVersionChanged = lastRegisteredVersion !== String(SW_VERSION);
+        if (swVersionChanged) {
+            console.log(`[FCM] Version changed (${lastRegisteredVersion} → ${SW_VERSION}) — will refresh backend metadata, keeping FCM token`);
         }
 
         // Check if already registered (fast path)
         if (!force && localStorage.getItem(_FCM_KEYS.registered) === 'true' && _currentFcmToken) {
-            // Validate the actual push subscription is still valid
-            // Catches scenarios where SW is cleared/updated but localStorage still has the old flag
+            // Validate the actual push subscription is still valid.
+            // This is the load-bearing probe: BUILD-38-style kill-switch
+            // scenarios revoke the push subscription on FCM's side, and the
+            // cached FCM token then accepts sends locally but FCM drops
+            // every delivery with "Unregistered". Detecting it here is more
+            // reliable than the SW version heuristic.
             try {
                 const reg = await navigator.serviceWorker.ready;
                 const subscription = await reg.pushManager.getSubscription();
@@ -336,6 +349,19 @@ async function ensureFcmTokenRegistered(force = false) {
                     console.log('[FCM] Push subscription lost, forcing re-registration');
                     force = true;
                     // Fall through to full registration below
+                } else if (swVersionChanged) {
+                    // Subscription is healthy AND we owe the backend an
+                    // sw_version refresh. Send the existing token (UPDATE
+                    // via backend ON CONFLICT) without rotating it. No FCM
+                    // churn, no in-flight push gets lost.
+                    console.log('[FCM] Subscription valid; refreshing backend sw_version with existing token');
+                    try {
+                        await registerTokenWithBackend(_currentFcmToken);
+                        localStorage.setItem(`${STORAGE_PREFIX}fcm_version`, String(SW_VERSION));
+                    } catch (regErr) {
+                        console.warn('[FCM] Backend re-registration failed (non-fatal — token still works):', regErr);
+                    }
+                    return _currentFcmToken;
                 } else {
                     console.log('[FCM] Already registered, subscription valid');
                     return _currentFcmToken;
@@ -393,20 +419,15 @@ async function ensureFcmTokenRegistered(force = false) {
             tokenOptions.serviceWorkerRegistration = swRegistration;
         }
 
-        // CRITICAL: when forcing re-registration (SW version bump or lost
-        // subscription), purge the SDK's cached token first.
-        //
-        // messaging.getToken() returns a cached token from Firebase's
-        // IndexedDB if one exists — but after the kill-switch SW
-        // (BUILD 38) self-unregistered, the original push subscription
-        // was REVOKED on FCM's side. The cached token still looks valid
-        // locally and gets POSTed to the backend, but FCM rejects all
-        // delivery attempts with "Unregistered" because the subscription
-        // it binds to no longer exists.
-        //
-        // deleteToken() forces the SDK to drop the IndexedDB entry; the
-        // following getToken() then creates a brand-new token bound to
-        // the CURRENT push subscription endpoint.
+        // force=true only fires in two cases now (after 2026-05-15 fix):
+        //   1. The subscription-probe above found the push subscription was
+        //      revoked. The cached FCM token is bound to that dead
+        //      subscription; we MUST drop it so getToken() creates a fresh
+        //      one bound to the current subscription. Original BUILD-38
+        //      scenario.
+        //   2. A caller explicitly passes force=true (e.g. recovery flow).
+        // SW version bumps NO LONGER trigger this branch — they take the
+        // fast path above and just refresh the backend metadata.
         if (force) {
             try {
                 await messaging.deleteToken();
