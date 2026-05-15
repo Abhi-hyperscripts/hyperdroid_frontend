@@ -8,85 +8,97 @@
  * All colors via theme variables — no hardcoded hex.
  * ============================================================ */
 
-/* ── Sidebar shell ───────────────────────────────────────────
- * A fixed 300px right rail inside .meeting-main's flexbox. The
- * video container next to it auto-compresses; no manual width
- * math. Sidebar can collapse to a thin 24px tab so the host can
- * reclaim full-width video on demand.
+/* ── Floating overlay HUD ────────────────────────────────────
+ * Sits as a child of #copilotHud (the absolute pointer-events:none
+ * overlay over the video). The control panel ALREADY floats top-left
+ * at top:12px left:16px; this recruit cockpit floats just below it
+ * at the same left edge. Never touches .meeting-main / .video-container,
+ * so the underlying meeting layout is unmodified.
  * ──────────────────────────────────────────────────────────── */
-.recruit-sidebar {
-    flex: 0 0 300px;
+.recruit-hud-sections.recruit-hud-floating {
+    position: absolute;
+    top: 100px;
+    left: 16px;
     width: 300px;
-    min-width: 300px;
-    max-width: 300px;
+    max-height: calc(100% - 140px);
+    background: rgba(4, 8, 18, 0.92);
+    border: 1px solid rgba(0, 212, 255, 0.18);
+    border-radius: 8px;
+    box-shadow:
+        0 0 20px rgba(0, 212, 255, 0.05),
+        0 4px 24px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    pointer-events: auto;
+    z-index: 92;
     display: flex;
-    flex-direction: row;
-    align-items: stretch;
-    background: var(--bg-card);
-    border-left: 1px solid var(--border-color);
-    border-radius: 12px 0 0 12px;
-    position: relative;
-    transition: flex-basis 0.2s ease, width 0.2s ease, min-width 0.2s ease, max-width 0.2s ease;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-.recruit-sidebar.recruit-sidebar-collapsed {
-    flex: 0 0 28px;
-    width: 28px;
-    min-width: 28px;
-    max-width: 28px;
-}
-
-.recruit-sidebar.recruit-sidebar-collapsed .recruit-hud-sections {
-    display: none;
-}
-
-.recruit-sidebar-collapse {
-    width: 22px;
+.recruit-hud-floating-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: rgba(0, 212, 255, 0.05);
+    border-bottom: 1px solid rgba(0, 212, 255, 0.12);
     flex-shrink: 0;
+}
+
+.recruit-hud-floating-title {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: rgba(0, 212, 255, 0.85);
+}
+
+.recruit-hud-floating-toggle {
     background: transparent;
-    border: none;
-    border-right: 1px solid var(--border-color);
-    color: var(--text-secondary);
+    border: 1px solid rgba(0, 212, 255, 0.25);
+    color: rgba(0, 212, 255, 0.85);
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0;
-    transition: background 0.15s ease, color 0.15s ease;
-}
-
-.recruit-sidebar-collapse:hover {
-    background: var(--bg-card-hover);
-    color: var(--brand-primary);
-}
-
-.recruit-sidebar.recruit-sidebar-collapsed .recruit-sidebar-collapse {
-    border-right: none;
-}
-
-.recruit-collapse-chevron {
     font-size: 14px;
     line-height: 1;
-    font-weight: 600;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.recruit-hud-sections {
-    flex: 1;
+.recruit-hud-floating-toggle:hover {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: rgba(0, 212, 255, 0.5);
+}
+
+.recruit-hud-floating-body {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 10px 10px 10px 6px;
+    padding: 10px;
     overflow-y: auto;
     overflow-x: hidden;
     min-height: 0;
 }
 
-/* Hide the recruit sidebar entirely on small screens — interview cockpit
- * is a desktop-first workflow; on mobile the recruiter typically only has
- * one panel of attention anyway, so we don't try to cram all four into a
- * phone screen. A future iteration can add a bottom-sheet view. */
+.recruit-hud-floating.recruit-hud-floating-collapsed {
+    max-height: unset;
+}
+
+.recruit-hud-floating.recruit-hud-floating-collapsed .recruit-hud-floating-body {
+    display: none;
+}
+
+/* Hide the floating cockpit on small screens — desktop-first workflow.
+ * The legacy COPILOT control panel still shows so the recruiter has
+ * basic copilot controls. */
 @media (max-width: 900px) {
-    .recruit-sidebar { display: none; }
+    .recruit-hud-sections.recruit-hud-floating { display: none; }
 }
 
 /* ── Candidate context bar ─────────────────────────────────── */

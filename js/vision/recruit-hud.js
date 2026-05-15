@@ -50,53 +50,44 @@
     }
 
     function injectDom() {
-        // The recruit cockpit lives as a fixed-width right sidebar inside
-        // .meeting-main, NOT inside the copilot overlay. The overlay is
-        // absolute-positioned with pointer-events:none over the video; nesting
-        // the recruit panels there forced them to overlap the video and eat
-        // ~178px of the top of the viewport. As a sibling of .video-container
-        // inside .meeting-main's flexbox, the sidebar steals 300px on the
-        // right and the video naturally compresses — same pattern as the
-        // chat-sidebar.
-        const main = document.querySelector('.meeting-main');
-        const videoContainer = document.getElementById('videoContainer');
-        if (!main) {
-            console.warn('[RecruitHUD] .meeting-main missing — cannot inject');
+        // Inject as a child of #copilotHud (the absolute overlay layer that
+        // already sits on top of the video tile). The wrapper is itself
+        // absolute-positioned via CSS so it FLOATS in the top-left below the
+        // existing COPILOT control panel — never pushes the video container,
+        // never breaks the meeting layout. pointer-events:auto on the
+        // wrapper so the panels remain interactive even though the parent
+        // overlay is pointer-events:none.
+        const hud = document.getElementById('copilotHud');
+        if (!hud) {
+            console.warn('[RecruitHUD] #copilotHud missing — cannot inject');
             return;
         }
 
-        const aside = document.createElement('aside');
-        aside.className = 'recruit-sidebar';
-        aside.id = 'recruitSidebar';
-        aside.innerHTML = ''
-            + '<button type="button" class="recruit-sidebar-collapse" id="recruitSidebarCollapse" onclick="toggleRecruitSidebar()" title="Hide cockpit">'
-            +   '<span class="recruit-collapse-chevron" id="recruitCollapseChevron">›</span>'
-            + '</button>'
-            + '<div class="recruit-hud-sections" id="recruitHudSections">'
+        const wrapper = document.createElement('div');
+        wrapper.className = 'recruit-hud-sections recruit-hud-floating';
+        wrapper.id = 'recruitHudSections';
+        wrapper.innerHTML = ''
+            + '<div class="recruit-hud-floating-header">'
+            +   '<span class="recruit-hud-floating-title">RECRUIT COCKPIT</span>'
+            +   '<button type="button" class="recruit-hud-floating-toggle" id="recruitFloatingToggle" onclick="toggleRecruitFloating()" title="Minimize cockpit">'
+            +     '<span class="recruit-hud-floating-chevron" id="recruitFloatingChevron">−</span>'
+            +   '</button>'
+            + '</div>'
+            + '<div class="recruit-hud-floating-body" id="recruitHudFloatingBody">'
             +   sectionsHtml()
             + '</div>';
-
-        // Insert as the LAST child of meeting-main so it sits to the right of
-        // the video container in the flexbox (chat-sidebar is usually hidden
-        // and toggled separately; if it opens, it appears between video and
-        // recruit sidebar, which is fine).
-        if (videoContainer && videoContainer.parentNode === main) {
-            // Insert right after the video container.
-            main.insertBefore(aside, videoContainer.nextSibling);
-        } else {
-            main.appendChild(aside);
-        }
+        hud.appendChild(wrapper);
     }
 
-    function toggleRecruitSidebar() {
-        const sidebar = document.getElementById('recruitSidebar');
-        const chev = document.getElementById('recruitCollapseChevron');
-        if (!sidebar) return;
-        const collapsed = sidebar.classList.toggle('recruit-sidebar-collapsed');
-        if (chev) chev.textContent = collapsed ? '‹' : '›';
-        sidebar.querySelector('.recruit-sidebar-collapse').title = collapsed ? 'Show cockpit' : 'Hide cockpit';
+    function toggleRecruitFloating() {
+        const w = document.getElementById('recruitHudSections');
+        const chev = document.getElementById('recruitFloatingChevron');
+        if (!w) return;
+        const collapsed = w.classList.toggle('recruit-hud-floating-collapsed');
+        if (chev) chev.textContent = collapsed ? '+' : '−';
+        w.querySelector('.recruit-hud-floating-toggle').title = collapsed ? 'Expand cockpit' : 'Minimize cockpit';
     }
-    window.toggleRecruitSidebar = toggleRecruitSidebar;
+    window.toggleRecruitFloating = toggleRecruitFloating;
 
     function sectionsHtml() {
         return ''
