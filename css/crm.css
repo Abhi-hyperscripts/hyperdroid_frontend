@@ -4938,6 +4938,24 @@ label.ff-checkbox-inline input[type="checkbox"] {
     border-radius: 8px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
+
+/* On mobile the column-picker trigger sits inside a tiny filter-group
+   parent (just button-sized). `right: 0` would fling the menu to the
+   far right of that parent; a fixed width can overflow past the
+   viewport. We keep `position: absolute` so the menu scrolls with its
+   parent (the user wants it visually tied to the button), and the
+   open handler in leads.js sets inline `left` / `width` so the menu
+   clamps to the viewport (12px inset on both sides) regardless of how
+   narrow the parent is. */
+@media (max-width: 768px) {
+    .crm-columns-menu {
+        right: auto;
+        min-width: 0;
+        max-width: none;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+}
 .crm-columns-menu-header {
     padding: 8px 14px 6px;
     font-size: 11px;

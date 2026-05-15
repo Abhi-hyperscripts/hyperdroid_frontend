@@ -954,6 +954,7 @@
                                 <option value="Azure">Azure</option>
                                 <option value="Razorpay">Razorpay (Payment Gateway)</option>
                                 <option value="Interakt">Interakt (WhatsApp BSP)</option>
+                                <option value="Exotel">Exotel (Telephony)</option>
                                 <option value="Custom">Custom</option>
                             </select>
                         </div>
@@ -968,6 +969,7 @@
                                 <option value="embedding">Embedding</option>
                                 <option value="payment_gateway">Payment Gateway</option>
                                 <option value="whatsapp">WhatsApp Messaging</option>
+                                <option value="telephony">Telephony (Voice Calls)</option>
                             </select>
                         </div>
 
@@ -1039,6 +1041,49 @@
                                     </button>
                                 </div>
                                 <small style="color:var(--text-secondary);font-size:0.75rem;">Required for inbound message verification. Used to validate the <code>interakt-signature</code> header (HMAC-SHA256).</small>
+                            </div>
+                        </div>
+
+                        <!-- Exotel-specific input — telephony BYOK. Auth generates the
+                             webhook_secret server-side (we deliberately do NOT collect
+                             it here); the per-number webhook URL appears in the row
+                             expand panel after save. -->
+                        <div id="apiKeyExotelGroup" style="display:none;">
+                            <div class="form-group">
+                                <label>ExoPhone (your Indian number)</label>
+                                <input type="text" id="exotelExoPhone" placeholder="e.g. 04446973238" autocomplete="off">
+                                <small style="color:var(--text-secondary);font-size:0.75rem;">Each ExoPhone has its own credentials + webhook URL. We strip non-digits and store digits-only — this acts as the row's instance key. The status-callback URL becomes <code>/api/calls/exotel/webhook/{tenantId}/{exophone}/{secret}</code>.</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Account SID</label>
+                                <input type="text" id="exotelAccountSid" placeholder="e.g. yourcompany" autocomplete="off">
+                                <small style="color:var(--text-secondary);font-size:0.75rem;">From your Exotel dashboard: Settings → API Settings → Account SID.</small>
+                            </div>
+                            <div class="form-group">
+                                <label>API Key</label>
+                                <div class="apikey-input-wrapper">
+                                    <input type="text" id="exotelApiKey" placeholder="48-char hex string" autocomplete="off">
+                                    <button type="button" class="apikey-toggle-btn" onclick="toggleFieldVisibility('exotelApiKey', 'exotelApiKeyEye')">
+                                        <svg id="exotelApiKeyEye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>API Token</label>
+                                <div class="apikey-input-wrapper">
+                                    <input type="password" id="exotelApiToken" placeholder="48-char hex string" autocomplete="off">
+                                    <button type="button" class="apikey-toggle-btn" onclick="toggleFieldVisibility('exotelApiToken', 'exotelApiTokenEye')">
+                                        <svg id="exotelApiTokenEye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Region</label>
+                                <select id="exotelRegion">
+                                    <option value="sg">Singapore (sg) — default</option>
+                                    <option value="in">India (in)</option>
+                                </select>
+                                <small style="color:var(--text-secondary);font-size:0.75rem;">Picks the Exotel API base host. Default <code>sg</code> works for most Indian accounts.</small>
                             </div>
                         </div>
                     </form>

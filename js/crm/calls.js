@@ -30,20 +30,31 @@
     // the open lead has a phone AND the tenant has Exotel configured (so we
     // don't tease the user with a button that errors on click).
 
-    let _callsConfigured = null;
+    // Short-lived cache so the inline phone-link click handler can decide
+    // synchronously enough to feel native, without DDoSing /numbers on every
+    // table render. 30s TTL — long enough to absorb a burst of clicks /
+    // re-renders, short enough that a tenant who just toggled a number in
+    // Settings sees the right behaviour within half a minute.
+    let _callsConfiguredCache = { value: null, at: 0 };
+    const CALLS_CONFIG_TTL_MS = 30 * 1000;
 
-    async function refreshCallsConfigStatus() {
-        if (_callsConfigured !== null) return _callsConfigured;
-        try {
-            const cfg = await api.request('/crm/calls/integration');
-            _callsConfigured = !!cfg?.configured;
-        } catch (_) {
-            // 403 for non-admins is fine — they can still place calls if
-            // the admin already configured it. Fall back to "show button,
-            // let backend gate".
-            _callsConfigured = true;
+    async function refreshCallsConfigStatus({ force = false } = {}) {
+        const now = Date.now();
+        if (!force && _callsConfiguredCache.value !== null
+            && (now - _callsConfiguredCache.at) < CALLS_CONFIG_TTL_MS) {
+            return _callsConfiguredCache.value;
         }
-        return _callsConfigured;
+        try {
+            const numbers = await api.request('/crm/calls/numbers');
+            const ok = Array.isArray(numbers) && numbers.some(n => n.is_active);
+            _callsConfiguredCache = { value: ok, at: now };
+            return ok;
+        } catch (_) {
+            // Backend down / permission issue → hide the button rather than
+            // show a teaser that errors when clicked.
+            _callsConfiguredCache = { value: false, at: now };
+            return false;
+        }
     }
 
     function shouldShowCallButton(lead) {
@@ -87,48 +98,76 @@
 
     function openPlaceCallModal(leadId) {
         if (!leadId) return;
-        // Build a minimal inline modal so we don't need extra HTML in
-        // leads.html. Same pattern the WhatsApp-send modal uses.
+
+        // Snapshot the lead's phone BEFORE we tear down the slide panel — the
+        // panel's DOM (#leadDetailInfo …) is what we read from.
+        let prefilledCustomer = '';
+        try {
+            const phoneEl = document.querySelector('#leadDetailInfo a[href^="tel:"]');
+            if (phoneEl) prefilledCustomer = phoneEl.textContent.trim();
+        } catch (_) {}
+
+        // The lead detail slide panel sits above the standard modal z-index,
+        // so a modal opened on top of it appears dimmed and unreachable
+        // (overlay covers it). Close the panel first; the call modal becomes
+        // the only focused surface. window._leadDetailId persists so the
+        // submit handler can still tie the call to the right lead.
+        try {
+            if (typeof window.closeLeadDetailPanel === 'function') {
+                window.closeLeadDetailPanel();
+            }
+        } catch (_) {}
+
         const existing = document.getElementById('placeCallModal');
         if (existing) existing.remove();
 
         const wrap = document.createElement('div');
         wrap.id = 'placeCallModal';
-        wrap.className = 'modal active';
-        wrap.style.cssText = 'position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);';
+        wrap.className = 'gm-overlay active';
         wrap.innerHTML = `
-            <div class="gm-modal" style="background:var(--bg-card);border-radius:8px;max-width:480px;width:90%;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,0.2);">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                    <h3 style="margin:0;">Place call</h3>
-                    <button onclick="document.getElementById('placeCallModal').remove()" style="background:none;border:0;font-size:24px;cursor:pointer;color:var(--text-secondary);">&times;</button>
+            <div class="gm-modal gm-sm">
+                <div class="gm-header">
+                    <div class="gm-header-left">
+                        <div class="gm-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/>
+                            </svg>
+                        </div>
+                        <div class="gm-title-group">
+                            <h3 class="gm-title">Place call</h3>
+                            <p class="gm-subtitle">Dials your number first, then bridges to the customer</p>
+                        </div>
+                    </div>
+                    <button class="gm-close" onclick="document.getElementById('placeCallModal').remove()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
                 </div>
-                <div style="display:grid;gap:12px;">
-                    <div>
-                        <label class="form-label">Customer number</label>
+                <div class="gm-body">
+                    <div class="crm-form-group">
+                        <label for="pcCustomerPhone">Customer number</label>
                         <input type="tel" id="pcCustomerPhone" class="form-control" placeholder="+91…">
                     </div>
-                    <div>
-                        <label class="form-label">Ring my number first</label>
+                    <div class="crm-form-group">
+                        <label for="pcAgentPhone">Ring my number first</label>
                         <input type="tel" id="pcAgentPhone" class="form-control" placeholder="+91… (your mobile)">
                         <small style="color:var(--text-secondary);font-size:0.8em;">Provider rings this number; pick up, then it bridges to the customer.</small>
                     </div>
-                    <label style="display:flex;gap:8px;align-items:center;font-size:0.9em;">
+                    <label style="display:flex;gap:8px;align-items:center;font-size:0.9em;margin-top:4px;">
                         <input type="checkbox" id="pcRecord" checked> Record the call
                     </label>
                 </div>
-                <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
-                    <button class="btn btn-outline-secondary" onclick="document.getElementById('placeCallModal').remove()">Cancel</button>
-                    <button class="btn btn-success" id="pcPlaceBtn" onclick="window._submitPlaceCall('${esc(leadId)}')">Call</button>
+                <div class="gm-footer" style="padding:16px 20px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--border-color-light);">
+                    <button class="btn btn-secondary" onclick="document.getElementById('placeCallModal').remove()">Cancel</button>
+                    <button class="btn btn-primary" id="pcPlaceBtn" onclick="window._submitPlaceCall('${esc(leadId)}')">Call</button>
                 </div>
             </div>
         `;
         document.body.appendChild(wrap);
 
-        // Try to prefill from the open lead's phone.
-        try {
-            const phoneEl = document.querySelector('#leadDetailInfo a[href^="tel:"]');
-            if (phoneEl) document.getElementById('pcCustomerPhone').value = phoneEl.textContent.trim();
-        } catch (_) {}
+        if (prefilledCustomer) document.getElementById('pcCustomerPhone').value = prefilledCustomer;
 
         // Prefill agent phone from the user's auth claim if available.
         try {
@@ -348,6 +387,128 @@
         `;
         document.head.appendChild(style);
     })();
+
+    // ─── Tap-to-call picker — Exotel vs native dialer ─────────────────────
+    // Every `.crm-tel-link` on the CRM is a `<a href="tel:…">`. On its own
+    // that opens whatever OS dialer is registered (great on mobile, useless
+    // on desktop). When the tenant has Exotel configured we surface a
+    // two-choice picker so the user can opt into the logged + recorded
+    // CRM call OR fall back to dialer-of-choice. Tenants without Exotel
+    // configured don't see the picker at all — the link works as before.
+
+    function openCallMethodPicker({ phone, telHref, leadId }) {
+        const existing = document.getElementById('callMethodPickerModal');
+        if (existing) existing.remove();
+
+        const safePhone = esc(phone || '');
+
+        const wrap = document.createElement('div');
+        wrap.id = 'callMethodPickerModal';
+        wrap.className = 'gm-overlay active';
+        wrap.innerHTML = `
+            <div class="gm-modal gm-sm">
+                <div class="gm-header">
+                    <div class="gm-header-left">
+                        <div class="gm-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/>
+                            </svg>
+                        </div>
+                        <div class="gm-title-group">
+                            <h3 class="gm-title">Call ${safePhone}</h3>
+                            <p class="gm-subtitle">Pick how you want to place this call</p>
+                        </div>
+                    </div>
+                    <button class="gm-close" data-action="close">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="gm-body" style="gap:10px;">
+                    <button class="btn btn-primary" data-action="exotel" style="justify-content:flex-start;text-align:left;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
+                        <span style="font-size:1.4em;line-height:1;">📞</span>
+                        <span style="display:flex;flex-direction:column;gap:2px;">
+                            <span style="font-weight:600;">Place via Exotel</span>
+                            <span style="font-size:0.85em;opacity:0.85;">Logs to the lead timeline, records the call, agent rings first.</span>
+                        </span>
+                    </button>
+                    <button class="btn btn-secondary" data-action="dialer" style="justify-content:flex-start;text-align:left;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
+                        <span style="font-size:1.4em;line-height:1;">📱</span>
+                        <span style="display:flex;flex-direction:column;gap:2px;">
+                            <span style="font-weight:600;">Use phone dialer</span>
+                            <span style="font-size:0.85em;opacity:0.85;">Opens your device's default dialer. Not logged in the CRM.</span>
+                        </span>
+                    </button>
+                </div>
+                <div class="gm-footer" style="padding:12px 20px;display:flex;justify-content:flex-end;border-top:1px solid var(--border-color-light);">
+                    <button class="btn btn-secondary" data-action="close">Cancel</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(wrap);
+
+        // Bind handlers directly. Avoids onclick-attribute escaping issues
+        // and keeps `phone` / `telHref` / `leadId` captured in closures.
+        const close = () => wrap.remove();
+        wrap.querySelectorAll('[data-action="close"]').forEach(b => b.addEventListener('click', close));
+        wrap.querySelector('[data-action="exotel"]').addEventListener('click', () => {
+            close();
+            try {
+                openPlaceCallModal(leadId || window._leadDetailId || '');
+                const el = document.getElementById('pcCustomerPhone');
+                if (el && phone) el.value = phone;
+            } catch (e) { console.warn('[calls] openPlaceCallModal failed', e); }
+        });
+        wrap.querySelector('[data-action="dialer"]').addEventListener('click', () => {
+            close();
+            if (telHref) window.location.href = telHref;
+        });
+    }
+
+    // Pre-fetch the configured flag at page-load so the first click is snappy.
+    // Cache TTL is short (30s) so subsequent clicks stay synchronous-feeling.
+    document.addEventListener('DOMContentLoaded', () => { refreshCallsConfigStatus(); });
+
+    // Delegated handler on the whole document — catches phone-link clicks
+    // anywhere (leads table, lead detail, lead-journey embed, etc.) without
+    // each renderer having to opt in.
+    //
+    // IMPORTANT: this is a `tel:` anchor. The browser starts the navigation
+    // synchronously the moment the click fires; if we `await` before calling
+    // preventDefault(), the dialer has already been triggered by the time
+    // we decide whether to intercept. So we ALWAYS preventDefault on a
+    // crm-tel-link click, then re-trigger the tel: nav ourselves if the
+    // tenant turns out not to have Exotel configured.
+    document.addEventListener('click', (e) => {
+        const anchor = e.target.closest('a.crm-tel-link');
+        if (!anchor) return;
+        // Modifier keys → let the browser handle (open in new tab, save, etc.)
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button === 1) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const telHref = anchor.getAttribute('href') || '';
+        const phone = (anchor.textContent || '').replace(/^\s*📞\s*/, '').trim();
+        const leadRow = anchor.closest('[data-lead-id]');
+        const leadId = (leadRow && leadRow.getAttribute('data-lead-id'))
+            || window._leadDetailId
+            || '';
+
+        // Decide which flow to use. Cached lookup is usually instant; on a
+        // cold cache the await is a single gRPC hop (<60ms).
+        (async () => {
+            const configured = await refreshCallsConfigStatus();
+            if (!configured) {
+                // Re-trigger the native tel: navigation we just suppressed.
+                if (telHref) window.location.href = telHref;
+                return;
+            }
+            openCallMethodPicker({ phone, telHref, leadId });
+        })();
+    }, true);
 
     // Expose entry points.
     window.openPlaceCallModal = openPlaceCallModal;

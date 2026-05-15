@@ -2243,10 +2243,13 @@ function renderApiKeysTable(keys) {
 
     const llmProviders = new Set(['anthropic', 'openai']);
     // Provider+service combos that show an expandable "how to wire this in
-    // the provider's dashboard" panel — currently just Interakt's webhook
-    // URL + setup instructions.
+    // the provider's dashboard" panel. URL composition now lives entirely
+    // in Auth (see WebhookUrlTemplates in appsettings + ComposeWebhookUrl
+    // in BL); the frontend just renders whatever Auth handed back.
     const isInteraktRow = (provider, serviceType) =>
         (provider || '').toLowerCase() === 'interakt' && (serviceType || '').toLowerCase() === 'whatsapp';
+    const isExotelRow = (provider, serviceType) =>
+        (provider || '').toLowerCase() === 'exotel' && (serviceType || '').toLowerCase() === 'telephony';
 
     tbody.innerHTML = keys.map((key, idx) => {
         const provider = key.provider || '';
@@ -2264,6 +2267,7 @@ function renderApiKeysTable(keys) {
         // Show the expandable copilot row only when this is an active LLM provider
         const isLlmRow = isActive && llmProviders.has(provider.toLowerCase()) && (serviceType.toLowerCase() === 'llm');
         const isInteraktSetupRow = isActive && isInteraktRow(provider, serviceType);
+        const isExotelSetupRow = isActive && isExotelRow(provider, serviceType);
         const rowId = `apikey-row-${idx}`;
         let expandToggleHtml = '';
         if (isLlmRow) {
@@ -2272,7 +2276,7 @@ function renderApiKeysTable(keys) {
                         <polyline points="6 9 12 15 18 9"/>
                     </svg>
                 </button>`;
-        } else if (isInteraktSetupRow) {
+        } else if (isInteraktSetupRow || isExotelSetupRow) {
             expandToggleHtml = `<button class="action-btn copilot-expand-btn" data-tooltip="Show Webhook URL" data-row-id="${rowId}" onclick="toggleCopilotExpand('${rowId}')">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="6 9 12 15 18 9"/>
@@ -2328,31 +2332,15 @@ function renderApiKeysTable(keys) {
             </tr>
         `;
 
-        // Hidden expandable child row — shows Interakt's "where do I paste
-        // this URL" instructions for tenants who just configured the key.
+        // Server-composed webhook URL — Auth fills `webhookUrl` on every row
+        // whose (provider, service_type) has a template configured in
+        // appsettings.WebhookUrlTemplates. Frontend just renders.
+        const webhookUrl = key.webhookUrl || key.webhook_url || '';
+
         let interaktSetupRow = '';
         if (isInteraktSetupRow) {
-            const tenantId = (function() {
-                try {
-                    const tok = localStorage.getItem('ragenaizer_authToken');
-                    if (!tok) return null;
-                    const payload = JSON.parse(atob(tok.split('.')[1]));
-                    return payload.tenant_id || null;
-                } catch { return null; }
-            })();
-            const baseUrl = (typeof CONFIG !== 'undefined' && CONFIG.endpoints && CONFIG.endpoints.notification)
-                ? CONFIG.endpoints.notification
-                : 'https://notification.ragenaizer.com';
-            // Per-number webhook URL — instance_key is the WhatsApp business phone
-            // (digits-only with country code) so multiple Interakt numbers under one
-            // tenant route to the right credential row in NotificationService.
-            const webhookUrl = tenantId
-                ? (instanceKey
-                    ? `${baseUrl}/api/webhooks/interakt/${tenantId}/${encodeURIComponent(instanceKey)}`
-                    : `${baseUrl}/api/webhooks/interakt/${tenantId}`)
-                : '(could not resolve tenant id — please re-login)';
             const phoneLabel = instanceKey ? ` for <code>${instanceKey}</code>` : '';
-
+            const urlDisplay = webhookUrl || '(no URL — set NOTIFICATION_PUBLIC_URL in Auth config)';
             interaktSetupRow = `
                 <tr class="copilot-expand-row" id="${rowId}-expand" style="display:none;">
                     <td colspan="6">
@@ -2364,7 +2352,7 @@ function renderApiKeysTable(keys) {
                                 </div>
                             </div>
                             <div style="display:flex; gap:8px; align-items:center; margin-top:12px; padding:12px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px;">
-                                <code id="${rowId}-webhook-url" style="flex:1; font-size:13px; user-select:all; word-break:break-all;">${webhookUrl}</code>
+                                <code id="${rowId}-webhook-url" style="flex:1; font-size:13px; user-select:all; word-break:break-all;">${urlDisplay}</code>
                                 <button class="btn btn-sm btn-outline-primary" onclick="copyTextToClipboard(document.getElementById('${rowId}-webhook-url').innerText, this)">
                                     Copy URL
                                 </button>
@@ -2376,6 +2364,43 @@ function renderApiKeysTable(keys) {
                                 <li>Paste the same <b>Webhook Secret</b> you entered above (signs every payload with HMAC-SHA256).</li>
                                 <li>Under <b>Others</b>, tick <b>Message received from customers</b>.</li>
                                 <li>Click <b>Submit</b>. You're done — incoming WhatsApp messages will start landing in CRM as leads + activities.</li>
+                            </ol>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Exotel webhook setup panel — same pattern as Interakt. Note that
+        // the secret embedded in the URL was generated SERVER-SIDE by Auth,
+        // not by the form; we just display whatever Auth handed back.
+        let exotelSetupRow = '';
+        if (isExotelSetupRow) {
+            const phoneLabel = instanceKey ? ` for <code>${instanceKey}</code>` : '';
+            const urlDisplay = webhookUrl || '(no URL — set CRM_PUBLIC_URL in Auth config)';
+            exotelSetupRow = `
+                <tr class="copilot-expand-row" id="${rowId}-expand" style="display:none;">
+                    <td colspan="6">
+                        <div class="copilot-expand-panel">
+                            <div class="copilot-expand-header">
+                                <div>
+                                    <div class="copilot-expand-title">Connect Exotel → Ragenaizer${phoneLabel} (one-time setup)</div>
+                                    <div class="copilot-expand-sub">Paste this Status Callback URL into Exotel so call lifecycle events (initiated → ringing → answered → completed + recording) land in the CRM in real time. The secret in the URL is generated by us — Exotel doesn't sign requests, the URL path itself is the credential.</div>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:8px; align-items:center; margin-top:12px; padding:12px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px;">
+                                <code id="${rowId}-webhook-url" style="flex:1; font-size:13px; user-select:all; word-break:break-all;">${urlDisplay}</code>
+                                <button class="btn btn-sm btn-outline-primary" onclick="copyTextToClipboard(document.getElementById('${rowId}-webhook-url').innerText, this)">
+                                    Copy URL
+                                </button>
+                            </div>
+                            <ol style="margin:14px 0 0 18px; line-height:1.7; color:var(--text-secondary); font-size:13px;">
+                                <li>Open <a href="https://my.exotel.com/" target="_blank" rel="noopener" style="color:var(--brand-primary);">Exotel Dashboard</a> → <b>Call Settings → App Bazaar</b> (or the per-ExoPhone settings).</li>
+                                <li>Paste the URL above into the <b>Call Status Callback</b> field.</li>
+                                <li>Set method to <b>POST</b> and content type to <code>application/x-www-form-urlencoded</code>.</li>
+                                <li>Save the App Bazaar config and link it to the matching ExoPhone.</li>
+                                <li>Submit your <b>KYC documents</b> in Exotel (Company PAN, COI, Address Proof, Photo). Outbound calls only work once KYC clears (24-72h).</li>
+                                <li>Place a test call from any CRM lead — the call rows + recordings will appear in the lead timeline.</li>
                             </ol>
                         </div>
                     </td>
@@ -2425,7 +2450,7 @@ function renderApiKeysTable(keys) {
             `;
         }
 
-        return mainRow + copilotRow + interaktSetupRow;
+        return mainRow + copilotRow + interaktSetupRow + exotelSetupRow;
     }).join('');
 }
 
@@ -2506,6 +2531,17 @@ function openAddApiKeyModal() {
     if (ikKey) { ikKey.value = ''; ikKey.type = 'password'; }
     if (ikSecret) { ikSecret.value = ''; ikSecret.type = 'password'; }
     if (ikPhone) { ikPhone.value = ''; ikPhone.disabled = false; }
+    // Reset Exotel-specific fields
+    const exSid = document.getElementById('exotelAccountSid');
+    const exKey = document.getElementById('exotelApiKey');
+    const exTok = document.getElementById('exotelApiToken');
+    const exPhone = document.getElementById('exotelExoPhone');
+    const exRegion = document.getElementById('exotelRegion');
+    if (exSid) exSid.value = '';
+    if (exKey) { exKey.value = ''; exKey.type = 'text'; }
+    if (exTok) { exTok.value = ''; exTok.type = 'password'; }
+    if (exPhone) { exPhone.value = ''; exPhone.disabled = false; }
+    if (exRegion) exRegion.value = 'sg';
     onApiKeyProviderChange();
     document.getElementById('apiKeySaveBtn').textContent = 'Save';
     openModal('apiKeyModal');
@@ -2522,15 +2558,18 @@ function onApiKeyProviderChange() {
     const provider = document.getElementById('apiKeyProvider').value;
     const isRazorpay = provider === 'Razorpay';
     const isInterakt = provider === 'Interakt';
-    const isMultiField = isRazorpay || isInterakt;
+    const isExotel = provider === 'Exotel';
+    const isMultiField = isRazorpay || isInterakt || isExotel;
     const singleGroup = document.getElementById('apiKeySingleGroup');
     const razorpayGroup = document.getElementById('apiKeyRazorpayGroup');
     const interaktGroup = document.getElementById('apiKeyInteraktGroup');
+    const exotelGroup = document.getElementById('apiKeyExotelGroup');
     const serviceTypeSelect = document.getElementById('apiKeyServiceType');
 
     if (singleGroup) singleGroup.style.display = isMultiField ? 'none' : '';
     if (razorpayGroup) razorpayGroup.style.display = isRazorpay ? '' : 'none';
     if (interaktGroup) interaktGroup.style.display = isInterakt ? '' : 'none';
+    if (exotelGroup) exotelGroup.style.display = isExotel ? '' : 'none';
 
     // Pin service type for providers that have only one valid service.
     // When switching AWAY from a pinned provider to a regular one, clear the
@@ -2542,10 +2581,13 @@ function onApiKeyProviderChange() {
     } else if (isInterakt && serviceTypeSelect) {
         serviceTypeSelect.value = 'whatsapp';
         serviceTypeSelect.disabled = true;
+    } else if (isExotel && serviceTypeSelect) {
+        serviceTypeSelect.value = 'telephony';
+        serviceTypeSelect.disabled = true;
     } else if (!apiKeyEditMode && serviceTypeSelect) {
-        // Clear stale pinned value (whatsapp / payment_gateway) when switching
-        // to a non-pinned provider; let the user re-pick.
-        if (serviceTypeSelect.value === 'whatsapp' || serviceTypeSelect.value === 'payment_gateway') {
+        // Clear stale pinned value (whatsapp / payment_gateway / telephony)
+        // when switching to a non-pinned provider; let the user re-pick.
+        if (['whatsapp', 'payment_gateway', 'telephony'].includes(serviceTypeSelect.value)) {
             serviceTypeSelect.value = '';
         }
         serviceTypeSelect.disabled = false;
@@ -2579,12 +2621,18 @@ function openEditApiKeyModal(provider, serviceType, instanceKey) {
     document.getElementById('apiKeyValue').type = 'password';
     document.getElementById('apiKeyValue').placeholder = 'Enter new API key...';
     onApiKeyProviderChange();
-    // Pre-fill + lock the phone field on rotation so the user can't accidentally
-    // change instance_key (which would create a duplicate row instead of rotating).
+    // Pre-fill + lock the instance-key field on rotation so the user can't
+    // accidentally change it (which would create a duplicate row instead of
+    // rotating). Applies to every multi-instance provider.
     const ikPhone = document.getElementById('interaktBusinessPhone');
     if (ikPhone) {
         ikPhone.value = apiKeyEditInstanceKey || '';
         ikPhone.disabled = true;
+    }
+    const exPhone = document.getElementById('exotelExoPhone');
+    if (exPhone) {
+        exPhone.value = apiKeyEditInstanceKey || '';
+        exPhone.disabled = true;
     }
     document.getElementById('apiKeySaveBtn').textContent = 'Update Key';
     openModal('apiKeyModal');
@@ -2633,6 +2681,33 @@ async function saveApiKey() {
         apiKeyVal = JSON.stringify({
             api_key: apiKey,
             webhook_secret: webhookSecret
+        });
+        instanceKey = phoneDigits;
+    } else if (provider === 'Exotel') {
+        // Exotel telephony BYOK. We deliberately do NOT collect
+        // webhook_secret here — Auth generates it server-side (see
+        // BusinessLayer_TenantApiKeys.EnrichBlobWithWebhookSecret) and
+        // embeds it into the row's webhook URL. Frontend learns the URL
+        // back via the /api/tenant-api-keys response.
+        const accountSid = document.getElementById('exotelAccountSid').value.trim();
+        const apiKey = document.getElementById('exotelApiKey').value.trim();
+        const apiToken = document.getElementById('exotelApiToken').value.trim();
+        const region = document.getElementById('exotelRegion').value || 'sg';
+        const phoneRaw = (document.getElementById('exotelExoPhone')?.value || '').trim();
+        const phoneDigits = phoneRaw.replace(/\D/g, '');
+        if (!accountSid || !apiKey || !apiToken) {
+            showToast('Exotel requires Account SID, API Key, and API Token', 'error');
+            return;
+        }
+        if (!apiKeyEditMode && !phoneDigits) {
+            showToast('Exotel requires the ExoPhone number', 'error');
+            return;
+        }
+        apiKeyVal = JSON.stringify({
+            account_sid: accountSid,
+            api_key: apiKey,
+            api_token: apiToken,
+            region: region
         });
         instanceKey = phoneDigits;
     } else {

@@ -1146,10 +1146,10 @@ function renderLeadsTable(leads) {
                         : `<span class="crm-cell-secondary">${escapeHtml(lead.email)}</span>`)
                     : `<span class="crm-cell-secondary">-</span>`}
             </td>
-            <td data-col="phone" class="hide-mobile">
+            <td data-col="phone">
                 <span class="crm-cell-secondary">${lead.phone ? crmPhoneLink(lead.phone) : '-'}</span>
             </td>
-            <td data-col="source" class="hide-mobile">
+            <td data-col="source">
                 <span class="crm-source-badge source-${lead.lead_source || 'manual'}">${formatSource(lead.lead_source)}</span>
             </td>
             <td data-col="status">
@@ -1158,19 +1158,19 @@ function renderLeadsTable(leads) {
                 ${lead.next_followup_date ? formatFollowupIndicator(lead.next_followup_date) : ''}
                 ${lead.has_pending_transfer ? '<span class="crm-transfer-pending-badge" data-tooltip="Transfer/Reassignment pending approval">⇄ Transfer Pending</span>' : ''}
             </td>
-            <td data-col="engagement" class="hide-mobile">
+            <td data-col="engagement">
                 ${renderEmailEngagement(lead)}
             </td>
-            <td data-col="team" class="hide-mobile">
+            <td data-col="team">
                 ${lead.teamName || lead.team_name ? renderTeamBadge(lead) : '<span class="crm-cell-secondary">—</span>'}
             </td>
-            <td data-col="owner" class="hide-mobile">
+            <td data-col="owner">
                 ${renderOwnerCell(lead)}
             </td>
-            <td data-col="created" class="hide-mobile">
+            <td data-col="created">
                 <span class="crm-cell-secondary">${formatDate(lead.created_at)}</span>
             </td>
-            <td data-col="latestSummary" class="hide-mobile">${renderLatestSummaryCell(lead)}</td>
+            <td data-col="latestSummary">${renderLatestSummaryCell(lead)}</td>
             <td>
                 <div class="crm-actions">
                     ${(lead.team_id || lead.team_name) ? `<button class="crm-action-btn" onclick="openLogActivityModal('${lead.id}')" data-tooltip="Log Activity">
@@ -1506,10 +1506,40 @@ function _bindColumnsPickerDragDrop(menu) {
 function toggleColumnsPicker(event) {
     if (event) event.stopPropagation();
     const menu = document.getElementById('columnsPickerMenu');
+    const btn = document.getElementById('columnsPickerBtn');
     if (!menu) return;
     if (menu.hidden) {
         renderColumnsPickerMenu();
         menu.hidden = false;
+
+        // On mobile the menu's parent (the column-picker filter-group) is
+        // only as wide as the button, so CSS-only positioning either flings
+        // the menu off-screen or clips it. The menu stays `position:absolute`
+        // (so it scrolls with its parent / button — what users expect) but
+        // we set inline left/width here so the menu spans the viewport with
+        // a 12px inset on each side. Anchor maths: menu.left is in the
+        // parent's coordinate space → translate viewport-x=12px back to
+        // parent-relative by subtracting the parent's screen-x.
+        if (btn && window.matchMedia('(max-width: 768px)').matches) {
+            const parent = btn.offsetParent || btn.parentElement;
+            const parentRect = parent.getBoundingClientRect();
+            // Use documentElement.clientWidth so an OS scrollbar doesn't
+            // sneak into the inset calculation. 16px gutter on each side
+            // matches the page's container padding so the menu sits inside
+            // the same "safe area" as the cards below.
+            const inset = 16;
+            const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+            menu.style.left = (inset - parentRect.left) + 'px';
+            menu.style.right = 'auto';
+            menu.style.width = (viewportWidth - inset * 2) + 'px';
+            menu.style.top = '';   // CSS handles top via `calc(100% + 6px)`
+        } else {
+            menu.style.left = '';
+            menu.style.right = '';
+            menu.style.width = '';
+            menu.style.top = '';
+        }
+
         // Close on outside click — bind once per open so we don't pile up listeners.
         setTimeout(() => {
             document.addEventListener('click', closeColumnsPickerOnOutside, { once: true });
