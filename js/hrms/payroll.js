@@ -6653,18 +6653,26 @@ async function downloadPayslipById(payslipId) {
             y += 8;
         };
 
+        // YTD totals are NOT served as separate fields — sum the per-component
+        // ytd_amount we already render line-by-line above. Without this, the
+        // total row shows "—" while every component below it shows a YTD value,
+        // which makes the audit reader question the math (it adds up — there's
+        // no source-of-truth difference, the field just wasn't rolled up).
+        const sumYtd = (arr) => arr.reduce((acc, x) =>
+            acc + (Number(x.ytd_amount ?? x.ytdAmount) || 0), 0);
+        const ytdGross = sumYtd(earnings);
+        const ytdDeductions = sumYtd(deductions);
+
         drawTableHeader('EARNINGS');
         earnings.forEach((e, i) => drawRow(e.component_name, e.amount, e.ytd_amount ?? e.ytdAmount, i % 2 === 1));
-        drawTotalRow('Gross Pay', payslip.gross_earnings || 0,
-                     payslip.ytd_gross_earnings ?? null);
+        drawTotalRow('Gross Pay', payslip.gross_earnings || 0, ytdGross);
 
         y += 4;
 
         // ── DEDUCTIONS TABLE
         drawTableHeader('DEDUCTIONS');
         deductions.forEach((d, i) => drawRow(d.component_name, d.amount, d.ytd_amount ?? d.ytdAmount, i % 2 === 1));
-        drawTotalRow('Total Deductions', payslip.total_deductions || 0,
-                     payslip.ytd_total_deductions ?? null);
+        drawTotalRow('Total Deductions', payslip.total_deductions || 0, ytdDeductions);
 
         y += 6;
 
