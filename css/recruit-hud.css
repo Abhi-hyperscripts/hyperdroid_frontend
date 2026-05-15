@@ -86,6 +86,15 @@
     min-height: 0;
 }
 
+/* Each section keeps its natural height — the BODY scrolls when total content
+ * exceeds the panel's max-height. Without this, the default flex-shrink:1
+ * squishes the jargon tray + scorecard body to ~30px while their inner content
+ * (199px of jargon defs / accumulated scorecard rows) renders outside their
+ * containers. */
+.recruit-hud-floating-body > * {
+    flex-shrink: 0;
+}
+
 .recruit-hud-floating.recruit-hud-floating-collapsed {
     max-height: unset;
 }
