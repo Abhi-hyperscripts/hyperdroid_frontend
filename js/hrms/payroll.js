@@ -9874,12 +9874,24 @@ async function saveNewVersion() {
             ? parseFloat(percentageInput?.value) || 0
             : parseFloat(fixedInput?.value) || 0;
 
+        // calculation_base must come from the selected component's metadata
+        // (data-calc-base on the dropdown option, captured into hiddenInput.dataset.calcBase
+        // by selectDropdownOption). Hardcoding 'ctc' for everything was the
+        // bug behind "HRA computed as 50% of CTC instead of 50% of basic"
+        // — it produced impossible structures (sum of earnings > CTC) and
+        // got rejected at payroll-process time with the "Other earnings exceed
+        // monthly CTC" error. For fixed components calc_base is irrelevant
+        // (send null to be explicit).
+        const calcBase = calcType === 'percentage'
+            ? (hiddenInput.dataset.calcBase || 'basic')
+            : null;
+
         if (value > 0) {
             selectedComponents.push({
                 component_id: componentId,
                 calculation_type: calcType,
-                calculation_base: 'ctc',  // v3.0.42: Ensure calculation_base is set for percentage type
-                percentage: calcType === 'percentage' ? value : null,  // v3.0.42: Fixed field name from percentage_of_basic to percentage
+                calculation_base: calcBase,
+                percentage: calcType === 'percentage' ? value : null,
                 fixed_amount: calcType === 'fixed' ? value : null,
                 display_order: index + 1
             });
