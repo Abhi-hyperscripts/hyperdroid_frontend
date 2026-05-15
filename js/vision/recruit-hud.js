@@ -189,6 +189,17 @@
         row.style.display = 'flex';
     }
 
+    // Normalize for map keys / dedup: trim + lowercase + Unicode NFC
+    // composition. Avoids treating "Communication" and "communication" as
+    // different scorecard rows, and " API " and "API" as different jargon
+    // entries. NFC composes combining sequences (e.g. "café" with
+    // U+00E9 vs e+U+0301) into the canonical form.
+    function normKey(s) {
+        if (!s) return '';
+        try { return ('' + s).trim().toLowerCase().normalize('NFC'); }
+        catch (_e) { return ('' + s).trim().toLowerCase(); }
+    }
+
     function onJargonDetected(data) {
         const list = document.getElementById('recruitJargonList');
         const count = document.getElementById('recruitJargonCount');
@@ -198,9 +209,9 @@
         const incoming = (data.terms || []).filter(t => t && t.term && t.definition);
         if (incoming.length === 0) return;
 
-        // Prepend newest, dedupe by term (case-insensitive), cap 20.
-        const seen = new Set(incoming.map(t => (t.term || '').toLowerCase()));
-        jargonHistory = incoming.concat(jargonHistory.filter(t => !seen.has((t.term || '').toLowerCase()))).slice(0, 20);
+        // Prepend newest, dedupe by normalized term, cap 20.
+        const seen = new Set(incoming.map(t => normKey(t.term)));
+        jargonHistory = incoming.concat(jargonHistory.filter(t => !seen.has(normKey(t.term)))).slice(0, 20);
         count.textContent = jargonHistory.length;
         row.style.display = 'flex';
 
@@ -221,12 +232,18 @@
 
         (data.deltas || []).forEach(d => {
             if (!d || !d.competency || !d.signal) return;
-            // Don't clobber an interviewer override.
-            const existing = scorecardState.get(d.competency);
+            // Normalize competency name for collision-safe Map keys (audit
+            // fix: "Communication" and "communication" were creating two
+            // separate scorecard rows). The original casing is preserved
+            // in the row's `displayName` for rendering.
+            const key = normKey(d.competency);
+            if (!key) return;
+            const existing = scorecardState.get(key);
             if (existing && existing.overridden) return;
-            scorecardState.set(d.competency, {
+            scorecardState.set(key, {
                 signal: d.signal,
                 evidenceQuote: d.evidenceQuote || '',
+                displayName: (existing && existing.displayName) || d.competency,
                 overridden: false,
             });
         });
@@ -247,22 +264,25 @@
         const rank = { not_yet: 0, partial: 1, demonstrated: 2 };
         entries.sort((a, b) => (rank[a[1].signal] || 0) - (rank[b[1].signal] || 0));
 
-        entries.forEach(([competency, d]) => {
+        entries.forEach(([key, d]) => {
             const sig = d.signal || 'not_yet';
             if (sig === 'demonstrated') demonstrated++;
             else if (sig === 'partial') partial++;
             else notYet++;
 
+            // Map keys are normalized; render using the original casing
+            // (displayName) so "Communication" doesn't show as "communication".
+            const displayName = d.displayName || key;
             const row = document.createElement('div');
             row.className = 'recruit-sc-row recruit-sc-' + sig;
-            const competencyEsc = escapeAttr(competency);
+            const keyEsc = escapeAttr(key);
             const evidenceFull = d.evidenceQuote || '';
             const evidencePreview = evidenceFull ? '“' + truncate(evidenceFull, 70) + '”' : '';
             row.innerHTML = ''
-                + '<span class="recruit-sc-comp" title="' + escapeAttr(competency) + '">' + escapeHtml(competency) + '</span>'
+                + '<span class="recruit-sc-comp" title="' + escapeAttr(displayName) + '">' + escapeHtml(displayName) + '</span>'
                 + '<span class="recruit-sc-signal recruit-sc-signal-' + sig + '">' + sig.replace(/_/g, ' ') + (d.overridden ? ' (you)' : '') + '</span>'
                 + (evidencePreview ? '<span class="recruit-sc-evidence" title="' + escapeAttr(evidenceFull) + '">' + escapeHtml(evidencePreview) + '</span>' : '<span class="recruit-sc-evidence"></span>')
-                + '<select class="recruit-sc-override" data-comp="' + competencyEsc + '" onchange="overrideRecruitScorecard(this.dataset.comp, this.value)">'
+                + '<select class="recruit-sc-override" data-comp="' + keyEsc + '" onchange="overrideRecruitScorecard(this.dataset.comp, this.value)">'
                 +   '<option value="">override…</option>'
                 +   '<option value="demonstrated"' + (sig === 'demonstrated' ? ' selected' : '') + '>demonstrated</option>'
                 +   '<option value="partial"'      + (sig === 'partial'      ? ' selected' : '') + '>partial</option>'
@@ -288,18 +308,67 @@
             'score=' + (data && data.overallScore), 'topics=' + ((data && data.topicsCovered && data.topicsCovered.length) || 0));
     }
 
-    // Called by meeting.js's leaveMeeting() before the final disconnect. Returns
-    // a Promise that resolves when the recruiter has Submitted or Skipped the
-    // modal. If there's no draft yet (e.g. AIEngine didn't produce one because
-    // the meeting was too short), resolves immediately.
-    function showRecruitReportModal() {
-        return new Promise((resolve) => {
-            if (!isInterviewMode || !reportDraft) {
-                resolve({ action: 'no_draft' });
-                return;
+    // Called by meeting.js's leaveMeeting() AFTER the backend has been told
+    // to leave (so the AI report can be generated). Returns a Promise that
+    // resolves when the recruiter has Submitted/Skipped, OR when the draft
+    // never arrives within 15s. The draft is generated by AIEngine after the
+    // bot tears down — there's a 2-10s delay between user clicking Leave
+    // and the draft arriving over SignalR, so the modal first shows a
+    // loader, then upgrades to the editable form once the draft arrives.
+    async function showRecruitReportModal() {
+        if (!isInterviewMode) return { action: 'not_interview_mode' };
+        if (reportSubmitted) return { action: 'already_submitted' };
+
+        // If we don't have the draft yet, wait for it (up to 15s) so the
+        // backend tear-down → AIEngine session-end → SignalR broadcast chain
+        // can complete. Display a non-blocking loader so the user knows we're
+        // waiting on the AI rather than the UI being frozen.
+        if (!reportDraft) {
+            const loader = mountLoader();
+            try {
+                await waitForReportDraft(15000);
+            } catch (_e) { /* timeout — fall through */ }
+            if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+            if (!reportDraft) {
+                console.warn('[RecruitHUD] InterviewReportDraft did not arrive in 15s — AI version already auto-saved server-side');
+                if (typeof Toast !== 'undefined' && Toast && Toast.warning) {
+                    Toast.warning('Report still generating — AI version auto-saved. You can edit it later from the recruit panel.', 4000);
+                }
+                return { action: 'timeout' };
             }
-            if (reportSubmitted) {
-                resolve({ action: 'already_submitted' });
+        }
+
+        return showRecruitReportModalCore();
+    }
+
+    function mountLoader() {
+        const loader = document.createElement('div');
+        loader.className = 'recruit-report-modal-overlay';
+        loader.id = 'recruitReportLoaderOverlay';
+        loader.innerHTML =
+            '<div class="recruit-report-modal recruit-report-modal-loader">' +
+            '  <div class="recruit-report-loader-spinner"></div>' +
+            '  <div class="recruit-report-loader-text">Generating interview report…</div>' +
+            '  <div class="recruit-report-loader-sub">The AI is summarizing the call. This usually takes 5-10 seconds.</div>' +
+            '</div>';
+        document.body.appendChild(loader);
+        return loader;
+    }
+
+    function waitForReportDraft(timeoutMs) {
+        return new Promise((resolve, reject) => {
+            const start = Date.now();
+            const tick = setInterval(() => {
+                if (reportDraft) { clearInterval(tick); resolve(); }
+                else if (Date.now() - start >= timeoutMs) { clearInterval(tick); reject(new Error('timeout')); }
+            }, 200);
+        });
+    }
+
+    function showRecruitReportModalCore() {
+        return new Promise((resolve) => {
+            if (!reportDraft) {
+                resolve({ action: 'no_draft' });
                 return;
             }
 
@@ -389,13 +458,29 @@
                 scoreInput.addEventListener('input', () => { scoreVal.textContent = scoreInput.value; });
             }
 
+            // Double-submit guard: once the user clicks Submit, disable the
+            // button and ignore subsequent clicks. Prevents the audit-flagged
+            // double-POST scenario (slow network + impatient user).
+            let inFlight = false;
+
             overlay.addEventListener('click', (e) => {
                 const action = e.target && e.target.getAttribute && e.target.getAttribute('data-action');
                 if (!action) return;
+                if (inFlight) return;
                 if (action === 'skip') {
                     cleanup();
                     resolve({ action: 'skip' });
                 } else if (action === 'submit') {
+                    inFlight = true;
+                    const submitBtn = overlay.querySelector('.recruit-report-btn-submit');
+                    const skipBtn = overlay.querySelector('.recruit-report-btn-skip');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.classList.add('recruit-report-btn-loading');
+                        submitBtn.textContent = 'Submitting…';
+                    }
+                    if (skipBtn) skipBtn.disabled = true;
+
                     submitFromModal()
                         .then(() => { reportSubmitted = true; cleanup(); resolve({ action: 'submitted' }); })
                         .catch((err) => {
@@ -492,15 +577,18 @@
 
     function overrideRecruitScorecard(competency, value) {
         if (!competency) return;
-        const existing = scorecardState.get(competency) || { signal: 'not_yet', evidenceQuote: '', overridden: false };
+        // Normalize key for collision safety — matches what the renderer
+        // wrote into the data-comp attribute.
+        const key = normKey(competency);
+        if (!key) return;
+        const existing = scorecardState.get(key) || { signal: 'not_yet', evidenceQuote: '', displayName: competency, overridden: false };
         if (!value) {
-            // Reset override (will be re-marked by next AI signal).
             existing.overridden = false;
-            scorecardState.set(competency, existing);
+            scorecardState.set(key, existing);
         } else {
             existing.signal = value;
             existing.overridden = true;
-            scorecardState.set(competency, existing);
+            scorecardState.set(key, existing);
         }
         renderScorecard();
     }

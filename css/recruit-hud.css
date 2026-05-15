@@ -755,3 +755,53 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ============================================================
+ * Loader (audit fix: wait for InterviewReportDraft up to 15s)
+ * ============================================================ */
+.recruit-report-modal-loader {
+    align-items: center;
+    justify-content: center;
+    padding: 32px 24px;
+    text-align: center;
+    max-width: 380px;
+}
+
+.recruit-report-loader-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: recruitReportLoaderSpin 0.8s linear infinite;
+    margin: 0 auto 14px auto;
+}
+
+@keyframes recruitReportLoaderSpin {
+    to { transform: rotate(360deg); }
+}
+
+.recruit-report-loader-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.recruit-report-loader-sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Submit button loading state (audit fix: prevent double-click) */
+.recruit-report-btn-loading {
+    opacity: 0.7;
+    cursor: wait;
+    pointer-events: none;
+}
+
+.recruit-report-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
