@@ -2977,22 +2977,16 @@ async function leaveMeeting() {
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
 
-            // Tell the backend we're leaving FIRST (audit fix). This triggers
-            // the last-participant teardown chain: stop transcription bot →
-            // AIEngine session-end → generate InterviewReport → broadcast
-            // InterviewReportDraft via SignalR. The recruit modal then waits
-            // for that broadcast (up to 15s) inside showRecruitReportModal.
-            // Keeping the SignalR connection ALIVE during the wait is what
-            // makes the draft delivery actually work; we tear it down after
-            // the modal closes.
+            // Tell the backend we're leaving FIRST. When the last participant
+            // (host or candidate) leaves, Vision tears down the transcription
+            // bot, AIEngine ends the session, and the interview report is
+            // generated + persisted to HRMS in the background — fire and
+            // forget. The recruiter views the report later at HRMS →
+            // Recruitment → Job Posting → Candidate → Session Report. NO
+            // in-meeting review modal: keeping the host on a "review report"
+            // screen while the candidate has already left was confusing UX.
             if (signalRConnection) {
                 try { await signalRConnection.invoke('LeaveMeeting', meetingId); } catch (_e) { /* best-effort */ }
-            }
-
-            // Phase 4 review modal — async wait inside the modal for the AI
-            // draft to arrive over SignalR. No-op for non-interview meetings.
-            if (typeof showRecruitReportModal === 'function') {
-                try { await showRecruitReportModal(); } catch (_e) { /* never block leave */ }
             }
 
             if (signalRConnection) {
