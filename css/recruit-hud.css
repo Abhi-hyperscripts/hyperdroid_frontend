@@ -265,6 +265,33 @@
 .recruit-quality-red    .recruit-quality-text  { color: var(--color-error-dark, #991b1b); }
 
 .recruit-quality-empty       { opacity: 0.6; }
+.recruit-quality-empty       .recruit-quality-dot  { background: var(--text-tertiary, var(--text-secondary)); box-shadow: none; }
+.recruit-quality-empty       .recruit-quality-text { color: var(--text-secondary); font-style: italic; }
+
+/* ── Empty-state placeholders ────────────────────────────────
+ * Shown in each AI-event-driven panel until the first relevant
+ * event arrives, so the cockpit shape is visible from second 1
+ * instead of looking broken. */
+.recruit-empty-state {
+    padding: 10px 12px;
+    background: var(--bg-card);
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.4;
+    font-style: italic;
+    opacity: 0.75;
+}
+
+.recruit-jargon-trigger-empty {
+    opacity: 0.6;
+}
+
+.recruit-jargon-trigger-empty .recruit-jargon-count {
+    background: var(--bg-card-hover);
+    color: var(--text-secondary);
+}
 
 /* Jargon trigger ─────────────────────────────────────────── */
 .recruit-jargon-trigger {

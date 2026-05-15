@@ -75,21 +75,23 @@
             +   '<span class="recruit-cand-round" id="recruitCandRound">—</span>'
             + '</div>'
 
-            + '<div class="recruit-ask-next" id="recruitAskNext" style="display:none;">'
+            + '<div class="recruit-ask-next" id="recruitAskNext">'
             +   '<div class="recruit-section-header">'
             +     '<span class="recruit-section-label">ASK NEXT</span>'
             +     '<span class="recruit-section-help" title="AI-suggested follow-up questions. They replace each turn — pull from the top.">?</span>'
             +   '</div>'
-            +   '<div class="recruit-ask-next-cards" id="recruitAskNextCards"></div>'
+            +   '<div class="recruit-ask-next-cards" id="recruitAskNextCards">'
+            +     '<div class="recruit-empty-state" id="recruitAskEmpty">Listening… follow-up suggestions appear here once the candidate gives a substantive answer.</div>'
+            +   '</div>'
             + '</div>'
 
-            + '<div class="recruit-signals-row" id="recruitSignalsRow" style="display:none;">'
-            +   '<div class="recruit-quality-chip recruit-quality-empty" id="recruitQualityChip" title="Quality of the candidate\'s most recent answer">'
+            + '<div class="recruit-signals-row" id="recruitSignalsRow">'
+            +   '<div class="recruit-quality-chip recruit-quality-empty" id="recruitQualityChip" title="Quality of the candidate\'s most recent answer — green / amber / red verdict will appear once the AI has graded an answer">'
             +     '<span class="recruit-quality-dot"></span>'
             +     '<span class="recruit-quality-label">LAST ANSWER</span>'
-            +     '<span class="recruit-quality-text" id="recruitQualityText">—</span>'
+            +     '<span class="recruit-quality-text" id="recruitQualityText">waiting…</span>'
             +   '</div>'
-            +   '<button type="button" class="recruit-jargon-trigger" id="recruitJargonTrigger" onclick="toggleRecruitJargonTray()">'
+            +   '<button type="button" class="recruit-jargon-trigger recruit-jargon-trigger-empty" id="recruitJargonTrigger" onclick="toggleRecruitJargonTray()" title="Plain-English definitions for technical terms the candidate uses — populates as jargon is detected">'
             +     '<span class="recruit-jargon-icon" aria-hidden="true">A.B</span>'
             +     '<span class="recruit-jargon-label">JARGON</span>'
             +     '<span class="recruit-jargon-count" id="recruitJargonCount">0</span>'
@@ -97,16 +99,20 @@
             + '</div>'
 
             + '<div class="recruit-jargon-tray" id="recruitJargonTray" style="display:none;">'
-            +   '<div class="recruit-jargon-list" id="recruitJargonList"></div>'
+            +   '<div class="recruit-jargon-list" id="recruitJargonList">'
+            +     '<div class="recruit-empty-state recruit-jargon-empty-state">No technical terms detected yet — plain-English definitions appear here when the candidate uses domain jargon.</div>'
+            +   '</div>'
             + '</div>'
 
-            + '<div class="recruit-scorecard" id="recruitScorecard" style="display:none;">'
+            + '<div class="recruit-scorecard" id="recruitScorecard">'
             +   '<button type="button" class="recruit-scorecard-header" onclick="toggleRecruitScorecard()">'
             +     '<span class="recruit-scorecard-chevron">▸</span>'
             +     '<span class="recruit-section-label">SCORECARD</span>'
-            +     '<span class="recruit-scorecard-summary" id="recruitScorecardSummary">—</span>'
+            +     '<span class="recruit-scorecard-summary" id="recruitScorecardSummary">fills as the candidate covers each competency</span>'
             +   '</button>'
-            +   '<div class="recruit-scorecard-body" id="recruitScorecardBody" style="display:none;"></div>'
+            +   '<div class="recruit-scorecard-body" id="recruitScorecardBody" style="display:none;">'
+            +     '<div class="recruit-empty-state recruit-scorecard-empty-state" id="recruitScorecardEmpty">Competency rows appear here as the AI marks signals from the conversation. You can override any AI verdict during or after the call.</div>'
+            +   '</div>'
             + '</div>';
     }
 
@@ -155,6 +161,16 @@
 
         askNextQueue = (data.questions || []).slice(0, 3);
         cards.innerHTML = '';
+        if (askNextQueue.length === 0) {
+            // Fall back to the empty state instead of hiding the panel —
+            // the user should always see the cockpit shape, never a vanishing section.
+            const empty = document.createElement('div');
+            empty.className = 'recruit-empty-state';
+            empty.id = 'recruitAskEmpty';
+            empty.textContent = 'Listening… follow-up suggestions appear here once the candidate gives a substantive answer.';
+            cards.appendChild(empty);
+            return;
+        }
         askNextQueue.forEach((q, i) => {
             const diff = (q.difficulty || 'medium').toLowerCase();
             const card = document.createElement('div');
@@ -172,13 +188,11 @@
                 + '</div>';
             cards.appendChild(card);
         });
-        root.style.display = askNextQueue.length > 0 ? 'block' : 'none';
     }
 
     function onAnswerQuality(data) {
         const chip = document.getElementById('recruitQualityChip');
-        const row = document.getElementById('recruitSignalsRow');
-        if (!chip || !row) return;
+        if (!chip) return;
 
         chip.classList.remove('recruit-quality-empty', 'recruit-quality-green', 'recruit-quality-amber', 'recruit-quality-red');
         chip.classList.add('recruit-quality-' + (data.color || 'empty'));
@@ -186,7 +200,6 @@
 
         const conf = typeof data.confidence === 'number' ? Math.round(data.confidence * 100) + '%' : '';
         chip.title = 'Last answer · ' + (data.color || '').toUpperCase() + (conf ? ' · ' + conf : '') + '\n' + (data.reason || '');
-        row.style.display = 'flex';
     }
 
     // Normalize for map keys / dedup: trim + lowercase + Unicode NFC
@@ -203,8 +216,8 @@
     function onJargonDetected(data) {
         const list = document.getElementById('recruitJargonList');
         const count = document.getElementById('recruitJargonCount');
-        const row = document.getElementById('recruitSignalsRow');
-        if (!list || !count || !row) return;
+        const trigger = document.getElementById('recruitJargonTrigger');
+        if (!list || !count) return;
 
         const incoming = (data.terms || []).filter(t => t && t.term && t.definition);
         if (incoming.length === 0) return;
@@ -213,7 +226,8 @@
         const seen = new Set(incoming.map(t => normKey(t.term)));
         jargonHistory = incoming.concat(jargonHistory.filter(t => !seen.has(normKey(t.term)))).slice(0, 20);
         count.textContent = jargonHistory.length;
-        row.style.display = 'flex';
+        // First detection swaps the trigger out of empty styling.
+        if (trigger) trigger.classList.remove('recruit-jargon-trigger-empty');
 
         list.innerHTML = '';
         jargonHistory.forEach(t => {
@@ -227,9 +241,6 @@
     }
 
     function onScorecardUpdate(data) {
-        const sc = document.getElementById('recruitScorecard');
-        if (!sc) return;
-
         (data.deltas || []).forEach(d => {
             if (!d || !d.competency || !d.signal) return;
             // Normalize competency name for collision-safe Map keys (audit
@@ -249,13 +260,19 @@
         });
 
         renderScorecard();
-        sc.style.display = 'block';
     }
 
     function renderScorecard() {
         const body = document.getElementById('recruitScorecardBody');
         const summary = document.getElementById('recruitScorecardSummary');
         if (!body || !summary) return;
+
+        if (scorecardState.size === 0) {
+            // Keep the empty-state placeholder visible until the first row arrives.
+            body.innerHTML = '<div class="recruit-empty-state recruit-scorecard-empty-state" id="recruitScorecardEmpty">Competency rows appear here as the AI marks signals from the conversation. You can override any AI verdict during or after the call.</div>';
+            summary.textContent = 'fills as the candidate covers each competency';
+            return;
+        }
 
         body.innerHTML = '';
         let demonstrated = 0, partial = 0, notYet = 0;
@@ -291,10 +308,7 @@
             body.appendChild(row);
         });
 
-        const total = scorecardState.size;
-        summary.textContent = total === 0
-            ? '—'
-            : demonstrated + ' demo · ' + partial + ' partial · ' + notYet + ' gap';
+        summary.textContent = demonstrated + ' demo · ' + partial + ' partial · ' + notYet + ' gap';
     }
 
     // ─── Phase 4: end-of-call report ─────────────────────────────────────
