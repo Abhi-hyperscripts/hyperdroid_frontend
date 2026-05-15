@@ -2,17 +2,91 @@
  * recruit-hud.css — Interview-only floating cockpit sections.
  *
  * Loaded for ALL meeting pages but only takes effect when
- * js/vision/recruit-hud.js injects #recruitHudSections (which
+ * js/vision/recruit-hud.js injects #recruitSidebar (which
  * only happens for meeting_mode === 'interview' | 'recruit').
  *
  * All colors via theme variables — no hardcoded hex.
  * ============================================================ */
 
+/* ── Sidebar shell ───────────────────────────────────────────
+ * A fixed 300px right rail inside .meeting-main's flexbox. The
+ * video container next to it auto-compresses; no manual width
+ * math. Sidebar can collapse to a thin 24px tab so the host can
+ * reclaim full-width video on demand.
+ * ──────────────────────────────────────────────────────────── */
+.recruit-sidebar {
+    flex: 0 0 300px;
+    width: 300px;
+    min-width: 300px;
+    max-width: 300px;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    background: var(--bg-card);
+    border-left: 1px solid var(--border-color);
+    border-radius: 12px 0 0 12px;
+    position: relative;
+    transition: flex-basis 0.2s ease, width 0.2s ease, min-width 0.2s ease, max-width 0.2s ease;
+}
+
+.recruit-sidebar.recruit-sidebar-collapsed {
+    flex: 0 0 28px;
+    width: 28px;
+    min-width: 28px;
+    max-width: 28px;
+}
+
+.recruit-sidebar.recruit-sidebar-collapsed .recruit-hud-sections {
+    display: none;
+}
+
+.recruit-sidebar-collapse {
+    width: 22px;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.recruit-sidebar-collapse:hover {
+    background: var(--bg-card-hover);
+    color: var(--brand-primary);
+}
+
+.recruit-sidebar.recruit-sidebar-collapsed .recruit-sidebar-collapse {
+    border-right: none;
+}
+
+.recruit-collapse-chevron {
+    font-size: 14px;
+    line-height: 1;
+    font-weight: 600;
+}
+
 .recruit-hud-sections {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 8px;
+    padding: 10px 10px 10px 6px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+}
+
+/* Hide the recruit sidebar entirely on small screens — interview cockpit
+ * is a desktop-first workflow; on mobile the recruiter typically only has
+ * one panel of attention anyway, so we don't try to cram all four into a
+ * phone screen. A future iteration can add a bottom-sheet view. */
+@media (max-width: 900px) {
+    .recruit-sidebar { display: none; }
 }
 
 /* ── Candidate context bar ─────────────────────────────────── */
