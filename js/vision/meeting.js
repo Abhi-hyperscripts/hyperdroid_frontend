@@ -2931,6 +2931,15 @@ async function leaveMeeting() {
     });
     if (confirmed) {
         try {
+            // Phase 4: if an AI-drafted interview report is waiting, show the
+            // review modal first. Returns immediately (no-op) when there's no
+            // draft (e.g. non-interview meeting, AI didn't run, or meeting
+            // too short to produce a report). The AI version is already
+            // persisted via the internal endpoint — Skip just leaves it as-is.
+            if (typeof showRecruitReportModal === 'function') {
+                try { await showRecruitReportModal(); } catch (_e) { /* never block leave */ }
+            }
+
             // Stop recording if active
             if (isRecording) {
                 await stopRecording();

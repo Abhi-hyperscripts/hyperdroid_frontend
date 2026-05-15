@@ -30,6 +30,9 @@
     let askNextQueue = [];
     let jargonHistory = [];        // most-recent first, cap 20
     const scorecardState = new Map();   // competency -> { signal, evidenceQuote, overridden }
+    let reportDraft = null;         // AI-drafted InterviewReport from session-end (Phase 4)
+    let reportInterviewId = null;   // from Phase 1 InterviewContextLoaded
+    let reportSubmitted = false;    // recruiter has Submit'd in the modal
 
     function initRecruitHud(connection, meetingMode, meetingIdParam) {
         const mode = (meetingMode || '').toLowerCase();
@@ -115,6 +118,7 @@
         signalR.on('AnswerQuality', onAnswerQuality);
         signalR.on('JargonDetected', onJargonDetected);
         signalR.on('ScorecardUpdate', onScorecardUpdate);
+        signalR.on('InterviewReportDraft', onReportDraft);
     }
 
     // ─── SignalR handlers ────────────────────────────────────────────────
@@ -129,7 +133,9 @@
         setText('recruitCandRound', roundLabel ? roundLabel.toUpperCase() + idx : '—');
         bar.classList.remove('recruit-candidate-bar-warning');
         bar.style.display = 'flex';
-        console.log('[RecruitHUD] candidate context loaded:', data.candidateName, '-', data.jdTitle);
+        // Stash the interviewId for the Phase 4 review-modal PUT.
+        reportInterviewId = data.interviewId || null;
+        console.log('[RecruitHUD] candidate context loaded:', data.candidateName, '-', data.jdTitle, 'interviewId=', reportInterviewId);
     }
 
     function onContextMissing(_data) {
@@ -271,6 +277,179 @@
             : demonstrated + ' demo · ' + partial + ' partial · ' + notYet + ' gap';
     }
 
+    // ─── Phase 4: end-of-call report ─────────────────────────────────────
+    function onReportDraft(data) {
+        reportDraft = data || null;
+        reportSubmitted = false;
+        if (reportDraft && reportDraft.interviewId) {
+            reportInterviewId = reportDraft.interviewId;
+        }
+        console.log('[RecruitHUD] InterviewReportDraft received: recommendation=' + (data && data.overallRecommendation),
+            'score=' + (data && data.overallScore), 'topics=' + ((data && data.topicsCovered && data.topicsCovered.length) || 0));
+    }
+
+    // Called by meeting.js's leaveMeeting() before the final disconnect. Returns
+    // a Promise that resolves when the recruiter has Submitted or Skipped the
+    // modal. If there's no draft yet (e.g. AIEngine didn't produce one because
+    // the meeting was too short), resolves immediately.
+    function showRecruitReportModal() {
+        return new Promise((resolve) => {
+            if (!isInterviewMode || !reportDraft) {
+                resolve({ action: 'no_draft' });
+                return;
+            }
+            if (reportSubmitted) {
+                resolve({ action: 'already_submitted' });
+                return;
+            }
+
+            const draft = reportDraft;
+            const overlay = document.createElement('div');
+            overlay.className = 'recruit-report-modal-overlay';
+            overlay.id = 'recruitReportModalOverlay';
+
+            // Build scorecard summary from the in-memory state — interviewer's
+            // overrides during the meeting are preserved.
+            const scLines = Array.from(scorecardState.entries()).map(([comp, d]) =>
+                '<li><strong>' + escapeHtml(comp) + ':</strong> ' + escapeHtml((d.signal || '').replace(/_/g, ' ')) +
+                (d.overridden ? ' <em>(your call)</em>' : '') + '</li>'
+            );
+            const scorecardHtml = scLines.length === 0
+                ? '<p class="recruit-report-empty">No competency signals captured during the call.</p>'
+                : '<ul class="recruit-report-scorecard">' + scLines.join('') + '</ul>';
+
+            const topicLines = (draft.topicsCovered || []).map(t =>
+                '<li><strong>' + escapeHtml(t.label || '—') + ':</strong> ' +
+                'depth ' + (t.depthReached || 0) + '/3, score ' + (t.depthScore15 || 0) + '/5' +
+                (t.notes ? ' — <em>' + escapeHtml(t.notes) + '</em>' : '') + '</li>'
+            );
+            const topicsHtml = topicLines.length === 0
+                ? '<p class="recruit-report-empty">No topics covered.</p>'
+                : '<ul class="recruit-report-topics">' + topicLines.join('') + '</ul>';
+
+            const recOptions = ['proceed', 'second_round', 'reject', 'inconclusive'];
+            const recHtml = recOptions.map(opt =>
+                '<label class="recruit-report-rec-opt recruit-report-rec-' + opt + '">' +
+                '<input type="radio" name="recruitRec" value="' + opt + '"' + ((draft.overallRecommendation === opt) ? ' checked' : '') + '> ' +
+                opt.replace(/_/g, ' ').toUpperCase() +
+                '</label>'
+            ).join('');
+
+            const score = Math.max(1, Math.min(10, draft.overallScore || 5));
+            const strengthsStr = (draft.strengths || []).join('\n');
+            const redFlagsStr = (draft.redFlags || []).join('\n');
+
+            overlay.innerHTML = ''
+                + '<div class="recruit-report-modal" role="dialog" aria-modal="true">'
+                +   '<div class="recruit-report-modal-header">'
+                +     '<span class="recruit-report-modal-title">Interview Report — AI Draft</span>'
+                +     '<button type="button" class="recruit-report-modal-close" data-action="skip" title="Skip review">×</button>'
+                +   '</div>'
+                +   '<div class="recruit-report-modal-body">'
+                +     '<p class="recruit-report-modal-hint">Review the AI-drafted report. Edit anything before submitting — the AI version is already saved as a draft, so Skip just keeps the AI\'s version.</p>'
+
+                +     '<label class="recruit-report-label">RECOMMENDATION</label>'
+                +     '<div class="recruit-report-rec-row" id="recruitReportRecRow">' + recHtml + '</div>'
+
+                +     '<label class="recruit-report-label">OVERALL SCORE <span class="recruit-report-score-val" id="recruitReportScoreVal">' + score + '</span> / 10</label>'
+                +     '<input type="range" min="1" max="10" step="1" value="' + score + '" id="recruitReportScore" class="recruit-report-score-slider">'
+
+                +     '<label class="recruit-report-label" for="recruitReportSummary">SUMMARY</label>'
+                +     '<textarea id="recruitReportSummary" class="recruit-report-summary" rows="4" placeholder="1-2 paragraph hiring summary…">' + escapeHtml(draft.summaryText || '') + '</textarea>'
+
+                +     '<div class="recruit-report-twocol">'
+                +       '<div>'
+                +         '<label class="recruit-report-label" for="recruitReportStrengths">STRENGTHS (one per line)</label>'
+                +         '<textarea id="recruitReportStrengths" class="recruit-report-list" rows="4" placeholder="e.g. Clear communication">' + escapeHtml(strengthsStr) + '</textarea>'
+                +       '</div>'
+                +       '<div>'
+                +         '<label class="recruit-report-label" for="recruitReportRedFlags">RED FLAGS (one per line)</label>'
+                +         '<textarea id="recruitReportRedFlags" class="recruit-report-list" rows="4" placeholder="e.g. Vague on system design">' + escapeHtml(redFlagsStr) + '</textarea>'
+                +       '</div>'
+                +     '</div>'
+
+                +     '<label class="recruit-report-label">SCORECARD (read-only — set during call)</label>'
+                +     scorecardHtml
+
+                +     '<label class="recruit-report-label">TOPICS COVERED (AI-detected, read-only)</label>'
+                +     topicsHtml
+
+                +   '</div>'
+                +   '<div class="recruit-report-modal-footer">'
+                +     '<button type="button" class="recruit-report-btn recruit-report-btn-skip" data-action="skip">Skip</button>'
+                +     '<button type="button" class="recruit-report-btn recruit-report-btn-submit" data-action="submit">Submit Report</button>'
+                +   '</div>'
+                + '</div>';
+
+            document.body.appendChild(overlay);
+
+            const scoreInput = document.getElementById('recruitReportScore');
+            const scoreVal = document.getElementById('recruitReportScoreVal');
+            if (scoreInput && scoreVal) {
+                scoreInput.addEventListener('input', () => { scoreVal.textContent = scoreInput.value; });
+            }
+
+            overlay.addEventListener('click', (e) => {
+                const action = e.target && e.target.getAttribute && e.target.getAttribute('data-action');
+                if (!action) return;
+                if (action === 'skip') {
+                    cleanup();
+                    resolve({ action: 'skip' });
+                } else if (action === 'submit') {
+                    submitFromModal()
+                        .then(() => { reportSubmitted = true; cleanup(); resolve({ action: 'submitted' }); })
+                        .catch((err) => {
+                            console.warn('[RecruitHUD] report submit failed:', err);
+                            if (typeof Toast !== 'undefined' && Toast && Toast.error) {
+                                Toast.error('Failed to submit report — the AI draft has been auto-saved.', 4000);
+                            }
+                            cleanup();
+                            resolve({ action: 'submit_failed', error: err && err.message });
+                        });
+                }
+            });
+
+            function cleanup() {
+                if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            }
+        });
+    }
+
+    async function submitFromModal() {
+        if (!reportInterviewId) {
+            throw new Error('No interview_id captured — AI draft was already saved automatically.');
+        }
+        const recRadio = document.querySelector('input[name="recruitRec"]:checked');
+        const scoreEl = document.getElementById('recruitReportScore');
+        const summaryEl = document.getElementById('recruitReportSummary');
+        const strengthsEl = document.getElementById('recruitReportStrengths');
+        const redFlagsEl = document.getElementById('recruitReportRedFlags');
+
+        const payload = {
+            overall_recommendation: (recRadio && recRadio.value) || (reportDraft && reportDraft.overallRecommendation) || 'inconclusive',
+            overall_score: parseInt((scoreEl && scoreEl.value) || (reportDraft && reportDraft.overallScore) || 5, 10),
+            summary_text: (summaryEl && summaryEl.value) || '',
+            strengths: ((strengthsEl && strengthsEl.value) || '').split('\n').map(s => s.trim()).filter(s => s.length > 0),
+            red_flags: ((redFlagsEl && redFlagsEl.value) || '').split('\n').map(s => s.trim()).filter(s => s.length > 0),
+            topics_covered: (reportDraft && reportDraft.topicsCovered) || [],
+            transcript_url: null,
+        };
+
+        // Use the shared api singleton — endpoint prefixed with /hrms/ so
+        // api.js routes to CONFIG.hrmsApiBaseUrl (prefix is stripped before
+        // hitting the backend route /api/job-applications/...).
+        if (typeof api === 'undefined' || !api || typeof api.request !== 'function') {
+            throw new Error('api singleton unavailable');
+        }
+        const endpoint = '/hrms/job-applications/interviews/' + encodeURIComponent(reportInterviewId) + '/report';
+        const res = await api.request(endpoint, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+        });
+        console.log('[RecruitHUD] report submitted:', res);
+        if (typeof Toast !== 'undefined' && Toast && Toast.success) Toast.success('Report submitted', 2500);
+    }
+
     // ─── UI actions ──────────────────────────────────────────────────────
 
     function toggleRecruitJargonTray() {
@@ -375,4 +554,5 @@
     window.useRecruitNextQuestion = useRecruitNextQuestion;
     window.skipRecruitNextQuestion = skipRecruitNextQuestion;
     window.overrideRecruitScorecard = overrideRecruitScorecard;
+    window.showRecruitReportModal = showRecruitReportModal;
 })();

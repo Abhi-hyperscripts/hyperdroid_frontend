@@ -490,3 +490,268 @@
         display: none;
     }
 }
+
+/* ============================================================
+ * Phase 4 — End-of-call review modal
+ * ============================================================ */
+.recruit-report-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 16px;
+    animation: recruitReportFadeIn 0.18s ease-out;
+}
+
+@keyframes recruitReportFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.recruit-report-modal {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 24px 64px var(--border-color-strong);
+    width: 100%;
+    max-width: 720px;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.recruit-report-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card-hover);
+}
+
+.recruit-report-modal-title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.recruit-report-modal-close {
+    background: transparent;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0 6px;
+    border-radius: 4px;
+}
+
+.recruit-report-modal-close:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.recruit-report-modal-body {
+    padding: 16px 18px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.recruit-report-modal-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0 0 14px 0;
+    line-height: 1.4;
+}
+
+.recruit-report-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    margin: 12px 0 6px 0;
+    text-transform: uppercase;
+}
+
+/* Recommendation pills */
+.recruit-report-rec-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.recruit-report-rec-opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    background: var(--bg-card);
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.recruit-report-rec-opt:hover {
+    background: var(--bg-card-hover);
+}
+
+.recruit-report-rec-opt input {
+    margin: 0;
+}
+
+/* Tint by recommendation */
+.recruit-report-rec-opt:has(input:checked).recruit-report-rec-proceed       { background: var(--color-success-light); border-color: var(--color-success); color: var(--color-success-text); }
+.recruit-report-rec-opt:has(input:checked).recruit-report-rec-second_round  { background: var(--color-warning-light); border-color: var(--color-warning); color: var(--color-warning-text); }
+.recruit-report-rec-opt:has(input:checked).recruit-report-rec-reject        { background: var(--color-error-light, rgba(239,68,68,0.12)); border-color: var(--color-error, #ef4444); color: var(--color-error-dark, #991b1b); }
+.recruit-report-rec-opt:has(input:checked).recruit-report-rec-inconclusive  { background: var(--bg-card-hover); border-color: var(--brand-primary); color: var(--text-primary); }
+
+/* Score slider */
+.recruit-report-score-val {
+    display: inline-block;
+    padding: 1px 8px;
+    margin-left: 6px;
+    border-radius: 4px;
+    background: var(--brand-primary);
+    color: var(--text-inverse, #ffffff);
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.recruit-report-score-slider {
+    width: 100%;
+    margin: 0;
+    accent-color: var(--brand-primary);
+}
+
+/* Free-text fields */
+.recruit-report-summary,
+.recruit-report-list {
+    width: 100%;
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text-primary);
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    resize: vertical;
+    line-height: 1.4;
+}
+
+.recruit-report-summary:focus,
+.recruit-report-list:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    background: var(--bg-card);
+}
+
+.recruit-report-twocol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Scorecard + Topics lists (read-only) */
+.recruit-report-scorecard,
+.recruit-report-topics {
+    margin: 0;
+    padding: 8px 12px;
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    list-style: none;
+    font-size: 12px;
+    color: var(--text-primary);
+    line-height: 1.6;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.recruit-report-scorecard li,
+.recruit-report-topics li {
+    padding: 3px 0;
+    border-bottom: 1px dashed var(--border-color-light);
+}
+
+.recruit-report-scorecard li:last-child,
+.recruit-report-topics li:last-child {
+    border-bottom: none;
+}
+
+.recruit-report-empty {
+    margin: 0;
+    padding: 10px 12px;
+    background: var(--bg-card-hover);
+    border-radius: 6px;
+    border: 1px dashed var(--border-color);
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Footer buttons */
+.recruit-report-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-card-hover);
+}
+
+.recruit-report-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    border: 1px solid var(--border-color);
+}
+
+.recruit-report-btn-skip {
+    background: var(--bg-card);
+    color: var(--text-secondary);
+}
+
+.recruit-report-btn-skip:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.recruit-report-btn-submit {
+    background: var(--brand-primary);
+    color: var(--text-inverse, #ffffff);
+    border-color: var(--brand-primary);
+}
+
+.recruit-report-btn-submit:hover {
+    background: var(--brand-primary-dark);
+    border-color: var(--brand-primary-dark);
+}
+
+@media (max-width: 600px) {
+    .recruit-report-modal {
+        max-height: 100vh;
+        border-radius: 0;
+        max-width: 100%;
+    }
+    .recruit-report-twocol {
+        grid-template-columns: 1fr;
+    }
+}
