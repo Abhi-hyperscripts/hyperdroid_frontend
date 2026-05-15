@@ -1,0 +1,492 @@
+/* ============================================================
+ * recruit-hud.css — Interview-only floating cockpit sections.
+ *
+ * Loaded for ALL meeting pages but only takes effect when
+ * js/vision/recruit-hud.js injects #recruitHudSections (which
+ * only happens for meeting_mode === 'interview' | 'recruit').
+ *
+ * All colors via theme variables — no hardcoded hex.
+ * ============================================================ */
+
+.recruit-hud-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+}
+
+/* ── Candidate context bar ─────────────────────────────────── */
+.recruit-candidate-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 11px;
+    line-height: 1.3;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+}
+
+.recruit-candidate-bar.recruit-candidate-bar-warning {
+    border-color: var(--color-warning);
+    background: var(--color-warning-light);
+}
+
+.recruit-cand-label {
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text-primary);
+    font-size: 10px;
+}
+
+.recruit-cand-name {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.recruit-cand-jd,
+.recruit-cand-round {
+    color: var(--text-secondary);
+}
+
+.recruit-divider {
+    width: 1px;
+    height: 12px;
+    background: var(--border-color-strong);
+    display: inline-block;
+}
+
+/* ── Section headers (shared) ──────────────────────────────── */
+.recruit-section-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 6px 0;
+    padding: 0;
+}
+
+.recruit-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.recruit-section-help {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 10px;
+    cursor: help;
+}
+
+/* ── Ask Next stack ────────────────────────────────────────── */
+.recruit-ask-next {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.recruit-ask-next-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.recruit-ask-card {
+    background: var(--bg-card-hover);
+    border: 1px solid var(--border-color-light);
+    border-left: 3px solid var(--brand-primary);
+    border-radius: 6px;
+    padding: 8px 10px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+/* Rank 0 (top suggestion) gets a stronger accent. */
+.recruit-ask-card-rank-0 {
+    border-left-color: var(--brand-primary);
+    background: var(--bg-card);
+}
+
+.recruit-ask-card-rank-1,
+.recruit-ask-card-rank-2 {
+    border-left-color: var(--border-color-strong);
+}
+
+.recruit-ask-card-flash {
+    background: var(--color-success-light);
+    border-left-color: var(--color-success);
+}
+
+.recruit-ask-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+}
+
+.recruit-ask-topic {
+    color: var(--brand-primary);
+    font-weight: 700;
+}
+
+.recruit-ask-diff {
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 9px;
+    border: 1px solid var(--border-color);
+}
+
+.recruit-diff-easy   { background: var(--color-success-light); color: var(--color-success-dark); border-color: var(--color-success); }
+.recruit-diff-medium { background: var(--color-warning-light); color: var(--color-warning-dark); border-color: var(--color-warning); }
+.recruit-diff-hard   { background: var(--color-error-light, rgba(239, 68, 68, 0.15)); color: var(--color-error-dark, #b91c1c); border-color: var(--color-error, #ef4444); }
+
+.recruit-ask-q {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.4;
+    margin: 4px 0;
+}
+
+.recruit-ask-why {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-style: italic;
+    line-height: 1.3;
+    margin: 4px 0 6px 0;
+}
+
+.recruit-ask-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.recruit-ask-use,
+.recruit-ask-skip {
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.recruit-ask-use {
+    background: var(--brand-primary);
+    color: var(--text-inverse, #ffffff);
+    border-color: var(--brand-primary);
+}
+
+.recruit-ask-use:hover {
+    background: var(--brand-primary-dark);
+    border-color: var(--brand-primary-dark);
+}
+
+.recruit-ask-skip:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-secondary);
+}
+
+/* ── Signals row (quality chip + jargon trigger) ───────────── */
+.recruit-signals-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.recruit-quality-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 11px;
+    line-height: 1.2;
+    cursor: help;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    max-width: 70%;
+}
+
+.recruit-quality-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border-color-strong);
+    flex-shrink: 0;
+}
+
+.recruit-quality-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+}
+
+.recruit-quality-text {
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recruit-quality-green       { border-color: var(--color-success); background: var(--color-success-light); }
+.recruit-quality-green  .recruit-quality-dot   { background: var(--color-success); box-shadow: 0 0 6px var(--color-success); }
+.recruit-quality-green  .recruit-quality-text  { color: var(--color-success-text); }
+
+.recruit-quality-amber       { border-color: var(--color-warning); background: var(--color-warning-light); }
+.recruit-quality-amber  .recruit-quality-dot   { background: var(--color-warning); box-shadow: 0 0 6px var(--color-warning); }
+.recruit-quality-amber  .recruit-quality-text  { color: var(--color-warning-text); }
+
+.recruit-quality-red         { border-color: var(--color-error, #ef4444); background: var(--color-error-light, rgba(239, 68, 68, 0.15)); }
+.recruit-quality-red    .recruit-quality-dot   { background: var(--color-error, #ef4444); box-shadow: 0 0 6px var(--color-error, #ef4444); }
+.recruit-quality-red    .recruit-quality-text  { color: var(--color-error-dark, #991b1b); }
+
+.recruit-quality-empty       { opacity: 0.6; }
+
+/* Jargon trigger ─────────────────────────────────────────── */
+.recruit-jargon-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.recruit-jargon-trigger:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--brand-primary);
+}
+
+.recruit-jargon-trigger-open {
+    background: var(--brand-primary);
+    color: var(--text-inverse, #ffffff);
+    border-color: var(--brand-primary);
+}
+
+.recruit-jargon-icon {
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.recruit-jargon-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.recruit-jargon-count {
+    background: rgba(var(--brand-primary-rgb), 0.15);
+    color: var(--brand-primary);
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 16px;
+    text-align: center;
+}
+
+.recruit-jargon-trigger-open .recruit-jargon-count {
+    background: rgba(255, 255, 255, 0.25);
+    color: var(--text-inverse, #ffffff);
+}
+
+/* Jargon tray ───────────────────────────────────────────── */
+.recruit-jargon-tray {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.recruit-jargon-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.recruit-jargon-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 8px;
+    background: var(--bg-card-hover);
+    border-radius: 4px;
+    border-left: 2px solid var(--brand-primary);
+}
+
+.recruit-jargon-term {
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--brand-primary);
+}
+
+.recruit-jargon-def {
+    font-size: 11px;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+/* ── Scorecard panel ───────────────────────────────────────── */
+.recruit-scorecard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.recruit-scorecard-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text-primary);
+    transition: background 0.15s ease;
+}
+
+.recruit-scorecard-header:hover {
+    background: var(--bg-card-hover);
+}
+
+.recruit-scorecard-chevron {
+    font-size: 12px;
+    color: var(--text-secondary);
+    width: 12px;
+    text-align: center;
+}
+
+.recruit-scorecard-summary {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.recruit-scorecard-body {
+    border-top: 1px solid var(--border-color);
+    padding: 4px 0;
+}
+
+.recruit-sc-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.recruit-sc-row:last-child {
+    border-bottom: none;
+}
+
+.recruit-sc-comp {
+    color: var(--text-primary);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recruit-sc-signal {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border: 1px solid;
+}
+
+.recruit-sc-signal-demonstrated {
+    background: var(--color-success-light);
+    color: var(--color-success-text);
+    border-color: var(--color-success);
+}
+
+.recruit-sc-signal-partial {
+    background: var(--color-warning-light);
+    color: var(--color-warning-text);
+    border-color: var(--color-warning);
+}
+
+.recruit-sc-signal-not_yet {
+    background: var(--color-error-light, rgba(239, 68, 68, 0.1));
+    color: var(--color-error-dark, #991b1b);
+    border-color: var(--color-error, #ef4444);
+}
+
+.recruit-sc-evidence {
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: help;
+}
+
+.recruit-sc-override {
+    font-size: 10px;
+    padding: 2px 4px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+/* ── Mobile/narrow HUD ────────────────────────────────────── */
+@media (max-width: 600px) {
+    .recruit-candidate-bar {
+        font-size: 10px;
+    }
+    .recruit-ask-q {
+        font-size: 12px;
+    }
+    .recruit-sc-row {
+        grid-template-columns: 1fr auto auto;
+    }
+    .recruit-sc-evidence {
+        display: none;
+    }
+}

@@ -415,6 +415,10 @@ async function initializeMeeting() {
         // Initialize copilot after SignalR is connected (host-only, ai_support meetings)
         if (isHostUser && meetingStatus.ai_support && signalRConnection) {
             initCopilot(signalRConnection, meetingStatus.meeting_mode, meetingId);
+            // Phase 3: recruit-only floating HUD. No-op for sales mode.
+            if (typeof initRecruitHud === 'function') {
+                initRecruitHud(signalRConnection, meetingStatus.meeting_mode, meetingId);
+            }
         }
 
         // Check if recording is already in progress when joining
