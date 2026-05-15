@@ -241,18 +241,6 @@
 
         <!-- Settings Menu Popup -->
         <div class="settings-menu" id="settingsMenu" style="display: none;">
-            <!-- Background option hidden for now
-            <div class="settings-menu-item" onclick="toggleBackgroundSettings(); closeSettingsMenu();">
-                <span class="menu-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <polyline points="21 15 16 10 5 21"></polyline>
-                    </svg>
-                </span>
-                <span class="menu-label">Background</span>
-            </div>
-            -->
             <div class="settings-menu-item" onclick="toggleParticipantsPanel(); closeSettingsMenu();">
                 <span class="menu-icon">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -312,53 +300,6 @@
                     </svg>
                 </span>
                 <span class="menu-label">Settings</span>
-            </div>
-        </div>
-
-        <!-- Background Settings Panel (hidden by default) -->
-        <div class="background-settings" id="backgroundSettings" style="display: none;">
-            <!-- Loading overlay for lazy-loaded libraries -->
-            <div class="bg-loading-overlay" id="bgLoadingOverlay" style="display: none;">
-                <div class="bg-loading-spinner"></div>
-                <span>Loading effects...</span>
-            </div>
-            <div class="bg-settings-header">
-                <h3>Background Effects</h3>
-                <button onclick="toggleBackgroundSettings()" class="close-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-            </div>
-            <div class="bg-options">
-                <div class="bg-option" onclick="setBackground('none')">
-                    <div class="bg-preview bg-none"></div>
-                    <span>None</span>
-                </div>
-                <div class="bg-option" onclick="setBackground('blur')">
-                    <div class="bg-preview bg-blur"></div>
-                    <span>Blur</span>
-                </div>
-                <div class="bg-option" onclick="setBackground('office')">
-                    <div class="bg-preview" style="background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop')"></div>
-                    <span>Office</span>
-                </div>
-                <div class="bg-option" onclick="setBackground('library')">
-                    <div class="bg-preview" style="background-image: url('https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=400&h=300&fit=crop')"></div>
-                    <span>Library</span>
-                </div>
-                <div class="bg-option" onclick="setBackground('nature')">
-                    <div class="bg-preview" style="background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop')"></div>
-                    <span>Nature</span>
-                </div>
-                <div class="bg-option" onclick="setBackground('beach')">
-                    <div class="bg-preview" style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=300&fit=crop')"></div>
-                    <span>Beach</span>
-                </div>
-                <div class="bg-option" onclick="setBackground('city')">
-                    <div class="bg-preview" style="background-image: url('https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop')"></div>
-                    <span>City</span>
-                </div>
-                <div class="bg-option" onclick="setBackground('gradient')">
-                    <div class="bg-preview" style="background: var(--gradient-accent)"></div>
-                    <span>Gradient</span>
-                </div>
             </div>
         </div>
 
@@ -474,16 +415,6 @@
     <!-- Include LiveKit and SignalR SDKs - Required for meeting -->
     <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
-
-    <!--
-    Virtual Background Libraries - LAZY LOADED when user opens background settings
-    These are heavy (~5MB total) and slow down mobile devices if loaded upfront:
-    - TensorFlow.js (~1.5MB)
-    - BodyPix (~2MB)
-    - COCO-SSD (~1MB)
-    - Three.js (~600KB)
-    See loadVirtualBackgroundLibraries() in meeting.js
-    -->
 
     <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>

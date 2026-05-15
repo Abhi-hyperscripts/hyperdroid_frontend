@@ -689,10 +689,10 @@ class ActiveSpeakerManager {
                         this.setVideoQualityDelayed(publication, quality, participant.identity, false);
                         console.log(`🔄 [${role}] Quality update scheduled for ${participant.identity}`);
                     }
-                    // DISABLED: Don't unsubscribe from inactive speakers - show all participant videos
-                    // else if (!shouldSubscribe && publication.isSubscribed) {
-                    //     publication.setSubscribed(false);
-                    // }
+                    else if (!shouldSubscribe && publication.isSubscribed) {
+                        publication.setSubscribed(false);
+                        console.log(`🛑 Unsubscribed off-screen ${participant.identity} to save CPU`);
+                    }
                 }
             });
 

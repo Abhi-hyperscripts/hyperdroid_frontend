@@ -303,39 +303,6 @@ let raisedHands = new Set(); // Track who has their hand raised
 // Picture-in-Picture state
 let pipEnabled = false;
 
-// Virtual background state
-let currentBackground = 'none';
-let backgroundCanvas = null;
-let backgroundContext = null;
-let backgroundImage = null;
-let bodyPixNet = null; // BodyPix model
-let cocoSsdModel = null; // COCO-SSD object detection model
-let segmentationRunning = false;
-let virtualBackgroundStream = null;
-let originalVideoTrack = null;
-let originalCameraPublication = null; // Store the original LiveKit camera publication
-let tempCanvas = null; // Reusable temp canvas for processing
-let tempCtx = null;
-let maskCanvas = null; // Reusable mask canvas for segmentation
-let maskCtx = null;
-let previousMaskCanvas = null; // For temporal smoothing
-let previousMaskCtx = null;
-let frameCount = 0; // Frame counter for throttling
-
-// Library loading state for lazy loading
-let virtualBackgroundLibsLoaded = false;
-let virtualBackgroundLibsLoading = false;
-
-// Three.js variables for virtual background
-let threeScene = null;
-let threeCamera = null;
-let threeRenderer = null;
-let videoTexture = null;
-let backgroundTexture = null;
-let maskTexture = null;
-let videoMesh = null;
-let backgroundMesh = null;
-
 // Get meeting ID from URL
 const urlParams = new URLSearchParams(window.location.search);
 meetingId = urlParams.get('id');
@@ -597,14 +564,21 @@ async function connectToLiveKit(wsUrl, token) {
 
         // Handle local participant track published (for camera toggle)
         room.on('localTrackPublished', (publication) => {
-            console.log('Local track published:', publication.kind);
-            if (publication.track && publication.kind === 'video') {
+            console.log('Local track published:', publication.kind, 'source:', publication.source);
+            if (!publication.track || publication.kind !== 'video') return;
+
+            // Screen share: show the same big-screen UI remote viewers see — DO NOT
+            // overwrite the local camera tile, which is what was happening before.
+            if (publication.source === 'screen_share') {
+                attachTrack(publication.track, publication, room.localParticipant);
+                return;
+            }
+
+            if (publication.source === 'camera') {
                 const video = document.querySelector('#local-participant video');
                 if (video) {
-                    // Use Safari-compatible method for consistency
                     attachVideoTrackSafari(publication.track, video, 'local');
                 }
-                // Hide placeholder when video is published
                 const localDiv = document.getElementById('local-participant');
                 if (localDiv) {
                     updateCameraOffPlaceholder(localDiv, true);
@@ -612,10 +586,23 @@ async function connectToLiveKit(wsUrl, token) {
             }
         });
 
-        // Handle local participant track unpublished (when camera is turned off)
+        // Handle local participant track unpublished
         room.on('localTrackUnpublished', (publication) => {
-            console.log('Local track unpublished:', publication.kind);
-            if (publication.kind === 'video' && publication.source === 'camera') {
+            console.log('Local track unpublished:', publication.kind, 'source:', publication.source);
+            if (publication.kind !== 'video') return;
+
+            // Screen share ended — tear down via the same path remote-detach uses.
+            // Covers both our in-app stop button AND the browser-native "Stop sharing" bar.
+            if (publication.source === 'screen_share') {
+                if (publication.track) {
+                    detachTrack(publication.track, publication, room.localParticipant);
+                }
+                const screenBtn = document.getElementById('screenBtn');
+                if (screenBtn) screenBtn.classList.remove('active');
+                return;
+            }
+
+            if (publication.source === 'camera') {
                 const localDiv = document.getElementById('local-participant');
                 if (localDiv) {
                     updateCameraOffPlaceholder(localDiv, false);
@@ -1902,6 +1889,10 @@ function detachTrack(track, publication, participant) {
         // Re-enable active speaker switching when screen share ends
         if (activeSpeakerManager) {
             activeSpeakerManager.setScreenShareActive(false);
+            // Re-subscribe cameras that were dropped by the off-screen unsubscribe
+            // logic while the share was the focus — otherwise the sharer's own
+            // camera tile stays blank until they next speak.
+            activeSpeakerManager.updateVideoSubscriptions();
         }
         screenBtn.disabled = false;
         screenBtn.style.opacity = '1';
@@ -2955,6 +2946,18 @@ async function leaveMeeting() {
             // Stop stale participant cleanup
             stopStaleParticipantCleanup();
 
+            // Stop participants-panel auto-refresh if it was open
+            if (participantsRefreshInterval) {
+                clearInterval(participantsRefreshInterval);
+                participantsRefreshInterval = null;
+            }
+
+            // Stop server-recording overlay timer if it was running
+            if (serverRecordingTimerInterval) {
+                clearInterval(serverRecordingTimerInterval);
+                serverRecordingTimerInterval = null;
+            }
+
             // Clean up live captions
             cleanupLiveCaptions();
 
@@ -3161,649 +3164,6 @@ document.addEventListener('leavepictureinpicture', () => {
     pipEnabled = false;
 });
 
-// Lazy load virtual background libraries (TensorFlow.js, BodyPix, COCO-SSD, Three.js)
-// These are ~5MB total and slow down mobile devices if loaded upfront
-async function loadVirtualBackgroundLibraries() {
-    if (virtualBackgroundLibsLoaded) {
-        return true;
-    }
-
-    if (virtualBackgroundLibsLoading) {
-        // Already loading, wait for it
-        while (virtualBackgroundLibsLoading) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        return virtualBackgroundLibsLoaded;
-    }
-
-    virtualBackgroundLibsLoading = true;
-
-    // Show loading indicator in background panel
-    const loadingOverlay = document.getElementById('bgLoadingOverlay');
-    if (loadingOverlay) {
-        loadingOverlay.style.display = 'flex';
-    }
-
-    const libraries = [
-        {
-            name: 'TensorFlow.js',
-            url: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0/dist/tf.min.js',
-            check: () => typeof tf !== 'undefined'
-        },
-        {
-            name: 'BodyPix',
-            url: 'https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.2.0/dist/body-pix.min.js',
-            check: () => typeof bodyPix !== 'undefined'
-        },
-        {
-            name: 'COCO-SSD',
-            url: 'https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js',
-            check: () => typeof cocoSsd !== 'undefined'
-        },
-        {
-            name: 'Three.js',
-            url: 'https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js',
-            check: () => typeof THREE !== 'undefined'
-        }
-    ];
-
-    try {
-        console.log('🔄 Loading virtual background libraries...');
-
-        for (const lib of libraries) {
-            if (lib.check()) {
-                console.log(`✓ ${lib.name} already loaded`);
-                continue;
-            }
-
-            console.log(`Loading ${lib.name}...`);
-            await new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = lib.url;
-                script.async = true;
-                script.onload = () => {
-                    console.log(`✓ ${lib.name} loaded`);
-                    resolve();
-                };
-                script.onerror = () => {
-                    console.error(`✗ Failed to load ${lib.name}`);
-                    reject(new Error(`Failed to load ${lib.name}`));
-                };
-                document.head.appendChild(script);
-            });
-        }
-
-        console.log('✅ All virtual background libraries loaded successfully!');
-        virtualBackgroundLibsLoaded = true;
-        return true;
-
-    } catch (error) {
-        console.error('Failed to load virtual background libraries:', error);
-        virtualBackgroundLibsLoaded = false;
-        return false;
-    } finally {
-        virtualBackgroundLibsLoading = false;
-        if (loadingOverlay) {
-            loadingOverlay.style.display = 'none';
-        }
-    }
-}
-
-// Toggle background settings panel
-async function toggleBackgroundSettings() {
-    const panel = document.getElementById('backgroundSettings');
-    const isOpening = panel.style.display === 'none';
-
-    panel.style.display = isOpening ? 'block' : 'none';
-
-    // Lazy load libraries when panel is first opened
-    if (isOpening && !virtualBackgroundLibsLoaded && !virtualBackgroundLibsLoading) {
-        loadVirtualBackgroundLibraries();
-    }
-}
-
-// Initialize BodyPix for person segmentation
-async function initializeSegmentation() {
-    if (bodyPixNet) return bodyPixNet; // Already initialized
-
-    try {
-        console.log('Loading BodyPix model...');
-
-        // Check if BodyPix is available
-        if (typeof bodyPix === 'undefined') {
-            console.warn('BodyPix library not loaded, falling back to simple mode');
-            return null;
-        }
-
-        // Load BodyPix model
-        // Using MobileNetV1 architecture with multiplier 0.75 for balance of speed and accuracy
-        bodyPixNet = await bodyPix.load({
-            architecture: 'MobileNetV1',
-            outputStride: 16,
-            multiplier: 0.75,
-            quantBytes: 2
-        });
-
-        console.log('✅ BodyPix model loaded successfully!');
-
-        // Load COCO-SSD for object detection (person, chair, etc.)
-        if (typeof cocoSsd !== 'undefined' && !cocoSsdModel) {
-            console.log('Loading COCO-SSD model...');
-            cocoSsdModel = await cocoSsd.load();
-            console.log('✅ COCO-SSD model loaded successfully!');
-        }
-
-        return bodyPixNet;
-    } catch (error) {
-        console.warn('BodyPix initialization failed, using simple blur mode:', error);
-        bodyPixNet = null;
-        return null;
-    }
-}
-
-// Initialize Three.js for virtual background
-function initializeThreeJS() {
-    if (threeRenderer) return; // Already initialized
-
-    console.log('Initializing Three.js for virtual background...');
-
-    // Create Three.js renderer using the existing canvas
-    threeRenderer = new THREE.WebGLRenderer({
-        canvas: backgroundCanvas,
-        alpha: false,
-        antialias: false
-    });
-    threeRenderer.setSize(640, 480);
-    threeRenderer.setClearColor(0x000000, 1);
-
-    // Create scene
-    threeScene = new THREE.Scene();
-
-    // Create orthographic camera
-    threeCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-
-    console.log('✅ Three.js initialized');
-}
-
-// Process video frames with Three.js compositing
-async function processVideoFrame() {
-    if (!segmentationRunning || !bodyPixNet) {
-        return;
-    }
-
-    // Request next frame first for smooth animation
-    if (segmentationRunning) {
-        requestAnimationFrame(processVideoFrame);
-    }
-
-    try {
-        // Get the hidden processing video element
-        let processingVideo = document.getElementById('bg-processing-video');
-        if (!processingVideo && originalVideoTrack) {
-            processingVideo = document.createElement('video');
-            processingVideo.id = 'bg-processing-video';
-            processingVideo.autoplay = true;
-            processingVideo.playsInline = true;
-            processingVideo.muted = true;
-            processingVideo.style.display = 'none';
-            processingVideo.width = 640;
-            processingVideo.height = 480;
-            processingVideo.srcObject = new MediaStream([originalVideoTrack]);
-            document.body.appendChild(processingVideo);
-
-            // Explicitly play the video (autoplay may be blocked)
-            try {
-                await processingVideo.play();
-                console.log('✅ Processing video is now playing');
-            } catch (e) {
-                console.warn('Could not autoplay processing video:', e);
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 200));
-        }
-
-        if (!processingVideo || processingVideo.readyState !== processingVideo.HAVE_ENOUGH_DATA) {
-            return;
-        }
-
-        // Ensure video is playing (not paused)
-        if (processingVideo.paused) {
-            try {
-                await processingVideo.play();
-            } catch (e) {
-                console.warn('Video paused, trying to play:', e);
-            }
-        }
-
-        // Handle blur and none modes with simple 2D canvas
-        if (currentBackground === 'blur' || currentBackground === 'none') {
-            const canvasCtx = backgroundContext;
-            canvasCtx.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-            if (currentBackground === 'blur') {
-                canvasCtx.filter = 'blur(10px)';
-            }
-            canvasCtx.drawImage(processingVideo, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-            canvasCtx.filter = 'none';
-            return;
-        }
-
-        // Create mask canvas if needed
-        if (!maskCanvas) {
-            maskCanvas = document.createElement('canvas');
-            maskCanvas.width = 640;
-            maskCanvas.height = 480;
-            maskCtx = maskCanvas.getContext('2d');
-        }
-
-        // Throttle segmentation
-        frameCount++;
-        const shouldSegment = frameCount % 2 === 0;
-
-        if (shouldSegment) {
-            // Segment person from background
-            const segmentation = await bodyPixNet.segmentPerson(processingVideo, {
-                flipHorizontal: false,
-                internalResolution: 'medium',
-                segmentationThreshold: 0.12  // Lower = include more area
-            });
-
-            // Create mask - person is opaque white, background is transparent
-            const maskImageData = bodyPix.toMask(segmentation,
-                { r: 255, g: 255, b: 255, a: 255 }, // person = opaque white
-                { r: 0, g: 0, b: 0, a: 0 },         // background = transparent
-                false
-            );
-
-            // Create temp canvas for blending if needed
-            if (!previousMaskCanvas) {
-                previousMaskCanvas = document.createElement('canvas');
-                previousMaskCanvas.width = 640;
-                previousMaskCanvas.height = 480;
-                previousMaskCtx = previousMaskCanvas.getContext('2d');
-            }
-
-            // Put new mask data
-            maskCtx.putImageData(maskImageData, 0, 0);
-
-            // Expand mask more to cover edge areas
-            maskCtx.filter = 'blur(15px) brightness(1.6)';
-            maskCtx.drawImage(maskCanvas, 0, 0);
-            maskCtx.filter = 'none';
-
-            // Temporal smoothing with more previous frame for stability
-            const tempMaskImageData = maskCtx.getImageData(0, 0, 640, 480);
-            const prevMaskImageData = previousMaskCtx.getImageData(0, 0, 640, 480);
-
-            // Use 70/30 blend: smoother edges, less flickering
-            for (let i = 0; i < tempMaskImageData.data.length; i += 4) {
-                const currentAlpha = tempMaskImageData.data[i + 3];
-                const previousAlpha = prevMaskImageData.data[i + 3];
-                tempMaskImageData.data[i + 3] = currentAlpha * 0.7 + previousAlpha * 0.3;
-            }
-
-            maskCtx.putImageData(tempMaskImageData, 0, 0);
-
-            // Store current mask for next frame
-            previousMaskCtx.clearRect(0, 0, 640, 480);
-            previousMaskCtx.drawImage(maskCanvas, 0, 0);
-        }
-
-        // Create temp canvas for masked video
-        if (!tempCanvas) {
-            tempCanvas = document.createElement('canvas');
-            tempCanvas.width = 640;
-            tempCanvas.height = 480;
-            tempCtx = tempCanvas.getContext('2d', { willReadFrequently: false });
-        }
-
-        // Draw video to temp canvas
-        tempCtx.clearRect(0, 0, 640, 480);
-        tempCtx.drawImage(processingVideo, 0, 0, 640, 480);
-
-        // Apply mask using destination-in (keep only person pixels)
-        if (maskCanvas) {
-            tempCtx.globalCompositeOperation = 'destination-in';
-            tempCtx.drawImage(maskCanvas, 0, 0, 640, 480);
-            tempCtx.globalCompositeOperation = 'source-over';
-        }
-
-        // Composite on main canvas
-        const canvasCtx = backgroundContext;
-        canvasCtx.clearRect(0, 0, 640, 480);
-
-        // Draw background
-        if (backgroundImage && backgroundImage.complete) {
-            canvasCtx.drawImage(backgroundImage, 0, 0, 640, 480);
-        } else if (currentBackground === 'gradient') {
-            const styles = getComputedStyle(document.documentElement);
-            const gradient = canvasCtx.createLinearGradient(0, 0, 640, 480);
-            gradient.addColorStop(0, styles.getPropertyValue('--brand-accent').trim() || '#6366f1');
-            gradient.addColorStop(1, styles.getPropertyValue('--brand-secondary').trim() || '#8b5cf6');
-            canvasCtx.fillStyle = gradient;
-            canvasCtx.fillRect(0, 0, 640, 480);
-        }
-
-        // Draw masked person on top
-        canvasCtx.drawImage(tempCanvas, 0, 0, 640, 480);
-
-    } catch (error) {
-        console.error('Error processing frame:', error);
-        // On error, just draw the video without effects
-        if (backgroundContext) {
-            const processingVideo = document.getElementById('bg-processing-video');
-            if (processingVideo) {
-                backgroundContext.clearRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
-                backgroundContext.drawImage(processingVideo, 0, 0, backgroundCanvas.width, backgroundCanvas.height);
-            }
-        }
-    }
-}
-
-// Set background effect
-async function setBackground(type) {
-    currentBackground = type;
-    const localVideo = document.querySelector('#local-participant video');
-
-    if (!localVideo) {
-        console.error('Local video not found');
-        return;
-    }
-
-    const participantDiv = localVideo.parentElement;
-
-    try {
-        if (type === 'none') {
-            // Stop segmentation and restore original video
-            await stopVirtualBackground();
-            console.log('✅ Background: None (original)');
-
-        } else if (type === 'blur') {
-            // For blur, try simple CSS filter first (faster, works everywhere)
-            console.log('Applying simple blur (CSS filter)...');
-            await stopVirtualBackground(); // Make sure segmentation is stopped
-
-            // Apply CSS blur
-            participantDiv.style.filter = 'blur(5px)';
-            localVideo.style.filter = 'blur(5px)';
-
-            console.log('✅ Background: Blur applied (CSS mode)');
-
-        } else {
-            // For virtual backgrounds, use BodyPix
-            try {
-                // Ensure libraries are loaded first (lazy loading)
-                if (!virtualBackgroundLibsLoaded) {
-                    console.log('Loading virtual background libraries...');
-                    const loaded = await loadVirtualBackgroundLibraries();
-                    if (!loaded) {
-                        throw new Error('Failed to load virtual background libraries');
-                    }
-                }
-
-                // Initialize BodyPix if needed
-                if (!bodyPixNet) {
-                    console.log('Loading BodyPix model for first use...');
-                    await initializeSegmentation();
-                }
-
-                if (!bodyPixNet) {
-                    throw new Error('BodyPix not available - using fallback mode');
-                }
-
-                // Create canvas if needed
-                if (!backgroundCanvas) {
-                    backgroundCanvas = document.createElement('canvas');
-                    backgroundCanvas.width = 640;
-                    backgroundCanvas.height = 480;
-                    backgroundContext = backgroundCanvas.getContext('2d');
-                    console.log('Canvas created: 640x480');
-                }
-
-                // Load background image
-                if (type !== 'gradient') {
-                    console.log(`Loading background image: ${type}...`);
-                    await loadBackgroundImage(type);
-                }
-
-                // Start virtual background processing
-                console.log('Starting virtual background processing with BodyPix...');
-                await startVirtualBackground();
-
-                console.log(`✅ Background: ${type} applied with BodyPix segmentation!`);
-
-            } catch (bgError) {
-                console.warn('Virtual background failed, using fallback:', bgError);
-                Toast.warning(`Virtual backgrounds require BodyPix library. Using blur as fallback. Error: ${bgError.message}`, 8000);
-
-                // Fallback to blur
-                participantDiv.style.filter = 'blur(8px)';
-                localVideo.style.filter = 'blur(8px)';
-            }
-        }
-
-        // Visual feedback
-        document.querySelectorAll('.bg-option').forEach(opt => opt.classList.remove('selected'));
-        const selectedOption = Array.from(document.querySelectorAll('.bg-option')).find(
-            opt => opt.textContent.toLowerCase().includes(type)
-        );
-        if (selectedOption) {
-            selectedOption.classList.add('selected');
-        }
-
-        // Update button state
-        const bgBtn = document.getElementById('bgBtn');
-        if (bgBtn) {
-            bgBtn.classList.toggle('active', type !== 'none');
-        }
-
-    } catch (error) {
-        console.error('Error applying background:', error);
-        Toast.error('Failed to apply background effect: ' + error.message);
-
-        // Try to restore original video
-        await stopVirtualBackground();
-    }
-}
-
-// Load background image
-async function loadBackgroundImage(backgroundType) {
-    const backgrounds = {
-        office: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920&h=1080&fit=crop',
-        library: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1920&h=1080&fit=crop',
-        nature: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop',
-        beach: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&h=1080&fit=crop',
-        city: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1920&h=1080&fit=crop',
-    };
-
-    const bgImageUrl = backgrounds[backgroundType];
-    if (!bgImageUrl) {
-        throw new Error('Unknown background type: ' + backgroundType);
-    }
-
-    return new Promise((resolve, reject) => {
-        backgroundImage = new Image();
-        backgroundImage.crossOrigin = 'anonymous';
-
-        backgroundImage.onload = () => {
-            console.log('Background image loaded:', backgroundType);
-            resolve();
-        };
-
-        backgroundImage.onerror = () => {
-            reject(new Error('Failed to load background image'));
-        };
-
-        backgroundImage.src = bgImageUrl;
-    });
-}
-
-// Start virtual background processing
-async function startVirtualBackground() {
-    if (segmentationRunning) {
-        console.log('Virtual background already running');
-        return;
-    }
-
-    try {
-        const localVideo = document.querySelector('#local-participant video');
-        if (!localVideo) {
-            throw new Error('Local video element not found');
-        }
-
-        // Save original camera track and publication if we don't have it
-        if (!originalVideoTrack || !originalCameraPublication) {
-            console.log('Saving original video track from LiveKit...');
-
-            // Get the original camera publication from LiveKit
-            const cameraPublication = Array.from(room.localParticipant.videoTrackPublications.values())
-                .find(pub => pub.source === LivekitClient.Track.Source.Camera);
-
-            if (!cameraPublication || !cameraPublication.track) {
-                throw new Error('No camera track found in LiveKit');
-            }
-
-            // Store the publication and clone the track
-            originalCameraPublication = cameraPublication;
-            originalVideoTrack = cameraPublication.track.mediaStreamTrack.clone();
-            console.log('Original track saved:', originalVideoTrack.id);
-        }
-
-        // Wait for canvas to be ready
-        if (!backgroundCanvas || !backgroundContext) {
-            throw new Error('Canvas not initialized');
-        }
-
-        // Start processing flag
-        segmentationRunning = true;
-        console.log('Starting segmentation processing...');
-
-        // Start frame processing first
-        processVideoFrame();
-
-        // Wait for first few frames to process
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        // Create stream from canvas
-        virtualBackgroundStream = backgroundCanvas.captureStream(30); // 30 FPS
-        const canvasVideoTrack = virtualBackgroundStream.getVideoTracks()[0];
-        console.log('Canvas stream created, track ID:', canvasVideoTrack.id);
-
-        // Create a LiveKit LocalVideoTrack from the canvas track
-        const localTrack = new LivekitClient.LocalVideoTrack(canvasVideoTrack, 'camera', {
-            name: 'camera-with-background'
-        });
-
-        // Unpublish the original camera track (if it's still published)
-        console.log('Unpublishing original camera track...');
-        try {
-            // Check if track is still published before unpublishing
-            const stillPublished = Array.from(room.localParticipant.videoTrackPublications.values())
-                .find(pub => pub.track === originalCameraPublication.track);
-
-            if (stillPublished) {
-                await room.localParticipant.unpublishTrack(originalCameraPublication.track);
-                console.log('Original track unpublished');
-            } else {
-                console.log('Original track already unpublished, skipping');
-            }
-        } catch (unpublishError) {
-            console.warn('Could not unpublish original track:', unpublishError);
-        }
-
-        // Publish the canvas track as the new camera
-        console.log('Publishing canvas track...');
-        await room.localParticipant.publishTrack(localTrack);
-
-        // Update local video display
-        localVideo.srcObject = new MediaStream([canvasVideoTrack]);
-
-        console.log('✅ Virtual background active and published to LiveKit!');
-    } catch (error) {
-        console.error('Error starting virtual background:', error);
-        segmentationRunning = false;
-
-        // Try to restore original video on error
-        if (originalCameraPublication && originalCameraPublication.track) {
-            try {
-                await room.localParticipant.publishTrack(originalCameraPublication.track);
-            } catch (restoreError) {
-                console.error('Failed to restore original track:', restoreError);
-            }
-        }
-
-        throw error;
-    }
-}
-
-// Stop virtual background processing
-async function stopVirtualBackground() {
-    console.log('Stopping virtual background...');
-    segmentationRunning = false;
-
-    // Clean up hidden processing video
-    const processingVideo = document.getElementById('bg-processing-video');
-    if (processingVideo) {
-        processingVideo.srcObject = null;
-        processingVideo.remove();
-    }
-
-    // Restore original video
-    const localVideo = document.querySelector('#local-participant video');
-    const participantDiv = localVideo ? localVideo.parentElement : null;
-
-    // Reset all filters
-    if (localVideo) {
-        localVideo.style.filter = '';
-        localVideo.style.mixBlendMode = '';
-        localVideo.style.opacity = '';
-    }
-
-    if (participantDiv) {
-        participantDiv.style.filter = '';
-        participantDiv.style.background = '';
-        participantDiv.style.backgroundImage = '';
-    }
-
-    // If we have a virtual background track published, replace it with the original
-    if (originalCameraPublication && room && room.localParticipant) {
-        try {
-            console.log('Unpublishing virtual background track...');
-
-            // Find and unpublish the canvas track
-            const canvasPublication = Array.from(room.localParticipant.videoTrackPublications.values())
-                .find(pub => pub.trackName === 'camera-with-background');
-
-            if (canvasPublication) {
-                await room.localParticipant.unpublishTrack(canvasPublication.track);
-            }
-
-            // Republish the original camera track
-            console.log('Republishing original camera track...');
-            await room.localParticipant.publishTrack(originalCameraPublication.track);
-
-            // Update local video display
-            if (localVideo && originalCameraPublication.track) {
-                localVideo.srcObject = new MediaStream([originalCameraPublication.track.mediaStreamTrack]);
-            }
-
-            console.log('✅ Original camera track restored to LiveKit');
-        } catch (error) {
-            console.error('Error restoring original track:', error);
-
-            // Fallback: just update local display
-            if (localVideo && originalVideoTrack) {
-                localVideo.srcObject = new MediaStream([originalVideoTrack]);
-            }
-        }
-    } else if (localVideo && originalVideoTrack) {
-        // Simple restore if no LiveKit track management needed
-        console.log('Restoring original video track (display only)');
-        const stream = new MediaStream([originalVideoTrack]);
-        localVideo.srcObject = stream;
-    }
-
-    console.log('✅ Virtual background stopped, original video restored');
-}
 
 // Participants panel management
 let isHost = false;
