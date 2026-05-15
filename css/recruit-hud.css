@@ -17,10 +17,14 @@
  * ──────────────────────────────────────────────────────────── */
 .recruit-hud-sections.recruit-hud-floating {
     position: absolute;
+    /* top + bottom anchoring (instead of max-height) so the panel can
+     * never grow past the parent overlay's bottom edge regardless of
+     * window size. Bottom margin leaves room for meeting toolbar /
+     * browser chrome / extension popups. */
     top: 100px;
     left: 16px;
+    bottom: 60px;
     width: 300px;
-    max-height: calc(100% - 140px);
     background: rgba(4, 8, 18, 0.92);
     border: 1px solid rgba(0, 212, 255, 0.18);
     border-radius: 8px;
@@ -34,6 +38,147 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+}
+
+/* When the panel doesn't have enough content to need the full height,
+ * collapse to natural height instead of empty stretching. */
+.recruit-hud-sections.recruit-hud-floating:not(:has(.recruit-ask-card)):not(:has(.recruit-sc-row)) {
+    bottom: auto;
+    max-height: calc(100% - 160px);
+}
+
+/* ── Cockpit text + background overrides ──────────────────────
+ * When the recruit HUD is in floating cockpit mode, ALL inner panels
+ * use cockpit colors (dark blue / cyan / white text) regardless of the
+ * user's light/dark theme — matches the existing COPILOT control panel
+ * aesthetic and prevents dark-on-dark text on light themes. */
+.recruit-hud-floating { color: rgba(255, 255, 255, 0.9); }
+
+.recruit-hud-floating .recruit-candidate-bar,
+.recruit-hud-floating .recruit-ask-next,
+.recruit-hud-floating .recruit-ask-card,
+.recruit-hud-floating .recruit-jargon-tray,
+.recruit-hud-floating .recruit-jargon-item,
+.recruit-hud-floating .recruit-scorecard,
+.recruit-hud-floating .recruit-sc-row {
+    background: rgba(0, 212, 255, 0.04);
+    border-color: rgba(0, 212, 255, 0.18);
+}
+
+.recruit-hud-floating .recruit-section-help {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: rgba(0, 212, 255, 0.25);
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* Semantic pills (difficulty + signal) keep their semantic hue but get a
+ * dark tint so they don't blast white on the cockpit. */
+.recruit-hud-floating .recruit-ask-diff,
+.recruit-hud-floating .recruit-sc-signal {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: currentColor;
+}
+.recruit-hud-floating .recruit-diff-easy,
+.recruit-hud-floating .recruit-sc-signal-demonstrated { color: rgb(134, 239, 172); }
+.recruit-hud-floating .recruit-diff-medium,
+.recruit-hud-floating .recruit-sc-signal-partial { color: rgb(252, 211, 77); }
+.recruit-hud-floating .recruit-diff-hard,
+.recruit-hud-floating .recruit-sc-signal-not_yet { color: rgb(252, 165, 165); }
+
+.recruit-hud-floating .recruit-ask-card-rank-0 {
+    background: rgba(0, 212, 255, 0.08);
+}
+
+.recruit-hud-floating .recruit-cand-label,
+.recruit-hud-floating .recruit-section-label {
+    color: rgba(0, 212, 255, 0.85);
+}
+
+.recruit-hud-floating .recruit-cand-name,
+.recruit-hud-floating .recruit-ask-q,
+.recruit-hud-floating .recruit-sc-comp,
+.recruit-hud-floating .recruit-jargon-term,
+.recruit-hud-floating .recruit-quality-label {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.recruit-hud-floating .recruit-cand-jd,
+.recruit-hud-floating .recruit-cand-round,
+.recruit-hud-floating .recruit-ask-why,
+.recruit-hud-floating .recruit-jargon-def,
+.recruit-hud-floating .recruit-scorecard-summary,
+.recruit-hud-floating .recruit-sc-evidence {
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.recruit-hud-floating .recruit-ask-topic {
+    color: rgba(0, 212, 255, 0.85);
+}
+
+.recruit-hud-floating .recruit-empty-state {
+    background: rgba(0, 212, 255, 0.03);
+    border-color: rgba(0, 212, 255, 0.2);
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.recruit-hud-floating .recruit-quality-chip {
+    background: rgba(0, 212, 255, 0.05);
+    border-color: rgba(0, 212, 255, 0.2);
+}
+
+.recruit-hud-floating .recruit-quality-empty .recruit-quality-text {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.recruit-hud-floating .recruit-jargon-trigger {
+    background: rgba(0, 212, 255, 0.05);
+    border-color: rgba(0, 212, 255, 0.2);
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.recruit-hud-floating .recruit-jargon-trigger:hover {
+    background: rgba(0, 212, 255, 0.12);
+    border-color: rgba(0, 212, 255, 0.4);
+}
+
+.recruit-hud-floating .recruit-scorecard-header {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.recruit-hud-floating .recruit-scorecard-header:hover {
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.recruit-hud-floating .recruit-ask-use {
+    background: rgba(0, 212, 255, 0.25);
+    border-color: rgba(0, 212, 255, 0.5);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.recruit-hud-floating .recruit-ask-use:hover {
+    background: rgba(0, 212, 255, 0.4);
+}
+
+.recruit-hud-floating .recruit-ask-skip {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.recruit-hud-floating .recruit-ask-skip:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.recruit-hud-floating .recruit-divider {
+    background: rgba(0, 212, 255, 0.2);
+}
+
+.recruit-hud-floating .recruit-sc-override {
+    background: rgba(4, 8, 18, 0.5);
+    border-color: rgba(0, 212, 255, 0.25);
+    color: rgba(255, 255, 255, 0.85);
 }
 
 .recruit-hud-floating-header {
