@@ -6601,8 +6601,16 @@ async function downloadPayslipById(payslipId) {
         y += 12;
 
         // ── EARNINGS TABLE (3 columns: COMPONENT | CURRENT | YTD)
-        const earnings   = (payslip.items || []).filter(i => i.component_type === 'earning');
-        const deductions = (payslip.items || []).filter(i => i.component_type === 'deduction');
+        // SINGLE SOURCE OF TRUTH: read from calculation_proof_data, which the engine
+        // pre-aggregates per component (v3.0.131). Falls back to payslip.items only
+        // for legacy payslips processed before the proof-aggregation refactor.
+        const proof = payslip.calculation_proof_data || payslip.calculationProofData || null;
+        const earnings   = (proof && Array.isArray(proof.earningsItems) && proof.earningsItems.length > 0)
+            ? proof.earningsItems
+            : (payslip.items || []).filter(i => i.component_type === 'earning');
+        const deductions = (proof && Array.isArray(proof.deductionItems) && proof.deductionItems.length > 0)
+            ? proof.deductionItems
+            : (payslip.items || []).filter(i => i.component_type === 'deduction');
 
         const colCompW = contentWidth * 0.55;
         const colCurW  = contentWidth * 0.225;
@@ -6653,25 +6661,41 @@ async function downloadPayslipById(payslipId) {
             y += 8;
         };
 
-        // YTD totals are NOT served as separate fields — sum the per-component
-        // ytd_amount we already render line-by-line above. Without this, the
-        // total row shows "—" while every component below it shows a YTD value,
-        // which makes the audit reader question the math (it adds up — there's
-        // no source-of-truth difference, the field just wasn't rolled up).
-        const sumYtd = (arr) => arr.reduce((acc, x) =>
-            acc + (Number(x.ytd_amount ?? x.ytdAmount) || 0), 0);
-        const ytdGross = sumYtd(earnings);
-        const ytdDeductions = sumYtd(deductions);
+        // Normalize: proof JSON uses camelCase (componentName, ytdAmount), legacy
+        // payslip.items uses snake_case (component_name, ytd_amount). Map both to
+        // the snake_case shape drawRow expects. The engine already aggregates per
+        // component in the proof JSON (v3.0.131), so this is a pure projection for
+        // the proof path. For the legacy fallback path, this also folds together
+        // any per-slice duplicates (one row per version × component) and resolves
+        // the cumulative-write-per-slice YTD by taking the max across slices.
+        const aggregateByName = (arr) => {
+            const map = new Map();
+            for (const item of arr) {
+                const name = item.componentName ?? item.component_name ?? item.component_code ?? '?';
+                const amt  = Number(item.amount ?? 0);
+                const ytd  = Number(item.ytdAmount ?? item.ytd_amount ?? 0);
+                const cur = map.get(name) || { component_name: name, amount: 0, ytd_amount: 0 };
+                cur.amount += amt;
+                cur.ytd_amount = Math.max(cur.ytd_amount, ytd);
+                map.set(name, cur);
+            }
+            return [...map.values()];
+        };
+        const earningsAgg = aggregateByName(earnings);
+        const deductionsAgg = aggregateByName(deductions);
+        const sumYtd = (arr) => arr.reduce((acc, x) => acc + (Number(x.ytd_amount) || 0), 0);
+        const ytdGross = sumYtd(earningsAgg);
+        const ytdDeductions = sumYtd(deductionsAgg);
 
         drawTableHeader('EARNINGS');
-        earnings.forEach((e, i) => drawRow(e.component_name, e.amount, e.ytd_amount ?? e.ytdAmount, i % 2 === 1));
+        earningsAgg.forEach((e, i) => drawRow(e.component_name, e.amount, e.ytd_amount, i % 2 === 1));
         drawTotalRow('Gross Pay', payslip.gross_earnings || 0, ytdGross);
 
         y += 4;
 
         // ── DEDUCTIONS TABLE
         drawTableHeader('DEDUCTIONS');
-        deductions.forEach((d, i) => drawRow(d.component_name, d.amount, d.ytd_amount ?? d.ytdAmount, i % 2 === 1));
+        deductionsAgg.forEach((d, i) => drawRow(d.component_name, d.amount, d.ytd_amount, i % 2 === 1));
         drawTotalRow('Total Deductions', payslip.total_deductions || 0, ytdDeductions);
 
         y += 6;
@@ -6733,8 +6757,20 @@ function formatNumber(num) {
 }
 
 function generatePayslipPdfContent(payslip) {
-    const earnings = (payslip.items || []).filter(i => i.component_type === 'earning');
-    const deductions = (payslip.items || []).filter(i => i.component_type === 'deduction');
+    // v3.0.131: prefer engine-aggregated proof JSON over raw payslip.items
+    const proof = payslip.calculation_proof_data || payslip.calculationProofData || null;
+    const rawEarnings = (proof && Array.isArray(proof.earningsItems) && proof.earningsItems.length > 0)
+        ? proof.earningsItems
+        : (payslip.items || []).filter(i => i.component_type === 'earning');
+    const rawDeductions = (proof && Array.isArray(proof.deductionItems) && proof.deductionItems.length > 0)
+        ? proof.deductionItems
+        : (payslip.items || []).filter(i => i.component_type === 'deduction');
+    const normalize = (it) => ({
+        component_name: it.componentName ?? it.component_name ?? it.component_code ?? '?',
+        amount: Number(it.amount ?? 0)
+    });
+    const earnings = rawEarnings.map(normalize);
+    const deductions = rawDeductions.map(normalize);
     // v3.0.25: Country-agnostic currency symbol from backend
     const currSymbol = payslip.currency_symbol || '₹';
 
@@ -9883,16 +9919,25 @@ async function saveNewVersion() {
             : parseFloat(fixedInput?.value) || 0;
 
         // calculation_base must come from the selected component's metadata
-        // (data-calc-base on the dropdown option, captured into hiddenInput.dataset.calcBase
-        // by selectDropdownOption). Hardcoding 'ctc' for everything was the
-        // bug behind "HRA computed as 50% of CTC instead of 50% of basic"
-        // — it produced impossible structures (sum of earnings > CTC) and
-        // got rejected at payroll-process time with the "Other earnings exceed
-        // monthly CTC" error. For fixed components calc_base is irrelevant
-        // (send null to be explicit).
-        const calcBase = calcType === 'percentage'
-            ? (hiddenInput.dataset.calcBase || 'basic')
-            : null;
+        // (data-calc-base on the dropdown option). The hidden input's dataset
+        // is populated by selectDropdownOption — but pre-loaded component rows
+        // (when editing an existing version) bypass that handler, so the
+        // dataset is empty there. Fallback chain:
+        //   1. hiddenInput.dataset.calcBase (set when user clicked option)
+        //   2. The selected dropdown option's data-calc-base (set on render)
+        //   3. 'basic' (last resort)
+        // Without step 2 the BASIC row pre-loaded from the previous version
+        // ended up as 'basic' (saved as 50% of itself = 0) even though the
+        // UI rendered "% of CTC". For fixed components calc_base is null.
+        let calcBase = null;
+        if (calcType === 'percentage') {
+            calcBase = hiddenInput.dataset.calcBase;
+            if (!calcBase) {
+                const selectedOption = row.querySelector('.dropdown-option.selected');
+                calcBase = selectedOption?.dataset?.calcBase;
+            }
+            calcBase = calcBase || 'basic';
+        }
 
         if (value > 0) {
             selectedComponents.push({
