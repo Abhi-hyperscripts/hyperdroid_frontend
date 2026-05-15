@@ -1290,8 +1290,8 @@
 
         let timelineHtml = '';
         if (sorted.length > 0) {
-            timelineHtml = `<h4 style="margin: 0 0 16px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); font-weight: 600;">Interview Rounds</h4>
-                <div class="rec-iv-timeline" style="display:flex; flex-direction:column; gap:14px;">${sorted.map(iv => renderInterviewRow(iv, iv === sorted[0])).join('')}</div>`;
+            timelineHtml = `<h4 style="margin: 0 0 8px; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); font-weight: 600;">Interview Rounds</h4>
+                <div class="rec-iv-timeline" style="display:flex; flex-direction:column; gap:8px;">${sorted.map(iv => renderInterviewRow(iv, iv === sorted[0])).join('')}</div>`;
         }
 
         // Always show the schedule form — HR can create any number of
@@ -1300,52 +1300,47 @@
         // on-23505 loop auto-bumps round_index so a second "HR Screen" lands
         // as HR Screen #2, third as #3, etc.
         const formHtml = `
-            <div style="margin-top: ${sorted.length > 0 ? '32px' : '0'}; padding-top: ${sorted.length > 0 ? '28px' : '0'}; border-top: ${sorted.length > 0 ? '1px solid var(--border-color)' : 'none'};">
-                <h4 style="margin: 0 0 14px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); font-weight: 600;">${sorted.length > 0 ? 'Schedule another interview' : 'Schedule the first interview'}</h4>
+            <div style="margin-top: ${sorted.length > 0 ? '16px' : '0'}; padding-top: ${sorted.length > 0 ? '14px' : '0'}; border-top: ${sorted.length > 0 ? '1px solid var(--border-color)' : 'none'};">
+                <h4 style="margin: 0 0 8px; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); font-weight: 600;">${sorted.length > 0 ? 'Schedule another interview' : 'Schedule the first interview'}</h4>
                 ${sorted.length === 0
-                    ? `<p style="margin: 0 0 24px; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; max-width: 760px;">
+                    ? `<p style="margin: 0 0 10px; color: var(--text-secondary); font-size: 0.8rem; line-height: 1.5; max-width: 760px;">
                         AI Copilot reads the JD + the candidate's answers and drives a topic-by-topic interview with drill-down follow-ups.
-                        On round 2+, prior round summaries are auto-fed in so the Copilot doesn't re-ask covered topics.
                        </p>`
-                    : `<p style="margin: 0 0 22px; color: var(--text-secondary); font-size: 0.86rem; line-height: 1.55; max-width: 760px;">
-                        Schedule freely — repeats of the same round type get auto-numbered (#2, #3…) and all prior rounds feed into the Copilot's context.
+                    : `<p style="margin: 0 0 10px; color: var(--text-secondary); font-size: 0.78rem; line-height: 1.45; max-width: 760px;">
+                        Repeats of the same round type get auto-numbered (#2, #3…); prior rounds feed into the Copilot's context.
                        </p>`}
-                <div style="display: grid; grid-template-columns: 1.1fr 1.6fr; gap: 18px; max-width: 760px; margin-bottom: 18px;">
+                <div style="display: grid; grid-template-columns: 1.1fr 1.6fr; gap: 10px; max-width: 760px; margin-bottom: 10px;">
                     <div>
-                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Round type</label>
-                        <select id="ivRoundType" class="form-control" style="width: 100%;">
+                        <label style="display: block; font-size: 0.68rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Round type</label>
+                        <select id="ivRoundType" class="form-control form-control-sm" style="width: 100%;">
                             ${ROUND_TYPES.map(rt => `<option value="${rt.value}" ${rt.value === nextRoundType ? 'selected' : ''}>${rt.label}</option>`).join('')}
                         </select>
                     </div>
                     <div>
-                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Optional label (e.g. "CTO + 2 staff engineers")</label>
-                        <input type="text" id="ivRoundLabel" class="form-control" placeholder="(auto)" maxlength="120" style="width: 100%;">
+                        <label style="display: block; font-size: 0.68rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Optional label</label>
+                        <input type="text" id="ivRoundLabel" class="form-control form-control-sm" placeholder="(auto)" maxlength="120" style="width: 100%;">
                     </div>
                 </div>
-                <!-- Date + time pair (matches the HRMS employee meeting picker — date in
-                     "14 May 2026" format and time in "05:00 PM" format come from the
-                     browser's native rendering of date / time inputs). Single
-                     datetime-local was uglier and hid the time field. -->
-                <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; max-width: 540px; margin-bottom: 22px;">
+                <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; max-width: 540px; margin-bottom: 12px;">
                     <div>
-                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Date</label>
-                        <input type="date" id="ivScheduleDate" class="form-control" value="${defaultDate}" style="width: 100%;">
+                        <label style="display: block; font-size: 0.68rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Date</label>
+                        <input type="date" id="ivScheduleDate" class="form-control form-control-sm" value="${defaultDate}" style="width: 100%;">
                     </div>
                     <div>
-                        <label style="display: block; font-size: 0.74rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Start time</label>
-                        <input type="time" id="ivScheduleTime" class="form-control" value="${defaultTime}" step="900" style="width: 100%;">
+                        <label style="display: block; font-size: 0.68rem; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Start time</label>
+                        <input type="time" id="ivScheduleTime" class="form-control form-control-sm" value="${defaultTime}" step="900" style="width: 100%;">
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 4px;">
-                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--text-primary); cursor: pointer; user-select: none;">
-                        <input type="checkbox" id="ivSendInvite" checked> Email candidate the invite
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-primary); cursor: pointer; user-select: none;">
+                        <input type="checkbox" id="ivSendInvite" checked> Email candidate
                     </label>
-                    <button class="rec-btn rec-btn-primary" style="padding: 9px 18px;" onclick="scheduleInterviewWithPicker('${escapeAttr(applicationId)}', false)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <button class="rec-btn rec-btn-primary rec-btn-sm" onclick="scheduleInterviewWithPicker('${escapeAttr(applicationId)}', false)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: -2px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         Schedule
                     </button>
-                    <button class="rec-btn" style="padding: 9px 18px;" onclick="scheduleInterviewWithPicker('${escapeAttr(applicationId)}', true)" title="Skip the picker — create the meeting and open it now">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <button class="rec-btn rec-btn-sm" onclick="scheduleInterviewWithPicker('${escapeAttr(applicationId)}', true)" title="Skip the picker — create the meeting and open it now">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: -2px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                         Start now
                     </button>
                 </div>
@@ -1453,10 +1448,10 @@
                </div>`
             : '';
         const topRow = `
-            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
                 ${roundChip}
                 ${statusBadge}
-                <span style="color: var(--text-secondary); font-size: 0.86rem;">${escapeHtml(meta)}</span>
+                <span style="color: var(--text-secondary); font-size: 0.76rem;">${escapeHtml(meta)}</span>
                 ${meetingCta}
             </div>`;
 
@@ -1466,54 +1461,135 @@
                  ${topicsSeeded.map(t => `<span class="rec-badge rec-badge-new" style="font-weight: 400; padding: 5px 12px;">${escapeHtml(t)}</span>`).join('')}
                </div>` : '';
 
-        // Report block — only when complete
+        // Report block — for every completed round (not just the latest), so HR
+        // can review the full session history in one panel. Older rounds use
+        // collapsible <details> so the timeline stays scannable.
         let reportBlock = '';
-        if (status === 'completed' && isLatest) {
+        if (status === 'completed') {
+            // The AI report comes back as JSONB columns parsed from raw HRMS
+            // rows; values may be null when the meeting finished but the
+            // report-generation step hadn't completed yet (e.g. AIEngine
+            // restarted mid-session). We treat "all four fields null" as a
+            // completed-but-no-report state and render a placeholder instead.
             let topicsCovered = [], redFlags = [], strengths = [];
             try { topicsCovered = JSON.parse(iv.topics_covered || '[]'); } catch { /* ignore */ }
             try { redFlags = JSON.parse(iv.red_flags || '[]'); } catch { /* ignore */ }
             try { strengths = JSON.parse(iv.strengths || '[]'); } catch { /* ignore */ }
-            const recColors = { proceed: '#22c55e', second_round: '#fbbf24', reject: '#ff4757', inconclusive: '#94a3b8' };
-            const rec = iv.overall_recommendation || 'inconclusive';
-            const recColor = recColors[rec] || '#94a3b8';
+            const hasReport = !!(iv.overall_recommendation || iv.summary_text ||
+                topicsCovered.length || strengths.length || redFlags.length);
 
-            const topicBars = topicsCovered.length
-                ? `<table class="rec-mini-table" style="margin-top: 8px;">
-                     <thead><tr><th>Topic</th><th>Depth reached</th><th>Score</th><th>Notes</th></tr></thead>
-                     <tbody>${topicsCovered.map(t => `
-                        <tr>
-                          <td>${escapeHtml(t.label || '')}</td>
-                          <td>${(t.depth_reached || 0)}/3</td>
-                          <td>${(t.depth_score_1_5 || '')}/5</td>
-                          <td style="color: var(--text-secondary);">${escapeHtml(t.notes || '')}</td>
-                        </tr>`).join('')}</tbody>
-                   </table>` : '';
-
-            reportBlock = `
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px;">
-                    <div class="rec-stat-card" style="border-left: 4px solid ${recColor};">
-                        <div class="rec-stat-label">RECOMMENDATION</div>
-                        <div class="rec-stat-value" style="font-size: 1.2rem; font-weight: 600; text-transform: uppercase; color: ${recColor};">
-                            ${escapeHtml((rec || '').replace(/_/g, ' '))}
+            if (!hasReport) {
+                // Completed-without-report placeholder
+                reportBlock = `
+                    <div class="glass-card-sm" style="margin-top: 8px; border-color: rgba(251,191,36,0.35);">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            <span style="font-size: 0.84rem; color: var(--text-primary); font-weight: 600;">Report not yet generated</span>
                         </div>
-                        <div class="rec-stat-sub">Overall score ${(iv.overall_score || '?')}/10</div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.45;">
+                            Interview ended but no AI report was attached. You can record the outcome manually.
+                        </div>
+                        <button type="button" class="rec-btn rec-btn-sm" style="margin-top: 8px;" onclick="editInterviewReport('${escapeAttr(iv.id)}')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: -2px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Write report
+                        </button>
+                    </div>`;
+            } else {
+                const recColors = { proceed: '#22c55e', second_round: '#fbbf24', reject: '#ff4757', inconclusive: '#94a3b8' };
+                const rec = iv.overall_recommendation || 'inconclusive';
+                const recColor = recColors[rec] || '#94a3b8';
+                const score = iv.overall_score || 0;
+                const scorePct = Math.max(0, Math.min(100, (score / 10) * 100));
+
+                // Horizontal bar chart of topics — depth (0/3) as cyan-pip stack,
+                // score (1/5) as gold-segment stack. Compact 22px rows.
+                const topicBars = topicsCovered.length
+                    ? `<div class="glass-card-sm" style="margin-top: 8px; padding: 10px 12px;">
+                         <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 6px;">Topics covered</div>
+                         <div style="display: flex; flex-direction: column; gap: 4px;">
+                           ${topicsCovered.map(t => {
+                             const depth = Math.max(0, Math.min(3, t.depth_reached || 0));
+                             const score15 = Math.max(0, Math.min(5, t.depth_score_1_5 || 0));
+                             const depthPips = [0,1,2].map(i => `<span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:${i < depth ? 'var(--brand-primary, #8b5cf6)' : 'rgba(255,255,255,0.12)'};"></span>`).join('');
+                             const scoreSegs = [0,1,2,3,4].map(i => `<span style="display:inline-block; width:9px; height:5px; border-radius:1px; background:${i < score15 ? '#fbbf24' : 'rgba(255,255,255,0.10)'};"></span>`).join('');
+                             return `<div style="display: grid; grid-template-columns: 1.4fr 60px 70px 1.2fr; gap: 8px; align-items: center; padding: 2px 0; font-size: 0.78rem;">
+                               <div style="color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeAttr(t.label || '')}">${escapeHtml(t.label || '')}</div>
+                               <div style="display: flex; gap: 3px; align-items: center;" title="Depth ${depth}/3">${depthPips}<span style="color: var(--text-tertiary, var(--text-secondary)); font-size: 0.68rem; margin-left: 4px;">${depth}/3</span></div>
+                               <div style="display: flex; gap: 2px; align-items: center;" title="Score ${score15}/5">${scoreSegs}<span style="color: var(--text-tertiary, var(--text-secondary)); font-size: 0.68rem; margin-left: 4px;">${score15}/5</span></div>
+                               <div style="color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.74rem;" title="${escapeAttr(t.notes || '')}">${escapeHtml(t.notes || '')}</div>
+                             </div>`;
+                           }).join('')}
+                         </div>
+                       </div>` : '';
+
+                const recordingCta = iv.transcript_url
+                    ? `<a href="${escapeAttr(iv.transcript_url)}" target="_blank" rel="noopener" class="rec-btn rec-btn-sm" style="display: inline-flex; align-items: center; gap: 4px;">
+                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                         Recording
+                       </a>` : '';
+
+                // Bento grid: 4 small glass cards + summary + topics + lists
+                const strengthsCard = `
+                    <div class="glass-card-sm" style="padding: 8px 10px;">
+                        <div style="font-size: 0.66rem; color: #22c55e; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 4px;">Strengths</div>
+                        ${strengths.length
+                            ? `<ul style="margin: 0; padding-left: 14px; color: var(--text-primary); font-size: 0.78rem; line-height: 1.4;">${strengths.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>`
+                            : `<div style="font-size: 0.74rem; color: var(--text-secondary); font-style: italic;">None recorded</div>`}
+                    </div>`;
+                const redFlagsCard = `
+                    <div class="glass-card-sm" style="padding: 8px 10px;">
+                        <div style="font-size: 0.66rem; color: #ff4757; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 4px;">Red flags</div>
+                        ${redFlags.length
+                            ? `<ul style="margin: 0; padding-left: 14px; color: var(--text-primary); font-size: 0.78rem; line-height: 1.4;">${redFlags.map(f => `<li>${escapeHtml(f)}</li>`).join('')}</ul>`
+                            : `<div style="font-size: 0.74rem; color: var(--text-secondary); font-style: italic;">None recorded</div>`}
+                    </div>`;
+
+                reportBlock = `
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 10px; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">
+                            <span>Session Report</span>
+                            ${iv.completed_at ? `<span style="color: var(--text-tertiary, var(--text-secondary)); font-weight: 500; text-transform: none; letter-spacing: 0;">· ${formatDate(iv.completed_at, true)}</span>` : ''}
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            ${recordingCta}
+                            <button type="button" class="rec-btn rec-btn-sm" onclick="editInterviewReport('${escapeAttr(iv.id)}')">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: -2px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                Edit
+                            </button>
+                        </div>
                     </div>
-                    <div class="rec-stat-card">
-                        <div class="rec-stat-label">SUMMARY</div>
-                        <div style="font-size: 0.88rem; line-height: 1.5; color: var(--text-primary); margin-top: 4px;">
+                    <div id="iv-report-view-${escapeAttr(iv.id)}">
+                    <div style="display: grid; grid-template-columns: 1.1fr 1.3fr 1fr 1fr; gap: 8px; margin-top: 8px;">
+                        <div class="glass-card-sm" style="padding: 8px 10px; border-left: 3px solid ${recColor};">
+                            <div style="font-size: 0.66rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 2px;">Recommendation</div>
+                            <div style="font-size: 0.92rem; font-weight: 700; text-transform: uppercase; color: ${recColor}; letter-spacing: 0.02em;">
+                                ${escapeHtml((rec || '').replace(/_/g, ' '))}
+                            </div>
+                        </div>
+                        <div class="glass-card-sm" style="padding: 8px 10px;">
+                            <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="font-size: 0.66rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">Score</span>
+                                <span style="font-size: 0.9rem; font-weight: 700; color: ${recColor};">${score}<span style="color: var(--text-tertiary, var(--text-secondary)); font-size: 0.7rem; font-weight: 500;">/10</span></span>
+                            </div>
+                            <div style="height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+                                <div style="width: ${scorePct}%; height: 100%; background: linear-gradient(90deg, ${recColor}, ${recColor}cc); border-radius: 3px;"></div>
+                            </div>
+                        </div>
+                        ${strengthsCard}
+                        ${redFlagsCard}
+                    </div>
+                    <div class="glass-card-sm" style="margin-top: 8px; padding: 8px 10px;">
+                        <div style="font-size: 0.66rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 4px;">Summary</div>
+                        <div style="font-size: 0.82rem; line-height: 1.5; color: var(--text-primary);">
                             ${escapeHtml(iv.summary_text || '(No summary text)')}
                         </div>
                     </div>
-                </div>
-                ${topicBars}
-                ${strengths.length ? `<h5 style="margin: 14px 0 6px; font-size: 0.86rem; color: #22c55e;">STRENGTHS</h5>
-                    <ul style="margin: 0; padding-left: 20px; color: var(--text-primary); font-size: 0.88rem;">${strengths.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>` : ''}
-                ${redFlags.length ? `<h5 style="margin: 14px 0 6px; font-size: 0.86rem; color: #ff4757;">RED FLAGS</h5>
-                    <ul style="margin: 0; padding-left: 20px; color: var(--text-primary); font-size: 0.88rem;">${redFlags.map(f => `<li>${escapeHtml(f)}</li>`).join('')}</ul>` : ''}
-                <div id="iv-tokens-${escapeAttr(iv.id)}" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border-color); font-size: 0.84rem; color: var(--text-primary);">
-                    <div style="color: var(--text-secondary); font-size: 0.78rem;">Loading token usage…</div>
-                </div>
-            `;
+                    ${topicBars}
+                    ${isLatest ? `<div id="iv-tokens-${escapeAttr(iv.id)}" style="margin-top: 8px; padding: 6px 10px; font-size: 0.74rem; color: var(--text-secondary);">
+                        <span style="font-size: 0.68rem;">Loading token usage…</span>
+                    </div>` : ''}
+                    </div>`;
+            }
         } else if (status === 'scheduled' || status === 'in_progress') {
             // Show seeded topic queue as a preview of what the Copilot will probe
             reportBlock = topicChips
@@ -1524,8 +1600,8 @@
         // Wrap every interview row in a soft card so the panel is scannable.
         // Older rounds get a slightly muted border to recede visually.
         const wrapStyle = isLatest
-            ? 'background: var(--bg-card-elevated, rgba(255,255,255,0.02)); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px 20px;'
-            : 'background: rgba(0,0,0,0.10); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px 18px; opacity: 0.92;';
+            ? 'background: var(--bg-card-elevated, rgba(255,255,255,0.02)); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 12px;'
+            : 'background: rgba(0,0,0,0.10); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 12px; opacity: 0.92;';
         return `<div style="${wrapStyle}">${topRow}${reportBlock}</div>`;
     }
 
@@ -1724,6 +1800,208 @@
             Toast?.success?.('Notes saved');
         } catch (err) {
             Toast?.error?.(err?.message || 'Failed to save notes');
+        }
+    };
+
+    // ─── Interview report — edit / save ────────────────────────────────
+    // Swap the read-only report block for an editable form, save via PUT,
+    // then refresh the whole interview panel so the timeline reflects the
+    // new values. We re-fetch from the server rather than mutate locally so
+    // there's a single source of truth.
+
+    // Find the latest interview snapshot for a given id from the cached
+    // application drawer list. Avoids a redundant network call when the
+    // user clicks Edit immediately after opening the drawer.
+    let _cachedInterviewsByApp = new Map();
+
+    window.editInterviewReport = async function (interviewId) {
+        if (!activeApplicationId || !interviewId) return;
+        try {
+            // Always re-fetch the interview list so the edit form starts
+            // from the latest server state (someone else might have edited
+            // since the drawer opened).
+            const list = await api.request(`/hrms/job-applications/${encodeURIComponent(activeApplicationId)}/interviews`);
+            _cachedInterviewsByApp.set(activeApplicationId, list || []);
+            const iv = (list || []).find(x => String(x.id) === String(interviewId));
+            if (!iv) {
+                Toast?.error?.('Interview not found');
+                return;
+            }
+
+            // Parse JSONB columns into editable arrays
+            let topicsCovered = [], redFlags = [], strengths = [];
+            try { topicsCovered = JSON.parse(iv.topics_covered || '[]'); } catch { /* ignore */ }
+            try { redFlags = JSON.parse(iv.red_flags || '[]'); } catch { /* ignore */ }
+            try { strengths = JSON.parse(iv.strengths || '[]'); } catch { /* ignore */ }
+
+            const view = document.getElementById(`iv-report-view-${interviewId}`);
+            if (!view) {
+                // No view block to replace — happens when the round was
+                // status=completed but had no report (placeholder shown
+                // instead). In that case we open the form in-place where
+                // the placeholder lives.
+                const row = (view || document.body).closest?.('.rec-iv-timeline > div') || null;
+                // Fall back: locate the round wrapper via row containing
+                // the editInterviewReport button.
+                renderInterviewReportEditor(interviewId, iv, topicsCovered, redFlags, strengths);
+                return;
+            }
+
+            renderInterviewReportEditor(interviewId, iv, topicsCovered, redFlags, strengths);
+        } catch (err) {
+            console.error('editInterviewReport failed', err);
+            Toast?.error?.(err?.message || 'Failed to load report for editing');
+        }
+    };
+
+    function renderInterviewReportEditor(interviewId, iv, topicsCovered, redFlags, strengths) {
+        // Locate the host element where the editor will render. Two paths:
+        //   1) #iv-report-view-{id} exists  → swap it for the editor
+        //   2) Round has no report block yet → append editor inside the
+        //      round wrapper. We find the wrapper by walking up from the
+        //      Edit button that was just clicked.
+        let host = document.getElementById(`iv-report-view-${interviewId}`);
+        let usedFallback = false;
+        if (!host) {
+            // Walk up from any Edit button referencing this interview id
+            const btns = document.querySelectorAll(`button[onclick*="editInterviewReport('${interviewId}')"]`);
+            if (btns.length) {
+                const wrap = btns[0].closest('div');
+                if (wrap) {
+                    host = document.createElement('div');
+                    host.id = `iv-report-view-${interviewId}`;
+                    wrap.parentNode.appendChild(host);
+                    usedFallback = true;
+                }
+            }
+        }
+        if (!host) {
+            Toast?.error?.('Cannot find report panel to edit');
+            return;
+        }
+
+        const escAttr = s => String(s ?? '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const rec = iv.overall_recommendation || 'inconclusive';
+        const score = Math.max(1, Math.min(10, iv.overall_score || 5));
+        const recOptions = ['proceed', 'second_round', 'reject', 'inconclusive'];
+
+        const cellInputStyle = 'width: 100%; box-sizing: border-box; font-size: 0.76rem;';
+        const topicsRows = (topicsCovered || []).map((t, i) => `
+            <tr>
+                <td><input type="text" class="form-control form-control-sm" data-iv-topic-label="${i}" value="${escAttr(t.label || '')}" style="${cellInputStyle}"></td>
+                <td style="width: 70px;"><input type="number" min="0" max="3" class="form-control form-control-sm" data-iv-topic-depth="${i}" value="${(t.depth_reached || 0)}" style="${cellInputStyle}"></td>
+                <td style="width: 70px;"><input type="number" min="1" max="5" class="form-control form-control-sm" data-iv-topic-score="${i}" value="${(t.depth_score_1_5 || '')}" style="${cellInputStyle}"></td>
+                <td><input type="text" class="form-control form-control-sm" data-iv-topic-notes="${i}" value="${escAttr(t.notes || '')}" style="${cellInputStyle}"></td>
+            </tr>
+        `).join('');
+
+        const labelStyle = 'display: block; font-size: 0.66rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 700;';
+        host.innerHTML = `
+            <div class="glass-card-sm" style="margin-top: 8px; padding: 10px 12px; border-color: var(--brand-primary);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 0.74rem; font-weight: 700; color: var(--brand-primary); letter-spacing: 0.06em; text-transform: uppercase;">Editing Session Report</span>
+                    <span style="font-size: 0.7rem; color: var(--text-secondary);">Overwrites AI draft</span>
+                </div>
+
+                <label style="${labelStyle}">Recommendation</label>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+                    ${recOptions.map(opt => `
+                        <label style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 0.74rem; ${opt === rec ? 'background: rgba(139, 92, 246, 0.12); border-color: var(--brand-primary);' : ''}">
+                            <input type="radio" name="ivRec_${interviewId}" value="${opt}" ${opt === rec ? 'checked' : ''}>
+                            ${opt.replace(/_/g, ' ').toUpperCase()}
+                        </label>
+                    `).join('')}
+                </div>
+
+                <label style="${labelStyle}">
+                    Score <span id="ivScoreVal_${interviewId}" style="color: var(--text-primary); margin-left: 4px; font-weight: 700;">${score}</span><span style="color: var(--text-tertiary, var(--text-secondary)); margin-left: 1px;">/10</span>
+                </label>
+                <input type="range" min="1" max="10" step="1" value="${score}" id="ivScore_${interviewId}" style="width: 100%; margin-bottom: 8px;"
+                    oninput="document.getElementById('ivScoreVal_${interviewId}').textContent = this.value;">
+
+                <label style="${labelStyle}">Summary</label>
+                <textarea id="ivSummary_${interviewId}" class="form-control form-control-sm" rows="3" style="margin-bottom: 8px; font-size: 0.8rem; width: 100%; box-sizing: border-box; resize: vertical;" placeholder="1-2 paragraph hiring summary…">${escapeHtml(iv.summary_text || '')}</textarea>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                    <div style="min-width: 0;">
+                        <label style="display: block; font-size: 0.66rem; color: #22c55e; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 700;">Strengths</label>
+                        <textarea id="ivStrengths_${interviewId}" class="form-control form-control-sm" rows="3" style="font-size: 0.78rem; width: 100%; box-sizing: border-box; resize: vertical;" placeholder="One per line">${escapeHtml((strengths || []).join('\n'))}</textarea>
+                    </div>
+                    <div style="min-width: 0;">
+                        <label style="display: block; font-size: 0.66rem; color: #ff4757; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; font-weight: 700;">Red flags</label>
+                        <textarea id="ivRedFlags_${interviewId}" class="form-control form-control-sm" rows="3" style="font-size: 0.78rem; width: 100%; box-sizing: border-box; resize: vertical;" placeholder="One per line">${escapeHtml((redFlags || []).join('\n'))}</textarea>
+                    </div>
+                </div>
+
+                ${topicsCovered.length ? `
+                    <label style="${labelStyle}">Topics covered (editable)</label>
+                    <table class="rec-mini-table" style="margin-bottom: 8px; font-size: 0.76rem;">
+                        <thead><tr><th>Topic</th><th>Depth /3</th><th>Score /5</th><th>Notes</th></tr></thead>
+                        <tbody id="ivTopicsBody_${interviewId}">${topicsRows}</tbody>
+                    </table>
+                ` : ''}
+
+                <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                    <button type="button" class="rec-btn rec-btn-sm" onclick="cancelInterviewReportEdit('${escAttr(interviewId)}')">Cancel</button>
+                    <button type="button" class="rec-btn rec-btn-primary rec-btn-sm" onclick="saveInterviewReport('${escAttr(interviewId)}', ${topicsCovered.length})" id="ivSaveBtn_${interviewId}">Save</button>
+                </div>
+            </div>
+        `;
+    }
+
+    window.cancelInterviewReportEdit = function (_interviewId) {
+        // Cheapest reset: re-render the full panel from cached interviews list.
+        if (activeApplicationId) loadApplicationInterviews(activeApplicationId);
+    };
+
+    window.saveInterviewReport = async function (interviewId, topicsLen) {
+        const btn = document.getElementById(`ivSaveBtn_${interviewId}`);
+        if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+        try {
+            const recRadio = document.querySelector(`input[name="ivRec_${interviewId}"]:checked`);
+            const overall_recommendation = recRadio ? recRadio.value : 'inconclusive';
+            const overall_score = parseInt(document.getElementById(`ivScore_${interviewId}`)?.value || '5', 10);
+            const summary_text = document.getElementById(`ivSummary_${interviewId}`)?.value || '';
+            const splitLines = el => (el?.value || '').split('\n').map(s => s.trim()).filter(Boolean);
+            const strengths = splitLines(document.getElementById(`ivStrengths_${interviewId}`));
+            const red_flags = splitLines(document.getElementById(`ivRedFlags_${interviewId}`));
+
+            // Rebuild topics_covered from the editable table rows. Scope the
+            // queries to THIS interview's view container so a second editor
+            // open elsewhere on the page can't have its data-iv-topic-*
+            // attributes collide with ours (data-iv-topic-label="0" alone
+            // would match the first one in document order regardless of
+            // which interview it belongs to).
+            const scope = document.getElementById(`iv-report-view-${interviewId}`);
+            const q = sel => scope ? scope.querySelector(sel) : document.querySelector(sel);
+            const topics_covered = [];
+            for (let i = 0; i < (topicsLen || 0); i++) {
+                const label = q(`[data-iv-topic-label="${i}"]`)?.value || '';
+                if (!label.trim()) continue;
+                const depth = parseInt(q(`[data-iv-topic-depth="${i}"]`)?.value || '0', 10);
+                const score15 = parseInt(q(`[data-iv-topic-score="${i}"]`)?.value || '0', 10) || null;
+                const notes = q(`[data-iv-topic-notes="${i}"]`)?.value || '';
+                topics_covered.push({ label, depth_reached: depth, depth_score_1_5: score15, notes });
+            }
+
+            await api.request(`/hrms/job-applications/interviews/${encodeURIComponent(interviewId)}/report`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    overall_recommendation,
+                    overall_score,
+                    summary_text,
+                    strengths,
+                    red_flags,
+                    topics_covered,
+                    transcript_url: null
+                })
+            });
+            Toast?.success?.('Report saved');
+            if (activeApplicationId) await loadApplicationInterviews(activeApplicationId);
+        } catch (err) {
+            console.error('saveInterviewReport failed', err);
+            Toast?.error?.(err?.message || 'Failed to save report');
+            if (btn) { btn.disabled = false; btn.textContent = 'Save report'; }
         }
     };
 

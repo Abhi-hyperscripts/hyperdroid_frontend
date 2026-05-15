@@ -1299,9 +1299,9 @@
                 <button class="gm-close" onclick="closeApplicationDrawer()">×</button>
             </div>
             <div class="gm-body">
-                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
                     <span class="rec-badge rec-badge-new" id="appDrawerStatus">new</span>
-                    <div style="min-width: 200px;">
+                    <div style="min-width: 180px;">
                         <select id="appDrawerStatusSelect" data-searchable="true" data-placeholder="Set status">
                             <option value="new">New</option>
                             <option value="reviewing">Reviewing</option>
@@ -1312,7 +1312,7 @@
                             <option value="rejected">Rejected</option>
                         </select>
                     </div>
-                    <span style="margin-left: auto; color: var(--text-secondary); font-size: 0.85rem;" id="appDrawerMeta"></span>
+                    <span style="margin-left: auto; color: var(--text-secondary); font-size: 0.82rem;" id="appDrawerMeta"></span>
                 </div>
                 <div id="appDrawerFields"></div>
 
@@ -1321,23 +1321,23 @@
                      "Schedule Interview" CTA when no interview exists, the
                      meeting link + status when one is in progress, and the
                      full post-interview report when status='completed'. -->
-                <details class="rec-posting-card rec-analytics-details" id="appDrawerInterviewDetails" style="margin-top: 18px;" open>
+                <details class="rec-posting-card rec-analytics-details" id="appDrawerInterviewDetails" style="margin-top: 10px;" open>
                     <summary class="rec-analytics-summary">
                         <div class="rec-analytics-summary-label">
-                            <svg class="rec-analytics-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 6 15 12 9 18"/></svg>
-                            <span style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary);">Recruit Copilot</span>
-                            <span style="color: var(--text-secondary); font-weight: 400; font-size: 0.82rem; margin-left: 8px;">· AI-driven interview</span>
+                            <svg class="rec-analytics-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 6 15 12 9 18"/></svg>
+                            <span style="font-size: 0.98rem; font-weight: 600; color: var(--text-primary);">Recruit Copilot</span>
+                            <span style="color: var(--text-secondary); font-weight: 400; font-size: 0.78rem; margin-left: 6px;">· AI-driven interview</span>
                         </div>
                     </summary>
-                    <div id="appDrawerInterviewBody" style="padding: 26px 28px 30px;">
+                    <div id="appDrawerInterviewBody" style="padding: 14px 16px 16px;">
                         <div class="rec-loading">Loading interview state…</div>
                     </div>
                 </details>
 
-                <div class="form-group" style="margin-top: 16px;">
-                    <label>Internal notes (visible to HR only)</label>
-                    <textarea id="appDrawerNotes" class="form-control" rows="3" placeholder="Notes for the hiring team..."></textarea>
-                    <button class="rec-btn rec-btn-sm" style="margin-top: 8px; align-self: flex-start;" onclick="saveApplicationNotes()">Save notes</button>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label style="font-size: 0.82rem;">Internal notes (visible to HR only)</label>
+                    <textarea id="appDrawerNotes" class="form-control" rows="2" placeholder="Notes for the hiring team..."></textarea>
+                    <button class="rec-btn rec-btn-sm" style="margin-top: 6px; align-self: flex-start;" onclick="saveApplicationNotes()">Save notes</button>
                 </div>
             </div>
         </div>
