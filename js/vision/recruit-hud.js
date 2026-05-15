@@ -67,7 +67,8 @@
         wrapper.className = 'recruit-hud-sections recruit-hud-floating';
         wrapper.id = 'recruitHudSections';
         wrapper.innerHTML = ''
-            + '<div class="recruit-hud-floating-header">'
+            + '<div class="recruit-hud-floating-header" id="recruitHudHeader" title="Drag to move">'
+            +   '<span class="recruit-hud-floating-grip" aria-hidden="true">⋮⋮</span>'
             +   '<span class="recruit-hud-floating-title">RECRUIT COCKPIT</span>'
             +   '<button type="button" class="recruit-hud-floating-toggle" id="recruitFloatingToggle" onclick="toggleRecruitFloating()" title="Minimize cockpit">'
             +     '<span class="recruit-hud-floating-chevron" id="recruitFloatingChevron">−</span>'
@@ -75,8 +76,171 @@
             + '</div>'
             + '<div class="recruit-hud-floating-body" id="recruitHudFloatingBody">'
             +   sectionsHtml()
-            + '</div>';
+            + '</div>'
+            + '<div class="recruit-hud-floating-resize-handle" id="recruitHudResizeHandle" title="Drag to resize" aria-hidden="true"></div>';
         hud.appendChild(wrapper);
+
+        setupDragAndResize(wrapper);
+        restorePosition(wrapper);
+    }
+
+    // ── Draggable + resizable cockpit ────────────────────────────────────
+    const POS_STORAGE_KEY = 'recruitHud.position.v1';
+
+    function loadSavedPosition() {
+        try {
+            const raw = localStorage.getItem(POS_STORAGE_KEY);
+            if (!raw) return null;
+            const p = JSON.parse(raw);
+            // Clamp to current viewport so old positions on smaller screens
+            // don't push the panel off-screen.
+            const maxLeft = window.innerWidth - 80;
+            const maxTop = window.innerHeight - 40;
+            return {
+                left: Math.max(0, Math.min(maxLeft, p.left | 0)),
+                top:  Math.max(0, Math.min(maxTop,  p.top  | 0)),
+                width:  Math.max(240, Math.min(window.innerWidth - 16,  p.width  | 0)),
+                height: Math.max(180, Math.min(window.innerHeight - 16, p.height | 0))
+            };
+        } catch (_e) { return null; }
+    }
+
+    function savePosition(pos) {
+        try { localStorage.setItem(POS_STORAGE_KEY, JSON.stringify(pos)); } catch (_e) {}
+    }
+
+    function restorePosition(panel) {
+        const saved = loadSavedPosition();
+        if (!saved) return;
+        applyUserPosition(panel, saved);
+    }
+
+    function applyUserPosition(panel, pos) {
+        panel.classList.add('recruit-hud-floating-user-positioned');
+        // Switch to fixed positioning so coords are viewport-relative —
+        // simpler drag math, and decouples from the parent #copilotHud
+        // overlay which may move when chat sidebar opens/closes.
+        panel.style.position = 'fixed';
+        panel.style.top = pos.top + 'px';
+        panel.style.left = pos.left + 'px';
+        panel.style.width = pos.width + 'px';
+        panel.style.height = pos.height + 'px';
+        panel.style.bottom = 'auto';
+        panel.style.right = 'auto';
+    }
+
+    function setupDragAndResize(panel) {
+        const header = panel.querySelector('#recruitHudHeader');
+        const resize = panel.querySelector('#recruitHudResizeHandle');
+        if (!header || !resize) return;
+
+        // ── Header drag ────────────────────────────────────────────────
+        header.addEventListener('mousedown', (e) => {
+            // Don't start drag when clicking the minimize button.
+            if (e.target.closest('.recruit-hud-floating-toggle')) return;
+            if (e.button !== 0) return;
+            e.preventDefault();
+
+            const r = panel.getBoundingClientRect();
+            // Anchor the panel where it currently sits so subsequent
+            // pointer math is straightforward.
+            panel.classList.add('recruit-hud-floating-user-positioned', 'recruit-hud-floating-dragging');
+            panel.style.position = 'fixed';
+            panel.style.left = r.left + 'px';
+            panel.style.top = r.top + 'px';
+            panel.style.width = r.width + 'px';
+            panel.style.height = r.height + 'px';
+            panel.style.bottom = 'auto';
+            panel.style.right = 'auto';
+
+            const startX = e.clientX, startY = e.clientY;
+            const startLeft = r.left, startTop = r.top;
+
+            const onMove = (ev) => {
+                const dx = ev.clientX - startX;
+                const dy = ev.clientY - startY;
+                const maxLeft = window.innerWidth - panel.offsetWidth;
+                // Keep header visible: never let panel.top push past viewport bottom - header height.
+                const maxTop = window.innerHeight - 32;
+                const newLeft = Math.max(0, Math.min(maxLeft, startLeft + dx));
+                const newTop  = Math.max(0, Math.min(maxTop,  startTop + dy));
+                panel.style.left = newLeft + 'px';
+                panel.style.top = newTop + 'px';
+            };
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                panel.classList.remove('recruit-hud-floating-dragging');
+                savePosition({
+                    left: parseInt(panel.style.left, 10) || 0,
+                    top:  parseInt(panel.style.top,  10) || 0,
+                    width:  panel.offsetWidth,
+                    height: panel.offsetHeight
+                });
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+
+        // ── Bottom-right corner resize ─────────────────────────────────
+        resize.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Anchor before resize starts.
+            const r = panel.getBoundingClientRect();
+            panel.classList.add('recruit-hud-floating-user-positioned', 'recruit-hud-floating-resizing');
+            panel.style.position = 'fixed';
+            panel.style.left = r.left + 'px';
+            panel.style.top = r.top + 'px';
+            panel.style.width = r.width + 'px';
+            panel.style.height = r.height + 'px';
+            panel.style.bottom = 'auto';
+            panel.style.right = 'auto';
+
+            const startX = e.clientX, startY = e.clientY;
+            const startW = r.width, startH = r.height;
+            const left = r.left, top = r.top;
+
+            const onMove = (ev) => {
+                const dw = ev.clientX - startX;
+                const dh = ev.clientY - startY;
+                const maxW = Math.min(720, window.innerWidth - left - 8);
+                const maxH = window.innerHeight - top - 8;
+                const newW = Math.max(240, Math.min(maxW, startW + dw));
+                const newH = Math.max(180, Math.min(maxH, startH + dh));
+                panel.style.width = newW + 'px';
+                panel.style.height = newH + 'px';
+            };
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                panel.classList.remove('recruit-hud-floating-resizing');
+                savePosition({
+                    left: parseInt(panel.style.left, 10) || 0,
+                    top:  parseInt(panel.style.top,  10) || 0,
+                    width:  panel.offsetWidth,
+                    height: panel.offsetHeight
+                });
+            };
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+
+        // Double-click the header to reset to default top-left anchored position.
+        header.addEventListener('dblclick', (e) => {
+            if (e.target.closest('.recruit-hud-floating-toggle')) return;
+            try { localStorage.removeItem(POS_STORAGE_KEY); } catch (_e) {}
+            panel.classList.remove('recruit-hud-floating-user-positioned');
+            panel.style.position = '';
+            panel.style.top = '';
+            panel.style.left = '';
+            panel.style.right = '';
+            panel.style.bottom = '';
+            panel.style.width = '';
+            panel.style.height = '';
+        });
     }
 
     function toggleRecruitFloating() {
