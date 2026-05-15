@@ -11784,16 +11784,35 @@ input:checked + .slider:before {
     border-color: var(--border-primary, var(--border-color, #e5e7eb));
 }
 
+/* `.current` = today's month. Previously this used a brand-tinted background
+   + brand border, which competed visually with `.selected` and made the picker
+   look like TWO months were chosen. Now it just shows a subtle dot at the
+   bottom-center of the cell — a quiet "today" indicator that never collides
+   with the selected state. */
 .month-picker-month.current {
-    border-color: var(--brand-primary);
-    color: var(--brand-primary);
-    background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+    position: relative;
+}
+.month-picker-month.current::after {
+    content: "";
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--brand-primary);
 }
 
 .month-picker-month.selected {
     background: var(--brand-primary);
     border-color: var(--brand-primary);
     color: var(--text-inverse, #ffffff);
+}
+/* If today IS the selected month, invert the dot so it stays visible against
+   the filled brand background. */
+.month-picker-month.selected.current::after {
+    background: var(--text-inverse, #ffffff);
 }
 
 .month-picker-month.future {
