@@ -1022,6 +1022,88 @@
                         </div>
                     </div>
 
+                    <!-- Calling (Exotel BYOK) Integration Card -->
+                    <div class="integration-card">
+                        <div class="integration-card-header">
+                            <div class="integration-icon" style="background:#2563eb; color:#fff;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="integration-title">Calling (Exotel)</h4>
+                                <p class="integration-description">Make and receive calls directly from a lead. Every call logs to the lead timeline with recording + transcript.</p>
+                            </div>
+                        </div>
+
+                        <div class="integration-status" id="callsStatus">
+                            <span class="dot disconnected" id="callsStatusDot"></span>
+                            <span id="callsStatusText">Not connected</span>
+                        </div>
+
+                        <details class="mailbox-help" style="margin-bottom:16px;">
+                            <summary>
+                                <svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                How do I connect Exotel?
+                                <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </summary>
+                            <div class="mailbox-help-body">
+                                <p>You bring your own Exotel account — we don't resell minutes. Sign up at <a href="https://my.exotel.com/auth/register" target="_blank" rel="noreferrer noopener">my.exotel.com</a> (free trial includes ₹500 credits for 15 days) and follow the steps:</p>
+                                <ol style="padding-left:20px; line-height:1.6;">
+                                    <li>Verify your number (Exotel sends a missed-call instruction).</li>
+                                    <li>Open <strong>Settings → API Settings</strong> and copy the <strong>Account SID</strong>, <strong>API Key</strong>, and <strong>API Token</strong>.</li>
+                                    <li>Note your <strong>ExoPhone</strong> (the Indian number Exotel assigned). Outbound calls use this as caller-ID.</li>
+                                    <li>Paste all four into the form below + click Save.</li>
+                                    <li>Copy the <strong>Status callback URL</strong> we generate, then in Exotel's dashboard go to <strong>Call Settings → App Bazaar</strong> (or per-ExoPhone settings) and paste it into the call-status-update webhook. Set method to POST and content type to <code>application/x-www-form-urlencoded</code>.</li>
+                                    <li>Submit your <strong>KYC documents</strong> in Exotel — Company PAN, Certificate of Incorporation, Address Proof, Photo. Outbound calls only work once KYC clears (24-72h).</li>
+                                </ol>
+                                <p style="margin-top:10px;color:var(--text-secondary);font-size:0.9em;">Once connected: Call buttons appear on every lead. Inbound calls to your ExoPhone surface as a toast → click to open the lead. Recordings + transcripts land in the lead timeline.</p>
+                            </div>
+                        </details>
+
+                        <form id="callsConfigForm" style="display:grid; gap:12px; max-width:560px;">
+                            <div>
+                                <label class="form-label" for="callsAccountSid">Account SID</label>
+                                <input type="text" id="callsAccountSid" class="form-control" placeholder="e.g. yourcompany" autocomplete="off">
+                                <small style="color:var(--text-secondary);font-size:0.8em;">Shown at the top of Exotel's API Settings page.</small>
+                            </div>
+                            <div>
+                                <label class="form-label" for="callsApiKey">API Key</label>
+                                <input type="text" id="callsApiKey" class="form-control" placeholder="48-char hex string" autocomplete="off">
+                                <small style="color:var(--text-secondary);font-size:0.8em;">The "username" column. Encrypted at rest after save.</small>
+                            </div>
+                            <div>
+                                <label class="form-label" for="callsApiToken">API Token</label>
+                                <input type="password" id="callsApiToken" class="form-control" placeholder="48-char hex string" autocomplete="off">
+                                <small style="color:var(--text-secondary);font-size:0.8em;">The "password" column — click "show" in Exotel to reveal it once. Encrypted at rest.</small>
+                            </div>
+                            <div>
+                                <label class="form-label" for="callsExoPhone">ExoPhone (your Indian number)</label>
+                                <input type="tel" id="callsExoPhone" class="form-control" placeholder="e.g. 04446973238" autocomplete="off">
+                                <small style="color:var(--text-secondary);font-size:0.8em;">Used as the caller-ID on outbound. Stored as digits only.</small>
+                            </div>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <button type="button" class="btn btn-primary" id="callsSaveBtn" onclick="saveCallsIntegration()">Save</button>
+                                <button type="button" class="btn btn-outline" id="callsClearBtn" onclick="clearCallsIntegration()" style="display:none;">Disconnect</button>
+                            </div>
+                        </form>
+
+                        <div id="callsWebhookReveal" style="display:none; margin-top:16px; padding:14px; background:var(--bg-secondary); border-left:3px solid var(--brand-primary); border-radius:6px;">
+                            <p style="margin:0 0 8px; font-weight:600;">Status callback URL — paste this into Exotel</p>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <input type="text" id="callsWebhookUrl" class="form-control" readonly style="flex:1; font-family:monospace; font-size:0.85em;">
+                                <button type="button" class="btn btn-sm btn-outline" onclick="copyCallsWebhookUrl()">Copy</button>
+                            </div>
+                            <small style="color:var(--text-secondary);">Set this in Exotel's Call flow App as the call-status-update webhook. POST, form-encoded.</small>
+                        </div>
+                    </div>
+
                     <!-- Google Sheets Integration Card -->
                     <div class="integration-card">
                         <div class="integration-card-header">

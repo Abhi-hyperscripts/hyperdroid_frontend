@@ -5404,3 +5404,117 @@ window.closeSharedMailboxPicker = closeSharedMailboxPicker;
 window.confirmPickerSelection = confirmPickerSelection;
 window.clearTenantDefaultMailbox = clearTenantDefaultMailbox;
 window.detachFlow = detachFlow;
+
+// ─── Calling (Exotel BYOK) integration ────────────────────────────────────
+// Settings → Integrations → Calling card. Loads the safe-view of the
+// tenant's current config (never echoes the encrypted API key/token), lets
+// the admin paste fresh creds + ExoPhone, and reveals the per-tenant
+// webhook URL to paste into Exotel's dashboard after save.
+
+async function loadCallsIntegration() {
+    const dot = document.getElementById('callsStatusDot');
+    const txt = document.getElementById('callsStatusText');
+    if (!dot || !txt) return;
+    try {
+        const cfg = await api.request('/crm/calls/integration');
+        document.getElementById('callsAccountSid').value = cfg.account_sid || '';
+        document.getElementById('callsExoPhone').value = cfg.exophone || '';
+        // The placeholders flag whether secrets ARE on file without echoing them.
+        const keyInput = document.getElementById('callsApiKey');
+        const tokenInput = document.getElementById('callsApiToken');
+        keyInput.placeholder = cfg.has_api_key ? '••••••• (encrypted on file — leave blank to keep)' : '48-char hex string';
+        tokenInput.placeholder = cfg.has_api_token ? '••••••• (encrypted on file — leave blank to keep)' : '48-char hex string';
+        keyInput.value = '';
+        tokenInput.value = '';
+
+        if (cfg.configured) {
+            dot.classList.remove('disconnected'); dot.classList.add('connected');
+            txt.textContent = 'Connected — calls log to lead timelines automatically';
+            const clear = document.getElementById('callsClearBtn');
+            if (clear) clear.style.display = '';
+        } else {
+            dot.classList.add('disconnected'); dot.classList.remove('connected');
+            txt.textContent = 'Not connected';
+        }
+
+        const reveal = document.getElementById('callsWebhookReveal');
+        if (cfg.webhook_url) {
+            document.getElementById('callsWebhookUrl').value = cfg.webhook_url;
+            reveal.style.display = '';
+        } else {
+            reveal.style.display = 'none';
+        }
+    } catch (e) {
+        console.warn('[calls] loadIntegration failed:', e?.message || e);
+    }
+}
+
+async function saveCallsIntegration() {
+    const btn = document.getElementById('callsSaveBtn');
+    const original = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+        const payload = {
+            provider: 'exotel',
+            account_sid: document.getElementById('callsAccountSid').value.trim(),
+            api_key: document.getElementById('callsApiKey').value.trim() || undefined,
+            api_token: document.getElementById('callsApiToken').value.trim() || undefined,
+            exophone: document.getElementById('callsExoPhone').value.replace(/\D/g, ''),
+            region: 'sg',
+        };
+        if (!payload.account_sid) { Toast.error('Account SID is required'); return; }
+        if (!payload.exophone) { Toast.error('ExoPhone is required'); return; }
+        const cfg = await api.request('/crm/calls/integration', {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+        });
+        Toast.success(cfg.configured ? 'Calling integration saved' : 'Saved — finish entering credentials');
+        await loadCallsIntegration();
+    } catch (e) {
+        Toast.error(e?.message || 'Save failed');
+    } finally {
+        btn.disabled = false; btn.textContent = original;
+    }
+}
+
+async function clearCallsIntegration() {
+    if (!confirm('Disconnect Exotel? This wipes the stored credentials. Existing call logs stay in the lead timelines.')) return;
+    try {
+        await api.request('/crm/calls/integration', { method: 'DELETE' });
+        Toast.success('Disconnected');
+        await loadCallsIntegration();
+    } catch (e) {
+        Toast.error(e?.message || 'Disconnect failed');
+    }
+}
+
+function copyCallsWebhookUrl() {
+    const inp = document.getElementById('callsWebhookUrl');
+    if (!inp || !inp.value) return;
+    navigator.clipboard.writeText(inp.value).then(
+        () => Toast.success('Webhook URL copied'),
+        () => { inp.select(); document.execCommand('copy'); Toast.success('Webhook URL copied'); }
+    );
+}
+
+// Auto-load when the Integrations tab opens. Defensive — the tab nav code
+// may load Calling settings asynchronously so we hook both DOMContentLoaded
+// AND a one-shot observer on the Integrations tab content.
+document.addEventListener('DOMContentLoaded', () => {
+    const tab = document.getElementById('tab-integrations');
+    if (!tab) return;
+    // First-paint load if we land directly on integrations.
+    if (tab.classList.contains('active') || getComputedStyle(tab).display !== 'none') {
+        loadCallsIntegration();
+    }
+    // Tab-switch trigger — match the existing pattern (the tab buttons
+    // toggle .active on the content panes).
+    document.querySelectorAll('[data-tab="integrations"], [onclick*="integrations"]').forEach(btn => {
+        btn.addEventListener('click', () => setTimeout(loadCallsIntegration, 60));
+    });
+});
+
+window.loadCallsIntegration = loadCallsIntegration;
+window.saveCallsIntegration = saveCallsIntegration;
+window.clearCallsIntegration = clearCallsIntegration;
+window.copyCallsWebhookUrl = copyCallsWebhookUrl;

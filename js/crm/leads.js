@@ -517,6 +517,12 @@ async function setupLeadsRealtime() {
     _leadsHubConnection.on('HelpRequestResolved', refresh);
     _leadsHubConnection.on('HelpRequestCancelled', refresh);
 
+    // Expose the connection on the window so sibling modules (calls.js,
+    // future telephony) can subscribe to CrmHub events without duplicating
+    // the SignalR setup. Each module guards itself with a one-shot bound
+    // flag so re-subscriptions don't fan out.
+    window._crmHubConnection = _leadsHubConnection;
+
     try {
         await _leadsHubConnection.start();
     } catch (e) {
