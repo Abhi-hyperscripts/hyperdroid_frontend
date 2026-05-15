@@ -827,8 +827,8 @@ async function connectToSignalR(guestName = null) {
             .withAutomaticReconnect()
             .build();
 
-        // Setup event handlers and start connection for guests
         setupSignalREventHandlers();
+        wireReconnectHooks(meetingId);
         await signalRConnection.start();
         await signalRConnection.invoke('JoinMeeting', meetingId);
         console.log('Connected to SignalR hub as guest:', guestName);
@@ -845,6 +845,7 @@ async function connectToSignalR(guestName = null) {
             .build();
 
         setupSignalREventHandlers();
+        wireReconnectHooks(meetingId);
         await signalRConnection.start();
         await signalRConnection.invoke('JoinMeeting', meetingId);
         console.log('Connected to SignalR hub as authenticated user');
@@ -852,6 +853,44 @@ async function connectToSignalR(guestName = null) {
     }
 
     throw new Error('No authentication method available');
+}
+
+// Round 3 audit fix (D1): wire reconnect handlers so the meeting auto-rejoins
+// the SignalR group after a transient network drop. Without these, .withAutomaticReconnect()
+// re-establishes the connection but the user is silently absent from the meeting group
+// (no chat, captions, hand-raises, recording-status updates) until they refresh.
+function wireReconnectHooks(meetingIdToRejoin) {
+    if (!signalRConnection) return;
+
+    signalRConnection.onreconnecting((err) => {
+        console.warn('[SignalR] Reconnecting…', err ? err.message : '');
+        if (typeof Toast !== 'undefined' && Toast && Toast.warning) {
+            Toast.warning('Connection lost — reconnecting…', 2500);
+        }
+    });
+
+    signalRConnection.onreconnected(async (connectionId) => {
+        console.log('[SignalR] Reconnected — re-joining meeting group', meetingIdToRejoin, connectionId);
+        try {
+            await signalRConnection.invoke('JoinMeeting', meetingIdToRejoin);
+            if (typeof Toast !== 'undefined' && Toast && Toast.success) {
+                Toast.success('Reconnected', 2000);
+            }
+        } catch (e) {
+            console.error('[SignalR] Failed to re-join meeting after reconnect', e);
+            if (typeof Toast !== 'undefined' && Toast && Toast.error) {
+                Toast.error('Could not rejoin chat — please refresh the page', 5000);
+            }
+        }
+    });
+
+    signalRConnection.onclose((err) => {
+        // After all reconnect attempts are exhausted.
+        console.error('[SignalR] Connection closed permanently', err);
+        if (typeof Toast !== 'undefined' && Toast && Toast.error) {
+            Toast.error('Disconnected from chat/captions. Please refresh to reconnect.', 8000);
+        }
+    });
 }
 
 // Setup SignalR event handlers
@@ -3724,39 +3763,72 @@ function renderParticipantsList(participants, hostUserId) {
         const item = document.createElement('div');
         item.className = 'participant-item' + (isHostParticipant ? ' host' : '');
 
-        // Get initials for avatar
-        const initials = participant.name ? participant.name.substring(0, 2).toUpperCase() : '??';
+        const rawName = participant.name || participant.identity || '';
+        const initials = rawName ? rawName.substring(0, 2).toUpperCase() : '??';
 
-        // Find audio track to check mute status
         const audioTrack = participant.tracks.find(t => t.type === 'AUDIO');
         const isMuted = audioTrack ? audioTrack.muted : false;
 
-        // Status indicators
-        const statusHtml = `
-            ${isMuted ? '<span class="status-indicator muted">🔇 Muted</span>' : '<span class="status-indicator">🎤 Speaking</span>'}
-        `;
+        // Round 3 audit fix (A1): build the row via createElement/textContent
+        // instead of template-string innerHTML. A malicious participant whose
+        // display name was `<img src=x onerror="…">` (set via the guest-join
+        // first_name/last_name fields or via a forged token's `name` claim)
+        // would otherwise execute script in the host's browser when the
+        // participants panel rendered them. participant.identity is also
+        // used in onclick handlers below; data-attributes + event
+        // delegation eliminate that injection vector too.
 
-        // Host controls (only show for host and not for themselves)
-        let controlsHtml = '';
+        const info = document.createElement('div');
+        info.className = 'participant-info';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'participant-avatar';
+        avatar.textContent = initials;
+        info.appendChild(avatar);
+
+        const details = document.createElement('div');
+        details.className = 'participant-details';
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'participant-name';
+        nameEl.textContent = rawName + (isCurrentUser ? ' (You)' : '');
+        details.appendChild(nameEl);
+
+        const statusEl = document.createElement('div');
+        statusEl.className = 'participant-status';
+        const statusInner = document.createElement('span');
+        statusInner.className = 'status-indicator' + (isMuted ? ' muted' : '');
+        statusInner.textContent = isMuted ? '🔇 Muted' : '🎤 Speaking';
+        statusEl.appendChild(statusInner);
+        details.appendChild(statusEl);
+
+        info.appendChild(details);
+        item.appendChild(info);
+
         if (isHost && !isCurrentUser) {
-            controlsHtml = `
-                <div class="participant-controls">
-                    ${!isMuted ? `<button class="participant-control-btn mute" onclick="muteParticipant('${participant.identity}')" title="Mute">🔇</button>` : ''}
-                    <button class="participant-control-btn remove" onclick="kickParticipant('${participant.identity}')" title="Remove">🚫</button>
-                </div>
-            `;
-        }
+            const controls = document.createElement('div');
+            controls.className = 'participant-controls';
 
-        item.innerHTML = `
-            <div class="participant-info">
-                <div class="participant-avatar">${initials}</div>
-                <div class="participant-details">
-                    <div class="participant-name">${participant.name}${isCurrentUser ? ' (You)' : ''}</div>
-                    <div class="participant-status">${statusHtml}</div>
-                </div>
-            </div>
-            ${controlsHtml}
-        `;
+            if (!isMuted) {
+                const muteBtn = document.createElement('button');
+                muteBtn.className = 'participant-control-btn mute';
+                muteBtn.title = 'Mute';
+                muteBtn.textContent = '🔇';
+                muteBtn.dataset.identity = participant.identity;
+                muteBtn.addEventListener('click', () => muteParticipant(muteBtn.dataset.identity));
+                controls.appendChild(muteBtn);
+            }
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'participant-control-btn remove';
+            removeBtn.title = 'Remove';
+            removeBtn.textContent = '🚫';
+            removeBtn.dataset.identity = participant.identity;
+            removeBtn.addEventListener('click', () => kickParticipant(removeBtn.dataset.identity));
+            controls.appendChild(removeBtn);
+
+            item.appendChild(controls);
+        }
 
         listContainer.appendChild(item);
     });

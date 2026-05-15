@@ -412,9 +412,18 @@
     <!-- Reaction Animations Container -->
     <div id="reactionsContainer" class="reactions-container"></div>
 
-    <!-- Include LiveKit and SignalR SDKs - Required for meeting -->
-    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+    <!-- Include LiveKit and SignalR SDKs - Required for meeting.
+         Round 3 audit fix (C1): pin exact versions + Subresource Integrity
+         hashes. Without these, a compromised jsdelivr or BGP-hijacked route
+         could serve backdoored JS that steals LiveKit tokens + chat content.
+         Hashes computed with: openssl dgst -sha384 -binary <file> | openssl base64 -A
+         When upgrading versions, recompute the hash. -->
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.0.0/dist/livekit-client.umd.min.js"
+            integrity="sha384-7CCpxZ2UCWftylVx33dX2apJDPn/ejL6nHBJ70bOhs2wHuOgpclTioCiK1PU1+vI"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"
+            integrity="sha384-/taWmisziXYpcfnYsumSUmNaiMvG/fF/OJOUCLnqCIYTrpOZy7WbFF6FfIxwOrfL"
+            crossorigin="anonymous"></script>
 
     <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
