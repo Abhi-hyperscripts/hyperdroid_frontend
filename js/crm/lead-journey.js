@@ -264,6 +264,11 @@
 
     async function openLeadDetailPanel(leadId) {
         window._leadDetailId = leadId;
+        // Remember which lead the rep is on so a reload (SW update mid-call,
+        // crash, browser-back from a tel: handoff) lands them back on this
+        // same lead instead of a fresh list. The leads.html init reads this
+        // sessionStorage key after loadLeads() and re-opens the panel.
+        try { sessionStorage.setItem('crm_openLeadId', encodeURIComponent(leadId)); } catch (_) {}
 
         // Open panel
         document.getElementById('leadDetailOverlay').classList.add('active');
@@ -430,6 +435,10 @@
         document.getElementById('leadDetailOverlay').classList.remove('active');
         document.getElementById('leadDetailPanel').classList.remove('active');
         window._leadDetailId = null;
+        // Explicit close = the rep is done with this lead. Clear the
+        // sessionStorage anchor so a subsequent reload lands on the list,
+        // not back on the lead they just dismissed.
+        try { sessionStorage.removeItem('crm_openLeadId'); } catch (_) {}
     }
 
     function renderTimeline(entries) {
