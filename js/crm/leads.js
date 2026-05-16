@@ -475,6 +475,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadReassignQueueBadge();
     initSearchableDropdowns();
     setupLeadsRealtime();
+    _initLeadsTableColumnResize();
     // Banner is hidden by default. Poll inbox once on load so users who
     // refresh mid-session don't lose their open requests until SignalR
     // delivers a new event.
@@ -482,6 +483,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.refreshHelpInboxBanner();
     }
 });
+
+// Excel-style column resize for the leads table. Mount once on init, then
+// re-mount whenever lead-fields-runtime injects custom-field <th>s so the
+// freshly-added columns also get a drag handle and any saved width.
+function _initLeadsTableColumnResize() {
+    if (typeof window.mountColumnResize !== 'function') return;
+    const table = document.getElementById('leadsTable');
+    if (!table) return;
+    const u = (typeof getStoredUser === 'function') ? getStoredUser() : null;
+    const tenantId = u?.tenantId || 'anon';
+    const opts = { resizeKey: `leads:${tenantId}` };
+
+    window.mountColumnResize(table, opts);
+
+    // Re-mount on header mutations (custom-field columns arrive late,
+    // column-picker may reorder/inject). Idempotent — existing handles
+    // are skipped and only new <th>s pick up the handle.
+    const thead = table.querySelector('thead');
+    if (thead && typeof MutationObserver !== 'undefined') {
+        const obs = new MutationObserver(() => window.mountColumnResize(table, opts));
+        obs.observe(thead, { childList: true, subtree: true });
+    }
+}
 
 // My Day deep-link: read URL params and pre-fill the matching filter widgets.
 // Supported today: ?ownerUserId=<uuid|me>, ?status=<csv>, ?hasFollowup=true.
@@ -2692,8 +2716,13 @@ function renderLatestSummaryCell(lead) {
     // CJK / no-space text from overflowing; -webkit-line-clamp limits to 2
     // visible lines so row heights stay consistent — full text is in the
     // click-through modal that opens via data-tooltip's affordance.
+    // No inline max-width here — the parent <td>'s column width (CSS
+    // min-width + any user-dragged width from table-resize.js) is the
+    // sole authority. Hard-coding 260px here was overriding the user's
+    // column-resize drag, keeping text wrapped at the old size even
+    // after they widened the column.
     return `
-        <div class="crm-summary-cell" style="cursor:pointer; max-width:260px; min-width:160px; line-height:1.3;"
+        <div class="crm-summary-cell" style="cursor:pointer; line-height:1.3;"
               data-tooltip="Click to see all summaries on this lead"
               data-tooltip-position="top"
               onclick="event.stopPropagation(); openLeadSummariesModal('${escapeHtml(lead.id)}', '${safeName.replace(/'/g, '&#39;')}')">

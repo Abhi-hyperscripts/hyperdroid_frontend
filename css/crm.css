@@ -2174,6 +2174,64 @@ body.crm-dashboard .crm-container {
 }
 
 /* =============================================================
+   Column-resize handle (Excel-style drag-to-resize)
+   Mounted by js/table-resize.js. Sits on the right edge of every
+   resizable <th>; gets a subtle hover/drag highlight in brand color.
+   ============================================================= */
+.crm-th-resizer {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    /* Slim hit-target but generous click area; the visible dotted bar
+       lives inside ::before so the surrounding 4px of empty space stays
+       grabbable without bleeding past the column edge. */
+    width: 10px;
+    height: 60%;
+    cursor: col-resize;
+    user-select: none;
+    touch-action: none;
+    z-index: 2;
+}
+/* The visible dotted bar — 2px wide vertical line of dots, centered.
+   Always visible so reps can see where to grab without having to hover
+   first (Excel/Sheets convention). */
+.crm-th-resizer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    background-image: linear-gradient(
+        to bottom,
+        var(--text-secondary) 0,
+        var(--text-secondary) 2px,
+        transparent 2px,
+        transparent 5px
+    );
+    background-size: 2px 5px;
+    background-repeat: repeat-y;
+    opacity: 0.45;
+    transition: opacity 0.15s ease, background-image 0.15s ease;
+    pointer-events: none;
+}
+.crm-th-resizer:hover::before,
+.crm-th-resizer.is-dragging::before {
+    /* Brand-color highlight while hovered / dragging so the user can
+       see which column they're sizing. */
+    background-image: linear-gradient(
+        to bottom,
+        var(--brand-primary) 0,
+        var(--brand-primary) 2px,
+        transparent 2px,
+        transparent 5px
+    );
+    opacity: 1;
+}
+
+/* =============================================================
    Leads Table - Column widths
    Give each column a generous min-width so cells don't wrap on
    ordinary content (a typical name, a +91-prefixed phone, a
