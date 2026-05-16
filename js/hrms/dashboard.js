@@ -284,6 +284,14 @@ function navigateIfSetupComplete(page) {
         return;
     }
 
+    // Recruitment is standalone — postings/applications/copilot have no
+    // dependency on offices/departments/designations/employees being set up,
+    // so a brand-new tenant can start sourcing candidates immediately.
+    if (page === 'recruitment.html') {
+        navigateTo(page);
+        return;
+    }
+
     if (!isSetupComplete) {
         showToast('Please complete organization setup first', 'error');
         return;
