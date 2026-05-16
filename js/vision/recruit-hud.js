@@ -70,6 +70,10 @@
             + '<div class="recruit-hud-floating-header" id="recruitHudHeader" title="Drag to move">'
             +   '<span class="recruit-hud-floating-grip" aria-hidden="true">⋮⋮</span>'
             +   '<span class="recruit-hud-floating-title">RECRUIT COCKPIT</span>'
+            +   '<label class="recruit-hud-opacity-control" title="Adjust cockpit transparency — see the candidate video behind the HUD">'
+            +     '<span class="recruit-hud-opacity-icon" aria-hidden="true">◐</span>'
+            +     '<input type="range" id="recruitHudOpacitySlider" min="20" max="100" step="5" value="100" aria-label="Cockpit opacity">'
+            +   '</label>'
             +   '<button type="button" class="recruit-hud-floating-toggle" id="recruitMaximizeToggle" onclick="toggleRecruitMaximize()" title="Maximize cockpit to full screen">'
             +     '<span id="recruitMaximizeIcon">⛶</span>'
             +   '</button>'
@@ -85,6 +89,47 @@
 
         setupDragAndResize(wrapper);
         restorePosition(wrapper);
+        setupOpacitySlider(wrapper);
+    }
+
+    // ── Opacity slider — let the host see the candidate video behind the HUD
+    // when maximized, without losing the panel entirely. Range 20–100%
+    // (never goes fully invisible or it becomes impossible to grab back).
+    const OPACITY_STORAGE_KEY = 'recruitHud.opacity.v1';
+
+    function setupOpacitySlider(panel) {
+        const slider = panel.querySelector('#recruitHudOpacitySlider');
+        if (!slider) return;
+
+        let initial = 100;
+        try {
+            const raw = localStorage.getItem(OPACITY_STORAGE_KEY);
+            if (raw) {
+                const n = parseInt(raw, 10);
+                if (Number.isFinite(n) && n >= 20 && n <= 100) initial = n;
+            }
+        } catch (_e) {}
+
+        slider.value = String(initial);
+        applyOpacity(panel, initial);
+
+        const onInput = (e) => {
+            e.stopPropagation();
+            const v = parseInt(slider.value, 10) || 100;
+            applyOpacity(panel, v);
+            try { localStorage.setItem(OPACITY_STORAGE_KEY, String(v)); } catch (_e) {}
+        };
+        slider.addEventListener('input', onInput);
+        // Stop the header's drag handler from grabbing slider drags.
+        ['mousedown', 'pointerdown', 'touchstart', 'click', 'dblclick'].forEach(evt => {
+            slider.addEventListener(evt, (e) => e.stopPropagation());
+        });
+    }
+
+    function applyOpacity(panel, percent) {
+        // Expose as CSS var so all background layers can scale together.
+        // Values map 100 → 1.0, 20 → 0.2.
+        panel.style.setProperty('--rh-alpha', String(percent / 100));
     }
 
     // ── Draggable + resizable cockpit ────────────────────────────────────

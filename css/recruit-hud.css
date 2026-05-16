@@ -25,14 +25,17 @@
     left: 16px;
     bottom: 60px;
     width: 300px;
-    background: rgba(4, 8, 18, 0.92);
-    border: 1px solid rgba(0, 212, 255, 0.18);
+    /* --rh-alpha (1 default, 0.2 min) is driven by the opacity slider
+     * in the header. Lets the host fade the cockpit to see candidate
+     * video behind it when maximized. */
+    background: rgba(4, 8, 18, calc(0.92 * var(--rh-alpha, 1)));
+    border: 1px solid rgba(0, 212, 255, calc(0.18 * var(--rh-alpha, 1)));
     border-radius: 8px;
     box-shadow:
-        0 0 20px rgba(0, 212, 255, 0.05),
-        0 4px 24px rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+        0 0 20px rgba(0, 212, 255, calc(0.05 * var(--rh-alpha, 1))),
+        0 4px 24px rgba(0, 0, 0, calc(0.55 * var(--rh-alpha, 1)));
+    backdrop-filter: blur(calc(8px * var(--rh-alpha, 1)));
+    -webkit-backdrop-filter: blur(calc(8px * var(--rh-alpha, 1)));
     pointer-events: auto;
     z-index: 92;
     display: flex;
@@ -406,6 +409,64 @@
 .recruit-hud-floating-toggle:hover {
     background: rgba(0, 212, 255, 0.1);
     border-color: rgba(0, 212, 255, 0.5);
+}
+
+/* ── Opacity slider in the header ─────────────────────────────
+ * Lets the interviewer fade the cockpit so the candidate's video
+ * shows through. Sits before the maximize button; doesn't compete
+ * with the title for space. Slider drags are stopPropagation'd in
+ * JS so they don't trigger panel-drag. */
+.recruit-hud-opacity-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 6px;
+    height: 20px;
+    border: 1px solid rgba(0, 212, 255, 0.25);
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+}
+.recruit-hud-opacity-control:hover {
+    border-color: rgba(0, 212, 255, 0.5);
+    background: rgba(0, 212, 255, 0.08);
+}
+.recruit-hud-opacity-icon {
+    font-size: 11px;
+    line-height: 1;
+    color: rgba(0, 212, 255, 0.7);
+}
+.recruit-hud-opacity-control input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 72px;
+    height: 4px;
+    background: rgba(0, 212, 255, 0.18);
+    border-radius: 2px;
+    outline: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+}
+.recruit-hud-opacity-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(0, 212, 255, 0.95);
+    border: 1px solid rgba(0, 212, 255, 1);
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(0, 212, 255, 0.5);
+}
+.recruit-hud-opacity-control input[type="range"]::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(0, 212, 255, 0.95);
+    border: 1px solid rgba(0, 212, 255, 1);
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(0, 212, 255, 0.5);
 }
 
 .recruit-hud-floating-body {
