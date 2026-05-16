@@ -958,12 +958,42 @@ async function exportLeadsToExcel() {
             .filter(x => x.def)
             .map(x => ({ code: x.code, label: x.def.label || x.code }));
 
+        // 3.5. Bulk-fetch all activity summaries for the exported leads so
+        // the sheet carries the FULL call/note history per lead, not just
+        // the most recent one — reps were copying summaries into the
+        // exported sheet by hand, then asking "why doesn't the export
+        // include all of them?". Batched at the backend's 500-id cap.
+        if (label) label.textContent = `Preparing… summaries 0/${allRows.length}`;
+        const summariesById = new Map();
+        const ALL_IDS = allRows.map(l => l.id).filter(Boolean);
+        const SUMMARY_BATCH = 500;
+        for (let i = 0; i < ALL_IDS.length; i += SUMMARY_BATCH) {
+            const slice = ALL_IDS.slice(i, i + SUMMARY_BATCH);
+            try {
+                const resp = await api.request('/crm/leads/all-summaries', {
+                    method: 'POST',
+                    body: JSON.stringify({ lead_ids: slice })
+                });
+                const map = resp?.summaries || {};
+                for (const [leadId, text] of Object.entries(map)) {
+                    if (typeof text === 'string' && text.length > 0) summariesById.set(leadId, text);
+                }
+            } catch (e) {
+                // Summary fetch shouldn't kill the whole export — log and
+                // continue so the rep still gets the basic columns. The
+                // affected leads will just have an empty Call Summaries cell.
+                console.warn('[leads-export] summaries batch failed', e);
+            }
+            if (label) label.textContent = `Preparing… summaries ${Math.min(i + SUMMARY_BATCH, ALL_IDS.length)}/${ALL_IDS.length}`;
+        }
+
         // 4. Header row.
         const headers = [
             'Lead ID', 'Created', 'First Name', 'Last Name', 'Email', 'Phone',
             'Company', 'Job Title', 'Source', 'Team', 'Owner', 'Status',
             'City', 'State', 'Country', 'Tags',
-            ...customDefs.map(c => c.label)
+            ...customDefs.map(c => c.label),
+            'Call Summaries'
         ];
 
         // 5. Body rows.
@@ -988,12 +1018,21 @@ async function exportLeadsToExcel() {
                 Array.isArray(lead.tags) ? lead.tags.join(', ') : ''
             ];
             for (const c of customDefs) base.push(_resolveCustomFieldLabel(c.code, cf[c.code]));
+            // Call Summaries — full chronology, newest first, date-prefixed.
+            // Empty string when the lead has no call/note rows yet.
+            base.push(summariesById.get(lead.id) || '');
             return base;
         });
 
-        // 6. Build workbook with sensible column widths.
+        // 6. Build workbook with sensible column widths. The Call Summaries
+        // column (last one) carries multi-line text — bump its width to 80
+        // chars so it stays readable when the user enables wrap-text.
         const ws = XLSX.utils.aoa_to_sheet([headers, ...body]);
-        ws['!cols'] = headers.map((h, i) => ({ wch: Math.max(12, Math.min(40, h.length + 4)) }));
+        const SUMMARIES_COL_IDX = headers.length - 1;
+        ws['!cols'] = headers.map((h, i) => {
+            if (i === SUMMARIES_COL_IDX) return { wch: 80 };
+            return { wch: Math.max(12, Math.min(40, h.length + 4)) };
+        });
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Leads');
 
