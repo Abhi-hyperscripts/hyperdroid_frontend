@@ -2350,6 +2350,31 @@ body.crm-dashboard .crm-container {
 }
 
 /* =============================================================
+   Status cell layout — flex container so badges share the column
+   width when the user widens the Status column via table-resize.
+   Status + disposition pills sit side-by-side on the first row and
+   grow to fill; followup-indicator + transfer-pending wrap onto
+   their own row beneath.
+   ============================================================= */
+.crm-status-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    width: 100%;
+}
+.crm-status-cell > .crm-status-badge,
+.crm-status-cell > .crm-disposition-badge {
+    flex: 1 1 70px;
+    justify-content: center;
+    margin: 0;
+}
+.crm-status-cell > .crm-followup-indicator,
+.crm-status-cell > .crm-transfer-pending-badge {
+    flex-basis: 100%;
+}
+
+/* =============================================================
    CRM - Status Badges (Leads)
    ============================================================= */
 .crm-status-badge {

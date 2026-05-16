@@ -1395,10 +1395,12 @@ function renderLeadsTable(leads) {
                 <span class="crm-source-badge source-${lead.lead_source || 'manual'}">${formatSource(lead.lead_source)}</span>
             </td>
             <td data-col="status">
-                ${(lead.team_id || lead.team_name) ? `<span class="crm-status-badge status-${lead.status || 'new'}" onclick="openStatusChangeModal('${lead.id}')" style="cursor:pointer;" data-tooltip="Click to change status">${formatStatus(lead.status)}</span>` : `<span class="crm-status-badge status-new" data-tooltip="Assign to team first">${formatStatus(lead.status)}</span>`}
-                ${lead.disposition ? `<span class="crm-disposition-badge disp-${lead.disposition}" title="${formatDisposition(lead.disposition)}">${formatDisposition(lead.disposition)}</span>` : ''}
-                ${lead.next_followup_date ? formatFollowupIndicator(lead.next_followup_date) : ''}
-                ${lead.has_pending_transfer ? '<span class="crm-transfer-pending-badge" data-tooltip="Transfer/Reassignment pending approval">⇄ Transfer Pending</span>' : ''}
+                <div class="crm-status-cell">
+                    ${(lead.team_id || lead.team_name) ? `<span class="crm-status-badge status-${lead.status || 'new'}" onclick="openStatusChangeModal('${lead.id}')" style="cursor:pointer;" data-tooltip="Click to change status">${formatStatus(lead.status)}</span>` : `<span class="crm-status-badge status-new" data-tooltip="Assign to team first">${formatStatus(lead.status)}</span>`}
+                    ${lead.disposition ? `<span class="crm-disposition-badge disp-${lead.disposition}" title="${formatDisposition(lead.disposition)}">${formatDisposition(lead.disposition)}</span>` : ''}
+                    ${lead.next_followup_date ? formatFollowupIndicator(lead.next_followup_date) : ''}
+                    ${lead.has_pending_transfer ? '<span class="crm-transfer-pending-badge" data-tooltip="Transfer/Reassignment pending approval">⇄ Transfer Pending</span>' : ''}
+                </div>
             </td>
             <td data-col="engagement">
                 ${renderEmailEngagement(lead)}
@@ -1477,6 +1479,7 @@ const COLUMN_PICKER_DEFS = [
     { id: 'email',         label: 'Email' },
     { id: 'phone',         label: 'Phone' },
     { id: 'source',        label: 'Source' },
+    { id: 'status',        label: 'Status' },
     { id: 'engagement',    label: 'Email engagement' },
     { id: 'team',          label: 'Team' },
     { id: 'owner',         label: 'Owner' },
