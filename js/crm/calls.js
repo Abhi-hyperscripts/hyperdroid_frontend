@@ -497,6 +497,15 @@
             || window._leadDetailId
             || '';
 
+        // Anchor the rep to this lead before the tap navigates away. On
+        // mobile the dialer takes the tab away mid-call and iOS often
+        // unloads the page; when the rep returns to the CRM, leads.html
+        // reads this sessionStorage key and re-opens the detail panel so
+        // they don't have to scroll/search for the lead they were just on.
+        if (leadId) {
+            try { sessionStorage.setItem('crm_openLeadId', encodeURIComponent(leadId)); } catch (_) {}
+        }
+
         // Decide which flow to use. Cached lookup is usually instant; on a
         // cold cache the await is a single gRPC hop (<60ms).
         (async () => {
