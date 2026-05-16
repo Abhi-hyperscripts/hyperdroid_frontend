@@ -1792,6 +1792,10 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     position: absolute;
     top: 12px;
     left: 16px;
+    /* Sits above the recruit cockpit (z-index 92 in recruit-hud.css) so
+     * the COPILOT/INTERVIEW mode + speed controls stay reachable even
+     * when the recruit HUD is maximized to full viewport. */
+    z-index: 95;
     display: flex;
     flex-direction: column;
     pointer-events: auto;
@@ -2339,6 +2343,10 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     left: 16px;
     width: 480px;
     max-height: calc(100% - 110px);
+    /* Sits above the recruit cockpit (z-index 92) so insight cards stack
+     * on top of the maximized HUD, matching the layering the user wants:
+     * video (bottom) → recruit cockpit → COPILOT cards (top). */
+    z-index: 95;
     display: flex;
     flex-direction: column;
     gap: 8px;
