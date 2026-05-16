@@ -2173,6 +2173,47 @@ body.crm-dashboard .crm-container {
     background: rgba(var(--brand-primary-rgb), 0.03);
 }
 
+/* =============================================================
+   Leads Table - Column widths
+   Give each column a generous min-width so cells don't wrap on
+   ordinary content (a typical name, a +91-prefixed phone, a
+   "L-2026-25018" id). The wrapper already has overflow-x:auto,
+   so the horizontal scrollbar absorbs the overflow when many
+   custom columns are visible.
+
+   Single-line cells get white-space:nowrap. Two-line cells
+   (name + company, summary) keep wrapping but get a wide
+   min-width so wrapping is rare.
+   ============================================================= */
+#leadsTable th[data-col="leadId"],
+#leadsTable td[data-col="leadId"]        { min-width: 110px; white-space: nowrap; }
+#leadsTable th[data-col="name"],
+#leadsTable td[data-col="name"]          { min-width: 200px; }
+#leadsTable th[data-col="email"],
+#leadsTable td[data-col="email"]         { min-width: 240px; white-space: nowrap; }
+#leadsTable th[data-col="phone"],
+#leadsTable td[data-col="phone"]         { min-width: 150px; white-space: nowrap; }
+#leadsTable th[data-col="source"],
+#leadsTable td[data-col="source"]        { min-width: 130px; white-space: nowrap; }
+#leadsTable th[data-col="status"],
+#leadsTable td[data-col="status"]        { min-width: 150px; white-space: nowrap; }
+#leadsTable th[data-col="engagement"],
+#leadsTable td[data-col="engagement"]    { min-width: 110px; white-space: nowrap; }
+#leadsTable th[data-col="team"],
+#leadsTable td[data-col="team"]          { min-width: 130px; white-space: nowrap; }
+#leadsTable th[data-col="owner"],
+#leadsTable td[data-col="owner"]         { min-width: 140px; white-space: nowrap; }
+#leadsTable th[data-col="created"],
+#leadsTable td[data-col="created"]       { min-width: 110px; white-space: nowrap; }
+#leadsTable th[data-col="latestSummary"],
+#leadsTable td[data-col="latestSummary"] { min-width: 280px; }
+
+/* Tenant-defined custom columns (added via Lead Fields runtime —
+   injected as data-col="lf_{field_code}"). These render as badge
+   columns and shouldn't wrap. */
+#leadsTable th[data-col^="lf_"],
+#leadsTable td[data-col^="lf_"]          { min-width: 140px; white-space: nowrap; }
+
 .crm-cell-primary {
     font-weight: 600;
     color: var(--text-primary);
@@ -2351,6 +2392,55 @@ body.crm-dashboard .crm-container {
 .crm-disposition-badge.disp-wrong_number {
     background: rgba(156, 163, 175, 0.15);
     color: #9ca3af;
+}
+
+/* =============================================================
+   All-summaries modal — type filter chips
+   Separates counselor notes (calls/notes/meetings/tasks) from
+   auto-generated EMAIL SENT rows so reps can flip between them.
+   ============================================================= */
+.crm-summary-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.crm-summary-chip:hover {
+    color: var(--text-primary);
+    border-color: var(--brand-primary);
+}
+.crm-summary-chip.is-active {
+    background: var(--brand-primary);
+    color: var(--text-inverse, #fff);
+    border-color: var(--brand-primary);
+}
+
+/* Mini type badge shown inside the latest-summary table cell so
+   reps can see at a glance whether the preview is their note,
+   an email row, etc. */
+.crm-summary-type-pill {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-right: 6px;
+    vertical-align: middle;
+    background: rgba(var(--brand-primary-rgb), 0.12);
+    color: var(--brand-primary);
+}
+.crm-summary-type-pill.type-email {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
 }
 
 /* =============================================================
@@ -4980,4 +5070,64 @@ label.ff-checkbox-inline input[type="checkbox"] {
     border-top: 1px solid var(--border-color);
     text-align: right;
 }
+
+/* Search-input scope toggle. Pinned absolute inside .crm-search-wrap so the
+   button sits flush at the left edge of the input — clear affordance that
+   it controls the input's behavior, not a separate filter widget. The input
+   gets left padding so user-typed text doesn't collide with the icon. */
+.crm-search-wrap {
+    position: relative;
+}
+.crm-search-input {
+    padding-left: 38px;
+}
+.crm-search-scope-toggle {
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    /* Sized so the button visibly sits INSIDE the input — ~4px breathing
+       room between the button's top/bottom and the input's borders. The
+       form-control-sm height is ~32px, so 22px button + 5px inset on each
+       side keeps the chrome clearly chip-like instead of bordering edge-to-edge. */
+    width: 26px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    padding: 0;
+}
+/* Default (filtered): muted neutral chip — clearly a button, but not loud. */
+.crm-search-scope-toggle[data-scope="filtered"] {
+    background: var(--bg-tertiary, rgba(255,255,255,0.06));
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+.crm-search-scope-toggle[data-scope="filtered"]:hover {
+    background: var(--bg-hover, rgba(255,255,255,0.10));
+    color: var(--text-primary);
+}
+/* "all leads" — solid brand-primary fill, white icon, ring for emphasis.
+   Hard color so the rep cannot miss that they're in the escape-hatch mode. */
+.crm-search-scope-toggle[data-scope="all"] {
+    background: var(--brand-primary);
+    color: #ffffff;
+    border-color: var(--brand-primary);
+    /* Subtle ring instead of a thick halo — keeps the button visually
+       contained when it shrinks. */
+    box-shadow: 0 0 0 1px rgba(99,102,241,0.35);
+}
+.crm-search-scope-toggle[data-scope="all"]:hover {
+    background: var(--brand-primary-hover, #4f46e5);
+    border-color: var(--brand-primary-hover, #4f46e5);
+}
+/* One-icon-per-state switch. Default hides the "all" icon, active hides
+   the "filtered" icon — gives an extra visual cue beyond just color. */
+.crm-search-scope-icon { display: none; }
+.crm-search-scope-toggle[data-scope="filtered"] .crm-search-scope-icon--filtered { display: block; }
+.crm-search-scope-toggle[data-scope="all"] .crm-search-scope-icon--all { display: block; }
 

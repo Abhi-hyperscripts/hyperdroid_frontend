@@ -46,7 +46,97 @@ function _filterStorageKey() {
     return `${_FILTER_STORAGE_KEY_BASE}:${u?.tenantId || 'anon'}`;
 }
 
+// ==================== Search scope toggle ====================
+// Tenant-scoped flag controlling whether the search box runs WITHIN the
+// current filter set (default — what reps expect when narrowing a view)
+// or ACROSS every lead they can see (escape hatch for "I know this lead
+// exists somewhere"). Stored alongside the filter snapshot under its own
+// key so toggling doesn't churn the larger blob.
+const _SEARCH_SCOPE_KEY_BASE = 'crm.leads.searchScope.v1';
+function _searchScopeStorageKey() {
+    const u = (typeof getStoredUser === 'function') ? getStoredUser() : null;
+    return `${_SEARCH_SCOPE_KEY_BASE}:${u?.tenantId || 'anon'}`;
+}
+function _isSearchScopeAll() {
+    const btn = document.getElementById('searchScopeToggle');
+    return btn?.dataset?.scope === 'all';
+}
+function _applySearchScopeUI(scope) {
+    const btn = document.getElementById('searchScopeToggle');
+    const input = document.getElementById('filterSearch');
+    if (!btn) return;
+    btn.dataset.scope = scope;
+    if (scope === 'all') {
+        // "All" still respects the caller's role gate (admin: tenant-wide,
+        // manager/TL: their teams, member: their assigned leads) — only
+        // the user-applied filter widgets are bypassed. Tooltip says
+        // "everything you can see" rather than literally "ALL" so a rep
+        // isn't surprised when their teammate's leads still don't appear.
+        btn.setAttribute('data-tooltip', 'Searching everything you can see (filters ignored). Click to search within your filters.');
+        if (input) input.placeholder = 'Search everything you can see…';
+    } else {
+        btn.setAttribute('data-tooltip', 'Searching within your filters. Click to search across everything you can see.');
+        if (input) input.placeholder = 'Search leads...';
+    }
+}
+function toggleSearchScope() {
+    const next = _isSearchScopeAll() ? 'filtered' : 'all';
+    _applySearchScopeUI(next);
+    try { localStorage.setItem(_searchScopeStorageKey(), next); } catch (_) {}
+    applyFilters();
+}
+function _restoreSearchScope() {
+    let scope = 'filtered';
+    try { scope = localStorage.getItem(_searchScopeStorageKey()) || 'filtered'; } catch (_) {}
+    _applySearchScopeUI(scope === 'all' ? 'all' : 'filtered');
+}
+
+// Page-init gate for filter persistence. While false, _persistFilters
+// returns without writing — protects the saved snapshot from being
+// clobbered by async loaders that fire applyFilters() before all
+// dropdown options have been populated.
+//
+// The bug this fixes: lead-fields-runtime fires `leadfields:ready` as soon
+// as it loads tenant field definitions (~100ms). That triggers
+// _restoreLeadFieldsChips → applyFilters → _persistFilters. At that
+// moment, loadSourceFilter / loadCampaignFilter / loadMyTeamsFilter
+// haven't returned yet, so their <select>s only contain the placeholder.
+// _persistFilters reads `el.value === ''` for those and writes a snapshot
+// MISSING filterSource/filterCampaign/filterTeam keys. The async loader
+// then finishes, reads the (now-incomplete) snapshot, finds no key to
+// restore, and the dropdown sits at its placeholder label even though
+// the user's filter is still intended.
+//
+// The flag flips to true once every initial-restore source has reported
+// in — see _markRestoreSourceDone() below.
+let _initialRestoreDone = false;
+const _PENDING_RESTORE_SOURCES = new Set(['source', 'campaign', 'teams', 'leadfields']);
+function _markRestoreSourceDone(name) {
+    _PENDING_RESTORE_SOURCES.delete(name);
+    if (_PENDING_RESTORE_SOURCES.size === 0 && !_initialRestoreDone) {
+        _initialRestoreDone = true;
+        // One final restore + apply pass now that every widget has its
+        // options. Anything saved that hasn't applied yet lands here.
+        _restoreAndApplyIfChanged();
+    }
+}
+// Safety net: if something goes wrong with one of the loaders and it
+// never marks done, unblock persistence after 5s so the user isn't
+// permanently unable to save filter changes. 5s is long enough that all
+// healthy loaders finish first, short enough that a stuck one doesn't
+// block the user indefinitely.
+setTimeout(() => {
+    if (!_initialRestoreDone) {
+        _initialRestoreDone = true;
+        _PENDING_RESTORE_SOURCES.clear();
+    }
+}, 5000);
+
 function _persistFilters() {
+    // Block writes during the initial restore window — async loaders
+    // haven't returned yet so the current widget state is partial. See
+    // the comment on _initialRestoreDone above for the failure mode.
+    if (!_initialRestoreDone) return;
     try {
         const out = {};
         for (const id of _PERSISTED_FILTER_IDS) {
@@ -162,6 +252,15 @@ function _restorePersistedFilters() {
             if (!hit) continue;
         }
         if (el.value !== want) { el.value = want; changed = true; }
+        // Flatpickr-managed date inputs draw their visible "alt input"
+        // separately from the underlying hidden <input>. Setting el.value
+        // updates the hidden input but leaves the visible alt-input
+        // showing the placeholder — so the filter is applied to the
+        // backend but the user can't see WHICH date is active.
+        // setDate(value, false) syncs both without firing onChange.
+        if (el._flatpickr && typeof el._flatpickr.setDate === 'function') {
+            el._flatpickr.setDate(want, /*triggerChange=*/false);
+        }
         // Sync the SearchableDropdown wrapper if there is one — without
         // this the wrapper's internal selectedValue stays empty and
         // buildFilterParams reads '' instead of the restored value. We
@@ -189,6 +288,107 @@ function _restorePersistedFilters() {
     return changed;
 }
 
+// Wipe every persisted filter widget back to its empty default and clear
+// the localStorage snapshot — exposed via the gear menu so a rep who can't
+// remember which filter is hiding their leads has a one-click escape hatch.
+// Persisted filters can confuse a rep into thinking "leads are missing":
+// the snapshot survives reloads, logouts, even browser-restarts, so a
+// filter set in March is still hiding rows in May with no visible chip.
+function clearAllFilters() {
+    try { localStorage.removeItem(_filterStorageKey()); } catch (_) {}
+    // Also reset the search scope — if a rep had toggled to "all leads"
+    // and then hit Clear, they'd expect the page to look clean, not stay
+    // in escape-hatch mode.
+    try { localStorage.removeItem(_searchScopeStorageKey()); } catch (_) {}
+    _applySearchScopeUI('filtered');
+    for (const id of _PERSISTED_FILTER_IDS) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        // Flatpickr-managed date inputs keep their visible "alt input" out
+        // of band — clearing `el.value` on the hidden input leaves the
+        // alt-input still showing the old date, so the user sees a date
+        // they can't tell isn't applied. _flatpickr.clear() syncs both.
+        if (el._flatpickr && typeof el._flatpickr.clear === 'function') {
+            el._flatpickr.clear();
+        } else {
+            el.value = '';
+        }
+        // SearchableDropdown wrappers keep their own selectedValue —
+        // buildFilterParams reads the wrapper, so resetting just the
+        // native <select> would silently leave the wrapper still filtered.
+        const wrapper = _sdWrapperFor(id);
+        if (wrapper && typeof wrapper.setValue === 'function') {
+            wrapper.setValue('', /*triggerChange=*/false);
+        }
+    }
+    // Date-mode dropdown isn't in the persisted-IDs list (it's a UX toggle,
+    // not a narrowing filter), but a non-default value still skews the
+    // date range. Reset to 'created' so the date inputs do what their label
+    // says again.
+    const dateMode = document.getElementById('filterDateMode');
+    if (dateMode) dateMode.value = 'created';
+    // Custom-field chips (lead-fields-runtime) and Form-answers selections
+    // are owned by separate modules — give each its own reset hook so the
+    // chips, labels and pill counters all clear in lockstep.
+    if (typeof window.setLeadFieldsFilterValues === 'function') {
+        window.setLeadFieldsFilterValues({});
+    }
+    if (typeof FormAnswersFilter !== 'undefined' && typeof FormAnswersFilter.reset === 'function') {
+        FormAnswersFilter.reset();
+    }
+    closeFilterMenu();
+    applyFilters();
+}
+
+// Open/close the gear-icon dropdown that hosts "Clear all filters". Same
+// mobile-anchor maths as the columns picker so the menu doesn't fling off
+// the right edge of a narrow viewport.
+function toggleFilterMenu(event) {
+    if (event) event.stopPropagation();
+    const menu = document.getElementById('filterMenu');
+    const btn = document.getElementById('filterMenuBtn');
+    if (!menu) return;
+    if (menu.hidden) {
+        menu.hidden = false;
+        if (btn && window.matchMedia('(max-width: 768px)').matches) {
+            const parent = btn.offsetParent || btn.parentElement;
+            const parentRect = parent.getBoundingClientRect();
+            const inset = 16;
+            const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+            menu.style.left = (inset - parentRect.left) + 'px';
+            menu.style.right = 'auto';
+            menu.style.width = (viewportWidth - inset * 2) + 'px';
+        } else {
+            // Right-anchor on desktop so the menu doesn't hang off the
+            // viewport when the gear sits flush with the right edge.
+            menu.style.left = 'auto';
+            menu.style.right = '0';
+            menu.style.width = '';
+        }
+        setTimeout(() => {
+            document.addEventListener('click', closeFilterMenuOnOutside, { once: true });
+        }, 0);
+    } else {
+        menu.hidden = true;
+    }
+}
+
+function closeFilterMenu() {
+    const menu = document.getElementById('filterMenu');
+    if (menu) menu.hidden = true;
+}
+
+function closeFilterMenuOnOutside(e) {
+    const menu = document.getElementById('filterMenu');
+    const btn = document.getElementById('filterMenuBtn');
+    if (!menu || menu.hidden) return;
+    if (menu.contains(e.target) || (btn && btn.contains(e.target))) {
+        document.addEventListener('click', closeFilterMenuOnOutside, { once: true });
+        return;
+    }
+    menu.hidden = true;
+}
+
 // Called from async option-populating loaders AFTER they restore a saved
 // value — kicks a re-fetch so the table reflects the restored filter
 // (initial loadLeads fired before the options existed). Lazy: only if a
@@ -214,6 +414,7 @@ function _restoreAndApplyIfChanged() {
 function _wireLeadFieldsReadyRestore() {
     const tryRestore = () => {
         if (_restoreLeadFieldsChips()) applyFilters();
+        _markRestoreSourceDone('leadfields');
     };
     if (window.__leadFieldsReady) {
         // Already initialised — restore on next tick so the source dropdown
@@ -248,6 +449,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // their options finish loading. The custom-dropdown chips owned by
     // lead-fields-runtime.js restore on its own ready event (registered
     // here so it fires regardless of script-load order).
+    _restoreSearchScope();
     _restorePersistedFilters();
     _wireLeadFieldsReadyRestore();
     // Deep-link from My Day: /pages/crm/leads.html?ownerUserId=<uuid>
@@ -352,7 +554,7 @@ let _teamMembersCache = {}; // { team_id: [{ user_id, user_name, role }] }
 async function loadMyTeamsFilter() {
     const sel = document.getElementById('filterTeam');
     const group = document.getElementById('filterTeamGroup');
-    if (!sel || !group) return;
+    if (!sel || !group) { _markRestoreSourceDone('teams'); return; }
     try {
         const teams = await api.request('/crm/leads/my-teams');
         const list = Array.isArray(teams) ? teams : [];
@@ -393,6 +595,8 @@ async function loadMyTeamsFilter() {
         _restoreAndApplyIfChanged();
     } catch (e) {
         console.warn('Failed to load team filter:', e?.message || e);
+    } finally {
+        _markRestoreSourceDone('teams');
     }
 }
 
@@ -828,7 +1032,7 @@ async function loadSourceFilter() {
     // distinct-strings endpoint if /lead-sources is unavailable so the
     // filter never silently breaks.
     const sel = document.getElementById('filterSource');
-    if (!sel) return;
+    if (!sel) { _markRestoreSourceDone('source'); return; }
     const allOpt = sel.querySelector('option[value=""]');
     sel.innerHTML = '';
     if (allOpt) sel.appendChild(allOpt);
@@ -901,6 +1105,7 @@ async function loadSourceFilter() {
     if (filterSourceDropdown && typeof filterSourceDropdown.rebuild === 'function') {
         filterSourceDropdown.rebuild();
     }
+    _markRestoreSourceDone('source');
 }
 
 // ==================== Filter Handling ====================
@@ -910,6 +1115,18 @@ async function loadSourceFilter() {
  */
 function buildFilterParams() {
     const params = new URLSearchParams();
+    // Search-scope escape hatch: when the search-box toggle is set to
+    // "all leads", strip every narrowing filter so the rep can find a
+    // specific lead they know exists without first having to clear
+    // whatever filters their view is in. The filter widgets still hold
+    // their values (they'll resume on toggle-off) — we just don't send
+    // them this round. Search text itself is the ONLY narrowing the
+    // backend receives in this mode.
+    if (_isSearchScopeAll()) {
+        const search = document.getElementById('filterSearch')?.value?.trim();
+        if (search) params.set('search', search);
+        return params;
+    }
     const status = filterStatusDropdown ? filterStatusDropdown.getValue() : document.getElementById('filterStatus').value;
     const source = filterSourceDropdown ? filterSourceDropdown.getValue() : document.getElementById('filterSource').value;
     const search = document.getElementById('filterSearch').value.trim();
@@ -1053,7 +1270,7 @@ window.onSourceFilterChanged = onSourceFilterChanged;
 // the API is down — filter just stays with a single "All campaigns" option.
 async function loadCampaignFilter() {
     const sel = document.getElementById('filterCampaign');
-    if (!sel) return;
+    if (!sel) { _markRestoreSourceDone('campaign'); return; }
     try {
         const resp = await api.request('/email-campaigns');
         const items = (resp && resp.items) || [];
@@ -1063,6 +1280,7 @@ async function loadCampaignFilter() {
             items.map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${c.status})</option>`).join('');
         _restoreAndApplyIfChanged();
     } catch (_) { /* silent fallback */ }
+    finally { _markRestoreSourceDone('campaign'); }
 }
 
 /**
@@ -1132,7 +1350,7 @@ function renderLeadsTable(leads) {
             </td>
             <td data-col="name" onclick="openLeadDetailPanel('${lead.id}')" style="cursor:pointer;">
                 <div class="crm-cell-primary">
-                    ${escapeHtml(lead.first_name || '')} ${escapeHtml(lead.last_name || '')}${getCustomFieldsBadge(lead.custom_fields)}
+                    ${getCustomFieldsBadge(lead.custom_fields)}${escapeHtml(lead.first_name || '')} ${escapeHtml(lead.last_name || '')}
                 </div>
                 ${lead.company_name ? `<div class="crm-cell-secondary">${escapeHtml(lead.company_name)}</div>` : (lead.company ? `<div class="crm-cell-secondary">${escapeHtml(lead.company)}</div>` : '')}
             </td>
@@ -2449,13 +2667,25 @@ function initSearchableDropdowns() {
 // doesn't want it.
 
 function renderLatestSummaryCell(lead) {
-    const summary = lead.latest_activity_summary;
-    if (!summary || !summary.trim()) {
+    // Prefer the rep's most recent counselor note over auto-generated
+    // EMAIL SENT rows — reps complained their hand-typed comment was
+    // being hidden behind the latest email-sent entry. Fall back to the
+    // raw latest activity only if no non-email summary exists yet.
+    const note = (lead.latest_note_summary || '').trim();
+    const fallback = (lead.latest_activity_summary || '').trim();
+    const useNote = note.length > 0;
+    const summary = useNote ? note : fallback;
+    if (!summary) {
         return '<span class="crm-cell-secondary">—</span>';
     }
-    const trimmed = summary.trim();
-    const preview = trimmed.length > 120 ? trimmed.slice(0, 120) + '…' : trimmed;
-    const ts = lead.latest_activity_at ? formatDate(lead.latest_activity_at) : '';
+    const preview = summary.length > 120 ? summary.slice(0, 120) + '…' : summary;
+    const ts = useNote
+        ? (lead.latest_note_at ? formatDate(lead.latest_note_at) : '')
+        : (lead.latest_activity_at ? formatDate(lead.latest_activity_at) : '');
+    const rawType = useNote ? (lead.latest_note_type || 'note') : (lead.latest_activity_type || '');
+    const typeLabel = formatSummaryTypeLabel(rawType);
+    const typePillClass = rawType === 'email' ? 'crm-summary-type-pill type-email' : 'crm-summary-type-pill';
+    const typePill = typeLabel ? `<span class="${typePillClass}">${escapeHtml(typeLabel)}</span>` : '';
     const safeName = escapeHtml(`${lead.first_name || ''} ${lead.last_name || ''}`.trim() || (lead.lead_number || 'this lead'));
     // Wrap long descriptions across 2 lines instead of letting an unbroken
     // 500-char string blow out the column width. word-break:break-word keeps
@@ -2469,13 +2699,26 @@ function renderLatestSummaryCell(lead) {
               onclick="event.stopPropagation(); openLeadSummariesModal('${escapeHtml(lead.id)}', '${safeName.replace(/'/g, '&#39;')}')">
             <div style="font-size:0.82rem; color:var(--text-primary);
                         word-break:break-word; overflow-wrap:anywhere;
-                        display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escapeHtml(preview)}</div>
+                        display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${typePill}${escapeHtml(preview)}</div>
             ${ts ? `<div style="font-size:0.7rem; color:var(--text-secondary); margin-top:2px;">${escapeHtml(ts)}</div>` : ''}
         </div>`;
 }
 
+function formatSummaryTypeLabel(type) {
+    switch ((type || '').toLowerCase()) {
+        case 'call':    return 'Call';
+        case 'email':   return 'Email';
+        case 'meeting': return 'Meeting';
+        case 'note':    return 'Note';
+        case 'task':    return 'Task';
+        default:        return '';
+    }
+}
+
 let _leadSummariesAll = [];     // full unfiltered list — search filter runs client-side
 let _leadSummariesCurrentLeadId = null;
+// 'all' | 'notes' (call/note/meeting/task) | 'email' | 'other'
+let _leadSummariesTypeFilter = 'all';
 
 async function openLeadSummariesModal(leadId, leadName) {
     _leadSummariesCurrentLeadId = leadId;
@@ -2483,6 +2726,10 @@ async function openLeadSummariesModal(leadId, leadName) {
     if (subtitle) subtitle.textContent = leadName || '—';
     const search = document.getElementById('leadSummariesSearch');
     if (search) search.value = '';
+    // Reset to "All" each time the modal opens so the user starts from
+    // a known state instead of inheriting the last lead's filter.
+    _leadSummariesTypeFilter = 'all';
+    _syncLeadSummariesChipsActive();
     document.getElementById('leadSummariesOverlay').classList.add('active');
 
     const loadingEl = document.getElementById('leadSummariesLoading');
@@ -2538,10 +2785,31 @@ function closeLeadSummariesModal() {
 
 function filterLeadSummaries() {
     const q = (document.getElementById('leadSummariesSearch')?.value || '').trim().toLowerCase();
-    const filtered = q
-        ? _leadSummariesAll.filter(a => (a.description || '').toLowerCase().includes(q))
-        : _leadSummariesAll;
+    const typeFilter = _leadSummariesTypeFilter;
+    const filtered = _leadSummariesAll.filter(a => {
+        if (q && !(a.description || '').toLowerCase().includes(q)) return false;
+        if (typeFilter === 'all') return true;
+        const t = (a.activity_type || '').toLowerCase();
+        if (typeFilter === 'notes') return t === 'call' || t === 'note' || t === 'meeting' || t === 'task';
+        if (typeFilter === 'email') return t === 'email';
+        if (typeFilter === 'other') return !(t === 'call' || t === 'note' || t === 'meeting' || t === 'task' || t === 'email');
+        return true;
+    });
     renderLeadSummariesList(filtered);
+}
+
+function setLeadSummariesFilter(type) {
+    _leadSummariesTypeFilter = type;
+    _syncLeadSummariesChipsActive();
+    filterLeadSummaries();
+}
+
+function _syncLeadSummariesChipsActive() {
+    document.querySelectorAll('#leadSummariesTypeFilter .crm-summary-chip').forEach(btn => {
+        const isActive = btn.dataset.summaryFilter === _leadSummariesTypeFilter;
+        btn.classList.toggle('is-active', isActive);
+        btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
 }
 
 function renderLeadSummariesList(items) {
@@ -2596,7 +2864,7 @@ function getCustomFieldsBadge(customFieldsJson) {
             .join('&#10;');
         const extra = count > 5 ? `&#10;...and ${count - 5} more` : '';
 
-        return ` <span class="crm-custom-fields-badge" title="${tooltipItems}${extra}">+${count} fields</span>`;
+        return `<span class="crm-custom-fields-badge" title="${tooltipItems}${extra}">+${count} fields</span> `;
     } catch {
         return '';
     }

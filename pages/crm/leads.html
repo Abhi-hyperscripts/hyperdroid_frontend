@@ -115,6 +115,32 @@
                             </svg>
                             New Lead
                         </button>
+                        <!-- Filter-options gear: persisted filters get sticky and can
+                             confuse a rep into thinking "missing leads" — exposing a
+                             one-click "Clear all filters" makes the persisted state
+                             recoverable without devtools or a logout. Sits at the
+                             far end of the action toolbar so it's discoverable but
+                             not in the primary-action path. -->
+                        <div style="position:relative; display:inline-block;">
+                            <button type="button" id="filterMenuBtn" class="btn btn-outline-primary"
+                                    onclick="toggleFilterMenu(event)"
+                                    title="Filter options"
+                                    aria-label="Filter options">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                </svg>
+                            </button>
+                            <div id="filterMenu" class="crm-columns-menu" hidden role="menu" aria-label="Filter options">
+                                <div role="menuitem" tabindex="0" class="crm-columns-menu-item" onclick="clearAllFilters()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();clearAllFilters();}">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"/>
+                                        <line x1="6" y1="6" x2="18" y2="18"/>
+                                    </svg>
+                                    Clear all filters
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -176,7 +202,33 @@
         <div class="crm-filter-bar crm-filter-bar--actions">
             <div class="crm-filter-group crm-search-group" style="flex:1; min-width:240px;">
                 <label for="filterSearch">Search</label>
-                <input type="text" id="filterSearch" class="form-control form-control-sm" placeholder="Search leads..." oninput="applyFilters()">
+                <div class="crm-search-wrap">
+                    <!-- Search-scope toggle. Default = scoped to the current filter
+                         set (intuitive for narrowing). Toggling to "all leads" bypasses
+                         every other filter so a rep can find a specific lead they know
+                         exists without first remembering / clearing whatever filters
+                         their view is currently in. State persists per-tenant. -->
+                    <button type="button" id="searchScopeToggle" class="crm-search-scope-toggle"
+                            data-scope="filtered"
+                            onclick="toggleSearchScope()"
+                            aria-label="Search scope"
+                            data-tooltip="Searching within your filters. Click to search across everything you can see.">
+                        <!-- Two icons, one shown per state. Funnel = scoped to
+                             active filters (default). Globe = bypasses user
+                             filters but still respects the role-based scope
+                             (admin sees tenant-wide; manager/TL sees their
+                             teams; member sees their assigned leads). -->
+                        <svg class="crm-search-scope-icon crm-search-scope-icon--filtered" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                        </svg>
+                        <svg class="crm-search-scope-icon crm-search-scope-icon--all" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                    </button>
+                    <input type="text" id="filterSearch" class="form-control form-control-sm crm-search-input" placeholder="Search leads..." oninput="applyFilters()">
+                </div>
             </div>
             <div class="crm-filter-group">
                 <label for="filterSource">Source</label>
@@ -798,6 +850,15 @@
                 <button class="gm-close" onclick="closeLeadSummariesModal()">&times;</button>
             </div>
             <div class="gm-body" style="font-size:13px;">
+                <!-- Type filter chips: reps asked to separate counselor notes
+                     from auto-generated email rows so the wall of EMAIL SENT
+                     entries doesn't bury their hand-typed call summaries. -->
+                <div class="crm-summary-filter-row" id="leadSummariesTypeFilter" role="tablist" aria-label="Filter summaries by type" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
+                    <button type="button" class="crm-summary-chip is-active" data-summary-filter="all" onclick="setLeadSummariesFilter('all')" role="tab" aria-selected="true">All</button>
+                    <button type="button" class="crm-summary-chip" data-summary-filter="notes" onclick="setLeadSummariesFilter('notes')" role="tab" aria-selected="false">Calls &amp; Notes</button>
+                    <button type="button" class="crm-summary-chip" data-summary-filter="email" onclick="setLeadSummariesFilter('email')" role="tab" aria-selected="false">Emails</button>
+                    <button type="button" class="crm-summary-chip" data-summary-filter="other" onclick="setLeadSummariesFilter('other')" role="tab" aria-selected="false">Other</button>
+                </div>
                 <input type="text" id="leadSummariesSearch" class="form-control" placeholder="Search summaries…" style="margin-bottom:12px;" oninput="filterLeadSummaries()">
                 <div id="leadSummariesLoading" class="crm-loading" style="display:none;"><div class="crm-loading-spinner"></div><p>Loading…</p></div>
                 <div id="leadSummariesEmpty" style="display:none; padding:24px; text-align:center; color:var(--text-secondary);">No summaries logged yet.</div>
