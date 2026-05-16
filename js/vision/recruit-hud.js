@@ -521,17 +521,20 @@
         const cards = document.getElementById('recruitAskNextCards');
         if (!root || !cards) return;
 
-        // Merge: pinned cards first (keep their original rank-0/1/2 styling
-        // through the pin-order), then AI suggestions filling remaining slots.
-        // De-dupe so the AI doesn't re-suggest an already-pinned question.
+        // Merge: pinned cards always show on top (up to MAX_PINNED), with
+        // fresh AI suggestions appended below them (up to MAX_FRESH). The
+        // earlier shared-cap of 3 starved fresh questions whenever all 3
+        // slots were pinned — the host stopped seeing new AI suggestions
+        // entirely and thought the AI had stopped emitting. De-dupe so the
+        // AI doesn't re-suggest an already-pinned question.
+        const MAX_PINNED = 3;
+        const MAX_FRESH = 3;
         const pinnedKeys = new Set(pinnedQuestions.map(p => (p.question || '').trim().toLowerCase()));
         const incoming = (data.questions || [])
             .filter(q => !pinnedKeys.has((q.question || '').trim().toLowerCase()));
-        const maxCards = 3;
-        const remaining = Math.max(0, maxCards - pinnedQuestions.length);
         askNextQueue = [
-            ...pinnedQuestions.map(p => ({ ...p, _pinned: true })),
-            ...incoming.slice(0, remaining).map(q => ({ ...q, _pinned: false }))
+            ...pinnedQuestions.slice(0, MAX_PINNED).map(p => ({ ...p, _pinned: true })),
+            ...incoming.slice(0, MAX_FRESH).map(q => ({ ...q, _pinned: false }))
         ];
 
         cards.innerHTML = '';
