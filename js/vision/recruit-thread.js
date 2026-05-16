@@ -1,0 +1,701 @@
+/* ============================================================
+ * recruit-thread.js — v7 interview cockpit (Q-Block thread)
+ *
+ * Replaces the v6 ASK NEXT / LAST ANSWER / JARGON / SCORECARD
+ * sections with a conversation-thread layout: one host-pinned
+ * question = one Q-Block; the candidate's answer + grade + jargon
+ * + scorecard signals nest UNDER the block. Click "Done" to
+ * close the block; AI emits 3 next-question candidates (easy /
+ * medium / hard); host picks one to open the next block.
+ *
+ * Initialized by recruit-hud.js after its own DOM injection.
+ * Takes over #recruitHudFloatingBody contents — the cockpit
+ * chrome (drag, resize, maximize, opacity) stays unchanged.
+ * ============================================================ */
+(function () {
+    'use strict';
+
+    if (window.__recruitThreadLoaded) return;
+    window.__recruitThreadLoaded = true;
+
+    // ─── State ────────────────────────────────────────────────
+    let signalR = null;
+    let meetingId = null;
+    let initialized = false;
+
+    // One Q-Block per host-pinned (or auto-detected) question.
+    // Order is newest-at-bottom — completed blocks scroll up, the
+    // active block is always at the bottom of the thread (with
+    // optional follow-up nested under it).
+    const blocks = [];                  // each: { id, parentId, questionText, topic, difficulty, askedAtMs, status, quality, jargon, deltas, answerSummary, autoDetected }
+    let activeBlockId = null;
+    let pendingHostDetections = [];     // host-detected blocks waiting for Confirm/Dismiss
+
+    // Picker state — populated when AI sends V7NextQuestionOptions.
+    let pickerOptions = null;           // { topicHint, options: [{question, why, topic, difficulty}] }
+    let pickerVisible = false;
+
+    // Trust check state — populated on V7TrustCheck. Floating banner.
+    let trustCheck = null;              // { reason, coaching, confidence, dismissedAtMs }
+
+    // Round metadata for the budget header.
+    let roundMeta = {
+        roundType: '',
+        roundLabel: '',
+        budgetMins: 15,
+        startedAtMs: 0
+    };
+
+    // Talk balance — wire later (existing recruit-hud talkBalance signals).
+    let talkSplit = { you: 0, candidate: 0 };
+
+    // Scorecard rollup — competency -> { signal, evidenceQuote }
+    const scorecard = new Map();
+
+    // ─── Init (called by recruit-hud.js) ──────────────────────
+    function initRecruitThread(connection, meetingIdParam) {
+        if (initialized) return;
+        signalR = connection;
+        meetingId = meetingIdParam;
+        replaceBody();
+        wireSignalR();
+        initialized = true;
+        console.log('[RecruitThread] v7 initialized for meeting', meetingId);
+    }
+    window.initRecruitThread = initRecruitThread;
+
+    // ─── DOM ──────────────────────────────────────────────────
+    function replaceBody() {
+        const body = document.getElementById('recruitHudFloatingBody');
+        if (!body) {
+            console.warn('[RecruitThread] #recruitHudFloatingBody missing — cannot mount');
+            return;
+        }
+        body.classList.add('rt-body');
+        body.innerHTML =
+            '<div class="rt-budget" id="rtBudget">' +
+            '  <span class="rt-budget-pill" id="rtBudgetRound">—</span>' +
+            '  <span class="rt-budget-pill"><span class="rt-lbl">⏱</span> <strong id="rtElapsed">0:00</strong>/<span id="rtTotal">15:00</span></span>' +
+            '  <span class="rt-budget-pill"><span class="rt-lbl">📚</span> TOPICS <strong id="rtTopicsDone">0</strong>/<span id="rtTopicsTotal">0</span></span>' +
+            '  <span class="rt-budget-pill"><span class="rt-lbl">🗣</span> TALK <span class="rt-talkbar" id="rtTalkBar"><span class="you"></span><span class="cand"></span></span> <span id="rtTalkText" class="rt-talk-text">—</span></span>' +
+            '</div>' +
+            '<div class="rt-trust" id="rtTrust" style="display:none;"></div>' +
+            '<div class="rt-thread" id="rtThread">' +
+            '  <div class="rt-empty" id="rtEmpty">Waiting for the first question. The AI will suggest 3 options when ready — pick one and ask the candidate.</div>' +
+            '</div>' +
+            '<div class="rt-scorecard" id="rtScorecard" style="display:none;">' +
+            '  <div class="rt-lbl-bar">SCORECARD <span class="rt-toggle" id="rtScToggle">▾</span></div>' +
+            '  <div class="rt-sc-list" id="rtScList"></div>' +
+            '</div>' +
+            '<div class="rt-picker" id="rtPicker" style="display:none;"></div>';
+        const scToggle = document.getElementById('rtScToggle');
+        if (scToggle) scToggle.addEventListener('click', () => {
+            const list = document.getElementById('rtScList');
+            const open = list.style.display !== 'none';
+            list.style.display = open ? 'none' : '';
+            scToggle.textContent = open ? '▸' : '▾';
+        });
+
+        startElapsedTicker();
+    }
+
+    function startElapsedTicker() {
+        roundMeta.startedAtMs = Date.now();
+        setInterval(() => {
+            const el = document.getElementById('rtElapsed');
+            if (!el) return;
+            const sec = Math.floor((Date.now() - roundMeta.startedAtMs) / 1000);
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            el.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+
+    // ─── SignalR wiring ───────────────────────────────────────
+    function wireSignalR() {
+        if (!signalR) return;
+
+        // v7 events from Phase 0+1 backend
+        signalR.on('V7NextQuestionOptions', onNextQuestionOptions);
+        signalR.on('V7HostQuestionDetected', onHostQuestionDetected);
+        signalR.on('V7TrustCheck', onTrustCheck);
+        signalR.on('V7QuestionGrade', onQuestionGrade);
+        signalR.on('V7FollowupSuggested', onFollowupSuggested);
+
+        // Existing v6 signals — still fire for question-scoped grading
+        // until the backend starts emitting V7QuestionGrade. We treat the
+        // single-payload CopilotInsight HUD signals as updates to the
+        // currently-active block.
+        signalR.on('InterviewQuestionsUpdated', onLegacyQuestionsUpdated);
+        signalR.on('AnswerQuality', onLegacyAnswerQuality);
+        signalR.on('JargonDetected', onLegacyJargon);
+        signalR.on('ScorecardUpdate', onLegacyScorecard);
+        signalR.on('InterviewContextLoaded', onContextLoaded);
+    }
+
+    function onContextLoaded(data) {
+        // Round type + budget come from HRMS via Phase 1 InterviewContextLoaded.
+        if (!data) return;
+        roundMeta.roundType = data.roundType || '';
+        roundMeta.roundLabel = data.roundLabel || data.roundType || '';
+        const total = roundBudgetMins(data.roundType);
+        roundMeta.budgetMins = total;
+        const tEl = document.getElementById('rtTotal');
+        if (tEl) tEl.textContent = total + ':00';
+        const rEl = document.getElementById('rtBudgetRound');
+        if (rEl) rEl.textContent = (data.roundLabel || data.roundType || 'INTERVIEW').toUpperCase();
+        const tdEl = document.getElementById('rtTopicsTotal');
+        const topics = Array.isArray(data.topicsSeeded) ? data.topicsSeeded.length : 0;
+        if (tdEl) tdEl.textContent = topics;
+    }
+
+    function roundBudgetMins(roundType) {
+        switch ((roundType || '').toLowerCase()) {
+            case 'hr_screen':       return 15;
+            case 'technical_round': return 45;
+            case 'technical_panel': return 60;
+            case 'hiring_manager':  return 30;
+            case 'ceo':             return 20;
+            case 'final':           return 30;
+            default:                return 30;
+        }
+    }
+
+    // ─── v7 signal handlers ───────────────────────────────────
+    function onNextQuestionOptions(data) {
+        if (!data || !Array.isArray(data.options)) return;
+        pickerOptions = {
+            topicHint: data.topicHint || '',
+            options: data.options
+        };
+        renderPicker();
+    }
+
+    function onHostQuestionDetected(data) {
+        if (!data || !data.questionText) return;
+        // De-dup: ignore if we already have an unresolved detection with the same text.
+        const dupe = pendingHostDetections.find(d => d.questionText.trim().toLowerCase() === data.questionText.trim().toLowerCase());
+        if (dupe) return;
+        const detection = {
+            id: 'host-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+            questionText: data.questionText,
+            classification: data.classification || 'new_topic',
+            parentQuestionIdHint: data.parentQuestionIdHint || '',
+            topic: data.topic || 'auto-detected',
+            confidence: data.confidence || 0.7,
+            timestamp: data.timestamp || Date.now()
+        };
+        pendingHostDetections.push(detection);
+        renderThread();
+    }
+
+    function onTrustCheck(data) {
+        if (!data) return;
+        trustCheck = {
+            reason: data.reason || '',
+            coaching: data.coaching || '',
+            confidence: data.confidence || 0,
+            timestamp: data.timestamp || Date.now()
+        };
+        renderTrustCheck();
+    }
+
+    function onQuestionGrade(data) {
+        // v7 explicit question_id tagging. Until AIEngine emits these,
+        // the legacy handlers below carry the load — but when present,
+        // route directly to the named block.
+        if (!data || !data.questionId) return;
+        const block = blocks.find(b => b.id === data.questionId);
+        if (!block) return;
+        if (data.qualityColor) block.quality = { color: data.qualityColor, reason: data.qualityReason || '', confidence: data.qualityConfidence || 0 };
+        if (data.answerSummary) block.answerSummary = data.answerSummary;
+        (data.jargon || []).forEach(j => addJargonToBlock(block, j));
+        (data.deltas || []).forEach(d => applyScorecardDelta(d));
+        renderThread();
+        renderScorecard();
+    }
+
+    function onFollowupSuggested(data) {
+        if (!data || !data.question || !data.parentQuestionId) return;
+        const parent = blocks.find(b => b.id === data.parentQuestionId);
+        if (!parent) return;
+        parent.followupSuggestion = {
+            question: data.question,
+            why: data.why || '',
+            topic: data.topic || parent.topic,
+            difficulty: data.difficulty || 'medium',
+            reason: data.reason || ''
+        };
+        renderThread();
+    }
+
+    // ─── Legacy CopilotInsight signal handlers ────────────────
+    // These fire on every per-turn Claude call today. They carry HUD
+    // signals (next_questions / answer_quality / jargon / scorecard
+    // deltas) but DON'T tag with question_id — so we attribute them
+    // to whichever Q-Block is currently active.
+    function onLegacyQuestionsUpdated(data) {
+        // If we don't have explicit picker options yet AND there's no
+        // active question, treat the next_questions stack as our picker.
+        if (pickerOptions) return; // v7 explicit options take precedence
+        if (activeBlockId) return; // mid-question — don't pop picker
+        if (!data || !Array.isArray(data.questions) || data.questions.length === 0) return;
+        // Normalize: ensure each option has a difficulty hint. The v6 schema
+        // emits difficulty per question but rarely all three tiers — best
+        // effort: pad with medium.
+        const opts = data.questions.slice(0, 3).map(q => ({
+            question: q.question,
+            why: q.why || '',
+            topic: q.topic || '',
+            difficulty: (q.difficulty || 'medium').toLowerCase()
+        }));
+        pickerOptions = { topicHint: '', options: opts };
+        renderPicker();
+    }
+
+    function onLegacyAnswerQuality(data) {
+        if (!activeBlockId || !data) return;
+        const block = blocks.find(b => b.id === activeBlockId);
+        if (!block) return;
+        if (data.color && data.color !== 'skip') {
+            block.quality = {
+                color: data.color,
+                reason: data.reason || '',
+                confidence: data.confidence || 0
+            };
+            renderThread();
+        }
+    }
+
+    function onLegacyJargon(data) {
+        if (!activeBlockId || !data || !Array.isArray(data.terms)) return;
+        const block = blocks.find(b => b.id === activeBlockId);
+        if (!block) return;
+        data.terms.forEach(t => addJargonToBlock(block, t));
+        renderThread();
+    }
+
+    function onLegacyScorecard(data) {
+        if (!data || !Array.isArray(data.deltas)) return;
+        data.deltas.forEach(d => applyScorecardDelta(d));
+        renderScorecard();
+    }
+
+    // ─── Mutators ─────────────────────────────────────────────
+    function addJargonToBlock(block, j) {
+        if (!j || !j.term) return;
+        block.jargon = block.jargon || [];
+        const key = j.term.trim().toLowerCase();
+        if (block.jargon.some(x => (x.term || '').trim().toLowerCase() === key)) return;
+        block.jargon.push({ term: j.term, definition: j.definition || '' });
+    }
+
+    function applyScorecardDelta(d) {
+        if (!d || !d.competency || !d.signal) return;
+        const key = d.competency.trim();
+        const prev = scorecard.get(key) || {};
+        // Allow signal promotion: not_yet → partial → demonstrated. Never demote.
+        const rank = { not_yet: 0, partial: 1, demonstrated: 2 };
+        const prevRank = rank[prev.signal] ?? -1;
+        const newRank = rank[d.signal] ?? 0;
+        if (newRank >= prevRank) {
+            scorecard.set(key, {
+                signal: d.signal,
+                evidenceQuote: d.evidenceQuote || prev.evidenceQuote || ''
+            });
+        }
+    }
+
+    // ─── Render: thread ──────────────────────────────────────
+    function renderThread() {
+        const thread = document.getElementById('rtThread');
+        if (!thread) return;
+        const empty = document.getElementById('rtEmpty');
+
+        // Hide empty state when we have any block or detection.
+        const hasContent = blocks.length > 0 || pendingHostDetections.length > 0;
+        if (empty) empty.style.display = hasContent ? 'none' : '';
+
+        // Remove existing block / detection nodes, keep the empty placeholder.
+        Array.from(thread.querySelectorAll('.rt-block, .rt-detected')).forEach(n => n.remove());
+
+        blocks.forEach((b, idx) => {
+            thread.appendChild(buildBlockNode(b, idx + 1));
+        });
+        pendingHostDetections.forEach((d, idx) => {
+            thread.appendChild(buildDetectedNode(d, blocks.length + idx + 1));
+        });
+
+        // Scroll active to view.
+        if (activeBlockId) {
+            const node = thread.querySelector(`[data-bid="${activeBlockId}"]`);
+            if (node) node.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+    }
+
+    function buildBlockNode(b, qNum) {
+        const wrap = document.createElement('div');
+        wrap.className = 'rt-block' + (b.status === 'done' ? ' rt-done' : ' rt-active') + (b.autoDetected ? ' rt-host' : '');
+        wrap.dataset.bid = b.id;
+
+        const diffClass = 'rt-diff-' + (b.difficulty || 'medium').toLowerCase();
+        const statusLbl = b.status === 'done' ? '✓ DONE' : 'LISTENING';
+        const statusCls = b.status === 'done' ? '' : 'rt-active-dot';
+
+        let html = '<div class="rt-qhead">' +
+            `<span class="rt-qnum">Q${qNum}</span>` +
+            `<span class="rt-qdiff ${diffClass}">${escape(b.difficulty || 'medium').toUpperCase()}</span>` +
+            `<span class="rt-qtopic">${escape(b.topic || '')}</span>` +
+            (b.isFollowup ? '<span class="rt-fu-chip">↳ FOLLOW-UP</span>' : '') +
+            `<span class="rt-qstatus ${statusCls}">${statusLbl}</span>` +
+            '</div>';
+
+        html += '<div class="rt-qbody">';
+        html += `<div class="rt-qtext">${escape(b.questionText)}</div>`;
+
+        if (b.answerSummary) {
+            html += `<div class="rt-answer"><span class="rt-tag">A:</span> ${escape(b.answerSummary)}</div>`;
+        } else if (b.status !== 'done') {
+            html += '<div class="rt-transcript"><span class="rt-tag">LIVE</span> waiting for candidate to answer…</div>';
+        }
+
+        // Signals row
+        let signals = '';
+        if (b.quality && b.quality.color && b.quality.color !== 'skip') {
+            signals += `<span class="rt-signal"><span class="rt-dot rt-dot-${b.quality.color}"></span> ${b.quality.color}${b.quality.reason ? ' — ' + escape(b.quality.reason) : ''}</span>`;
+        } else if (b.status !== 'done') {
+            signals += '<span class="rt-signal"><span class="rt-dot rt-dot-pending"></span> <em>grading…</em></span>';
+        }
+        if (b.jargon && b.jargon.length) {
+            const terms = b.jargon.slice(0, 5).map(j => escape(j.term)).join(', ');
+            signals += `<span class="rt-signal">📚 <span class="rt-jargon">${terms}</span></span>`;
+        }
+        if (signals) html += `<div class="rt-signals">${signals}</div>`;
+
+        html += '</div>'; // qbody
+
+        // Follow-up suggestion card (only on active blocks)
+        if (b.status !== 'done' && b.followupSuggestion) {
+            const fs = b.followupSuggestion;
+            html += '<div class="rt-fu-suggest">' +
+                '<span class="rt-fu-icon">↳</span>' +
+                '<div class="rt-fu-body">' +
+                `<strong>${escape(fs.question)}</strong>` +
+                (fs.why ? `<div class="rt-fu-why">${escape(fs.why)}</div>` : '') +
+                '</div>' +
+                '<div class="rt-fu-actions">' +
+                `<button class="rt-btn-primary" data-action="add-followup" data-bid="${b.id}">ADD AS FOLLOW-UP</button>` +
+                `<button class="rt-btn-ghost" data-action="skip-followup" data-bid="${b.id}">SKIP</button>` +
+                '</div>' +
+                '</div>';
+        }
+
+        // Footer actions (active only)
+        if (b.status !== 'done') {
+            html += '<div class="rt-qfooter">' +
+                `<button class="rt-btn-done" data-action="done-block" data-bid="${b.id}">✓ DONE — PICK NEXT TOPIC</button>` +
+                '</div>';
+        }
+
+        wrap.innerHTML = html;
+        wrap.querySelectorAll('[data-action]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleAction(btn.dataset.action, btn.dataset.bid);
+            });
+        });
+        return wrap;
+    }
+
+    function buildDetectedNode(d, qNum) {
+        const wrap = document.createElement('div');
+        wrap.className = 'rt-detected';
+        wrap.dataset.did = d.id;
+        const confPct = Math.round(d.confidence * 100);
+        wrap.innerHTML =
+            '<div class="rt-qhead">' +
+            `<span class="rt-qnum">Q${qNum}</span>` +
+            `<span class="rt-qdiff rt-diff-medium">DETECTED</span>` +
+            `<span class="rt-qtopic">${escape(d.topic)}</span>` +
+            `<span class="rt-qstatus rt-host-dot">FROM YOUR SPEECH · ${confPct}%</span>` +
+            '</div>' +
+            '<div class="rt-qbody">' +
+            `<div class="rt-qtext">${escape(d.questionText)}</div>` +
+            '<div class="rt-detected-note">↑ AI detected this question from your speech. Confirm to make it the active question, or dismiss if it was an aside.</div>' +
+            '</div>' +
+            '<div class="rt-qfooter">' +
+            `<button class="rt-btn-done" data-action="confirm-detected" data-did="${d.id}">CONFIRM &amp; ASK</button>` +
+            `<button class="rt-btn-ghost" data-action="dismiss-detected" data-did="${d.id}">DISMISS</button>` +
+            '</div>';
+        wrap.querySelectorAll('[data-action]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                handleAction(btn.dataset.action, btn.dataset.did);
+            });
+        });
+        return wrap;
+    }
+
+    // ─── Render: picker ──────────────────────────────────────
+    function renderPicker() {
+        const pick = document.getElementById('rtPicker');
+        if (!pick) return;
+        if (!pickerOptions || !pickerOptions.options.length) {
+            pick.style.display = 'none';
+            return;
+        }
+        pick.style.display = '';
+        let html = '<div class="rt-lbl-bar">PICK NEXT QUESTION</div>';
+        if (pickerOptions.topicHint)
+            html += `<div class="rt-picker-hint">${escape(pickerOptions.topicHint)}</div>`;
+        pickerOptions.options.forEach((o, idx) => {
+            html += `<div class="rt-picker-option" data-idx="${idx}">` +
+                '<div class="rt-po-hdr">' +
+                `<span class="rt-qdiff rt-diff-${(o.difficulty || 'medium').toLowerCase()}">${escape(o.difficulty || 'medium').toUpperCase()}</span>` +
+                `<span class="rt-qtopic">${escape(o.topic || '')}</span>` +
+                '</div>' +
+                `<div class="rt-po-q">${escape(o.question)}</div>` +
+                (o.why ? `<div class="rt-po-why">${escape(o.why)}</div>` : '') +
+                '</div>';
+        });
+        html += '<div class="rt-picker-actions">' +
+            '<button class="rt-btn-ghost" data-action="custom-question">+ CUSTOM</button>' +
+            '<button class="rt-btn-ghost" data-action="skip-round">SKIP</button>' +
+            '</div>';
+        pick.innerHTML = html;
+        pick.querySelectorAll('.rt-picker-option').forEach(opt => {
+            opt.addEventListener('click', () => {
+                const idx = parseInt(opt.dataset.idx, 10);
+                pickOption(idx);
+            });
+        });
+        pick.querySelectorAll('[data-action]').forEach(btn => {
+            btn.addEventListener('click', () => handleAction(btn.dataset.action));
+        });
+    }
+
+    // ─── Render: scorecard ────────────────────────────────────
+    function renderScorecard() {
+        const sc = document.getElementById('rtScorecard');
+        const list = document.getElementById('rtScList');
+        if (!sc || !list) return;
+        if (scorecard.size === 0) {
+            sc.style.display = 'none';
+            return;
+        }
+        sc.style.display = '';
+        const rows = Array.from(scorecard.entries()).map(([comp, v]) => {
+            const sig = v.signal;
+            const dot = sig === 'demonstrated' ? '●' : sig === 'partial' ? '◐' : '○';
+            const cls = sig === 'demonstrated' ? 'rt-sig-done' : sig === 'partial' ? 'rt-sig-part' : 'rt-sig-not';
+            return `<div class="rt-sc-row"><span class="rt-sig ${cls}">${dot}</span> ${escape(comp)}</div>`;
+        });
+        list.innerHTML = rows.join('');
+
+        // Topics-done counter on the budget bar
+        const done = Array.from(scorecard.values()).filter(v => v.signal === 'demonstrated').length;
+        const td = document.getElementById('rtTopicsDone');
+        if (td) td.textContent = done;
+    }
+
+    // ─── Render: trust check ──────────────────────────────────
+    function renderTrustCheck() {
+        const t = document.getElementById('rtTrust');
+        if (!t) return;
+        if (!trustCheck || trustCheck.dismissedAtMs) {
+            t.style.display = 'none';
+            return;
+        }
+        const conf = trustCheck.confidence ? ` · ${trustCheck.confidence.toFixed(2)}` : '';
+        t.style.display = '';
+        t.innerHTML =
+            '<span class="rt-trust-icon">⚠</span>' +
+            '<div class="rt-trust-body">' +
+            `<strong>TRUST CHECK${conf}</strong>` +
+            (trustCheck.reason ? `<div>${escape(trustCheck.reason)}</div>` : '') +
+            (trustCheck.coaching ? `<div class="rt-trust-coach"><strong>Coach:</strong> ${escape(trustCheck.coaching)}</div>` : '') +
+            '</div>' +
+            '<button class="rt-trust-dismiss" data-action="dismiss-trust">✕</button>';
+        t.querySelectorAll('[data-action]').forEach(btn => {
+            btn.addEventListener('click', () => handleAction(btn.dataset.action));
+        });
+    }
+
+    // ─── Actions ──────────────────────────────────────────────
+    function handleAction(action, ref) {
+        switch (action) {
+            case 'done-block':       return doneActiveBlock();
+            case 'add-followup':     return addFollowupFromSuggestion(ref);
+            case 'skip-followup':    return skipFollowupSuggestion(ref);
+            case 'confirm-detected': return confirmDetected(ref);
+            case 'dismiss-detected': return dismissDetected(ref);
+            case 'custom-question':  return openCustomQuestion();
+            case 'skip-round':       return skipRound();
+            case 'dismiss-trust':    return dismissTrust();
+        }
+    }
+
+    function pickOption(idx) {
+        if (!pickerOptions || !pickerOptions.options[idx]) return;
+        const opt = pickerOptions.options[idx];
+        const block = createBlock({
+            questionText: opt.question,
+            topic: opt.topic,
+            difficulty: opt.difficulty || 'medium',
+            isFollowup: false,
+            parentId: ''
+        });
+        // Clear picker
+        pickerOptions = null;
+        renderPicker();
+        // Tell AIEngine
+        emitActiveQuestion(block);
+        renderThread();
+    }
+
+    function createBlock(opts) {
+        const block = {
+            id: opts.id || ('q-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8)),
+            parentId: opts.parentId || '',
+            questionText: opts.questionText,
+            topic: opts.topic || '',
+            difficulty: opts.difficulty || 'medium',
+            isFollowup: !!opts.isFollowup,
+            autoDetected: !!opts.autoDetected,
+            status: 'active',
+            askedAtMs: Date.now(),
+            quality: null,
+            jargon: [],
+            answerSummary: '',
+            followupSuggestion: null
+        };
+        blocks.push(block);
+        activeBlockId = block.id;
+        return block;
+    }
+
+    function emitActiveQuestion(block) {
+        if (!signalR || !meetingId) return;
+        try {
+            signalR.invoke('SetActiveQuestion',
+                String(meetingId),
+                block.id,
+                block.questionText,
+                block.topic || '',
+                block.difficulty || 'medium',
+                !!block.isFollowup,
+                block.parentId || ''
+            ).catch(err => console.warn('[RecruitThread] SetActiveQuestion failed:', err));
+        } catch (e) {
+            console.warn('[RecruitThread] SetActiveQuestion threw:', e);
+        }
+    }
+
+    function doneActiveBlock() {
+        const block = blocks.find(b => b.id === activeBlockId);
+        if (!block) return;
+        block.status = 'done';
+        activeBlockId = null;
+        renderThread();
+        // Ask AIEngine for next 3 options
+        requestNextTopic();
+    }
+
+    function requestNextTopic() {
+        if (!signalR || !meetingId) return;
+        try {
+            signalR.invoke('RequestNextTopic', String(meetingId))
+                .catch(err => console.warn('[RecruitThread] RequestNextTopic failed:', err));
+        } catch (e) {
+            console.warn('[RecruitThread] RequestNextTopic threw:', e);
+        }
+    }
+
+    function addFollowupFromSuggestion(parentId) {
+        const parent = blocks.find(b => b.id === parentId);
+        if (!parent || !parent.followupSuggestion) return;
+        const fs = parent.followupSuggestion;
+        // Close the parent's active state (but keep it in the thread).
+        parent.status = 'done';
+        parent.followupSuggestion = null;
+        const fu = createBlock({
+            questionText: fs.question,
+            topic: fs.topic,
+            difficulty: fs.difficulty,
+            isFollowup: true,
+            parentId: parent.id
+        });
+        emitActiveQuestion(fu);
+        renderThread();
+    }
+
+    function skipFollowupSuggestion(parentId) {
+        const parent = blocks.find(b => b.id === parentId);
+        if (!parent) return;
+        parent.followupSuggestion = null;
+        renderThread();
+    }
+
+    function confirmDetected(detectionId) {
+        const idx = pendingHostDetections.findIndex(d => d.id === detectionId);
+        if (idx < 0) return;
+        const d = pendingHostDetections[idx];
+        pendingHostDetections.splice(idx, 1);
+        // If there's a current active block, close it.
+        const cur = blocks.find(b => b.id === activeBlockId);
+        if (cur) { cur.status = 'done'; cur.followupSuggestion = null; }
+        const block = createBlock({
+            id: d.id,
+            questionText: d.questionText,
+            topic: d.topic,
+            difficulty: 'medium',
+            autoDetected: true,
+            isFollowup: d.classification === 'follow_up',
+            parentId: d.parentQuestionIdHint
+        });
+        emitActiveQuestion(block);
+        renderThread();
+    }
+
+    function dismissDetected(detectionId) {
+        pendingHostDetections = pendingHostDetections.filter(d => d.id !== detectionId);
+        renderThread();
+    }
+
+    function openCustomQuestion() {
+        if (!window.Confirm && !window.prompt) return;
+        const text = window.prompt('Your question for the candidate:');
+        if (!text || !text.trim()) return;
+        const block = createBlock({
+            questionText: text.trim(),
+            topic: '',
+            difficulty: 'medium'
+        });
+        pickerOptions = null;
+        renderPicker();
+        emitActiveQuestion(block);
+        renderThread();
+    }
+
+    function skipRound() {
+        // Just hide the picker. Host can do their own thing.
+        pickerOptions = null;
+        renderPicker();
+    }
+
+    function dismissTrust() {
+        if (trustCheck) trustCheck.dismissedAtMs = Date.now();
+        renderTrustCheck();
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────
+    function escape(s) {
+        if (s == null) return '';
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+})();

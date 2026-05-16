@@ -47,6 +47,18 @@
         wireSignalR();
         initialized = true;
         console.log('[RecruitHUD] initialized for meeting', meetingId, 'mode=', mode);
+
+        // v7 thread mode — when the new module is present, hand it the
+        // SignalR connection so it can replace #recruitHudFloatingBody
+        // with the Q-Block thread / picker / scorecard / trust-check UI.
+        // The cockpit chrome (drag, opacity, maximize, minimize) stays
+        // owned by this module. v6 sections will be torn out by the
+        // thread module's replaceBody() call.
+        const v7Enabled = (window.RECRUIT_V7_ENABLED !== false); // default ON
+        if (v7Enabled && typeof window.initRecruitThread === 'function') {
+            try { window.initRecruitThread(connection, meetingIdParam); }
+            catch (e) { console.warn('[RecruitHUD] initRecruitThread failed:', e); }
+        }
     }
 
     function injectDom() {
