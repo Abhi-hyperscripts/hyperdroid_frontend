@@ -315,13 +315,19 @@
 .recruit-hud-floating-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 6px;
     padding: 6px 10px;
     background: rgba(0, 212, 255, 0.05);
     border-bottom: 1px solid rgba(0, 212, 255, 0.12);
     flex-shrink: 0;
     cursor: move;
     user-select: none;
+}
+/* Title grows to fill remaining width so the two action buttons
+ * (maximize + minimize) cluster on the right edge instead of being
+ * pushed apart by justify-content. */
+.recruit-hud-floating-title {
+    flex: 1;
 }
 
 .recruit-hud-floating-grip {

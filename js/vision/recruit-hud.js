@@ -70,6 +70,9 @@
             + '<div class="recruit-hud-floating-header" id="recruitHudHeader" title="Drag to move">'
             +   '<span class="recruit-hud-floating-grip" aria-hidden="true">⋮⋮</span>'
             +   '<span class="recruit-hud-floating-title">RECRUIT COCKPIT</span>'
+            +   '<button type="button" class="recruit-hud-floating-toggle" id="recruitMaximizeToggle" onclick="toggleRecruitMaximize()" title="Maximize cockpit to full screen">'
+            +     '<span id="recruitMaximizeIcon">⛶</span>'
+            +   '</button>'
             +   '<button type="button" class="recruit-hud-floating-toggle" id="recruitFloatingToggle" onclick="toggleRecruitFloating()" title="Minimize cockpit">'
             +     '<span class="recruit-hud-floating-chevron" id="recruitFloatingChevron">−</span>'
             +   '</button>'
@@ -106,7 +109,10 @@
             return {
                 left: Math.max(0, Math.min(maxLeft, p.left | 0)),
                 top:  Math.max(MIN_TOP, Math.min(maxTop,  p.top  | 0)),
-                width:  Math.max(240, Math.min(window.innerWidth - 16,  p.width  | 0)),
+                // Allow saved widths up to viewport (was capped at 720 in the
+                // resize handler, but a maximized cockpit should round-trip
+                // through localStorage at full width).
+                width:  Math.max(240, Math.min(window.innerWidth - 8,   p.width  | 0)),
                 height: Math.max(180, Math.min(window.innerHeight - 16, p.height | 0))
             };
         } catch (_e) { return null; }
@@ -216,7 +222,9 @@
             const onMove = (ev) => {
                 const dw = ev.clientX - startX;
                 const dh = ev.clientY - startY;
-                const maxW = Math.min(720, window.innerWidth - left - 8);
+                // Allow up to viewport width/height — recruiter may want
+                // full-screen cockpit when reading long question stacks.
+                const maxW = window.innerWidth - left - 8;
                 const maxH = window.innerHeight - top - 8;
                 const newW = Math.max(240, Math.min(maxW, startW + dw));
                 const newH = Math.max(180, Math.min(maxH, startH + dh));
@@ -252,6 +260,74 @@
             panel.style.height = '';
         });
     }
+
+    // Stash for restore — captures the geometry the user had before
+    // clicking Maximize, so the second click puts it back exactly.
+    let _preMaximizeGeometry = null;
+
+    function toggleRecruitMaximize() {
+        const panel = document.getElementById('recruitHudSections');
+        const icon = document.getElementById('recruitMaximizeIcon');
+        const btn = document.getElementById('recruitMaximizeToggle');
+        if (!panel) return;
+        const isMaximized = panel.classList.contains('recruit-hud-floating-maximized');
+        if (isMaximized) {
+            // Restore previous geometry
+            panel.classList.remove('recruit-hud-floating-maximized');
+            if (_preMaximizeGeometry) {
+                panel.style.position = _preMaximizeGeometry.position || 'fixed';
+                panel.style.top = _preMaximizeGeometry.top;
+                panel.style.left = _preMaximizeGeometry.left;
+                panel.style.right = _preMaximizeGeometry.right || 'auto';
+                panel.style.bottom = _preMaximizeGeometry.bottom || 'auto';
+                panel.style.width = _preMaximizeGeometry.width;
+                panel.style.height = _preMaximizeGeometry.height;
+            } else {
+                // No prior geometry — reset to default anchored position
+                panel.classList.remove('recruit-hud-floating-user-positioned');
+                panel.style.position = '';
+                panel.style.top = '';
+                panel.style.left = '';
+                panel.style.right = '';
+                panel.style.bottom = '';
+                panel.style.width = '';
+                panel.style.height = '';
+            }
+            if (icon) icon.textContent = '⛶';
+            if (btn) btn.title = 'Maximize cockpit to full screen';
+            // Save the restored position so it round-trips on reload.
+            if (panel.classList.contains('recruit-hud-floating-user-positioned')) {
+                savePosition({
+                    left: parseInt(panel.style.left, 10) || 0,
+                    top: parseInt(panel.style.top, 10) || 0,
+                    width: panel.offsetWidth,
+                    height: panel.offsetHeight
+                });
+            }
+        } else {
+            // Snapshot current geometry, then go full-screen
+            _preMaximizeGeometry = {
+                position: panel.style.position,
+                top: panel.style.top,
+                left: panel.style.left,
+                right: panel.style.right,
+                bottom: panel.style.bottom,
+                width: panel.style.width,
+                height: panel.style.height
+            };
+            panel.classList.add('recruit-hud-floating-user-positioned', 'recruit-hud-floating-maximized');
+            panel.style.position = 'fixed';
+            panel.style.top = MIN_TOP + 'px';
+            panel.style.left = '8px';
+            panel.style.right = 'auto';
+            panel.style.bottom = '8px';
+            panel.style.width = (window.innerWidth - 16) + 'px';
+            panel.style.height = (window.innerHeight - MIN_TOP - 16) + 'px';
+            if (icon) icon.textContent = '⊟';
+            if (btn) btn.title = 'Restore cockpit to previous size';
+        }
+    }
+    window.toggleRecruitMaximize = toggleRecruitMaximize;
 
     function toggleRecruitFloating() {
         const w = document.getElementById('recruitHudSections');
