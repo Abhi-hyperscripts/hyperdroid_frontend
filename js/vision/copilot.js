@@ -85,6 +85,7 @@ function initCopilot(connection, meetingMode, meetingIdParam) {
     connection.on('CopilotResearch', handleCopilotResearch);
     connection.on('CopilotModeChanged', handleCopilotModeChanged);
     connection.on('CopilotFrequencyChanged', handleCopilotFrequencyChanged);
+    connection.on('CopilotModelChanged', handleCopilotModelChanged);
     connection.on('CopilotBotStatus', handleCopilotBotStatus);
 
     // Start uptime clock
@@ -432,6 +433,52 @@ function updateFreqToggleUI(frequency) {
         }
     });
 }
+
+/**
+ * Switch the per-turn copilot model mid-session. "haiku" (default — fast,
+ * cheap) or "sonnet" (slower, more thoughtful — for technical interviews).
+ */
+let copilotModel = 'haiku';
+function setCopilotModel(model) {
+    if (!copilotConnection || !copilotMeetingId) {
+        console.warn('[Copilot HUD] Cannot set model — no connection or meeting ID');
+        return;
+    }
+    if (model !== 'haiku' && model !== 'sonnet') return;
+
+    // Cost guard — Sonnet at FAST cooldown can queue calls.
+    if (model === 'sonnet' && copilotFrequency === 'fast' && window.Toast) {
+        Toast.info('Sonnet at FAST may queue calls — consider NORMAL or CHILL.');
+    }
+
+    copilotConnection.invoke('SetCopilotModel', copilotMeetingId, model)
+        .then(success => {
+            if (success) {
+                copilotModel = model;
+                updateModelToggleUI(model);
+                console.log(`[Copilot HUD] Model set to: ${model}`);
+            } else {
+                console.warn(`[Copilot HUD] Failed to set model: ${model}`);
+            }
+        })
+        .catch(err => {
+            console.error(`[Copilot HUD] Error setting model: ${err}`);
+        });
+}
+
+function handleCopilotModelChanged(data) {
+    console.log(`[Copilot HUD] Model changed to: ${data.model} by ${data.changedBy}`);
+    copilotModel = data.model;
+    updateModelToggleUI(data.model);
+}
+
+function updateModelToggleUI(model) {
+    document.querySelectorAll('.copilot-model-btn').forEach(btn => {
+        if (btn.getAttribute('data-model') === model) btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
+}
+window.setCopilotModel = setCopilotModel;
 
 /**
  * Update mode toggle button UI to reflect active mode.

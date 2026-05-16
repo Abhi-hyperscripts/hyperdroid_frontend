@@ -2674,6 +2674,48 @@ body.dashboard > *:not(.navbar):not(.employee-panel-overlay):not(.employee-slide
     color: #00d4ff;
 }
 
+/* Mid-session model switcher (HAIKU / SONNET). Same chip styling as the
+ * frequency switcher; subtle violet accent for SONNET-active so the host
+ * can tell at a glance which model is paying. */
+.hud-model-toggle {
+    display: inline-flex;
+    gap: 2px;
+    margin-left: 2px;
+}
+
+.copilot-model-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.45);
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.copilot-model-btn:hover {
+    background: rgba(0, 212, 255, 0.1);
+    color: rgba(0, 212, 255, 0.8);
+    border-color: rgba(0, 212, 255, 0.3);
+}
+
+.copilot-model-btn.active {
+    background: rgba(0, 212, 255, 0.15);
+    border-color: rgba(0, 212, 255, 0.4);
+    color: #00d4ff;
+}
+
+.copilot-model-btn[data-model="sonnet"].active {
+    background: rgba(168, 85, 247, 0.15);
+    border-color: rgba(168, 85, 247, 0.45);
+    color: rgb(216, 180, 254);
+}
+
 /* ── HUD mobile responsive ── */
 @media (max-width: 768px) {
     .hud-control-panel {
