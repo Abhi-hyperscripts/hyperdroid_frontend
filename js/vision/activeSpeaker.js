@@ -127,6 +127,14 @@ class ActiveSpeakerManager {
         this.room.on('activeSpeakersChanged', (speakers) => {
             console.log('Active speakers changed:', speakers.map(s => s.identity));
             this.handleActiveSpeakersChange(speakers);
+            // Recruit-HUD talk-balance tracker. No-op for non-interview meetings
+            // (recruit-hud.js attaches the global only in interview mode).
+            if (typeof window.__recruitOnSpeakerChange === 'function') {
+                try {
+                    const hostIdentity = this.room?.localParticipant?.identity || null;
+                    window.__recruitOnSpeakerChange(speakers.map(s => s.identity), hostIdentity);
+                } catch (_e) { /* never let the tracker break video */ }
+            }
         });
 
         // Listen for audio track published/unpublished

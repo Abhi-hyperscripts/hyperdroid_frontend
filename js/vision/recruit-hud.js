@@ -255,6 +255,19 @@
 
     function sectionsHtml() {
         return ''
+            + '<div class="recruit-session-meter" id="recruitSessionMeter" title="Session timer · talk balance · topics covered">'
+            +   '<span class="recruit-meter-cell"><span class="recruit-meter-label">ELAPSED</span><span class="recruit-meter-value" id="recruitElapsed">00:00</span></span>'
+            +   '<span class="recruit-meter-cell" id="recruitTalkRatio" title="Talk balance — aim for ~30% you, ~70% candidate">'
+            +     '<span class="recruit-meter-label">TALK</span>'
+            +     '<span class="recruit-meter-bar">'
+            +       '<span class="recruit-meter-bar-host" id="recruitTalkBarHost" style="width: 50%;"></span>'
+            +       '<span class="recruit-meter-bar-cand" id="recruitTalkBarCand" style="width: 50%;"></span>'
+            +     '</span>'
+            +     '<span class="recruit-meter-value" id="recruitTalkPct">—</span>'
+            +   '</span>'
+            +   '<span class="recruit-meter-cell" title="Topics covered · partial · gap (from the scorecard)"><span class="recruit-meter-label">TOPICS</span><span class="recruit-meter-value" id="recruitTopicMini">0/0</span></span>'
+            + '</div>'
+
             + '<div class="recruit-candidate-bar" id="recruitCandidateBar" style="display:none;">'
             +   '<span class="recruit-cand-label">CANDIDATE</span>'
             +   '<span class="recruit-cand-name" id="recruitCandName">—</span>'
@@ -309,6 +322,7 @@
         if (!signalR) return;
         signalR.on('InterviewContextLoaded', onContextLoaded);
         signalR.on('InterviewContextMissing', onContextMissing);
+        signalR.on('CopilotInsight', onCopilotInsightForRecruit);
         signalR.on('InterviewQuestionsUpdated', onQuestionsUpdated);
         signalR.on('AnswerQuality', onAnswerQuality);
         signalR.on('JargonDetected', onJargonDetected);
@@ -837,6 +851,253 @@
         try { document.execCommand('copy'); } catch (_e) { /* noop */ }
         document.body.removeChild(ta);
     }
+
+    // ─── Session meter (Tier 1) ───────────────────────────────────────────
+    // Elapsed timer + talk-balance bar + topic-count. Updated every second
+    // so the recruiter has constant glanceable awareness of pacing.
+    let _sessionStartMs = 0;
+    let _talkAccumMs = { host: 0, candidate: 0 };
+    let _speakingStarts = new Map();  // identity → ms timestamp
+    let _lastSpeakerActivityMs = 0;
+    let _hostCurrentRunStartMs = 0;   // for talk-pace warning
+    let _paceWarningShownMs = 0;      // debounce
+    let _silenceWarningShownMs = 0;   // debounce
+    let _timerInterval = null;
+
+    function startSessionMeter() {
+        _sessionStartMs = Date.now();
+        _lastSpeakerActivityMs = _sessionStartMs;
+        if (_timerInterval) clearInterval(_timerInterval);
+        _timerInterval = setInterval(updateSessionMeter, 1000);
+        updateSessionMeter();
+    }
+
+    function updateSessionMeter() {
+        if (!_sessionStartMs) return;
+        const now = Date.now();
+        const elapsedSec = Math.floor((now - _sessionStartMs) / 1000);
+        const mm = Math.floor(elapsedSec / 60);
+        const ss = elapsedSec % 60;
+        setText('recruitElapsed', `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`);
+
+        // Include current in-progress speaking time in the totals
+        let hostMs = _talkAccumMs.host;
+        let candMs = _talkAccumMs.candidate;
+        for (const [id, startMs] of _speakingStarts) {
+            const dur = now - startMs;
+            if (id === '__host__') hostMs += dur;
+            else candMs += dur;
+        }
+        const total = hostMs + candMs;
+        if (total > 0) {
+            const hostPct = Math.round((hostMs / total) * 100);
+            const candPct = 100 - hostPct;
+            const hostBar = document.getElementById('recruitTalkBarHost');
+            const candBar = document.getElementById('recruitTalkBarCand');
+            if (hostBar) hostBar.style.width = hostPct + '%';
+            if (candBar) candBar.style.width = candPct + '%';
+            setText('recruitTalkPct', `${hostPct}/${candPct}`);
+        }
+
+        // Talk-pace warning — host monologuing >90s straight
+        if (_hostCurrentRunStartMs > 0) {
+            const runSec = (now - _hostCurrentRunStartMs) / 1000;
+            if (runSec > 90 && now - _paceWarningShownMs > 60_000) {
+                _paceWarningShownMs = now;
+                if (typeof Toast !== 'undefined' && Toast && Toast.warning) {
+                    Toast.warning('You\'ve been talking ~90s — pause and let the candidate in.', 5000);
+                }
+            }
+        }
+
+        // Silence detection — nobody spoken in 8s after session warm-up
+        if (now - _sessionStartMs > 30_000) {  // give the first 30s grace
+            const silenceSec = (now - _lastSpeakerActivityMs) / 1000;
+            if (silenceSec > 8 && now - _silenceWarningShownMs > 30_000 && _speakingStarts.size === 0) {
+                _silenceWarningShownMs = now;
+                if (typeof Toast !== 'undefined' && Toast && Toast.warning) {
+                    Toast.warning('Candidate quiet — invite them to think out loud or rephrase.', 4500);
+                }
+            }
+        }
+
+        // Topic mini-counter — derived from scorecard state
+        if (scorecardState && scorecardState.size > 0) {
+            let demo = 0, partial = 0, gap = 0;
+            for (const [, d] of scorecardState) {
+                if (d.signal === 'demonstrated') demo++;
+                else if (d.signal === 'partial') partial++;
+                else gap++;
+            }
+            setText('recruitTopicMini', `${demo}/${scorecardState.size}`);
+        }
+    }
+
+    // Public hook called by meeting.js's active-speakers changed handler.
+    // identities are LiveKit participant identities; isHost flag is computed
+    // by meeting.js (host is the authenticated user, candidates are guests
+    // or other authenticated participants).
+    window.__recruitOnSpeakerChange = function (currentSpeakingIdentities, hostIdentity) {
+        if (!_sessionStartMs) return;
+        const now = Date.now();
+        _lastSpeakerActivityMs = now;
+        const currentSet = new Set(currentSpeakingIdentities || []);
+
+        // For everyone WHO WAS speaking but is no longer → finalize their accum
+        for (const [id, startMs] of Array.from(_speakingStarts)) {
+            if (!currentSet.has(id === '__host__' ? hostIdentity : id)) {
+                const dur = now - startMs;
+                if (id === '__host__') {
+                    _talkAccumMs.host += dur;
+                    _hostCurrentRunStartMs = 0;
+                } else {
+                    _talkAccumMs.candidate += dur;
+                }
+                _speakingStarts.delete(id);
+            }
+        }
+
+        // For everyone newly speaking → start tracking
+        for (const id of currentSet) {
+            const isHost = id === hostIdentity;
+            const key = isHost ? '__host__' : id;
+            if (!_speakingStarts.has(key)) {
+                _speakingStarts.set(key, now);
+                if (isHost) _hostCurrentRunStartMs = now;
+            }
+        }
+    };
+
+    // ─── Drift visual alert (Tier 2) ──────────────────────────────────────
+    // The AI emits a CopilotInsight with type=move_on when drift is detected.
+    // We pulse the recruit HUD + flash a 🚨 indicator on the top question card
+    // for 5 seconds so the recruiter can't miss it.
+    function onCopilotInsightForRecruit(data) {
+        if (!isInterviewMode || !data) return;
+        if (data.type !== 'move_on') return;
+        const panel = document.getElementById('recruitHudSections');
+        if (!panel) return;
+        panel.classList.add('recruit-hud-drift-alert');
+        setTimeout(() => panel.classList.remove('recruit-hud-drift-alert'), 5000);
+        if (typeof Toast !== 'undefined' && Toast && Toast.info) {
+            Toast.info('AI detected drift — top question is a redirect to keep on topic.', 4000);
+        }
+    }
+
+    // ─── Pre-leave checklist (Tier 1) ─────────────────────────────────────
+    // meeting.js's leaveMeeting should call window.recruitPreLeaveCheck()
+    // before its Confirm.show. If it returns false, the leave is cancelled
+    // so the recruiter can finish the must-asks first.
+    window.recruitPreLeaveCheck = async function () {
+        if (!isInterviewMode) return true;
+        // Skip the checklist on early leaves (under 5 min) — likely an
+        // accidental click or test session.
+        if (_sessionStartMs && Date.now() - _sessionStartMs < 5 * 60_000) return true;
+
+        return new Promise((resolve) => {
+            const items = [
+                { id: 'comp',     label: 'Asked about salary / comp expectations' },
+                { id: 'notice',   label: 'Asked about notice period / availability' },
+                { id: 'cand_qs',  label: 'Gave candidate time to ask their questions' },
+                { id: 'nextStep', label: 'Told candidate the next step / timeline' }
+            ];
+            const overlay = document.createElement('div');
+            overlay.className = 'recruit-preleave-overlay';
+            overlay.innerHTML = ''
+                + '<div class="recruit-preleave-modal" role="dialog" aria-modal="true">'
+                +   '<div class="recruit-preleave-header">Before you leave the interview</div>'
+                +   '<div class="recruit-preleave-hint">Quick sanity check — confirm you covered the mandatory wrap-up items. Skip if you genuinely don\'t need them.</div>'
+                +   '<div class="recruit-preleave-list">'
+                +     items.map(i => `
+                        <label class="recruit-preleave-row">
+                            <input type="checkbox" data-pre-id="${i.id}">
+                            <span>${escapeHtml(i.label)}</span>
+                        </label>
+                      `).join('')
+                +   '</div>'
+                +   '<div class="recruit-preleave-actions">'
+                +     '<button type="button" class="rec-btn rec-btn-sm" data-pre-action="cancel">Stay in meeting</button>'
+                +     '<button type="button" class="rec-btn rec-btn-sm" data-pre-action="skip">Skip and leave</button>'
+                +     '<button type="button" class="rec-btn rec-btn-sm rec-btn-primary" data-pre-action="confirm" disabled>Confirm + leave</button>'
+                +   '</div>'
+                + '</div>';
+            document.body.appendChild(overlay);
+
+            const allCheckboxes = overlay.querySelectorAll('input[type="checkbox"]');
+            const confirmBtn = overlay.querySelector('[data-pre-action="confirm"]');
+            allCheckboxes.forEach(cb => cb.addEventListener('change', () => {
+                const allChecked = Array.from(allCheckboxes).every(c => c.checked);
+                confirmBtn.disabled = !allChecked;
+            }));
+
+            overlay.addEventListener('click', (e) => {
+                const action = e.target?.getAttribute?.('data-pre-action');
+                if (!action) return;
+                if (action === 'cancel')        { cleanup(); resolve(false); }
+                else if (action === 'skip')     { cleanup(); resolve(true); }
+                else if (action === 'confirm')  { cleanup(); resolve(true); }
+            });
+
+            function cleanup() {
+                if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            }
+        });
+    };
+
+    // ─── Keyboard shortcuts (Tier 1) ──────────────────────────────────────
+    // U = copy + flash top question (USE), S = skip top question,
+    // 1/2/3 = focus card N, ? = show help.
+    document.addEventListener('keydown', function (e) {
+        if (!isInterviewMode) return;
+        // Don't hijack typing in inputs/textareas/contenteditable
+        const t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+        // Don't fire if modifier is held — those are app/OS shortcuts
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        const key = e.key.toLowerCase();
+        if (key === 'u') {
+            e.preventDefault();
+            if (askNextQueue.length > 0) useRecruitNextQuestion(0);
+        } else if (key === 's') {
+            e.preventDefault();
+            if (askNextQueue.length > 0) skipRecruitNextQuestion(0);
+        } else if (key === '1' || key === '2' || key === '3') {
+            const idx = parseInt(key, 10) - 1;
+            if (askNextQueue[idx]) { e.preventDefault(); useRecruitNextQuestion(idx); }
+        } else if (key === '?' || (e.shiftKey && key === '/')) {
+            e.preventDefault();
+            showShortcutHelp();
+        }
+    });
+
+    function showShortcutHelp() {
+        const existing = document.getElementById('recruitShortcutHelp');
+        if (existing) { existing.remove(); return; }
+        const ov = document.createElement('div');
+        ov.id = 'recruitShortcutHelp';
+        ov.className = 'recruit-shortcut-help';
+        ov.innerHTML = ''
+            + '<div class="recruit-shortcut-help-card">'
+            +   '<div class="recruit-shortcut-help-title">Recruit cockpit shortcuts</div>'
+            +   '<div class="recruit-shortcut-help-grid">'
+            +     '<kbd>U</kbd><span>Copy top question to clipboard</span>'
+            +     '<kbd>S</kbd><span>Skip top question</span>'
+            +     '<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><span>Copy question 1 / 2 / 3</span>'
+            +     '<kbd>?</kbd><span>Toggle this help</span>'
+            +   '</div>'
+            +   '<button type="button" class="rec-btn rec-btn-sm" onclick="document.getElementById(\'recruitShortcutHelp\').remove();">Close</button>'
+            + '</div>';
+        document.body.appendChild(ov);
+    }
+
+    // Boot session meter the first time the HUD is initialised in interview mode
+    const _originalInit = initRecruitHud;
+    initRecruitHud = function (connection, meetingMode, meetingIdParam) {
+        _originalInit(connection, meetingMode, meetingIdParam);
+        if ((meetingMode || '').toLowerCase() === 'interview' || (meetingMode || '').toLowerCase() === 'recruit') {
+            startSessionMeter();
+        }
+    };
 
     // ─── Exports ─────────────────────────────────────────────────────────
     window.initRecruitHud = initRecruitHud;

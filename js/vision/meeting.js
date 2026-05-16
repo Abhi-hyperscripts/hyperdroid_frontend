@@ -2961,6 +2961,18 @@ function copyMeetingLink() {
 
 // Leave meeting
 async function leaveMeeting() {
+    // Recruit-HUD pre-leave checklist for interview meetings — checks that
+    // mandatory wrap-up items (salary expectations, notice period, candidate
+    // questions, next steps) were covered. Returns false if user chose to
+    // stay in the meeting; true means proceed (either everything checked or
+    // explicit "skip and leave"). No-op outside interview mode.
+    if (typeof window.recruitPreLeaveCheck === 'function') {
+        try {
+            const proceed = await window.recruitPreLeaveCheck();
+            if (!proceed) return;
+        } catch (_e) { /* never let the checklist block legitimate leaves */ }
+    }
+
     const confirmed = await Confirm.show({
         title: 'Leave Meeting',
         message: 'Are you sure you want to leave the meeting?',
