@@ -87,18 +87,25 @@
     // ── Draggable + resizable cockpit ────────────────────────────────────
     const POS_STORAGE_KEY = 'recruitHud.position.v1';
 
+    // Minimum top — keeps the panel header below the page nav bar so the
+    // drag grip is always reachable. Without this, the user can drag the
+    // header behind a fixed top nav and lose grab-target visibility,
+    // requiring localStorage clear or ESC-reset to recover.
+    const MIN_TOP = 60;
+
     function loadSavedPosition() {
         try {
             const raw = localStorage.getItem(POS_STORAGE_KEY);
             if (!raw) return null;
             const p = JSON.parse(raw);
             // Clamp to current viewport so old positions on smaller screens
-            // don't push the panel off-screen.
+            // don't push the panel off-screen. Top is clamped to MIN_TOP
+            // so the header never lands under the nav.
             const maxLeft = window.innerWidth - 80;
             const maxTop = window.innerHeight - 40;
             return {
                 left: Math.max(0, Math.min(maxLeft, p.left | 0)),
-                top:  Math.max(0, Math.min(maxTop,  p.top  | 0)),
+                top:  Math.max(MIN_TOP, Math.min(maxTop,  p.top  | 0)),
                 width:  Math.max(240, Math.min(window.innerWidth - 16,  p.width  | 0)),
                 height: Math.max(180, Math.min(window.innerHeight - 16, p.height | 0))
             };
@@ -160,10 +167,13 @@
                 const dx = ev.clientX - startX;
                 const dy = ev.clientY - startY;
                 const maxLeft = window.innerWidth - panel.offsetWidth;
-                // Keep header visible: never let panel.top push past viewport bottom - header height.
+                // Keep header reachable: never let panel.top go ABOVE the nav
+                // (would hide the drag grip behind a fixed nav), and never
+                // push BELOW viewport bottom - header height (would clip the
+                // panel below the fold with no grab target).
                 const maxTop = window.innerHeight - 32;
                 const newLeft = Math.max(0, Math.min(maxLeft, startLeft + dx));
-                const newTop  = Math.max(0, Math.min(maxTop,  startTop + dy));
+                const newTop  = Math.max(MIN_TOP, Math.min(maxTop,  startTop + dy));
                 panel.style.left = newLeft + 'px';
                 panel.style.top = newTop + 'px';
             };
@@ -277,6 +287,29 @@
             +   '<span class="recruit-cand-round" id="recruitCandRound">—</span>'
             + '</div>'
 
+            + '<div class="recruit-answer-assist" id="recruitAnswerAssist" style="display:none;">'
+            +   '<div class="recruit-answer-assist-header">'
+            +     '<span class="recruit-answer-assist-icon" aria-hidden="true">🎤</span>'
+            +     '<span class="recruit-answer-assist-label">ANSWER ASSIST</span>'
+            +     '<span class="recruit-answer-assist-clock" id="recruitAnswerAssistClock">—</span>'
+            +     '<button type="button" class="recruit-answer-assist-dismiss" id="recruitAnswerAssistDismiss" onclick="dismissRecruitAnswerAssist()" title="Dismiss">×</button>'
+            +   '</div>'
+            +   '<div class="recruit-answer-assist-question" id="recruitAnswerAssistQuestion"></div>'
+            +   '<div class="recruit-answer-assist-body" id="recruitAnswerAssistBody"></div>'
+            + '</div>'
+
+            + '<div class="recruit-trust-check" id="recruitTrustCheck" style="display:none;">'
+            +   '<div class="recruit-trust-check-header">'
+            +     '<span class="recruit-trust-check-icon" aria-hidden="true">🛡️</span>'
+            +     '<span class="recruit-trust-check-label">TRUST CHECK</span>'
+            +     '<span class="recruit-trust-check-clock" id="recruitTrustCheckClock">—</span>'
+            +     '<button type="button" class="recruit-trust-check-dismiss" onclick="dismissRecruitTrustCheck()" title="Dismiss">×</button>'
+            +   '</div>'
+            +   '<div class="recruit-trust-check-signals" id="recruitTrustCheckSignals"></div>'
+            +   '<div class="recruit-trust-check-probe-label">VERBAL COUNTER-PROBE</div>'
+            +   '<div class="recruit-trust-check-probe" id="recruitTrustCheckProbe"></div>'
+            + '</div>'
+
             + '<div class="recruit-ask-next" id="recruitAskNext">'
             +   '<div class="recruit-section-header">'
             +     '<span class="recruit-section-label">ASK NEXT</span>'
@@ -288,11 +321,11 @@
             + '</div>'
 
             + '<div class="recruit-signals-row" id="recruitSignalsRow">'
-            +   '<div class="recruit-quality-chip recruit-quality-empty" id="recruitQualityChip" title="Quality of the candidate\'s most recent answer — green / amber / red verdict will appear once the AI has graded an answer">'
+            +   '<button type="button" class="recruit-quality-chip recruit-quality-empty" id="recruitQualityChip" onclick="toggleRecruitQualityExpand()" title="Click to expand — full reason + confidence">'
             +     '<span class="recruit-quality-dot"></span>'
             +     '<span class="recruit-quality-label">LAST ANSWER</span>'
             +     '<span class="recruit-quality-text" id="recruitQualityText">waiting…</span>'
-            +   '</div>'
+            +   '</button>'
             +   '<button type="button" class="recruit-jargon-trigger recruit-jargon-trigger-empty" id="recruitJargonTrigger" onclick="toggleRecruitJargonTray()" title="Plain-English definitions for technical terms the candidate uses — populates as jargon is detected">'
             +     '<span class="recruit-jargon-icon" aria-hidden="true">A.B</span>'
             +     '<span class="recruit-jargon-label">JARGON</span>'
@@ -393,17 +426,66 @@
         });
     }
 
+    // Remember the full reason + confidence so the expand handler can show it.
+    let _lastAnswerQuality = { reason: '', confidence: null, color: '' };
     function onAnswerQuality(data) {
         const chip = document.getElementById('recruitQualityChip');
         if (!chip) return;
 
         chip.classList.remove('recruit-quality-empty', 'recruit-quality-green', 'recruit-quality-amber', 'recruit-quality-red');
         chip.classList.add('recruit-quality-' + (data.color || 'empty'));
-        setText('recruitQualityText', truncate(data.reason || (data.color || '').toUpperCase(), 80));
+        _lastAnswerQuality = {
+            reason: data.reason || '',
+            confidence: typeof data.confidence === 'number' ? data.confidence : null,
+            color: data.color || ''
+        };
+        // If chip is currently expanded, refresh the expanded view; otherwise
+        // show the truncated version.
+        if (chip.classList.contains('recruit-quality-expanded')) {
+            renderQualityExpanded();
+        } else {
+            setText('recruitQualityText', truncate(data.reason || (data.color || '').toUpperCase(), 80));
+        }
 
-        const conf = typeof data.confidence === 'number' ? Math.round(data.confidence * 100) + '%' : '';
-        chip.title = 'Last answer · ' + (data.color || '').toUpperCase() + (conf ? ' · ' + conf : '') + '\n' + (data.reason || '');
+        const conf = _lastAnswerQuality.confidence != null ? Math.round(_lastAnswerQuality.confidence * 100) + '%' : '';
+        chip.title = 'Click to expand · Last answer · ' + (data.color || '').toUpperCase() + (conf ? ' · ' + conf : '');
     }
+
+    function renderQualityExpanded() {
+        const conf = _lastAnswerQuality.confidence != null ? Math.round(_lastAnswerQuality.confidence * 100) + '%' : '';
+        const reason = _lastAnswerQuality.reason || '(no reason given)';
+        const textEl = document.getElementById('recruitQualityText');
+        if (!textEl) return;
+        // Keep label visible but swap the truncated reason for a multi-line
+        // block that includes confidence.
+        textEl.innerHTML = '';
+        const reasonDiv = document.createElement('div');
+        reasonDiv.className = 'recruit-quality-expanded-reason';
+        reasonDiv.textContent = reason;
+        textEl.appendChild(reasonDiv);
+        if (conf) {
+            const confDiv = document.createElement('div');
+            confDiv.className = 'recruit-quality-expanded-conf';
+            confDiv.textContent = 'Confidence: ' + conf;
+            textEl.appendChild(confDiv);
+        }
+    }
+
+    function toggleRecruitQualityExpand() {
+        const chip = document.getElementById('recruitQualityChip');
+        if (!chip) return;
+        // Only meaningful once an actual verdict has arrived.
+        if (chip.classList.contains('recruit-quality-empty')) return;
+        const wasExpanded = chip.classList.toggle('recruit-quality-expanded');
+        if (wasExpanded) {
+            renderQualityExpanded();
+        } else {
+            // Restore the compact truncated view
+            const reason = _lastAnswerQuality.reason || (_lastAnswerQuality.color || '').toUpperCase();
+            setText('recruitQualityText', truncate(reason, 80));
+        }
+    }
+    window.toggleRecruitQualityExpand = toggleRecruitQualityExpand;
 
     // Normalize for map keys / dedup: trim + lowercase + Unicode NFC
     // composition. Avoids treating "Communication" and "communication" as
@@ -968,21 +1050,146 @@
         }
     };
 
-    // ─── Drift visual alert (Tier 2) ──────────────────────────────────────
-    // The AI emits a CopilotInsight with type=move_on when drift is detected.
-    // We pulse the recruit HUD + flash a 🚨 indicator on the top question card
-    // for 5 seconds so the recruiter can't miss it.
+    // ─── Drift visual alert + Answer Assist (Tier 2 + MVP) ─────────────
+    // The AI emits CopilotInsight with:
+    //   - type=move_on            → drift detected, pulse the HUD red.
+    //   - type=key_moment with content starting "Candidate asked:"
+    //                              → render the Answer Assist card so the
+    //                                interviewer has bullet-point answers
+    //                                ready when the candidate flips the script.
+    let _answerAssistAutoDismissId = null;
     function onCopilotInsightForRecruit(data) {
         if (!isInterviewMode || !data) return;
-        if (data.type !== 'move_on') return;
-        const panel = document.getElementById('recruitHudSections');
-        if (!panel) return;
-        panel.classList.add('recruit-hud-drift-alert');
-        setTimeout(() => panel.classList.remove('recruit-hud-drift-alert'), 5000);
-        if (typeof Toast !== 'undefined' && Toast && Toast.info) {
-            Toast.info('AI detected drift — top question is a redirect to keep on topic.', 4000);
+
+        if (data.type === 'move_on') {
+            const panel = document.getElementById('recruitHudSections');
+            if (panel) {
+                panel.classList.add('recruit-hud-drift-alert');
+                setTimeout(() => panel.classList.remove('recruit-hud-drift-alert'), 5000);
+            }
+            if (typeof Toast !== 'undefined' && Toast && Toast.info) {
+                Toast.info('AI detected drift — top question is a redirect to keep on topic.', 4000);
+            }
+            return;
+        }
+
+        if (data.type === 'key_moment' && data.content) {
+            const c = String(data.content).trim();
+            if (/^candidate asked:/i.test(c)) {
+                showAnswerAssist(data);
+                return;
+            }
+            if (/^ai[- ]?assist suspected:/i.test(c)) {
+                showTrustCheck(data);
+                return;
+            }
         }
     }
+
+    // ─── Trust Check (AI-cheating detection) ──────────────────────────
+    let _trustCheckAutoDismissId = null;
+    function showTrustCheck(insight) {
+        const root = document.getElementById('recruitTrustCheck');
+        const sigEl = document.getElementById('recruitTrustCheckSignals');
+        const probeEl = document.getElementById('recruitTrustCheckProbe');
+        const clk = document.getElementById('recruitTrustCheckClock');
+        if (!root || !sigEl || !probeEl) return;
+
+        const raw = String(insight.content || '');
+        const signalsText = raw.replace(/^ai[- ]?assist suspected:\s*/i, '').trim();
+        const probe = String(insight.suggestedResponse || insight.suggested_response || '').trim();
+
+        sigEl.textContent = signalsText || '(signals not specified)';
+        probeEl.textContent = probe || '(no counter-probe suggested)';
+
+        root.style.display = 'flex';
+        root.classList.add('recruit-trust-check-flash');
+        setTimeout(() => root.classList.remove('recruit-trust-check-flash'), 1500);
+
+        // 60s auto-dismiss — trust checks need more dwell time than answer-assists
+        if (_trustCheckAutoDismissId) clearTimeout(_trustCheckAutoDismissId);
+        const expiresAtMs = Date.now() + 60_000;
+        const tickClock = () => {
+            if (root.style.display === 'none') return;
+            const left = Math.max(0, Math.ceil((expiresAtMs - Date.now()) / 1000));
+            if (clk) clk.textContent = left + 's';
+            if (left > 0) setTimeout(tickClock, 1000);
+            else dismissTrustCheck();
+        };
+        tickClock();
+        _trustCheckAutoDismissId = setTimeout(dismissTrustCheck, 60_000);
+
+        // Also flash a Toast so the host doesn't miss it even if focused elsewhere
+        if (typeof Toast !== 'undefined' && Toast && Toast.warning) {
+            Toast.warning('🛡️ Trust check — AI suspects the candidate may be using a tool. See verbal counter-probe.', 5000);
+        }
+    }
+
+    function dismissTrustCheck() {
+        const root = document.getElementById('recruitTrustCheck');
+        if (root) root.style.display = 'none';
+        if (_trustCheckAutoDismissId) { clearTimeout(_trustCheckAutoDismissId); _trustCheckAutoDismissId = null; }
+    }
+    window.dismissRecruitTrustCheck = dismissTrustCheck;
+
+    function showAnswerAssist(insight) {
+        const root = document.getElementById('recruitAnswerAssist');
+        const qEl  = document.getElementById('recruitAnswerAssistQuestion');
+        const bEl  = document.getElementById('recruitAnswerAssistBody');
+        const clk  = document.getElementById('recruitAnswerAssistClock');
+        if (!root || !qEl || !bEl) return;
+
+        const raw = String(insight.content || '');
+        const question = raw.replace(/^candidate asked:\s*/i, '').trim();
+        const answer = String(insight.suggestedResponse || insight.suggested_response || '').trim();
+
+        qEl.textContent = question || '(question not captured)';
+        // Multi-line bullet answers come back as "• Point 1\n• Point 2" — render
+        // each line as its own row. Plain prose renders as one paragraph.
+        const lines = answer ? answer.split(/\n+/).map(s => s.trim()).filter(Boolean) : [];
+        bEl.innerHTML = '';
+        if (lines.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'recruit-answer-assist-empty';
+            empty.textContent = '(AI did not provide an answer — defer to the hiring manager.)';
+            bEl.appendChild(empty);
+        } else {
+            const list = document.createElement('div');
+            list.className = 'recruit-answer-assist-bullets';
+            lines.forEach(l => {
+                const row = document.createElement('div');
+                row.className = 'recruit-answer-assist-line';
+                row.textContent = l.replace(/^[•\-\*]\s*/, '');
+                list.appendChild(row);
+            });
+            bEl.appendChild(list);
+        }
+
+        root.style.display = 'flex';
+        root.classList.add('recruit-answer-assist-flash');
+        setTimeout(() => root.classList.remove('recruit-answer-assist-flash'), 1200);
+
+        // Auto-dismiss after 45s — by then the interviewer has either used it
+        // or moved on. Reset the countdown if a new answer-assist arrives.
+        if (_answerAssistAutoDismissId) clearTimeout(_answerAssistAutoDismissId);
+        const expiresAtMs = Date.now() + 45_000;
+        const tickClock = () => {
+            if (root.style.display === 'none') return;
+            const left = Math.max(0, Math.ceil((expiresAtMs - Date.now()) / 1000));
+            if (clk) clk.textContent = left + 's';
+            if (left > 0) setTimeout(tickClock, 1000);
+            else dismissAnswerAssist();
+        };
+        tickClock();
+        _answerAssistAutoDismissId = setTimeout(dismissAnswerAssist, 45_000);
+    }
+
+    function dismissAnswerAssist() {
+        const root = document.getElementById('recruitAnswerAssist');
+        if (root) root.style.display = 'none';
+        if (_answerAssistAutoDismissId) { clearTimeout(_answerAssistAutoDismissId); _answerAssistAutoDismissId = null; }
+    }
+    window.dismissRecruitAnswerAssist = dismissAnswerAssist;
 
     // ─── Pre-leave checklist (Tier 1) ─────────────────────────────────────
     // meeting.js's leaveMeeting should call window.recruitPreLeaveCheck()
@@ -1067,6 +1274,28 @@
         } else if (key === '?' || (e.shiftKey && key === '/')) {
             e.preventDefault();
             showShortcutHelp();
+        } else if (key === 'escape') {
+            // Escape hatch: if the panel got dragged into an unreachable
+            // corner (behind a nav bar, off-screen on a resized window, etc.)
+            // ESC resets it to the default top-left anchored position. Same
+            // effect as double-clicking the header, but works even when the
+            // header itself is hidden.
+            const panel = document.getElementById('recruitHudSections');
+            if (panel && panel.classList.contains('recruit-hud-floating-user-positioned')) {
+                e.preventDefault();
+                try { localStorage.removeItem(POS_STORAGE_KEY); } catch (_e) {}
+                panel.classList.remove('recruit-hud-floating-user-positioned');
+                panel.style.position = '';
+                panel.style.top = '';
+                panel.style.left = '';
+                panel.style.right = '';
+                panel.style.bottom = '';
+                panel.style.width = '';
+                panel.style.height = '';
+                if (typeof Toast !== 'undefined' && Toast && Toast.info) {
+                    Toast.info('Cockpit position reset to top-left.', 3000);
+                }
+            }
         }
     });
 
@@ -1083,6 +1312,7 @@
             +     '<kbd>U</kbd><span>Copy top question to clipboard</span>'
             +     '<kbd>S</kbd><span>Skip top question</span>'
             +     '<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><span>Copy question 1 / 2 / 3</span>'
+            +     '<kbd>Esc</kbd><span>Reset cockpit position (rescue from off-screen drag)</span>'
             +     '<kbd>?</kbd><span>Toggle this help</span>'
             +   '</div>'
             +   '<button type="button" class="rec-btn rec-btn-sm" onclick="document.getElementById(\'recruitShortcutHelp\').remove();">Close</button>'

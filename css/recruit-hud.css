@@ -130,6 +130,137 @@
     color: rgba(255, 255, 255, 0.55);
 }
 
+/* Quality chip text colors — the underlying .recruit-quality-red/amber/green
+ * rules use var(--color-X-dark) which is tuned for light theme. Inside the
+ * dark cockpit those become near-invisible (e.g. #991b1b on near-black).
+ * Brighten them with tints designed for dark backgrounds. */
+.recruit-hud-floating .recruit-quality-green .recruit-quality-text { color: rgb(134, 239, 172); }
+.recruit-hud-floating .recruit-quality-amber .recruit-quality-text { color: rgb(252, 211, 77); }
+.recruit-hud-floating .recruit-quality-red   .recruit-quality-text { color: rgb(252, 165, 165); }
+
+/* ── Quality chip — click-to-expand drawer ────────────────────
+ * Compact pill by default (truncated reason); click flips to
+ * full-width multi-line block showing the entire AI verdict
+ * + confidence percentage. Click again to collapse. */
+.recruit-hud-floating .recruit-quality-chip {
+    cursor: pointer;
+    user-select: none;
+    background: rgba(0, 212, 255, 0.05);
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.recruit-hud-floating .recruit-quality-chip:hover:not(.recruit-quality-empty) {
+    background: rgba(0, 212, 255, 0.10);
+    border-color: rgba(0, 212, 255, 0.4);
+}
+.recruit-hud-floating .recruit-quality-chip.recruit-quality-expanded {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    padding: 8px 10px;
+    gap: 4px;
+}
+.recruit-hud-floating .recruit-quality-chip.recruit-quality-expanded .recruit-quality-label {
+    margin-bottom: 2px;
+}
+.recruit-hud-floating .recruit-quality-chip.recruit-quality-expanded .recruit-quality-text {
+    display: block;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    width: 100%;
+    line-height: 1.4;
+    font-size: 11px;
+}
+.recruit-quality-expanded-reason {
+    font-weight: 500;
+}
+.recruit-quality-expanded-conf {
+    margin-top: 4px;
+    font-size: 10px;
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Reusable recruit-hud button (.rec-btn family) ──────────────
+ * The class is referenced everywhere in recruit-hud.js + the
+ * recruitment.html page (pre-leave modal, shortcut help Close,
+ * Edit Report buttons, etc.) but was ONLY defined as a page-scoped
+ * <style> block inside pages/hrms/recruitment.html. On the meeting
+ * page those buttons rendered as unstyled default-browser elements.
+ * Defining once here so every recruit-hud surface gets the same
+ * styling regardless of which page loads it.
+ *
+ * Scoped weakly so the recruitment.html page-scoped overrides still
+ * win (its inline <style> has higher specificity via CSS order). */
+.rec-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: var(--bg-card, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    border-radius: 6px;
+    color: var(--text-primary, rgba(255, 255, 255, 0.92));
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    text-decoration: none;
+    line-height: 1.2;
+}
+.rec-btn:hover {
+    background: var(--bg-card-hover, rgba(255, 255, 255, 0.10));
+    border-color: var(--brand-primary, rgba(0, 212, 255, 0.6));
+}
+.rec-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+.rec-btn-sm {
+    padding: 5px 10px;
+    font-size: 0.78rem;
+    border-radius: 5px;
+}
+.rec-btn-primary {
+    background: var(--brand-primary, rgba(0, 212, 255, 0.85));
+    border-color: var(--brand-primary, rgba(0, 212, 255, 0.85));
+    color: var(--text-inverse, #fff);
+}
+.rec-btn-primary:hover {
+    background: var(--brand-primary-hover, rgba(0, 212, 255, 1));
+    border-color: var(--brand-primary-hover, rgba(0, 212, 255, 1));
+}
+
+/* Cockpit-context override: rec-btn instances inside the recruit-hud's
+ * dark modals (shortcut help, pre-leave checklist, answer-assist) should
+ * use cockpit colors regardless of the app theme (var(--bg-card) resolves
+ * to white on light themes, which clashes with the dark backdrop). */
+.recruit-shortcut-help .rec-btn,
+.recruit-preleave-overlay .rec-btn {
+    background: rgba(0, 212, 255, 0.08);
+    border-color: rgba(0, 212, 255, 0.3);
+    color: rgba(255, 255, 255, 0.92);
+}
+.recruit-shortcut-help .rec-btn:hover,
+.recruit-preleave-overlay .rec-btn:hover {
+    background: rgba(0, 212, 255, 0.18);
+    border-color: rgba(0, 212, 255, 0.55);
+}
+.recruit-shortcut-help .rec-btn-primary,
+.recruit-preleave-overlay .rec-btn-primary {
+    background: rgba(0, 212, 255, 0.6);
+    border-color: rgba(0, 212, 255, 0.85);
+    color: #051018;
+    font-weight: 600;
+}
+.recruit-shortcut-help .rec-btn-primary:hover,
+.recruit-preleave-overlay .rec-btn-primary:hover {
+    background: rgba(0, 212, 255, 0.85);
+    border-color: rgba(0, 212, 255, 1);
+}
+
 .recruit-hud-floating .recruit-jargon-trigger {
     background: rgba(0, 212, 255, 0.05);
     border-color: rgba(0, 212, 255, 0.2);
@@ -370,6 +501,184 @@
 }
 .recruit-hud-floating .recruit-ask-card-rank-0 {
     animation: recruit-rank-0-pulse 2.4s ease-in-out infinite;
+}
+
+/* ── MVP: Answer Assist (candidate asked the interviewer something) ─
+ * Renders a high-priority card between candidate bar and Ask Next
+ * with the verbatim question + bullet-point answers from the AI. Auto-
+ * dismisses after 45s. Dismissable manually via the × button. */
+.recruit-answer-assist {
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.10), rgba(251, 191, 36, 0.04));
+    border: 1px solid rgba(251, 191, 36, 0.45);
+    border-radius: 8px;
+    box-shadow: 0 0 16px rgba(251, 191, 36, 0.12);
+}
+.recruit-answer-assist-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+}
+.recruit-answer-assist-icon {
+    font-size: 13px;
+}
+.recruit-answer-assist-label {
+    font-weight: 800;
+    color: rgb(251, 211, 77);
+}
+.recruit-answer-assist-clock {
+    margin-left: auto;
+    font-family: 'SF Mono', 'Cascadia Code', monospace;
+    font-size: 10px;
+    color: rgba(251, 191, 36, 0.7);
+    font-variant-numeric: tabular-nums;
+}
+.recruit-answer-assist-dismiss {
+    background: transparent;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    color: rgba(251, 211, 77, 0.95);
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1;
+}
+.recruit-answer-assist-dismiss:hover {
+    background: rgba(251, 191, 36, 0.18);
+}
+.recruit-answer-assist-question {
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.96);
+    line-height: 1.35;
+    padding: 4px 0;
+    border-bottom: 1px dashed rgba(251, 191, 36, 0.25);
+}
+.recruit-answer-assist-bullets {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.recruit-answer-assist-line {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.86);
+    line-height: 1.45;
+    padding-left: 12px;
+    position: relative;
+}
+.recruit-answer-assist-line::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: rgba(251, 191, 36, 0.8);
+}
+.recruit-answer-assist-empty {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+    font-style: italic;
+}
+@keyframes recruit-answer-assist-flash {
+    0%   { box-shadow: 0 0 16px rgba(251, 191, 36, 0.12); }
+    20%  { box-shadow: 0 0 28px rgba(251, 191, 36, 0.55); }
+    100% { box-shadow: 0 0 16px rgba(251, 191, 36, 0.12); }
+}
+.recruit-answer-assist-flash {
+    animation: recruit-answer-assist-flash 1.2s ease-in-out 1;
+}
+
+/* ── Trust Check (AI-cheating detection) ─────────────────────────
+ * Red-shield card that appears when the AI suspects the candidate is
+ * feeding answers to ChatGPT/Claude. Distinct from the AnswerQuality
+ * red chip (which is "the answer was bad") — this is "the AI is
+ * suspicious of the AI". Renders signals seen + a verbal counter-probe
+ * the interviewer can use to defeat AI-assist (lived-experience,
+ * rapid-fire, defend-the-prior-answer style). Auto-dismisses in 60s. */
+.recruit-trust-check {
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.14), rgba(255, 71, 87, 0.05));
+    border: 1px solid rgba(255, 71, 87, 0.55);
+    border-radius: 8px;
+    box-shadow: 0 0 18px rgba(255, 71, 87, 0.18);
+}
+.recruit-trust-check-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+}
+.recruit-trust-check-icon {
+    font-size: 13px;
+}
+.recruit-trust-check-label {
+    font-weight: 800;
+    color: rgb(252, 165, 165);
+}
+.recruit-trust-check-clock {
+    margin-left: auto;
+    font-family: 'SF Mono', 'Cascadia Code', monospace;
+    font-size: 10px;
+    color: rgba(255, 71, 87, 0.7);
+    font-variant-numeric: tabular-nums;
+}
+.recruit-trust-check-dismiss {
+    background: transparent;
+    border: 1px solid rgba(255, 71, 87, 0.35);
+    color: rgba(252, 165, 165, 0.95);
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1;
+}
+.recruit-trust-check-dismiss:hover {
+    background: rgba(255, 71, 87, 0.18);
+}
+.recruit-trust-check-signals {
+    font-size: 11px;
+    color: rgba(252, 165, 165, 0.92);
+    line-height: 1.4;
+    padding: 4px 0;
+    font-style: italic;
+}
+.recruit-trust-check-probe-label {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: rgba(252, 165, 165, 0.75);
+    margin-top: 4px;
+    border-top: 1px dashed rgba(255, 71, 87, 0.3);
+    padding-top: 6px;
+}
+.recruit-trust-check-probe {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.96);
+    line-height: 1.45;
+}
+@keyframes recruit-trust-check-flash {
+    0%, 100% { box-shadow: 0 0 18px rgba(255, 71, 87, 0.18); }
+    20%      { box-shadow: 0 0 36px rgba(255, 71, 87, 0.7);  }
+    60%      { box-shadow: 0 0 36px rgba(255, 71, 87, 0.7);  }
+}
+.recruit-trust-check-flash {
+    animation: recruit-trust-check-flash 1.5s ease-in-out 1;
 }
 
 /* ── Tier 2: Drift visual alert ──────────────────────────────────
