@@ -497,13 +497,26 @@
             || window._leadDetailId
             || '';
 
-        // Anchor the rep to this lead before the tap navigates away. On
-        // mobile the dialer takes the tab away mid-call and iOS often
-        // unloads the page; when the rep returns to the CRM, leads.html
-        // reads this sessionStorage key and re-opens the detail panel so
-        // they don't have to scroll/search for the lead they were just on.
+        // Anchor the rep to this lead before the tap navigates away. Two
+        // mechanisms because Android and iOS handle return-from-dialer
+        // differently:
+        //   1. sessionStorage anchor — covers the path where the tab is
+        //      evicted while the dialer is foregrounded (iOS Safari does
+        //      this routinely). leads.html init reads the key and re-opens
+        //      the panel after loadLeads.
+        //   2. open the detail panel synchronously, here, before the
+        //      dialer is invoked — covers the more common path where the
+        //      back button restores the tab from bfcache (no reload, no
+        //      DOMContentLoaded, so the sessionStorage handoff never
+        //      fires). The panel is already on screen when the rep
+        //      returns; they can log call outcomes immediately.
         if (leadId) {
             try { sessionStorage.setItem('crm_openLeadId', encodeURIComponent(leadId)); } catch (_) {}
+            if (typeof window.openLeadDetailPanel === 'function') {
+                try { window.openLeadDetailPanel(leadId); } catch (err) {
+                    console.warn('[calls] pre-dial panel open failed', err);
+                }
+            }
         }
 
         // Decide which flow to use. Cached lookup is usually instant; on a
