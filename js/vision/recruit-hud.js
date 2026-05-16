@@ -390,12 +390,29 @@
         bar.style.display = 'flex';
     }
 
+    // Pinned cards survive AI refreshes — the user picks one to anchor on, asks
+    // it, and the card STAYS visible until they manually unpin (or skip).
+    // Identity is the verbatim question text since AI doesn't emit stable IDs.
+    let pinnedQuestions = []; // each: { question, why, topic, difficulty }
+
     function onQuestionsUpdated(data) {
         const root = document.getElementById('recruitAskNext');
         const cards = document.getElementById('recruitAskNextCards');
         if (!root || !cards) return;
 
-        askNextQueue = (data.questions || []).slice(0, 3);
+        // Merge: pinned cards first (keep their original rank-0/1/2 styling
+        // through the pin-order), then AI suggestions filling remaining slots.
+        // De-dupe so the AI doesn't re-suggest an already-pinned question.
+        const pinnedKeys = new Set(pinnedQuestions.map(p => (p.question || '').trim().toLowerCase()));
+        const incoming = (data.questions || [])
+            .filter(q => !pinnedKeys.has((q.question || '').trim().toLowerCase()));
+        const maxCards = 3;
+        const remaining = Math.max(0, maxCards - pinnedQuestions.length);
+        askNextQueue = [
+            ...pinnedQuestions.map(p => ({ ...p, _pinned: true })),
+            ...incoming.slice(0, remaining).map(q => ({ ...q, _pinned: false }))
+        ];
+
         cards.innerHTML = '';
         if (askNextQueue.length === 0) {
             // Fall back to the empty state instead of hiding the panel —
@@ -409,17 +426,22 @@
         }
         askNextQueue.forEach((q, i) => {
             const diff = (q.difficulty || 'medium').toLowerCase();
+            const isPinned = !!q._pinned;
             const card = document.createElement('div');
-            card.className = 'recruit-ask-card recruit-ask-card-rank-' + i;
+            card.className = 'recruit-ask-card recruit-ask-card-rank-' + i + (isPinned ? ' recruit-ask-card-pinned' : '');
+            const useLabel = isPinned ? 'UNPIN' : 'USE';
+            const useTitle = isPinned ? 'Unpin — let AI replace on next refresh' : 'Copy to clipboard + pin this card so it stays visible across AI refreshes';
+            const pinBadge = isPinned ? '<span class="recruit-ask-pinned-badge" title="Pinned — survives AI refresh">📌 PINNED</span>' : '';
             card.innerHTML = ''
                 + '<div class="recruit-ask-meta">'
                 +   '<span class="recruit-ask-topic">' + escapeHtml(q.topic || 'general') + '</span>'
                 +   '<span class="recruit-ask-diff recruit-diff-' + diff + '">' + diff.toUpperCase() + '</span>'
+                +   pinBadge
                 + '</div>'
                 + '<div class="recruit-ask-q">' + escapeHtml(q.question || '') + '</div>'
                 + (q.why ? '<div class="recruit-ask-why">' + escapeHtml(q.why) + '</div>' : '')
                 + '<div class="recruit-ask-actions">'
-                +   '<button type="button" class="recruit-ask-use" data-idx="' + i + '" onclick="useRecruitNextQuestion(' + i + ')" title="Copy to clipboard">USE</button>'
+                +   '<button type="button" class="recruit-ask-use" data-idx="' + i + '" onclick="useRecruitNextQuestion(' + i + ')" title="' + escapeAttr(useTitle) + '">' + useLabel + '</button>'
                 +   '<button type="button" class="recruit-ask-skip" data-idx="' + i + '" onclick="skipRecruitNextQuestion(' + i + ')" title="Hide this suggestion">SKIP</button>'
                 + '</div>';
             cards.appendChild(card);
@@ -474,8 +496,14 @@
     function toggleRecruitQualityExpand() {
         const chip = document.getElementById('recruitQualityChip');
         if (!chip) return;
-        // Only meaningful once an actual verdict has arrived.
-        if (chip.classList.contains('recruit-quality-empty')) return;
+        // Empty state: nothing to expand, but provide click feedback so the
+        // recruiter knows the chip is interactive once a verdict lands.
+        if (chip.classList.contains('recruit-quality-empty')) {
+            if (typeof Toast !== 'undefined' && Toast && Toast.info) {
+                Toast.info('Waiting on AI — verdict appears here after the candidate finishes a substantive answer.', 3000);
+            }
+            return;
+        }
         const wasExpanded = chip.classList.toggle('recruit-quality-expanded');
         if (wasExpanded) {
             renderQualityExpanded();
@@ -857,21 +885,49 @@
     function useRecruitNextQuestion(idx) {
         const q = askNextQueue[idx];
         if (!q) return;
-        copyToClipboard(q.question);
+        const key = (q.question || '').trim().toLowerCase();
+        const wasPinned = !!q._pinned;
+
+        if (wasPinned) {
+            // Toggle off — unpin. Card stays in place until next AI refresh.
+            pinnedQuestions = pinnedQuestions.filter(p => (p.question || '').trim().toLowerCase() !== key);
+            askNextQueue[idx] = { ...q, _pinned: false };
+            if (typeof Toast !== 'undefined' && Toast && Toast.info) {
+                Toast.info('Unpinned — card will refresh on next AI suggestion.', 2000);
+            }
+        } else {
+            // Pin + copy to clipboard so the recruiter can paste / read it.
+            copyToClipboard(q.question);
+            // Keep only stable fields when adding to pinned list — drop _pinned flag.
+            const pinnable = { question: q.question, why: q.why, topic: q.topic, difficulty: q.difficulty };
+            pinnedQuestions.push(pinnable);
+            // Cap at 3 pinned — drop the OLDEST if we'd exceed.
+            if (pinnedQuestions.length > 3) pinnedQuestions = pinnedQuestions.slice(-3);
+            askNextQueue[idx] = { ...q, _pinned: true };
+            if (typeof Toast !== 'undefined' && Toast && Toast.success) {
+                Toast.success('📌 Pinned + copied: ' + truncate(q.question, 50), 2200);
+            }
+        }
+        // Re-render in place so the pin badge + button label update without
+        // losing the flash effect we trigger below.
+        onQuestionsUpdated({ questions: askNextQueue.filter(q => !q._pinned) });
         const card = document.querySelectorAll('.recruit-ask-card')[idx];
         if (card) {
             card.classList.add('recruit-ask-card-flash');
             setTimeout(() => card.classList.remove('recruit-ask-card-flash'), 600);
         }
-        if (typeof Toast !== 'undefined' && Toast && Toast.success) {
-            Toast.success('Copied: ' + truncate(q.question, 60), 2000);
-        }
     }
 
     function skipRecruitNextQuestion(idx) {
+        const q = askNextQueue[idx];
+        if (q && q._pinned) {
+            // Skipping a pinned card also unpins it.
+            const key = (q.question || '').trim().toLowerCase();
+            pinnedQuestions = pinnedQuestions.filter(p => (p.question || '').trim().toLowerCase() !== key);
+        }
         askNextQueue.splice(idx, 1);
         // Re-render the remaining cards with their new indices.
-        onQuestionsUpdated({ questions: askNextQueue });
+        onQuestionsUpdated({ questions: askNextQueue.filter(q => !q._pinned) });
     }
 
     function overrideRecruitScorecard(competency, value) {

@@ -945,6 +945,40 @@
     border-left-color: var(--color-success);
 }
 
+/* Pinned card — survives AI refresh until manually unpinned. Brighter
+ * border + a small 📌 PINNED badge so the recruiter can tell which
+ * cards they've anchored on. */
+.recruit-hud-floating .recruit-ask-card-pinned {
+    border-color: rgba(0, 212, 255, 0.55) !important;
+    border-left-width: 4px;
+    box-shadow: 0 0 14px rgba(0, 212, 255, 0.20);
+}
+.recruit-ask-pinned-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+    padding: 2px 6px;
+    background: rgba(0, 212, 255, 0.18);
+    border: 1px solid rgba(0, 212, 255, 0.45);
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: rgba(0, 212, 255, 0.95);
+    text-transform: uppercase;
+}
+/* When pinned, the USE button becomes an UNPIN button — recolor to
+ * indicate the destructive-ish action. */
+.recruit-hud-floating .recruit-ask-card-pinned .recruit-ask-use {
+    background: rgba(255, 71, 87, 0.18);
+    border-color: rgba(255, 71, 87, 0.55);
+    color: rgba(252, 165, 165, 0.95);
+}
+.recruit-hud-floating .recruit-ask-card-pinned .recruit-ask-use:hover {
+    background: rgba(255, 71, 87, 0.35);
+    border-color: rgba(255, 71, 87, 0.85);
+}
+
 .recruit-ask-meta {
     display: flex;
     align-items: center;
