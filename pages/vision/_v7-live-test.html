@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>v7 Cockpit — production module test (local only)</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../../css/theme.css">
+  <link rel="stylesheet" href="../../css/recruit-hud.css">
+  <link rel="stylesheet" href="../../css/recruit-thread.css">
+  <style>
+    body { background: #06080f; padding: 20px; font-family: system-ui; color: #fff; margin: 0; }
+    #copilotHud { position: relative; width: 720px; height: 720px; }
+    #copilotHud .recruit-hud-sections.recruit-hud-floating {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      width: auto;
+    }
+    .sim-panel {
+      position: fixed; bottom: 16px; right: 16px; padding: 12px;
+      background: rgba(0,0,0,.85); border: 1px solid rgba(0,212,255,.3);
+      border-radius: 8px; font-family: monospace; font-size: 10px;
+      color: rgba(255,255,255,.7); width: 280px;
+    }
+    .sim-panel h4 { color: rgba(0,212,255,.95); margin: 0 0 8px; letter-spacing: .14em; font-size: 10px;}
+    .sim-panel button {
+      display: block; width: 100%; margin-bottom: 4px;
+      padding: 5px; background: rgba(0,212,255,.08);
+      border: 1px solid rgba(0,212,255,.3); color: rgba(0,212,255,.9);
+      border-radius: 4px; cursor: pointer;
+      font-family: monospace; font-size: 9px; text-align: left;
+    }
+    .sim-panel button:hover { background: rgba(0,212,255,.15); }
+  </style>
+</head>
+<body>
+  <h2>v7 Cockpit — production module driven by fake SignalR</h2>
+
+  <div id="copilotHud"></div>
+
+  <div class="sim-panel">
+    <h4>FAKE SIGNALR EVENTS</h4>
+    <button onclick="t.contextLoaded()">1. InterviewContextLoaded (HR Screen)</button>
+    <button onclick="t.options()">2. V7NextQuestionOptions (3 picks)</button>
+    <button onclick="t.legacyQ()">— OR — legacy QuestionsUpdated</button>
+    <button onclick="t.gradeAmber()">3. AnswerQuality (amber)</button>
+    <button onclick="t.gradeGreen()">3. AnswerQuality (green)</button>
+    <button onclick="t.jargon()">4. JargonDetected (terms)</button>
+    <button onclick="t.score()">5. ScorecardUpdate (deltas)</button>
+    <button onclick="t.followup()">6. V7FollowupSuggested</button>
+    <button onclick="t.hostDetect()">7. V7HostQuestionDetected</button>
+    <button onclick="t.trust()">8. V7TrustCheck</button>
+    <button onclick="t.reset()" style="background:rgba(252,165,165,.15);border-color:rgba(252,165,165,.4);color:rgb(252,165,165);">Reset</button>
+  </div>
+
+  <script>
+    // Build the cockpit chrome that recruit-hud.js normally injects.
+    // For this fixture we hand-roll a minimal shell so recruit-thread.js
+    // has a #recruitHudFloatingBody to mount into.
+    document.getElementById('copilotHud').innerHTML =
+      '<div class="recruit-hud-sections recruit-hud-floating" id="recruitHudSections">' +
+      '  <div class="recruit-hud-floating-header" id="recruitHudHeader">' +
+      '    <span class="recruit-hud-floating-grip">⋮⋮</span>' +
+      '    <span class="recruit-hud-floating-title">RECRUIT COCKPIT (v7 test)</span>' +
+      '  </div>' +
+      '  <div class="recruit-hud-floating-body" id="recruitHudFloatingBody"></div>' +
+      '</div>';
+
+    // Fake SignalR connection — captures invokes + fires server events.
+    const handlers = {};
+    const invokeLog = [];
+    const fakeSignalR = {
+      on(evt, fn) { (handlers[evt] = handlers[evt] || []).push(fn); },
+      invoke(method, ...args) {
+        invokeLog.push({ method, args });
+        console.log('[fake invoke]', method, args);
+        return Promise.resolve(true);
+      }
+    };
+    window.__handlers = handlers;
+    window.__invokeLog = invokeLog;
+
+    function fire(evt, payload) {
+      console.log('[fake fire]', evt, payload);
+      (handlers[evt] || []).forEach(fn => fn(payload));
+    }
+
+    // Test helpers
+    window.t = {
+      contextLoaded() {
+        fire('InterviewContextLoaded', {
+          interviewId: 'iv-1',
+          roundType: 'hr_screen',
+          roundLabel: 'HR Screen',
+          topicsSeeded: ['Background', 'Decipher', 'CMIX', 'Validation'],
+          candidateName: 'Priya Sharma'
+        });
+      },
+      options() {
+        fire('V7NextQuestionOptions', {
+          topicHint: 'Start broad — verify background before diving into platform depth',
+          options: [
+            { question: 'Walk me through your background — how did you get into survey programming?', why: 'Open with background', topic: 'background', difficulty: 'easy' },
+            { question: 'Tell me about your Decipher experience — XML, visual editor, custom JS.', why: 'Probe platform depth', topic: 'decipher', difficulty: 'medium' },
+            { question: 'Describe the messiest data-validation rule you ever shipped — what bug did it catch?', why: 'Drill on lived QA experience', topic: 'validation', difficulty: 'hard' }
+          ],
+          timestamp: Date.now()
+        });
+      },
+      legacyQ() {
+        fire('InterviewQuestionsUpdated', {
+          meetingId: 'test',
+          questions: [
+            { question: 'Walk me through your background.', why: 'Background', topic: 'background', difficulty: 'easy' },
+            { question: 'Tell me about your Decipher experience.', why: 'Platform', topic: 'decipher', difficulty: 'medium' },
+            { question: 'Describe a data-validation rule that caught a bug.', why: 'QA depth', topic: 'validation', difficulty: 'hard' }
+          ]
+        });
+      },
+      gradeAmber() {
+        fire('AnswerQuality', { color: 'amber', reason: 'Vague on platforms — needs drill', confidence: 0.78 });
+      },
+      gradeGreen() {
+        fire('AnswerQuality', { color: 'green', reason: 'Specific: dates + roles + concrete tools', confidence: 0.91 });
+      },
+      jargon() {
+        fire('JargonDetected', { terms: [
+          { term: 'NetMR', definition: 'Online survey programming platform from MarketTools.' },
+          { term: 'conjoint', definition: 'Stated-preference technique that infers trade-offs.' },
+          { term: 'MaxDiff', definition: 'Forced trade-off scaling method.' }
+        ]});
+      },
+      score() {
+        fire('ScorecardUpdate', { deltas: [
+          { competency: 'Decipher proficiency', signal: 'demonstrated', evidenceQuote: '19 yrs Decipher XML' },
+          { competency: 'CMIX depth', signal: 'partial', evidenceQuote: 'used CMIX occasionally' },
+          { competency: 'Data validation', signal: 'not_yet', evidenceQuote: '' }
+        ]});
+      },
+      followup() {
+        // First need an active block — assume one was picked
+        const active = document.querySelector('.rt-block.rt-active');
+        if (!active) { alert('Pick a question first (click an option in the picker)'); return; }
+        fire('V7FollowupSuggested', {
+          parentQuestionId: active.dataset.bid,
+          question: 'How deep does your JS customisation go? Walk me through one tricky widget.',
+          why: 'Drill on lived experience',
+          topic: 'decipher',
+          difficulty: 'hard',
+          reason: 'answer was platform-name list, not depth',
+          timestamp: Date.now()
+        });
+      },
+      hostDetect() {
+        fire('V7HostQuestionDetected', {
+          questionText: 'And how does CMIX compare to Decipher for the same study?',
+          classification: 'new_topic',
+          parentQuestionIdHint: '',
+          topic: 'cmix',
+          confidence: 0.84,
+          timestamp: Date.now()
+        });
+      },
+      trust() {
+        fire('V7TrustCheck', {
+          reason: '"Great question" trope + textbook structure + evasive "does that align with what you\'re looking for"',
+          coaching: 'Ask a quick gut-question: "In one sentence, what\'s the dumbest survey-programming mistake you\'ve seen?"',
+          confidence: 0.82,
+          timestamp: Date.now()
+        });
+      },
+      reset() { location.reload(); }
+    };
+
+    // Stub the global chip handlers copilot.js normally exposes — in
+    // production meeting.html loads copilot.js BEFORE recruit-thread.js,
+    // so these are real. Here we mock them just so the fixture
+    // demonstrates the active-state-sync behavior.
+    window.setCopilotMode = (mode) => {
+      document.querySelectorAll('.copilot-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    };
+    window.setCopilotFrequency = (freq) => {
+      document.querySelectorAll('.copilot-freq-btn').forEach(b => b.classList.toggle('active', b.dataset.freq === freq));
+    };
+    window.setCopilotModel = (model) => {
+      document.querySelectorAll('.copilot-model-btn').forEach(b => b.classList.toggle('active', b.dataset.model === model));
+    };
+
+    // Init the thread module
+    document.addEventListener('DOMContentLoaded', () => {
+      // recruit-thread.js auto-registers initRecruitThread on window
+      if (typeof window.initRecruitThread === 'function') {
+        window.initRecruitThread(fakeSignalR, 'test-meeting-uuid');
+        console.log('[test] initRecruitThread fired');
+      } else {
+        console.error('[test] initRecruitThread not found');
+      }
+    });
+  </script>
+  <script>document.write('<script src="../../js/vision/recruit-thread.js?cb=' + Date.now() + '"><\/script>');</script>
+</body>
+</html>

@@ -202,6 +202,43 @@ body.recruit-v7-mode .hud-emotion-strip {
     align-self: flex-start;
 }
 
+/* ── Drift / coaching alert banner ─────────────────────── */
+/* Yellow tone — softer than trust check's red. Different signal:
+   trust check = something might be wrong with the candidate;
+   coach alert = something is wrong with the *interviewer* (drift, pacing). */
+.rt-coach-alert {
+    background: linear-gradient(90deg, rgba(252, 211, 77, 0.12), rgba(252, 211, 77, 0.04));
+    border-bottom: 1px solid rgba(252, 211, 77, 0.35);
+    padding: 8px 12px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+.rt-coach-kind {
+    color: rgb(252, 211, 77);
+    letter-spacing: 0.1em;
+    font-size: 9px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+.rt-coach-msg {
+    flex: 1;
+    color: rgba(255, 255, 255, 0.88);
+    line-height: 1.45;
+}
+.rt-coach-x {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 4px;
+    align-self: flex-start;
+}
+.rt-coach-x:hover { color: rgba(255, 255, 255, 0.9); }
+
 /* ── Thread ─────────────────────────────────────────────── */
 /* flex: 1 + min-height:0 = thread takes ALL remaining vertical space
  * and shrinks-when-needed-but-not-below-its-own-scroll-area when many
@@ -411,6 +448,23 @@ body.recruit-v7-mode .hud-emotion-strip {
     animation: rtPulse 1.8s infinite;
 }
 .rt-host-dot::before { content: '✎ '; color: rgb(252, 211, 77); }
+.rt-graded-dot::before { content: '✓ '; color: rgb(134, 239, 172); }
+.rt-graded-dot { color: rgb(134, 239, 172); }
+
+/* Per-Q-Block latency badge — ms from candidate-finished to grade-arrived.
+   Color tiers tell the host at a glance whether the AI was snappy or slow. */
+.rt-lat-chip {
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: rgba(125, 211, 252, 0.12);
+    border: 1px solid rgba(125, 211, 252, 0.35);
+    color: rgb(125, 211, 252);
+    margin-left: 4px;
+    white-space: nowrap;
+}
 .rt-fu-chip {
     font-size: 8px;
     color: rgb(216, 180, 254);
@@ -505,24 +559,73 @@ body.recruit-v7-mode .hud-emotion-strip {
     letter-spacing: 0.14em;
     margin-bottom: 4px;
 }
+/* Grid: signal-dot column + content column.
+   Row 1: dot | competency + 0-10 score chip
+   Row 2:     | reason ("why this score") — slightly more prominent than evidence
+   Row 3:     | evidence quote (italic, dimmer) */
 .rt-bsc-row {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    padding: 3px 0;
+    display: grid;
+    grid-template-columns: 14px 1fr;
+    column-gap: 6px;
+    row-gap: 2px;
+    align-items: start;
+    padding: 5px 0;
     font-size: 11px;
-    line-height: 1.35;
+    line-height: 1.4;
+}
+.rt-bsc-row .rt-sig {
+    grid-row: 1;
+    grid-column: 1;
+    align-self: center;
 }
 .rt-bsc-comp {
-    color: rgba(255, 255, 255, 0.85);
+    grid-row: 1;
+    grid-column: 2;
+    color: rgba(255, 255, 255, 0.9);
     font-weight: 600;
+    overflow-wrap: anywhere;
+    display: inline-block;
+    margin-right: 6px;
+}
+.rt-bsc-score {
+    grid-row: 1;
+    grid-column: 2;
+    justify-self: end;
+    align-self: center;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 1px 6px;
+    border-radius: 8px;
     white-space: nowrap;
 }
-.rt-bsc-evidence {
-    color: rgba(255, 255, 255, 0.5);
-    font-style: italic;
+.rt-score-hi { color: rgb(134, 239, 172); background: rgba(34, 197, 94, 0.14); border: 1px solid rgba(34, 197, 94, 0.35); }
+.rt-score-mid { color: rgb(252, 211, 77); background: rgba(245, 158, 11, 0.14); border: 1px solid rgba(245, 158, 11, 0.35); }
+.rt-score-lo { color: rgb(252, 165, 165); background: rgba(239, 68, 68, 0.14); border: 1px solid rgba(239, 68, 68, 0.35); }
+.rt-bsc-reason {
+    grid-row: 2;
+    grid-column: 2;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 10.5px;
+    overflow-wrap: anywhere;
+    /* Two-line clamp for the reason — primary context. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    text-overflow: ellipsis;
+}
+.rt-bsc-evidence {
+    grid-row: 3;
+    grid-column: 2;
+    color: rgba(255, 255, 255, 0.45);
+    font-style: italic;
+    font-size: 10px;
+    /* Single-line clamp — secondary context. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
 }
 
 /* ── Follow-up suggestion card ─────────────────────────── */

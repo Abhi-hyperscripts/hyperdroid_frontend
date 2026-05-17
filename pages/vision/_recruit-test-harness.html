@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Recruit Test Harness (local only)</title>
+  <script src="../../js/config.js"></script>
+  <script src="../../js/api.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../../css/theme.css">
+  <link rel="stylesheet" href="../../css/recruit-hud.css">
+  <link rel="stylesheet" href="../../css/recruit-thread.css">
+  <style>
+    body { background: #06080f; color: #fff; font-family: 'Inter', system-ui, sans-serif; margin: 0; padding: 16px; }
+    .layout { display: grid; grid-template-columns: 1fr 720px 1fr; gap: 16px; height: calc(100vh - 32px); }
+    .col {
+      display: flex; flex-direction: column;
+      border: 1px solid rgba(0, 212, 255, 0.18); border-radius: 8px;
+      background: rgba(4, 8, 18, 0.6); overflow: hidden;
+    }
+    .col-hdr {
+      padding: 8px 12px; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.14em; color: rgba(0, 212, 255, 0.85);
+      border-bottom: 1px solid rgba(0, 212, 255, 0.18);
+      background: rgba(0, 212, 255, 0.05);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .col-hdr .name { color: rgba(255, 255, 255, 0.85); font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 10px; }
+    .col-body { flex: 1; padding: 10px; overflow-y: auto; }
+    .col-foot { padding: 10px; border-top: 1px solid rgba(0, 212, 255, 0.12); }
+    textarea {
+      width: 100%; box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.4); color: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(0, 212, 255, 0.25); border-radius: 5px;
+      padding: 8px 10px; font-family: inherit; font-size: 13px; line-height: 1.45;
+      resize: vertical; min-height: 80px; outline: none;
+    }
+    textarea:focus { border-color: rgba(0, 212, 255, 0.6); }
+    .btn-row { display: flex; gap: 6px; margin-top: 6px; }
+    .btn {
+      flex: 1; padding: 8px;
+      background: rgba(0, 212, 255, 0.12); border: 1px solid rgba(0, 212, 255, 0.4);
+      color: #00d4ff; font-family: inherit; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.08em; border-radius: 5px; cursor: pointer;
+    }
+    .btn:hover { background: rgba(0, 212, 255, 0.22); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-host { border-color: rgba(252, 211, 77, 0.5); color: rgb(252, 211, 77); background: rgba(252, 211, 77, 0.1); }
+    .btn-host:hover { background: rgba(252, 211, 77, 0.22); }
+    .btn-cand { border-color: rgba(134, 239, 172, 0.5); color: rgb(134, 239, 172); background: rgba(134, 239, 172, 0.1); }
+    .btn-cand:hover { background: rgba(134, 239, 172, 0.22); }
+    .btn-stop { border-color: rgba(252, 165, 165, 0.5); color: rgb(252, 165, 165); background: rgba(252, 165, 165, 0.1); }
+
+    .top-bar {
+      grid-column: 1 / -1;
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      padding: 8px 12px; background: rgba(4, 8, 18, 0.7);
+      border: 1px solid rgba(0, 212, 255, 0.2); border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .top-bar select {
+      padding: 6px 10px; background: rgba(0, 0, 0, 0.4);
+      color: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 4px;
+      font-family: inherit; font-size: 12px; min-width: 300px; outline: none;
+    }
+    .status-pill {
+      padding: 3px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    }
+    .status-idle { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.55); }
+    .status-running { background: rgba(134, 239, 172, 0.15); color: rgb(134, 239, 172); }
+    .status-error { background: rgba(252, 165, 165, 0.15); color: rgb(252, 165, 165); }
+
+    /* Reuse the cockpit chrome styles inside the middle column */
+    #cockpitMount {
+      position: relative;
+      width: 100%; height: 100%;
+      overflow: hidden;
+    }
+    #cockpitMount .recruit-hud-sections.recruit-hud-floating {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      width: auto;
+    }
+
+    .log {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      color: rgba(255, 255, 255, 0.55);
+    }
+    .log .ev { padding: 2px 0; }
+    .log .ev-self { color: rgb(252, 211, 77); }
+    .log .ev-cand { color: rgb(134, 239, 172); }
+    .log .ev-sig { color: rgba(0, 212, 255, 0.7); }
+    .log .ev-err { color: rgb(252, 165, 165); }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <strong style="color: rgba(0,212,255,.95); font-size: 11px; letter-spacing: .12em;">RECRUIT TEST HARNESS</strong>
+    <select id="ivSelect"><option value="">Loading interviews…</option></select>
+    <button class="btn" id="btnStart" style="flex:0 0 auto; min-width: 90px;">START</button>
+    <button class="btn btn-stop" id="btnEnd" style="flex:0 0 auto; min-width: 90px;" disabled>END</button>
+    <span class="status-pill status-idle" id="sessionStatus">IDLE</span>
+    <span id="meetingIdLabel" style="font-size: 10px; color: rgba(255,255,255,.4); font-family: monospace;"></span>
+  </div>
+
+  <div class="layout">
+    <div class="col">
+      <div class="col-hdr">
+        <span>HOST</span>
+        <span class="name" id="hostNameLabel">(pick an interview)</span>
+      </div>
+      <div class="col-body log" id="hostLog"></div>
+      <div class="col-foot">
+        <textarea id="hostText" placeholder="Type what the host (you) says, then Send. Ctrl+Enter to send."></textarea>
+        <div class="btn-row">
+          <button class="btn btn-host" id="btnSendHost" disabled>SEND AS HOST →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="col-hdr">
+        <span>v7 COCKPIT (live SignalR)</span>
+        <span class="name" id="cockpitNameLabel">—</span>
+      </div>
+      <div id="copilotHud" style="position: relative; flex: 1;">
+        <div id="cockpitMount"></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="col-hdr">
+        <span>CANDIDATE</span>
+        <span class="name" id="candNameLabel">(pick an interview)</span>
+      </div>
+      <div class="col-body log" id="candLog"></div>
+      <div class="col-foot">
+        <textarea id="candText" placeholder="Type what the candidate says, then Send. Ctrl+Enter to send."></textarea>
+        <div class="btn-row">
+          <button class="btn btn-cand" id="btnSendCand" disabled>SEND AS CANDIDATE →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../../js/vision/recruit-thread.js"></script>
+  <script>
+    'use strict';
+
+    // ── State ─────────────────────────────────────────────
+    let interviews = [];          // [{ interviewId, meetingId, candidateName, postingTitle, roundType }]
+    let selectedInterview = null;
+    let signalRConn = null;
+    let started = false;
+
+    const $ = (id) => document.getElementById(id);
+
+    function setStatus(text, cls) {
+      const el = $('sessionStatus');
+      el.textContent = text;
+      el.className = 'status-pill ' + (cls || 'status-idle');
+    }
+
+    function log(panelId, txt, cls) {
+      const el = $(panelId);
+      const div = document.createElement('div');
+      div.className = 'ev ' + (cls || '');
+      div.textContent = '[' + new Date().toISOString().slice(11, 19) + '] ' + txt;
+      el.appendChild(div);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    // Token helper — the SPA stores the JWT under `ragenaizer_authToken`.
+    function authToken() {
+      return localStorage.getItem('ragenaizer_authToken')
+          || localStorage.getItem('jwt_token')
+          || localStorage.getItem('token')
+          || '';
+    }
+
+    // ── Load interviews list from HRMS via local proxy / api.js ────
+    async function loadInterviews() {
+      try {
+        // Direct backend call — local HRMS at :5104 has the data restored from prod.
+        // No proxy needed when both run on the same machine; use HRMS REST.
+        const res = await fetch((window.CONFIG?.hrmsApiBaseUrl || 'http://localhost:5104/api') + '/recruitment/interviews/scheduled', {
+          headers: { 'Authorization': 'Bearer ' + authToken() }
+        });
+        if (!res.ok) {
+          // Fallback: query via a dedicated lookup endpoint if available, else hardcoded
+          throw new Error('list interviews failed: ' + res.status);
+        }
+        interviews = await res.json();
+      } catch (e) {
+        console.warn('Interview list fetch failed, falling back to hardcoded:', e);
+        // Hardcoded from the restored DB — works if the HRMS REST endpoint isn't available
+        interviews = [
+          {
+            interviewId: 'b288b0e3-c152-4187-bca3-8fa981c133ab',
+            meetingId: 'e1d153ec-5f9e-41e3-9b03-78cbc54ea734',
+            candidateName: 'Priya Sharma',
+            postingTitle: 'Survey Programmer (5-8 yrs) — Decipher / CMIX / Qualtrics',
+            roundType: 'hr_screen'
+          },
+          {
+            interviewId: 'e64c64bb-0021-48c1-b67d-f59ea99b7839',
+            meetingId: '05183c80-9071-4ae1-9ad1-eaab733ca2ac',
+            candidateName: 'Aarav Mehta',
+            postingTitle: 'Frontend Developer (1-2 yrs) — HTML / CSS / JavaScript',
+            roundType: 'hr_screen'
+          },
+          {
+            interviewId: 'b288b0e3-c152-4187-bca3-8fa981c133ab',
+            meetingId: 'e1d153ec-5f9e-41e3-9b03-78cbc54ea734',
+            candidateName: 'Priya Sharma',
+            postingTitle: 'Survey Programmer (5-8 yrs) — Decipher / CMIX / Qualtrics',
+            roundType: 'negotiation'
+          },
+          {
+            interviewId: 'e64c64bb-0021-48c1-b67d-f59ea99b7839',
+            meetingId: '05183c80-9071-4ae1-9ad1-eaab733ca2ac',
+            candidateName: 'Aarav Mehta',
+            postingTitle: 'Frontend Developer (1-2 yrs) — HTML / CSS / JavaScript',
+            roundType: 'ceo'
+          }
+        ];
+      }
+      renderInterviewSelect();
+    }
+
+    function renderInterviewSelect() {
+      const sel = $('ivSelect');
+      sel.innerHTML = '';
+      if (!interviews.length) {
+        sel.innerHTML = '<option value="">No scheduled interviews</option>';
+        return;
+      }
+      const blank = document.createElement('option');
+      blank.value = ''; blank.textContent = 'Pick an interview…';
+      sel.appendChild(blank);
+      interviews.forEach((iv, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `${iv.candidateName} — ${iv.postingTitle} · ${iv.roundType}`;
+        sel.appendChild(opt);
+      });
+    }
+
+    $('ivSelect').addEventListener('change', (e) => {
+      const idx = parseInt(e.target.value, 10);
+      selectedInterview = isNaN(idx) ? null : interviews[idx];
+      $('candNameLabel').textContent = selectedInterview?.candidateName || '(pick an interview)';
+      $('hostNameLabel').textContent = selectedInterview ? 'Recruiter (you)' : '(pick an interview)';
+      $('cockpitNameLabel').textContent = selectedInterview?.postingTitle || '—';
+      $('meetingIdLabel').textContent = selectedInterview?.meetingId || '';
+    });
+
+    // ── Start session ──────────────────────────────────────
+    $('btnStart').addEventListener('click', async () => {
+      if (!selectedInterview) { alert('Pick an interview first'); return; }
+      try {
+        setStatus('STARTING…', 'status-idle');
+        const visionBase = window.CONFIG?.visionApiBaseUrl || 'http://localhost:5099/api';
+        const res = await fetch(visionBase + '/test-recruit/start', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken()
+          },
+          body: JSON.stringify({ meetingId: selectedInterview.meetingId })
+        });
+        if (!res.ok) {
+          const t = await res.text();
+          throw new Error('start failed: ' + res.status + ' — ' + t);
+        }
+        const data = await res.json();
+        log('hostLog', 'Test pipeline started for meeting ' + data.meetingId, 'ev-sig');
+        setStatus('RUNNING', 'status-running');
+        started = true;
+        $('btnStart').disabled = true;
+        $('btnEnd').disabled = false;
+        $('btnSendHost').disabled = false;
+        $('btnSendCand').disabled = false;
+        await connectSignalR(selectedInterview.meetingId);
+        mountCockpit(selectedInterview.meetingId);
+      } catch (e) {
+        log('hostLog', 'START failed: ' + e.message, 'ev-err');
+        setStatus('ERROR', 'status-error');
+      }
+    });
+
+    // ── End session ──────────────────────────────────────
+    $('btnEnd').addEventListener('click', async () => {
+      if (!selectedInterview) return;
+      try {
+        const visionBase = window.CONFIG?.visionApiBaseUrl || 'http://localhost:5099/api';
+        await fetch(visionBase + '/test-recruit/end', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + authToken()
+          },
+          body: JSON.stringify({ meetingId: selectedInterview.meetingId })
+        });
+        log('hostLog', 'Test pipeline ended', 'ev-sig');
+        setStatus('IDLE', 'status-idle');
+        started = false;
+        $('btnStart').disabled = false;
+        $('btnEnd').disabled = true;
+        $('btnSendHost').disabled = true;
+        $('btnSendCand').disabled = true;
+      } catch (e) {
+        log('hostLog', 'END error: ' + e.message, 'ev-err');
+      }
+    });
+
+    // ── Inject text ──────────────────────────────────────
+    async function inject(speaker, text) {
+      if (!selectedInterview) return;
+      const visionBase = window.CONFIG?.visionApiBaseUrl || 'http://localhost:5099/api';
+      const res = await fetch(visionBase + '/test-recruit/inject', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + authToken()
+        },
+        body: JSON.stringify({ meetingId: selectedInterview.meetingId, speaker, text })
+      });
+      if (!res.ok) throw new Error('inject failed: ' + res.status);
+      return res.json();
+    }
+
+    $('btnSendHost').addEventListener('click', async () => {
+      const text = $('hostText').value.trim();
+      if (!text) return;
+      try {
+        await inject('Recruiter', text);
+        log('hostLog', '→ ' + text, 'ev-self');
+        $('hostText').value = '';
+      } catch (e) { log('hostLog', 'inject error: ' + e.message, 'ev-err'); }
+    });
+    $('btnSendCand').addEventListener('click', async () => {
+      const text = $('candText').value.trim();
+      if (!text || !selectedInterview) return;
+      try {
+        // Stamp the active Q-Block as "candidate finished" so the grade-
+        // latency badge ("⚡ 3.4s") can compute and render once the grade
+        // lands. In prod this is fired by the STT end-of-utterance detector.
+        if (typeof window.recruitMarkCandidateAnswered === 'function') {
+          window.recruitMarkCandidateAnswered();
+        }
+        await inject(selectedInterview.candidateName, text);
+        log('candLog', '→ ' + text, 'ev-cand');
+        $('candText').value = '';
+      } catch (e) { log('candLog', 'inject error: ' + e.message, 'ev-err'); }
+    });
+
+    // Ctrl+Enter to send
+    $('hostText').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $('btnSendHost').click(); }
+    });
+    $('candText').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $('btnSendCand').click(); }
+    });
+
+    // ── SignalR connection ────────────────────────────────
+    async function connectSignalR(meetingId) {
+      if (signalRConn) {
+        try { await signalRConn.stop(); } catch (_e) {}
+      }
+      const hubUrl = (window.CONFIG?.visionApiBaseUrl || 'http://localhost:5099') .replace(/\/api$/, '') + '/hubs/chat';
+      signalRConn = new signalR.HubConnectionBuilder()
+        .withUrl(hubUrl, {
+          accessTokenFactory: () => authToken()
+        })
+        .withAutomaticReconnect()
+        .build();
+      // Log all v7 events for visibility
+      ['V7QuestionGrade', 'V7FollowupSuggested', 'V7NextQuestionOptions', 'V7TrustCheck',
+       'V7HostQuestionDetected', 'CopilotInsight', 'AnswerQuality', 'JargonDetected',
+       'ScorecardUpdate', 'InterviewQuestionsUpdated', 'InterviewContextLoaded'].forEach(ev => {
+        signalRConn.on(ev, (data) => {
+          const summary = JSON.stringify(data).slice(0, 180);
+          log('hostLog', '◉ ' + ev + ' ' + summary, 'ev-sig');
+        });
+      });
+      await signalRConn.start();
+      log('hostLog', 'SignalR connected to ' + hubUrl, 'ev-sig');
+      // Join the meeting room (matches what meeting.js does)
+      try {
+        await signalRConn.invoke('JoinMeeting', meetingId);
+        log('hostLog', 'Joined meeting room ' + meetingId, 'ev-sig');
+      } catch (e) { log('hostLog', 'JoinMeeting failed: ' + e.message, 'ev-err'); }
+    }
+
+    // ── Mount v7 cockpit ──────────────────────────────────
+    function mountCockpit(meetingId) {
+      const mount = $('cockpitMount');
+      mount.innerHTML =
+        '<div class="recruit-hud-sections recruit-hud-floating" id="recruitHudSections">' +
+        '  <div class="recruit-hud-floating-header" id="recruitHudHeader">' +
+        '    <span class="recruit-hud-floating-grip">⋮⋮</span>' +
+        '    <span class="recruit-hud-floating-title">RECRUIT COCKPIT</span>' +
+        '  </div>' +
+        '  <div class="recruit-hud-floating-body" id="recruitHudFloatingBody"></div>' +
+        '</div>';
+      if (window.initRecruitThread && signalRConn) {
+        window.initRecruitThread(signalRConn, meetingId);
+        log('hostLog', 'v7 cockpit mounted', 'ev-sig');
+      }
+    }
+
+    loadInterviews();
+  </script>
+</body>
+</html>

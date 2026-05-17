@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Recruit HUD — local preview (not committed)</title>
+    <link rel="stylesheet" href="../../css/theme.css">
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/recruit-hud.css">
+    <link rel="stylesheet" href="../../css/searchable-dropdown.css">
+    <style>
+        /* Local-only stand-in for the host video tile so the underlying layout
+         * looks like the real meeting page (we have no LiveKit here). */
+        .demo-video-tile {
+            flex: 1;
+            min-height: 0;
+            border-radius: 8px;
+            background:
+                linear-gradient(135deg, rgba(0,212,255,0.05), rgba(0,0,0,0.4)),
+                radial-gradient(circle at 30% 30%, rgba(120, 120, 140, 0.15), rgba(20, 22, 30, 0.85) 65%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.35);
+            font-family: 'SF Mono', 'Cascadia Code', monospace;
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html" class="navbar-logo-link">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+    </nav>
+
+    <div class="meeting-container meeting-container-with-nav">
+        <div class="meeting-main">
+            <div class="video-container" id="videoContainer">
+                <div class="demo-video-tile">Candidate video (local preview)</div>
+            </div>
+
+            <!-- Same HUD overlay markup as meeting.html (host-only floating cockpit) -->
+            <div class="copilot-hud hud-center" id="copilotHud" style="display:block;">
+                <div class="hud-control-panel">
+                    <div class="hud-panel-row hud-panel-top">
+                        <span class="hud-reticle"></span>
+                        <span class="hud-label">COPILOT</span>
+                        <span class="hud-mode" id="copilotModeBadge">INTERVIEW</span>
+                        <span class="hud-panel-divider"></span>
+                        <span class="hud-live-dot" id="hudBotDot"></span>
+                        <span class="hud-live" id="hudBotLabel">LIVE</span>
+                        <span class="hud-panel-spacer"></span>
+                        <span class="hud-stat" id="hudInsightCount">0 INSIGHTS</span>
+                        <span class="hud-panel-divider"></span>
+                        <span class="hud-stat" id="hudUptime">00:00</span>
+                    </div>
+                    <div class="hud-panel-row hud-panel-bottom">
+                        <div class="hud-mode-selector">
+                            <button class="copilot-mode-btn active" data-mode="manual"><span>Manual</span></button>
+                            <button class="copilot-mode-btn" data-mode="earpiece"><span>Earpiece</span></button>
+                            <button class="copilot-mode-btn" data-mode="autonomous"><span>Auto</span></button>
+                        </div>
+                        <span class="hud-panel-divider"></span>
+                        <div class="hud-freq-toggle">
+                            <button class="copilot-freq-btn" data-freq="fast">FAST</button>
+                            <button class="copilot-freq-btn active" data-freq="normal">NORMAL</button>
+                            <button class="copilot-freq-btn" data-freq="chill">CHILL</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- copilotInsights is referenced by other meeting scripts; harmless empty here -->
+                <div id="copilotInsights"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast stub so recruit-hud.js's optional Toast calls don't throw -->
+    <script>
+        window.Toast = {
+            success: (msg) => console.log('[Toast.success]', msg),
+            warning: (msg) => console.log('[Toast.warning]', msg),
+            error:   (msg) => console.log('[Toast.error]', msg)
+        };
+        window.api = { isAuthenticated: () => true, request: () => Promise.resolve({}) };
+    </script>
+    <script src="../../js/vision/recruit-hud.js"></script>
+    <script>
+        // ── Fake SignalR connection ──────────────────────────────────────
+        // recruit-hud.js calls signalR.on(eventName, handler) for each event
+        // it cares about. We back this with a Map so we can fire events
+        // ourselves via window.demoFire('EventName', payload).
+        const handlers = new Map();
+        const fakeSignalR = {
+            on(eventName, cb) {
+                if (!handlers.has(eventName)) handlers.set(eventName, []);
+                handlers.get(eventName).push(cb);
+            }
+        };
+        window.demoFire = (eventName, data) => {
+            const list = handlers.get(eventName) || [];
+            console.log('[demoFire]', eventName, data, '→', list.length, 'handler(s)');
+            list.forEach(h => { try { h(data); } catch (e) { console.error(e); } });
+            return list.length;
+        };
+        window.demoHandlers = () => Array.from(handlers.keys());
+
+        // Initialize the recruit HUD in interview mode
+        window.initRecruitHud(fakeSignalR, 'interview', 'demo-meeting-id');
+        console.log('[preview] initialized — wired events:', window.demoHandlers());
+    </script>
+</body>
+</html>

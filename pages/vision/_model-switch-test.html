@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Model Switcher Test (local only)</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../../css/theme.css">
+  <style>
+    body { background: #0a0e1c; padding: 20px; font-family: system-ui; color: #fff; }
+    .test-log { margin-top: 20px; padding: 10px; background: rgba(255,255,255,.05); border: 1px solid #333; border-radius: 6px; font-family: monospace; font-size: 12px; max-height: 280px; overflow-y: auto; }
+    .test-log div { padding: 2px 0; }
+    .ok { color: #6ee7b7; }
+    .err { color: #fca5a5; }
+  </style>
+</head>
+<body>
+  <h2>COPILOT control panel — HAIKU / SONNET switcher test</h2>
+
+  <div class="copilot-hud" style="position: relative; height: 120px;">
+    <div class="hud-control-panel" style="position: relative; top:0; left:0;">
+      <div class="hud-panel-row hud-panel-top">
+        <div>COPILOT</div>
+        <span>INTERVIEW</span>
+      </div>
+      <div class="hud-panel-row hud-panel-bottom">
+        <div class="hud-freq-toggle" id="copilotFreqToggle">
+          <button class="copilot-freq-btn" data-freq="fast">FAST</button>
+          <button class="copilot-freq-btn active" data-freq="normal">NORMAL</button>
+          <button class="copilot-freq-btn" data-freq="chill">CHILL</button>
+        </div>
+        <span class="hud-panel-divider"></span>
+        <div class="hud-model-toggle" id="copilotModelToggle">
+          <button class="copilot-model-btn active" data-model="haiku" onclick="setCopilotModel('haiku')" title="Haiku — fast, cheap">HAIKU</button>
+          <button class="copilot-model-btn" data-model="sonnet" onclick="setCopilotModel('sonnet')" title="Sonnet — recommended for interviews">SONNET</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-log" id="testLog"><div>Test log:</div></div>
+
+  <script>
+    // Minimal Toast stub so the cost-guard branch doesn't crash.
+    window.Toast = { info: (m) => log('Toast.info: ' + m), error: (m) => log('Toast.error: ' + m, true) };
+    function log(msg, err) {
+      const el = document.getElementById('testLog');
+      const d = document.createElement('div');
+      d.className = err ? 'err' : 'ok';
+      d.textContent = '[' + new Date().toISOString().slice(11,19) + '] ' + msg;
+      el.appendChild(d);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    // Globals the copilot.js module-level state relies on.
+    window.copilotMeetingId = '00000000-0000-0000-0000-000000000000';
+    window.copilotFrequency = 'normal';
+
+    // Fake SignalR connection — record invocations, allow firing of server events.
+    const fakeInvocations = [];
+    const fakeListeners = {};
+    window.copilotConnection = {
+      invoke(method, ...args) {
+        fakeInvocations.push({ method, args, ts: Date.now() });
+        log('SignalR invoke: ' + method + '(' + JSON.stringify(args) + ')');
+        // Simulate server roundtrip + broadcast
+        return new Promise(resolve => {
+          setTimeout(() => {
+            if (method === 'SetCopilotModel') {
+              const model = args[1];
+              if (model === 'haiku' || model === 'sonnet') {
+                // Fake CopilotModelChanged broadcast
+                (fakeListeners['CopilotModelChanged'] || []).forEach(fn => fn({ model, changedBy: 'test', timestamp: Date.now() }));
+                resolve(true);
+              } else {
+                resolve(false);
+              }
+            } else {
+              resolve(true);
+            }
+          }, 60);
+        });
+      },
+      on(event, fn) {
+        (fakeListeners[event] = fakeListeners[event] || []).push(fn);
+      }
+    };
+
+    // Test API surface
+    window.__test = { fakeInvocations, fakeListeners };
+  </script>
+
+  <script src="../../js/vision/copilot.js"></script>
+
+  <script>
+    // copilot.js has its own `let copilotConnection` block-scoped inside the
+    // script — we can't reassign that from outside. Use the proper init
+    // entrypoint to plumb our fake connection through.
+    if (typeof initCopilot === 'function') {
+      initCopilot(window.copilotConnection, 'interview', window.copilotMeetingId);
+      log('initCopilot called with fake connection');
+    } else {
+      log('ERROR: initCopilot not found', true);
+    }
+    log('Test fixture ready. Click HAIKU or SONNET above.');
+  </script>
+</body>
+</html>

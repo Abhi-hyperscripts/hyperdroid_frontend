@@ -435,10 +435,11 @@ function updateFreqToggleUI(frequency) {
 }
 
 /**
- * Switch the per-turn copilot model mid-session. "haiku" (default — fast,
- * cheap) or "sonnet" (slower, more thoughtful — for technical interviews).
+ * Switch the per-turn copilot model mid-session. "sonnet" (default — better
+ * follow-up quality, handles detailed prompts/tools without truncation) or
+ * "haiku" (faster but misses nuance on the recruit-copilot's long prompt).
  */
-let copilotModel = 'haiku';
+let copilotModel = 'sonnet';
 function setCopilotModel(model) {
     if (!copilotConnection || !copilotMeetingId) {
         console.warn('[Copilot HUD] Cannot set model — no connection or meeting ID');

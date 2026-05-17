@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>v7 Cockpit — UI Mockup (local only)</title>
+  <link rel="stylesheet" href="../../css/styles.css">
+  <link rel="stylesheet" href="../../css/theme.css">
+  <link rel="stylesheet" href="../../css/recruit-hud.css">
+  <style>
+    body {
+      background:
+        radial-gradient(ellipse at 30% 20%, rgba(168, 85, 247, .15), transparent 60%),
+        radial-gradient(ellipse at 70% 60%, rgba(0, 212, 255, .12), transparent 55%),
+        #06080f;
+      min-height: 100vh;
+      margin: 0;
+      padding: 24px;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #fff;
+    }
+
+    /* fake video tile underneath for context */
+    .mock-video-tile {
+      position: fixed;
+      right: 24px;
+      top: 24px;
+      width: 240px;
+      height: 180px;
+      background: linear-gradient(135deg, #1e3a8a 0%, #6d28d9 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,.6);
+      font-family: monospace;
+      font-size: 11px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.45);
+    }
+
+    /* ──────────────────────────────────────────────────────────
+     * v7 Cockpit container
+     * ────────────────────────────────────────────────────────── */
+    .v7-cockpit {
+      max-width: 720px;
+      background: rgba(4, 8, 18, .92);
+      border: 1px solid rgba(0, 212, 255, .22);
+      border-radius: 10px;
+      box-shadow:
+        0 0 28px rgba(0, 212, 255, .08),
+        0 12px 40px rgba(0, 0, 0, .55);
+      overflow: hidden;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    /* Header */
+    .v7-header {
+      padding: 8px 14px 6px;
+      border-bottom: 1px solid rgba(0, 212, 255, .12);
+      background: linear-gradient(180deg, rgba(0,212,255,.04), transparent);
+    }
+    .v7-titlebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .v7-titlebar .grip { color: rgba(0,212,255,.35); cursor: move; font-size: 10px; letter-spacing: -2px;}
+    .v7-titlebar .title { color: rgba(0,212,255,.85); font-size: 10px; font-weight: 700; letter-spacing: .14em; flex: 1;}
+    .v7-titlebar .opacity {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 6px; border: 1px solid rgba(0,212,255,.25);
+      border-radius: 4px;
+    }
+    .v7-titlebar .opacity input[type=range] { width: 60px; height: 4px;}
+    .v7-titlebar .icon-btn {
+      width: 22px; height: 22px;
+      background: transparent;
+      border: 1px solid rgba(0,212,255,.25);
+      color: rgba(0,212,255,.85);
+      border-radius: 4px;
+      cursor: pointer; font-size: 12px;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+
+    .v7-budget {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      font-size: 10px;
+      color: rgba(255,255,255,.55);
+      letter-spacing: .08em;
+    }
+    .v7-budget .pill {
+      display: inline-flex; align-items: baseline; gap: 5px;
+    }
+    .v7-budget .pill strong { color: rgba(0,212,255,.95); font-weight: 700; font-size: 12px;}
+    .v7-budget .pill .good { color: rgb(134, 239, 172);}
+    .v7-budget .talk-bar {
+      width: 80px; height: 4px; background: rgba(255,255,255,.08); border-radius: 2px; position: relative; overflow: hidden;
+    }
+    .v7-budget .talk-bar .you { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(252,211,77,.65); width: 28%;}
+    .v7-budget .talk-bar .cand { position: absolute; right: 0; top: 0; bottom: 0; background: rgba(134,239,172,.65); width: 72%;}
+
+    .v7-controls {
+      display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; align-items: center;
+    }
+    .v7-controls .group { display: inline-flex; gap: 2px; padding: 2px 6px; background: rgba(255,255,255,.03); border-radius: 4px;}
+    .v7-controls .group .lbl { font-size: 7px; color: rgba(255,255,255,.35); align-self: center; margin-right: 4px;}
+    .v7-chip {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(255,255,255,.45);
+      font-family: inherit;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      padding: 3px 7px;
+      border-radius: 3px;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .v7-chip.active { background: rgba(0,212,255,.18); border-color: rgba(0,212,255,.45); color: #00d4ff;}
+    .v7-chip.sonnet.active { background: rgba(168,85,247,.18); border-color: rgba(168,85,247,.5); color: rgb(216,180,254);}
+
+    /* Trust check banner */
+    .v7-trust {
+      background: linear-gradient(90deg, rgba(252, 165, 165, .12), rgba(252, 165, 165, .04));
+      border-bottom: 1px solid rgba(252, 165, 165, .35);
+      padding: 8px 14px;
+      display: flex; gap: 10px; align-items: start;
+      font-size: 11px;
+    }
+    .v7-trust .icon { color: rgb(252,165,165); font-size: 14px;}
+    .v7-trust .body { flex: 1; color: rgba(255,255,255,.88); line-height: 1.4;}
+    .v7-trust .body strong { color: rgb(252,165,165); letter-spacing: .1em; font-size: 9px; display: block; margin-bottom: 2px;}
+    .v7-trust .dismiss { background: transparent; border: none; color: rgba(255,255,255,.5); cursor: pointer;}
+
+    /* Thread */
+    .v7-thread {
+      padding: 8px 14px;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+
+    .v7-qblock {
+      background: rgba(255,255,255,.025);
+      border: 1px solid rgba(0,212,255,.15);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    .v7-qblock.done {
+      opacity: .65;
+      border-color: rgba(255,255,255,.1);
+    }
+    .v7-qblock.active {
+      border-color: rgba(0,212,255,.45);
+      box-shadow: 0 0 16px rgba(0,212,255,.08);
+    }
+    .v7-qblock.host-detected {
+      border-left: 3px solid rgb(252, 211, 77);
+    }
+
+    .v7-qhead {
+      display: flex; gap: 8px; align-items: center;
+      padding: 8px 12px;
+      background: rgba(0,212,255,.04);
+      border-bottom: 1px solid rgba(0,212,255,.1);
+    }
+    .v7-qhead .qnum {
+      color: rgba(0,212,255,.95);
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: .1em;
+    }
+    .v7-qhead .qdiff {
+      font-size: 8px; font-weight: 700; padding: 2px 6px; border-radius: 3px; letter-spacing: .08em;
+    }
+    .qdiff-easy { background: rgba(134,239,172,.12); color: rgb(134,239,172); border: 1px solid rgba(134,239,172,.3);}
+    .qdiff-medium { background: rgba(252,211,77,.12); color: rgb(252,211,77); border: 1px solid rgba(252,211,77,.3);}
+    .qdiff-hard { background: rgba(252,165,165,.12); color: rgb(252,165,165); border: 1px solid rgba(252,165,165,.3);}
+    .v7-qhead .qtopic {
+      color: rgba(255,255,255,.5);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .v7-qhead .qstatus {
+      margin-left: auto;
+      font-size: 9px;
+      color: rgba(255,255,255,.4);
+      letter-spacing: .08em;
+    }
+    .v7-qhead .qstatus.active-dot::before {
+      content: '●';
+      color: rgb(134,239,172);
+      margin-right: 4px;
+      animation: pulse 1.8s infinite;
+    }
+    .v7-qhead .qstatus.host-dot::before { content: '✎ '; color: rgb(252,211,77); }
+    @keyframes pulse { 0%,100% { opacity: 1;} 50% { opacity: .35;}}
+
+    .v7-qbody { padding: 10px 12px;}
+    .v7-qtext {
+      color: rgba(255,255,255,.92);
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 8px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .v7-transcript {
+      background: rgba(0,0,0,.25);
+      border: 1px dashed rgba(255,255,255,.1);
+      border-radius: 5px;
+      padding: 6px 8px;
+      font-size: 10px;
+      font-style: italic;
+      color: rgba(255,255,255,.55);
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .v7-transcript .tag { color: rgba(0,212,255,.7); font-style: normal; font-weight: 700; font-size: 8px; letter-spacing: .08em; margin-right: 6px;}
+
+    .v7-answer-summary {
+      color: rgba(255,255,255,.85);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+    .v7-answer-summary .tag { color: rgba(255,255,255,.5); font-size: 9px; letter-spacing: .08em; font-weight: 700; margin-right: 4px; font-family: inherit;}
+
+    .v7-signals {
+      display: flex; gap: 14px; flex-wrap: wrap; padding: 6px 0;
+      font-size: 10px;
+    }
+    .v7-signal {
+      display: inline-flex; gap: 6px; align-items: center;
+      color: rgba(255,255,255,.7);
+    }
+    .v7-signal .dot { width: 8px; height: 8px; border-radius: 50%;}
+    .dot-green { background: rgb(134,239,172);}
+    .dot-amber { background: rgb(252,211,77);}
+    .dot-red { background: rgb(252,165,165);}
+    .dot-skip { background: rgba(255,255,255,.25);}
+    .dot-pending { background: rgba(255,255,255,.2); animation: pulse 1.6s infinite;}
+
+    .v7-jargon { color: rgba(0,212,255,.85); font-family: monospace;}
+    .v7-jargon-list { color: rgba(255,255,255,.6);}
+
+    /* Follow-up suggestion */
+    .v7-fu-suggest {
+      margin: 10px 12px 12px;
+      padding: 8px 10px;
+      background: linear-gradient(90deg, rgba(168,85,247,.12), rgba(168,85,247,.04));
+      border: 1px solid rgba(168,85,247,.3);
+      border-radius: 6px;
+      display: flex; gap: 10px; align-items: center;
+    }
+    .v7-fu-suggest .fu-icon {color: rgb(216,180,254); font-size: 14px;}
+    .v7-fu-suggest .fu-body { flex: 1; font-size: 12px; color: rgba(255,255,255,.88); font-family: 'Inter', sans-serif;}
+    .v7-fu-suggest .fu-body .why { font-size: 10px; color: rgba(255,255,255,.5); margin-top: 2px;}
+    .v7-fu-suggest .fu-actions { display: flex; gap: 4px;}
+    .v7-fu-suggest button {
+      background: transparent; border: 1px solid rgba(168,85,247,.4); color: rgb(216,180,254);
+      padding: 4px 8px; font-size: 9px; font-weight: 700; letter-spacing: .08em;
+      border-radius: 4px; cursor: pointer; font-family: inherit;
+    }
+    .v7-fu-suggest button.primary { background: rgba(168,85,247,.18);}
+
+    /* Nested follow-up Q-Block */
+    .v7-fu-block {
+      margin: 10px 12px 0 30px;
+      border-left: 2px solid rgba(168,85,247,.35);
+      padding-left: 10px;
+      position: relative;
+    }
+    .v7-fu-block::before {
+      content: '↳';
+      position: absolute; left: -15px; top: 6px;
+      color: rgba(168,85,247,.6);
+    }
+
+    .v7-qfooter {
+      padding: 6px 12px 10px;
+      display: flex; gap: 6px;
+    }
+    .v7-qfooter button {
+      background: rgba(134,239,172,.1);
+      border: 1px solid rgba(134,239,172,.4);
+      color: rgb(134,239,172);
+      padding: 5px 10px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .v7-qfooter button.secondary {
+      background: transparent;
+      border-color: rgba(255,255,255,.15);
+      color: rgba(255,255,255,.55);
+    }
+
+    /* Scorecard rollup */
+    .v7-scorecard {
+      padding: 8px 14px;
+      border-top: 1px solid rgba(0,212,255,.12);
+      background: rgba(0,212,255,.02);
+    }
+    .v7-scorecard .lbl {
+      font-size: 9px;
+      color: rgba(0,212,255,.7);
+      letter-spacing: .12em;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .v7-sc-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 11px;}
+    .v7-sc-row { display: flex; gap: 8px; align-items: center; color: rgba(255,255,255,.75);}
+    .v7-sc-row .sig {
+      font-size: 12px; line-height: 1;
+    }
+    .sig-done { color: rgb(134,239,172);}
+    .sig-part { color: rgb(252,211,77);}
+    .sig-not { color: rgba(255,255,255,.3);}
+
+    /* Picker */
+    .v7-picker {
+      border-top: 1px solid rgba(0,212,255,.12);
+      background: rgba(0,212,255,.03);
+      padding: 10px 14px 14px;
+    }
+    .v7-picker .picker-head {
+      font-size: 10px; font-weight: 700; color: rgba(0,212,255,.95);
+      letter-spacing: .14em; margin-bottom: 4px;
+    }
+    .v7-picker .picker-hint {
+      font-size: 10px; color: rgba(255,255,255,.55);
+      margin-bottom: 10px;
+    }
+    .v7-picker-option {
+      padding: 8px 10px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .v7-picker-option:hover {
+      border-color: rgba(0,212,255,.45);
+      background: rgba(0,212,255,.05);
+    }
+    .v7-picker-option .pohdr {
+      display: flex; gap: 6px; align-items: center; margin-bottom: 4px;
+      font-size: 9px;
+    }
+    .v7-picker-option .poq {
+      color: rgba(255,255,255,.92);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .v7-picker-option .pow {
+      color: rgba(255,255,255,.5);
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      margin-top: 3px;
+    }
+    .v7-picker-actions { display: flex; gap: 6px; margin-top: 8px;}
+    .v7-picker-actions button {
+      flex: 1; padding: 6px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.15);
+      color: rgba(255,255,255,.55);
+      font-family: inherit; font-size: 9px;
+      font-weight: 700; letter-spacing: .08em;
+      border-radius: 5px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="mock-video-tile">CANDIDATE VIDEO<br>(audio only)</div>
+
+  <div class="v7-cockpit">
+
+    <!-- HEADER: drag + opacity + maximize + close + budget + controls -->
+    <div class="v7-header">
+      <div class="v7-titlebar">
+        <span class="grip">⋮⋮</span>
+        <span class="title">RECRUIT COCKPIT</span>
+        <span class="opacity">◐<input type="range" min="20" max="100" value="100"></span>
+        <button class="icon-btn">⛶</button>
+        <button class="icon-btn">−</button>
+      </div>
+      <div class="v7-budget">
+        <span class="pill"><span>HR SCREEN</span></span>
+        <span class="pill">⏱ <strong>6:41</strong> / 15:00</span>
+        <span class="pill">📚 TOPICS <strong>2</strong>/4</span>
+        <span class="pill">🗣 TALK <span class="talk-bar"><span class="you"></span><span class="cand"></span></span> <span class="good">28/72 good</span></span>
+      </div>
+      <div class="v7-controls">
+        <div class="group">
+          <span class="lbl">MODE</span>
+          <button class="v7-chip active">MANUAL</button>
+          <button class="v7-chip">EARPIECE</button>
+          <button class="v7-chip">AUTO</button>
+        </div>
+        <div class="group">
+          <span class="lbl">SPEED</span>
+          <button class="v7-chip">FAST</button>
+          <button class="v7-chip active">NORMAL</button>
+          <button class="v7-chip">CHILL</button>
+        </div>
+        <div class="group">
+          <span class="lbl">MODEL</span>
+          <button class="v7-chip">HAIKU</button>
+          <button class="v7-chip sonnet active">SONNET</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRUST CHECK BANNER (only renders when fired) -->
+    <div class="v7-trust">
+      <span class="icon">⚠</span>
+      <div class="body">
+        <strong>TRUST CHECK · 0.82</strong>
+        Candidate may be reading from AI assistance — "Great question" trope + textbook structure + evasive "does that align with what you're looking for". Ask a quick gut-question: <em>"In one sentence, what's the dumbest survey-programming mistake you've seen?"</em>
+      </div>
+      <button class="dismiss">✕</button>
+    </div>
+
+    <!-- THREAD -->
+    <div class="v7-thread">
+
+      <!-- Q-BLOCK 1: DONE -->
+      <div class="v7-qblock done">
+        <div class="v7-qhead">
+          <span class="qnum">Q1</span>
+          <span class="qdiff qdiff-easy">EASY</span>
+          <span class="qtopic">background</span>
+          <span class="qstatus">✓ DONE</span>
+        </div>
+        <div class="v7-qbody">
+          <div class="v7-qtext">Walk me through your background — how did you get into survey programming?</div>
+          <div class="v7-answer-summary"><span class="tag">A:</span> 19 yrs in MR programming, started at NetMR, worked at full-service agencies running tracker + ad-hoc studies; led the Decipher team for the last 6.</div>
+          <div class="v7-signals">
+            <span class="v7-signal"><span class="dot dot-green"></span> Quality: green — concrete, dates + roles</span>
+            <span class="v7-signal">📚 <span class="v7-jargon-list">NetMR, GMI, OMI</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q-BLOCK 2: ACTIVE -->
+      <div class="v7-qblock active">
+        <div class="v7-qhead">
+          <span class="qnum">Q2</span>
+          <span class="qdiff qdiff-medium">MEDIUM</span>
+          <span class="qtopic">decipher</span>
+          <span class="qstatus active-dot">LISTENING</span>
+        </div>
+        <div class="v7-qbody">
+          <div class="v7-qtext">Tell me about your experience with Decipher — which platform have you used most, and what types of surveys did you build?</div>
+          <div class="v7-transcript"><span class="tag">LIVE</span>"…mostly Decipher XML and the visual editor for simpler projects, and I'll drop into JS for custom UIs when the standard widgets can't handle it. We did a lot of conjoint and MaxDiff…"</div>
+          <div class="v7-signals">
+            <span class="v7-signal"><span class="dot dot-pending"></span> Quality: <em>grading…</em></span>
+            <span class="v7-signal">📚 <span class="v7-jargon-list">conjoint, MaxDiff, custom JS UIs</span></span>
+          </div>
+        </div>
+
+        <!-- FOLLOW-UP SUGGESTION -->
+        <div class="v7-fu-suggest">
+          <span class="fu-icon">↳</span>
+          <div class="fu-body">
+            <strong>How deep does your JS customisation go? Walk me through one tricky widget you built.</strong>
+            <div class="why">drill on lived experience — answer was platform-name list, not depth</div>
+          </div>
+          <div class="fu-actions">
+            <button class="primary">ADD AS FOLLOW-UP</button>
+            <button>SKIP</button>
+          </div>
+        </div>
+
+        <div class="v7-qfooter">
+          <button>✓ DONE — PICK NEXT TOPIC</button>
+          <button class="secondary">EDIT QUESTION</button>
+        </div>
+      </div>
+
+      <!-- HOST-DETECTED off-script question (chip in left border + yellow status) -->
+      <div class="v7-qblock host-detected" style="opacity:.55">
+        <div class="v7-qhead">
+          <span class="qnum">Q3</span>
+          <span class="qdiff qdiff-medium">MEDIUM</span>
+          <span class="qtopic">cmix · auto-detected</span>
+          <span class="qstatus host-dot">FROM YOUR SPEECH · 0.84</span>
+        </div>
+        <div class="v7-qbody" style="padding-bottom: 4px;">
+          <div class="v7-qtext">And how does CMIX compare to Decipher for the same study?</div>
+          <div style="font-size:10px;color:rgba(252,211,77,.85);font-style:italic;">↑ AI detected this question from your speech. Click <em>Confirm</em> to make it the active question, or <em>Dismiss</em> if it was an aside.</div>
+        </div>
+        <div class="v7-qfooter">
+          <button>CONFIRM &amp; ASK</button>
+          <button class="secondary">DISMISS</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SCORECARD ROLLUP -->
+    <div class="v7-scorecard">
+      <div class="lbl">SCORECARD</div>
+      <div class="v7-sc-list">
+        <div class="v7-sc-row"><span class="sig sig-done">●</span> Decipher proficiency</div>
+        <div class="v7-sc-row"><span class="sig sig-part">◐</span> CMIX depth</div>
+        <div class="v7-sc-row"><span class="sig sig-not">○</span> Qualtrics</div>
+        <div class="v7-sc-row"><span class="sig sig-not">○</span> Data validation</div>
+        <div class="v7-sc-row"><span class="sig sig-not">○</span> Multi-language surveys</div>
+        <div class="v7-sc-row"><span class="sig sig-not">○</span> Medical surveys</div>
+      </div>
+    </div>
+
+    <!-- PICKER (renders after Done is clicked) -->
+    <div class="v7-picker">
+      <div class="picker-head">PICK NEXT QUESTION</div>
+      <div class="picker-hint">AI: <em>CMIX is partial — drill on platform depth. Multi-lang surveys still uncovered.</em></div>
+
+      <div class="v7-picker-option">
+        <div class="pohdr"><span class="qdiff qdiff-easy">EASY</span><span class="qtopic">localization</span></div>
+        <div class="poq">Have you done Spanish-language surveys before?</div>
+        <div class="pow">surface good-to-have skill from JD</div>
+      </div>
+      <div class="v7-picker-option">
+        <div class="pohdr"><span class="qdiff qdiff-medium">MEDIUM</span><span class="qtopic">cmix</span></div>
+        <div class="poq">Walk me through a CMIX project — block logic, embedded data, JS hooks.</div>
+        <div class="pow">drill on the platform you said was secondary</div>
+      </div>
+      <div class="v7-picker-option">
+        <div class="pohdr"><span class="qdiff qdiff-hard">HARD</span><span class="qtopic">validation</span></div>
+        <div class="poq">Describe a data-validation rule that caught a live bug — what did it cost you?</div>
+        <div class="pow">probe lived QA experience</div>
+      </div>
+
+      <div class="v7-picker-actions">
+        <button>+ CUSTOM QUESTION</button>
+        <button>SKIP — WRAP UP ROUND</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Simulation controls — fire fake gRPC events that mutate the cockpit -->
+  <div style="position: fixed; bottom: 16px; left: 16px; padding: 12px; background: rgba(0,0,0,.85); border: 1px solid rgba(0,212,255,.3); border-radius: 8px; font-family: monospace; font-size: 10px; color: rgba(255,255,255,.7); max-width: 360px;">
+    <div style="color: rgba(0,212,255,.95); font-weight: 700; letter-spacing: .14em; margin-bottom: 8px;">SIM CONTROLS</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+      <button onclick="sim.gradeComing()" class="sim-btn">Grade Q2 → green</button>
+      <button onclick="sim.gradeAmber()" class="sim-btn">Grade Q2 → amber</button>
+      <button onclick="sim.addFollowup()" class="sim-btn">Add follow-up</button>
+      <button onclick="sim.doneActive()" class="sim-btn">Done with Q2</button>
+      <button onclick="sim.pickOption(0)" class="sim-btn">Pick EASY</button>
+      <button onclick="sim.pickOption(2)" class="sim-btn">Pick HARD</button>
+      <button onclick="sim.confirmHostQ()" class="sim-btn">Confirm Q3 (host)</button>
+      <button onclick="sim.dismissHostQ()" class="sim-btn">Dismiss Q3 (host)</button>
+      <button onclick="sim.fireTrustCheck()" class="sim-btn">Fire Trust Check</button>
+      <button onclick="sim.dismissTrust()" class="sim-btn">Dismiss Trust</button>
+      <button onclick="sim.simHostQuestion()" class="sim-btn">AI detects host Q</button>
+      <button onclick="sim.reset()" class="sim-btn" style="background:rgba(252,165,165,.15);border-color:rgba(252,165,165,.4);color:rgb(252,165,165);">Reset</button>
+    </div>
+  </div>
+  <style>
+    .sim-btn {
+      padding: 5px 8px; background: rgba(0,212,255,.08); border: 1px solid rgba(0,212,255,.3);
+      color: rgba(0,212,255,.9); border-radius: 4px; cursor: pointer; font-family: monospace;
+      font-size: 9px; font-weight: 700; letter-spacing: .04em; text-align: left;
+    }
+    .sim-btn:hover { background: rgba(0,212,255,.15);}
+  </style>
+
+  <script>
+    // Mini state machine — simulates the v7 cockpit message flow without
+    // any real gRPC. Each sim.* call mutates the DOM exactly the way the
+    // real frontend (Phase 2) will react to its SignalR events.
+    const sim = {
+      qCount: 3,
+
+      gradeComing(color = 'green') {
+        const active = document.querySelector('.v7-qblock.active');
+        if (!active) return;
+        const sig = active.querySelector('.v7-signal:first-child');
+        sig.innerHTML = `<span class="dot dot-${color}"></span> Quality: ${color} — answered specifics on Decipher XML + JS customisation`;
+        // Also mark scorecard row
+        const row = Array.from(document.querySelectorAll('.v7-sc-row')).find(r => r.innerText.includes('Decipher'));
+        if (row) row.querySelector('.sig').className = 'sig sig-done', row.querySelector('.sig').textContent = '●';
+      },
+      gradeAmber() { this.gradeComing('amber'); },
+
+      addFollowup() {
+        const active = document.querySelector('.v7-qblock.active');
+        if (!active) return;
+        // Remove the suggestion card
+        const sug = active.querySelector('.v7-fu-suggest');
+        if (sug) sug.remove();
+        // Add a nested follow-up
+        const fu = document.createElement('div');
+        fu.className = 'v7-fu-block';
+        fu.innerHTML = `
+          <div class="v7-qblock active" style="margin-bottom:0;">
+            <div class="v7-qhead">
+              <span class="qnum">Q2.1</span>
+              <span class="qdiff qdiff-hard">HARD</span>
+              <span class="qtopic">decipher · follow-up</span>
+              <span class="qstatus active-dot">LISTENING</span>
+            </div>
+            <div class="v7-qbody">
+              <div class="v7-qtext">How deep does your JS customisation go? Walk me through one tricky widget you built.</div>
+              <div class="v7-transcript"><span class="tag">LIVE</span>"waiting for candidate response…"</div>
+              <div class="v7-signals">
+                <span class="v7-signal"><span class="dot dot-pending"></span> Quality: <em>grading…</em></span>
+              </div>
+            </div>
+            <div class="v7-qfooter">
+              <button>✓ DONE — BACK TO Q2</button>
+            </div>
+          </div>`;
+        active.querySelector('.v7-qfooter').insertAdjacentElement('beforebegin', fu);
+        // Demote parent to "drilling deeper"
+        active.querySelector('.qstatus').textContent = 'DRILLING DEEPER';
+        active.querySelector('.qstatus').className = 'qstatus';
+      },
+
+      doneActive() {
+        const active = document.querySelector('.v7-qblock.active:not(.host-detected)');
+        if (!active) return;
+        active.classList.remove('active');
+        active.classList.add('done');
+        active.querySelectorAll('.v7-transcript, .v7-fu-suggest, .v7-qfooter, .v7-fu-block').forEach(e => e.remove());
+        const status = active.querySelector('.qstatus');
+        status.className = 'qstatus';
+        status.textContent = '✓ DONE';
+        // Picker stays visible — pretend it just refreshed
+        const picker = document.querySelector('.v7-picker');
+        picker.style.borderTopColor = 'rgba(252,211,77,.5)';
+        picker.querySelector('.picker-head').textContent = 'PICK NEXT QUESTION · just refreshed';
+      },
+
+      pickOption(idx) {
+        const opts = document.querySelectorAll('.v7-picker-option');
+        if (!opts[idx]) return;
+        const diff = opts[idx].querySelector('.qdiff').textContent;
+        const topic = opts[idx].querySelector('.qtopic').textContent;
+        const q = opts[idx].querySelector('.poq').textContent;
+        this.qCount++;
+        const newBlock = document.createElement('div');
+        newBlock.className = 'v7-qblock active';
+        newBlock.innerHTML = `
+          <div class="v7-qhead">
+            <span class="qnum">Q${this.qCount}</span>
+            <span class="qdiff qdiff-${diff.toLowerCase()}">${diff}</span>
+            <span class="qtopic">${topic}</span>
+            <span class="qstatus active-dot">LISTENING</span>
+          </div>
+          <div class="v7-qbody">
+            <div class="v7-qtext">${q}</div>
+            <div class="v7-transcript"><span class="tag">LIVE</span>"…"</div>
+            <div class="v7-signals">
+              <span class="v7-signal"><span class="dot dot-pending"></span> Quality: <em>grading…</em></span>
+            </div>
+          </div>
+          <div class="v7-qfooter">
+            <button>✓ DONE — PICK NEXT TOPIC</button>
+          </div>`;
+        document.querySelector('.v7-thread').appendChild(newBlock);
+        // Hide picker
+        document.querySelector('.v7-picker').style.display = 'none';
+      },
+
+      simHostQuestion() {
+        // Fire-and-forget — same as the v7-qblock.host-detected one but added below thread
+        this.qCount++;
+        const node = document.createElement('div');
+        node.className = 'v7-qblock host-detected';
+        node.style.opacity = '.55';
+        node.innerHTML = `
+          <div class="v7-qhead">
+            <span class="qnum">Q${this.qCount}</span>
+            <span class="qdiff qdiff-medium">MEDIUM</span>
+            <span class="qtopic">data-validation · auto-detected</span>
+            <span class="qstatus host-dot">FROM YOUR SPEECH · 0.81</span>
+          </div>
+          <div class="v7-qbody" style="padding-bottom:4px;">
+            <div class="v7-qtext">So tell me about a time a data-validation rule caught a bug in production.</div>
+            <div style="font-size:10px;color:rgba(252,211,77,.85);font-style:italic;">↑ AI detected this from your speech. Click Confirm to activate, or Dismiss.</div>
+          </div>
+          <div class="v7-qfooter">
+            <button onclick="sim.confirmDetected(this)">CONFIRM & ASK</button>
+            <button class="secondary" onclick="sim.dismissDetected(this)">DISMISS</button>
+          </div>`;
+        document.querySelector('.v7-thread').appendChild(node);
+      },
+
+      confirmHostQ() {
+        const det = document.querySelector('.v7-qblock.host-detected');
+        if (det) this.confirmDetected(det.querySelector('button'));
+      },
+      dismissHostQ() {
+        const det = document.querySelector('.v7-qblock.host-detected');
+        if (det) this.dismissDetected(det.querySelector('button.secondary'));
+      },
+      confirmDetected(btn) {
+        const block = btn.closest('.v7-qblock');
+        block.classList.remove('host-detected');
+        block.classList.add('active');
+        block.style.opacity = '1';
+        block.querySelector('.qstatus').className = 'qstatus active-dot';
+        block.querySelector('.qstatus').textContent = 'LISTENING (confirmed)';
+        block.querySelector('[style*="rgba(252,211,77"]')?.remove();
+        block.querySelector('.v7-qfooter').innerHTML = '<button>✓ DONE — PICK NEXT TOPIC</button>';
+      },
+      dismissDetected(btn) {
+        btn.closest('.v7-qblock').remove();
+      },
+
+      fireTrustCheck() {
+        const existing = document.querySelector('.v7-trust');
+        if (!existing) {
+          const t = document.createElement('div');
+          t.className = 'v7-trust';
+          t.innerHTML = `<span class="icon">⚠</span>
+            <div class="body"><strong>TRUST CHECK · 0.78</strong>
+            Candidate cadence shifted — long pauses then fluent textbook structure. Ask a quick gut-question to break the pattern.</div>
+            <button class="dismiss" onclick="sim.dismissTrust()">✕</button>`;
+          document.querySelector('.v7-header').insertAdjacentElement('afterend', t);
+        }
+      },
+      dismissTrust() { document.querySelector('.v7-trust')?.remove(); },
+
+      reset() { location.reload(); }
+    };
+  </script>
+
+  <div style="max-width: 720px; margin-top: 16px; padding: 12px 16px; color: rgba(255,255,255,.55); font-size: 11px; line-height: 1.6; font-family: system-ui;">
+    <strong style="color: rgba(0,212,255,.85);">v7 cockpit — proposed layout (Phase 2 build target)</strong><br>
+    The whole AI surface lives inside this one floating panel. Drag to move, ⛶ maximize, ◐ opacity slider, − minimize. Underneath: candidate video (full-bleed). All sales scaffolding (legacy COPILOT panel + INTEL panel) hidden in interview mode.<br>
+    <em>Yellow border-left block</em> = auto-detected from interviewer speech. <em>Purple dashed</em> = AI follow-up suggestion under active block. <em>Sonnet violet</em> on the model chip means deeper grading is on. Trust Check has its own dedicated banner above the thread — never enters the question queue.
+  </div>
+</body>
+</html>

@@ -36,8 +36,21 @@
     let pickerVisible = false;
     let pickerPending = false;          // true after Done clicked, until options arrive — drives "asking AI for next…" placeholder
 
+    // Topic state machine — driven by CopilotInsight.topicLabel /
+    // topicExhausted / followUpDepth. Used to enforce the 3-follow-up cap
+    // (picker filters out exhausted topics) and to render an accurate
+    // topics-done counter (distinct topic labels touched, not scorecard
+    // deltas which can be ~3 per turn).
+    const exhaustedTopics = new Set();   // lowercase topic labels marked exhausted
+    const touchedTopics = new Set();     // lowercase topic labels with any engagement
+
     // Trust check state — populated on V7TrustCheck. Floating banner.
     let trustCheck = null;              // { reason, coaching, confidence, dismissedAtMs }
+
+    // Drift / coaching alert state — populated when AIEngine emits a key_moment
+    // CopilotInsight whose content starts with "DRIFT ALERT" or similar
+    // coaching prefixes. Surfaces as a dismissable banner above the picker.
+    let coachAlert = null;              // { kind, content, at, dismissedAt }
 
     // Round metadata for the budget header.
     let roundMeta = {
@@ -55,19 +68,47 @@
 
     // ─── Init (called by recruit-hud.js) ──────────────────────
     function initRecruitThread(connection, meetingIdParam) {
-        if (initialized) return;
+        // Re-init on every call: the harness (and a real End → Start in
+        // Vision) tears down + rebuilds the cockpit mount DOM, so the
+        // previous rtThread/rtPicker/rtTrust elements are gone. If we
+        // early-return here the new mount is left empty.
+        const isReinit = initialized;
         signalR = connection;
         meetingId = meetingIdParam;
-        // Body class drives the CSS that hides the legacy COPILOT panel,
-        // INTEL panel, and insight feed in interview mode (Phase 2.5).
-        // Removing this class restores the v6 layout for debugging.
+        // Reset state — same module, fresh session.
+        if (isReinit) {
+            blocks.length = 0;
+            pendingHostDetections = [];
+            activeBlockId = null;
+            pickerOptions = null;
+            pickerPending = false;
+            trustCheck = null;
+            coachAlert = null;
+            scorecard.clear();
+            exhaustedTopics.clear();
+            touchedTopics.clear();
+        }
         document.body.classList.add('recruit-v7-mode');
         replaceBody();
         wireSignalR();
         initialized = true;
-        console.log('[RecruitThread] v7 initialized for meeting', meetingId);
+        console.log('[RecruitThread] v7 initialized for meeting', meetingId, isReinit ? '(re-init)' : '');
     }
     window.initRecruitThread = initRecruitThread;
+
+    // Called by the harness (and in prod by the STT end-of-utterance detector)
+    // when the candidate has just finished answering. Stamps the active Q-Block
+    // with the candidate-done timestamp so the grade-latency badge can show
+    // "⚡ graded 3.4s after candidate finished" when the V7QuestionGrade
+    // event lands. No-op if no active block.
+    window.recruitMarkCandidateAnswered = function () {
+        const block = blocks.find(b => b.id === activeBlockId);
+        if (!block) return;
+        block.candidateSentMs = Date.now();
+        // Reset any prior grade-latency so a re-graded turn shows fresh timing.
+        delete block.gradeArrivedMs;
+        delete block.gradeLatencyMs;
+    };
 
     // ─── DOM ──────────────────────────────────────────────────
     function replaceBody() {
@@ -105,8 +146,8 @@
             '  </div>' +
             '  <div class="rt-ctrl-group">' +
             '    <span class="rt-ctrl-lbl">MODEL</span>' +
-            '    <button class="copilot-model-btn active" data-model="haiku" onclick="setCopilotModel(\'haiku\')" title="Haiku — fast, cheap">HAIKU</button>' +
-            '    <button class="copilot-model-btn" data-model="sonnet" onclick="setCopilotModel(\'sonnet\')" title="Sonnet — recommended for interviews">SONNET</button>' +
+            '    <button class="copilot-model-btn" data-model="haiku" onclick="setCopilotModel(\'haiku\')" title="Haiku — fast, cheap (may miss nuance on detailed prompts)">HAIKU</button>' +
+            '    <button class="copilot-model-btn active" data-model="sonnet" onclick="setCopilotModel(\'sonnet\')" title="Sonnet — default, recommended for interviews (better follow-up + drift detection)">SONNET</button>' +
             '  </div>' +
             '</div>' +
             '<div class="rt-trust" id="rtTrust" style="display:none;"></div>' +
@@ -155,6 +196,7 @@
         signalR.on('V7TrustCheck', onTrustCheck);
         signalR.on('V7QuestionGrade', onQuestionGrade);
         signalR.on('V7FollowupSuggested', onFollowupSuggested);
+        signalR.on('V7TopicState', onTopicState);
 
         // Existing v6 signals — still fire for question-scoped grading
         // until the backend starts emitting V7QuestionGrade. We treat the
@@ -165,6 +207,104 @@
         signalR.on('JargonDetected', onLegacyJargon);
         signalR.on('ScorecardUpdate', onLegacyScorecard);
         signalR.on('InterviewContextLoaded', onContextLoaded);
+        // Drift / coaching key_moments arrive in the generic CopilotInsight
+        // stream — recruit-thread surfaces only the ones whose content reads
+        // as a coaching alert (DRIFT, OFF-TOPIC, PACE, ROUND MISMATCH, etc.).
+        signalR.on('CopilotInsight', onCopilotInsight);
+
+        // Re-sync active Q-Block on SignalR reconnect. AIEngine keeps a
+        // session-scoped activeQuestionId; if the connection drops while a
+        // question is pinned, the AIEngine session retains the OLD id but
+        // a NEW gRPC session may be spun up on the next call — either way
+        // re-emitting ActiveQuestionChanged on every reconnect keeps the
+        // backend in sync with what the host actually has pinned in the UI.
+        if (typeof signalR.onreconnected === 'function') {
+            signalR.onreconnected(() => {
+                console.log('[RecruitThread] SignalR reconnected — re-syncing active Q-Block');
+                const cur = blocks.find(b => b.id === activeBlockId);
+                if (cur && cur.status !== 'done') {
+                    emitActiveQuestion(cur);
+                }
+            });
+        }
+    }
+
+    function onTopicState(data) {
+        // V7 dedicated event — Vision fans out topic_state independently
+        // because the CopilotInsight carrier is dropped when type=no_action_needed
+        // (the common quiet-turn case after the speed-pass gating).
+        if (!data) return;
+        const tlRaw = (data.topicLabel || '').trim();
+        if (!tlRaw) return;
+        const tl = tlRaw.toLowerCase();
+        touchedTopics.add(tl);
+        if (data.topicExhausted === true || data.topicExhausted === 'true') {
+            exhaustedTopics.add(tl);
+        }
+        renderScorecard();
+        renderPicker();
+    }
+
+    function onCopilotInsight(data) {
+        if (!data) return;
+        if (data.type !== 'key_moment') return;
+        const content = String(data.content || '');
+        // Match coaching prefixes the AI emits at the start of a key_moment.
+        // Narrow enough that ordinary key_moments don't trigger a banner.
+        //
+        // NOTE: round-type mismatch alerts are intentionally NOT surfaced.
+        // A single Ragenaizer interview compresses multiple phases (HR +
+        // technical + CEO + negotiation) into one call, so a "you're asking
+        // a technical Q in an HR round" warning is noise. The AI prompt
+        // tells the model not to emit these, but we filter here as belt+
+        // suspenders.
+        //
+        // AI-ASSIST SUSPECTED and CANDIDATE ASKED are also surfaced — these
+        // are the trust-check and answer-assist signals the AI emits as
+        // `key_moment` insights. They need a banner so the host doesn't
+        // miss them while looking at the active Q-Block.
+        const m = content.match(/^(DRIFT(?:\s+ALERT)?|OFF[-\s]TOPIC|PACE\s+ALERT|TIME\s+ALERT|AI[-\s]ASSIST\s+SUSPECTED|CANDIDATE\s+ASKED|FORM[_\s]VS[_\s]REALITY|UNREALISTIC[_\s]COMP)/i);
+        if (!m) return;
+        coachAlert = {
+            kind: m[1].toUpperCase().replace(/\s+/g, '_'),
+            content: content,
+            at: Date.now(),
+            dismissedAt: 0
+        };
+        renderCoachAlert();
+    }
+
+    function dismissCoachAlert() {
+        if (coachAlert) coachAlert.dismissedAt = Date.now();
+        renderCoachAlert();
+    }
+
+    function renderCoachAlert() {
+        let el = document.getElementById('rtCoachAlert');
+        const mount = document.getElementById('rtThread')?.parentElement;
+        if (!mount) return;
+        if (!coachAlert || coachAlert.dismissedAt) {
+            if (el) el.remove();
+            return;
+        }
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'rtCoachAlert';
+            el.className = 'rt-coach-alert';
+            const thread = document.getElementById('rtThread');
+            mount.insertBefore(el, thread);
+        }
+        // Strip the redundant prefix from the message body — the kind chip
+        // already shows it. E.g. content "DRIFT ALERT: candidate ignored..."
+        // → message "candidate ignored...". Matches the same regex used in
+        // onCopilotInsight so any newly-added prefix stays in sync.
+        const msgBody = String(coachAlert.content || '')
+            .replace(/^(DRIFT(?:\s+ALERT)?|OFF[-\s]TOPIC|PACE\s+ALERT|TIME\s+ALERT|AI[-\s]ASSIST\s+SUSPECTED|CANDIDATE\s+ASKED|FORM[_\s]VS[_\s]REALITY|UNREALISTIC[_\s]COMP)\s*[:\-—]\s*/i, '')
+            .trim();
+        el.innerHTML =
+            '<span class="rt-coach-kind">' + escape(coachAlert.kind.replace(/_/g, ' ')) + '</span>' +
+            '<span class="rt-coach-msg">' + escape(msgBody) + '</span>' +
+            '<button class="rt-coach-x" data-action="dismiss-coach" title="Dismiss">×</button>';
     }
 
     function onContextLoaded(data) {
@@ -179,7 +319,21 @@
         const rEl = document.getElementById('rtBudgetRound');
         if (rEl) rEl.textContent = (data.roundLabel || data.roundType || 'INTERVIEW').toUpperCase();
         const tdEl = document.getElementById('rtTopicsTotal');
-        const topics = Array.isArray(data.topicsSeeded) ? data.topicsSeeded.length : 0;
+        // Vision sends `topicsSeededJson` as a serialized JSON string, NOT
+        // an array. Earlier code expected `topicsSeeded` (array) so the
+        // counter stuck at 0. Try both: direct array first (in case any
+        // path supplies it), then parse the JSON string. Fall back to 0.
+        let topics = 0;
+        if (Array.isArray(data.topicsSeeded)) {
+            topics = data.topicsSeeded.length;
+        } else if (typeof data.topicsSeededJson === 'string' && data.topicsSeededJson.trim()) {
+            try {
+                const parsed = JSON.parse(data.topicsSeededJson);
+                if (Array.isArray(parsed)) topics = parsed.length;
+            } catch (_e) {
+                // Ignore parse errors — counter just stays at 0.
+            }
+        }
         if (tdEl) tdEl.textContent = topics;
     }
 
@@ -213,9 +367,95 @@
         // host-actionable and would render a blank Q-Block.
         const trimmed = (data.questionText || '').trim();
         if (!trimmed) return;
-        // De-dup: ignore if we already have an unresolved detection with the same text.
-        const dupe = pendingHostDetections.find(d => d.questionText.trim().toLowerCase() === trimmed.toLowerCase());
-        if (dupe) return;
+        // Suppress entirely when classification is "follow_up" or "clarification"
+        // AND there's an active Q-Block. Those classifications mean the host is
+        // RE-STATING the active question (e.g. they pinned the AI-suggested
+        // follow-up then spoke it out loud). Creating a new block would create
+        // a confusing Q1.1.1 duplicate of Q1.1. The exact-text dedup below also
+        // covers identical text, but follow_up classification often comes with
+        // paraphrased text that still semantically maps to the active block.
+        const cls = (data.classification || '').toLowerCase();
+        if ((cls === 'follow_up' || cls === 'clarification') && activeBlockId) {
+            return;
+        }
+        // Dedup against pending detections AND against existing blocks — if the
+        // host re-says a question that was already pinned (via picker or earlier
+        // detection), don't re-prompt for confirmation.
+        const dupePending = pendingHostDetections.find(d => d.questionText.trim().toLowerCase() === trimmed.toLowerCase());
+        if (dupePending) return;
+        const dupeBlock = blocks.find(b => (b.questionText || '').trim().toLowerCase() === trimmed.toLowerCase());
+        if (dupeBlock) return;
+        // Fuzzy dedup against ALL existing blocks (not just active). The AI
+        // sees the host's prior question in every subsequent transcript
+        // window, so it can re-emit host_question_detected for the SAME
+        // question on each turn — leading to Q2, Q3, Q4 all duplicating
+        // each other. Exact-text dedup above misses contractions ("What's"
+        // vs "What is") and minor STT rewording. 0.7 Jaccard threshold is
+        // tight enough that genuinely-new questions still create new blocks.
+        const wordsHost = new Set(trimmed.toLowerCase().match(/\b[a-z]{3,}\b/g) || []);
+        if (wordsHost.size > 0) {
+            const dupeFuzzy = blocks.find(b => {
+                const wordsB = new Set((b.questionText || '').toLowerCase().match(/\b[a-z]{3,}\b/g) || []);
+                if (wordsB.size === 0) return false;
+                let intersect = 0;
+                wordsHost.forEach(w => { if (wordsB.has(w)) intersect++; });
+                const union = wordsHost.size + wordsB.size - intersect;
+                return union > 0 && (intersect / union) >= 0.7;
+            });
+            if (dupeFuzzy) return;
+        }
+        // Real-world flow: host READS OUT a picker suggestion (no click). If
+        // the spoken text matches any current picker option closely, silently
+        // pin THAT picker option (preserving topic + difficulty metadata)
+        // instead of creating a generic auto-detected block with classification
+        // metadata only. Threshold 0.55 — picker text is conversational so word
+        // overlap can be 50-60% even on a verbatim read after STT noise.
+        if (pickerOptions && Array.isArray(pickerOptions.options) && pickerOptions.options.length > 0) {
+            const wordsA = new Set(trimmed.toLowerCase().match(/\b[a-z]{3,}\b/g) || []);
+            let bestIdx = -1, bestScore = 0;
+            pickerOptions.options.forEach((o, i) => {
+                const wordsB = new Set(((o && o.question) || '').toLowerCase().match(/\b[a-z]{3,}\b/g) || []);
+                let intersect = 0;
+                wordsA.forEach(w => { if (wordsB.has(w)) intersect++; });
+                const union = wordsA.size + wordsB.size - intersect;
+                const jaccard = union > 0 ? intersect / union : 0;
+                if (jaccard > bestScore) { bestScore = jaccard; bestIdx = i; }
+            });
+            if (bestIdx >= 0 && bestScore >= 0.55) {
+                // Silent pin — use the picker option's metadata (topic,
+                // difficulty) instead of the AI's auto-detect guesses, and
+                // replace its questionText with what the host actually said
+                // so the Q-Block reflects the recruiter's wording.
+                const picked = pickerOptions.options[bestIdx];
+                const opt = { ...picked, question: trimmed };
+                pickerOptions.options[bestIdx] = opt;
+                pickOption(bestIdx);
+                return;
+            }
+        }
+        // Fuzzy dedup: if the host's spoken text is ≥50% word-overlap with the
+        // currently-active pinned block AND that block hasn't been graded yet,
+        // assume the host is re-speaking the pinned question in their own words
+        // (e.g. picker said "what drew you to apply" → host said "what attracted
+        // you to"). Don't create a duplicate Q-Block. Replace the block's text
+        // with the host's actual phrasing so the answer summary uses the real
+        // question wording.
+        if (activeBlockId) {
+            const active = blocks.find(b => b.id === activeBlockId);
+            if (active && !active.quality && !active.answerSummary) {
+                const wordsA = new Set(trimmed.toLowerCase().match(/\b[a-z]{3,}\b/g) || []);
+                const wordsB = new Set((active.questionText || '').toLowerCase().match(/\b[a-z]{3,}\b/g) || []);
+                let intersect = 0;
+                wordsA.forEach(w => { if (wordsB.has(w)) intersect++; });
+                const union = wordsA.size + wordsB.size - intersect;
+                const jaccard = union > 0 ? intersect / union : 0;
+                if (jaccard >= 0.5) {
+                    active.questionText = trimmed;
+                    renderThread();
+                    return;
+                }
+            }
+        }
         const detection = {
             id: 'host-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
             questionText: trimmed,
@@ -227,6 +467,17 @@
         };
         pendingHostDetections.push(detection);
         renderThread();
+
+        // Auto-confirm high-confidence detections (≥ 0.9). The CONFIRM & ASK
+        // card was a safety prompt for low/medium-confidence picks; at 0.9+
+        // the AI is reliably picking up real host questions and waiting for
+        // a manual click introduces a race where the candidate's reply gets
+        // graded against the now-stale active Q-Block. Auto-confirm flips
+        // the active block immediately so downstream grading attaches to
+        // the right question.
+        if (detection.confidence >= 0.9) {
+            confirmDetected(detection.id);
+        }
     }
 
     function onTrustCheck(data) {
@@ -241,12 +492,23 @@
     }
 
     function onQuestionGrade(data) {
-        // v7 explicit question_id tagging. Until AIEngine emits these,
-        // the legacy handlers below carry the load — but when present,
-        // route directly to the named block.
+        // v7 explicit question_id tagging. AIEngine snapshots the active
+        // question id at the start of each insights call, so this grade
+        // is always tagged with the question the candidate was answering
+        // when grading STARTED — even if the host has since pivoted.
         if (!data || !data.questionId) return;
         const block = blocks.find(b => b.id === data.questionId);
         if (!block) return;
+        // Stale-grade guard: if the block was marked DONE >30s ago, drop
+        // the grade. The host has moved on; surfacing late grades on a
+        // closed Q-Block confuses the thread. 30s is generous — typical
+        // Sonnet round-trip is 10-15s, so a grade for an active block
+        // never trips this filter.
+        if (block.status === 'done' && block.askedAtMs && (Date.now() - block.askedAtMs) > 30000) {
+            console.warn('[RecruitThread] Dropping stale grade for done block', data.questionId,
+                'age=', Date.now() - block.askedAtMs, 'ms');
+            return;
+        }
         if (data.qualityColor) block.quality = { color: data.qualityColor, reason: data.qualityReason || '', confidence: data.qualityConfidence || 0 };
         if (data.answerSummary) block.answerSummary = data.answerSummary;
         (data.jargon || []).forEach(j => addJargonToBlock(block, j));
@@ -254,6 +516,31 @@
             addDeltaToBlock(block, d);  // per-block visibility
             applyScorecardDelta(d);     // also bubble up to aggregate rollup
         });
+        // Latency badge: only stamp when this is a real grade (green/amber/red),
+        // not a "skip" verdict (which means AI declined to grade — badge would
+        // be misleading). Cap at 90s to suppress badges when the host actually
+        // left the mic dead for over a minute — Sonnet taking ~25s plus in-flight
+        // queueing under rapid candidate turns can push real latency past 30s,
+        // so the prior 25s cap was hiding legitimate measurements.
+        const isRealGrade = data.qualityColor && data.qualityColor !== 'skip';
+        if (block.candidateSentMs && !block.gradeLatencyMs && isRealGrade) {
+            const ageMs = Date.now() - block.candidateSentMs;
+            if (ageMs <= 90000) {
+                block.gradeArrivedMs = Date.now();
+                block.gradeLatencyMs = ageMs;
+            }
+        }
+        // If a corrective "skip" arrives, mark the block as skipped (not
+        // nulled). Nulling destroys state the picker depends on — when the
+        // candidate deflects ('skip'), the host needs the picker MORE than
+        // ever to redirect, and renderPicker's hasResolution check reads
+        // block.quality.color. Renderers that show a colored chip should
+        // already treat 'skip' as "no colored chip" (it's not green/amber/red).
+        if (data.qualityColor === 'skip') {
+            block.quality = { color: 'skip', reason: data.qualityReason || '', confidence: 0 };
+            delete block.gradeLatencyMs;
+            delete block.gradeArrivedMs;
+        }
         renderThread();
         renderScorecard();
     }
@@ -273,12 +560,23 @@
             }
             return;
         }
+        // Stamp how long the suggestion took. Two clocks: from candidate-done
+        // (matches the grade-latency badge's anchor for natural reading) and
+        // from manual-trigger if the host clicked "Ask AI for follow-up". The
+        // manual path resets candidateSentMs to the click time elsewhere, so
+        // we can reuse the same field.
+        let suggestLatencyMs = null;
+        if (parent.candidateSentMs) {
+            const ageMs = Date.now() - parent.candidateSentMs;
+            if (ageMs > 0 && ageMs <= 90000) suggestLatencyMs = ageMs;
+        }
         parent.followupSuggestion = {
             question: data.question,
             why: data.why || '',
             topic: data.topic || parent.topic,
             difficulty: data.difficulty || 'medium',
-            reason: data.reason || ''
+            reason: data.reason || '',
+            latencyMs: suggestLatencyMs
         };
         renderThread();
     }
@@ -305,6 +603,8 @@
         }));
         pickerOptions = { topicHint: '', options: opts };
         renderPicker();
+        // Picker now has content — empty-state placeholder should hide.
+        renderThread();
     }
 
     function onLegacyAnswerQuality(data) {
@@ -369,12 +669,20 @@
             if (newRank > prevRank) {
                 existing.signal = d.signal;
                 existing.evidenceQuote = d.evidenceQuote || existing.evidenceQuote || '';
+                if (typeof d.score === 'number') existing.score = d.score;
+                if (d.reason) existing.reason = d.reason;
+            } else if (newRank === prevRank) {
+                // Same band — keep the higher score / fresher reason.
+                if (typeof d.score === 'number' && d.score > (existing.score ?? -1)) existing.score = d.score;
+                if (d.reason && d.reason.length > (existing.reason || '').length) existing.reason = d.reason;
             }
         } else {
             block.deltas.push({
                 competency: d.competency,
                 signal: d.signal,
-                evidenceQuote: d.evidenceQuote || ''
+                evidenceQuote: d.evidenceQuote || '',
+                score: typeof d.score === 'number' ? d.score : null,
+                reason: d.reason || ''
             });
         }
     }
@@ -491,8 +799,15 @@
         wrap.dataset.bid = b.id;
 
         const diffClass = 'rt-diff-' + (b.difficulty || 'medium').toLowerCase();
-        const statusLbl = b.status === 'done' ? '✓ DONE' : 'LISTENING';
-        const statusCls = b.status === 'done' ? '' : 'rt-active-dot';
+        // Three pill states: DONE (host picked next topic), ANSWERED (grade
+        // arrived — candidate has spoken), LISTENING (active, no grade yet).
+        // Without ANSWERED, the pill stays at LISTENING after grading lands,
+        // which contradicts the green grade card right below it.
+        const graded = b.quality && b.quality.color && b.quality.color !== 'skip';
+        let statusLbl, statusCls;
+        if (b.status === 'done') { statusLbl = '✓ DONE'; statusCls = ''; }
+        else if (graded) { statusLbl = 'ANSWERED'; statusCls = 'rt-graded-dot'; }
+        else { statusLbl = 'LISTENING'; statusCls = 'rt-active-dot'; }
 
         // Follow-up chip references the parent so the host can see at a
         // glance "this is a drill-down of Q1" — combined with the Q1.1
@@ -501,11 +816,19 @@
             ? `<span class="rt-fu-chip" title="Follow-up question drilling into ${escape(parentNum || 'parent')}">↳ FOLLOW-UP OF ${escape(parentNum || '?')}</span>`
             : '';
 
+        // Latency badge — only render when we actually measured the round-trip
+        // (candidate-done → grade-arrival). Shows "⚡ 3.4s" with full title
+        // breakdown on hover. Hidden until the grade lands.
+        const latChip = (typeof b.gradeLatencyMs === 'number')
+            ? `<span class="rt-lat-chip" title="Time from candidate finishing to grade arrival">⚡ ${(b.gradeLatencyMs / 1000).toFixed(1)}s</span>`
+            : '';
+
         let html = '<div class="rt-qhead">' +
             `<span class="rt-qnum">${escape(displayNum)}</span>` +
             `<span class="rt-qdiff ${diffClass}">${escape(b.difficulty || 'medium').toUpperCase()}</span>` +
             `<span class="rt-qtopic">${escape(b.topic || '')}</span>` +
             fuChip +
+            latChip +
             `<span class="rt-qstatus ${statusCls}">${statusLbl}</span>` +
             '</div>';
 
@@ -514,7 +837,10 @@
 
         if (b.answerSummary) {
             html += `<div class="rt-answer"><span class="rt-tag">A:</span> ${escape(b.answerSummary)}</div>`;
-        } else if (b.status !== 'done') {
+        } else if (b.status !== 'done' && !graded) {
+            // Only show "waiting for answer" while truly waiting. Once the
+            // grade lands the candidate has clearly spoken, even if we don't
+            // yet have a full answer summary.
             html += '<div class="rt-transcript"><span class="rt-tag">LIVE</span> waiting for candidate to answer…</div>';
         }
 
@@ -539,10 +865,19 @@
             b.deltas.slice(0, 5).forEach(d => {
                 const dot = d.signal === 'demonstrated' ? '●' : d.signal === 'partial' ? '◐' : '○';
                 const cls = d.signal === 'demonstrated' ? 'rt-sig-done' : d.signal === 'partial' ? 'rt-sig-part' : 'rt-sig-not';
+                const hasScore = typeof d.score === 'number';
+                // Score band drives the chip color so the host can scan
+                // dense rows at a glance (red 0-3 / amber 4-6 / green 7-10).
+                const scoreCls = !hasScore ? '' : (d.score >= 7 ? 'rt-score-hi' : d.score >= 4 ? 'rt-score-mid' : 'rt-score-lo');
+                const scoreChip = hasScore ? `<span class="rt-bsc-score ${scoreCls}">${d.score}/10</span>` : '';
+                const reasonBlock = d.reason ? `<span class="rt-bsc-reason">${escape(d.reason)}</span>` : '';
+                const evidenceBlock = d.evidenceQuote ? `<span class="rt-bsc-evidence">"${escape(d.evidenceQuote)}"</span>` : '';
                 html += '<div class="rt-bsc-row">' +
                     `<span class="rt-sig ${cls}">${dot}</span>` +
                     `<span class="rt-bsc-comp">${escape(d.competency)}</span>` +
-                    (d.evidenceQuote ? `<span class="rt-bsc-evidence">"${escape(d.evidenceQuote)}"</span>` : '') +
+                    scoreChip +
+                    reasonBlock +
+                    evidenceBlock +
                     '</div>';
             });
             html += '</div>';
@@ -553,11 +888,15 @@
         // Follow-up suggestion card (only on active blocks)
         if (b.status !== 'done' && b.followupSuggestion) {
             const fs = b.followupSuggestion;
+            const fuLatChip = (typeof fs.latencyMs === 'number')
+                ? `<span class="rt-lat-chip" title="Time from candidate finishing to AI follow-up suggestion">⚡ ${(fs.latencyMs / 1000).toFixed(1)}s</span>`
+                : '';
             html += '<div class="rt-fu-suggest">' +
                 '<span class="rt-fu-icon">↳</span>' +
                 '<div class="rt-fu-body">' +
                 `<strong>${escape(fs.question)}</strong>` +
                 (fs.why ? `<div class="rt-fu-why">${escape(fs.why)}</div>` : '') +
+                (fuLatChip ? `<div class="rt-fu-meta">${fuLatChip}</div>` : '') +
                 '</div>' +
                 '<div class="rt-fu-actions">' +
                 `<button class="rt-btn-primary" data-action="add-followup" data-bid="${b.id}">ADD AS FOLLOW-UP</button>` +
@@ -627,13 +966,23 @@
         const pick = document.getElementById('rtPicker');
         if (!pick) return;
 
-        // Hide the picker entirely while a Q-Block is active — the host
-        // shouldn't see "pick next" while they're still on a question.
-        // Options remain stashed in pickerOptions; they'll render the
-        // moment Done is clicked.
+        // Hide the picker while the active block is still un-graded — the
+        // host is mid-question and doesn't need next-question noise yet. But
+        // ONCE the active block has any grade resolution (green/amber/red OR
+        // 'skip' — meaning the candidate deflected and no grade is coming),
+        // surface the picker below it so the host can move on. They can still
+        // click DONE explicitly to mark the block complete; picking a new
+        // card also closes the active one. Skip is critical here: when the
+        // candidate flips a question back at the host, the host needs the
+        // picker MORE than ever to redirect — hiding it on skip stranded the
+        // host with no visual next-step UI.
         if (activeBlockId) {
-            pick.style.display = 'none';
-            return;
+            const active = blocks.find(b => b.id === activeBlockId);
+            const hasResolution = active && active.quality && active.quality.color;
+            if (!hasResolution) {
+                pick.style.display = 'none';
+                return;
+            }
         }
 
         // Loading placeholder: shown after Done click while waiting for
@@ -670,7 +1019,25 @@
         // Filter out malformed entries — null, missing question, etc.
         // A `null` in the array would crash the next access. Empty
         // question strings are useless to the host so drop them too.
-        const safeOpts = pickerOptions.options.filter(o => o && typeof o === 'object' && o.question && o.question.trim());
+        // ALSO drop options whose topic is in the exhaustedTopics set —
+        // the state machine has marked it done, so we shouldn't push the
+        // host to drill it further. If filtering empties the list we keep
+        // the original (better something than nothing); host can still
+        // SKIP or ASK MY OWN.
+        let safeOpts = pickerOptions.options.filter(o => o && typeof o === 'object' && o.question && o.question.trim());
+        if (exhaustedTopics.size > 0) {
+            const beforeCount = safeOpts.length;
+            const filtered = safeOpts.filter(o => {
+                const t = (o.topic || '').trim().toLowerCase();
+                return !t || !exhaustedTopics.has(t);
+            });
+            if (filtered.length > 0) safeOpts = filtered;
+            // else: AI didn't suggest any non-exhausted topics — keep original
+            // so the host has something. Add a small banner so they know.
+            if (filtered.length === 0 && beforeCount > 0) {
+                html += '<div class="rt-picker-hint rt-picker-warn">⚠ All suggestions still on exhausted topics — use ASK MY OWN to switch topics</div>';
+            }
+        }
         safeOpts.forEach((o, idx) => {
             html += `<div class="rt-picker-option" data-idx="${idx}">` +
                 '<div class="rt-po-hdr">' +
@@ -718,8 +1085,13 @@
         });
         list.innerHTML = rows.join('');
 
-        // Topics-done counter on the budget bar
-        const done = Array.from(scorecard.values()).filter(v => v.signal === 'demonstrated').length;
+        // Topics-done counter on the budget bar — counts DISTINCT topics
+        // marked exhausted by the AI's topic_state signal. Falls back to
+        // the count of distinct topics touched (engaged with) if no topic
+        // has been exhausted yet, so the bar reflects breadth not the
+        // misleading "demonstrated scorecard deltas" count we used before
+        // (which double-counted multiple competencies per turn).
+        const done = exhaustedTopics.size > 0 ? exhaustedTopics.size : touchedTopics.size;
         const td = document.getElementById('rtTopicsDone');
         if (td) td.textContent = done;
     }
@@ -758,6 +1130,7 @@
             case 'custom-question':  return openCustomQuestion();
             case 'skip-round':       return skipRound();
             case 'dismiss-trust':    return dismissTrust();
+            case 'dismiss-coach':    return dismissCoachAlert();
             case 'request-next':     return (() => { pickerPending = true; renderThread(); renderPicker(); requestNextTopic(); })();
             case 'request-followup': return requestManualFollowup(ref);
             case 'custom-submit':    return submitCustomQuestion();
@@ -768,6 +1141,23 @@
     function pickOption(idx) {
         if (!pickerOptions || !pickerOptions.options[idx]) return;
         const opt = pickerOptions.options[idx];
+        // Close the previously-active block. If it never got real engagement
+        // (no grade, no answer summary, no scorecard deltas — host pinned but
+        // skipped without asking), DELETE it so we don't leave an empty husk.
+        // Otherwise mark DONE. Mirrors the confirmDetected transition logic.
+        const curIdx = blocks.findIndex(b => b.id === activeBlockId);
+        if (curIdx >= 0) {
+            const cur = blocks[curIdx];
+            const hadEngagement = (cur.quality && cur.quality.color && cur.quality.color !== 'skip')
+                || !!cur.answerSummary
+                || (cur.deltas && cur.deltas.length > 0);
+            if (hadEngagement) {
+                cur.status = 'done';
+                cur.followupSuggestion = null;
+            } else {
+                blocks.splice(curIdx, 1);
+            }
+        }
         const block = createBlock({
             questionText: opt.question,
             topic: opt.topic,
@@ -918,17 +1308,41 @@
         if (idx < 0) return;
         const d = pendingHostDetections[idx];
         pendingHostDetections.splice(idx, 1);
-        // If there's a current active block, close it.
-        const cur = blocks.find(b => b.id === activeBlockId);
-        if (cur) { cur.status = 'done'; cur.followupSuggestion = null; }
+        // Transition the current active block: if it never got an answer or
+        // a real grade (host pinned a picker option then asked a different
+        // question instead), DELETE it — leaving an empty "DONE" husk is
+        // visual clutter the host can't act on. Only keep blocks that had
+        // genuine engagement (any grade other than 'skip', or an answer
+        // summary that came in via streaming).
+        const curIdx = blocks.findIndex(b => b.id === activeBlockId);
+        if (curIdx >= 0) {
+            const cur = blocks[curIdx];
+            const hadEngagement = (cur.quality && cur.quality.color && cur.quality.color !== 'skip')
+                || !!cur.answerSummary
+                || (cur.deltas && cur.deltas.length > 0);
+            if (hadEngagement) {
+                cur.status = 'done';
+                cur.followupSuggestion = null;
+            } else {
+                blocks.splice(curIdx, 1);
+            }
+        }
+        // Only treat as a follow-up when we have BOTH classification=follow_up
+        // AND a resolvable parent id (the AIEngine's snapshotted active id).
+        // Otherwise we'd render an orphan "FOLLOW-UP OF ?" chip — happens when
+        // the prior block was already DONE before the detection arrived (no
+        // active id to snapshot), but the AI still classified it as a
+        // follow-up. In that case it's effectively a new topic.
+        const hasResolvableParent = !!(d.parentQuestionIdHint && blocks.find(b => b.id === d.parentQuestionIdHint));
+        const isFollowup = d.classification === 'follow_up' && hasResolvableParent;
         const block = createBlock({
             id: d.id,
             questionText: d.questionText,
             topic: d.topic,
             difficulty: 'medium',
             autoDetected: true,
-            isFollowup: d.classification === 'follow_up',
-            parentId: d.parentQuestionIdHint
+            isFollowup: isFollowup,
+            parentId: isFollowup ? d.parentQuestionIdHint : ''
         });
         emitActiveQuestion(block);
         renderThread();
