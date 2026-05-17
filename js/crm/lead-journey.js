@@ -14,6 +14,17 @@
         document.getElementById('statusChangeConfirmBtn').disabled = true;
         document.getElementById('lostReasonSection').style.display = 'none';
         document.getElementById('wonValueSection').style.display = 'none';
+        // Reset reason/value inputs — they'd otherwise carry state from a
+        // prior open. A rep could pick "Other" + type custom text, cancel,
+        // then re-open on a different lead and the stale value would
+        // silently slip through (Confirm enables on truthy custom even
+        // before the user re-opens the dropdown).
+        const lostSelect = document.getElementById('lostReasonSelect');
+        const lostCustom = document.getElementById('lostReasonCustom');
+        const wonValue  = document.getElementById('wonDealValue');
+        if (lostSelect)  lostSelect.value = '';
+        if (lostCustom) { lostCustom.value = ''; lostCustom.style.display = 'none'; }
+        if (wonValue)    wonValue.value = '';
 
         try {
             // Fetch the lead + transitions in parallel so the modal can show
