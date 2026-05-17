@@ -7,8 +7,27 @@
 .rt-body {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    /* Body itself scrolls when total content exceeds the cockpit
+     * height — covers the case where trust + thread + scorecard +
+     * picker all want to render and the cockpit isn't tall enough.
+     * Header (budget + controls + trust banner) flows in this scroll
+     * too, but they're short and the active content the host actually
+     * cares about (active block + picker) sits at the bottom and is
+     * always reachable by scrolling. */
+    overflow-y: auto;
     padding: 0 !important; /* override any inherited padding from v6 styles */
+    /* Global word-break — any text content (question text, jargon
+     * terms, transcript fragments, URLs in answers) must wrap inside
+     * the cockpit, even when a single token has no spaces. Without
+     * `anywhere` a 200-char URL or jargon term overflows horizontally
+     * and gets clipped. min-width:0 lets flex children shrink below
+     * their content's intrinsic width. */
+    min-width: 0;
+}
+.rt-body * {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    min-width: 0;
 }
 
 /* ── Phase 2.5: hide legacy panels in v7 interview mode ────────
@@ -188,21 +207,19 @@ body.recruit-v7-mode .hud-emotion-strip {
  * and shrinks-when-needed-but-not-below-its-own-scroll-area when many
  * sibling panels (trust + scorecard + picker) stack up. Without the
  * min-height: 0 trick, flex children can overflow their parent. */
+/* With body-level scroll, the thread no longer needs its own scroll
+ * region — it grows to fit its content and the body handles the
+ * vertical overflow. flex-shrink: 0 prevents it from collapsing
+ * when picker / scorecard render alongside. */
 .rt-thread {
-    flex: 1 1 auto;
-    min-height: 120px;
-    overflow-y: auto;
+    flex: 0 0 auto;
     padding: 8px 12px;
 }
-/* Cap the picker height so a long topic_hint + 3 options can't squeeze
- * the thread to nothing when both are visible (idle-state). */
 .rt-picker {
-    max-height: 320px;
-    overflow-y: auto;
+    flex: 0 0 auto;
 }
 .rt-scorecard {
-    max-height: 160px;
-    overflow-y: auto;
+    flex: 0 0 auto;
 }
 .rt-empty {
     color: rgba(255, 255, 255, 0.45);

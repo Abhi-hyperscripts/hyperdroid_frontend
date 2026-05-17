@@ -113,9 +113,13 @@
             '<div class="rt-thread" id="rtThread">' +
             '  <div class="rt-empty" id="rtEmpty">Waiting for the first question. The AI will suggest 3 options when ready — pick one and ask the candidate.</div>' +
             '</div>' +
+            // Scorecard is COLLAPSED by default (▸) — host opens it
+            // when they want to check competency coverage. Reduces vertical
+            // weight in the cockpit so picker + active block stay above
+            // the fold.
             '<div class="rt-scorecard" id="rtScorecard" style="display:none;">' +
-            '  <div class="rt-lbl-bar">SCORECARD <span class="rt-toggle" id="rtScToggle">▾</span></div>' +
-            '  <div class="rt-sc-list" id="rtScList"></div>' +
+            '  <div class="rt-lbl-bar">SCORECARD <span class="rt-toggle" id="rtScToggle">▸</span></div>' +
+            '  <div class="rt-sc-list" id="rtScList" style="display:none;"></div>' +
             '</div>' +
             '<div class="rt-picker" id="rtPicker" style="display:none;"></div>';
         const scToggle = document.getElementById('rtScToggle');
@@ -204,13 +208,17 @@
     }
 
     function onHostQuestionDetected(data) {
-        if (!data || !data.questionText) return;
+        if (!data) return;
+        // Whitespace-only counts as empty — a 3-space "question" is not
+        // host-actionable and would render a blank Q-Block.
+        const trimmed = (data.questionText || '').trim();
+        if (!trimmed) return;
         // De-dup: ignore if we already have an unresolved detection with the same text.
-        const dupe = pendingHostDetections.find(d => d.questionText.trim().toLowerCase() === data.questionText.trim().toLowerCase());
+        const dupe = pendingHostDetections.find(d => d.questionText.trim().toLowerCase() === trimmed.toLowerCase());
         if (dupe) return;
         const detection = {
             id: 'host-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
-            questionText: data.questionText,
+            questionText: trimmed,
             classification: data.classification || 'new_topic',
             parentQuestionIdHint: data.parentQuestionIdHint || '',
             topic: data.topic || 'auto-detected',
@@ -324,12 +332,18 @@
 
     function applyScorecardDelta(d) {
         if (!d || !d.competency || !d.signal) return;
+        // Signal enum guard: AIEngine clamps to this set but a buggy
+        // upstream emitter or a v6→v7 schema drift could send junk.
+        // Drop instead of rendering a row with an unknown signal that
+        // has no dot icon.
+        const validSignals = { not_yet: 0, partial: 1, demonstrated: 2 };
+        if (!(d.signal in validSignals)) return;
         const key = d.competency.trim();
+        if (!key) return;
         const prev = scorecard.get(key) || {};
         // Allow signal promotion: not_yet → partial → demonstrated. Never demote.
-        const rank = { not_yet: 0, partial: 1, demonstrated: 2 };
-        const prevRank = rank[prev.signal] ?? -1;
-        const newRank = rank[d.signal] ?? 0;
+        const prevRank = validSignals[prev.signal] ?? -1;
+        const newRank = validSignals[d.signal];
         if (newRank >= prevRank) {
             scorecard.set(key, {
                 signal: d.signal,
@@ -542,7 +556,11 @@
         if (pickerOptions.options.length === 0) {
             html += '<div class="rt-picker-loading rt-picker-fallback">AI couldn\'t suggest 3 options this turn. Type your own:</div>';
         }
-        pickerOptions.options.forEach((o, idx) => {
+        // Filter out malformed entries — null, missing question, etc.
+        // A `null` in the array would crash the next access. Empty
+        // question strings are useless to the host so drop them too.
+        const safeOpts = pickerOptions.options.filter(o => o && typeof o === 'object' && o.question && o.question.trim());
+        safeOpts.forEach((o, idx) => {
             html += `<div class="rt-picker-option" data-idx="${idx}">` +
                 '<div class="rt-po-hdr">' +
                 `<span class="rt-qdiff rt-diff-${(o.difficulty || 'medium').toLowerCase()}">${escape(o.difficulty || 'medium').toUpperCase()}</span>` +
@@ -552,6 +570,9 @@
                 (o.why ? `<div class="rt-po-why">${escape(o.why)}</div>` : '') +
                 '</div>';
         });
+        // Reassign so pickOption(idx) doesn't reference the original
+        // (possibly null-containing) array.
+        pickerOptions.options = safeOpts;
         html += '<div class="rt-picker-actions">' +
             '<button class="rt-btn-ghost" data-action="custom-question">+ ASK MY OWN</button>' +
             '<button class="rt-btn-ghost" data-action="skip-round">SKIP</button>' +
