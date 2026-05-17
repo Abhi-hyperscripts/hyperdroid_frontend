@@ -11,6 +11,86 @@
     padding: 0 !important; /* override any inherited padding from v6 styles */
 }
 
+/* ── Phase 2.5: hide legacy panels in v7 interview mode ────────
+ * The classic COPILOT control panel + insight feed + INTEL panel
+ * are sales-shaped and not useful during interviews. The v7 cockpit
+ * absorbs the control chips (MODE/SPEED/MODEL) and drops the insight
+ * feed (HUD signals route to Q-Blocks instead) and INTEL feed
+ * (candidates don't need competitor research mid-interview).
+ *
+ * body.recruit-v7-mode is added on init by recruit-thread.js.
+ * Remove the class to restore the v6 layout for fallback/debugging.
+ * ────────────────────────────────────────────────────────────── */
+body.recruit-v7-mode .hud-control-panel,
+body.recruit-v7-mode .hud-insight-feed,
+body.recruit-v7-mode .hud-research-panel,
+body.recruit-v7-mode .hud-emotion-strip {
+    display: none !important;
+}
+
+/* ── Cockpit chip controls (relocated from legacy panel) ────── */
+.rt-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 12px 8px;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.12);
+    background: rgba(0, 0, 0, 0.18);
+}
+.rt-ctrl-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+.rt-ctrl-lbl {
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    margin-right: 4px;
+}
+/* Override the legacy chip styles (which target font-size=8 via
+ * .copilot-*-btn) when sitting inside our rt-controls strip.
+ * Same .active / data-*-attr selectors keep updateModeToggleUI /
+ * updateFreqToggleUI / updateModelToggleUI working unchanged. */
+.rt-controls .copilot-mode-btn,
+.rt-controls .copilot-freq-btn,
+.rt-controls .copilot-model-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.45);
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 3px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    line-height: 1;
+}
+.rt-controls .copilot-mode-btn:hover,
+.rt-controls .copilot-freq-btn:hover,
+.rt-controls .copilot-model-btn:hover {
+    background: rgba(0, 212, 255, 0.1);
+    color: rgba(0, 212, 255, 0.85);
+    border-color: rgba(0, 212, 255, 0.35);
+}
+.rt-controls .copilot-mode-btn.active,
+.rt-controls .copilot-freq-btn.active,
+.rt-controls .copilot-model-btn.active {
+    background: rgba(0, 212, 255, 0.18);
+    border-color: rgba(0, 212, 255, 0.45);
+    color: #00d4ff;
+}
+.rt-controls .copilot-model-btn[data-model="sonnet"].active {
+    background: rgba(168, 85, 247, 0.18);
+    border-color: rgba(168, 85, 247, 0.5);
+    color: rgb(216, 180, 254);
+}
+
 /* ── Budget header ──────────────────────────────────────── */
 .rt-budget {
     display: flex;

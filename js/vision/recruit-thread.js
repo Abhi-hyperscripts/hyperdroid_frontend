@@ -57,6 +57,10 @@
         if (initialized) return;
         signalR = connection;
         meetingId = meetingIdParam;
+        // Body class drives the CSS that hides the legacy COPILOT panel,
+        // INTEL panel, and insight feed in interview mode (Phase 2.5).
+        // Removing this class restores the v6 layout for debugging.
+        document.body.classList.add('recruit-v7-mode');
         replaceBody();
         wireSignalR();
         initialized = true;
@@ -78,6 +82,31 @@
             '  <span class="rt-budget-pill"><span class="rt-lbl">⏱</span> <strong id="rtElapsed">0:00</strong>/<span id="rtTotal">15:00</span></span>' +
             '  <span class="rt-budget-pill"><span class="rt-lbl">📚</span> TOPICS <strong id="rtTopicsDone">0</strong>/<span id="rtTopicsTotal">0</span></span>' +
             '  <span class="rt-budget-pill"><span class="rt-lbl">🗣</span> TALK <span class="rt-talkbar" id="rtTalkBar"><span class="you"></span><span class="cand"></span></span> <span id="rtTalkText" class="rt-talk-text">—</span></span>' +
+            '</div>' +
+            // Chip groups share .copilot-mode-btn / .copilot-freq-btn /
+            // .copilot-model-btn class names so the existing
+            // updateModeToggleUI / updateFreqToggleUI / updateModelToggleUI
+            // functions in copilot.js auto-sync the active state on both
+            // the legacy panel (now hidden) and these v7 chips. Inline
+            // onclick targets the same global handlers — no new wiring.
+            '<div class="rt-controls" id="rtControls">' +
+            '  <div class="rt-ctrl-group">' +
+            '    <span class="rt-ctrl-lbl">MODE</span>' +
+            '    <button class="copilot-mode-btn active" data-mode="manual" onclick="setCopilotMode(\'manual\')" title="Read insights only">MANUAL</button>' +
+            '    <button class="copilot-mode-btn" data-mode="earpiece" onclick="setCopilotMode(\'earpiece\')" title="TTS whisper of suggestions">EARPIECE</button>' +
+            '    <button class="copilot-mode-btn" data-mode="autonomous" onclick="setCopilotMode(\'autonomous\')" title="AI speaks to candidate">AUTO</button>' +
+            '  </div>' +
+            '  <div class="rt-ctrl-group">' +
+            '    <span class="rt-ctrl-lbl">SPEED</span>' +
+            '    <button class="copilot-freq-btn" data-freq="fast" onclick="setCopilotFrequency(\'fast\')" title="2s cooldown — more insights">FAST</button>' +
+            '    <button class="copilot-freq-btn active" data-freq="normal" onclick="setCopilotFrequency(\'normal\')" title="4s cooldown — balanced">NORMAL</button>' +
+            '    <button class="copilot-freq-btn" data-freq="chill" onclick="setCopilotFrequency(\'chill\')" title="8s cooldown — minimal">CHILL</button>' +
+            '  </div>' +
+            '  <div class="rt-ctrl-group">' +
+            '    <span class="rt-ctrl-lbl">MODEL</span>' +
+            '    <button class="copilot-model-btn active" data-model="haiku" onclick="setCopilotModel(\'haiku\')" title="Haiku — fast, cheap">HAIKU</button>' +
+            '    <button class="copilot-model-btn" data-model="sonnet" onclick="setCopilotModel(\'sonnet\')" title="Sonnet — recommended for interviews">SONNET</button>' +
+            '  </div>' +
             '</div>' +
             '<div class="rt-trust" id="rtTrust" style="display:none;"></div>' +
             '<div class="rt-thread" id="rtThread">' +
