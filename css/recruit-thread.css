@@ -184,10 +184,25 @@ body.recruit-v7-mode .hud-emotion-strip {
 }
 
 /* ── Thread ─────────────────────────────────────────────── */
+/* flex: 1 + min-height:0 = thread takes ALL remaining vertical space
+ * and shrinks-when-needed-but-not-below-its-own-scroll-area when many
+ * sibling panels (trust + scorecard + picker) stack up. Without the
+ * min-height: 0 trick, flex children can overflow their parent. */
 .rt-thread {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 120px;
     overflow-y: auto;
     padding: 8px 12px;
+}
+/* Cap the picker height so a long topic_hint + 3 options can't squeeze
+ * the thread to nothing when both are visible (idle-state). */
+.rt-picker {
+    max-height: 320px;
+    overflow-y: auto;
+}
+.rt-scorecard {
+    max-height: 160px;
+    overflow-y: auto;
 }
 .rt-empty {
     color: rgba(255, 255, 255, 0.45);
@@ -196,6 +211,88 @@ body.recruit-v7-mode .hud-emotion-strip {
     padding: 16px 8px;
     line-height: 1.5;
 }
+
+/* Idle-state CTA — appears in thread when there's no active question,
+ * no picker, no host detection, and at least one prior block. Gives
+ * the host a button to ask AI for next options instead of being stuck. */
+.rt-idle-cta {
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: rgba(0, 212, 255, 0.04);
+    border: 1px dashed rgba(0, 212, 255, 0.25);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.rt-idle-text {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.4;
+}
+
+/* Picker loading state — shown after Done click while waiting for AI. */
+.rt-picker-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 10px;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 11px;
+    font-style: italic;
+    line-height: 1.4;
+}
+.rt-picker-fallback {
+    color: rgba(252, 211, 77, 0.85);
+    font-style: normal;
+    padding: 8px 0;
+}
+.rt-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(0, 212, 255, 0.25);
+    border-top-color: rgba(0, 212, 255, 0.85);
+    border-radius: 50%;
+    animation: rtSpin 0.9s linear infinite;
+    flex-shrink: 0;
+}
+@keyframes rtSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* Custom-question inline input (replaces native window.prompt). */
+.rt-custom-input {
+    padding: 10px 12px;
+    background: rgba(168, 85, 247, 0.06);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+.rt-custom-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 4px;
+    padding: 8px 10px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    background: rgba(0, 0, 0, 0.35);
+    color: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    border-radius: 5px;
+    resize: vertical;
+    outline: none;
+}
+.rt-custom-textarea:focus {
+    border-color: rgba(168, 85, 247, 0.7);
+    box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.18);
+}
+.rt-custom-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+}
+.rt-custom-actions button { flex: 1; }
 
 /* ── Q-Block ─────────────────────────────────────────────── */
 .rt-block,

@@ -34,6 +34,7 @@
     // Picker state — populated when AI sends V7NextQuestionOptions.
     let pickerOptions = null;           // { topicHint, options: [{question, why, topic, difficulty}] }
     let pickerVisible = false;
+    let pickerPending = false;          // true after Done clicked, until options arrive — drives "asking AI for next…" placeholder
 
     // Trust check state — populated on V7TrustCheck. Floating banner.
     let trustCheck = null;              // { reason, coaching, confidence, dismissedAtMs }
@@ -192,12 +193,14 @@
 
     // ─── v7 signal handlers ───────────────────────────────────
     function onNextQuestionOptions(data) {
-        if (!data || !Array.isArray(data.options)) return;
+        if (!data) return;
         pickerOptions = {
             topicHint: data.topicHint || '',
-            options: data.options
+            options: Array.isArray(data.options) ? data.options : []
         };
+        pickerPending = false;
         renderPicker();
+        renderThread();
     }
 
     function onHostQuestionDetected(data) {
@@ -341,12 +344,18 @@
         if (!thread) return;
         const empty = document.getElementById('rtEmpty');
 
-        // Hide empty state when we have any block or detection.
-        const hasContent = blocks.length > 0 || pendingHostDetections.length > 0;
+        // Hide empty state when we have any block, detection, OR a picker
+        // showing (because the picker IS the "what to do next" UI).
+        // Also hide when picker is pending (loading next options).
+        const hasContent =
+            blocks.length > 0 ||
+            pendingHostDetections.length > 0 ||
+            (pickerOptions && pickerOptions.options.length > 0) ||
+            pickerPending;
         if (empty) empty.style.display = hasContent ? 'none' : '';
 
         // Remove existing block / detection nodes, keep the empty placeholder.
-        Array.from(thread.querySelectorAll('.rt-block, .rt-detected')).forEach(n => n.remove());
+        Array.from(thread.querySelectorAll('.rt-block, .rt-detected, .rt-idle-cta')).forEach(n => n.remove());
 
         blocks.forEach((b, idx) => {
             thread.appendChild(buildBlockNode(b, idx + 1));
@@ -354,6 +363,29 @@
         pendingHostDetections.forEach((d, idx) => {
             thread.appendChild(buildDetectedNode(d, blocks.length + idx + 1));
         });
+
+        // Idle-state CTA — when no active block, no pending detections,
+        // no picker shown or pending → at least one block exists →
+        // surface a "Get next question from AI" CTA so the host isn't
+        // stuck after Skipping a picker.
+        const idle =
+            !activeBlockId &&
+            pendingHostDetections.length === 0 &&
+            !pickerOptions &&
+            !pickerPending &&
+            blocks.length > 0;
+        if (idle) {
+            const cta = document.createElement('div');
+            cta.className = 'rt-idle-cta';
+            cta.innerHTML =
+                '<div class="rt-idle-text">No active question. Want AI to suggest 3 options for the next topic?</div>' +
+                '<button class="rt-btn-done" data-action="request-next">Ask AI for next options</button>' +
+                '<button class="rt-btn-ghost" data-action="custom-question">+ Ask my own</button>';
+            cta.querySelectorAll('[data-action]').forEach(btn => {
+                btn.addEventListener('click', () => handleAction(btn.dataset.action));
+            });
+            thread.appendChild(cta);
+        }
 
         // Scroll active to view.
         if (activeBlockId) {
@@ -469,14 +501,47 @@
     function renderPicker() {
         const pick = document.getElementById('rtPicker');
         if (!pick) return;
-        if (!pickerOptions || !pickerOptions.options.length) {
+
+        // Hide the picker entirely while a Q-Block is active — the host
+        // shouldn't see "pick next" while they're still on a question.
+        // Options remain stashed in pickerOptions; they'll render the
+        // moment Done is clicked.
+        if (activeBlockId) {
             pick.style.display = 'none';
             return;
         }
+
+        // Loading placeholder: shown after Done click while waiting for
+        // the picker payload to arrive from AIEngine.
+        if (pickerPending && !pickerOptions) {
+            pick.style.display = '';
+            pick.innerHTML =
+                '<div class="rt-lbl-bar">PICK NEXT QUESTION</div>' +
+                '<div class="rt-picker-loading">' +
+                '  <span class="rt-spinner"></span>' +
+                '  AI is picking 3 next-question candidates from the gaps in your scorecard…' +
+                '</div>' +
+                '<div class="rt-picker-actions">' +
+                '  <button class="rt-btn-ghost" data-action="custom-question">+ ASK MY OWN</button>' +
+                '</div>';
+            pick.querySelectorAll('[data-action]').forEach(btn => {
+                btn.addEventListener('click', () => handleAction(btn.dataset.action));
+            });
+            return;
+        }
+
+        if (!pickerOptions) {
+            pick.style.display = 'none';
+            return;
+        }
+
         pick.style.display = '';
         let html = '<div class="rt-lbl-bar">PICK NEXT QUESTION</div>';
         if (pickerOptions.topicHint)
             html += `<div class="rt-picker-hint">${escape(pickerOptions.topicHint)}</div>`;
+        if (pickerOptions.options.length === 0) {
+            html += '<div class="rt-picker-loading rt-picker-fallback">AI couldn\'t suggest 3 options this turn. Type your own:</div>';
+        }
         pickerOptions.options.forEach((o, idx) => {
             html += `<div class="rt-picker-option" data-idx="${idx}">` +
                 '<div class="rt-po-hdr">' +
@@ -488,7 +553,7 @@
                 '</div>';
         });
         html += '<div class="rt-picker-actions">' +
-            '<button class="rt-btn-ghost" data-action="custom-question">+ CUSTOM</button>' +
+            '<button class="rt-btn-ghost" data-action="custom-question">+ ASK MY OWN</button>' +
             '<button class="rt-btn-ghost" data-action="skip-round">SKIP</button>' +
             '</div>';
         pick.innerHTML = html;
@@ -561,6 +626,9 @@
             case 'custom-question':  return openCustomQuestion();
             case 'skip-round':       return skipRound();
             case 'dismiss-trust':    return dismissTrust();
+            case 'request-next':     return (() => { pickerPending = true; renderThread(); renderPicker(); requestNextTopic(); })();
+            case 'custom-submit':    return submitCustomQuestion();
+            case 'custom-cancel':    return cancelCustomQuestion();
         }
     }
 
@@ -625,9 +693,20 @@
         if (!block) return;
         block.status = 'done';
         activeBlockId = null;
+        // Mark picker as pending so the next render shows "asking AI…"
+        // until V7NextQuestionOptions arrives. Clear any stale options
+        // from before this Done click.
+        pickerOptions = null;
+        pickerPending = true;
         renderThread();
+        renderPicker();
         // Ask AIEngine for next 3 options
         requestNextTopic();
+    }
+
+    function onNextQuestionOptions_clearPending() {
+        // Called from onNextQuestionOptions implicitly via state reset.
+        pickerPending = false;
     }
 
     function requestNextTopic() {
@@ -692,24 +771,73 @@
     }
 
     function openCustomQuestion() {
-        if (!window.Confirm && !window.prompt) return;
-        const text = window.prompt('Your question for the candidate:');
-        if (!text || !text.trim()) return;
+        // Inline themed input — no native window.prompt (which breaks the
+        // cockpit theme and reads as phishy). Replaces the picker / idle
+        // CTA with a textarea + Cancel/Use buttons.
+        const pick = document.getElementById('rtPicker');
+        const thread = document.getElementById('rtThread');
+        const host = pick && pick.style.display !== 'none' ? pick : thread;
+        if (!host) return;
+
+        // Remove any existing custom-input UI first.
+        Array.from(host.querySelectorAll('.rt-custom-input')).forEach(n => n.remove());
+
+        const wrap = document.createElement('div');
+        wrap.className = 'rt-custom-input';
+        wrap.innerHTML =
+            '<div class="rt-lbl-bar">YOUR OWN QUESTION</div>' +
+            '<textarea class="rt-custom-textarea" id="rtCustomText" rows="3" placeholder="Type the question you want to ask the candidate…"></textarea>' +
+            '<div class="rt-custom-actions">' +
+            '  <button class="rt-btn-done" data-action="custom-submit">USE THIS QUESTION</button>' +
+            '  <button class="rt-btn-ghost" data-action="custom-cancel">CANCEL</button>' +
+            '</div>';
+        // Insert at the top of host so it grabs attention.
+        host.insertBefore(wrap, host.firstChild);
+        wrap.querySelectorAll('[data-action]').forEach(btn => {
+            btn.addEventListener('click', () => handleAction(btn.dataset.action));
+        });
+        // Auto-focus + Enter submits (Shift+Enter for newline).
+        const ta = wrap.querySelector('#rtCustomText');
+        if (ta) {
+            ta.focus();
+            ta.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    submitCustomQuestion();
+                }
+            });
+        }
+    }
+
+    function submitCustomQuestion() {
+        const ta = document.getElementById('rtCustomText');
+        if (!ta) return;
+        const text = (ta.value || '').trim();
+        if (!text) { ta.focus(); return; }
         const block = createBlock({
-            questionText: text.trim(),
-            topic: '',
+            questionText: text,
+            topic: '(custom)',
             difficulty: 'medium'
         });
         pickerOptions = null;
+        pickerPending = false;
+        cancelCustomQuestion();
         renderPicker();
         emitActiveQuestion(block);
         renderThread();
     }
 
+    function cancelCustomQuestion() {
+        Array.from(document.querySelectorAll('.rt-custom-input')).forEach(n => n.remove());
+    }
+
     function skipRound() {
-        // Just hide the picker. Host can do their own thing.
+        // Just hide the picker. Host can do their own thing — the idle
+        // CTA in the thread will appear if there's no active block.
         pickerOptions = null;
+        pickerPending = false;
         renderPicker();
+        renderThread();
     }
 
     function dismissTrust() {
