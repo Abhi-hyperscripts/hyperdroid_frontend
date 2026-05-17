@@ -55,18 +55,44 @@
         document.querySelectorAll('.status-option-btn').forEach(btn => {
             btn.classList.toggle('selected', btn.dataset.status === status);
         });
-        document.getElementById('statusChangeConfirmBtn').disabled = false;
 
-        // Show/hide lost reason
-        document.getElementById('lostReasonSection').style.display = status === 'lost' ? '' : 'none';
+        // 'lost' is a deal status; on the lead modal only 'unqualified'
+        // currently demands a reason. Treat both the same so a future
+        // deal-lost reuse of this modal still works.
+        const needsReason = status === 'lost' || status === 'unqualified';
+        const reasonSection = document.getElementById('lostReasonSection');
+        reasonSection.style.display = needsReason ? '' : 'none';
         document.getElementById('wonValueSection').style.display = status === 'won' ? '' : 'none';
 
-        // Lost reason custom field toggle
-        const lostSelect = document.getElementById('lostReasonSelect');
-        lostSelect.onchange = function () {
-            document.getElementById('lostReasonCustom').style.display =
-                this.value === 'Other' ? '' : 'none';
+        // Status-aware label. "Reason for marking unqualified *" reads more
+        // naturally for the false-positive downgrade than "Reason for losing".
+        const reasonLabel = reasonSection.querySelector('label');
+        if (reasonLabel) {
+            reasonLabel.textContent = status === 'unqualified'
+                ? 'Reason for marking unqualified *'
+                : 'Reason for losing this lead *';
+        }
+
+        // Confirm is disabled until the user has done what's required.
+        // For reason-needing transitions, that's "picked a reason (and
+        // typed the custom one if they chose Other)"; otherwise the
+        // status pick itself is enough.
+        const confirmBtn = document.getElementById('statusChangeConfirmBtn');
+        const updateConfirmGate = () => {
+            if (!needsReason) { confirmBtn.disabled = false; return; }
+            const sel = document.getElementById('lostReasonSelect').value;
+            const custom = document.getElementById('lostReasonCustom').value.trim();
+            confirmBtn.disabled = !sel || (sel === 'Other' && !custom);
         };
+        confirmBtn.disabled = needsReason;  // start locked when reason needed
+
+        const lostSelect = document.getElementById('lostReasonSelect');
+        const lostCustom = document.getElementById('lostReasonCustom');
+        lostSelect.onchange = function () {
+            lostCustom.style.display = this.value === 'Other' ? '' : 'none';
+            updateConfirmGate();
+        };
+        lostCustom.oninput = updateConfirmGate;
     }
 
     async function confirmStatusChange() {
@@ -74,7 +100,10 @@
 
         const body = { status: _statusChangeSelected };
 
-        if (_statusChangeSelected === 'lost') {
+        // 'unqualified' downgrades + (future) deal-style 'lost' both require
+        // a reason. Same UI block, same payload key (`lost_reason`) — the
+        // backend stores it on lead_assignment_history.reason for audit.
+        if (_statusChangeSelected === 'lost' || _statusChangeSelected === 'unqualified') {
             const sel = document.getElementById('lostReasonSelect').value;
             if (!sel) { Toast.error('Please select a reason'); return; }
             body.lost_reason = sel === 'Other'
