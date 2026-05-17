@@ -333,6 +333,28 @@ body.recruit-v7-mode .hud-emotion-strip {
     border-left: 3px solid rgb(252, 211, 77);
 }
 
+/* Follow-up blocks indent + get a violet left rail to make the
+ * parent–child relationship obvious at a glance. Combined with the
+ * Q1.1 numbering scheme and the "↳ FOLLOW-UP OF Q1" chip in the
+ * header, the host can't miss who the parent is. */
+.rt-block.rt-is-followup {
+    margin-left: 24px;
+    border-left: 3px solid rgba(168, 85, 247, 0.45);
+    position: relative;
+}
+.rt-block.rt-is-followup::before {
+    /* Decorative connector arrow pointing up to the parent. */
+    content: '';
+    position: absolute;
+    left: -16px;
+    top: -8px;
+    width: 12px;
+    height: 22px;
+    border-left: 2px solid rgba(168, 85, 247, 0.45);
+    border-bottom: 2px solid rgba(168, 85, 247, 0.45);
+    border-bottom-left-radius: 8px;
+}
+
 .rt-qhead {
     display: flex;
     flex-wrap: wrap;

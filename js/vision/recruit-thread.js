@@ -391,6 +391,27 @@
     }
 
     // ─── Render: thread ──────────────────────────────────────
+    // Compute hierarchical display numbers: top-level blocks become Q1,
+    // Q2, Q3… Follow-ups become Q{parent}.{childIdx} — e.g. Q1.1, Q1.2.
+    // Makes the parent reference obvious at a glance.
+    function computeBlockNumbers() {
+        const nums = new Map();
+        let topCount = 0;
+        const childCounts = new Map();
+        for (const b of blocks) {
+            if (!b.isFollowup || !b.parentId) {
+                topCount++;
+                nums.set(b.id, `Q${topCount}`);
+            } else {
+                const parentNum = nums.get(b.parentId) || `Q?`;
+                const idx = (childCounts.get(b.parentId) || 0) + 1;
+                childCounts.set(b.parentId, idx);
+                nums.set(b.id, `${parentNum}.${idx}`);
+            }
+        }
+        return nums;
+    }
+
     function renderThread() {
         const thread = document.getElementById('rtThread');
         if (!thread) return;
@@ -409,11 +430,15 @@
         // Remove existing block / detection nodes, keep the empty placeholder.
         Array.from(thread.querySelectorAll('.rt-block, .rt-detected, .rt-idle-cta')).forEach(n => n.remove());
 
-        blocks.forEach((b, idx) => {
-            thread.appendChild(buildBlockNode(b, idx + 1));
+        const numbers = computeBlockNumbers();
+        blocks.forEach((b) => {
+            const displayNum = numbers.get(b.id) || '?';
+            const parentNum = b.isFollowup && b.parentId ? (numbers.get(b.parentId) || '') : '';
+            thread.appendChild(buildBlockNode(b, displayNum, parentNum));
         });
+        const detStart = (numbers.size || 0);
         pendingHostDetections.forEach((d, idx) => {
-            thread.appendChild(buildDetectedNode(d, blocks.length + idx + 1));
+            thread.appendChild(buildDetectedNode(d, `Q${detStart + idx + 1}`));
         });
 
         // Idle-state CTA — when no active block, no pending detections,
@@ -446,20 +471,30 @@
         }
     }
 
-    function buildBlockNode(b, qNum) {
+    function buildBlockNode(b, displayNum, parentNum) {
         const wrap = document.createElement('div');
-        wrap.className = 'rt-block' + (b.status === 'done' ? ' rt-done' : ' rt-active') + (b.autoDetected ? ' rt-host' : '');
+        wrap.className = 'rt-block' +
+            (b.status === 'done' ? ' rt-done' : ' rt-active') +
+            (b.autoDetected ? ' rt-host' : '') +
+            (b.isFollowup ? ' rt-is-followup' : '');
         wrap.dataset.bid = b.id;
 
         const diffClass = 'rt-diff-' + (b.difficulty || 'medium').toLowerCase();
         const statusLbl = b.status === 'done' ? '✓ DONE' : 'LISTENING';
         const statusCls = b.status === 'done' ? '' : 'rt-active-dot';
 
+        // Follow-up chip references the parent so the host can see at a
+        // glance "this is a drill-down of Q1" — combined with the Q1.1
+        // numbering, the relationship is unmissable.
+        const fuChip = b.isFollowup
+            ? `<span class="rt-fu-chip" title="Follow-up question drilling into ${escape(parentNum || 'parent')}">↳ FOLLOW-UP OF ${escape(parentNum || '?')}</span>`
+            : '';
+
         let html = '<div class="rt-qhead">' +
-            `<span class="rt-qnum">Q${qNum}</span>` +
+            `<span class="rt-qnum">${escape(displayNum)}</span>` +
             `<span class="rt-qdiff ${diffClass}">${escape(b.difficulty || 'medium').toUpperCase()}</span>` +
             `<span class="rt-qtopic">${escape(b.topic || '')}</span>` +
-            (b.isFollowup ? '<span class="rt-fu-chip">↳ FOLLOW-UP</span>' : '') +
+            fuChip +
             `<span class="rt-qstatus ${statusCls}">${statusLbl}</span>` +
             '</div>';
 
@@ -537,14 +572,14 @@
         return wrap;
     }
 
-    function buildDetectedNode(d, qNum) {
+    function buildDetectedNode(d, displayNum) {
         const wrap = document.createElement('div');
         wrap.className = 'rt-detected';
         wrap.dataset.did = d.id;
         const confPct = Math.round(d.confidence * 100);
         wrap.innerHTML =
             '<div class="rt-qhead">' +
-            `<span class="rt-qnum">Q${qNum}</span>` +
+            `<span class="rt-qnum">${escape(displayNum)}</span>` +
             `<span class="rt-qdiff rt-diff-medium">DETECTED</span>` +
             `<span class="rt-qtopic">${escape(d.topic)}</span>` +
             `<span class="rt-qstatus rt-host-dot">FROM YOUR SPEECH · ${confPct}%</span>` +
