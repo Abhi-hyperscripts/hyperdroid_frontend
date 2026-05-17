@@ -250,7 +250,10 @@
         if (data.qualityColor) block.quality = { color: data.qualityColor, reason: data.qualityReason || '', confidence: data.qualityConfidence || 0 };
         if (data.answerSummary) block.answerSummary = data.answerSummary;
         (data.jargon || []).forEach(j => addJargonToBlock(block, j));
-        (data.deltas || []).forEach(d => applyScorecardDelta(d));
+        (data.deltas || []).forEach(d => {
+            addDeltaToBlock(block, d);  // per-block visibility
+            applyScorecardDelta(d);     // also bubble up to aggregate rollup
+        });
         renderThread();
         renderScorecard();
     }
@@ -317,7 +320,16 @@
 
     function onLegacyScorecard(data) {
         if (!data || !Array.isArray(data.deltas)) return;
-        data.deltas.forEach(d => applyScorecardDelta(d));
+        // Per-block attribution: when there's an active question, attach
+        // these deltas to it so the host sees "this answer scored X" in
+        // the block itself, not just in the rollup. When no active block
+        // (between questions), the rollup still updates.
+        const active = activeBlockId ? blocks.find(b => b.id === activeBlockId) : null;
+        data.deltas.forEach(d => {
+            if (active) addDeltaToBlock(active, d);
+            applyScorecardDelta(d);
+        });
+        renderThread();
         renderScorecard();
     }
 
@@ -328,6 +340,32 @@
         const key = j.term.trim().toLowerCase();
         if (block.jargon.some(x => (x.term || '').trim().toLowerCase() === key)) return;
         block.jargon.push({ term: j.term, definition: j.definition || '' });
+    }
+
+    function addDeltaToBlock(block, d) {
+        if (!d || !d.competency || !d.signal) return;
+        const validSignals = { not_yet: 0, partial: 1, demonstrated: 2 };
+        if (!(d.signal in validSignals)) return;
+        block.deltas = block.deltas || [];
+        const key = d.competency.trim().toLowerCase();
+        // Same-block dedup with promotion-only semantics: a delta arriving
+        // later in the same answer can promote (partial → demonstrated)
+        // but never demote.
+        const existing = block.deltas.find(x => (x.competency || '').trim().toLowerCase() === key);
+        if (existing) {
+            const prevRank = validSignals[existing.signal] ?? -1;
+            const newRank = validSignals[d.signal];
+            if (newRank > prevRank) {
+                existing.signal = d.signal;
+                existing.evidenceQuote = d.evidenceQuote || existing.evidenceQuote || '';
+            }
+        } else {
+            block.deltas.push({
+                competency: d.competency,
+                signal: d.signal,
+                evidenceQuote: d.evidenceQuote || ''
+            });
+        }
     }
 
     function applyScorecardDelta(d) {
@@ -446,6 +484,23 @@
             signals += `<span class="rt-signal">📚 <span class="rt-jargon">${terms}</span></span>`;
         }
         if (signals) html += `<div class="rt-signals">${signals}</div>`;
+
+        // Per-block scorecard deltas — competency signals attributed to
+        // THIS specific answer. Renders as a stacked list inside the
+        // block so the host sees per-question coverage at a glance.
+        if (b.deltas && b.deltas.length) {
+            html += '<div class="rt-block-scorecard"><div class="rt-bsc-lbl">SCORED</div>';
+            b.deltas.slice(0, 5).forEach(d => {
+                const dot = d.signal === 'demonstrated' ? '●' : d.signal === 'partial' ? '◐' : '○';
+                const cls = d.signal === 'demonstrated' ? 'rt-sig-done' : d.signal === 'partial' ? 'rt-sig-part' : 'rt-sig-not';
+                html += '<div class="rt-bsc-row">' +
+                    `<span class="rt-sig ${cls}">${dot}</span>` +
+                    `<span class="rt-bsc-comp">${escape(d.competency)}</span>` +
+                    (d.evidenceQuote ? `<span class="rt-bsc-evidence">"${escape(d.evidenceQuote)}"</span>` : '') +
+                    '</div>';
+            });
+            html += '</div>';
+        }
 
         html += '</div>'; // qbody
 
@@ -684,6 +739,11 @@
             askedAtMs: Date.now(),
             quality: null,
             jargon: [],
+            // Per-block scorecard deltas — competency signals attributed
+            // to THIS specific answer. Renders inline inside the block so
+            // the host sees "this answer demonstrated/partial-ed/missed
+            // X" rather than just an aggregate at the bottom.
+            deltas: [],
             answerSummary: '',
             followupSuggestion: null
         };
