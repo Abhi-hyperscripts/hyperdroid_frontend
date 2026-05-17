@@ -259,9 +259,20 @@
     }
 
     function onFollowupSuggested(data) {
-        if (!data || !data.question || !data.parentQuestionId) return;
+        if (!data || !data.parentQuestionId) return;
         const parent = blocks.find(b => b.id === data.parentQuestionId);
         if (!parent) return;
+        // Clear any pending "manual follow-up" spinner — the response
+        // is here. Empty question means AI returned null (rare); show
+        // a toast-style hint instead of an empty card.
+        parent.manualFollowupPending = false;
+        if (!data.question) {
+            renderThread();
+            if (window.Toast && data.reason) {
+                try { Toast.info(data.reason); } catch (_e) {}
+            }
+            return;
+        }
         parent.followupSuggestion = {
             question: data.question,
             why: data.why || '',
@@ -555,10 +566,20 @@
                 '</div>';
         }
 
-        // Footer actions (active only)
+        // Footer actions (active only). The "💡 Ask AI for follow-up"
+        // button is always visible — covers the case where the host
+        // wants a drill-down but AI didn't proactively suggest one. While
+        // a manual follow-up is in flight we show a spinner state so
+        // double-clicks don't fire multiple Claude calls.
         if (b.status !== 'done') {
+            const fuPending = !!b.manualFollowupPending;
+            const fuLabel = fuPending
+                ? '<span class="rt-spinner-small"></span> asking AI…'
+                : '💡 ASK AI FOR FOLLOW-UP';
+            const fuDisabled = fuPending ? 'disabled' : '';
             html += '<div class="rt-qfooter">' +
                 `<button class="rt-btn-done" data-action="done-block" data-bid="${b.id}">✓ DONE — PICK NEXT TOPIC</button>` +
+                `<button class="rt-btn-fu-manual" data-action="request-followup" data-bid="${b.id}" ${fuDisabled}>${fuLabel}</button>` +
                 '</div>';
         }
 
@@ -738,6 +759,7 @@
             case 'skip-round':       return skipRound();
             case 'dismiss-trust':    return dismissTrust();
             case 'request-next':     return (() => { pickerPending = true; renderThread(); renderPicker(); requestNextTopic(); })();
+            case 'request-followup': return requestManualFollowup(ref);
             case 'custom-submit':    return submitCustomQuestion();
             case 'custom-cancel':    return cancelCustomQuestion();
         }
@@ -832,6 +854,37 @@
                 .catch(err => console.warn('[RecruitThread] RequestNextTopic failed:', err));
         } catch (e) {
             console.warn('[RecruitThread] RequestNextTopic threw:', e);
+        }
+    }
+
+    function requestManualFollowup(bid) {
+        if (!signalR || !meetingId) return;
+        const block = blocks.find(b => b.id === bid);
+        if (!block) return;
+        if (block.manualFollowupPending) return; // debounce
+        block.manualFollowupPending = true;
+        renderThread();
+        try {
+            signalR.invoke('RequestFollowup', String(meetingId), bid)
+                .then(ok => {
+                    if (ok === false) {
+                        // Server rejected (rate-limit or auth). Clear pending
+                        // immediately so the host can retry.
+                        block.manualFollowupPending = false;
+                        renderThread();
+                    }
+                    // Successful invokes leave pending=true. The pending flag
+                    // clears when V7FollowupSuggested arrives (handled below).
+                })
+                .catch(err => {
+                    console.warn('[RecruitThread] RequestFollowup failed:', err);
+                    block.manualFollowupPending = false;
+                    renderThread();
+                });
+        } catch (e) {
+            console.warn('[RecruitThread] RequestFollowup threw:', e);
+            block.manualFollowupPending = false;
+            renderThread();
         }
     }
 

@@ -583,6 +583,44 @@ body.recruit-v7-mode .hud-emotion-strip {
 }
 .rt-btn-done:hover { background: rgba(134, 239, 172, 0.18); }
 .rt-btn-primary:hover { background: rgba(168, 85, 247, 0.28); }
+
+/* Manual follow-up button — violet to match the AI suggestion theme.
+ * Always visible in the active block alongside DONE so the host can
+ * pull a drill-down on demand even when AI didn't proactively
+ * suggest one. */
+.rt-btn-fu-manual {
+    background: rgba(168, 85, 247, 0.1);
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    color: rgb(216, 180, 254);
+    padding: 5px 10px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: inherit;
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
+.rt-btn-fu-manual:hover {
+    background: rgba(168, 85, 247, 0.22);
+    border-color: rgba(168, 85, 247, 0.65);
+}
+.rt-btn-fu-manual:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+.rt-spinner-small {
+    width: 10px;
+    height: 10px;
+    border: 2px solid rgba(168, 85, 247, 0.25);
+    border-top-color: rgba(216, 180, 254, 0.85);
+    border-radius: 50%;
+    animation: rtSpin 0.9s linear infinite;
+    flex-shrink: 0;
+    display: inline-block;
+}
 .rt-btn-ghost:hover {
     background: rgba(255, 255, 255, 0.05);
     color: rgba(255, 255, 255, 0.85);
