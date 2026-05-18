@@ -450,9 +450,9 @@
                     <span class="cm-tile-badge" style="background:${p.bg};">${esc(p.name)}</span>
                     <span style="display:flex;flex-direction:column;flex:1;min-width:0;">
                         <span class="cm-tile-name">${esc(n.instance_key)}</span>
-                        <span class="cm-tile-meta">Logged + recorded · rings you first</span>
+                        <span class="cm-tile-meta">Logged · recorded · rings you</span>
                     </span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>`;
         }).join('');
 
@@ -461,9 +461,9 @@
                 <span class="cm-tile-badge" style="background:#6b7280;">Device</span>
                 <span style="display:flex;flex-direction:column;flex:1;min-width:0;">
                     <span class="cm-tile-name">Direct dialer</span>
-                    <span class="cm-tile-meta">Opens your OS dialer · not logged in CRM</span>
+                    <span class="cm-tile-meta">OS dialer · not logged</span>
                 </span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
             </button>`;
 
         const wrap = document.createElement('div');
@@ -490,7 +490,7 @@
                         </svg>
                     </button>
                 </div>
-                <div class="gm-body" style="gap:10px;display:flex;flex-direction:column;">
+                <div class="gm-body" style="gap:6px;display:flex;flex-direction:column;">
                     ${numberTilesHtml}
                     ${dialerTileHtml}
                 </div>
@@ -590,8 +590,24 @@
         })();
     }, true);
 
+    // Wrapper that the lead-detail-panel Call button uses. Pulls the
+    // customer phone out of the panel's DOM, then opens the same number
+    // picker as a `.crm-tel-link` click — so reps get the provider+number
+    // choice instead of jumping straight to the place-call form.
+    function openLeadCallPicker(leadId) {
+        leadId = leadId || window._leadDetailId || '';
+        let phone = '';
+        try {
+            const phoneEl = document.querySelector('#leadDetailInfo a[href^="tel:"]');
+            if (phoneEl) phone = (phoneEl.textContent || '').replace(/^\s*📞\s*/, '').trim();
+        } catch (_) {}
+        const telHref = phone ? `tel:${phone.replace(/\s+/g, '')}` : '';
+        openCallMethodPicker({ phone, telHref, leadId });
+    }
+
     // Expose entry points.
     window.openPlaceCallModal = openPlaceCallModal;
+    window.openLeadCallPicker = openLeadCallPicker;
     window._submitPlaceCall = _submitPlaceCall;
     window.renderCallTimelineEntries = renderCallTimelineEntries;
 })();
