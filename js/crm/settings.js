@@ -5434,16 +5434,79 @@ async function loadCallsIntegration() {
             ? `Connected — ${numbers.length} number${numbers.length > 1 ? 's' : ''} configured`
             : `${numbers.length} number${numbers.length > 1 ? 's' : ''} configured, all inactive`;
 
-        tbody.innerHTML = numbers.map(n => `
-            <tr data-instance="${escapeHtml(n.instance_key)}">
+        // Provider badge — pretty label per known provider, with a coloured
+        // pill so reps can tell at a glance whether a row is Exotel vs
+        // MyOperator (since both can coexist for the same tenant).
+        const providerLabel = (p) => {
+            const slug = (p || '').toLowerCase();
+            if (slug === 'exotel') return { name: 'Exotel', bg: '#2563eb' };
+            if (slug === 'myoperator') return { name: 'MyOperator', bg: '#9333ea' };
+            return { name: p || 'Unknown', bg: '#6b7280' };
+        };
+        // Toggle visibility based on caller's role. Sales reps see the
+        // active flag as read-only; admins (and SUPERADMIN) can flip it.
+        // Toggling proxies to Auth's PUT /api/tenant-api-keys/{provider}/{serviceType}
+        // — same SSoT pattern as the rest of BYOK.
+        const canToggle = (() => {
+            try {
+                const roles = (api.getUser && (api.getUser().roles || api.getUser().role)) || [];
+                const list = Array.isArray(roles) ? roles : String(roles).split(',');
+                return list.some(r => /CRM_ADMIN|SUPERADMIN/i.test(r));
+            } catch (_) { return false; }
+        })();
+
+        tbody.innerHTML = numbers.map(n => {
+            const p = providerLabel(n.provider);
+            const toggleCell = canToggle
+                ? `<label class="cm-switch" title="${n.is_active ? 'Toggle off' : 'Toggle on'}" data-prov="${escapeHtml(n.provider)}" data-key="${escapeHtml(n.instance_key)}">
+                       <input type="checkbox" ${n.is_active ? 'checked' : ''}>
+                       <span class="cm-switch-slider"></span>
+                   </label>
+                   <span style="font-size:0.85em;color:var(--text-secondary);margin-left:8px;">${n.is_active ? 'On' : 'Off'}</span>`
+                : `<span class="status-badge ${n.is_active ? 'active' : 'inactive'}">${n.is_active ? 'Active' : 'Inactive'}</span>`;
+            // Webhook URL cell — distinguishes "row is off" from "Auth env
+            // var missing" so admins know what action to take. The url is
+            // only ever empty when Auth's GetDecryptedApiKeyAsync refuses
+            // (inactive row) or when CRM_PUBLIC_URL isn't set in Auth.
+            let webhookCell;
+            if (n.webhook_url) {
+                webhookCell = `<code style="font-size:0.78em;user-select:all;word-break:break-all;">${escapeHtml(n.webhook_url)}</code>`;
+            } else if (!n.is_active) {
+                webhookCell = '<span style="color:var(--text-secondary);font-size:0.85em;">Disabled — toggle on to view webhook URL</span>';
+            } else {
+                webhookCell = '<span style="color:var(--text-secondary);font-size:0.85em;">No webhook URL — set CRM_PUBLIC_URL in Auth config</span>';
+            }
+            return `
+            <tr data-instance="${escapeHtml(n.instance_key)}" data-provider="${escapeHtml(n.provider)}">
+                <td><span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:0.75rem;font-weight:600;color:#fff;background:${p.bg};">${escapeHtml(p.name)}</span></td>
                 <td><code>${escapeHtml(n.instance_key)}</code></td>
-                <td><span class="status-badge ${n.is_active ? 'active' : 'inactive'}">${n.is_active ? 'Active' : 'Inactive'}</span></td>
-                <td>
-                    ${n.webhook_url
-                        ? `<code style="font-size:0.78em;user-select:all;word-break:break-all;">${escapeHtml(n.webhook_url)}</code>`
-                        : '<span style="color:var(--text-secondary);font-size:0.85em;">No webhook URL — set CRM_PUBLIC_URL in Auth config</span>'}
-                </td>
-            </tr>`).join('');
+                <td>${toggleCell}</td>
+                <td>${webhookCell}</td>
+            </tr>`;
+        }).join('');
+
+        // Bind toggle handlers — uses api.updateApiKey() so the call is
+        // routed through the shared client (handles base URL, auth header,
+        // CORS, token refresh). Auth is the SSoT for tenant_api_keys.is_active.
+        tbody.querySelectorAll('.cm-switch input[type="checkbox"]').forEach(input => {
+            input.addEventListener('change', async () => {
+                const label = input.closest('.cm-switch');
+                const prov = label.getAttribute('data-prov');
+                const key = label.getAttribute('data-key');
+                const next = input.checked;
+                input.disabled = true;
+                try {
+                    await api.updateApiKey(prov, 'telephony', { isActive: next }, key);
+                    Toast.success(`${prov} number ${key} ${next ? 'enabled' : 'disabled'}`);
+                    loadCallsIntegration();  // re-render so the "On/Off" hint updates
+                } catch (err) {
+                    Toast.error(err?.message || 'Toggle failed');
+                    input.checked = !next;  // revert
+                } finally {
+                    input.disabled = false;
+                }
+            });
+        });
         list.style.display = '';
         empty.style.display = 'none';
     } catch (e) {

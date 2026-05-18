@@ -1031,8 +1031,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <h4 class="integration-title">Calling (Exotel)</h4>
-                                <p class="integration-description">Make and receive calls directly from a lead. Every call logs to the lead timeline with recording + transcript.</p>
+                                <h4 class="integration-title">Calling</h4>
+                                <p class="integration-description">Make and receive calls directly from a lead via Exotel, MyOperator, or any future provider you connect. Every call logs to the lead timeline with recording + transcript.</p>
                             </div>
                         </div>
 
@@ -1048,22 +1048,33 @@
                                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
                                     <line x1="12" y1="17" x2="12.01" y2="17"/>
                                 </svg>
-                                How do I connect Exotel?
+                                How do I connect a calling provider?
                                 <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <polyline points="6 9 12 15 18 9"/>
                                 </svg>
                             </summary>
                             <div class="mailbox-help-body">
-                                <p>You bring your own Exotel account — we don't resell minutes. Sign up at <a href="https://my.exotel.com/auth/register" target="_blank" rel="noreferrer noopener">my.exotel.com</a> (free trial includes ₹500 credits for 15 days) and follow the steps:</p>
-                                <ol style="padding-left:20px; line-height:1.6;">
-                                    <li>Verify your number (Exotel sends a missed-call instruction).</li>
-                                    <li>Open <strong>Settings → API Settings</strong> and copy the <strong>Account SID</strong>, <strong>API Key</strong>, and <strong>API Token</strong>.</li>
-                                    <li>Note your <strong>ExoPhone</strong> (the Indian number Exotel assigned). Outbound calls use this as caller-ID.</li>
-                                    <li>Paste all four into the form below + click Save.</li>
-                                    <li>Copy the <strong>Status callback URL</strong> we generate, then in Exotel's dashboard go to <strong>Call Settings → App Bazaar</strong> (or per-ExoPhone settings) and paste it into the call-status-update webhook. Set method to POST and content type to <code>application/x-www-form-urlencoded</code>.</li>
-                                    <li>Submit your <strong>KYC documents</strong> in Exotel — Company PAN, Certificate of Incorporation, Address Proof, Photo. Outbound calls only work once KYC clears (24-72h).</li>
+                                <p>You bring your own telephony account — we don't resell minutes. Pick the provider that already serves your business, then follow the matching playbook.</p>
+
+                                <p style="margin-top:14px;margin-bottom:6px;"><strong>Option A — Exotel</strong> (Twilio-compatible, India-focused)</p>
+                                <ol style="padding-left:20px; line-height:1.6; margin-top:0;">
+                                    <li>Sign up at <a href="https://my.exotel.com/auth/register" target="_blank" rel="noreferrer noopener">my.exotel.com</a> (free trial includes ₹500 credits for 15 days).</li>
+                                    <li>Open <strong>Settings → API Settings</strong> and copy the <strong>Account SID</strong>, <strong>API Key</strong>, <strong>API Token</strong>, plus your <strong>ExoPhone</strong> (Indian number Exotel assigned — used as caller-ID).</li>
+                                    <li>Paste them into <strong>Admin → API Keys → Add (Exotel)</strong> and Save.</li>
+                                    <li>Copy the Status callback URL we generate, then in Exotel: <strong>Call Settings → App Bazaar</strong> → paste into the call-status-update webhook (POST + <code>application/x-www-form-urlencoded</code>).</li>
+                                    <li>Submit Exotel <strong>KYC</strong> (Company PAN, COI, Address Proof, Photo). Outbound calls work once KYC clears (24–72h).</li>
                                 </ol>
-                                <p style="margin-top:10px;color:var(--text-secondary);font-size:0.9em;">Once connected: Call buttons appear on every lead. Inbound calls to your ExoPhone surface as a toast → click to open the lead. Recordings + transcripts land in the lead timeline.</p>
+
+                                <p style="margin-top:14px;margin-bottom:6px;"><strong>Option B — MyOperator</strong> (IVR-routed, India-focused)</p>
+                                <ol style="padding-left:20px; line-height:1.6; margin-top:0;">
+                                    <li>Sign up / log in at <a href="https://in.app.myoperator.com/home" target="_blank" rel="noreferrer noopener">app.myoperator.com</a>.</li>
+                                    <li>Open <strong>APIs &amp; Webhook → Developer API → Calling APIs</strong>. Click <strong>Generate Credentials</strong> and copy the <strong>Company ID</strong>, the <strong>x-api-key</strong>, and the <strong>Authentication</strong> value (click <em>Show value</em>).</li>
+                                    <li>Create / pick an IVR under <strong>Call → IVR Flows</strong> and note its <strong>Public IVR ID</strong> — outbound calls won't dial without it.</li>
+                                    <li>Paste all five (Company ID + x-api-key + Secret Token + Public IVR ID + your DID phone) into <strong>Admin → API Keys → Add (MyOperator)</strong> and Save.</li>
+                                    <li>Copy the webhook URL we generate, then in MyOperator: <strong>APIs &amp; Webhook → Webhooks v2</strong> → paste as Target URL (POST + <code>application/json</code>). Subscribe to <code>call.initiated</code>, <code>call.answered</code>, <code>call.end</code>, <code>call.summary</code>, <code>disposition</code>.</li>
+                                </ol>
+
+                                <p style="margin-top:10px;color:var(--text-secondary);font-size:0.9em;">Once connected: Call buttons appear on every lead. Inbound calls surface as a toast → click to open the lead. Recordings + transcripts land in the lead timeline.</p>
                             </div>
                         </details>
 
@@ -1073,7 +1084,8 @@
                             <table style="width:100%; border-collapse:collapse;" class="data-table">
                                 <thead>
                                     <tr>
-                                        <th style="text-align:left;">ExoPhone</th>
+                                        <th style="text-align:left;">Provider</th>
+                                        <th style="text-align:left;">Number</th>
                                         <th style="text-align:left;">Status</th>
                                         <th style="text-align:left;">Webhook URL</th>
                                     </tr>
@@ -1083,8 +1095,8 @@
                         </div>
 
                         <div id="callsNumbersEmpty" style="display:none; padding:24px; text-align:center; border:1px dashed var(--border-color); border-radius:8px; background:var(--bg-secondary);">
-                            <p style="margin:0 0 8px; font-weight:600;">No Exotel numbers connected yet</p>
-                            <p style="margin:0; color:var(--text-secondary); font-size:0.9em;">Add and manage Exotel numbers in <strong>Admin → API Keys</strong>.</p>
+                            <p style="margin:0 0 8px; font-weight:600;">No calling provider connected yet</p>
+                            <p style="margin:0; color:var(--text-secondary); font-size:0.9em;">Add Exotel, MyOperator, or another supported provider in <strong>Admin → API Keys</strong>.</p>
                         </div>
 
                         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">

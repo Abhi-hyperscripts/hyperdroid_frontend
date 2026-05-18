@@ -96,7 +96,7 @@
 
     // ─── Outbound call modal ──────────────────────────────────────────────
 
-    function openPlaceCallModal(leadId) {
+    function openPlaceCallModal(leadId, opts) {
         if (!leadId) return;
 
         // Snapshot the lead's phone BEFORE we tear down the slide panel — the
@@ -120,6 +120,20 @@
 
         const existing = document.getElementById('placeCallModal');
         if (existing) existing.remove();
+
+        // Pinned-number metadata flows through from openCallMethodPicker
+        // so the rep sees which number they picked, and the submit sends
+        // instance_key (binding the call to that specific provider row).
+        const lockedInstance = (typeof opts === 'object' && opts) ? (opts.instanceKey || '') : '';
+        const lockedSlug = (typeof opts === 'object' && opts) ? (opts.providerSlug || '') : '';
+        const pal = providerPalette(lockedSlug);
+        const pinnedBadgeHtml = lockedInstance ? `
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);margin-bottom:8px;">
+                <span style="padding:2px 10px;border-radius:999px;font-size:0.72rem;font-weight:600;color:#fff;background:${pal.bg};">${esc(pal.name)}</span>
+                <code style="flex:1;font-size:0.92rem;">${esc(lockedInstance)}</code>
+                <span style="font-size:0.75em;color:var(--text-secondary);">Dialing from</span>
+            </div>
+        ` : '';
 
         const wrap = document.createElement('div');
         wrap.id = 'placeCallModal';
@@ -146,6 +160,9 @@
                     </button>
                 </div>
                 <div class="gm-body">
+                    ${pinnedBadgeHtml}
+                    <input type="hidden" id="pcInstanceKey" value="${esc(lockedInstance)}">
+                    <input type="hidden" id="pcProviderSlug" value="${esc(lockedSlug)}">
                     <div class="crm-form-group">
                         <label for="pcCustomerPhone">Customer number</label>
                         <input type="tel" id="pcCustomerPhone" class="form-control" placeholder="+91…">
@@ -182,19 +199,25 @@
         const customer = document.getElementById('pcCustomerPhone').value.trim();
         const agent = document.getElementById('pcAgentPhone').value.trim();
         const record = document.getElementById('pcRecord').checked;
+        const instanceKey = (document.getElementById('pcInstanceKey')?.value || '').trim();
         if (!customer) { Toast.error('Customer number required'); return; }
         if (!agent) { Toast.error('Your number is required to ring you first'); return; }
         try { localStorage.setItem('ragenaizer_last_agent_phone', agent); } catch (_) {}
         btn.disabled = true; btn.textContent = 'Ringing…';
         try {
+            const body = {
+                lead_id: leadId,
+                agent_phone: agent,
+                customer_phone: customer,
+                record,
+            };
+            // Pin the call to a specific provider row when the picker
+            // selected one. Empty string = backend falls back to
+            // ResolveDefault (first active row across all providers).
+            if (instanceKey) body.instance_key = instanceKey;
             const resp = await api.request('/crm/calls/place', {
                 method: 'POST',
-                body: JSON.stringify({
-                    lead_id: leadId,
-                    agent_phone: agent,
-                    customer_phone: customer,
-                    record,
-                }),
+                body: JSON.stringify(body),
             });
             Toast.success(`Call placed (SID ${resp.call_sid || 'pending'})`);
             const modal = document.getElementById('placeCallModal');
@@ -388,19 +411,60 @@
         document.head.appendChild(style);
     })();
 
-    // ─── Tap-to-call picker — Exotel vs native dialer ─────────────────────
+    // ─── Tap-to-call picker — provider × number × dialer ──────────────────
     // Every `.crm-tel-link` on the CRM is a `<a href="tel:…">`. On its own
     // that opens whatever OS dialer is registered (great on mobile, useless
-    // on desktop). When the tenant has Exotel configured we surface a
-    // two-choice picker so the user can opt into the logged + recorded
-    // CRM call OR fall back to dialer-of-choice. Tenants without Exotel
-    // configured don't see the picker at all — the link works as before.
+    // on desktop). When the tenant has telephony configured we surface a
+    // picker so the rep can choose:
+    //   - any active provider-backed number (Exotel / MyOperator / …)
+    //   - or fall back to the device dialer.
+    // Adapters live in CRM; the rep just picks a number and the backend
+    // dispatches via the correct ICallProvider (basic-auth XML vs OBD JSON).
+    function providerPalette(slug) {
+        const s = (slug || '').toLowerCase();
+        if (s === 'exotel') return { name: 'Exotel', bg: '#2563eb' };
+        if (s === 'myoperator') return { name: 'MyOperator', bg: '#9333ea' };
+        return { name: slug || 'Unknown', bg: '#6b7280' };
+    }
 
-    function openCallMethodPicker({ phone, telHref, leadId }) {
+    async function openCallMethodPicker({ phone, telHref, leadId }) {
         const existing = document.getElementById('callMethodPickerModal');
         if (existing) existing.remove();
 
+        // Pull the live number list (skip cache to reflect any toggle the
+        // rep just flipped in Settings → Calling without page reload).
+        let numbers = [];
+        try {
+            numbers = await api.request('/crm/calls/numbers') || [];
+        } catch (_) { numbers = []; }
+        const active = numbers.filter(n => n.is_active);
         const safePhone = esc(phone || '');
+
+        // Build one tile per active number. Reps see provider + DID up
+        // front; backend resolves credentials by (tenant, provider,
+        // instance_key) — they don't need to know the dispatch path.
+        const numberTilesHtml = active.map((n, idx) => {
+            const p = providerPalette(n.provider);
+            return `
+                <button type="button" class="cm-number-tile" data-action="dial-number" data-idx="${idx}">
+                    <span class="cm-tile-badge" style="background:${p.bg};">${esc(p.name)}</span>
+                    <span style="display:flex;flex-direction:column;flex:1;min-width:0;">
+                        <span class="cm-tile-name">${esc(n.instance_key)}</span>
+                        <span class="cm-tile-meta">Logged + recorded · rings you first</span>
+                    </span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>`;
+        }).join('');
+
+        const dialerTileHtml = `
+            <button type="button" class="cm-number-tile" data-action="dialer" style="background:transparent;">
+                <span class="cm-tile-badge" style="background:#6b7280;">Device</span>
+                <span style="display:flex;flex-direction:column;flex:1;min-width:0;">
+                    <span class="cm-tile-name">Direct dialer</span>
+                    <span class="cm-tile-meta">Opens your OS dialer · not logged in CRM</span>
+                </span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>`;
 
         const wrap = document.createElement('div');
         wrap.id = 'callMethodPickerModal';
@@ -416,7 +480,7 @@
                         </div>
                         <div class="gm-title-group">
                             <h3 class="gm-title">Call ${safePhone}</h3>
-                            <p class="gm-subtitle">Pick how you want to place this call</p>
+                            <p class="gm-subtitle">Pick the number to dial from${active.length ? '' : ' — no provider configured yet'}</p>
                         </div>
                     </div>
                     <button class="gm-close" data-action="close">
@@ -426,21 +490,9 @@
                         </svg>
                     </button>
                 </div>
-                <div class="gm-body" style="gap:10px;">
-                    <button class="btn btn-primary" data-action="exotel" style="justify-content:flex-start;text-align:left;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
-                        <span style="font-size:1.4em;line-height:1;">📞</span>
-                        <span style="display:flex;flex-direction:column;gap:2px;">
-                            <span style="font-weight:600;">Place via Exotel</span>
-                            <span style="font-size:0.85em;opacity:0.85;">Logs to the lead timeline, records the call, agent rings first.</span>
-                        </span>
-                    </button>
-                    <button class="btn btn-secondary" data-action="dialer" style="justify-content:flex-start;text-align:left;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;">
-                        <span style="font-size:1.4em;line-height:1;">📱</span>
-                        <span style="display:flex;flex-direction:column;gap:2px;">
-                            <span style="font-weight:600;">Use phone dialer</span>
-                            <span style="font-size:0.85em;opacity:0.85;">Opens your device's default dialer. Not logged in the CRM.</span>
-                        </span>
-                    </button>
+                <div class="gm-body" style="gap:10px;display:flex;flex-direction:column;">
+                    ${numberTilesHtml}
+                    ${dialerTileHtml}
                 </div>
                 <div class="gm-footer" style="padding:12px 20px;display:flex;justify-content:flex-end;border-top:1px solid var(--border-color-light);">
                     <button class="btn btn-secondary" data-action="close">Cancel</button>
@@ -449,19 +501,25 @@
         `;
         document.body.appendChild(wrap);
 
-        // Bind handlers directly. Avoids onclick-attribute escaping issues
-        // and keeps `phone` / `telHref` / `leadId` captured in closures.
         const close = () => wrap.remove();
         wrap.querySelectorAll('[data-action="close"]').forEach(b => b.addEventListener('click', close));
-        wrap.querySelector('[data-action="exotel"]').addEventListener('click', () => {
-            close();
-            try {
-                openPlaceCallModal(leadId || window._leadDetailId || '');
-                const el = document.getElementById('pcCustomerPhone');
-                if (el && phone) el.value = phone;
-            } catch (e) { console.warn('[calls] openPlaceCallModal failed', e); }
+        wrap.querySelectorAll('[data-action="dial-number"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-idx'), 10);
+                const picked = active[idx];
+                close();
+                try {
+                    openPlaceCallModal(leadId || window._leadDetailId || '', {
+                        instanceKey: picked.instance_key,
+                        providerSlug: picked.provider,
+                    });
+                    const el = document.getElementById('pcCustomerPhone');
+                    if (el && phone) el.value = phone;
+                } catch (e) { console.warn('[calls] openPlaceCallModal failed', e); }
+            });
         });
-        wrap.querySelector('[data-action="dialer"]').addEventListener('click', () => {
+        const dialerBtn = wrap.querySelector('[data-action="dialer"]');
+        if (dialerBtn) dialerBtn.addEventListener('click', () => {
             close();
             if (telHref) window.location.href = telHref;
         });
