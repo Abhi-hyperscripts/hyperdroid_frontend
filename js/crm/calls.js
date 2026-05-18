@@ -198,9 +198,6 @@
                         <input type="tel" id="pcCustomerPhone" class="form-control" placeholder="+91…">
                     </div>
                     ${agentPhoneInputHtml}
-                    <label style="display:flex;gap:8px;align-items:center;font-size:0.9em;margin-top:4px;">
-                        <input type="checkbox" id="pcRecord" checked> Record the call
-                    </label>
                 </div>
                 <div class="gm-footer" style="padding:16px 20px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--border-color-light);">
                     <button class="btn btn-secondary" onclick="document.getElementById('placeCallModal').remove()">Cancel</button>
@@ -217,18 +214,18 @@
         const btn = document.getElementById('pcPlaceBtn');
         const customer = document.getElementById('pcCustomerPhone').value.trim();
         const agent = document.getElementById('pcAgentPhone').value.trim();
-        const record = document.getElementById('pcRecord').checked;
         const instanceKey = (document.getElementById('pcInstanceKey')?.value || '').trim();
         if (!customer) { Toast.error('Customer number required'); return; }
         if (!agent) { Toast.error('Your number is required to ring you first'); return; }
         try { localStorage.setItem('ragenaizer_last_agent_phone', agent); } catch (_) {}
         btn.disabled = true; btn.textContent = 'Ringing…';
         try {
+            // Recording is forced on by the backend — every call is recorded
+            // for audit / compliance, no per-call opt-out.
             const body = {
                 lead_id: leadId,
                 agent_phone: agent,
                 customer_phone: customer,
-                record,
             };
             // Pin the call to a specific provider row when the picker
             // selected one. Empty string = backend falls back to
