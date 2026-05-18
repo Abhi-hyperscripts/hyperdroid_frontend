@@ -5498,6 +5498,12 @@ async function loadCallsIntegration() {
                 try {
                     await api.updateApiKey(prov, 'telephony', { isActive: next }, key);
                     Toast.success(`${prov} number ${key} ${next ? 'enabled' : 'disabled'}`);
+                    // Invalidate calls.js's 30s "configured" cache so other
+                    // pages (leads, lead-detail) pick up the new state on
+                    // their next decorate pass instead of waiting 30s.
+                    if (typeof window.bustCallsConfigCache === 'function') {
+                        window.bustCallsConfigCache();
+                    }
                     loadCallsIntegration();  // re-render so the "On/Off" hint updates
                 } catch (err) {
                     Toast.error(err?.message || 'Toggle failed');

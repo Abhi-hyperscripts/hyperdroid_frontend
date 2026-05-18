@@ -438,6 +438,18 @@
             numbers = await api.request('/crm/calls/numbers') || [];
         } catch (_) { numbers = []; }
         const active = numbers.filter(n => n.is_active);
+
+        // Zero active providers → behave like no BYOK was ever set up: skip
+        // the picker entirely and hand off to the OS dialer. Also bust the
+        // stale "configured" cache so the lead-detail Call button hides on
+        // the next decorate pass. Otherwise a tenant who just turned every
+        // number off would see a picker with only "Direct dialer" — one
+        // extra click for no gain.
+        if (active.length === 0) {
+            _callsConfiguredCache = { value: false, at: Date.now() };
+            if (telHref) window.location.href = telHref;
+            return;
+        }
         const safePhone = esc(phone || '');
 
         // Build one tile per active number. Reps see provider + DID up
@@ -610,4 +622,8 @@
     window.openLeadCallPicker = openLeadCallPicker;
     window._submitPlaceCall = _submitPlaceCall;
     window.renderCallTimelineEntries = renderCallTimelineEntries;
+    // Settings → Calling toggles need a way to invalidate the 30s
+    // "is anything configured" cache immediately, so the lead-page Call
+    // button hides/shows on the next decorate without a stale-data lag.
+    window.bustCallsConfigCache = () => { _callsConfiguredCache = { value: null, at: 0 }; };
 })();
