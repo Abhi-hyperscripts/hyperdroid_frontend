@@ -18,6 +18,10 @@
     let _functionalGroups = [];
     let _teams = [];
     let _users = [];    // all tenant users with their current team (if any)
+    // True when this tenant has at least one ACTIVE telephony number
+    // registered. Gates the "Receives inbound calls" toggle on each team
+    // card — pointless to surface when there's no provider to route from.
+    let _telephonyConfigured = false;
 
     // Edit state for the FG modal.
     let _editingFgId = null;
@@ -287,14 +291,19 @@
         loadMemberDealEditsToggle();
 
         try {
-            const [teams, fgs, users] = await Promise.all([
+            const [teams, fgs, users, numbers] = await Promise.all([
                 apiGet('/teams'),
                 apiGet('/functional-areas'),
-                apiGet('/teams/users')
+                apiGet('/teams/users'),
+                // Treat any non-2xx (404, 403, etc.) as "not configured" — we
+                // never want a transient calls-endpoint failure to wipe the
+                // toggle from tenants who have actually wired up telephony.
+                apiGet('/calls/numbers').catch(() => [])
             ]);
             _teams = Array.isArray(teams) ? teams : [];
             _functionalGroups = Array.isArray(fgs) ? fgs : [];
             _users = Array.isArray(users) ? users : [];
+            _telephonyConfigured = Array.isArray(numbers) && numbers.some(n => n && n.is_active);
 
             loading.style.display = 'none';
 
@@ -348,6 +357,17 @@
                             ? `<span style="color: var(--text-muted); font-size: 0.78rem; font-style: italic;">No functional groups</span>`
                             : fas.map(f => `<span class="fa-chip">${esc(f.name)}</span>`).join('')}
                     </div>
+                    ${_telephonyConfigured ? `
+                    <label class="team-card-inbound" onclick="event.stopPropagation()" data-tooltip="When ON, this team's members are rung when a customer calls our number">
+                        <input type="checkbox" ${t.receives_inbound_calls ? 'checked' : ''}
+                               onchange="toggleTeamInbound('${esc(t.id)}', this.checked, this)">
+                        <span class="team-card-inbound-label">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
+                            </svg>
+                            Receives inbound calls
+                        </span>
+                    </label>` : ''}
                     <div class="team-card-foot">
                         <span class="team-card-stat" title="Manager">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -1134,12 +1154,30 @@
         return luma > 165 ? '#0f172a' : '#fff';
     }
 
+    // Flip a team's inbound-calls toggle. Fires from the team card checkbox;
+    // we update the local cache so a re-render doesn't snap the checkbox
+    // back if the user clicks twice quickly.
+    async function toggleTeamInbound(teamId, checked, checkboxEl) {
+        // Optimistic UI: reflect the new state immediately. On server error
+        // we roll back the checkbox so it matches what was actually saved.
+        try {
+            await apiPut(`/teams/${teamId}/inbound`, { receives_inbound_calls: !!checked });
+            const t = _teams.find(t => t.id === teamId);
+            if (t) t.receives_inbound_calls = !!checked;
+            Toast.success(checked ? 'Inbound calls ON for this team' : 'Inbound calls OFF for this team');
+        } catch (e) {
+            if (checkboxEl) checkboxEl.checked = !checked;  // revert
+            toastErr(e, 'Failed to update inbound calls setting');
+        }
+    }
+
     window.loadTeamsTab         = loadTeamsTab;
     window.openCreateTeamModal  = openCreateTeamModal;
     window.openEditTeamModal    = openEditTeamModal;
     window.closeTeamModal       = closeTeamModal;
     window.saveTeam             = saveTeam;
     window.deleteTeam                = deleteTeam;
+    window.toggleTeamInbound         = toggleTeamInbound;
     window.closeReassignDeleteModal  = closeReassignDeleteModal;
     window.confirmReassignDelete     = confirmReassignDelete;
     window._addManager          = _addManager;

@@ -167,6 +167,47 @@
     line-height: 1.4;
 }
 
+/* Inbound-calls toggle row — sits between the FA chips and the member-count
+   footer. Native checkbox stays visible but styled as a brand chip when on. */
+.team-card-inbound {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    margin-top: 10px;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color-light);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.team-card-inbound:hover {
+    background: var(--bg-tertiary);
+}
+.team-card-inbound input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--brand-primary);
+    cursor: pointer;
+    margin: 0;
+}
+.team-card-inbound-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+/* When checked: brand-tinted chip-style so it visually pops "ON". */
+.team-card-inbound:has(input:checked) {
+    background: rgba(var(--brand-primary-rgb), 0.08);
+    border-color: rgba(var(--brand-primary-rgb), 0.3);
+}
+.team-card-inbound:has(input:checked) .team-card-inbound-label {
+    color: var(--brand-primary-dark);
+}
+
 .team-card-foot {
     display: flex;
     align-items: center;

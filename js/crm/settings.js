@@ -5483,12 +5483,23 @@ async function loadCallsIntegration() {
             } else {
                 webhookCell = '<span style="color:var(--text-secondary);font-size:0.85em;">No webhook URL — set CRM_PUBLIC_URL in Auth config</span>';
             }
+            // Inbound-connect URL: pasted into the ExoPhone's "Voice App URL"
+            // so Exotel asks CRM who to ring on incoming calls. Same gating
+            // story as the webhook URL — only populated when the row is
+            // active and Auth knows CRM_PUBLIC_URL.
+            let inboundCell;
+            if (n.inbound_connect_url) {
+                inboundCell = `<code style="font-size:0.78em;user-select:all;word-break:break-all;">${escapeHtml(n.inbound_connect_url)}</code>`;
+            } else {
+                inboundCell = '<span style="color:var(--text-secondary);font-size:0.85em;">—</span>';
+            }
             return `
             <tr data-instance="${escapeHtml(n.instance_key)}" data-provider="${escapeHtml(n.provider)}">
                 <td><span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:0.75rem;font-weight:600;color:#fff;background:${p.bg};">${escapeHtml(p.name)}</span></td>
                 <td><code>${escapeHtml(n.instance_key)}</code></td>
                 <td>${toggleCell}</td>
                 <td>${webhookCell}</td>
+                <td>${inboundCell}</td>
             </tr>`;
         }).join('');
 
