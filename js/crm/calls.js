@@ -304,11 +304,15 @@
         const when = c.initiated_at || c.created_at;
 
         let recordingHtml = '';
-        if (c.recording_url) {
+        // Prefer the same-origin signed proxy URL — the raw provider CDN
+        // (Exotel especially) is Basic-auth protected and would prompt the
+        // browser for credentials if we used it directly.
+        const playbackUrl = c.recording_playback_url || c.recording_url;
+        if (playbackUrl) {
             recordingHtml = `
                 <div style="margin-top:6px;">
                     <audio controls preload="none" style="height:32px;max-width:280px;">
-                        <source src="${esc(c.recording_url)}" type="audio/mpeg">
+                        <source src="${esc(playbackUrl)}" type="audio/mpeg">
                     </audio>
                 </div>`;
         }
