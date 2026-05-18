@@ -389,6 +389,13 @@
             const timeline = await api.request(`/crm/leads/${leadId}/timeline`);
             renderTimeline(timeline);
 
+            // Calls live in a separate table and aren't part of /timeline.
+            // calls.js prepends rows under [data-call-row] so re-renders of
+            // the journey timeline don't trample them.
+            if (typeof window.renderCallTimelineEntries === 'function') {
+                window.renderCallTimelineEntries(leadId);
+            }
+
             // Refresh the Need-Help / Cancel-Help button state. The requester
             // gets a single button that flips between "Need Help" (no open
             // request) and "Cancel pending help" (open request raised by them).
