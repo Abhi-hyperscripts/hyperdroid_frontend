@@ -277,7 +277,12 @@
 
     function buildCallRow(c) {
         const div = document.createElement('div');
-        div.className = 'tl-row';
+        // Mirror the lead-journey timeline classes (.tl-entry / .tl-content /
+        // .tl-header / .tl-title / .tl-desc / .tl-meta) so call rows inherit
+        // the same flex layout, absolute-positioned icon dot, and typography
+        // as activities, status changes, etc. Without these classes the row
+        // falls back to default block layout and the icon overlaps the text.
+        div.className = 'tl-entry tl-call';
         div.setAttribute('data-call-row', c.id);
         const isIn = c.direction === 'inbound';
         const dirLabel = isIn ? 'Incoming call' : 'Outgoing call';
@@ -292,9 +297,9 @@
             'no-answer': 'No answer',
             'canceled': 'Canceled',
         })[c.status] || c.status;
-        const statusClass = c.status === 'completed' ? 'completed'
-                          : (c.status === 'failed' || c.status === 'busy' || c.status === 'no-answer' || c.status === 'canceled') ? 'failed'
-                          : 'pending';
+        const statusChip = c.status === 'completed' ? 'tl-chip-completed'
+                          : (c.status === 'failed' || c.status === 'busy' || c.status === 'no-answer' || c.status === 'canceled') ? 'tl-chip-missed'
+                          : 'tl-chip-pending';
         const dur = c.duration_seconds ? formatDuration(c.duration_seconds) : '';
         const when = c.initiated_at || c.created_at;
 
@@ -319,19 +324,19 @@
 
         div.innerHTML = `
             <div class="tl-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     ${isIn
                         ? '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>'
                         : '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/><polyline points="15 3 21 3 21 9"/><line x1="14" y1="10" x2="21" y2="3"/>'}
                 </svg>
             </div>
-            <div class="tl-body">
-                <div class="tl-head">
-                    <strong>${esc(dirLabel)}</strong>
-                    <span class="tl-chip tl-chip-${statusClass}">${esc(statusLabel)}</span>
+            <div class="tl-content">
+                <div class="tl-header">
+                    <span class="tl-title">${esc(dirLabel)}</span>
+                    <span class="tl-chip ${statusChip}">${esc(statusLabel)}</span>
                     ${dur ? `<span class="tl-chip">${esc(dur)}</span>` : ''}
                 </div>
-                <div class="tl-detail">${esc(otherSide || '')}</div>
+                ${otherSide ? `<div class="tl-desc">${esc(otherSide)}</div>` : ''}
                 ${recordingHtml}
                 ${transcriptHtml}
                 <div class="tl-meta">${when ? new Date(when).toLocaleString() : ''}</div>

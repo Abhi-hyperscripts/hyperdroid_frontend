@@ -799,6 +799,11 @@
     color: #3b82f6;
 }
 
+.tl-entry.tl-call .tl-icon {
+    border-color: #14b8a6;
+    color: #14b8a6;
+}
+
 /* Email engagement — distinct colour per lifecycle step. Reuses the same
    brand-palette hues as status badges so the two views read consistently. */
 .tl-entry.tl-email_sent         .tl-icon { border-color: var(--text-secondary); color: var(--text-secondary); }
