@@ -497,26 +497,31 @@ class API {
         return this.request(`/users/${userId}`);
     }
 
-    async createUserAdmin(email, password, firstName, lastName, roles = []) {
+    async createUserAdmin(email, password, firstName, lastName, roles = [], phoneNumber = null) {
+        const body = {
+            email,
+            password,
+            firstName,
+            lastName,
+            roles
+        };
+        if (phoneNumber) body.phoneNumber = phoneNumber;
         return this.request('/users', {
             method: 'POST',
-            body: JSON.stringify({
-                email,
-                password,
-                firstName,
-                lastName,
-                roles
-            })
+            body: JSON.stringify(body)
         });
     }
 
-    async updateUserAdmin(userId, firstName, lastName) {
+    async updateUserAdmin(userId, firstName, lastName, phoneNumber = undefined) {
+        const body = {
+            firstName,
+            lastName
+        };
+        // undefined = field unchanged; "" = clear; "+91…" = set
+        if (phoneNumber !== undefined) body.phoneNumber = phoneNumber;
         return this.request(`/users/${userId}`, {
             method: 'PUT',
-            body: JSON.stringify({
-                firstName,
-                lastName
-            })
+            body: JSON.stringify(body)
         });
     }
 

@@ -57,6 +57,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (roles.includes('SUPERADMIN')) {
         const dz = document.getElementById('dangerZoneTabBtn');
         if (dz) dz.style.display = '';
+        // CRM Users tab is also SUPERADMIN-only — writes a rep's phone via
+        // Auth gRPC, which is a cross-tenant-sensitive op gated server-side.
+        const cu = document.getElementById('crmUsersTabBtn');
+        if (cu) cu.style.display = '';
     }
 
     // If the user was bounced here by CrmSetupGuard because the tenant
@@ -77,7 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Deep-link tab switch. Campaigns has its own prefill logic so skip it
     // here; the other tabs just need the sidebar button re-clicked.
     const urlTab = new URLSearchParams(window.location.search).get('tab');
-    const KNOWN_TABS = ['general','pipeline','lead-fields','integrations','mailboxes','templates','campaigns','lead-sources','functional-groups','teams','danger-zone'];
+    const KNOWN_TABS = ['general','pipeline','lead-fields','integrations','mailboxes','templates','campaigns','lead-sources','functional-groups','teams','crm-users','danger-zone'];
     if (urlTab && urlTab !== 'campaigns' && KNOWN_TABS.includes(urlTab)) {
         switchSettingsTab(urlTab);
     }
@@ -313,7 +317,8 @@ const settingsTabNames = {
     'mailboxes': 'Mailboxes',
     'lead-sources': 'Lead Sources',
     'functional-groups': 'Functional Groups',
-    'teams': 'Teams Setup'
+    'teams': 'Teams Setup',
+    'crm-users': 'CRM Users'
 };
 
 function setupSettingsSidebar() {
@@ -458,6 +463,8 @@ function switchSettingsTab(tabName) {
         loadAutomationsTab();
     } else if (tabName === 'campaigns' && typeof loadCampaignsTab === 'function') {
         loadCampaignsTab();
+    } else if (tabName === 'crm-users' && typeof loadCrmUsersTab === 'function') {
+        loadCrmUsersTab();
     }
 }
 
@@ -5533,3 +5540,151 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.loadCallsIntegration = loadCallsIntegration;
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  CRM USERS TAB — SUPERADMIN-only. Lists every tenant user that holds a
+//  CRM_* role and lets the admin set/clear their phone_number, which becomes
+//  the caller_id on the Place-Call modal. Read + write both go through
+//  /api/crm-admin/users — CRM service forwards over gRPC to Auth, which is
+//  the single source of truth for AspNetUsers.PhoneNumber.
+// ═══════════════════════════════════════════════════════════════════════════
+
+let _crmUsersCache = [];
+
+async function loadCrmUsersTab() {
+    const loading = document.getElementById('crmUsersLoading');
+    const wrapper = document.getElementById('crmUsersTableWrapper');
+    const empty = document.getElementById('crmUsersEmptyState');
+    if (loading) loading.style.display = '';
+    if (wrapper) wrapper.style.display = 'none';
+    if (empty) empty.style.display = 'none';
+
+    try {
+        const users = await api.request('/crm-admin/users');
+        _crmUsersCache = Array.isArray(users) ? users : [];
+        renderCrmUsersTable(_crmUsersCache);
+    } catch (err) {
+        console.error('[crm-users] load failed:', err);
+        if (typeof Toast !== 'undefined' && Toast.error) {
+            Toast.error('Failed to load CRM users: ' + (err?.message || 'unknown'));
+        }
+        renderCrmUsersTable([]);
+    } finally {
+        if (loading) loading.style.display = 'none';
+    }
+}
+
+function renderCrmUsersTable(users) {
+    const wrapper = document.getElementById('crmUsersTableWrapper');
+    const empty = document.getElementById('crmUsersEmptyState');
+    const tbody = document.getElementById('crmUsersTableBody');
+    if (!wrapper || !empty || !tbody) return;
+
+    if (!users || users.length === 0) {
+        wrapper.style.display = 'none';
+        empty.style.display = '';
+        return;
+    }
+
+    wrapper.style.display = '';
+    empty.style.display = 'none';
+
+    tbody.innerHTML = users.map(u => {
+        const userId = escapeHtml(u.user_id || '');
+        const first = escapeHtml(u.first_name || '');
+        const last = escapeHtml(u.last_name || '');
+        const email = escapeHtml(u.email || '');
+        const phone = u.phone_number ? escapeHtml(u.phone_number) : '';
+        const phoneCell = phone
+            ? `<code style="font-size:0.86rem; color:var(--text-primary);">${phone}</code>`
+            : `<span style="color:var(--text-secondary); font-style:italic;">Not set</span>`;
+        const roles = Array.isArray(u.roles) ? u.roles : [];
+        const roleBadges = roles.map(r => {
+            const isSuper = r === 'SUPERADMIN';
+            return `<span style="display:inline-block; padding:2px 8px; border-radius:999px; font-size:0.72rem; font-weight:500; margin-right:4px; ${isSuper ? 'background:rgba(239,68,68,.12); color:var(--color-danger);' : 'background:var(--bg-secondary); color:var(--text-secondary); border:1px solid var(--border-color);'}">${escapeHtml(r)}</span>`;
+        }).join('');
+        return `
+            <tr>
+                <td data-label="First name">${first || '<span style="color:var(--text-secondary);">—</span>'}</td>
+                <td data-label="Last name">${last || '<span style="color:var(--text-secondary);">—</span>'}</td>
+                <td data-label="Email">${email}</td>
+                <td data-label="Phone number">${phoneCell}</td>
+                <td data-label="Roles">${roleBadges || '<span style="color:var(--text-secondary);">—</span>'}</td>
+                <td data-label="Actions" style="text-align:right;">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="openCrmUserPhoneModal('${userId}')">Edit phone</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function openCrmUserPhoneModal(userId) {
+    const u = _crmUsersCache.find(x => x.user_id === userId);
+    if (!u) {
+        if (typeof Toast !== 'undefined' && Toast.error) Toast.error('User not found — refresh and try again');
+        return;
+    }
+    document.getElementById('crmUserPhoneUserId').value = u.user_id || '';
+    const displayName = [u.first_name, u.last_name].filter(Boolean).join(' ').trim() || u.email || '';
+    document.getElementById('crmUserPhoneUserName').value = displayName + (u.email ? ` <${u.email}>` : '');
+    document.getElementById('crmUserPhoneNumber').value = u.phone_number || '';
+    const subtitle = document.getElementById('crmUserPhoneSubtitle');
+    if (subtitle) subtitle.textContent = displayName ? `Caller ID for ${displayName}` : 'Update the rep\'s caller ID';
+    openModal('crmUserPhoneModal');
+    setTimeout(() => document.getElementById('crmUserPhoneNumber')?.focus(), 50);
+}
+
+function closeCrmUserPhoneModal() {
+    closeModal('crmUserPhoneModal');
+}
+
+function clearCrmUserPhone() {
+    const phoneField = document.getElementById('crmUserPhoneNumber');
+    if (phoneField) {
+        phoneField.value = '';
+        phoneField.focus();
+    }
+}
+
+async function handleCrmUserPhoneSubmit(event) {
+    if (event && typeof event.preventDefault === 'function') event.preventDefault();
+    const userId = document.getElementById('crmUserPhoneUserId').value;
+    const phoneNumber = (document.getElementById('crmUserPhoneNumber').value || '').trim();
+    if (!userId) return;
+
+    const saveBtn = document.getElementById('crmUserPhoneSaveBtn');
+    const originalLabel = saveBtn ? saveBtn.textContent : '';
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+
+    try {
+        // CRM service uses JsonNamingPolicy.SnakeCaseLower — body must use snake_case keys
+        // or [FromBody] binds the field to null and the server silently clears the phone.
+        const resp = await api.request(`/crm-admin/users/${encodeURIComponent(userId)}/phone`, {
+            method: 'PUT',
+            body: JSON.stringify({ phone_number: phoneNumber })
+        });
+        if (typeof Toast !== 'undefined' && Toast.success) {
+            Toast.success(phoneNumber ? 'Phone updated' : 'Phone cleared');
+        }
+        // Patch cache locally so we don't need a full reload before refreshCache returns
+        const idx = _crmUsersCache.findIndex(u => u.user_id === userId);
+        if (idx >= 0) _crmUsersCache[idx].phone_number = resp?.phone_number || '';
+        renderCrmUsersTable(_crmUsersCache);
+        closeCrmUserPhoneModal();
+        // Reload from server to confirm persistence
+        loadCrmUsersTab();
+    } catch (err) {
+        console.error('[crm-users] save phone failed:', err);
+        if (typeof Toast !== 'undefined' && Toast.error) {
+            Toast.error('Failed to save phone: ' + (err?.message || 'unknown'));
+        }
+    } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = originalLabel || 'Save'; }
+    }
+}
+
+window.loadCrmUsersTab = loadCrmUsersTab;
+window.openCrmUserPhoneModal = openCrmUserPhoneModal;
+window.closeCrmUserPhoneModal = closeCrmUserPhoneModal;
+window.clearCrmUserPhone = clearCrmUserPhone;
+window.handleCrmUserPhoneSubmit = handleCrmUserPhoneSubmit;

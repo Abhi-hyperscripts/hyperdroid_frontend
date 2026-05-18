@@ -621,7 +621,7 @@ function renderUsersTable(users) {
                 <td>
                     <div class="action-buttons">
                         ${isActive ? `
-                            <button class="action-btn" onclick="openEditUserModal('${user.userId}', '${user.firstName?.replace(/'/g, "\\'")}', '${user.lastName?.replace(/'/g, "\\'")}')" data-tooltip="Edit User">
+                            <button class="action-btn" onclick="openEditUserModal('${user.userId}', '${user.firstName?.replace(/'/g, "\\'")}', '${user.lastName?.replace(/'/g, "\\'")}', '${(user.phoneNumber || '').replace(/'/g, "\\'")}')" data-tooltip="Edit User">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -986,6 +986,7 @@ async function createUser() {
     const password = document.getElementById('newUserPassword').value;
     const firstName = document.getElementById('newUserFirstName').value;
     const lastName = document.getElementById('newUserLastName').value;
+    const phoneNumber = (document.getElementById('newUserPhoneNumber')?.value || '').trim();
 
     if (!email || !password || !firstName || !lastName) {
         showToast('Please fill in all required fields', 'error');
@@ -994,7 +995,7 @@ async function createUser() {
 
     try {
         // Create user without any roles - roles are assigned separately via Manage Roles
-        await api.createUserAdmin(email, password, firstName, lastName, []);
+        await api.createUserAdmin(email, password, firstName, lastName, [], phoneNumber || null);
         closeModal('createUserModal');
         showToast('User created successfully. Assign roles via Manage Roles.', 'success');
         await loadUsers();
@@ -1377,10 +1378,12 @@ function openResetPasswordModal(userId, userName) {
     openModal('resetPasswordModal');
 }
 
-function openEditUserModal(userId, firstName, lastName) {
+function openEditUserModal(userId, firstName, lastName, phoneNumber) {
     document.getElementById('editUserUserId').value = userId;
     document.getElementById('editUserFirstName').value = firstName || '';
     document.getElementById('editUserLastName').value = lastName || '';
+    const phoneField = document.getElementById('editUserPhoneNumber');
+    if (phoneField) phoneField.value = phoneNumber || '';
 
     openModal('editUserModal');
 }
@@ -1389,6 +1392,7 @@ async function saveEditUser() {
     const userId = document.getElementById('editUserUserId').value;
     const firstName = document.getElementById('editUserFirstName').value.trim();
     const lastName = document.getElementById('editUserLastName').value.trim();
+    const phoneNumber = (document.getElementById('editUserPhoneNumber')?.value || '').trim();
 
     if (!firstName || !lastName) {
         showToast('Please fill in both first name and last name', 'error');
@@ -1396,7 +1400,8 @@ async function saveEditUser() {
     }
 
     try {
-        await api.updateUserAdmin(userId, firstName, lastName);
+        // Always send phoneNumber so blanking it clears the field server-side
+        await api.updateUserAdmin(userId, firstName, lastName, phoneNumber);
         closeModal('editUserModal');
         showToast('User updated successfully', 'success');
         await loadUsers();

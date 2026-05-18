@@ -270,7 +270,12 @@ body:has(.auth-container)::after {
 .form-group input[type="email"]:not(.form-input),
 .form-group input[type="password"]:not(.form-input),
 .form-group input[type="number"]:not(.form-input),
+.form-group input[type="tel"]:not(.form-input),
+.form-group input[type="url"]:not(.form-input),
+.form-group input[type="search"]:not(.form-input),
 .form-group input[type="datetime-local"]:not(.form-input),
+.form-group input[type="date"]:not(.form-input),
+.form-group input[type="time"]:not(.form-input),
 .form-group textarea:not(.form-input),
 .form-group select:not(.form-input) {
     width: 100%;
@@ -317,7 +322,15 @@ body:has(.auth-container)::after {
 }
 
 .modal-content .form-group input[type="text"],
+.modal-content .form-group input[type="email"],
+.modal-content .form-group input[type="password"],
+.modal-content .form-group input[type="number"],
+.modal-content .form-group input[type="tel"],
+.modal-content .form-group input[type="url"],
+.modal-content .form-group input[type="search"],
 .modal-content .form-group input[type="datetime-local"],
+.modal-content .form-group input[type="date"],
+.modal-content .form-group input[type="time"],
 .modal-content .form-group textarea,
 .modal-content .form-group select {
     padding: 6px 10px;

@@ -638,6 +638,13 @@
                         </svg>
                         <span class="nav-label">Teams Setup</span>
                     </button>
+                    <!-- Superadmin-only. Hidden by JS in settings.js for non-superadmins. -->
+                    <button class="sidebar-btn" data-tab="crm-users" id="crmUsersTabBtn" onclick="switchSettingsTab('crm-users')" style="display:none;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                        <span class="nav-label">CRM Users</span>
+                    </button>
                     <button class="sidebar-btn" data-tab="integrations" onclick="switchSettingsTab('integrations')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
@@ -1933,6 +1940,67 @@
                     </div>
                 </div>
 
+                <!-- ─── CRM Users Tab (Superadmin only) ──────────────────────
+                     Shows every user in this tenant that holds a CRM_* role.
+                     SUPERADMIN can edit each rep's `phone_number` inline —
+                     that number becomes the caller_id on the lead Place-Call
+                     modal, so reps no longer have to type their mobile each
+                     time. Read + write both go via Auth gRPC (CRM owns no
+                     copy of the phone). -->
+                <div class="crm-tab-content" id="tab-crm-users">
+                    <div class="section-header">
+                        <div>
+                            <h3 class="section-title">CRM Users</h3>
+                            <p class="section-subtitle">Set or clear the phone number for every sales rep. This number is used as the caller ID on outbound calls placed from a lead.</p>
+                        </div>
+                        <div class="header-actions">
+                            <button class="btn btn-outline-secondary" onclick="loadCrmUsersTab()" id="refreshCrmUsersBtn" title="Refresh list">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+                                    <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                </svg>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    <details style="margin-bottom:14px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; padding:10px 14px;">
+                        <summary style="cursor:pointer; font-weight:600; font-size:0.92rem;">What is this?</summary>
+                        <div style="margin-top:10px; color:var(--text-secondary); font-size:0.88rem; line-height:1.55;">
+                            <p style="margin:0 0 8px 0;">Every sales rep needs a phone number on their profile so the system can ring them first, then bridge the customer in. Without a number on file, reps have to type their mobile into the Place Call modal every single time.</p>
+                            <p style="margin:0;">This page lists every active user in your CRM. Click <strong>Edit</strong> next to any rep to set or update their number in E.164 format (e.g. <code>+918586084450</code>). The change is saved to the Authentication service over gRPC and takes effect immediately for that rep's next call.</p>
+                        </div>
+                    </details>
+
+                    <div class="crm-loading" id="crmUsersLoading" style="display:none;">
+                        <div class="crm-loading-spinner"></div>
+                    </div>
+
+                    <div class="crm-table-wrapper" id="crmUsersTableWrapper" style="display:none;">
+                        <table class="data-table" id="crmUsersTable">
+                            <thead>
+                                <tr>
+                                    <th>First name</th>
+                                    <th>Last name</th>
+                                    <th>Email</th>
+                                    <th>Phone number</th>
+                                    <th>Roles</th>
+                                    <th style="width:120px; text-align:right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="crmUsersTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="empty-state" id="crmUsersEmptyState" style="display:none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                        </svg>
+                        <h3>No CRM users yet</h3>
+                        <p>No users in this tenant currently hold a CRM role. Invite a teammate from <a href="/pages/auth/dashboard.html">Admin → Users</a>, give them a CRM role, and they'll show up here.</p>
+                    </div>
+                </div>
+
                 <!-- ─── Danger Zone Tab (Superadmin only) ──────────────────── -->
                 <div class="crm-tab-content" id="tab-danger-zone">
                     <div class="section-header">
@@ -2144,6 +2212,55 @@
     </div>
 
     <!-- Create/Edit Lead Source Modal -->
+    <!-- CRM User — edit phone modal. SUPERADMIN-only; opened from CRM Users tab. -->
+    <div class="gm-overlay" id="crmUserPhoneModal">
+        <div class="gm-modal" style="max-width:480px;">
+            <div class="gm-header">
+                <div class="gm-header-left">
+                    <div class="gm-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        </svg>
+                    </div>
+                    <div class="gm-title-group">
+                        <h3 class="gm-title">Edit phone number</h3>
+                        <p class="gm-subtitle" id="crmUserPhoneSubtitle">Update the rep's caller ID</p>
+                    </div>
+                </div>
+                <button class="gm-close" onclick="closeCrmUserPhoneModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="gm-body">
+                <details style="margin-bottom:14px; background:var(--bg-card); border:1px solid var(--border-color); border-radius:10px; padding:10px 14px;">
+                    <summary style="cursor:pointer; font-weight:600; font-size:0.9rem;">What is this?</summary>
+                    <div style="margin-top:10px; color:var(--text-secondary); font-size:0.86rem; line-height:1.5;">
+                        Setting a phone number here saves it to the user's Authentication profile (over gRPC) and makes it the default caller ID on the lead Place-Call modal. Leave blank to clear. Use E.164 format with country code.
+                    </div>
+                </details>
+                <form id="crmUserPhoneForm" onsubmit="handleCrmUserPhoneSubmit(event)">
+                    <input type="hidden" id="crmUserPhoneUserId">
+                    <div class="form-group">
+                        <label>User</label>
+                        <input type="text" id="crmUserPhoneUserName" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="crmUserPhoneNumber">Phone Number <span style="color: var(--text-secondary); font-weight: normal;">(optional)</span></label>
+                        <input type="text" inputmode="tel" id="crmUserPhoneNumber" placeholder="+918586084450" autocomplete="tel">
+                        <small style="color: var(--text-secondary);">E.164 format with country code. Leave blank to clear.</small>
+                    </div>
+                </form>
+            </div>
+            <div class="gm-footer" style="padding: 16px 20px; display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid var(--border-color-light);">
+                <button type="button" class="btn btn-outline-secondary" onclick="clearCrmUserPhone()" id="crmUserPhoneClearBtn">Clear phone</button>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeCrmUserPhoneModal()">Cancel</button>
+                    <button type="submit" form="crmUserPhoneForm" class="btn btn-primary" id="crmUserPhoneSaveBtn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="gm-overlay" id="leadSourceModal">
         <div class="gm-modal">
             <div class="gm-header">

@@ -135,6 +135,36 @@
             </div>
         ` : '';
 
+        // Auth-stored phone is the caller_id we ring first. BYOK calling
+        // requires it — without a number on the rep's profile, the provider
+        // has nothing to call. Short-circuit straight to the OS dialer so
+        // the rep can still place the call manually. (The picker has the
+        // same guard, but this path is also reachable from the lead-detail
+        // Call button, which bypasses the picker entirely.) Admins fix
+        // this under Settings → CRM Users.
+        let authPhone = '';
+        try {
+            const u = (typeof api.getUser === 'function') ? api.getUser() : null;
+            authPhone = (u?.phoneNumber || u?.phone || '').trim();
+        } catch (_) {}
+        if (!authPhone) {
+            const digits = (prefilledCustomer || '').replace(/[^\d+]/g, '');
+            if (digits) {
+                try { window.location.href = 'tel:' + digits; } catch (_) {}
+            } else if (typeof Toast !== 'undefined' && Toast.warning) {
+                Toast.warning('Ask an admin to save your phone under Settings → CRM Users so you can place calls.');
+            }
+            return;
+        }
+        const authPhoneBadgeHtml = `
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--border-color);border-radius:8px;background:var(--bg-secondary);">
+                <span style="font-size:0.78em;color:var(--text-secondary);">Calling as</span>
+                <code style="flex:1;font-size:0.9rem;color:var(--text-primary);">${esc(authPhone)}</code>
+            </div>
+            <input type="hidden" id="pcAgentPhone" value="${esc(authPhone)}">
+        `;
+        const agentPhoneInputHtml = authPhoneBadgeHtml;
+
         const wrap = document.createElement('div');
         wrap.id = 'placeCallModal';
         wrap.className = 'gm-overlay active';
@@ -167,11 +197,7 @@
                         <label for="pcCustomerPhone">Customer number</label>
                         <input type="tel" id="pcCustomerPhone" class="form-control" placeholder="+91…">
                     </div>
-                    <div class="crm-form-group">
-                        <label for="pcAgentPhone">Ring my number first</label>
-                        <input type="tel" id="pcAgentPhone" class="form-control" placeholder="+91… (your mobile)">
-                        <small style="color:var(--text-secondary);font-size:0.8em;">Provider rings this number; pick up, then it bridges to the customer.</small>
-                    </div>
+                    ${agentPhoneInputHtml}
                     <label style="display:flex;gap:8px;align-items:center;font-size:0.9em;margin-top:4px;">
                         <input type="checkbox" id="pcRecord" checked> Record the call
                     </label>
@@ -185,13 +211,6 @@
         document.body.appendChild(wrap);
 
         if (prefilledCustomer) document.getElementById('pcCustomerPhone').value = prefilledCustomer;
-
-        // Prefill agent phone from the user's auth claim if available.
-        try {
-            const u = (typeof api.getUser === 'function') ? api.getUser() : null;
-            const phone = u?.phone || u?.phoneNumber || localStorage.getItem('ragenaizer_last_agent_phone');
-            if (phone) document.getElementById('pcAgentPhone').value = phone;
-        } catch (_) {}
     }
 
     async function _submitPlaceCall(leadId) {
@@ -450,6 +469,23 @@
             if (telHref) window.location.href = telHref;
             return;
         }
+
+        // No caller_id on the rep's Auth profile → BYOK calling is unusable
+        // (every provider needs a number to ring first). Don't show the
+        // picker at all — it would either ask the rep to retype their
+        // mobile every call, or silently fall back to typing-it-in. Hand
+        // off to the OS dialer so the rep can still place the call manually.
+        // Admins can fix this under Settings → CRM Users.
+        let _authPhone = '';
+        try {
+            const u = (typeof api.getUser === 'function') ? api.getUser() : null;
+            _authPhone = (u?.phoneNumber || u?.phone || '').trim();
+        } catch (_) {}
+        if (!_authPhone) {
+            if (telHref) window.location.href = telHref;
+            return;
+        }
+
         const safePhone = esc(phone || '');
 
         // Build one tile per active number. Reps see provider + DID up
