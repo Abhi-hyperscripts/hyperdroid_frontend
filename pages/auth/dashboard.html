@@ -955,6 +955,7 @@
                                 <option value="Razorpay">Razorpay (Payment Gateway)</option>
                                 <option value="Interakt">Interakt (WhatsApp BSP)</option>
                                 <option value="Exotel">Exotel (Telephony)</option>
+                                <option value="MyOperator">MyOperator (Telephony)</option>
                                 <option value="Custom">Custom</option>
                             </select>
                         </div>
@@ -1084,6 +1085,49 @@
                                     <option value="in">India (in)</option>
                                 </select>
                                 <small style="color:var(--text-secondary);font-size:0.75rem;">Picks the Exotel API base host. Default <code>sg</code> works for most Indian accounts.</small>
+                            </div>
+                        </div>
+
+                        <!-- MyOperator-specific input — telephony BYOK using OBD
+                             Type 2 IVR Dialer. Same Auth-as-SSoT pattern as
+                             Exotel: Auth generates webhook_secret server-side
+                             and embeds it into the row's webhook URL, which
+                             tenants paste into MyOperator's Webhooks v2 config. -->
+                        <div id="apiKeyMyOperatorGroup" style="display:none;">
+                            <div class="form-group">
+                                <label>DID / Caller ID (your MyOperator number)</label>
+                                <input type="text" id="myoperatorPhone" placeholder="e.g. 09267980630" autocomplete="off">
+                                <small style="color:var(--text-secondary);font-size:0.75rem;">The number MyOperator routes calls from. Acts as the row's instance key. Digits-only — we strip non-digits. Webhook URL becomes <code>/api/calls/myoperator/webhook/{tenantId}/{phone}/{secret}</code>.</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Company ID</label>
+                                <input type="text" id="myoperatorCompanyId" placeholder="16-char hex string" autocomplete="off">
+                                <small style="color:var(--text-secondary);font-size:0.75rem;">From your MyOperator panel: API &amp; Webhook → Developer API → Calling APIs → Endpoint Details (top of the page).</small>
+                            </div>
+                            <div class="form-group">
+                                <label>x-api-key (API Gateway Key)</label>
+                                <div class="apikey-input-wrapper">
+                                    <input type="text" id="myoperatorXApiKey" placeholder="40-char alphanumeric token" autocomplete="off">
+                                    <button type="button" class="apikey-toggle-btn" onclick="toggleFieldVisibility('myoperatorXApiKey', 'myoperatorXApiKeyEye')">
+                                        <svg id="myoperatorXApiKeyEye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </button>
+                                </div>
+                                <small style="color:var(--text-secondary);font-size:0.75rem;">Goes in the <code>x-api-key</code> header on every OBD call. Find it on the same Endpoint Details page.</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Secret Token (Authentication)</label>
+                                <div class="apikey-input-wrapper">
+                                    <input type="password" id="myoperatorSecretToken" placeholder="32-char hex string" autocomplete="off">
+                                    <button type="button" class="apikey-toggle-btn" onclick="toggleFieldVisibility('myoperatorSecretToken', 'myoperatorSecretTokenEye')">
+                                        <svg id="myoperatorSecretTokenEye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </button>
+                                </div>
+                                <small style="color:var(--text-secondary);font-size:0.75rem;">The "Authentication" value (click <em>Show value</em> on the panel). Goes in the OBD request <code>secret_token</code> body field, not a header.</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Public IVR ID</label>
+                                <input type="text" id="myoperatorPublicIvrId" placeholder="e.g. ivr_abcdef123" autocomplete="off">
+                                <small style="color:var(--text-secondary);font-size:0.75rem;">The IVR that routes the call on MyOperator's side. Create / look it up under MyOperator panel → <b>Call</b> → IVR Flows. Required — OBD won't dial without it.</small>
                             </div>
                         </div>
                     </form>
