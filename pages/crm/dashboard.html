@@ -45,14 +45,28 @@
                 <h1>CRM Dashboard</h1>
                 <p>Customer Relationship Management</p>
             </div>
-            <button class="refresh-btn" id="refreshBtn" onclick="refreshDashboard()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="23 4 23 10 17 10"/>
-                    <polyline points="1 20 1 14 7 14"/>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                </svg>
-                Refresh
-            </button>
+            <div class="crm-header-actions">
+                <a class="download-companion-btn"
+                   href="https://github.com/Abhi-hyperscripts/ragenaizer-downloads/releases/latest/download/ragenaizer-companion.apk"
+                   download="ragenaizer-companion.apk"
+                   rel="noopener"
+                   title="Install the Ragenaizer Companion app on your Android phone to dial leads with one tap and stream call outcomes back to the CRM.">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Download Android App
+                </a>
+                <button class="refresh-btn" id="refreshBtn" onclick="refreshDashboard()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <polyline points="1 20 1 14 7 14"/>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
         </div>
 
         <!-- Stats Overview — compact horizontal -->

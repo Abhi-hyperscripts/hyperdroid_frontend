@@ -1250,6 +1250,52 @@ body.crm-dashboard .crm-container {
     animation: crm-btn-spin 1s linear infinite;
 }
 
+/* Header actions row — Download Android App + Refresh side-by-side. */
+.crm-container .crm-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.crm-container .download-companion-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: #fff;
+    background: linear-gradient(135deg, var(--brand-primary, #3B82F6) 0%, var(--brand-accent, #6366F1) 100%);
+    border: 1px solid transparent;
+    box-shadow: 0 2px 10px rgba(59, 130, 246, 0.25);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.crm-container .download-companion-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+    filter: brightness(1.05);
+}
+
+.crm-container .download-companion-btn:active {
+    transform: translateY(0);
+    filter: brightness(0.95);
+}
+
+@media (max-width: 600px) {
+    .crm-container .crm-header-actions {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .crm-container .download-companion-btn {
+        font-size: 0.8rem;
+        padding: 7px 12px;
+    }
+}
+
 /* =============================================================
    CRM DASHBOARD - Responsive Overrides
    ============================================================= */
