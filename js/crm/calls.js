@@ -510,6 +510,27 @@
                 </button>`;
         }).join('');
 
+        // Detect whether the agent has registered the Ragenaizer Companion
+        // Android app. We hit NS's per-user list endpoint; if non-empty we
+        // render a 3rd tile that pushes an FCM call-trigger to their phone
+        // via /api/Calls/companion-initiate. Failing fetch (NS down or no
+        // route) → tile is hidden, picker still works for Exotel + dialer.
+        let _companionAvailable = false;
+        try {
+            const tokens = await api.request('/notifications/companion-device-tokens');
+            _companionAvailable = Array.isArray(tokens) && tokens.length > 0;
+        } catch (_) { _companionAvailable = false; }
+
+        const companionTileHtml = _companionAvailable ? `
+            <button type="button" class="cm-number-tile" data-action="companion" style="background:transparent;">
+                <span class="cm-tile-badge" style="background:#5b4fd8;">Ragenaizer</span>
+                <span style="display:flex;flex-direction:column;flex:1;min-width:0;">
+                    <span class="cm-tile-name">Companion app</span>
+                    <span class="cm-tile-meta">Push to your phone · logged · timeline</span>
+                </span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>` : '';
+
         const dialerTileHtml = `
             <button type="button" class="cm-number-tile" data-action="dialer" style="background:transparent;">
                 <span class="cm-tile-badge" style="background:#6b7280;">Device</span>
@@ -546,6 +567,7 @@
                 </div>
                 <div class="gm-body" style="gap:6px;display:flex;flex-direction:column;">
                     ${numberTilesHtml}
+                    ${companionTileHtml}
                     ${dialerTileHtml}
                 </div>
                 <div class="gm-footer" style="padding:12px 20px;display:flex;justify-content:flex-end;border-top:1px solid var(--border-color-light);">
@@ -576,6 +598,41 @@
         if (dialerBtn) dialerBtn.addEventListener('click', () => {
             close();
             if (telHref) window.location.href = telHref;
+        });
+        // Companion tile — fires an FCM push to the agent's phone via
+        // CRM → NS gRPC SendCompanionCallTrigger. The companion app opens
+        // pre-filled and the agent taps the green call button once. The
+        // call event lands in the lead timeline via /api/Calls/log after
+        // the call ends (~3s post-IDLE).
+        const companionBtn = wrap.querySelector('[data-action="companion"]');
+        if (companionBtn) companionBtn.addEventListener('click', async () => {
+            const lid = leadId || window._leadDetailId || '';
+            if (!lid) {
+                if (typeof Toast !== 'undefined') Toast.error('No lead selected for this call');
+                return;
+            }
+            companionBtn.disabled = true;
+            companionBtn.querySelector('.cm-tile-meta').textContent = 'Sending…';
+            try {
+                const resp = await api.request('/crm/calls/companion-initiate', {
+                    method: 'POST',
+                    body: JSON.stringify({ lead_id: lid })
+                });
+                close();
+                if (resp && resp.success && resp.devices_succeeded > 0) {
+                    if (typeof Toast !== 'undefined')
+                        Toast.success(`Sent to ${resp.devices_succeeded} companion device${resp.devices_succeeded === 1 ? '' : 's'} — tap the green Call button on your phone.`);
+                } else if (resp && resp.devices_targeted === 0) {
+                    if (typeof Toast !== 'undefined')
+                        Toast.warning('No companion devices registered yet. Install & sign into the Ragenaizer Companion Android app.');
+                } else {
+                    if (typeof Toast !== 'undefined')
+                        Toast.error(resp?.message || 'Failed to reach your phone');
+                }
+            } catch (e) {
+                close();
+                if (typeof Toast !== 'undefined') Toast.error(e?.message || 'Network error');
+            }
         });
     }
 
