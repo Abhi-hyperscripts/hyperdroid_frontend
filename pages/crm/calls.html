@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/js/cookie-consent.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
+    <title>Calls Inbox - CRM | Ragenaizer</title>
+    <script>window.CACHE_VERSION = Date.now();</script>
+    <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script src="/js/sw-update.js"></script>
+    <script src="/js/pwa-install-prompt.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script>document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glassmorphic-modal.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/crm-calls-inbox.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</head>
+<body class="dashboard crm-page crm-calls-inbox-page">
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="../home.html">
+                <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <!-- Navigation links rendered by Navigation.init() -->
+        </div>
+    </nav>
+
+    <div class="crm-container">
+        <!-- Header — same shape as leads.html so the breadcrumb / title /
+             action toolbar render identically. -->
+        <div class="crm-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">CRM</a>
+                    <span class="separator">/</span>
+                    <span class="current">Calls Inbox</span>
+                </nav>
+                <div class="crm-header-row">
+                    <h1>Calls Inbox</h1>
+                    <div class="crm-header-actions">
+                        <details class="ci-help">
+                            <summary>What is this?</summary>
+                            <div class="ci-help-body">
+                                <p>Every inbound and outbound call your team makes — in one place. Click any row for the full call timeline + recording. Calls from numbers we don't recognise sit in <strong>Unmatched</strong> until you convert them to a lead.</p>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats strip — same .crm-stats-grid + .crm-stat-card classes as
+             leads.html. Click any card to switch the filter chip below. -->
+        <div class="crm-stats-grid pms-stats-5col" id="ciStatsGrid">
+            <div class="crm-stat-card ci-stat-clickable" data-quickfilter="all" role="button" tabindex="0">
+                <div class="crm-stat-icon stat-total">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-text">
+                    <div class="crm-stat-value" id="ciStatTotal">—</div>
+                    <div class="crm-stat-label">Today</div>
+                </div>
+            </div>
+            <div class="crm-stat-card ci-stat-clickable" data-quickfilter="inbound" role="button" tabindex="0">
+                <div class="crm-stat-icon stat-completed">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="7 17 17 7"/>
+                        <polyline points="7 7 7 17 17 17"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-text">
+                    <div class="crm-stat-value" id="ciStatInbound">—</div>
+                    <div class="crm-stat-label">Inbound</div>
+                </div>
+            </div>
+            <div class="crm-stat-card ci-stat-clickable" data-quickfilter="outbound" role="button" tabindex="0">
+                <div class="crm-stat-icon stat-new">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="17 7 7 17"/>
+                        <polyline points="17 17 17 7 7 7"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-text">
+                    <div class="crm-stat-value" id="ciStatOutbound">—</div>
+                    <div class="crm-stat-label">Outbound</div>
+                </div>
+            </div>
+            <div class="crm-stat-card ci-stat-clickable" data-quickfilter="missed" role="button" tabindex="0">
+                <div class="crm-stat-icon stat-lost">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
+                        <line x1="18" y1="3" x2="22" y2="7"/>
+                        <line x1="22" y1="3" x2="18" y2="7"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-text">
+                    <div class="crm-stat-value" id="ciStatMissed">—</div>
+                    <div class="crm-stat-label">Missed</div>
+                </div>
+            </div>
+            <div class="crm-stat-card ci-stat-clickable" data-quickfilter="unmatched" role="button" tabindex="0">
+                <div class="crm-stat-icon stat-active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-text">
+                    <div class="crm-stat-value" id="ciStatUnmatched">—</div>
+                    <div class="crm-stat-label">Unmatched</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="ci-filterbar">
+            <div class="ci-chips" role="tablist" aria-label="Filter calls">
+                <button type="button" class="ci-chip ci-chip--active" data-filter="all" role="tab" aria-selected="true">All</button>
+                <button type="button" class="ci-chip" data-filter="inbound" role="tab">Inbound</button>
+                <button type="button" class="ci-chip" data-filter="outbound" role="tab">Outbound</button>
+                <button type="button" class="ci-chip" data-filter="missed" role="tab">Missed</button>
+                <button type="button" class="ci-chip" data-filter="unmatched" role="tab">Unmatched</button>
+            </div>
+            <div class="ci-search-wrap">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input id="ciSearch" type="search" class="form-control" placeholder="Search phone or last 10 digits…" />
+            </div>
+            <div class="ci-daterange">
+                <label for="ciScope" class="ci-daterange-label">Range</label>
+                <select id="ciScope" class="form-control">
+                    <option value="today" selected>Today</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                    <option value="all">All time</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- List — uses the shared .crm-table-wrapper + .crm-table classes
+             so it picks up the same glassmorphic styling as leads.html.
+             table-cards.js folds rows into cards on ≤768px viewports. -->
+        <div id="ciLoading" class="ci-state">Loading calls…</div>
+        <div id="ciEmpty" class="ci-state" style="display:none;">
+            <div class="ci-empty-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+            </div>
+            <p class="ci-empty-title">No calls yet</p>
+            <p class="ci-empty-sub">Place a call from any lead or wait for an inbound call to your ExoPhone — rows will appear here in real time.</p>
+        </div>
+        <div class="crm-table-wrapper data-table-container" id="ciTableWrap" style="display:none;">
+            <table id="ciTable" class="crm-table data-table">
+                <thead>
+                    <tr>
+                        <th style="width:32px;"></th>
+                        <th>Phone</th>
+                        <th>Lead</th>
+                        <th class="hide-mobile">Agent</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th class="hide-mobile">Duration</th>
+                        <th>Recording</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="ciTbody"></tbody>
+            </table>
+        </div>
+        <div class="ci-footer">
+            <span id="ciCount" class="ci-count"></span>
+            <button id="ciLoadMore" class="btn btn-secondary" style="display:none;">Load more</button>
+        </div>
+    </div>
+
+    <!-- Slide-in detail drawer — reuses .slide-panel + .panel-header / .panel-body
+         from css/slide-panel.css (same pattern as the lead-detail drawer). -->
+    <div id="ciDrawerOverlay" class="slide-panel-overlay" onclick="closeCallDrawer()"></div>
+    <aside id="ciDrawer" class="slide-panel">
+        <header class="panel-header">
+            <h3 id="ciDrawerTitle" class="panel-title">Call detail</h3>
+            <button class="panel-close-btn" onclick="closeCallDrawer()" aria-label="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </header>
+        <div id="ciDrawerBody" class="panel-body">
+            <!-- populated by js -->
+        </div>
+    </aside>
+
+    <!-- Convert-to-Lead modal — uses .gm-overlay/.gm-modal (visibility
+         toggled via .active class, same as every other modal). -->
+    <div id="ciConvertOverlay" class="gm-overlay" onclick="closeConvertModal()">
+        <div class="gm-modal" onclick="event.stopPropagation()">
+            <header class="gm-header">
+                <div class="gm-title-group">
+                    <h3 class="gm-title">Convert to Lead</h3>
+                    <p class="gm-subtitle" id="ciConvertSubtitle">Create a new lead from this caller</p>
+                </div>
+                <button class="gm-close" onclick="closeConvertModal()" aria-label="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </header>
+            <div class="gm-body">
+                <div class="crm-form-group">
+                    <label for="ciConvertName">Customer name (optional)</label>
+                    <input id="ciConvertName" type="text" class="form-control" placeholder="Leave blank to use phone as name" />
+                </div>
+                <div class="crm-form-group">
+                    <label for="ciConvertTeam">Assign to team (optional)</label>
+                    <select id="ciConvertTeam" class="form-control">
+                        <option value="">— Don't assign yet —</option>
+                    </select>
+                </div>
+            </div>
+            <footer class="gm-footer">
+                <button class="btn btn-secondary" onclick="closeConvertModal()">Cancel</button>
+                <button class="btn btn-primary" id="ciConvertSubmit" onclick="submitConvertToLead()">Create Lead</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- ── Scripts ─────────────────────────────────────────────────── -->
+    <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/table-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script>document.write('<script src="../../js/crm/calls-inbox.js?v=' + CACHE_VERSION + '"><\/script>');</script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+/* Calls Inbox — page-specific CSS layered on top of crm.css.
+   Reuses .crm-stats-grid / .crm-stat-card / .crm-stat-icon / etc from
+   the global CRM theme; only the items below are net-new. */
+
+.crm-calls-inbox-page .crm-container {
+    padding-bottom: 64px;
+}
+
+/* Make the stats cards behave like buttons (cursor, focus ring) without
+   replacing the visual style. */
+.crm-stat-card.ci-stat-clickable {
+    cursor: pointer;
+    user-select: none;
+}
+.crm-stat-card.ci-stat-clickable:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ── Help disclosure ("What is this?") — same disclosure pattern used on
+   other pages. Lives in the header-actions slot so it sits with the
+   page-level actions visually. */
+.ci-help {
+    font-size: 0.85rem;
+}
+.ci-help > summary {
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color-light);
+    background: var(--bg-secondary);
+    list-style: none;
+    user-select: none;
+}
+.ci-help > summary::-webkit-details-marker { display: none; }
+.ci-help > summary:hover { background: var(--bg-tertiary); }
+.ci-help-body {
+    margin-top: 8px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    max-width: 480px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* ── Filter chip + search row ────────────────────────────────────────── */
+.ci-filterbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 14px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    border-radius: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-light);
+}
+.ci-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.ci-chip {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color-light);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.ci-chip:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+.ci-chip--active {
+    background: var(--brand-primary);
+    color: #fff;
+    border-color: var(--brand-primary);
+}
+.ci-chip--active:hover {
+    background: var(--brand-primary-hover, var(--brand-primary));
+    color: #fff;
+}
+.ci-search-wrap {
+    position: relative;
+    flex: 1 1 220px;
+    max-width: 360px;
+}
+.ci-search-wrap > svg {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    pointer-events: none;
+}
+.ci-search-wrap > input {
+    padding-left: 32px;
+}
+.ci-daterange {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ci-daterange-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+.ci-daterange > select {
+    width: auto;
+    min-width: 140px;
+}
+
+/* ── Table — uses .crm-table-wrapper / .crm-table from global crm.css, so
+   appearance matches leads.html exactly. Only thing we add here is the
+   row pointer cursor to telegraph the "click for detail drawer" behaviour. */
+#ciTable tbody tr {
+    cursor: pointer;
+}
+
+.ci-dir-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+}
+.ci-dir-in  { color: var(--color-success, #16a34a); background: rgba(34,197,94,0.10); }
+.ci-dir-out { color: var(--brand-primary);          background: rgba(99,102,241,0.10); }
+
+.ci-phone {
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+.ci-time { color: var(--text-secondary); font-size: 0.83rem; }
+.ci-mute { color: var(--text-secondary); font-size: 0.85rem; }
+
+.ci-chip-status {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.ci-chip-completed { background: rgba(34,197,94,0.10); color: var(--color-success, #16a34a); }
+.ci-chip-missed    { background: rgba(220,38,38,0.10); color: var(--color-error, #dc2626); }
+.ci-chip-pending   { background: rgba(99,102,241,0.10); color: var(--brand-primary); }
+
+.ci-lead-link {
+    color: var(--brand-primary);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.85rem;
+}
+.ci-lead-link:hover { text-decoration: underline; }
+
+.ci-convert-btn {
+    background: rgba(245,158,11,0.10);
+    color: var(--color-warning, #d97706);
+    border: 1px solid rgba(245,158,11,0.3);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.ci-convert-btn:hover {
+    background: rgba(245,158,11,0.20);
+}
+
+.ci-row-action {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.4rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 0 8px;
+    line-height: 1;
+}
+.ci-row-action:hover { color: var(--brand-primary); }
+
+/* ── Empty / loading state ──────────────────────────────────────────────── */
+.ci-state {
+    padding: 36px 18px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+.ci-empty-icon {
+    margin: 0 auto 10px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+}
+.ci-empty-title {
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    margin: 0 0 4px;
+}
+.ci-empty-sub {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.ci-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 4px;
+    margin-top: 8px;
+}
+.ci-count {
+    color: var(--text-secondary);
+    font-size: 0.83rem;
+}
+
+/* ── Slide-in drawer body ──────────────────────────────────────────────── */
+.ci-drawer-section {
+    margin-bottom: 22px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+.ci-drawer-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.ci-drawer-h {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin: 0 0 10px;
+    font-weight: 600;
+}
+.ci-drawer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    font-size: 0.88rem;
+}
+.ci-drawer-k {
+    color: var(--text-secondary);
+    font-size: 0.83rem;
+}
+.ci-drawer-v {
+    color: var(--text-primary);
+    font-weight: 500;
+    text-align: right;
+    word-break: break-word;
+}
+.ci-mono { font-family: var(--font-mono, monospace); font-size: 0.78rem; }
+
+.ci-life {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.ci-life li {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+    position: relative;
+}
+.ci-life-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+.ci-life-label {
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+.ci-life-when {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.ci-transcript {
+    background: var(--bg-secondary);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    line-height: 1.5;
+}
+
+.ci-drawer-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
