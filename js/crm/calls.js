@@ -284,7 +284,12 @@
         const isIn = c.direction === 'inbound';
         const dirLabel = isIn ? 'Incoming call' : 'Outgoing call';
         const otherSide = isIn ? c.from_phone : c.to_phone;
-        const statusLabel = ({
+        // "Completed" + duration > 0 means a human actually picked up.
+        // Rename to "Connected" so the rep can tell at a glance which calls
+        // reached someone vs. which technically "completed" with 0s (e.g.
+        // hung up immediately, voicemail-only). Same colour, clearer label.
+        const isConnected = c.status === 'completed' && (c.duration_seconds || 0) > 0;
+        const statusLabel = isConnected ? 'Connected' : ({
             'initiated': 'Initiated',
             'ringing': 'Ringing…',
             'in-progress': 'In progress',
