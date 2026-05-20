@@ -4477,6 +4477,7 @@ function setupSidebar() {
         'directory': 'Employee Directory',
         'reportingManager': 'Reporting Manager',
         'managersList': 'Managers List',
+        'registeredDevices': 'Registered Devices',
         'nfcCards': 'NFC Cards',
         'employeeBanking': 'Employee Banking'
     };
@@ -4550,6 +4551,10 @@ function setupSidebar() {
             // Load data for the tab if needed
             if (tabId === 'nfcCards' && !nfcCardsLoaded) {
                 loadNfcCardsTable();
+            }
+            if (tabId === 'registeredDevices' && !window.__registeredDevicesLoaded) {
+                loadRegisteredDevices();
+                window.__registeredDevicesLoaded = true;
             }
             if (tabId === 'employeeBanking' && typeof EmployeeBanking !== 'undefined') {
                 EmployeeBanking.ensureInit();
@@ -6364,4 +6369,165 @@ function formatDate(dateStr) {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
     return date.toLocaleDateString();
+}
+
+
+// ─── Registered Devices (mobile attendance app's biometric enrollment) ───
+//
+// Backed by HRMS GET /api/attendance/biometric/devices and
+// POST /api/attendance/biometric/reset/{employeeId}. See architecture
+// notes in pages/hrms/employees.html and src/state/biometric.ts in the
+// RagenaizerAttendance RN repo for the full story.
+
+let _rdRows = [];           // last fetched device rows
+let _rdEmployeeNames = {};  // employee_id -> display name (from existing employees list)
+
+async function loadRegisteredDevices() {
+    const tbody = document.getElementById('registeredDevicesTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="7"><div class="loading-spinner"></div><p>Loading registered devices…</p></td></tr>`;
+    try {
+        // Build a name map from the existing employees list (already loaded
+        // for the directory tab). Falls back to employee_code if name is
+        // unavailable.
+        _rdEmployeeNames = {};
+        try {
+            const empResp = await api.request('/hrms/employees');
+            const empList = Array.isArray(empResp) ? empResp : (empResp?.employees || empResp?.data || []);
+            empList.forEach(e => {
+                const name = (e.first_name && e.last_name)
+                    ? `${e.first_name} ${e.last_name}`
+                    : (e.full_name || e.name || '');
+                if (e.id && name) _rdEmployeeNames[e.id] = name;
+            });
+        } catch (e) {
+            console.warn('Could not load employee names for device table', e);
+        }
+        _rdRows = await api.request('/hrms/attendance/biometric/devices');
+        renderRegisteredDevices();
+    } catch (e) {
+        console.error('loadRegisteredDevices failed', e);
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="7"><div class="empty-state"><p>Could not load registered devices: ${e?.message ?? 'unknown error'}</p></div></td></tr>`;
+    }
+}
+
+function renderRegisteredDevices() {
+    const tbody = document.getElementById('registeredDevicesTableBody');
+    if (!tbody) return;
+    const q = (document.getElementById('rdSearchInput')?.value || '').toLowerCase().trim();
+
+    const filtered = _rdRows.filter(r => {
+        if (!q) return true;
+        const name = (_rdEmployeeNames[r.employee_id] || '').toLowerCase();
+        return name.includes(q)
+            || (r.employee_code || '').toLowerCase().includes(q)
+            || (r.device_id || '').toLowerCase().includes(q);
+    });
+
+    // Stat counters (always over the unfiltered set so the totals are real)
+    const tot = _rdRows.length;
+    const enr = _rdRows.filter(r => r.status === 'ENROLLED').length;
+    const inv = _rdRows.filter(r => r.status === 'INVALIDATED').length;
+    const ne = _rdRows.filter(r => r.status === 'NEVER_ENROLLED').length;
+    setText('rdTotalCount', tot);
+    setText('rdEnrolledCount', enr);
+    setText('rdInvalidatedCount', inv);
+    setText('rdNeverEnrolledCount', ne);
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="7"><div class="empty-state"><p>No matching devices.</p></div></td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(r => {
+        const name = _rdEmployeeNames[r.employee_id] || r.employee_code || '—';
+        const initials = name.split(/\s+/).map(s => s[0]).join('').slice(0, 2).toUpperCase() || '?';
+        const deviceShort = r.device_id ? `<code>${r.device_id.slice(0, 14)}${r.device_id.length > 14 ? '…' : ''}</code>` : '—';
+        const enrolledAt = formatDateTime(r.key_enrolled_at);
+        const lastSig = formatDateTime(r.last_signature_at);
+
+        const statusBadge = r.status === 'ENROLLED'
+            ? `<span class="badge badge-success">Enrolled</span>`
+            : r.status === 'INVALIDATED'
+                ? `<span class="badge badge-warning">Invalidated</span>`
+                : `<span class="badge badge-muted">Never enrolled</span>`;
+
+        // Reset only makes sense when something is currently enrolled.
+        const actionBtn = r.status === 'ENROLLED'
+            ? `<button class="btn btn-sm btn-outline-danger" onclick="resetRegisteredDevice('${r.employee_id}', '${escapeAttr(name)}')">
+                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                 Reset
+               </button>`
+            : `<button class="btn btn-sm btn-secondary" disabled title="Nothing to reset">Reset</button>`;
+
+        return `
+            <tr>
+                <td>
+                    <div class="employee-info">
+                        <div class="employee-avatar">${initials}</div>
+                        <div>
+                            <div class="employee-name">${escapeHtml(name)}</div>
+                            <div class="employee-code">${escapeHtml(r.employee_code || '-')}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>${deviceShort}</td>
+                <td>${escapeHtml(r.platform || '—')}</td>
+                <td>${enrolledAt}</td>
+                <td>${lastSig}</td>
+                <td>${statusBadge}</td>
+                <td>${actionBtn}</td>
+            </tr>`;
+    }).join('');
+}
+
+function filterRegisteredDevices() {
+    renderRegisteredDevices();
+}
+
+async function resetRegisteredDevice(employeeId, employeeName) {
+    const confirmed = (typeof Confirm !== 'undefined' && Confirm.show)
+        ? await Confirm.show({
+            title: `Reset ${employeeName}'s registered device?`,
+            message: `Their old phone immediately stops working for clock-in. On their next sign-in (on any phone), the mobile app re-enrols silently — they don't see any extra prompt.`,
+            confirmText: 'Reset enrollment',
+            cancelText: 'Cancel',
+            type: 'danger',
+        })
+        : confirm(`Reset ${employeeName}'s registered device? The old phone will stop working immediately.`);
+    if (!confirmed) return;
+
+    try {
+        await api.request(`/hrms/attendance/biometric/reset/${employeeId}`, { method: 'POST' });
+        if (typeof Toast !== 'undefined') {
+            Toast.success(`${employeeName}'s device enrollment has been reset.`);
+        }
+        loadRegisteredDevices();
+    } catch (e) {
+        console.error('reset device failed', e);
+        const msg = e?.response?.data?.error || e?.message || 'Could not reset enrollment.';
+        if (typeof Toast !== 'undefined') Toast.error(msg);
+        else alert(msg);
+    }
+}
+
+// ── Tiny helpers shared by the Registered Devices view ─────────────────
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+}
+function formatDateTime(iso) {
+    if (!iso) return '—';
+    try {
+        const d = new Date(iso);
+        const date = d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+        const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        return `${date} ${time}`;
+    } catch { return iso; }
+}
+function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function escapeAttr(s) {
+    return escapeHtml(s).replace(/`/g, '&#96;');
 }

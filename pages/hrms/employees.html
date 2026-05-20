@@ -194,8 +194,11 @@
                             <span class="chevron">▼</span>
                         </div>
                         <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="registeredDevices" id="registeredDevicesTab">
+                                <span class="nav-number">5</span><span class="nav-label">Registered Devices</span>
+                            </button>
                             <button class="sidebar-btn" data-tab="nfcCards" id="nfcCardsTab">
-                                <span class="nav-number">5</span><span class="nav-label">NFC Cards</span>
+                                <span class="nav-number">6</span><span class="nav-label">NFC Cards</span>
                             </button>
                         </div>
                     </div>
@@ -510,6 +513,77 @@
                                 <div id="managersListPagination" class="pagination-container"></div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Registered Devices Tab -->
+                <div class="tab-content" id="registeredDevices">
+                    <!-- Filters -->
+                    <div class="filters-bar">
+                        <div class="search-box-modern">
+                            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="m21 21-4.35-4.35"/>
+                            </svg>
+                            <input type="text" id="rdSearchInput" placeholder="Search by name, code, or device ID..." oninput="filterRegisteredDevices()">
+                        </div>
+                        <div id="rdStatusFilterContainer" class="filter-dropdown-container"></div>
+                        <button class="btn btn-secondary" onclick="loadRegisteredDevices()" id="rdRefreshBtn" type="button">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <polyline points="1 20 1 14 7 14"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+
+                    <!-- Helper text -->
+                    <details class="info-panel" style="margin: 0 0 12px 0;">
+                        <summary>What is this?</summary>
+                        <div style="padding: 8px 4px; line-height: 1.5;">
+                            <p>The mobile attendance app uses <strong>cryptographic device binding</strong> — each employee can only clock in from their one registered phone. The phone holds a private key in its secure hardware (Android Keystore / iOS Secure Enclave) that's protected by their fingerprint; the server stores only the public half.</p>
+                            <p>If an employee gets a new phone, click <strong>Reset</strong> here to clear the existing enrollment. Their next clock-in attempt on the new phone will silently re-enroll. The old phone immediately stops working.</p>
+                            <p>If a status shows <strong>NEVER_ENROLLED</strong>, the employee hasn't yet used the mobile app — they'll enroll automatically on their first clock-in.</p>
+                        </div>
+                    </details>
+
+                    <!-- Stat cards -->
+                    <div class="stats-row" id="rdStatsRow">
+                        <div class="stat-card"><div class="stat-value" id="rdTotalCount">0</div><div class="stat-label">Total</div></div>
+                        <div class="stat-card"><div class="stat-value" id="rdEnrolledCount" style="color: var(--color-success);">0</div><div class="stat-label">Enrolled</div></div>
+                        <div class="stat-card"><div class="stat-value" id="rdInvalidatedCount" style="color: var(--color-warning);">0</div><div class="stat-label">Invalidated</div></div>
+                        <div class="stat-card"><div class="stat-value" id="rdNeverEnrolledCount" style="color: var(--text-muted);">0</div><div class="stat-label">Never enrolled</div></div>
+                    </div>
+
+                    <!-- Registered Devices Table -->
+                    <div class="table-container">
+                        <table class="data-table" id="registeredDevicesTable">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Device ID</th>
+                                    <th>Platform</th>
+                                    <th>Enrolled</th>
+                                    <th>Last clock-in</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="registeredDevicesTableBody">
+                                <tr class="empty-row">
+                                    <td colspan="7">
+                                        <div class="empty-state">
+                                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                <rect x="5" y="2" width="14" height="20" rx="2"/>
+                                                <line x1="12" y1="18" x2="12.01" y2="18"/>
+                                            </svg>
+                                            <p>Loading registered devices…</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
