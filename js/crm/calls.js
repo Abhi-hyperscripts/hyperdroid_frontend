@@ -339,6 +339,7 @@
             <div class="tl-content">
                 <div class="tl-header">
                     <span class="tl-title">${esc(dirLabel)}</span>
+                    <span class="tl-chip tl-chip-type">CALL</span>
                     <span class="tl-chip ${statusChip}">${esc(statusLabel)}</span>
                     ${dur ? `<span class="tl-chip">${esc(dur)}</span>` : ''}
                 </div>
