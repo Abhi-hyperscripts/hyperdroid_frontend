@@ -266,7 +266,16 @@
         // row regardless of how many lifecycle webhooks the provider sent
         // (they all upsert into one DB row by CallSid).
         const frag = document.createDocumentFragment();
-        calls.forEach(c => frag.appendChild(buildCallRow(c)));
+        calls.forEach(c => {
+            // Companion-app calls are already represented in the timeline by
+            // their auto-logged Activity row (backend creates one in
+            // IngestCompanionCallEventAsync). The activity row carries the
+            // CALL type chip, contact_outcome pill, and duration — same shape
+            // a manually-logged call would have. Rendering a separate tl-call
+            // row here would duplicate that information.
+            if (c.provider === 'companion') return;
+            frag.appendChild(buildCallRow(c));
+        });
         // Insert at the top so it sits above activities. lead-journey
         // renders in descending order so prepend is the right insert point.
         tl.insertBefore(frag, tl.firstChild);
@@ -339,7 +348,6 @@
             <div class="tl-content">
                 <div class="tl-header">
                     <span class="tl-title">${esc(dirLabel)}</span>
-                    <span class="tl-chip tl-chip-type">CALL</span>
                     <span class="tl-chip ${statusChip}">${esc(statusLabel)}</span>
                     ${dur ? `<span class="tl-chip">${esc(dur)}</span>` : ''}
                 </div>
