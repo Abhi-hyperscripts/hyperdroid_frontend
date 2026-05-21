@@ -23768,3 +23768,144 @@ input[type="month"]::-webkit-calendar-picker-indicator:hover {
 /* Employee Meetings Modal styles moved to glassmorphic-modal.css (.gm-* classes) */
 
 
+
+/* ── Attendance table — GPS pins.
+   Two pins per row: clock-in (green) and clock-out (red), each a link
+   to the corresponding Google Maps location. Grey + outlined when GPS
+   wasn't captured (e.g. user denied permission, or clocked from web
+   without geofence enforcement). The default 📍 emoji renders as a
+   red flag on most platforms, so we override colour via CSS filters
+   to make the in/out distinction clear. */
+.gps-pin {
+    text-decoration: none;
+    font-size: 14px;
+    line-height: 1;
+    display: inline-block;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+.gps-pin:hover {
+    transform: scale(1.2);
+}
+.gps-pin-in {
+    /* Green hue rotation — clock-in marker */
+    filter: hue-rotate(90deg) saturate(0.9);
+}
+.gps-pin-out {
+    /* Default red — clock-out marker */
+    filter: saturate(1.1);
+}
+.gps-pin-missing {
+    opacity: 0.25;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+/* ── Attendance — clock-in photo thumbnail + lightbox + delete button.
+   The thumbnail is a small circle in the table; clicking it opens a
+   fixed-position lightbox with the full image + employee caption. */
+.attendance-photo-thumb {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-color, #334155);
+    cursor: zoom-in;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.attendance-photo-thumb:hover {
+    transform: scale(1.1);
+    border-color: var(--brand-primary, #3b82f6);
+}
+.attendance-photo-empty {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px dashed var(--border-color, #334155);
+    opacity: 0.5;
+    font-size: 14px;
+    background: var(--bg-tertiary, #1e293b);
+}
+
+/* Lightbox overlay — fixed, full-viewport, dimmed backdrop. The image
+   inside is centered; caption + close button float above the photo.
+   `!important` on position+inset+z-index because a higher-specificity
+   layout rule on body.dashboard descendants was demoting our overlay
+   to position:relative — visible in the cascade DevTools but easier
+   to override than to track down + edit. */
+.attendance-photo-lightbox {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 99999 !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+    animation: attLightboxIn 0.2s ease;
+}
+@keyframes attLightboxIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.attendance-photo-lightbox-content {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    cursor: default;
+    text-align: center;
+}
+.attendance-photo-lightbox-content img {
+    max-width: 90vw;
+    max-height: 80vh;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+.attendance-photo-lightbox-caption {
+    margin-top: 16px;
+    color: #fff;
+    font-size: 14px;
+}
+.attendance-photo-lightbox-caption strong { display: block; font-size: 16px; }
+.attendance-photo-lightbox-caption span   { opacity: 0.75; }
+.attendance-photo-lightbox-close {
+    position: absolute;
+    top: -16px;
+    right: -16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: white;
+    border: 0;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: transform 0.15s ease;
+}
+.attendance-photo-lightbox-close:hover { transform: scale(1.1); }
+
+/* SUPERADMIN-only delete button in the Actions column. */
+.btn-attendance-delete {
+    background: transparent;
+    border: 1px solid var(--border-color, #334155);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text-secondary, #94a3b8);
+    transition: all 0.15s ease;
+}
+.btn-attendance-delete:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}

@@ -12,7 +12,7 @@
          browsers), object-src 'none' kills Flash/PDF embedding. 'unsafe-inline'
          on script-src remains because the HRMS JS files still use ~150 inline
          onclick="" handlers; refactoring to event delegation is post-prod. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.sheetjs.com https://www.googletagmanager.com https://www.gstatic.com https://justadudewhohacks.github.io; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss: ws:; frame-src 'self' https://www.google.com https://docs.google.com; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.sheetjs.com https://www.googletagmanager.com https://www.gstatic.com https://justadudewhohacks.github.io; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: blob: https: http://localhost:9000; connect-src 'self' https: wss: ws:; frame-src 'self' https://www.google.com https://docs.google.com; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <!-- Favicons -->
@@ -172,11 +172,14 @@
                             <thead>
                                 <tr>
                                     <th>Employee</th>
+                                    <th title="Clock-in selfie. Click to expand.">Photo</th>
                                     <th>Check In</th>
                                     <th>Check Out</th>
                                     <th>Working Hours</th>
                                     <th>Status</th>
                                     <th>Type</th>
+                                    <th title="GPS coordinates captured at clock-in / clock-out. Tap a pin to open in Google Maps.">Location</th>
+                                    <th title="SUPERADMIN-only — deletes the row and the Drive photo. Useful for typo / wrong-employee / test rows.">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="attendanceTableBody">

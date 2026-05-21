@@ -375,6 +375,22 @@ function renderAttendanceRows(attendance) {
             statusHtml += ` <span class="status-badge late" title="Late by ${lateText}">Late (${lateText})</span>`;
         }
 
+        // GPS pins — tap to open in Google Maps. The mobile app already
+        // sends both clock-in + clock-out coordinates (web stays
+        // GPS-optional). Two tiny pins side-by-side: green=in, red=out,
+        // grey=missing. Hover/title shows the exact coords + accuracy.
+        const locHtml = renderGpsCell(a);
+
+        // Clock-in selfie thumbnail. URL is presigned on the row at
+        // clock-in time; older rows may show a broken-image fallback
+        // (see TODO in renderPhotoCell — re-presign on list is a v2).
+        const photoHtml = renderPhotoCell(a);
+
+        // Actions cell — SUPERADMIN-only Delete button. The backend
+        // enforces the same role; hiding the UI button is just so HR
+        // admins don't get a 401 when they don't expect it.
+        const actionsHtml = renderActionsCell(a);
+
         return `
         <tr>
             <td>
@@ -383,14 +399,177 @@ function renderAttendanceRows(attendance) {
                     <div class="employee-name">${escapeHtml(a.employee_name) || 'Employee'}</div>
                 </div>
             </td>
+            <td>${photoHtml}</td>
             <td>${formatTime(a.check_in_time)}</td>
             <td>${formatTime(a.check_out_time)}</td>
             <td>${a.total_hours ? a.total_hours.toFixed(1) + 'h' : '-'}</td>
             <td>${statusHtml}</td>
             <td>${escapeHtml(capitalizeFirst(a.attendance_type)) || '-'}</td>
+            <td>${locHtml}</td>
+            <td>${actionsHtml}</td>
         </tr>
     `;
     }).join('');
+}
+
+// Small circular thumbnail for the clock-in selfie. Click expands to a
+// full-screen lightbox. No photo → outlined placeholder circle.
+//
+// TODO(v2): the presigned URL stored in check_in_photo_url expires
+// (typically 1 hour from clock-in). The list endpoint should re-presign
+// on each fetch — moving to GetEmployeeProfilePhotoUrlAsync-style
+// derivation. For now older rows will show a broken image; the onerror
+// handler swaps to the placeholder so the table doesn't break.
+function renderPhotoCell(a) {
+    const url = a.check_in_photo_url;
+    if (!url) {
+        return `<span class="attendance-photo-empty" title="No clock-in photo">📷</span>`;
+    }
+    const safeUrl = url.replace(/"/g, '&quot;');
+    return `
+        <img src="${safeUrl}"
+             class="attendance-photo-thumb"
+             alt="Clock-in selfie"
+             title="Click to expand"
+             onclick="openAttendancePhotoLightbox('${safeUrl}', '${escapeHtml(a.employee_name || '')}', '${escapeHtml(formatTime(a.check_in_time) || '')}')"
+             onerror="this.outerHTML='<span class=&quot;attendance-photo-empty&quot; title=&quot;Photo expired or unavailable&quot;>📷</span>'" />
+    `;
+}
+
+// Actions cell: a small trash icon button. Three gates before we render it:
+//   1. Caller is SUPERADMIN — backend enforces this; we hide the button
+//      for everyone else so they don't get a 401 they don't expect.
+//   2. The row has a real DB id — absent-employee rows are synthesised
+//      client-side from the employee roster (no attendance_records row
+//      yet), so there's nothing to delete.
+//   3. The row has at least one of check_in_time or check_out_time — an
+//      attendance_records row with both null is effectively empty, and
+//      should not be deletable (nothing to undo).
+// Anything that fails the gates renders an em-dash so the column stays
+// aligned without a phantom button.
+function renderActionsCell(a) {
+    if (!(window.hrmsRoles && hrmsRoles.isSuperAdmin && hrmsRoles.isSuperAdmin())) {
+        return `<span style="color: var(--text-muted);">—</span>`;
+    }
+    if (!a.id || (!a.check_in_time && !a.check_out_time)) {
+        return `<span style="color: var(--text-muted);" title="Nothing to delete — no clock-in / clock-out yet.">—</span>`;
+    }
+    return `
+        <button
+            class="btn-attendance-delete"
+            onclick="confirmDeleteAttendance('${a.id}', '${escapeHtml(a.employee_name || 'Employee')}', '${escapeHtml(formatTime(a.check_in_time) || '')}')"
+            title="Delete clock-in/out, photos, GPS, and the rest of this attendance row (SUPERADMIN only). The employee record is untouched.">
+            🗑️
+        </button>
+    `;
+}
+
+// Lightbox for the selfie thumbnail. Renders a fixed-position overlay
+// with the photo enlarged, the employee name + clock-in time captioned,
+// and a close button. Clicking the backdrop or pressing Escape closes.
+function openAttendancePhotoLightbox(url, employeeName, clockInTime) {
+    // Reuse if already open (e.g. double-click).
+    let existing = document.getElementById('attendancePhotoLightbox');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'attendancePhotoLightbox';
+    overlay.className = 'attendance-photo-lightbox';
+    overlay.innerHTML = `
+        <div class="attendance-photo-lightbox-content" onclick="event.stopPropagation()">
+            <img src="${url.replace(/"/g, '&quot;')}" alt="Clock-in selfie" />
+            <div class="attendance-photo-lightbox-caption">
+                <strong>${employeeName}</strong>
+                <span>Clocked in at ${clockInTime}</span>
+            </div>
+            <button class="attendance-photo-lightbox-close" onclick="document.getElementById('attendancePhotoLightbox').remove()">✕</button>
+        </div>
+    `;
+    overlay.onclick = () => overlay.remove();
+    document.body.appendChild(overlay);
+
+    // ESC closes too — added once per lightbox open so it self-removes.
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+window.openAttendancePhotoLightbox = openAttendancePhotoLightbox;
+
+// SUPERADMIN delete confirmation. Shows a modal with the employee
+// + clock-in time so the admin can confirm they're deleting the
+// right record. The backend deletes both the DB row AND the Drive
+// photo(s) — that's why this is irreversible.
+async function confirmDeleteAttendance(recordId, employeeName, clockInTime) {
+    // Use Confirm.show from toast.js — project convention; never the
+    // browser's window.confirm (which looks like a phishing dialog and
+    // ignores our theme). Confirm.show escapes HTML in the message
+    // field, so format with line breaks + bullet characters, not tags.
+    const confirmed = await Confirm.show({
+        type: 'danger',
+        title: `Delete today's attendance for ${employeeName}?`,
+        message:
+            `Clocked in at ${clockInTime}.\n\n` +
+            `REMOVES:\n` +
+            `  • Check-in and check-out times\n` +
+            `  • GPS coordinates\n` +
+            `  • Selfie photo (from Drive storage)\n` +
+            `  • Status, notes, and other attendance fields\n\n` +
+            `KEEPS:\n` +
+            `  • The employee profile\n` +
+            `  • Salary, leave balance, every other day's attendance\n\n` +
+            `This cannot be undone.`,
+        confirmText: 'Delete attendance',
+        cancelText: 'Keep it',
+    });
+    if (!confirmed) return;
+
+    try {
+        // The api singleton uses `api.request(url, { method })` for any
+        // non-GET verb (organization.js, recruitment.js, leave.js all
+        // do the same). There is no shorthand `api.delete()`.
+        await api.request(`/hrms/attendance/${recordId}`, { method: 'DELETE' });
+        showToast('Attendance record deleted', 'success');
+        // No explicit refresh — the backend broadcasts AttendanceUpdated
+        // (Action='deleted') over SignalR, and onAttendanceUpdated() in
+        // this file already calls loadAttendance() when that fires.
+        // Belt-and-braces fallback: refresh anyway after a small delay,
+        // in case the WebSocket dropped between delete and broadcast.
+        setTimeout(() => { if (typeof loadAttendance === 'function') loadAttendance(); }, 500);
+    } catch (e) {
+        const errMsg = e?.response?.data?.error
+            ?? e?.message
+            ?? 'Could not delete the record.';
+        showToast(errMsg, 'error');
+        console.error('[attendance] delete failed', e);
+    }
+}
+window.confirmDeleteAttendance = confirmDeleteAttendance;
+
+// One-line cell with two map pins: green (clock-in) + red (clock-out).
+// Each pin is a link to https://maps.google.com/?q=lat,long when GPS
+// was captured; an outlined grey pin when missing (e.g. user denied
+// location permission or clocked out from the web without geofence).
+function renderGpsCell(a) {
+    const fmt = (lat, lng) => `${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)}`;
+    const pin = (lat, lng, color, title) => {
+        if (lat == null || lng == null) {
+            return `<span class="gps-pin gps-pin-missing" title="${escapeHtml(title)} — no GPS captured">📍</span>`;
+        }
+        const href = `https://maps.google.com/?q=${lat},${lng}`;
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer"
+                   class="gps-pin gps-pin-${color}"
+                   title="${escapeHtml(title)} · ${fmt(lat, lng)}">📍</a>`;
+    };
+    return `
+        <span style="display:inline-flex;gap:6px;align-items:center;">
+            ${pin(a.check_in_latitude,  a.check_in_longitude,  'in',  'Clock-in')}
+            ${pin(a.check_out_latitude, a.check_out_longitude, 'out', 'Clock-out')}
+        </span>
+    `;
 }
 
 function updateDailyStats(present, absent, late, onLeave) {
@@ -1167,6 +1346,14 @@ function onAttendanceUpdated(data) {
             break;
         case 'regularization_rejected':
             message = `Regularization rejected for ${employeeName}`;
+            break;
+        case 'deleted':
+            // Fired by the SUPERADMIN delete endpoint. Toast is muted —
+            // the actor already saw their own "Attendance record deleted"
+            // success toast from confirmDeleteAttendance(), so this one
+            // is mainly so OTHER admins watching the table get a hint
+            // about why the row just vanished.
+            message = `Attendance deleted for ${employeeName}`;
             break;
         default:
             message = `Attendance updated for ${employeeName}`;

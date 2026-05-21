@@ -443,6 +443,20 @@ body.hrms-dashboard::before {
     border-color: var(--color-warning);
 }
 
+/* Attendance — teal→cyan gradient. Distinct from Leave (amber/orange)
+   so the eye reads them as different concerns: leave is "off", attendance
+   is "in". Hardcoded RGB pair (no theme-var dependency) so it stays
+   distinct across light/dark + any brand theme override. */
+#cardAttendance .action-icon {
+    background: linear-gradient(135deg, #10b981 0%, #0891b2 100%);
+}
+#cardAttendance .action-icon svg {
+    color: var(--text-inverse, #ffffff);
+}
+#cardAttendance:hover {
+    border-color: #10b981;
+}
+
 /* Reports - Info/Cyan */
 #cardReports .action-icon {
     background: var(--gradient-info);
