@@ -1780,7 +1780,11 @@ async function uploadTenantProfileAsset(kind, inputEl) {
         document.getElementById(targetId).value = driveKey;
         if (fileId) document.getElementById(idFldId).value = fileId;
         renderTenantAssetPreview(kind, driveKey, file);
-        if (typeof showToast === 'function') showToast(`${kind === 'logo' ? 'Logo' : 'Signature'} uploaded — click Save Changes to persist`, 'success');
+        // Auto-persist the new key — otherwise the upload sits in DOM only and
+        // the next page load reads back the previous (now-orphaned) key from
+        // the DB, leaving every downstream document (payslips, invoices, POs)
+        // with a broken logo until someone notices to click Save Changes.
+        await persistAssetKeyOnly(kind, driveKey);
     } catch (e) {
         console.error('Asset upload failed:', e);
         if (typeof showToast === 'function') showToast(`Upload failed: ${e.message}`, 'error');
@@ -1798,6 +1802,47 @@ async function clearTenantProfileAsset(kind) {
     const targetId = kind === 'logo' ? 'profileLogoDriveKey' : 'profileSignatureDriveKey';
     document.getElementById(targetId).value = '';
     renderTenantAssetPreview(kind, '');
+    await persistAssetKeyOnly(kind, '');
+}
+
+// Persist just the logo/signature key change to the tenant profile, without
+// touching other fields in the form (in case the user has unsaved edits we
+// don't want to clobber, or invalid input in another field that would block
+// a full save). Uses the server snapshot for everything else.
+async function persistAssetKeyOnly(kind, newKey) {
+    try {
+        const snap = _tenantProfileSnapshot || (await api.getTenantProfile()).profile || {};
+        const payload = {
+            companyName:        snap.companyName        ?? '',
+            legalName:          snap.legalName          ?? '',
+            tagline:            snap.tagline            ?? '',
+            addressLine1:       snap.addressLine1       ?? '',
+            addressLine2:       snap.addressLine2       ?? '',
+            city:               snap.city               ?? '',
+            state:              snap.state              ?? '',
+            postalCode:         snap.postalCode         ?? '',
+            country:            snap.country            ?? '',
+            phone:              snap.phone              ?? '',
+            email:              snap.email              ?? '',
+            website:            snap.website            ?? '',
+            taxId:              snap.taxId              ?? '',
+            registrationNumber: snap.registrationNumber ?? '',
+            bankDetailsJson:    snap.bankDetailsJson    ?? '',
+            footerText:         snap.footerText         ?? '',
+            logoDriveKey:       kind === 'logo'      ? newKey : (snap.logoDriveKey      ?? ''),
+            signatureDriveKey:  kind === 'signature' ? newKey : (snap.signatureDriveKey ?? '')
+        };
+        const res = await api.updateTenantProfile(payload);
+        _tenantProfileSnapshot = res.profile || payload;
+        const label = kind === 'logo' ? 'Logo' : 'Signature';
+        const verb = newKey ? 'updated' : 'removed';
+        if (typeof showToast === 'function') showToast(`${label} ${verb}`, 'success');
+    } catch (e) {
+        console.error(`[branding] auto-save ${kind} key failed`, e);
+        if (typeof showToast === 'function') {
+            showToast(`Saved locally — couldn't persist ${kind} to server. Click Save Changes to retry.`, 'warning');
+        }
+    }
 }
 
 function renderTenantAssetPreview(kind, driveKey, fileObj) {
@@ -1821,26 +1866,26 @@ function renderTenantAssetPreview(kind, driveKey, fileObj) {
         return;
     }
 
-    // Otherwise fetch a presigned download URL from Drive (best-effort; degrades to label).
-    // The download endpoint takes a fileId (Drive's DB row id), NOT the s3
-    // key — so we first need the fileId. Use the hidden field if it's already
-    // populated (reconcileAssetFileId fills it on profile load); fall back to
-    // listing the branding folder and matching by s3 key if it's still empty.
-    previewEl.innerHTML = `<span class="profile-asset-empty">${driveKey.split('/').pop()}</span>`;
+    // Resolve the saved key directly to a presigned download URL — no fileId
+    // lookup required. The tenant-asset/presign endpoint takes the s3 key and
+    // enforces tenant-prefix scoping server-side. Avoids the prior approach's
+    // fragile path (list branding folder → match by s3_key → call getDownloadUrl)
+    // which fell back to filename-text when the listing missed the file for
+    // any reason (Drive row deleted, field-name drift, key contains spaces, …).
+    previewEl.innerHTML = `<span class="profile-asset-empty">Loading ${kind}…</span>`;
     (async () => {
         try {
-            const idFieldId = kind === 'logo' ? 'profileLogoDriveFileId' : 'profileSignatureDriveFileId';
-            let fileId = (document.getElementById(idFieldId)?.value || '').trim();
-            if (!fileId) {
-                // Reconcile inline — synchronous-ish: list the folder once.
-                await reconcileAssetFileId(kind, driveKey);
-                fileId = (document.getElementById(idFieldId)?.value || '').trim();
+            const r = await api.request(`/drive/tenant-asset/presign?key=${encodeURIComponent(driveKey)}&expiry_minutes=60`);
+            const url = r?.url;
+            if (url) {
+                previewEl.innerHTML = `<img src="${url}" alt="${kind}">`;
+            } else {
+                previewEl.innerHTML = `<span class="profile-asset-empty">Preview unavailable</span>`;
             }
-            if (!fileId) return;  // Couldn't resolve — keep the filename label.
-            const dl = await api.getDownloadUrl(fileId, 60);
-            const url = dl.url || dl.downloadUrl || dl.download_url;
-            if (url) previewEl.innerHTML = `<img src="${url}" alt="${kind}">`;
-        } catch (e) { console.warn(`[branding] preview ${kind} fetch failed`, e); }
+        } catch (e) {
+            console.warn(`[branding] preview ${kind} fetch failed`, e);
+            previewEl.innerHTML = `<span class="profile-asset-empty">Preview unavailable</span>`;
+        }
     })();
 }
 
