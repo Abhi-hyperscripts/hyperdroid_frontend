@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Setup sidebar navigation
     setupSidebar();
 
+    // Show the Mobile App Settings tab to HR/admin/superadmin and wire the toggle.
+    wireAttendanceConfigTab();
+
     // Initialize daily date picker with Flatpickr
     initializeDailyDatePicker();
 
@@ -281,7 +284,8 @@ function switchTab(tabName) {
     const tabNames = {
         'daily': 'Daily Attendance',
         'regularization': 'Regularization Requests',
-        'overtime': 'Overtime Requests'
+        'overtime': 'Overtime Requests',
+        'settings': 'Mobile App Settings'
     };
     const activeTabName = document.getElementById('activeTabName');
     if (activeTabName && tabNames[tabName]) {
@@ -293,7 +297,136 @@ function switchTab(tabName) {
         case 'daily': loadAttendance(); break;
         case 'regularization': loadTeamRegularizations(); break;
         case 'overtime': loadTeamOvertime(); break;
+        case 'settings': loadAttendanceConfig(); break;
     }
+}
+
+// ───────────────────────────────────────────────────────────────────────
+// Mobile App Settings tab — tenant-scoped attendance config.
+// Today this is just the liveness flag, but the same fetch/save pair is
+// the future home for any other per-tenant mobile attendance knob
+// (geofence enforcement, photo retention policy, etc.). The endpoint
+// returns the current config and the strictly-monotonic version number
+// that the mobile app's response-header watcher uses to know it needs
+// to refetch.
+// ───────────────────────────────────────────────────────────────────────
+
+let _attendanceConfigState = { liveness_required: false, config_version: null, updated_by: null, updated_at: null };
+let _savingAttendanceConfig = false;
+
+async function loadAttendanceConfig() {
+    const toggle = document.getElementById('livenessToggle');
+    const pill = document.getElementById('livenessStatusPill');
+    const audit = document.getElementById('livenessAuditLine');
+    if (!toggle) return; // settings tab not in DOM (RBAC hid it)
+
+    toggle.disabled = true;
+    pill.textContent = '…';
+    audit.textContent = 'Loading current state…';
+
+    try {
+        const cfg = await api.request('/hrms/attendance/config');
+        _attendanceConfigState = cfg;
+        renderAttendanceConfigState();
+    } catch (e) {
+        const status = e?.response?.status ?? e?.status;
+        audit.textContent = `Couldn't load (${status || 'network error'}). Try again.`;
+        pill.textContent = '—';
+        if (typeof Toast !== 'undefined') Toast.error('Failed to load attendance settings.');
+    }
+}
+
+function renderAttendanceConfigState() {
+    const toggle = document.getElementById('livenessToggle');
+    const pill = document.getElementById('livenessStatusPill');
+    const audit = document.getElementById('livenessAuditLine');
+    if (!toggle) return;
+
+    toggle.checked = !!_attendanceConfigState.liveness_required;
+    toggle.disabled = !canEditAttendanceConfig();
+    pill.textContent = _attendanceConfigState.liveness_required ? 'ON' : 'OFF';
+    pill.style.background = _attendanceConfigState.liveness_required ? 'var(--color-success-light)' : 'var(--bg-tertiary)';
+    pill.style.color = _attendanceConfigState.liveness_required ? 'var(--color-success-text)' : 'var(--text-secondary)';
+
+    const v = _attendanceConfigState.config_version ?? '—';
+    const when = _attendanceConfigState.updated_at
+        ? new Date(_attendanceConfigState.updated_at).toLocaleString()
+        : 'never';
+    audit.textContent = `v${v} · last updated ${when}`;
+}
+
+function canEditAttendanceConfig() {
+    return hrmsRoles.isHRAdmin() || hrmsRoles.isHrmsAdmin?.() || hrmsRoles.isSuperAdmin();
+}
+
+async function saveAttendanceConfig(newValue) {
+    if (_savingAttendanceConfig) return;
+    _savingAttendanceConfig = true;
+    const toggle = document.getElementById('livenessToggle');
+    const audit = document.getElementById('livenessAuditLine');
+    const previous = _attendanceConfigState.liveness_required;
+    toggle.disabled = true;
+    audit.textContent = 'Saving…';
+
+    try {
+        const updated = await api.request('/hrms/attendance/config', {
+            method: 'PUT',
+            body: JSON.stringify({ liveness_required: !!newValue })
+        });
+        _attendanceConfigState = updated;
+        renderAttendanceConfigState();
+        if (typeof Toast !== 'undefined') {
+            Toast.success(newValue
+                ? 'Liveness verification turned ON. Mobile devices will update within a minute.'
+                : 'Liveness verification turned OFF. Mobile devices will update within a minute.');
+        }
+    } catch (e) {
+        // Roll the toggle back so UI matches server state on failure.
+        toggle.checked = previous;
+        _attendanceConfigState.liveness_required = previous;
+        renderAttendanceConfigState();
+        const status = e?.response?.status ?? e?.status;
+        if (typeof Toast !== 'undefined') Toast.error(`Save failed (${status || 'network'}). No change applied.`);
+    } finally {
+        _savingAttendanceConfig = false;
+        toggle.disabled = !canEditAttendanceConfig();
+    }
+}
+
+// Wire toggle handler + RBAC visibility once the DOM is ready. This runs
+// alongside setupSidebar so the new tab + button behave like the rest.
+function wireAttendanceConfigTab() {
+    const navGroup = document.getElementById('attendanceConfigNavGroup');
+    if (!navGroup) return;
+
+    // Only HR Admin / Admin / Superadmin can see the Settings tab. The
+    // backend GET is open to everyone (mobile app needs it), but the
+    // admin UI for it is gated to people who can also PUT.
+    if (canEditAttendanceConfig()) {
+        navGroup.style.display = '';
+    }
+
+    const toggle = document.getElementById('livenessToggle');
+    if (!toggle) return;
+
+    toggle.addEventListener('change', async () => {
+        const next = toggle.checked;
+        // Confirm before turning OFF — weakening fraud detection
+        // deserves a deliberate click, not an accidental tap.
+        if (!next && typeof Confirm !== 'undefined' && Confirm.show) {
+            const ok = await Confirm.show({
+                title: 'Disable liveness verification?',
+                message: 'Employees will be able to clock in with a single selfie (no live action check). This weakens defence against photo replay attacks. Continue?',
+                confirmLabel: 'Turn OFF',
+                confirmStyle: 'danger',
+            });
+            if (!ok) {
+                toggle.checked = true;
+                return;
+            }
+        }
+        await saveAttendanceConfig(next);
+    });
 }
 
 async function loadAttendance() {

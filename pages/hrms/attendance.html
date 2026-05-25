@@ -134,6 +134,27 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Configuration Section — admin-only, JS hides the
+                         entire nav-group when current user lacks
+                         HRMS_HR_ADMIN / HRMS_ADMIN / SUPERADMIN. -->
+                    <div class="nav-group" data-group="configuration" id="attendanceConfigNavGroup" style="display:none;">
+                        <div class="nav-group-header">
+                            <span class="nav-group-title">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                </svg>
+                                Configuration
+                            </span>
+                            <span class="chevron">▼</span>
+                        </div>
+                        <div class="nav-group-items">
+                            <button class="sidebar-btn" data-tab="settings" id="settingsTabBtn">
+                                <span class="nav-number">4</span><span class="nav-label">Mobile App Settings</span>
+                            </button>
+                        </div>
+                    </div>
                 </nav>
             </aside>
 
@@ -279,6 +300,53 @@
                             </tbody>
                         </table>
                         <div id="overtimePagination" class="pagination-container"></div>
+                    </div>
+                </div>
+
+                <!-- Mobile App Settings Tab — tenant-scoped attendance
+                     config consumed by the Ragenaizer ESS mobile app.
+                     Today only Liveness; future per-tenant attendance
+                     knobs (geofence enforcement, photo retention, etc.)
+                     plug into the same panel + same endpoint. -->
+                <div class="tab-content" id="settings">
+                    <div style="max-width:760px;">
+                        <div class="card" style="padding:24px; border:1px solid var(--border-color); border-radius:12px; background:var(--bg-card);">
+                            <h3 style="margin:0 0 4px 0;">Mobile attendance</h3>
+                            <p style="margin:0 0 24px 0; color:var(--text-secondary); font-size:0.9rem;">
+                                Controls how the Ragenaizer ESS app behaves at clock-in. Changes propagate to every active device in your tenant within seconds.
+                            </p>
+
+                            <div style="display:flex; gap:24px; align-items:flex-start; padding:18px; border:1px solid var(--border-color); border-radius:10px; background:var(--bg-card-hover);">
+                                <div style="flex:1; min-width:0;">
+                                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                                        <strong style="font-size:1rem;">Liveness verification at clock-in</strong>
+                                        <span id="livenessStatusPill" style="font-size:0.7rem; padding:2px 8px; border-radius:999px; background:var(--bg-tertiary); color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px;">—</span>
+                                    </div>
+                                    <p style="margin:0 0 8px 0; color:var(--text-secondary); font-size:0.88rem; line-height:1.55;">
+                                        When <strong>ON</strong>, employees must perform a randomised face challenge (turn head / blink / smile) before the selfie is accepted. Defeats photo / screen replay attacks but adds ~3 seconds per clock-in.<br>
+                                        When <strong>OFF</strong>, a single front-camera selfie is captured and uploaded. Faster, but no spoofing defence beyond the GPS + device-binding check.
+                                    </p>
+                                    <p id="livenessAuditLine" style="margin:8px 0 0 0; color:var(--text-muted); font-size:0.78rem;">Loading current state…</p>
+                                </div>
+
+                                <label class="toggle-switch" style="flex-shrink:0; margin-top:4px;" title="Toggle liveness verification">
+                                    <input type="checkbox" id="livenessToggle" disabled>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <details style="margin-top:18px; color:var(--text-secondary); font-size:0.85rem;">
+                                <summary style="cursor:pointer; user-select:none; padding:6px 0;">What is this?</summary>
+                                <div style="padding:10px 14px; margin-top:6px; border-left:3px solid var(--brand-primary); background:var(--bg-card-hover); border-radius:0 8px 8px 0;">
+                                    <p style="margin:0 0 8px 0;">
+                                        The mobile attendance app captures a selfie when employees clock in. With liveness <strong>ON</strong>, the app additionally asks for a randomised live action (e.g., "turn your head left") and verifies it before accepting the photo — this stops a stolen phone + photo printout combination from punching in for someone else.
+                                    </p>
+                                    <p style="margin:0;">
+                                        Mobile devices pick up the change either via a push notification or on the next API call (whichever lands first). Typically &lt;60 seconds.
+                                    </p>
+                                </div>
+                            </details>
+                        </div>
                     </div>
                 </div>
 
