@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-IN">
 <head>
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
@@ -218,6 +218,18 @@
         document.write('<script src="../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../js/register.js?v=' + CACHE_VERSION + '"><\/script>');
+    </script>
+    <script>
+        // Meta Pixel: Lead intent — user landed on free-trial signup form
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.rzTrack) {
+                window.rzTrack('track', 'Lead', {
+                    content_name: 'free_trial_form_view',
+                    currency: 'INR',
+                    value: 999
+                });
+            }
+        });
     </script>
     <script>
         // Theme toggle

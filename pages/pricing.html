@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en-IN" data-theme="dark">
 <head>
     <!-- Force dark theme to match landing page -->
     <script>document.documentElement.setAttribute('data-theme', 'dark');</script>
     <!-- Cookie Consent & Analytics -->
     <script src="/js/cookie-consent.js" defer></script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -29,13 +29,54 @@
     <meta property="og:title" content="Pricing - Ragenaizer | Simple, Transparent Pricing">
     <meta property="og:description" content="Per user per month, billed annually. Video, Chat, Drive, HRMS and more in one platform. Start your free trial today.">
     <meta property="og:image" content="https://ragenaizer.com/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary">
+    <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Ragenaizer Pricing - Plans for Every Team">
     <meta name="twitter:description" content="Simple per-user pricing. All-in-one business platform. Free trial available.">
+    <meta name="twitter:image" content="https://ragenaizer.com/assets/og-image.png">
 
     <meta name="theme-color" content="#050810">
+
+    <!-- Schema.org: Product + Offers (price snippets in Google SERP) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "Ragenaizer",
+        "description": "All-in-one business platform — Vision (video conferencing), Chat, Drive, HRMS, CRM, PMS, LMS, Accounts, AI Engine. India-hosted alternative to Microsoft 365 + Zoom + Slack + HubSpot + Tally.",
+        "brand": { "@type": "Brand", "name": "Ragenaizer" },
+        "image": "https://ragenaizer.com/assets/og-image.png",
+        "url": "https://ragenaizer.com/pages/pricing.html",
+        "offers": {
+            "@type": "AggregateOffer",
+            "priceCurrency": "INR",
+            "lowPrice": "999",
+            "highPrice": "999",
+            "offerCount": "4",
+            "offers": [
+                { "@type": "Offer", "name": "Mini", "price": "999", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "For growing teams of up to 25 users. CRM, HRMS, Vision, Chat, Drive, Accounts, AI Engine and more." },
+                { "@type": "Offer", "name": "Starter", "price": "999", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "For growing teams of 25+. Includes every Ragenaizer app — CRM, HRMS, Vision, Chat, Drive, Email, Accounts, LMS, AI Engine and more." },
+                { "@type": "Offer", "name": "Pro", "price": "999", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "Most popular. For mid-sized businesses at 50+ seat block. All apps included." },
+                { "@type": "Offer", "name": "Enterprise", "price": "999", "priceCurrency": "INR", "url": "https://ragenaizer.com/pages/pricing.html", "description": "For large organizations on a 150-seat block. All apps. Annual contract." }
+            ]
+        }
+    }
+    </script>
+
+    <!-- Schema.org: Breadcrumb -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ragenaizer.com/" },
+            { "@type": "ListItem", "position": 2, "name": "Pricing", "item": "https://ragenaizer.com/pages/pricing.html" }
+        ]
+    }
+    </script>
 
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
@@ -846,6 +887,19 @@
         }
 
         document.addEventListener('DOMContentLoaded', loadPlans);
+
+        // Meta Pixel: page-level conversion intent signal
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.rzTrack) {
+                window.rzTrack('track', 'ViewContent', {
+                    content_name: 'pricing',
+                    content_category: 'pricing',
+                    content_type: 'product_pricing',
+                    currency: 'INR',
+                    value: 999
+                });
+            }
+        });
     </script>
 </body>
 </html>

@@ -167,6 +167,16 @@ async function handleFormSubmit() {
             handleText.textContent = 'Success!';
             Toast.success('Account created successfully! Redirecting to login...');
 
+            // Meta Pixel: CompleteRegistration conversion event (queued through consent gate)
+            if (window.rzTrack) {
+                window.rzTrack('track', 'CompleteRegistration', {
+                    content_name: 'free_trial_signup',
+                    currency: 'INR',
+                    value: 999,
+                    status: 'success'
+                });
+            }
+
             setTimeout(() => {
                 window.location.href = 'login.html';
             }, 2000);

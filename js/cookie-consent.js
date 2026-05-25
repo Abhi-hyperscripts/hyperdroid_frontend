@@ -35,10 +35,14 @@
         localStorage.setItem(CONSENT_KEY, JSON.stringify(data));
     }
 
-    // Load Google Analytics if consent given
+    // Meta Pixel ID — Ragenaizer Web (Wisetrack Technologies LLP BP)
+    const META_PIXEL_ID = '989104590339385';
+
+    // Load Google Analytics + Meta Pixel if consent given
     function loadAnalytics() {
         if (window.gaLoaded) return;
 
+        // Google Analytics 4
         const script = document.createElement('script');
         script.async = true;
         script.src = 'https://www.googletagmanager.com/gtag/js?id=G-LXVS357DCK';
@@ -50,8 +54,34 @@
         gtag('js', new Date());
         gtag('config', 'G-LXVS357DCK');
 
+        // Meta Pixel — base + PageView
+        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+        n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+        document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        window.fbq('init', META_PIXEL_ID);
+        window.fbq('track', 'PageView');
+
+        // Fire any conversion events queued before consent was granted
+        if (Array.isArray(window._rzFbqQueue)) {
+            window._rzFbqQueue.forEach(function(args){ try { window.fbq.apply(null, args); } catch(e){} });
+            window._rzFbqQueue = [];
+        }
+
         window.gaLoaded = true;
     }
+
+    // Public helper: track a Meta Pixel event, queue if consent not yet granted
+    window.rzTrack = function() {
+        const args = Array.prototype.slice.call(arguments);
+        if (window.fbq) {
+            window.fbq.apply(null, args);
+        } else {
+            window._rzFbqQueue = window._rzFbqQueue || [];
+            window._rzFbqQueue.push(args);
+        }
+    };
 
     // Create and show the consent banner
     function showBanner() {
