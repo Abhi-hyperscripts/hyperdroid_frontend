@@ -879,6 +879,16 @@
             `;
 
             document.getElementById('signupForm').addEventListener('submit', handleSubmit);
+
+            // Meta Pixel: Lead intent — form rendered for a specific plan
+            if (window.rzTrack) {
+                window.rzTrack('track', 'Lead', {
+                    content_name: currentPlan.displayName || 'signup_form',
+                    content_category: 'signup',
+                    currency: 'INR',
+                    value: (typeof currentPlan.pricePerUserMonthly === 'number' ? currentPlan.pricePerUserMonthly : 999)
+                });
+            }
         }
 
         function showMessage(type, text) {
@@ -1048,6 +1058,15 @@
                 }
 
                 if (currentPlan.isTrial) {
+                    // Meta Pixel: CompleteRegistration for trial path
+                    if (window.rzTrack) {
+                        window.rzTrack('track', 'CompleteRegistration', {
+                            content_name: currentPlan.displayName,
+                            currency: 'INR',
+                            value: 0,
+                            status: 'trial'
+                        });
+                    }
                     // Trial signup — show success with credentials
                     showSuccessCard({
                         tenantName: data.tenantName || orgName,
@@ -1071,6 +1090,16 @@
         }
 
         function openRazorpayCheckout(signupResponse, orgName, adminEmail, phone, seats) {
+            // Meta Pixel: InitiateCheckout — user opened Razorpay payment modal
+            if (window.rzTrack) {
+                window.rzTrack('track', 'InitiateCheckout', {
+                    content_name: currentPlan.displayName,
+                    content_category: 'signup',
+                    num_items: seats,
+                    currency: signupResponse.currency || 'INR',
+                    value: (signupResponse.amountPaise || 0) / 100
+                });
+            }
             const options = {
                 key: signupResponse.razorpayKeyId,
                 amount: signupResponse.amountPaise,
@@ -1096,6 +1125,27 @@
                         const verifyData = await verifyRes.json();
 
                         if (verifyRes.ok && verifyData.success) {
+                            // Meta Pixel: Purchase — paid signup verified, this is THE money event
+                            if (window.rzTrack) {
+                                window.rzTrack('track', 'Purchase', {
+                                    content_name: currentPlan.displayName,
+                                    content_category: 'subscription',
+                                    content_ids: [signupResponse.tenantId || rzpResponse.razorpay_payment_id],
+                                    num_items: signupResponse.seats || 1,
+                                    currency: signupResponse.currency || 'INR',
+                                    value: (signupResponse.amountPaise || 0) / 100,
+                                    transaction_id: rzpResponse.razorpay_payment_id
+                                });
+                            }
+                            // Also fire CompleteRegistration for double-coverage
+                            if (window.rzTrack) {
+                                window.rzTrack('track', 'CompleteRegistration', {
+                                    content_name: currentPlan.displayName,
+                                    currency: signupResponse.currency || 'INR',
+                                    value: (signupResponse.amountPaise || 0) / 100,
+                                    status: 'paid'
+                                });
+                            }
                             showSuccessCard({
                                 tenantName: verifyData.tenantName || orgName,
                                 email: verifyData.superAdminEmail || adminEmail,
