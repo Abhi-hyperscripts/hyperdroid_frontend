@@ -35,8 +35,8 @@
         localStorage.setItem(CONSENT_KEY, JSON.stringify(data));
     }
 
-    // Meta Pixel ID — Ragenaizer Web (Wisetrack Technologies LLP BP)
-    const META_PIXEL_ID = '989104590339385';
+    // Meta Pixel ID — Wisetrack Web (Wisetrack Lead Gen BP)
+    const META_PIXEL_ID = '1300543928289367';
 
     // Load Google Analytics + Meta Pixel if consent given
     function loadAnalytics() {
