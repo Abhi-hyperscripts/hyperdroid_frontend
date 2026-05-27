@@ -1562,6 +1562,12 @@ async function startFacebookFormMapping(formId, formName, existingSourceId) {
         srcInput.value = (prior || formName || '').slice(0, 200);
     }
 
+    // Populate auto-assign-team dropdown. Default empty = "Assign manually
+    // later" (existing behavior). On "Edit Mapping" pre-select whatever
+    // team is currently saved on the lead_source so the user sees the
+    // current state.
+    await populateAutoAssignTeamDropdown(existingSourceId);
+
     try {
         const [questions, standardFields] = await Promise.all([
             api.request(`/crm/facebook/pages/${encodeURIComponent(_fbCurrentPageId)}/forms/${encodeURIComponent(formId)}/questions`),
@@ -1687,6 +1693,43 @@ async function loadStandardLeadFields() {
     return _fbStandardFields;
 }
 
+// Cache the team list once per Manage-Forms session so reopening the
+// mapping stage doesn't refetch. Cleared on modal close (openFacebookFormModal).
+let _fbAutoAssignTeams = null;
+
+async function populateAutoAssignTeamDropdown(existingSourceId) {
+    const sel = document.getElementById('fbAutoAssignTeamSelect');
+    if (!sel) return;
+
+    // Fetch teams (cached). On failure, leave the dropdown with just the
+    // empty option — the auto-assign feature is optional, no need to block
+    // the modal on a teams-API hiccup.
+    if (!_fbAutoAssignTeams) {
+        try {
+            const teams = await api.request('/crm/teams');
+            _fbAutoAssignTeams = Array.isArray(teams) ? teams : [];
+        } catch {
+            _fbAutoAssignTeams = [];
+        }
+    }
+
+    // Rebuild options — empty option first, then one per active team.
+    sel.innerHTML =
+        '<option value="">— Assign manually later —</option>' +
+        _fbAutoAssignTeams
+            .filter(t => t.is_active !== false)
+            .map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.team_name || t.name || t.id)}</option>`)
+            .join('');
+
+    // Pre-select the currently-saved team for this source, if any.
+    let preselect = '';
+    if (existingSourceId) {
+        const prev = facebookForms.find(f => f.lead_source_id === existingSourceId);
+        preselect = prev?.auto_assign_team_id || '';
+    }
+    sel.value = preselect;
+}
+
 async function saveFacebookFormMapping() {
     const pageId = document.getElementById('fbMappingPageId').value;
     const formId = document.getElementById('fbMappingFormId').value;
@@ -1743,11 +1786,21 @@ async function saveFacebookFormMapping() {
     const label = btn.textContent;
     btn.textContent = 'Saving…';
 
+    // Read the auto-assign-team dropdown. Empty string = user picked
+    // "Assign manually later". The backend treats Guid.Empty as the
+    // explicit clear signal, so we map the empty option to that UUID.
+    const teamSel = document.getElementById('fbAutoAssignTeamSelect');
+    const teamSelVal = (teamSel?.value || '').trim();
+    const autoTeamId = teamSelVal === '' ? '00000000-0000-0000-0000-000000000000' : teamSelVal;
+
     try {
         if (existingId) {
             await api.request(`/crm/facebook/forms/${existingId}/mapping`, {
                 method: 'PUT',
-                body: JSON.stringify({ field_mappings: JSON.stringify(mappings) })
+                body: JSON.stringify({
+                    field_mappings: JSON.stringify(mappings),
+                    auto_assign_team_id: autoTeamId,
+                })
             });
         } else {
             await api.request('/crm/facebook/forms/connect', {
@@ -1757,7 +1810,8 @@ async function saveFacebookFormMapping() {
                     form_id: formId,
                     form_name: formName,
                     field_mappings: JSON.stringify(mappings),
-                    source_name: sourceName
+                    source_name: sourceName,
+                    auto_assign_team_id: autoTeamId,
                 })
             });
         }
