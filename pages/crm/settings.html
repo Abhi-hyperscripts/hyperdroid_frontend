@@ -928,6 +928,139 @@
                             </div>
                         </details>
 
+                        <!-- ─── CAPI (Conversion API) Settings ─────────────── -->
+                        <div class="capi-settings-panel" id="capiSettingsPanel" style="padding: 14px 14px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 16px;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--brand-primary); flex-shrink: 0;">
+                                    <path d="M3 3v18h18"/>
+                                    <polyline points="7 14 12 9 16 13 21 8"/>
+                                </svg>
+                                <h4 style="margin: 0; font-weight: 600; color: var(--text-primary); font-size: 1em;">Conversion API (CAPI)</h4>
+                                <span id="capiStatusBadge" style="margin-left: auto; padding: 2px 8px; border-radius: 999px; font-size: 0.75em; background: var(--bg-tertiary); color: var(--text-secondary);">Not configured</span>
+                            </div>
+
+                            <details class="mailbox-help" style="margin-bottom: 12px;">
+                                <summary>
+                                    <svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                    What is Conversion API and why turn it on?
+                                    <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="6 9 12 15 18 9"/>
+                                    </svg>
+                                </summary>
+                                <div class="mailbox-help-body">
+                                    <p>Meta CAPI sends server-to-server conversion events (Lead, QualifiedLead) from this CRM directly to Meta. Once turned on, Meta's ad optimizer learns from your <strong>real lead quality</strong>, not just form submissions — typically cuts cost-per-qualified-lead by 30–50% over a few weeks.</p>
+                                    <p style="margin-top: 8px; font-weight: 600;">What you need:</p>
+                                    <ol style="padding-left: 20px; line-height: 1.6;">
+                                        <li>Open <a href="https://business.facebook.com/events_manager" target="_blank" rel="noreferrer noopener">Meta Events Manager</a>.</li>
+                                        <li>Pick (or create) the Pixel you use for this business. Copy the <strong>Pixel ID</strong> from Settings.</li>
+                                        <li>Same Settings page → <strong>Conversion API → Generate Access Token</strong>. Copy the token.</li>
+                                        <li>Paste both below, click <strong>Save &amp; Enable</strong>, then <strong>Test Connection</strong>. You should see <code>events_received: 1</code>.</li>
+                                    </ol>
+                                    <p style="margin-top: 8px; color: var(--text-secondary); font-size: 0.9em;">No browser pixel install required for CAPI — Meta dedups across both if you have both. We send <code>Lead</code> on every new lead and <code>QualifiedLead</code> when a salesperson marks a lead as qualified.</p>
+                                </div>
+                            </details>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                                <div>
+                                    <label for="capiPixelInput" style="display: block; font-weight: 500; margin-bottom: 4px; font-size: 0.9em;">Pixel ID</label>
+                                    <input type="text" id="capiPixelInput" class="form-control" placeholder="e.g. 1300543928289367" autocomplete="off">
+                                    <small id="capiPixelHint" style="color: var(--text-secondary); font-size: 0.8em;">Digits only, from Meta Events Manager.</small>
+                                </div>
+                                <div>
+                                    <label for="capiTokenInput" style="display: block; font-weight: 500; margin-bottom: 4px; font-size: 0.9em;">CAPI Access Token</label>
+                                    <input type="password" id="capiTokenInput" class="form-control" placeholder="EAA…" autocomplete="off">
+                                    <small id="capiTokenHint" style="color: var(--text-secondary); font-size: 0.8em;">Stored encrypted (AES-256-GCM). Never logged.</small>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;">
+                                <span style="font-size: 0.9em; font-weight: 500; color: var(--text-secondary);">Events to fire:</span>
+                                <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: pointer;">
+                                    <input type="checkbox" id="capiEvtLead" checked>
+                                    <span>Lead</span>
+                                </label>
+                                <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: pointer;">
+                                    <input type="checkbox" id="capiEvtQualified">
+                                    <span>QualifiedLead</span>
+                                </label>
+                                <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: pointer;">
+                                    <input type="checkbox" id="capiEvtSchedule">
+                                    <span>Schedule</span>
+                                </label>
+                                <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: pointer;">
+                                    <input type="checkbox" id="capiEvtPurchase">
+                                    <span>Purchase</span>
+                                </label>
+                            </div>
+
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button type="button" class="btn btn-primary" onclick="saveCapiSettings()" id="capiSaveBtn" style="padding: 6px 12px; font-size: 0.85em;">
+                                    Save &amp; Enable
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="testCapiConnection()" id="capiTestBtn" style="padding: 6px 12px; font-size: 0.85em;">
+                                    Test Connection
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="openCapiRecent()" id="capiRecentBtn" style="padding: 6px 12px; font-size: 0.85em; margin-left: auto;">
+                                    Recent Events
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="disconnectCapi()" id="capiDisconnectBtn" style="padding: 6px 12px; font-size: 0.85em; display: none;">
+                                    Disconnect
+                                </button>
+                            </div>
+
+                            <div id="capiStatusMessage" style="display: none; margin-top: 10px; padding: 8px 10px; border-radius: 6px; font-size: 0.85em;"></div>
+                        </div>
+
+                        <!-- CAPI Recent Events modal — mirrors fbSyncLogsModal markup so
+                             the existing .gm-* glassmorphic styles apply automatically. -->
+                        <div class="gm-overlay" id="capiRecentModal">
+                            <div class="gm-modal" style="max-width: 920px; width: 95vw;">
+                                <div class="gm-header">
+                                    <div class="gm-header-left">
+                                        <div class="gm-icon" style="background: var(--brand-primary); color: #fff;">
+                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 3v18h18"/>
+                                                <polyline points="7 14 12 9 16 13 21 8"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 class="gm-title">Recent CAPI Events</h3>
+                                            <p class="gm-subtitle">Most recent outbound Meta Conversion API events for this tenant</p>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="gm-close" onclick="closeCapiRecent()" aria-label="Close">&times;</button>
+                                </div>
+                                <div class="gm-body" style="-webkit-overflow-scrolling: touch;">
+                                    <div class="crm-table-wrapper">
+                                        <table class="crm-table data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Created</th>
+                                                    <th>Event</th>
+                                                    <th>Lead</th>
+                                                    <th>Status</th>
+                                                    <th style="text-align:right;">Attempts</th>
+                                                    <th>Last error</th>
+                                                    <th>Sent</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="capiRecentBody">
+                                                <tr><td colspan="7" style="text-align:center; color: var(--text-secondary); padding: 16px;">Loading…</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="gm-footer">
+                                    <button type="button" class="btn btn-secondary" onclick="closeCapiRecent()">Close</button>
+                                    <button type="button" class="btn btn-outline" onclick="refreshCapiRecent()">Refresh</button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                             <button class="btn btn-primary" id="fbConnectSuBtn" onclick="openFacebookSystemUserModal()">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
@@ -4116,6 +4249,7 @@
         document.write('<script src="../../js/crm/email-campaigns.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/whatsapp-settings.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-fields-settings.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/settings-fb-capi.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->
