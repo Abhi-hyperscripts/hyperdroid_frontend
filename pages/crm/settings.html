@@ -977,24 +977,55 @@
                                 </div>
                             </div>
 
-                            <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;">
-                                <span style="font-size: 0.9em; font-weight: 500; color: var(--text-secondary);">Events to fire:</span>
-                                <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: pointer;">
-                                    <input type="checkbox" id="capiEvtLead" checked>
-                                    <span>Lead</span>
-                                </label>
-                                <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: pointer;">
-                                    <input type="checkbox" id="capiEvtQualified">
-                                    <span>QualifiedLead</span>
-                                </label>
-                                <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: pointer;">
-                                    <input type="checkbox" id="capiEvtSchedule">
-                                    <span>Schedule</span>
-                                </label>
-                                <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.9em; cursor: pointer;">
-                                    <input type="checkbox" id="capiEvtPurchase">
-                                    <span>Purchase</span>
-                                </label>
+                            <div style="margin-bottom: 12px;">
+                                <div style="font-size: 0.9em; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">Events to fire</div>
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+
+                                    <!-- Lead: fires on every new lead create -->
+                                    <label style="display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start; cursor: pointer; padding: 10px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px;">
+                                        <input type="checkbox" id="capiEvtLead" checked style="margin-top: 2px;">
+                                        <div>
+                                            <div style="font-weight: 600; color: var(--text-primary);">Lead</div>
+                                            <div style="font-size: 0.85em; color: var(--text-secondary); margin-top: 2px; line-height: 1.4;">
+                                                Fires on every new lead — Facebook poll, webhook, CSV import, manual entry, WhatsApp inbox conversion. Tells Meta "this ad created a real lead in our CRM." <strong>Most important signal.</strong> Lets Meta's optimizer find more people like the ones who already converted.
+                                            </div>
+                                        </div>
+                                    </label>
+
+                                    <!-- QualifiedLead: fires on status flip to qualified -->
+                                    <label style="display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start; cursor: pointer; padding: 10px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px;">
+                                        <input type="checkbox" id="capiEvtQualified" style="margin-top: 2px;">
+                                        <div>
+                                            <div style="font-weight: 600; color: var(--text-primary);">QualifiedLead</div>
+                                            <div style="font-size: 0.85em; color: var(--text-secondary); margin-top: 2px; line-height: 1.4;">
+                                                Fires when a salesperson marks a lead's status as <code>qualified</code>. This is the moment Meta learns the difference between tire-kickers and real prospects — typically cuts cost-per-qualified-lead 30-50% over 2-3 weeks. Turn on after you have at least 10 qualified leads so Meta has signal to optimize against.
+                                            </div>
+                                        </div>
+                                    </label>
+
+                                    <!-- Schedule: fires on future-dated followup -->
+                                    <label style="display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start; cursor: pointer; padding: 10px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px;">
+                                        <input type="checkbox" id="capiEvtSchedule" style="margin-top: 2px;">
+                                        <div>
+                                            <div style="font-weight: 600; color: var(--text-primary);">Schedule</div>
+                                            <div style="font-size: 0.85em; color: var(--text-secondary); margin-top: 2px; line-height: 1.4;">
+                                                Fires when a future-dated follow-up (call, meeting, demo) is logged on a lead — a stronger commitment signal than just "qualified." Past-dated entries are skipped (those are after-the-fact backfill, not real schedules). Best for funnels where booking a demo is the key milestone before purchase.
+                                            </div>
+                                        </div>
+                                    </label>
+
+                                    <!-- Purchase: fires on deal won -->
+                                    <label style="display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start; cursor: pointer; padding: 10px 12px; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px;">
+                                        <input type="checkbox" id="capiEvtPurchase" style="margin-top: 2px;">
+                                        <div>
+                                            <div style="font-weight: 600; color: var(--text-primary);">Purchase</div>
+                                            <div style="font-size: 0.85em; color: var(--text-secondary); margin-top: 2px; line-height: 1.4;">
+                                                Fires when a deal linked to the lead is marked <code>Won</code>. Passes the deal value + currency to Meta so its ROAS bidder learns which lead profiles produce actual revenue — not just clicks. Highest-value signal Meta supports. Requires the lead → deal conversion flow (won deals created directly without a source lead don't fire).
+                                            </div>
+                                        </div>
+                                    </label>
+
+                                </div>
                             </div>
 
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
