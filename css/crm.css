@@ -3445,11 +3445,20 @@ body.crm-page .searchable-dropdown.open .searchable-dropdown-menu {
    generic `.gm-body:has(.searchable-dropdown.open) { overflow: visible }` rule
    above is unnecessary here and actively harmful — a single stuck `.open`
    class bursts the 18-row table out of modal bounds. Keep these bodies
-   scroll-contained. */
+   scroll-contained. Also pin .gm-modal back to overflow:hidden so the body's
+   scroll boundary actually clips at the modal's max-height edge instead of
+   the rows extending out past the rounded modal corners. */
 body.crm-page #gsSheetPickerModal .gm-body:has(.searchable-dropdown.open),
-body.crm-page #gsShareModal .gm-body:has(.searchable-dropdown.open) {
+body.crm-page #gsShareModal .gm-body:has(.searchable-dropdown.open),
+body.crm-page #fbFormModal .gm-body:has(.searchable-dropdown.open) {
     overflow-y: auto !important;
     overflow-x: hidden !important;
+}
+
+body.crm-page #gsSheetPickerModal .gm-modal:has(.searchable-dropdown.open),
+body.crm-page #gsShareModal .gm-modal:has(.searchable-dropdown.open),
+body.crm-page #fbFormModal .gm-modal:has(.searchable-dropdown.open) {
+    overflow: hidden !important;
 }
 
 /* ─── Custom Fields Badge ─────────────────────────────────────────────── */

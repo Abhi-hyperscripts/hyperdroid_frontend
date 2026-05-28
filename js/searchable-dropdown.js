@@ -378,7 +378,34 @@ const SearchableDropdown = (function() {
             // Position menu if needed (for dropdowns near bottom of screen)
             this.positionMenu();
 
+            // Inside a glassmorphic modal, lay down a dim scrim over the
+            // modal body so the active dropdown reads as the only thing in
+            // focus. Without this, the row underneath the open trigger
+            // remains visible (column 1 next to the 240px menu), which
+            // looks like the menu is bleeding through transparent layers.
+            this._showModalScrim();
+
             setTimeout(() => this.searchInput.focus(), 10);
+        }
+
+        _showModalScrim() {
+            const modal = this.dropdownEl.closest('.gm-modal');
+            if (!modal) return;
+            let scrim = modal.querySelector(':scope > .gm-dropdown-scrim');
+            if (!scrim) {
+                scrim = document.createElement('div');
+                scrim.className = 'gm-dropdown-scrim';
+                modal.appendChild(scrim);
+            }
+            scrim.style.display = 'block';
+            this._scrimEl = scrim;
+        }
+
+        _hideModalScrim() {
+            if (this._scrimEl) {
+                this._scrimEl.style.display = 'none';
+                this._scrimEl = null;
+            }
         }
 
         close() {
@@ -387,6 +414,7 @@ const SearchableDropdown = (function() {
             this.dropdownEl.classList.remove('open-up');
             this.triggerEl.setAttribute('aria-expanded', 'false');
             this.highlightedIndex = -1;
+            this._hideModalScrim();
             // Reset inline styles from fixed-escape positioning + restore the
             // menu element back to its original parent (we portaled it to
             // <body> on open to escape transformed ancestors).
@@ -416,7 +444,17 @@ const SearchableDropdown = (function() {
         positionMenu() {
             const rect = this.triggerEl.getBoundingClientRect();
             const menuHeight = 280; // Approximate max height
-            const spaceBelow = window.innerHeight - rect.bottom;
+            // When the trigger is inside a glassmorphic modal, treat the
+            // modal footer's top edge as the bottom limit — opening into
+            // the footer crashes the menu over scrolling content + the
+            // action buttons, which looks unfinished. Falls back to the
+            // viewport bottom when not in a modal.
+            const modal = this.dropdownEl.closest('.gm-modal');
+            const footer = modal ? modal.querySelector('.gm-footer') : null;
+            const bottomLimit = footer
+                ? footer.getBoundingClientRect().top
+                : window.innerHeight;
+            const spaceBelow = bottomLimit - rect.bottom;
             const spaceAbove = rect.top;
 
             if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
