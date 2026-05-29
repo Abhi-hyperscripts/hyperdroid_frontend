@@ -1580,10 +1580,16 @@
                             <form id="applyFormEl" onsubmit="submitApplication(event)" autocomplete="on">
                                 <!-- Honeypot: hidden field that real candidates
                                      never fill. Bots that auto-complete every
-                                     input land themselves on the spam list. -->
+                                     input land themselves on the spam list.
+                                     Name must NOT match any autofill heuristic
+                                     (country/address/email/etc) — Samsung
+                                     Internet and other Android browsers ignore
+                                     autocomplete="off" and fill fields whose
+                                     name/label looks like a known field type,
+                                     which silently dropped real submissions. -->
                                 <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" tabindex="-1">
-                                    <label for="company_country">Country (leave blank)</label>
-                                    <input type="text" id="company_country" name="company_country" tabindex="-1" autocomplete="off">
+                                    <label for="hp_field">Do not fill</label>
+                                    <input type="text" id="hp_field" name="hp_field" tabindex="-1" autocomplete="off" data-form-type="other" data-lpignore="true" data-1p-ignore="true">
                                 </div>
                                 <div id="applyFields"></div>
                                 <button type="submit" class="apply-submit" id="applySubmitBtn">

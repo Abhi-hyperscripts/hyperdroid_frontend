@@ -686,8 +686,13 @@
 
             // Forward the honeypot value. Real candidates leave it blank; bots
             // typically fill every field. Backend silently accepts-and-drops
-            // the submission when this is non-empty.
-            const honeypot = document.getElementById('company_country');
+            // the submission when this is non-empty. Field id/name is
+            // intentionally meaningless (`hp_field`) — earlier we used
+            // `company_country` which Samsung Internet autofilled on Android,
+            // silently dropping legitimate submissions. The server still keys
+            // the trap on `company_country` for backward compat with already-
+            // deployed pages, so we keep that as the payload key.
+            const honeypot = document.getElementById('hp_field');
             if (honeypot && honeypot.value) data.company_country = honeypot.value;
 
             const url = `${getApiBase()}/recruitment/apply/${encodeURIComponent(webhookKey)}`;
