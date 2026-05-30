@@ -959,6 +959,29 @@
                 const formData = {};
                 new FormData(form).forEach((v, k) => { formData[k] = v; });
 
+                // Merge in the first-touch UTM record stamped by
+                // cookie-consent.js when the visitor first landed with
+                // utm_* in the URL. First-touch wins over any utm_*
+                // form fields the tenant might have configured — the
+                // localStorage value reflects the campaign that brought
+                // the visitor, not the URL they happened to be on when
+                // they hit Submit (which could be the second-touch /
+                // remarketing campaign). Companion CRM contract:
+                // BL_Leads + /api/leads/capture both accept these keys
+                // case-insensitively; over-long values are capped
+                // server-side. Safe-call: window.UtmTracking may not be
+                // loaded yet (host page without cookie-consent.js).
+                try {
+                    if (window.UtmTracking && typeof window.UtmTracking.getFirstTouch === 'function') {
+                        const ft = window.UtmTracking.getFirstTouch();
+                        if (ft) {
+                            ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach(function(k) {
+                                if (ft[k]) formData[k] = ft[k];
+                            });
+                        }
+                    }
+                } catch (e) { /* fail silent — never block a lead submit on attribution */ }
+
                 const webhookUrl = `${baseUrl}${formConfig.webhook_url}`;
                 const res = await fetch(webhookUrl, {
                     method: 'POST',

@@ -267,8 +267,101 @@
     `;
     document.head.appendChild(slideDownStyle);
 
+    // ─── UTM first-touch attribution ─────────────────────────────
+    // Runs on EVERY page load alongside cookie consent. UTM capture
+    // is functional (it's how lead attribution works), not analytics
+    // — no consent gate. The captured record is read by the embed
+    // lead-form widget on submit and echoed back to the CRM as part
+    // of the body.
+    //
+    // First-touch model: the FIRST page load with utm_* in the URL
+    // wins, and we NEVER overwrite that on a subsequent landing.
+    // Rationale: a visitor who landed via Teen Agency v1, browsed
+    // for two days, then clicked a Meta CAPI v2 ad should still be
+    // attributed to Teen Agency (the campaign that actually moved
+    // them). Switching to last-touch is a one-line change here if
+    // we ever revise that model.
+    //
+    // Storage shape (under ragenaizer_first_touch):
+    //   { version, utm_source, utm_medium, utm_campaign, utm_content,
+    //     utm_term, landing_page, referrer, captured_at }
+    //
+    // Companion CRM contract: BL_Leads.CreateLeadAsync + the public
+    // /api/leads/capture/{webhookKey} webhook both accept these keys
+    // case-insensitively; over-long values get capped at the DB
+    // layer's VARCHAR widths (200 / 500). See CRM commit 9e79a60.
+    const UTM_STORAGE_KEY = 'ragenaizer_first_touch';
+    const UTM_STORAGE_VERSION = '1.0';
+    const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+
+    function captureFirstTouch() {
+        try {
+            // First-touch wins. Existing record present → no re-stamp.
+            const existing = localStorage.getItem(UTM_STORAGE_KEY);
+            if (existing) {
+                try {
+                    const parsed = JSON.parse(existing);
+                    if (parsed && parsed.version === UTM_STORAGE_VERSION) return parsed;
+                    // Old / unknown version — fall through to re-capture.
+                } catch (e) { /* malformed JSON — fall through to re-capture */ }
+            }
+            const params = new URLSearchParams(window.location.search || '');
+            const utm = {};
+            let anyUtm = false;
+            for (const k of UTM_KEYS) {
+                const v = params.get(k);
+                if (v && v.trim()) { utm[k] = v.trim(); anyUtm = true; }
+            }
+            // No utm_* on URL → don't stamp anything. A visitor who lands
+            // on /pages/apply.html directly (no campaign) shouldn't get a
+            // bogus first-touch row from a later refresh that DOES carry
+            // utm_*; that later refresh becomes their first-touch.
+            if (!anyUtm) return null;
+            const record = Object.assign({
+                version: UTM_STORAGE_VERSION,
+                landing_page: window.location.pathname + window.location.search,
+                referrer: document.referrer || null,
+                captured_at: new Date().toISOString()
+            }, utm);
+            localStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(record));
+            return record;
+        } catch (e) {
+            // localStorage unavailable (private browsing / quota / etc.) —
+            // fail silent. A blocked stamp is worse-case "first-touch lost
+            // for this visitor", which is acceptable degradation.
+            console.warn('UTM first-touch capture failed:', e);
+            return null;
+        }
+    }
+
+    function getFirstTouch() {
+        try {
+            const stored = localStorage.getItem(UTM_STORAGE_KEY);
+            if (!stored) return null;
+            const parsed = JSON.parse(stored);
+            return parsed && parsed.version === UTM_STORAGE_VERSION ? parsed : null;
+        } catch (e) { return null; }
+    }
+
+    // Public API for the embed widget + any other form on the site.
+    // Idempotent — capture() is safe to call repeatedly; the
+    // first-touch row is only written once per browser.
+    window.UtmTracking = {
+        capture: captureFirstTouch,
+        getFirstTouch: getFirstTouch,
+        // For tests / SPA route changes that want to reset attribution.
+        // NOT exposed in the public docs.
+        _clearForTesting: function() { try { localStorage.removeItem(UTM_STORAGE_KEY); } catch (e) {} }
+    };
+
     // Initialize on DOM ready
     function init() {
+        // UTM capture is intentionally outside the consent gate — it's
+        // functional attribution, not analytics. Fire it immediately so
+        // a tenant who clicks "Decline" still has their first-touch row
+        // available for the apply / contact / demo form submit.
+        captureFirstTouch();
+
         const consent = getConsent();
 
         if (consent === null) {
