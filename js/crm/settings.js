@@ -2060,13 +2060,17 @@ function renderLeadSources() {
 
 // ─── Lead Source Modal: Create ───────────────────────────────────────────────
 
-function openNewLeadSourceModal() {
+async function openNewLeadSourceModal() {
     editingLeadSourceId = null;
     document.getElementById('leadSourceModalTitle').textContent = 'New Lead Source';
     document.getElementById('leadSourceSubmitBtn').textContent = 'Create Source';
     document.getElementById('leadSourceForm').reset();
     document.getElementById('leadSourceId').value = '';
     clearFormFieldsBuilder();
+    // Populate the auto-assign-team dropdown with no preselect — a new
+    // source defaults to "Assign manually later". Awaited so the dropdown
+    // is fully built before the modal becomes interactive.
+    await populateLeadSourceTeamDropdown(null);
     openModal('leadSourceModal');
 }
 
@@ -2085,8 +2089,44 @@ async function editLeadSource(id) {
     document.getElementById('leadSourceIdentifier').value = source.source_identifier || '';
 
     populateFormFieldsBuilder(source.form_fields);
+    // Pre-select the currently-saved team for this source so the dropdown
+    // reflects the persisted state. Falls through to "— Assign manually —"
+    // when the source has no team configured.
+    await populateLeadSourceTeamDropdown(source.auto_assign_team_id || null);
 
     openModal('leadSourceModal');
+}
+
+// Cache the team list once per Settings-page session — opening/closing
+// the modal doesn't refetch. Mirrors _fbAutoAssignTeams used by the FB
+// form mapping modal; we keep a separate cache so the two modals don't
+// share lifecycle (the FB cache is cleared on Manage-Forms modal close).
+let _leadSourceAutoAssignTeams = null;
+
+async function populateLeadSourceTeamDropdown(preselectTeamId) {
+    const sel = document.getElementById('leadSourceAutoAssignTeamSelect');
+    if (!sel) return;
+
+    // Fetch teams (cached). On failure, leave the dropdown with just the
+    // empty option — auto-assign is optional, no need to block the modal
+    // on a teams-API hiccup.
+    if (!_leadSourceAutoAssignTeams) {
+        try {
+            const teams = await api.request('/crm/teams');
+            _leadSourceAutoAssignTeams = Array.isArray(teams) ? teams : [];
+        } catch {
+            _leadSourceAutoAssignTeams = [];
+        }
+    }
+
+    sel.innerHTML =
+        '<option value="">— Assign manually later —</option>' +
+        _leadSourceAutoAssignTeams
+            .filter(t => t.is_active !== false)
+            .map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.team_name || t.name || t.id)}</option>`)
+            .join('');
+
+    sel.value = preselectTeamId || '';
 }
 
 function closeLeadSourceModal() {
@@ -2117,12 +2157,28 @@ async function handleLeadSourceSubmit(event) {
             if (f.key) fieldMappings[f.key] = [f.key];
         }
 
+        // Auto-assign team — empty string maps to null (== "no team
+        // configured"). On UPDATE the backend treats null as "leave
+        // current value" UNLESS the empty Guid is sent — but our
+        // contract here is simpler: empty selection clears the field.
+        // The backend's UpdateLeadSourceRequest docstring says "Use
+        // Guid.Empty to clear", but Guid.Empty serialises as the
+        // all-zeros UUID, which we send instead of null when the
+        // user explicitly picks "— Assign manually later —" while
+        // editing. On CREATE this distinction doesn't matter (a fresh
+        // source has nothing to preserve), so we send null.
+        const teamSelectValue = document.getElementById('leadSourceAutoAssignTeamSelect').value;
+        const autoAssignTeamId = teamSelectValue
+            ? teamSelectValue
+            : (editingLeadSourceId ? '00000000-0000-0000-0000-000000000000' : null);
+
         const payload = {
             source_name: document.getElementById('leadSourceName').value.trim(),
             source_type: document.getElementById('leadSourceType').value,
             source_identifier: document.getElementById('leadSourceIdentifier').value.trim() || null,
             field_mappings: JSON.stringify(fieldMappings),
-            form_fields: JSON.stringify(formFields)
+            form_fields: JSON.stringify(formFields),
+            auto_assign_team_id: autoAssignTeamId
         };
 
         if (editingLeadSourceId) {

@@ -2474,6 +2474,20 @@
                         </p>
                     </div>
                     <div class="crm-form-group">
+                        <label for="leadSourceAutoAssignTeamSelect">
+                            Auto-assign new leads to team
+                            <span style="color: var(--text-secondary); font-weight: 400; font-size: 0.85em;">(optional)</span>
+                        </label>
+                        <select id="leadSourceAutoAssignTeamSelect" class="form-control">
+                            <option value="">— Assign manually later —</option>
+                            <!-- Populated by openNewLeadSourceModal / editLeadSource -->
+                        </select>
+                        <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 4px;">
+                            New leads from this source run through the same team round-robin a superadmin manually triggers.
+                            Leave empty to assign manually on the Leads page.
+                        </p>
+                    </div>
+                    <div class="crm-form-group">
                         <label>Form Fields (visible to leads)</label>
                         <p class="form-help-text" style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 10px;">
                             Build the form your leads will fill in. Pick a type for each field (text, dropdown, etc.), set its label and width. Each field's <code>key</code> decides where its value lands in the CRM — standard keys like <code>full_name</code>, <code>email</code>, <code>phone</code>, <code>company_name</code>, <code>job_title</code> go into their CRM columns; anything else is kept as a custom field on the lead.
