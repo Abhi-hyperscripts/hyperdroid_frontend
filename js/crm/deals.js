@@ -77,6 +77,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadContacts();
     loadCompanies();
     initSearchableDropdowns();
+    // Keyboard shortcuts (/, s, f, c, Esc) + saved-views chips.
+    window.addEventListener('keydown', dealKeyboardHandler);
+    renderSavedViewsBar();
 });
 
 function initSearchableDropdowns() {
@@ -162,11 +165,22 @@ async function loadDealStages() {
 
 /**
  * Load pipeline deals (full deal objects for kanban/list rendering)
+ *
+ * ?kanban=true triggers the joined query — backend returns the same
+ * Deal shape with extra fields populated: contact_name, company_name_resolved,
+ * owner_name, days_in_current_stage, stage_win_probability,
+ * stage_name_resolved, stage_type_resolved. Other consumers (copilot
+ * tools, deal list view) still get the lean payload via the unflagged
+ * route.
  */
 async function loadPipeline() {
     try {
-        const response = await api.request('/crm/deals');
+        const response = await api.request('/crm/deals?kanban=true');
         allDeals = response.data || response || [];
+        // Owner dropdown options derive from the actual deal owners
+        // present in the result — keeps the filter free of users who
+        // have no deals on this pipeline.
+        populateOwnerFilter();
         renderCurrentView();
         updatePipelineSummary();
     } catch (error) {
@@ -229,21 +243,408 @@ async function loadCompanies() {
 }
 
 // ==================== Pipeline Summary ====================
+//
+// Summary tiles operate on the FILTERED deal set so applying a filter
+// re-scopes the Total / Forecast / Won numbers to the visible subset.
+// The summary on the top of the page is supposed to answer "what am I
+// looking at right now?", not "what's the global pipeline?".
 
 function updatePipelineSummary() {
-    const totalValue = allDeals.reduce((sum, d) => sum + (parseFloat(d.deal_value) || 0), 0);
-    // Determine won/lost by matching stage_id to dealStages with stage_type
+    const deals = getFilteredDeals();
+    const totalValue = deals.reduce((sum, d) => sum + (parseFloat(d.deal_value) || 0), 0);
     const wonStageIds = dealStages.filter(s => s.stage_type === 'won').map(s => s.id);
     const lostStageIds = dealStages.filter(s => s.stage_type === 'lost').map(s => s.id);
-    const wonDeals = allDeals.filter(d => wonStageIds.includes(d.stage_id));
-    const lostDeals = allDeals.filter(d => lostStageIds.includes(d.stage_id));
+    const wonDeals = deals.filter(d => wonStageIds.includes(d.stage_id));
+    const lostDeals = deals.filter(d => lostStageIds.includes(d.stage_id));
     const wonValue = wonDeals.reduce((sum, d) => sum + (parseFloat(d.deal_value) || 0), 0);
     const lostValue = lostDeals.reduce((sum, d) => sum + (parseFloat(d.deal_value) || 0), 0);
 
+    // Weighted forecast — Σ deal_value × stage.win_probability/100 for
+    // OPEN deals, plus realised won revenue. Lost deals count zero.
+    // Mirrors the C# helper BusinessLayer.ComputeWeightedForecast so
+    // the frontend and backend agree on the math (the backend tests
+    // pin this).
+    const weighted = computeWeightedForecast(deals);
+
     document.getElementById('totalPipelineValue').textContent = formatCurrency(totalValue, defaultCurrency);
-    document.getElementById('totalDealsCount').textContent = allDeals.length;
+    document.getElementById('totalDealsCount').textContent = deals.length;
     document.getElementById('wonDealsValue').textContent = formatCurrency(wonValue, defaultCurrency);
     document.getElementById('lostDealsValue').textContent = formatCurrency(lostValue, defaultCurrency);
+    const fcEl = document.getElementById('weightedForecastValue');
+    if (fcEl) fcEl.textContent = formatCurrency(weighted, defaultCurrency);
+
+    // Stale indicator — number of OPEN deals at ≥ 14d in current stage.
+    // Surfaces on the toolbar so a sales lead can spot pipeline rot.
+    const openIds = new Set(dealStages.filter(s => s.stage_type === 'open').map(s => s.id));
+    const stale = deals.filter(d => openIds.has(d.stage_id) && (d.days_in_current_stage ?? 0) >= 14);
+    const ind = document.getElementById('staleDealsIndicator');
+    const cnt = document.getElementById('staleDealsCount');
+    if (ind && cnt) {
+        cnt.textContent = stale.length;
+        ind.style.display = stale.length > 0 ? 'inline-flex' : 'none';
+    }
+}
+
+function computeWeightedForecast(deals) {
+    let sum = 0;
+    for (const d of deals) {
+        const type = (d.stage_type_resolved || '').toLowerCase();
+        if (type === 'lost') continue;
+        const value = parseFloat(d.deal_value) || 0;
+        if (type === 'won') { sum += value; continue; }
+        let p = parseFloat(d.stage_win_probability) || 0;
+        if (p > 100) p = 100; if (p < 0) p = 0;
+        sum += value * (p / 100);
+    }
+    return Math.round(sum * 100) / 100;
+}
+
+// ==================== Filter state ====================
+
+let dealFilters = {
+    search: '',
+    ownerId: '',
+    staleness: '',  // '', 'fresh', 'watch', 'stale'
+    valueRange: '', // '', '0-50000', '50000-200000', ...
+};
+
+function getFilteredDeals() {
+    const f = dealFilters;
+    return allDeals.filter(d => {
+        if (f.search) {
+            const q = f.search.toLowerCase();
+            const hay = [
+                d.deal_name, d.contact_name, d.company_name_resolved,
+                d.owner_name, d.utm_campaign, d.utm_source,
+            ].filter(Boolean).join(' ').toLowerCase();
+            if (!hay.includes(q)) return false;
+        }
+        if (f.ownerId && d.owner_user_id !== f.ownerId) return false;
+        if (f.staleness) {
+            const days = d.days_in_current_stage;
+            if (days == null) return false;
+            if (f.staleness === 'fresh' && days >= 7) return false;
+            if (f.staleness === 'watch' && (days < 7 || days >= 14)) return false;
+            if (f.staleness === 'stale' && days < 14) return false;
+        }
+        if (f.valueRange) {
+            const v = parseFloat(d.deal_value) || 0;
+            const [lo, hi] = f.valueRange.split('-').map(x => x === '' ? null : parseFloat(x));
+            if (lo != null && v < lo) return false;
+            if (hi != null && v >= hi) return false;
+        }
+        return true;
+    });
+}
+
+function applyDealFilters() {
+    dealFilters.search = (document.getElementById('dealSearchInput')?.value || '').trim();
+    dealFilters.ownerId = document.getElementById('filterOwner')?.value || '';
+    dealFilters.staleness = document.getElementById('filterStaleness')?.value || '';
+    dealFilters.valueRange = document.getElementById('filterValueRange')?.value || '';
+
+    const anyActive = !!(dealFilters.search || dealFilters.ownerId
+                      || dealFilters.staleness || dealFilters.valueRange);
+    const clr = document.getElementById('clearFiltersBtn');
+    if (clr) clr.style.display = anyActive ? '' : 'none';
+
+    renderCurrentView();
+    updatePipelineSummary();
+}
+
+function clearDealFilters() {
+    dealFilters = { search: '', ownerId: '', staleness: '', valueRange: '' };
+    const ids = ['dealSearchInput', 'filterOwner', 'filterStaleness', 'filterValueRange'];
+    for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    }
+    applyDealFilters();
+}
+
+function filterToStaleDeals() {
+    document.getElementById('filterStaleness').value = 'stale';
+    applyDealFilters();
+}
+
+function populateOwnerFilter() {
+    const sel = document.getElementById('filterOwner');
+    if (!sel) return;
+    const seen = new Map();
+    for (const d of allDeals) {
+        if (d.owner_user_id && d.owner_name && !seen.has(d.owner_user_id)) {
+            seen.set(d.owner_user_id, d.owner_name);
+        }
+    }
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All owners</option>'
+        + Array.from(seen.entries())
+            .sort((a, b) => a[1].localeCompare(b[1]))
+            .map(([id, name]) => `<option value="${id}">${escapeHtml(name)}</option>`)
+            .join('');
+    sel.value = current;
+}
+
+// ==================== Bulk-select state ====================
+
+let bulkSelectMode = false;
+let bulkSelectedDealIds = new Set();
+
+function toggleBulkSelect() {
+    bulkSelectMode = !bulkSelectMode;
+    bulkSelectedDealIds.clear();
+    document.body.classList.toggle('bulk-select-active', bulkSelectMode);
+    document.getElementById('bulkActionBar').style.display = bulkSelectMode ? 'flex' : 'none';
+    const toggleBtn = document.getElementById('bulkSelectToggle');
+    if (toggleBtn) toggleBtn.classList.toggle('active', bulkSelectMode);
+    if (bulkSelectMode) populateBulkTargetStageDropdown();
+    renderCurrentView();
+    updateBulkSelectedCount();
+}
+
+function populateBulkTargetStageDropdown() {
+    const sel = document.getElementById('bulkMoveTargetStage');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Move to…</option>'
+        + dealStages
+            .filter(s => s.is_active !== false)
+            .map(s => `<option value="${s.id}">${escapeHtml(s.stage_name)}</option>`)
+            .join('');
+    sel.onchange = updateBulkSelectedCount;
+}
+
+function clearBulkSelection() {
+    bulkSelectedDealIds.clear();
+    renderCurrentView();
+    updateBulkSelectedCount();
+}
+
+function updateBulkSelectedCount() {
+    const cnt = document.getElementById('bulkSelectedCount');
+    if (cnt) cnt.textContent = bulkSelectedDealIds.size;
+    const btn = document.getElementById('bulkMoveBtn');
+    const targetEl = document.getElementById('bulkMoveTargetStage');
+    if (btn) {
+        btn.disabled = bulkSelectedDealIds.size === 0
+                    || !targetEl || !targetEl.value;
+    }
+}
+
+function handleBulkCardClick(dealId) {
+    if (bulkSelectedDealIds.has(dealId)) bulkSelectedDealIds.delete(dealId);
+    else bulkSelectedDealIds.add(dealId);
+    renderCurrentView();
+    updateBulkSelectedCount();
+}
+
+async function confirmBulkMove() {
+    const target = document.getElementById('bulkMoveTargetStage').value;
+    if (!target || bulkSelectedDealIds.size === 0) return;
+    const ids = Array.from(bulkSelectedDealIds);
+    const targetStage = dealStages.find(s => s.id === target);
+    const confirmed = await Confirm.show({
+        title: 'Move deals',
+        message: `Move ${ids.length} deal${ids.length === 1 ? '' : 's'} to "${targetStage?.stage_name || 'target stage'}"?`,
+        confirmText: 'Move',
+    });
+    if (!confirmed) return;
+    try {
+        const res = await api.request('/crm/deals/bulk-move', {
+            method: 'POST',
+            body: JSON.stringify({ deal_ids: ids, target_stage_id: target }),
+        });
+        if (res.moved > 0) Toast.success(`Moved ${res.moved} deal${res.moved === 1 ? '' : 's'}.`);
+        if (res.failed > 0) Toast.error(`${res.failed} deal${res.failed === 1 ? '' : 's'} couldn't be moved.`);
+        bulkSelectedDealIds.clear();
+        await loadPipeline();
+    } catch (err) {
+        console.error(err);
+        Toast.error('Bulk move failed.');
+    }
+}
+
+// ==================== Keyboard shortcuts ====================
+//
+// Hotkeys are scoped to the deals page via window listener installed
+// at init. Skipped when focus is in an input/textarea/contenteditable
+// so a rep typing in the search bar can't accidentally trip "s".
+
+function isTypingInField(el) {
+    if (!el) return false;
+    const tag = el.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (el.isContentEditable) return true;
+    return false;
+}
+
+function dealKeyboardHandler(event) {
+    // Don't hijack typing.
+    if (isTypingInField(event.target)) {
+        // Allow Esc to bail out of search even while typing.
+        if (event.key === 'Escape') {
+            const search = document.getElementById('dealSearchInput');
+            if (search && document.activeElement === search) {
+                search.value = ''; search.blur(); applyDealFilters();
+            }
+        }
+        return;
+    }
+    // Don't trigger when a modal / side panel is open — those have
+    // their own UX.
+    if (document.querySelector('.gm-overlay.active, .deal-detail-panel.open, .modal.show')) return;
+
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+    switch (event.key) {
+        case '/':
+        case 's':
+        case 'S': {
+            // '/' focuses search; 's' toggles bulk-select mode.
+            if (event.key === '/') {
+                event.preventDefault();
+                document.getElementById('dealSearchInput')?.focus();
+            } else {
+                event.preventDefault();
+                toggleBulkSelect();
+            }
+            break;
+        }
+        case 'f':
+        case 'F': {
+            event.preventDefault();
+            document.getElementById('filterOwner')?.focus();
+            break;
+        }
+        case 'c':
+        case 'C': {
+            event.preventDefault();
+            clearDealFilters();
+            break;
+        }
+        case 'Escape': {
+            if (bulkSelectMode) { event.preventDefault(); toggleBulkSelect(); }
+            else if (
+                dealFilters.search || dealFilters.ownerId
+                || dealFilters.staleness || dealFilters.valueRange
+            ) {
+                event.preventDefault();
+                clearDealFilters();
+            }
+            break;
+        }
+    }
+}
+
+// ==================== Saved views ====================
+//
+// Persisted in localStorage keyed by tenant id (when available). A
+// view = a name + the current dealFilters snapshot. Lists are read on
+// every page-load init; updates re-render the chips.
+const SAVED_VIEWS_KEY = 'ragenaizer_deals_saved_views';
+
+function tenantScopedSavedViewsKey() {
+    // The tenant id isn't strictly required for correctness — it just
+    // means a user toggling between tenants in the same browser
+    // doesn't see the other tenant's views. Falls back to a global
+    // key if tenant id isn't on the page.
+    const tid = (window.api && api.getTenantId && api.getTenantId()) || 'default';
+    return `${SAVED_VIEWS_KEY}::${tid}`;
+}
+
+function loadSavedViews() {
+    try {
+        const raw = localStorage.getItem(tenantScopedSavedViewsKey());
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function persistSavedViews(views) {
+    try {
+        localStorage.setItem(tenantScopedSavedViewsKey(), JSON.stringify(views));
+    } catch (e) {
+        // localStorage quota, private mode, etc. — fail silent and
+        // emit a toast so the user knows the save didn't stick.
+        Toast.error('Could not save view (storage unavailable)');
+    }
+}
+
+async function saveCurrentView() {
+    // Theme-consistent prompt from toast.js (Prompt.show) — never the
+    // native browser prompt() which (a) looks like phishing and (b)
+    // breaks the brand theme on every dialog.
+    const name = await Prompt.show({
+        title: 'Save view',
+        message: 'Name this view',
+        placeholder: 'e.g. My hot deals',
+        confirmText: 'Save',
+    });
+    if (!name || !String(name).trim()) return;
+    const views = loadSavedViews();
+    const trimmed = String(name).trim();
+    views.push({
+        id: 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name: trimmed,
+        filters: { ...dealFilters },
+        created_at: new Date().toISOString(),
+    });
+    persistSavedViews(views);
+    renderSavedViewsBar();
+    Toast.success(`Saved view "${trimmed}"`);
+}
+
+function applySavedView(viewId) {
+    const views = loadSavedViews();
+    const view = views.find(v => v.id === viewId);
+    if (!view) return;
+    dealFilters = { ...view.filters };
+    // Re-sync the DOM inputs so the user can see what's active.
+    const map = {
+        dealSearchInput: dealFilters.search,
+        filterOwner: dealFilters.ownerId,
+        filterStaleness: dealFilters.staleness,
+        filterValueRange: dealFilters.valueRange,
+    };
+    for (const [id, val] of Object.entries(map)) {
+        const el = document.getElementById(id);
+        if (el) el.value = val || '';
+    }
+    applyDealFilters();
+}
+
+function deleteSavedView(viewId) {
+    const views = loadSavedViews().filter(v => v.id !== viewId);
+    persistSavedViews(views);
+    renderSavedViewsBar();
+}
+
+function renderSavedViewsBar() {
+    const host = document.getElementById('savedViewsBar');
+    if (!host) return;
+    const views = loadSavedViews();
+    if (views.length === 0) {
+        host.innerHTML = `
+            <button type="button" class="saved-view-save" onclick="saveCurrentView()" title="Save current filters as a view">
+                + Save view
+            </button>
+        `;
+        host.style.display = 'flex';
+        return;
+    }
+    host.innerHTML = views.map(v => `
+        <span class="saved-view-chip" onclick="applySavedView('${v.id}')" title="Apply view">
+            ${escapeHtml(v.name)}
+            <button class="saved-view-delete" onclick="event.stopPropagation(); deleteSavedView('${v.id}')" title="Delete">×</button>
+        </span>
+    `).join('') + `
+        <button type="button" class="saved-view-save" onclick="saveCurrentView()" title="Save current filters as a view">
+            + Save view
+        </button>
+    `;
+    host.style.display = 'flex';
 }
 
 // ==================== View Toggle ====================
@@ -294,10 +695,14 @@ function renderKanbanBoard() {
         return;
     }
 
-    // Group deals by stage
+    // Group deals by stage — using the FILTERED set so kanban columns
+    // reflect the active filter chips (search, owner, age, value).
+    // When filters are inactive getFilteredDeals returns allDeals
+    // verbatim (no extra cost on the common path).
+    const dealsToShow = getFilteredDeals();
     const dealsByStage = {};
     dealStages.forEach(stage => {
-        dealsByStage[stage.id] = allDeals.filter(d => d.stage_id === stage.id);
+        dealsByStage[stage.id] = dealsToShow.filter(d => d.stage_id === stage.id);
     });
 
     board.innerHTML = dealStages.map(stage => {
@@ -328,11 +733,67 @@ function renderKanbanBoard() {
     }).join('');
 }
 
+// ─── Card-meta helpers ────────────────────────────────────────────
+// Deterministic owner initials + color from user_id hash, so the same
+// rep gets the same chip color across every card / every session
+// without a server lookup. Hash is intentionally shallow (fast and
+// stable across browsers) — collisions just mean two reps share a
+// color, not a correctness issue.
+
+function ownerInitials(name) {
+    if (!name) return '?';
+    const parts = String(name).trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return ((parts[0][0] || '') + (parts[parts.length - 1][0] || '')).toUpperCase();
+}
+
+function ownerAvatarColor(userId) {
+    // 8-color palette — wide enough that small teams almost always
+    // get unique colors, tight enough that the kanban doesn't look
+    // like Christmas lights at 50+ owners.
+    const palette = [
+        '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b',
+        '#10b981', '#06b6d4', '#3b82f6', '#ef4444',
+    ];
+    if (!userId) return palette[0];
+    let h = 0;
+    for (let i = 0; i < userId.length; i++) h = ((h << 5) - h + userId.charCodeAt(i)) | 0;
+    return palette[Math.abs(h) % palette.length];
+}
+
+function daysInStageBadgeClass(days) {
+    if (days == null) return '';
+    if (days < 7) return 'days-fresh';
+    if (days < 14) return 'days-watch';
+    return 'days-stale';
+}
+
+function formatDaysInStage(days) {
+    if (days == null) return '—';
+    if (days === 0) return 'Today';
+    if (days === 1) return '1d';
+    if (days < 30) return `${days}d`;
+    const months = Math.floor(days / 30);
+    return months === 1 ? '1mo' : `${months}mo`;
+}
+
 function renderDealCard(deal, stage) {
     const value = formatCurrency(parseFloat(deal.deal_value) || 0, deal.currency || defaultCurrency);
+    // Backend snake_case mapping (JsonNamingPolicy.SnakeCaseLower):
+    //   contact_name (joined from contacts)
+    //   company_name_resolved (joined from companies — name suffix
+    //     avoids clobbering the legacy nullable company_name field
+    //     on the Deal POJO; the joined value is what we render)
+    //   owner_name + owner_is_inactive (gRPC enriched in BL)
+    //   days_in_current_stage (computed via LATERAL on deal_stage_history)
     const contactName = deal.contact_name || '';
-    const companyName = deal.company_name || '';
-    const closeDate = deal.expected_close_date ? formatDate(deal.expected_close_date) : '';
+    const companyName = deal.company_name_resolved || '';
+    const ownerName = deal.owner_name || '';
+    const ownerInactive = !!deal.owner_is_inactive;
+    const days = deal.days_in_current_stage;
+    const closeDate = deal.expected_close_date ? formatDate(deal.expected_close_date) : '—';
+    const tags = Array.isArray(deal.tags) ? deal.tags.filter(t => t && String(t).trim()) : [];
+
     const isWon = stage && stage.stage_type === 'won';
     const isLost = stage && stage.stage_type === 'lost';
 
@@ -340,15 +801,24 @@ function renderDealCard(deal, stage) {
     const draggable = canChangeDealStage();
     const showQuickActions = !isWon && !isLost && canChangeDealStage();
 
+    const avatarColor = ownerAvatarColor(deal.owner_user_id);
+    const initials = ownerInitials(ownerName);
+    const bulkSelected = bulkSelectMode && bulkSelectedDealIds.has(deal.id);
+
     return `
-        <div class="kanban-deal-card" ${draggable ? 'draggable="true"' : ''}
+        <div class="kanban-deal-card ${bulkSelected ? 'bulk-selected' : ''}" ${draggable && !bulkSelectMode ? 'draggable="true"' : ''}
              data-deal-id="${deal.id}"
-             ${draggable ? `ondragstart="handleDragStart(event, '${deal.id}')"` : ''}
+             ${draggable && !bulkSelectMode ? `ondragstart="handleDragStart(event, '${deal.id}')"` : ''}
              onclick="handleDealCardTap(event, '${deal.id}')">
+            ${bulkSelectMode ? `
+                <span class="bulk-select-checkbox ${bulkSelected ? 'checked' : ''}" aria-hidden="true">
+                    ${bulkSelected ? '✓' : ''}
+                </span>
+            ` : ''}
             <div class="deal-card-header">
                 <span class="deal-card-name">${escapeHtml(deal.deal_name || 'Untitled Deal')}</span>
                 <div class="deal-card-actions">
-                    <button class="crm-action-btn" onclick="editDeal('${deal.id}')" title="Edit">
+                    <button class="crm-action-btn" onclick="event.stopPropagation(); editDeal('${deal.id}')" title="Edit">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -357,24 +827,42 @@ function renderDealCard(deal, stage) {
                 </div>
             </div>
             <div class="deal-card-value">${value}</div>
-            <div class="deal-card-meta">
-                ${companyName ? `<span class="deal-card-company">${escapeHtml(companyName)}</span>` : ''}
-                ${contactName ? `<span class="deal-card-contact">${escapeHtml(contactName)}</span>` : ''}
+            ${(companyName || contactName) ? `
+                <div class="deal-card-meta">
+                    ${companyName ? `<span class="deal-card-company" title="Company">${escapeHtml(companyName)}</span>` : ''}
+                    ${contactName ? `<span class="deal-card-contact" title="Contact">${escapeHtml(contactName)}</span>` : ''}
+                </div>
+            ` : ''}
+            ${tags.length > 0 ? `
+                <div class="deal-card-tags">
+                    ${tags.slice(0, 3).map(t => `<span class="deal-tag">${escapeHtml(t)}</span>`).join('')}
+                    ${tags.length > 3 ? `<span class="deal-tag deal-tag-more">+${tags.length - 3}</span>` : ''}
+                </div>
+            ` : ''}
+            <div class="deal-card-status-row">
+                <span class="deal-card-date" title="Expected close">📅 ${closeDate}</span>
+                <span class="deal-card-days ${daysInStageBadgeClass(days)}" title="Days in current stage">${formatDaysInStage(days)}</span>
             </div>
-            ${closeDate ? `<div class="deal-card-date">${closeDate}</div>` : ''}
             <div class="deal-card-footer">
+                ${ownerName ? `
+                    <span class="deal-card-owner ${ownerInactive ? 'owner-inactive' : ''}" title="Owner: ${escapeHtml(ownerName)}${ownerInactive ? ' (inactive)' : ''}">
+                        <span class="deal-owner-avatar" style="background:${avatarColor}">${escapeHtml(initials)}</span>
+                    </span>
+                ` : '<span class="deal-card-owner deal-owner-unassigned" title="Unassigned">—</span>'}
                 ${showQuickActions ? `
-                    <button class="deal-quick-btn deal-won-btn" onclick="event.stopPropagation(); markDealWon('${deal.id}')" title="Mark as Won">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                    </button>
-                    <button class="deal-quick-btn deal-lost-btn" onclick="event.stopPropagation(); markDealLost('${deal.id}')" title="Mark as Lost">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
+                    <div class="deal-card-quick-actions">
+                        <button class="deal-quick-btn deal-won-btn" onclick="event.stopPropagation(); markDealWon('${deal.id}')" title="Mark as Won">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </button>
+                        <button class="deal-quick-btn deal-lost-btn" onclick="event.stopPropagation(); markDealLost('${deal.id}')" title="Mark as Lost">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
                 ` : ''}
             </div>
         </div>
@@ -885,6 +1373,19 @@ async function confirmStageChange() {
  * Ignores taps on buttons (edit, won, lost) via event target check.
  */
 function handleDealCardTap(event, dealId) {
+    // Bulk-select mode intercepts taps: a tap toggles the deal's
+    // membership in the selection set instead of opening the side
+    // panel. The opt-out is the same toggle button used to enter
+    // bulk mode in the first place.
+    if (bulkSelectMode) {
+        // Still respect button clicks so the user can edit a card
+        // mid-selection if needed.
+        if (event.target.closest('button')) return;
+        event.preventDefault();
+        event.stopPropagation();
+        handleBulkCardClick(dealId);
+        return;
+    }
     // Don't open picker if user clicked a button inside the card
     if (event.target.closest('button')) return;
     // Don't open on drag

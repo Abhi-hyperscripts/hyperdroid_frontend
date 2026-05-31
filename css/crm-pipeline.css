@@ -239,12 +239,416 @@
     flex-shrink: 0;
 }
 
-/* Deal Card Footer (Quick Won/Lost buttons) */
+/* =============================================================
+   PIPELINE TOOLBAR — filter chips + bulk-select toggle
+   ============================================================= */
+.pipeline-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0 16px;
+    flex-wrap: wrap;
+}
+
+.pipeline-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pipeline-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 0 0 auto;
+}
+
+.pipeline-search {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0 10px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    flex: 0 0 auto;
+    width: auto;
+}
+
+.pipeline-search:focus-within {
+    border-color: var(--brand-primary, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.pipeline-search svg {
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.pipeline-search input {
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    padding: 8px 10px;
+    width: 200px;
+    outline: none;
+}
+
+/* Override the global `.form-control { width: 100% }` cascade so the
+   filter selects sit inline beside the search box. Without `width: auto !important`
+   each select wraps onto its own line. */
+.pipeline-toolbar .pipeline-filter {
+    width: auto !important;
+    min-width: 130px;
+    max-width: 200px;
+    padding: 7px 10px;
+    font-size: 0.85rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.pipeline-filter-clear {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+}
+
+.stale-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #f87171;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.stale-indicator:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+#bulkSelectToggle.active {
+    background: var(--brand-primary, #6366f1);
+    color: #fff;
+    border-color: var(--brand-primary, #6366f1);
+}
+
+/* =============================================================
+   BULK ACTION BAR — appears when bulk-select mode is on
+   ============================================================= */
+.pipeline-bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 10px;
+    animation: bulk-slide-in 0.2s ease-out;
+}
+
+@keyframes bulk-slide-in {
+    from { transform: translateY(-4px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.bulk-bar-count {
+    font-weight: 600;
+    color: var(--brand-primary, #6366f1);
+}
+
+.pipeline-bulk-select {
+    min-width: 180px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+}
+
+/* Bulk-select mode disables card hover-pop so taps feel like
+   selection, not navigation. Card cursor reads "pointer" universally. */
+body.bulk-select-active .kanban-deal-card {
+    cursor: pointer;
+}
+
+body.bulk-select-active .kanban-deal-card .deal-card-quick-actions {
+    /* Hide hover-reveal quick actions while picking — they'd visually
+       conflict with the selection checkmark and aren't useful in
+       this mode. */
+    display: none;
+}
+
+.bulk-select-checkbox {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-card);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.bulk-select-checkbox.checked {
+    background: var(--brand-primary, #6366f1);
+    border-color: var(--brand-primary, #6366f1);
+}
+
+.kanban-deal-card.bulk-selected {
+    border-color: var(--brand-primary, #6366f1);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+.kanban-deal-card {
+    position: relative;
+}
+
+/* =============================================================
+   SAVED VIEWS BAR — chips of persisted filter sets
+   ============================================================= */
+.saved-views-bar {
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.saved-view-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: var(--brand-primary, #6366f1);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.saved-view-chip:hover {
+    background: rgba(99, 102, 241, 0.18);
+}
+
+.saved-view-delete {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0 0 4px;
+    opacity: 0.6;
+}
+
+.saved-view-delete:hover {
+    opacity: 1;
+}
+
+.saved-view-save {
+    background: transparent;
+    border: 1px dashed var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    cursor: pointer;
+}
+
+.saved-view-save:hover {
+    border-color: var(--brand-primary, #6366f1);
+    color: var(--brand-primary, #6366f1);
+}
+
+/* =============================================================
+   FORECAST TILE — bottom green/cyan accent (weighted)
+   ============================================================= */
+.crm-stat-icon.stat-forecast {
+    background: linear-gradient(135deg, #06b6d4 0%, #6366f1 100%);
+    color: #fff;
+}
+
+.crm-stat-value.pipeline-forecast {
+    color: var(--brand-primary, #6366f1);
+}
+
+/* Deal Card Footer (owner avatar + quick won/lost buttons on hover) */
 .deal-card-footer {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 6px;
     padding-top: 8px;
     border-top: 1px solid var(--border-color-light);
+}
+
+/* Status row sits between meta and footer — close date pill + days-in-stage badge.
+   Always rendered so cards have a consistent height even when expected_close_date
+   is null ("—" placeholder). */
+.deal-card-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.deal-card-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+/* Days-in-stage badge with traffic-light coloring: green <7d, amber 7-13d,
+   red >=14d. Pipedrive-style aging signal. Sits at the right of the
+   status row to draw the eye when a deal is going stale. */
+.deal-card-days {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.2;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.deal-card-days.days-fresh {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.deal-card-days.days-watch {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.deal-card-days.days-stale {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* Tag chips — render up to 3, then "+N more". */
+.deal-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.deal-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--brand-primary, #6366f1);
+    font-size: 0.65rem;
+    font-weight: 600;
+    line-height: 1.4;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.deal-tag.deal-tag-more {
+    background: var(--bg-hover);
+    color: var(--text-muted);
+    border-color: var(--border-color);
+}
+
+/* Owner avatar chip — initials over a deterministic color from
+   owner_user_id hash. The "deal-card-owner" wrapper exists so we can
+   pin it at the left edge of the footer while the quick-actions
+   group sits at the right. */
+.deal-card-owner {
+    display: inline-flex;
+    align-items: center;
+}
+
+.deal-owner-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.02em;
+}
+
+.deal-card-owner.owner-inactive .deal-owner-avatar {
+    filter: grayscale(0.6);
+    opacity: 0.55;
+    border: 1px dashed var(--text-muted);
+}
+
+.deal-card-owner.deal-owner-unassigned {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+/* Quick-action buttons (won / lost). Hidden by default — revealed on
+   card hover. Pipedrive-style. Reduces visual noise on the kanban so
+   the card meta (deal name, value, owner) reads cleanly. Falls back to
+   "always visible" on touch devices where there's no hover state. */
+.deal-card-quick-actions {
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transform: translateY(2px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.kanban-deal-card:hover .deal-card-quick-actions,
+.kanban-deal-card:focus-within .deal-card-quick-actions {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (hover: none) {
+    .deal-card-quick-actions {
+        opacity: 1;
+        transform: none;
+    }
 }
 
 .deal-quick-btn {

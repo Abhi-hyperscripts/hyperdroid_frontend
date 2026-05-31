@@ -83,8 +83,8 @@
             </div>
         </div>
 
-        <!-- Pipeline Summary -->
-        <div class="crm-stats-grid" id="pipelineSummary">
+        <!-- Pipeline Summary — 5 tiles: Total / Deals / Won / Lost / Forecast -->
+        <div class="crm-stats-grid pms-stats-5col" id="pipelineSummary">
             <div class="crm-stat-card">
                 <div class="crm-stat-icon stat-total">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -130,7 +130,83 @@
                 <div class="crm-stat-value pipeline-lost" id="lostDealsValue">-</div>
                 <div class="crm-stat-label">Lost</div>
             </div>
+            <!-- Weighted Forecast — Σ deal_value × stage.win_probability/100 across open
+                 deals, plus realised won revenue. The signal an Indian SMB
+                 founder actually cares about: "how much is the pipeline
+                 actually worth, weighted by likelihood?" -->
+            <div class="crm-stat-card" id="weightedForecastCard" title="Weighted by each stage's win probability">
+                <div class="crm-stat-icon stat-forecast">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3v18h18"/>
+                        <path d="M7 14l4-4 4 4 5-5"/>
+                    </svg>
+                </div>
+                <div class="crm-stat-value pipeline-forecast" id="weightedForecastValue">-</div>
+                <div class="crm-stat-label">Forecast</div>
+            </div>
         </div>
+
+        <!-- Filter + Bulk Toolbar -->
+        <div class="pipeline-toolbar" id="pipelineToolbar">
+            <div class="pipeline-toolbar-left">
+                <div class="pipeline-search">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input type="text" id="dealSearchInput" placeholder="Search deals…" oninput="applyDealFilters()" />
+                </div>
+                <select id="filterOwner" class="form-control pipeline-filter" onchange="applyDealFilters()" title="Filter by owner">
+                    <option value="">All owners</option>
+                </select>
+                <select id="filterStaleness" class="form-control pipeline-filter" onchange="applyDealFilters()" title="Filter by days-in-stage">
+                    <option value="">All ages</option>
+                    <option value="fresh">Fresh (&lt; 7d)</option>
+                    <option value="watch">Watch (7-13d)</option>
+                    <option value="stale">Stale (≥ 14d)</option>
+                </select>
+                <select id="filterValueRange" class="form-control pipeline-filter" onchange="applyDealFilters()" title="Filter by deal value">
+                    <option value="">All values</option>
+                    <option value="0-50000">&lt; ₹50K</option>
+                    <option value="50000-200000">₹50K - ₹2L</option>
+                    <option value="200000-1000000">₹2L - ₹10L</option>
+                    <option value="1000000-">≥ ₹10L</option>
+                </select>
+                <button type="button" id="clearFiltersBtn" class="btn btn-outline pipeline-filter-clear" onclick="clearDealFilters()" title="Clear all filters" style="display:none;">
+                    Clear filters
+                </button>
+            </div>
+            <div class="pipeline-toolbar-right">
+                <span id="staleDealsIndicator" class="stale-indicator" onclick="filterToStaleDeals()" style="display:none;" title="Click to filter">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12" y2="16"/>
+                    </svg>
+                    <span id="staleDealsCount">0</span> stale
+                </span>
+                <button type="button" id="bulkSelectToggle" class="btn btn-outline" onclick="toggleBulkSelect()" title="Toggle bulk select mode (S)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 11 12 14 22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    Select
+                </button>
+            </div>
+        </div>
+
+        <!-- Bulk action bar — slides in when in bulk-select mode -->
+        <div class="pipeline-bulk-bar" id="bulkActionBar" style="display:none;">
+            <span class="bulk-bar-count"><span id="bulkSelectedCount">0</span> selected</span>
+            <select id="bulkMoveTargetStage" class="form-control pipeline-bulk-select" title="Target stage"></select>
+            <button type="button" class="btn btn-primary" onclick="confirmBulkMove()" id="bulkMoveBtn" disabled>Move</button>
+            <button type="button" class="btn btn-outline" onclick="clearBulkSelection()">Clear</button>
+            <button type="button" class="btn btn-link" onclick="toggleBulkSelect()">Exit</button>
+        </div>
+
+        <!-- Saved views bar — chips populated from localStorage. The
+             "+ Save view" button persists the current filter set. -->
+        <div class="saved-views-bar" id="savedViewsBar"></div>
 
         <!-- Kanban View -->
         <div class="pipeline-kanban" id="kanbanView">
