@@ -782,6 +782,30 @@
                             </button>
                         </div>
                     </div>
+
+                    <!--
+                        AI section — rendered ONLY when the tenant has BOTH an
+                        active gladia/stt key AND an active anthropic/llm key
+                        in Auth's tenant_api_keys. Visibility is decided at
+                        page load by GET /api/crm-settings/ai-status. When
+                        the preconditions aren't met, this entire block stays
+                        display:none — no toggle, no "request access" CTA,
+                        nothing. Matches the spec.
+                    -->
+                    <div class="settings-form-section" id="aiSettingsSection" style="display: none; margin-top: 32px;">
+                        <h3 class="section-title">AI</h3>
+                        <p class="section-description" style="color: var(--text-secondary); margin-bottom: 16px;">
+                            Unlocks live call coaching (Gladia STT + Claude analysis), AI Copilot search/act, lead discovery, and post-call summaries. Off by default — flip on once your team is ready.
+                        </p>
+                        <label class="ai-toggle-row">
+                            <div class="ai-toggle-text">
+                                <span class="ai-toggle-title">Enable AI features</span>
+                                <span class="ai-toggle-hint" id="aiToggleHint">Off</span>
+                            </div>
+                            <input type="checkbox" id="aiEnabledToggle" class="ai-toggle-input" onchange="onAiToggleChange(event)">
+                            <span class="ai-toggle-switch" aria-hidden="true"></span>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- ─── Pipeline Tab ──────────────────────────────────────────────── -->

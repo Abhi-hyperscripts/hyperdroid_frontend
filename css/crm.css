@@ -455,6 +455,97 @@
     white-space: nowrap;
 }
 
+/* ─── Settings: AI toggle row ─────────────────────────────────────────────
+   Themed flip-switch used by the "Enable AI" section in Settings → General.
+   Scoped to .ai-toggle-* to avoid colliding with any other toggle styles
+   on the page (hrms.css line ~9324 has a global .toggle-switch rule that
+   bleeds, so this uses its own class names by design). */
+.ai-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-card);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    position: relative;
+}
+
+.ai-toggle-row:hover {
+    border-color: var(--brand-primary, #6366f1);
+    background: var(--bg-hover);
+}
+
+.ai-toggle-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.ai-toggle-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ai-toggle-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+/* The checkbox is visually hidden — clicks pass through the label row.
+   We use a sibling <span class="ai-toggle-switch"> as the rendered control. */
+.ai-toggle-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+}
+
+.ai-toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--bg-tertiary, #334155);
+    border: 1px solid var(--border-color);
+    transition: background 0.18s ease, border-color 0.18s ease;
+    flex-shrink: 0;
+}
+
+.ai-toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.ai-toggle-input:checked ~ .ai-toggle-switch {
+    background: var(--brand-primary, #6366f1);
+    border-color: var(--brand-primary, #6366f1);
+}
+
+.ai-toggle-input:checked ~ .ai-toggle-switch::after {
+    transform: translateX(20px);
+}
+
+.ai-toggle-input:focus-visible ~ .ai-toggle-switch {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
 /* ─── Settings Specific: Pipeline Stage Card ──────────────────────────────── */
 
 .stage-card {

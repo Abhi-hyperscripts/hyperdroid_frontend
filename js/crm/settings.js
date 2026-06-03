@@ -757,13 +757,22 @@ async function loadGeneralSettings() {
         if (loading) loading.style.display = 'flex';
         if (form) form.style.display = 'none';
 
-        const [currencyResp, ownerLabelResp, dimLabelResp, dimFieldResp, leadFieldsResp] = await Promise.all([
+        const [currencyResp, ownerLabelResp, dimLabelResp, dimFieldResp, leadFieldsResp, aiStatusResp] = await Promise.all([
             api.request('/crm/crm-settings/default_currency'),
             api.request('/crm/crm-settings/report_owner_label').catch(() => null),
             api.request('/crm/crm-settings/report_dimension_label').catch(() => null),
             api.request('/crm/crm-settings/report_dimension_field').catch(() => null),
-            api.request('/crm/lead-fields?includeInactive=false').catch(() => null)
+            api.request('/crm/lead-fields?includeInactive=false').catch(() => null),
+            // ai-status: fail-closed; on error the section stays hidden.
+            api.request('/crm/crm-settings/ai-status').catch(() => null)
         ]);
+
+        // AI section visibility — backend tells us whether the tenant has
+        // BOTH active gladia/stt + anthropic/llm keys. Without them, the
+        // entire section stays display:none (per spec, no toggle, no
+        // "request access" CTA). With them, render the toggle + pre-check
+        // from the stored ai_enabled setting.
+        renderAiSection(aiStatusResp);
 
         const currency = (currencyResp && currencyResp.value) ? currencyResp.value : 'USD';
         const select = document.getElementById('defaultCurrency');
@@ -795,6 +804,60 @@ async function loadGeneralSettings() {
     } finally {
         if (loading) loading.style.display = 'none';
         if (form) form.style.display = 'block';
+    }
+}
+
+/**
+ * Render the AI section iff the backend says both required keys (gladia/stt
+ * and anthropic/llm) are present + active on Auth's tenant_api_keys.
+ *
+ * The whole section's display state is controlled here — there's no
+ * "request access" CTA when the preconditions aren't met (per the spec).
+ * If a tenant lacks one or both keys, they don't even see this surface,
+ * which is the correct UX: the admin who can fix it does that in Auth's
+ * Tenant Settings → API Keys page, not in CRM.
+ */
+function renderAiSection(aiStatusResp) {
+    const section = document.getElementById('aiSettingsSection');
+    if (!section) return;
+
+    const hasKeys = !!(aiStatusResp && aiStatusResp.has_required_keys);
+    if (!hasKeys) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    const toggle = document.getElementById('aiEnabledToggle');
+    const hint = document.getElementById('aiToggleHint');
+    if (toggle) toggle.checked = !!aiStatusResp.ai_enabled;
+    if (hint) hint.textContent = aiStatusResp.ai_enabled ? 'On' : 'Off';
+}
+
+/**
+ * Toggle handler — persists the new state immediately so the admin
+ * doesn't have to hit Save Settings. On failure, revert the visual
+ * state so the toggle reflects what's actually stored.
+ */
+async function onAiToggleChange(event) {
+    const toggle = event && event.target;
+    const next = !!(toggle && toggle.checked);
+    const hint = document.getElementById('aiToggleHint');
+    if (hint) hint.textContent = next ? 'On' : 'Off';
+
+    try {
+        await api.request('/crm/crm-settings/ai_enabled', {
+            method: 'PUT',
+            body: JSON.stringify({ value: next ? 'true' : 'false' }),
+        });
+        Toast.success(next ? 'AI enabled' : 'AI disabled');
+    } catch (err) {
+        console.error('Failed to update ai_enabled', err);
+        // Revert visual state on failure so the admin doesn't think
+        // the change stuck.
+        if (toggle) toggle.checked = !next;
+        if (hint) hint.textContent = !next ? 'On' : 'Off';
+        Toast.error('Could not update AI setting. Please try again.');
     }
 }
 
