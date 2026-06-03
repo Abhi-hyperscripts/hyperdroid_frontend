@@ -672,10 +672,12 @@
         // Transcript. Show content if landed; otherwise a status hint
         // (transcribing / failed). 'skipped' is silent — it's the
         // tenant's choice (AI disabled, short call, no key) and not
-        // worth a UI message.
+        // worth a UI message. Failed states get a Retry button that
+        // re-submits via the new durable pipeline.
         const tStatus = meta.transcript_status;
         const tText = meta.transcript_text;
         const tLang = meta.transcript_language;
+        const callEventId = meta.call_event_id;
         if (tText) {
             const langChip = tLang ? ` <span class="tl-lang-chip">${esc(tLang)}</span>` : '';
             parts.push(`
@@ -684,8 +686,17 @@
                     <pre class="tl-transcript-text">${esc(tText)}</pre>
                 </details>
             `);
-        } else if (tStatus === 'pending' || tStatus === 'transcribing') {
+        } else if (tStatus === 'pending' || tStatus === 'transcribing' || tStatus === 'submitted') {
             parts.push(`<div class="tl-pending">Transcribing…</div>`);
+        } else if (tStatus === 'failed' && callEventId) {
+            parts.push(`
+                <div class="tl-error-row">
+                    <div class="tl-error">Transcription failed</div>
+                    <button class="btn btn-sm btn-outline-primary tl-retry-btn"
+                            data-call-event-id="${esc(callEventId)}"
+                            onclick="retryTranscriptionFromBtn(this)">Retry transcription</button>
+                </div>
+            `);
         } else if (tStatus === 'failed') {
             parts.push(`<div class="tl-error">Transcription failed</div>`);
         }
@@ -699,6 +710,17 @@
             if (s) parts.push(renderCallSummary(s));
         } else if (sStatus === 'pending' || sStatus === 'summarizing') {
             parts.push(`<div class="tl-pending">Summarizing…</div>`);
+        } else if (sStatus === 'failed' && callEventId) {
+            // Summary-only failure: retry triggers the transcription
+            // pipeline (which re-fires summary). Same endpoint.
+            parts.push(`
+                <div class="tl-error-row">
+                    <div class="tl-error">Summary failed</div>
+                    <button class="btn btn-sm btn-outline-primary tl-retry-btn"
+                            data-call-event-id="${esc(callEventId)}"
+                            onclick="retryTranscriptionFromBtn(this)">Retry</button>
+                </div>
+            `);
         } else if (sStatus === 'failed') {
             parts.push(`<div class="tl-error">Summary failed</div>`);
         }
@@ -803,6 +825,29 @@
             }
         });
         document.body.appendChild(modal);
+    };
+
+    window.retryTranscriptionFromBtn = async function(btn) {
+        const cid = btn.getAttribute('data-call-event-id');
+        if (!cid) return;
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = '…';
+        try {
+            await api.request(`/Calls/${cid}/retry-transcription`, {
+                method: 'POST'
+            });
+            Toast.success('Re-submitted for transcription');
+            // Reload the lead-detail panel so the timeline shows the
+            // new "Transcribing…" placeholder. The SignalR event will
+            // refresh it again when the pipeline completes.
+            if (window._leadDetailId) openLeadDetailPanel(window._leadDetailId);
+        } catch (e) {
+            btn.disabled = false;
+            btn.textContent = originalText;
+            const msg = (e && e.message) ? e.message : 'Failed to re-submit';
+            Toast.error(msg);
+        }
     };
 
     window.completeFollowupFromTimeline = async function(btn) {

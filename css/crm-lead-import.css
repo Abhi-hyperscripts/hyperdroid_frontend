@@ -1451,6 +1451,16 @@ body > .tox.tox-silver-sink,
     display: inline-block;
     width: fit-content;
 }
+
+/* Layout for "{error pill} + {retry button}" so the button sits
+   inline with the failure badge instead of stacking below it. */
+.tl-error-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.tl-retry-btn { font-size: 0.78rem; padding: 4px 12px; }
 .tl-pending {
     color: var(--text-secondary);
     background: rgba(99,102,241,0.10);
