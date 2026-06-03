@@ -516,6 +516,7 @@
 
             // Build structured detail chips for activities
             let detailChips = '';
+            let callExtras = '';
             if (e.type === 'activity' && e.meta) {
                 const chips = [];
                 const aType = e.meta.activity_type;
@@ -537,6 +538,14 @@
                     chips.push(`<span class="tl-chip tl-chip-pending">Next: ${esc(nextAction || 'Follow up')}${dateStr ? ' · ' + dateStr : ''}</span>`);
                 }
                 if (chips.length) detailChips = `<div class="tl-chips">${chips.join('')}</div>`;
+
+                // Call activity extras: audio player + transcript + summary.
+                // The backend (BL_LeadJourney) joins the activity to its
+                // matching lead_call_events row via the [companion:<sid>]
+                // marker; the controller post-stamps a signed playback URL.
+                if (aType === 'call') {
+                    callExtras = renderCallExtras(e.meta);
+                }
             }
             if (e.type === 'followup' && e.meta) {
                 const chips = [];
@@ -632,6 +641,7 @@
                         </div>
                         ${detailChips}
                         ${desc}
+                        ${callExtras}
                         ${replyBtn}
                         ${followupCompleteBtn}
                         <div class="tl-meta">${whoLine ? `${whoLine} · ` : ''}${time}</div>
@@ -639,6 +649,96 @@
                 </div>
             `;
         }).join('');
+    }
+
+    // Render audio player + transcript <details> + AI summary panel for
+    // a call activity. All blocks are guarded — we render whatever's
+    // available and a tiny status badge for pending/failed states so
+    // the user can tell "alive but empty" from "broken".
+    function renderCallExtras(meta) {
+        const parts = [];
+
+        // Audio player. Backend stamps a signed URL that proxies to
+        // either the provider CDN (Exotel) or Drive S3 (companion).
+        const playback = meta.recording_playback_url;
+        if (playback) {
+            parts.push(`
+                <div class="tl-audio">
+                    <audio controls preload="none" src="${esc(playback)}" style="width:100%;"></audio>
+                </div>
+            `);
+        }
+
+        // Transcript. Show content if landed; otherwise a status hint
+        // (transcribing / failed). 'skipped' is silent — it's the
+        // tenant's choice (AI disabled, short call, no key) and not
+        // worth a UI message.
+        const tStatus = meta.transcript_status;
+        const tText = meta.transcript_text;
+        const tLang = meta.transcript_language;
+        if (tText) {
+            const langChip = tLang ? ` <span class="tl-lang-chip">${esc(tLang)}</span>` : '';
+            parts.push(`
+                <details class="tl-transcript">
+                    <summary>Transcript${langChip}</summary>
+                    <pre class="tl-transcript-text">${esc(tText)}</pre>
+                </details>
+            `);
+        } else if (tStatus === 'pending' || tStatus === 'transcribing') {
+            parts.push(`<div class="tl-pending">Transcribing…</div>`);
+        } else if (tStatus === 'failed') {
+            parts.push(`<div class="tl-error">Transcription failed</div>`);
+        }
+
+        // AI summary (Haiku tool_use output).
+        const sStatus = meta.summary_status;
+        const sJson = meta.summary_json;
+        if (sJson) {
+            let s = null;
+            try { s = typeof sJson === 'string' ? JSON.parse(sJson) : sJson; } catch (_) {}
+            if (s) parts.push(renderCallSummary(s));
+        } else if (sStatus === 'pending' || sStatus === 'summarizing') {
+            parts.push(`<div class="tl-pending">Summarizing…</div>`);
+        } else if (sStatus === 'failed') {
+            parts.push(`<div class="tl-error">Summary failed</div>`);
+        }
+
+        if (!parts.length) return '';
+        return `<div class="tl-call-extras">${parts.join('')}</div>`;
+    }
+
+    // Render a Haiku-shape sales-call summary. Schema matches the
+    // tool defined in AIEngine.LlmGrpcService.SummarizeCallTranscript.
+    function renderCallSummary(s) {
+        const rows = [];
+        if (s.intent) {
+            rows.push(`<div class="tl-summary-row"><span class="tl-summary-label">Intent</span><span class="tl-summary-val">${esc(s.intent)}</span></div>`);
+        }
+        const pills = [];
+        if (s.sentiment) pills.push(`<span class="tl-pill tl-pill-sentiment-${esc(s.sentiment)}">${esc(s.sentiment)}</span>`);
+        if (s.urgency) pills.push(`<span class="tl-pill tl-pill-urgency-${esc(s.urgency)}">urgency: ${esc(s.urgency)}</span>`);
+        if (s.follow_up_required === true) pills.push(`<span class="tl-pill tl-pill-followup">follow-up</span>`);
+        if (pills.length) {
+            rows.push(`<div class="tl-summary-row"><span class="tl-summary-label">Read</span><span class="tl-summary-val">${pills.join(' ')}</span></div>`);
+        }
+        if (Array.isArray(s.customer_pain) && s.customer_pain.length) {
+            rows.push(`<div class="tl-summary-row"><span class="tl-summary-label">Pain points</span><ul class="tl-summary-list">${s.customer_pain.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`);
+        }
+        if (Array.isArray(s.next_steps) && s.next_steps.length) {
+            rows.push(`<div class="tl-summary-row"><span class="tl-summary-label">Next steps</span><ul class="tl-summary-list">${s.next_steps.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`);
+        }
+        if (Array.isArray(s.key_quotes) && s.key_quotes.length) {
+            rows.push(`<div class="tl-summary-row"><span class="tl-summary-label">Key quotes</span><ul class="tl-summary-list tl-summary-quotes">${s.key_quotes.map(x => `<li>"${esc(x)}"</li>`).join('')}</ul></div>`);
+        }
+        if (s.agent_notes) {
+            rows.push(`<div class="tl-summary-row"><span class="tl-summary-label">Coaching</span><span class="tl-summary-val tl-summary-coach">${esc(s.agent_notes)}</span></div>`);
+        }
+        return `
+            <details class="tl-summary" open>
+                <summary>AI summary</summary>
+                <div class="tl-summary-body">${rows.join('')}</div>
+            </details>
+        `;
     }
 
     // Modal that embeds the existing whatsapp-inbox.html page in compact
