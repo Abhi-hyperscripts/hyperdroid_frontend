@@ -834,7 +834,7 @@
         const originalText = btn.textContent;
         btn.textContent = '…';
         try {
-            await api.request(`/Calls/${cid}/retry-transcription`, {
+            await api.request(`/crm/calls/${cid}/retry-transcription`, {
                 method: 'POST'
             });
             Toast.success('Re-submitted for transcription');
