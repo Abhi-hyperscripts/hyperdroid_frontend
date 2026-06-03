@@ -791,20 +791,36 @@
                         the preconditions aren't met, this entire block stays
                         display:none — no toggle, no "request access" CTA,
                         nothing. Matches the spec.
+
+                        The wrapper hosts BOTH the divider line AND the
+                        section content so toggling display:none hides them
+                        together — keeps the General-only view clean when
+                        the tenant hasn't configured keys.
                     -->
-                    <div class="settings-form-section" id="aiSettingsSection" style="display: none; margin-top: 32px;">
-                        <h3 class="section-title">AI</h3>
-                        <p class="section-description" style="color: var(--text-secondary); margin-bottom: 16px;">
-                            Unlocks live call coaching (Gladia STT + Claude analysis), AI Copilot search/act, lead discovery, and post-call summaries. Off by default — flip on once your team is ready.
-                        </p>
-                        <label class="ai-toggle-row">
-                            <div class="ai-toggle-text">
-                                <span class="ai-toggle-title">Enable AI features</span>
-                                <span class="ai-toggle-hint" id="aiToggleHint">Off</span>
+                    <div id="aiSettingsSection" style="display: none;">
+                        <div style="border-top: 1px solid var(--border-color); margin: 32px 0 20px;"></div>
+                        <div class="settings-form-section">
+                            <div class="ai-section-header">
+                                <span class="ai-section-icon" aria-hidden="true">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 3l1.9 4.2 4.6.4-3.5 3 1 4.5L12 13l-4 2.1 1-4.5-3.5-3 4.6-.4z"/>
+                                        <path d="M19 14l.6 1.5 1.6.1-1.2 1 .4 1.5L19 17.5l-1.4.6.4-1.5-1.2-1 1.6-.1z"/>
+                                    </svg>
+                                </span>
+                                <div class="ai-section-titles">
+                                    <h3 class="section-title">AI</h3>
+                                    <p class="ai-section-subtitle">Transcribes sales calls and writes a short AI summary on every recording.</p>
+                                </div>
                             </div>
-                            <input type="checkbox" id="aiEnabledToggle" class="ai-toggle-input" onchange="onAiToggleChange(event)">
-                            <span class="ai-toggle-switch" aria-hidden="true"></span>
-                        </label>
+                            <label class="ai-toggle-row">
+                                <div class="ai-toggle-text">
+                                    <span class="ai-toggle-title">Enable AI transcription &amp; summaries</span>
+                                    <span class="ai-toggle-hint" id="aiToggleHint">Off — recordings are kept, but transcripts and summaries won't be generated.</span>
+                                </div>
+                                <input type="checkbox" id="aiEnabledToggle" class="ai-toggle-input" onchange="onAiToggleChange(event)">
+                                <span class="ai-toggle-switch" aria-hidden="true"></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
 

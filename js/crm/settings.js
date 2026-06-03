@@ -831,7 +831,19 @@ function renderAiSection(aiStatusResp) {
     const toggle = document.getElementById('aiEnabledToggle');
     const hint = document.getElementById('aiToggleHint');
     if (toggle) toggle.checked = !!aiStatusResp.ai_enabled;
-    if (hint) hint.textContent = aiStatusResp.ai_enabled ? 'On' : 'Off';
+    if (hint) hint.textContent = aiHintText(!!aiStatusResp.ai_enabled);
+}
+
+/**
+ * Single source of truth for the AI hint text — keeps both states
+ * descriptive ("On — your team will see AI surfaces…" vs "Off — your
+ * team won't see AI surfaces until you flip this on.") instead of just
+ * the bare "On"/"Off" toggle state.
+ */
+function aiHintText(enabled) {
+    return enabled
+        ? 'On — every new call recording gets a transcript and a short AI summary.'
+        : "Off — recordings are kept, but transcripts and summaries won't be generated.";
 }
 
 /**
@@ -843,7 +855,7 @@ async function onAiToggleChange(event) {
     const toggle = event && event.target;
     const next = !!(toggle && toggle.checked);
     const hint = document.getElementById('aiToggleHint');
-    if (hint) hint.textContent = next ? 'On' : 'Off';
+    if (hint) hint.textContent = aiHintText(next);
 
     try {
         await api.request('/crm/crm-settings/ai_enabled', {
@@ -856,7 +868,7 @@ async function onAiToggleChange(event) {
         // Revert visual state on failure so the admin doesn't think
         // the change stuck.
         if (toggle) toggle.checked = !next;
-        if (hint) hint.textContent = !next ? 'On' : 'Off';
+        if (hint) hint.textContent = aiHintText(!next);
         Toast.error('Could not update AI setting. Please try again.');
     }
 }

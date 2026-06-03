@@ -455,6 +455,41 @@
     white-space: nowrap;
 }
 
+/* ─── Settings: AI section header — sparkle icon + title + subtitle ──── */
+.ai-section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.ai-section-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.15));
+    color: var(--brand-primary, #6366f1);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    flex-shrink: 0;
+}
+
+.ai-section-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.ai-section-subtitle {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
 /* ─── Settings: AI toggle row ─────────────────────────────────────────────
    Themed flip-switch used by the "Enable AI" section in Settings → General.
    Scoped to .ai-toggle-* to avoid colliding with any other toggle styles
