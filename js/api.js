@@ -283,7 +283,13 @@ class API {
                         errorMessage = Object.values(data.errors).flat().join('. ');
                     }
                 }
-                throw new Error(errorMessage || 'Request failed');
+                // Carry the HTTP status code on the thrown error so callers
+                // can branch on 403/404/etc instead of string-matching the
+                // message. Existing catch-blocks that only read .message
+                // keep working — they just ignore the extra field.
+                const apiErr = new Error(errorMessage || 'Request failed');
+                apiErr.status = response.status;
+                throw apiErr;
             }
 
             return data;

@@ -625,11 +625,14 @@
             // click (icon OR title). The whole row is clickable so users
             // don't have to aim at the 14×14 icon. Phone digits come from
             // the entry's meta (set by the backend in
-            // AddWhatsAppMessagesToTimelineAsync).
+            // AddWhatsAppMessagesToTimelineAsync); business_phone too so
+            // the iframe doesn't need to enumerate the tenant's numbers
+            // (a SUPERADMIN-only endpoint).
             const isWa = e.type === 'whatsapp';
             const waPhone = isWa && e.meta ? (e.meta.customer_phone || '') : '';
+            const waBiz = isWa && e.meta ? (e.meta.business_phone || '') : '';
             const waOpenAttrs = isWa && waPhone
-                ? ` style="cursor:pointer" onclick="openWhatsAppThreadModal('${esc(waPhone)}')" title="Open this conversation"`
+                ? ` style="cursor:pointer" onclick="openWhatsAppThreadModal('${esc(waPhone)}', '${esc(waBiz)}')" title="Open this conversation"`
                 : '';
 
             return `
@@ -769,8 +772,13 @@
     // re-implementing anything. The iframe loads with ?phone=&compact=1;
     // the page's own JS auto-opens the conversation and the CSS hides
     // the sidebar / navbar / breadcrumb.
-    window.openWhatsAppThreadModal = function (phoneDigits) {
+    window.openWhatsAppThreadModal = function (phoneDigits, businessDigits) {
         if (!phoneDigits) return;
+        // businessDigits flows into the iframe URL so the inbox JS can skip
+        // /api/whatsapp/numbers (SUPERADMIN-only). Optional for backward
+        // compatibility — older callers that only pass phoneDigits still
+        // work for SUPERADMINs (the inbox falls back to its full bootstrap).
+        businessDigits = (businessDigits || '').replace(/\D/g, '');
         // Close the lead-detail slide panel first — the modal is full-width
         // and the panel would otherwise sit half-covered underneath it. The
         // panel's data is preserved; it re-opens via the same row click.
@@ -806,7 +814,8 @@
         headerBar.appendChild(close);
 
         const iframe = document.createElement('iframe');
-        iframe.src = `/pages/crm/whatsapp-inbox.html?phone=${encodeURIComponent(phoneDigits)}&compact=1`;
+        const businessParam = businessDigits ? `&business=${encodeURIComponent(businessDigits)}` : '';
+        iframe.src = `/pages/crm/whatsapp-inbox.html?phone=${encodeURIComponent(phoneDigits)}${businessParam}&compact=1`;
         iframe.style.cssText = 'border:0;flex:1;width:100%;background:#efeae2;';
         iframe.setAttribute('title', 'WhatsApp conversation');
 

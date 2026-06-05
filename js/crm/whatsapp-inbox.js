@@ -103,9 +103,49 @@
                 }).catch(err => console.warn('[wa-inbox] reply send failed:', err));
             }
         });
-        await loadNumbers();
+        if (pageMode === 'compact') {
+            // Compact-mode init: skip the full-inbox bootstrap entirely. The
+            // lead-detail modal already knows which lead this is and which
+            // business number it was chatting on, so it passes both in URL
+            // params and we drive the single thread directly.
+            await loadCompactThread();
+        } else {
+            await loadNumbers();
+        }
         await connectSignalR();
     }
+
+    async function loadCompactThread() {
+        // Both params are required — the caller (lead-journey.js) populates
+        // them from the timeline entry's meta.customer_phone /
+        // meta.business_phone fields. Missing → fall back to the SUPERADMIN
+        // inbox bootstrap so a manual ?compact=1 url-paste still does
+        // something useful for admins.
+        const params = new URLSearchParams(window.location.search);
+        const phone = (params.get('phone') || '').replace(/\D/g, '');
+        const businessPhone = (params.get('business') || '').replace(/\D/g, '');
+        if (!phone || !businessPhone) {
+            console.warn('[wa-inbox] compact mode missing phone/business param — falling back to full-inbox bootstrap');
+            await loadNumbers();
+            return;
+        }
+        activeBusinessPhone = businessPhone;
+        // Hide the inbox sidebar + picker — we have no conversation list in
+        // compact mode, just the open thread.
+        document.getElementById('waNumberPicker')?.style?.setProperty('display', 'none');
+        document.getElementById('waSidebarEmpty')?.style?.setProperty('display', 'none');
+        const convList = document.getElementById('waConvList');
+        if (convList) convList.innerHTML = '';
+        // Open the thread directly — openConversation calls /whatsapp/thread
+        // which the backend authorizes via CrmScope ownership check.
+        await openConversation(phone, params.get('name') || '');
+    }
+
+    // Per-page mode. 'full' = standalone inbox (SUPERADMIN-only). 'compact'
+    // = single-thread iframe embedded in the lead-detail modal (any CRM user
+    // who can access the lead). Set inside ensureLoggedIn from URL params so
+    // every downstream branch can check one flag instead of re-parsing.
+    let pageMode = 'full';
 
     function ensureLoggedIn() {
         const tok = localStorage.getItem('ragenaizer_authToken') || localStorage.getItem('authToken');
@@ -113,13 +153,19 @@
             window.location.href = '/pages/login.html';
             return new Promise(() => {});
         }
-        // SUPERADMIN-only page. Mirror the backend gate on
-        // /api/whatsapp/* so a non-superadmin pasting the URL in the bar
-        // gets bounced back to the CRM dashboard rather than landing on
-        // an empty/403'ing inbox.
+        // Compact-mode iframe (?compact=1&phone=...) is the per-lead chat
+        // view: backend's GET /thread + POST /send now allow CRM_USER when
+        // CrmScope.CanAccess(lead.ownerUserId, lead.teamId) passes. The
+        // SUPERADMIN-only inbox endpoints (/numbers, /conversations) are
+        // skipped in compact mode — the caller passes ?business=<digits>
+        // so we don't need to enumerate the tenant's numbers.
+        const params = new URLSearchParams(window.location.search);
+        const isCompact = params.get('compact') === '1' && !!params.get('phone');
+        pageMode = isCompact ? 'compact' : 'full';
+
         const user = (typeof api !== 'undefined' && api.getUser) ? api.getUser() : null;
         const roles = user?.roles || [];
-        if (!roles.includes('SUPERADMIN')) {
+        if (!roles.includes('SUPERADMIN') && pageMode === 'full') {
             if (typeof Toast !== 'undefined') Toast.error('WhatsApp Inbox is restricted to administrators.');
             window.location.href = '/pages/crm/dashboard.html';
             return new Promise(() => {});
@@ -281,19 +327,6 @@
         }
 
         await loadConversations();
-
-        // Modal-embed mode: `?phone=<digits>&compact=1` is used by the lead
-        // timeline to open just this thread inside an iframe-modal. We auto-
-        // open the conversation and rely on CSS (body.wa-compact) to hide
-        // the navbar, breadcrumb, and conversation-list pane.
-        try {
-            const params = new URLSearchParams(window.location.search);
-            const phone = (params.get('phone') || '').replace(/\D/g, '');
-            if (phone) {
-                const conv = conversations.find(c => c.customerPhone === phone);
-                await openConversation(phone, conv?.customerName || '');
-            }
-        } catch (_) { /* not fatal — falls back to manual pick */ }
     }
 
     function buildNumberPicker(numbers) {
@@ -516,6 +549,7 @@
             messagesDiv.innerHTML = '<div class="wa-loading">Loading messages…</div>';
         }
 
+        let loadStatus = 'ok';
         try {
             const resp = await api.request(
                 `/whatsapp/thread?businessPhoneNumber=${encodeURIComponent(activeBusinessPhone)}`
@@ -537,7 +571,29 @@
         } catch (err) {
             console.error('[wa-inbox] thread load failed:', err);
             threadMessages = [];
-            if (typeof Toast !== 'undefined') Toast.error('Failed to load thread');
+            // Distinguish 403 (you can't see this conversation) from generic
+            // failure so the UI doesn't lie. api.request attaches the HTTP
+            // status to the thrown Error (see js/api.js). Hide the composer
+            // so the rep doesn't type a reply that the backend will also
+            // reject on send.
+            const isForbidden = err?.status === 403;
+            loadStatus = isForbidden ? 'forbidden' : 'error';
+            if (typeof Toast !== 'undefined') {
+                Toast.error(isForbidden
+                    ? "You don't have access to this conversation"
+                    : 'Failed to load thread');
+            }
+        }
+        if (loadStatus === 'forbidden') {
+            // Show a clear "no access" state in the messages pane and keep
+            // the composer hidden — replying would also 403.
+            const messagesDiv = document.getElementById('waMessages');
+            if (messagesDiv) {
+                messagesDiv.innerHTML = '<div class="wa-loading" style="text-align:center;padding:32px 16px;color:var(--text-secondary);">This conversation belongs to a lead you don\'t own. Ask an admin to reassign it if you need access.</div>';
+            }
+            showComposer(false);
+            renderConversationList();
+            return;
         }
         renderThread();
         renderConversationList();
