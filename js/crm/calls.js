@@ -314,27 +314,26 @@
         const dur = c.duration_seconds ? formatDuration(c.duration_seconds) : '';
         const when = c.initiated_at || c.created_at;
 
-        let recordingHtml = '';
-        // Prefer the same-origin signed proxy URL — the raw provider CDN
-        // (Exotel especially) is Basic-auth protected and would prompt the
-        // browser for credentials if we used it directly.
-        const playbackUrl = c.recording_playback_url || c.recording_url;
-        if (playbackUrl) {
-            recordingHtml = `
-                <div style="margin-top:6px;">
-                    <audio controls preload="none" style="height:32px;max-width:280px;">
-                        <source src="${esc(playbackUrl)}" type="audio/mpeg">
-                    </audio>
-                </div>`;
-        }
-
-        let transcriptHtml = '';
-        if (c.transcript) {
-            transcriptHtml = `
-                <details style="margin-top:6px;">
-                    <summary style="cursor:pointer;color:var(--text-secondary);font-size:0.85em;">Transcript</summary>
-                    <div style="margin-top:6px;padding:8px;background:var(--bg-secondary);border-radius:6px;font-size:0.88em;white-space:pre-wrap;">${esc(c.transcript)}</div>
-                </details>`;
+        // Audio + transcript + AI summary rendered via the shared
+        // helper from lead-journey.js so this surface matches the
+        // activity-timeline rendering pixel-for-pixel. Mapping from
+        // the for-lead row's snake_case fields to the meta shape the
+        // helper expects.
+        let extrasHtml = '';
+        if (typeof window.renderCallExtras === 'function') {
+            const playbackUrl = c.recording_playback_url || c.recording_url;
+            const meta = {
+                call_event_id: c.id,
+                recording_playback_url: playbackUrl,
+                recording_source: c.recording_source,
+                has_recording: !!playbackUrl,
+                transcript_status: c.transcript_status,
+                transcript_text: c.transcript_text,
+                transcript_language: c.transcript_language,
+                summary_status: c.summary_status,
+                summary_json: c.summary_json,
+            };
+            extrasHtml = window.renderCallExtras(meta);
         }
 
         div.innerHTML = `
@@ -352,8 +351,7 @@
                     ${dur ? `<span class="tl-chip">${esc(dur)}</span>` : ''}
                 </div>
                 ${otherSide ? `<div class="tl-desc">${esc(otherSide)}</div>` : ''}
-                ${recordingHtml}
-                ${transcriptHtml}
+                ${extrasHtml}
                 <div class="tl-meta">${when ? new Date(when).toLocaleString() : ''}</div>
             </div>
         `;

@@ -2237,6 +2237,13 @@
     window.closeLogActivityModal = closeLogActivityModal;
     window.submitLogActivity = submitLogActivity;
     window.openReplyModalFromBtn = openReplyModalFromBtn;
+    // Exported so calls.js (and any other timeline surface that
+    // renders call rows directly from /api/calls/for-lead) can
+    // reuse the same audio + transcript + summary rendering as the
+    // lead-journey activity timeline. Single source of truth for
+    // the call-extras DOM shape.
+    window.renderCallExtras = renderCallExtras;
+    window.renderCallSummary = renderCallSummary;
     window.openReplyModal = openReplyModal;
     window.closeReplyModal = closeReplyModal;
     window.submitReply = submitReply;
