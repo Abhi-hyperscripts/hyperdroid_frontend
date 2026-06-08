@@ -853,6 +853,107 @@
                                 <input type="checkbox" id="aiEnabledToggle" class="ai-toggle-input" onchange="onAiToggleChange(event)">
                                 <span class="ai-toggle-switch" aria-hidden="true"></span>
                             </label>
+
+                            <!-- Tier-2 transcription tuning. Scoped classes (.tng-*)
+                                 so global form-row CSS in hrms.css doesn't put
+                                 label/control/hint on a horizontal grid. -->
+                            <details class="tng-panel" id="aiTuningSection">
+                                <summary class="tng-summary">
+                                    <svg class="tng-summary-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="3"/>
+                                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68 1.65 1.65 0 0 0 10 3.17V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                                    </svg>
+                                    <span class="tng-summary-text">Tune transcription quality</span>
+                                    <span class="tng-summary-meta">language · vocabulary · context</span>
+                                </summary>
+
+                                <div class="tng-body">
+                                    <p class="tng-intro">
+                                        Defaults are tuned for <strong>Indian B2B teams running Hindi-English calls</strong>.
+                                        Override per your team's language + domain — every call recording goes through these settings.
+                                    </p>
+
+                                    <!-- Field 1: Language -->
+                                    <div class="tng-field">
+                                        <label class="tng-label" for="aiTuningLanguage">Primary language(s)</label>
+                                        <select id="aiTuningLanguage" class="tng-control" onchange="onAiTuningChange()">
+                                            <option value="">Auto-detect (Gladia picks)</option>
+                                            <option value="en">English only</option>
+                                            <option value="hi">Hindi only</option>
+                                            <option value="hi,en" selected>Hindi + English (Hinglish code-switching)</option>
+                                            <option value="ta">Tamil</option>
+                                            <option value="te">Telugu</option>
+                                            <option value="bn">Bengali</option>
+                                            <option value="mr">Marathi</option>
+                                            <option value="gu">Gujarati</option>
+                                        </select>
+                                        <p class="tng-hint">Pick a single language for the cleanest result. The dual option enables code-switching for sentences that mix languages mid-thought.</p>
+                                    </div>
+
+                                    <!-- Field 2: Code switching toggle -->
+                                    <div class="tng-field tng-inline">
+                                        <label class="tng-checkbox-row">
+                                            <input type="checkbox" id="aiCodeSwitchToggle" onchange="onAiTuningChange()" checked />
+                                            <span class="tng-checkbox-mark"></span>
+                                            <span class="tng-checkbox-text">
+                                                <strong>Code-switching</strong>
+                                                <span class="tng-hint tng-hint-inline" id="aiCodeSwitchHint">On — Gladia expects mid-utterance Hindi↔English flips.</span>
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    <!-- Field 3: Context prompt -->
+                                    <div class="tng-field">
+                                        <div class="tng-label-row">
+                                            <label class="tng-label" for="aiTuningContext">Context prompt</label>
+                                            <span class="tng-counter"><span id="aiContextCount">0</span> / 600</span>
+                                        </div>
+                                        <textarea id="aiTuningContext" class="tng-control tng-textarea" rows="3" maxlength="600"
+                                            placeholder="e.g. Indian B2B sales call about CRM software. Speakers may mention competitor products. Common topics: pipeline, demos, contracts."
+                                            oninput="onAiContextInput(event)"></textarea>
+                                        <p class="tng-hint">Free-form sentence about what your calls are about. Helps Gladia recognise domain words.</p>
+                                    </div>
+
+                                    <!-- Field 4: Custom vocabulary -->
+                                    <div class="tng-field">
+                                        <div class="tng-label-row">
+                                            <label class="tng-label" for="aiTuningVocab">Custom vocabulary</label>
+                                            <span class="tng-counter"><span id="aiVocabCount">0</span> / 200 terms</span>
+                                        </div>
+                                        <textarea id="aiTuningVocab" class="tng-control tng-textarea" rows="6"
+                                            placeholder="One term per line. e.g.&#10;Ragenaizer&#10;Wisetrack&#10;Customer name 1&#10;Product name 1"
+                                            oninput="onAiVocabInput(event)"></textarea>
+                                        <div class="tng-vocab-footer">
+                                            <p class="tng-hint">Brand names, customer names, product names — anything Gladia would otherwise mis-hear.</p>
+                                            <button type="button" class="tng-link-btn" onclick="autoPopulateAiVocab()">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.65 0 5.05 1.14 6.7 2.96"/><path d="M21 3v6h-6"/></svg>
+                                                Auto-populate from CRM
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Field 5: Model tier -->
+                                    <div class="tng-field">
+                                        <label class="tng-label" for="aiTuningModel">Quality tier</label>
+                                        <select id="aiTuningModel" class="tng-control" onchange="onAiTuningChange()">
+                                            <option value="auto" selected>Auto (Gladia picks; cheapest)</option>
+                                            <option value="standard">Standard</option>
+                                            <option value="enhanced">Enhanced (~2× cost, better accuracy)</option>
+                                            <option value="solaria">Solaria (Gladia's Indian-language specialist, 2025)</option>
+                                        </select>
+                                        <p class="tng-hint">Solaria requires a Gladia plan that includes it — start with Auto unless you've confirmed your plan.</p>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="tng-actions">
+                                        <button class="btn btn-primary" id="aiTuningSaveBtn" onclick="saveAiTuning()">
+                                            <span class="btn-spinner" id="aiTuningSaveSpinner" style="display:none;"></span>
+                                            Save tuning
+                                        </button>
+                                        <button class="btn btn-outline-secondary" onclick="loadAiTuning()">Reset</button>
+                                    </div>
+                                </div>
+                            </details>
                         </div>
                     </div>
                 </div>

@@ -5437,3 +5437,193 @@ label.ff-checkbox-inline input[type="checkbox"] {
     font-size: 0.72rem; color: var(--text-secondary); margin-top: 1px; line-height: 1.2;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+
+/* ─── Transcription tuning panel (Settings → AI) ───────────────────────
+   Scoped .tng-* classes so global form-row styles in hrms.css /
+   tenant-manager.css don't hijack the layout. Single-column stack with
+   clear field grouping, matches the rest of the AI section's dark glass. */
+
+.tng-panel {
+    margin-top: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-card);
+    overflow: hidden;
+}
+.tng-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    cursor: pointer;
+    list-style: none;
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    user-select: none;
+    transition: background 0.15s ease;
+}
+.tng-summary::-webkit-details-marker { display: none; }
+.tng-summary::after {
+    content: '▾';
+    margin-left: auto;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    transition: transform 0.2s ease;
+}
+.tng-panel[open] .tng-summary::after { transform: rotate(180deg); }
+.tng-summary:hover { background: var(--bg-secondary); }
+.tng-summary-icon { color: var(--brand-primary); flex-shrink: 0; }
+.tng-summary-meta {
+    margin-left: 8px;
+    font-weight: 400;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+.tng-body {
+    padding: 4px 20px 20px;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+.tng-intro {
+    margin: 16px 0 4px;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.55;
+}
+.tng-intro strong { color: var(--text-primary); }
+
+/* One field per row — single column, label above control above hint. */
+.tng-field {
+    margin-top: 18px;
+}
+.tng-label,
+.tng-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.tng-label-row .tng-label { margin-bottom: 0; }
+.tng-counter {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+.tng-control {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.tng-control:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+.tng-textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+}
+.tng-hint {
+    margin: 6px 0 0;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
+.tng-hint-inline { display: block; font-weight: 400; }
+
+/* Code-switching checkbox — inline, lighter than the AI master toggle. */
+.tng-field.tng-inline {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+.tng-checkbox-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    margin: 0;
+}
+.tng-checkbox-row input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+.tng-checkbox-mark {
+    position: relative;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--bg-secondary);
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.tng-checkbox-row input:checked + .tng-checkbox-mark {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+.tng-checkbox-row input:checked + .tng-checkbox-mark::after {
+    content: '';
+    position: absolute;
+    left: 5px; top: 1px;
+    width: 5px; height: 10px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+.tng-checkbox-text {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+.tng-checkbox-text strong { display: block; font-weight: 600; margin-bottom: 2px; }
+
+/* Vocab footer — hint + auto-populate link side by side. */
+.tng-vocab-footer {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 6px;
+}
+.tng-vocab-footer .tng-hint { margin: 0; flex: 1; }
+.tng-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--brand-primary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.tng-link-btn:hover { text-decoration: underline; }
+
+.tng-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}

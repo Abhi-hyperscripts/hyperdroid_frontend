@@ -837,6 +837,10 @@ function renderAiSection(aiStatusResp) {
     // AI-adjacent automation. Read the current value via getAllSettings
     // and reflect it. Default-on per backend defaults.
     loadAutoStatusToggle();
+
+    // Tier-2 transcription tuning. Loaded silently so the form reflects
+    // current values when the admin expands the <details> panel.
+    loadAiTuning();
 }
 
 async function loadAutoStatusToggle() {
@@ -917,6 +921,149 @@ async function onAiToggleChange(event) {
         Toast.error('Could not update AI setting. Please try again.');
     }
 }
+
+// ─── Tier-2 transcription tuning ─────────────────────────────────────────
+// 4 settings stored per-tenant:
+//   transcription_language_hint   — e.g. "hi,en"
+//   transcription_code_switching  — "true"/"false"
+//   transcription_context_prompt  — free-form ≤600 chars
+//   transcription_custom_vocabulary — newline-separated, ≤200 terms
+//   transcription_model           — "auto"|"standard"|"enhanced"|"solaria"
+async function loadAiTuning() {
+    try {
+        const keys = [
+            'transcription_language_hint',
+            'transcription_code_switching',
+            'transcription_context_prompt',
+            'transcription_custom_vocabulary',
+            'transcription_model',
+        ];
+        const values = await Promise.all(keys.map(k =>
+            api.request(`/crm/crm-settings/${k}`)
+                .then(r => r.value)
+                .catch(() => null)));
+        const [lang, codeSwitch, ctx, vocab, model] = values;
+
+        const langEl = document.getElementById('aiTuningLanguage');
+        if (langEl) langEl.value = lang || 'hi,en';
+
+        const csEl = document.getElementById('aiCodeSwitchToggle');
+        if (csEl) csEl.checked = (codeSwitch || 'true') === 'true';
+        updateCodeSwitchHint();
+
+        const ctxEl = document.getElementById('aiTuningContext');
+        if (ctxEl) {
+            ctxEl.value = ctx || '';
+            updateContextCount();
+        }
+
+        const vocabEl = document.getElementById('aiTuningVocab');
+        if (vocabEl) {
+            vocabEl.value = vocab || '';
+            updateVocabCount();
+        }
+
+        const modelEl = document.getElementById('aiTuningModel');
+        if (modelEl) modelEl.value = model || 'auto';
+    } catch (err) {
+        console.warn('[ai-tuning] load failed', err);
+    }
+}
+
+function updateContextCount() {
+    const ctxEl = document.getElementById('aiTuningContext');
+    const countEl = document.getElementById('aiContextCount');
+    if (ctxEl && countEl) countEl.textContent = (ctxEl.value || '').length;
+}
+function updateVocabCount() {
+    const vocabEl = document.getElementById('aiTuningVocab');
+    const countEl = document.getElementById('aiVocabCount');
+    if (vocabEl && countEl) {
+        const terms = (vocabEl.value || '')
+            .split('\n').map(t => t.trim()).filter(t => t.length > 0);
+        countEl.textContent = terms.length;
+    }
+}
+function updateCodeSwitchHint() {
+    const csEl = document.getElementById('aiCodeSwitchToggle');
+    const hint = document.getElementById('aiCodeSwitchHint');
+    if (!csEl || !hint) return;
+    hint.textContent = csEl.checked
+        ? 'On — Gladia expects mid-utterance Hindi↔English flips. Recommended whenever the call mixes languages.'
+        : 'Off — Gladia treats each utterance as a single language. Slightly faster, but worse on mixed-language calls.';
+}
+function onAiContextInput() { updateContextCount(); }
+function onAiVocabInput()   { updateVocabCount(); }
+function onAiTuningChange() { updateCodeSwitchHint(); }
+
+async function autoPopulateAiVocab() {
+    try {
+        const resp = await api.request('/crm/crm-settings/transcription-vocab-suggestions');
+        const vocabEl = document.getElementById('aiTuningVocab');
+        if (!vocabEl || !resp || !Array.isArray(resp.suggestions)) return;
+        // Merge with whatever the user already typed, dedup case-insensitive.
+        const existing = (vocabEl.value || '')
+            .split('\n').map(t => t.trim()).filter(t => t.length > 0);
+        const seen = new Set(existing.map(t => t.toLowerCase()));
+        for (const s of resp.suggestions) {
+            const v = (s || '').trim();
+            if (v && !seen.has(v.toLowerCase())) {
+                existing.push(v);
+                seen.add(v.toLowerCase());
+            }
+        }
+        vocabEl.value = existing.join('\n');
+        updateVocabCount();
+        Toast.success(`Added ${resp.suggestions.length} suggestion(s) to vocabulary`);
+    } catch (err) {
+        console.error('[ai-tuning] auto-populate failed', err);
+        Toast.error('Could not load vocabulary suggestions');
+    }
+}
+
+async function saveAiTuning() {
+    const btn = document.getElementById('aiTuningSaveBtn');
+    const spinner = document.getElementById('aiTuningSaveSpinner');
+    const lang = document.getElementById('aiTuningLanguage')?.value ?? '';
+    const codeSwitch = document.getElementById('aiCodeSwitchToggle')?.checked ?? false;
+    const ctx = document.getElementById('aiTuningContext')?.value ?? '';
+    const vocab = document.getElementById('aiTuningVocab')?.value ?? '';
+    const model = document.getElementById('aiTuningModel')?.value ?? 'auto';
+
+    btn.disabled = true;
+    if (spinner) spinner.style.display = 'inline-block';
+    try {
+        // Sequential so the backend's per-key validation errors are
+        // attributable. Promise.all would race + lose the first failed key.
+        const puts = [
+            ['transcription_language_hint',     lang || 'hi,en'],
+            ['transcription_code_switching',    codeSwitch ? 'true' : 'false'],
+            ['transcription_context_prompt',    ctx],
+            ['transcription_custom_vocabulary', vocab],
+            ['transcription_model',             model],
+        ];
+        for (const [key, value] of puts) {
+            await api.request(`/crm/crm-settings/${key}`, {
+                method: 'PUT',
+                body: JSON.stringify({ value }),
+            });
+        }
+        Toast.success('Transcription tuning saved');
+    } catch (err) {
+        console.error('Failed to save transcription tuning', err);
+        Toast.error(err?.message || 'Could not save tuning');
+    } finally {
+        btn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
+    }
+}
+
+window.onAiTuningChange = onAiTuningChange;
+window.onAiContextInput = onAiContextInput;
+window.onAiVocabInput = onAiVocabInput;
+window.autoPopulateAiVocab = autoPopulateAiVocab;
+window.saveAiTuning = saveAiTuning;
+window.loadAiTuning = loadAiTuning;
 
 async function saveGeneralSettings() {
     const btn = document.getElementById('saveGeneralBtn');
