@@ -946,7 +946,7 @@
     async function deleteTeam(teamId, teamName) {
         const ok = await Confirm.show({
             title: `Delete team "${teamName}"?`,
-            message: "If the team has assigned leads, you'll be asked to pick another team — the leads will be round-robin distributed across that team's Members + Team Leads before this team is archived.\n\nMembers stay where they are — remove or move them through Edit Team first.",
+            message: "If the team has assigned leads, you'll be asked to pick another team — the leads will be round-robin distributed across that team's Members + Team Leads before this team is archived.\n\nManager, Team Leads, and Members are automatically removed from this team. Their accounts and access to other teams are not affected.",
             type: 'danger',
             confirmText: 'Delete team'
         });
