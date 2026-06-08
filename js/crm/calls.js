@@ -261,11 +261,15 @@
         // re-render. Identified by a stable [data-call-row] attribute.
         tl.querySelectorAll('[data-call-row]').forEach(el => el.remove());
 
-        // Prepend in chronological-descending order to match the rest of
-        // the timeline rendering convention. Each call lands as a single
-        // row regardless of how many lifecycle webhooks the provider sent
-        // (they all upsert into one DB row by CallSid).
-        const frag = document.createDocumentFragment();
+        // Merge calls into the existing timeline by timestamp. lead-journey
+        // stamps every backend-sourced .tl-entry with data-ts (UTC ISO); we
+        // do the same on call rows above. For each call, find the first
+        // existing entry whose timestamp is OLDER (or no timestamp at all)
+        // and insertBefore it. That keeps the merged list strictly desc.
+        //
+        // Old behaviour was a blind prepend, which put any call at the top
+        // regardless of when it happened — so a 1-minute-old status change
+        // ended up visually below a yesterday's call recording.
         calls.forEach(c => {
             // Companion-app calls are already represented in the timeline by
             // their auto-logged Activity row (backend creates one in
@@ -274,11 +278,38 @@
             // a manually-logged call would have. Rendering a separate tl-call
             // row here would duplicate that information.
             if (c.provider === 'companion') return;
-            frag.appendChild(buildCallRow(c));
+            const row = buildCallRow(c);
+            insertTimelineEntryByTimestamp(tl, row, c.created_at);
         });
-        // Insert at the top so it sits above activities. lead-journey
-        // renders in descending order so prepend is the right insert point.
-        tl.insertBefore(frag, tl.firstChild);
+    }
+
+    // Insert a freshly-built timeline row into #leadTimeline at the right
+    // position so the list stays sorted desc by data-ts. Falls back to
+    // append if the new row has no timestamp (shouldn't happen in practice).
+    function insertTimelineEntryByTimestamp(container, newRow, newTs) {
+        if (!newTs) {
+            container.appendChild(newRow);
+            return;
+        }
+        const newTime = Date.parse(newTs);
+        if (isNaN(newTime)) {
+            container.appendChild(newRow);
+            return;
+        }
+        const rows = container.querySelectorAll('.tl-entry');
+        for (const r of rows) {
+            const rowTs = r.getAttribute('data-ts');
+            const rowTime = rowTs ? Date.parse(rowTs) : NaN;
+            // Skip rows with unparseable timestamps — they stay where they
+            // already are; we still find the right slot among the rest.
+            if (isNaN(rowTime)) continue;
+            if (newTime > rowTime) {
+                container.insertBefore(newRow, r);
+                return;
+            }
+        }
+        // Older than everything → bottom of the list.
+        container.appendChild(newRow);
     }
 
     function buildCallRow(c) {
@@ -290,6 +321,11 @@
         // falls back to default block layout and the icon overlaps the text.
         div.className = 'tl-entry tl-call';
         div.setAttribute('data-call-row', c.id);
+        // data-ts lets the timeline merge-sort interleave this call with
+        // backend-sourced timeline entries (status changes, follow-ups, etc).
+        // Without it, a yesterday's call would land above a 1-minute-old
+        // status change because the renderer used to blindly prepend.
+        if (c.created_at) div.setAttribute('data-ts', c.created_at);
         const isIn = c.direction === 'inbound';
         const dirLabel = isIn ? 'Incoming call' : 'Outgoing call';
         const otherSide = isIn ? c.from_phone : c.to_phone;

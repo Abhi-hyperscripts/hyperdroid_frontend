@@ -635,8 +635,15 @@
                 ? ` style="cursor:pointer" onclick="openWhatsAppThreadModal('${esc(waPhone)}', '${esc(waBiz)}')" title="Open this conversation"`
                 : '';
 
+            // Stamp the entry's UTC ISO timestamp on the DOM so the call
+            // renderer (calls.js) can find the right slot when interleaving
+            // call rows from a separate endpoint. Without this, calls.js
+            // ends up prepending blindly and a yesterday's call lands above
+            // a 1-minute-old status change.
+            const tsAttr = e.timestamp ? ` data-ts="${esc(e.timestamp)}"` : '';
+
             return `
-                <div class="tl-entry ${typeClass}"${waOpenAttrs}>
+                <div class="tl-entry ${typeClass}"${tsAttr}${waOpenAttrs}>
                     <div class="tl-icon">${icon}</div>
                     <div class="tl-content">
                         <div class="tl-header">
