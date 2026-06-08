@@ -403,13 +403,37 @@
             // button visible, which is correct for the no-existing-request case.
             refreshHelpButtonForLead(leadId);
 
+            // Render "In sequence: …" badge if the lead is mid-cadence.
+            // Fire-and-forget — silently no-ops on 404 or error so the panel
+            // still works for tenants that never use sequences.
+            refreshSequenceBadgeForLead(leadId);
+
             // Cache the lead's email + display name on a hidden node so
             // openComposeForLead() can read it without re-fetching. The
             // small mail-icon button next to the email field uses these.
             window._leadDetailEmail = lead.email || '';
             window._leadDetailName  = name || '';
         } catch (e) {
-            document.getElementById('leadTimeline').innerHTML = `<p style="color:var(--color-error);">${esc(e.message || 'Failed to load')}</p>`;
+            // 404 = lead is gone (typically wiped by an admin between when
+            // the user last opened it and now). The sessionStorage anchor
+            // re-triggered a fetch on page reload; we don't want to keep
+            // re-failing every time the page is opened.
+            // Surface a friendly toast, close the broken panel, and clear
+            // the anchor so the next reload lands the user on the list.
+            const msg = e?.message || '';
+            const isMissing = /not found|404/i.test(msg);
+            if (isMissing) {
+                try { sessionStorage.removeItem('crm_openLeadId'); } catch (_) {}
+                closeLeadDetailPanel();
+                if (typeof Toast !== 'undefined') {
+                    Toast.info('That lead no longer exists. It may have been deleted or wiped.');
+                }
+                return;
+            }
+            // Other errors (network blip, server 500): leave the panel up
+            // so the user can retry by re-clicking the row, and show the
+            // raw error in the timeline area.
+            document.getElementById('leadTimeline').innerHTML = `<p style="color:var(--color-error);">${esc(msg || 'Failed to load')}</p>`;
         }
     }
 
@@ -487,6 +511,154 @@
         // not back on the lead they just dismissed.
         try { sessionStorage.removeItem('crm_openLeadId'); } catch (_) {}
     }
+
+    // ─── Sequence enrollment badge + modal ──────────────────────────────────
+
+    // Polls the active enrollment for this lead and renders an "In sequence"
+    // badge with an Unenroll button. No-ops silently when no enrollment exists
+    // OR when the sequences endpoint isn't available (e.g. tenant never used it).
+    async function refreshSequenceBadgeForLead(leadId) {
+        const slot = document.getElementById('leadSeqBadgeSlot');
+        if (!slot) return;
+        slot.innerHTML = '';
+        try {
+            const enrollment = await api.request(`/sequences/by-lead/${leadId}/active`);
+            if (!enrollment || !enrollment.id) return;     // no active enrollment
+            const stepLabel = `Step ${enrollment.current_step_order} of ${enrollment.total_steps}`;
+            const nextStr = enrollment.next_fire_at
+                ? `, next ${formatTimeAgo(new Date(enrollment.next_fire_at))}`
+                : '';
+            slot.innerHTML = `
+                <div class="lead-seq-badge">
+                    <span class="lead-seq-badge-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/>
+                        </svg>
+                    </span>
+                    <div class="lead-seq-badge-body">
+                        <strong>${esc(enrollment.sequence_name || 'Sequence')}</strong>
+                        <span>${stepLabel}${esc(nextStr)}</span>
+                    </div>
+                    <div class="lead-seq-badge-actions">
+                        <button class="btn btn-sm btn-outline-danger" onclick="unenrollFromSequence('${enrollment.id}')">Unenroll</button>
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            // Endpoint not available / 404 / tenant unlicensed for sequences —
+            // silently leave the slot empty so existing flows aren't disturbed.
+        }
+    }
+
+    window.unenrollFromSequence = async function (enrollmentId) {
+        if (!enrollmentId) return;
+        const ok = await Confirm.show({
+            title: 'Unenroll lead from sequence?',
+            message: 'Future steps will stop firing. Activity already logged on this lead stays.',
+            type: 'danger',
+            confirmText: 'Yes, unenroll',
+            cancelText: 'Keep enrolled',
+        });
+        if (!ok) return;
+        const lid = window._leadDetailId;
+        try {
+            await api.request(`/sequences/enrollments/${enrollmentId}/unenroll`, {
+                method: 'POST',
+                body: JSON.stringify({ reason: 'Unenrolled from lead detail panel' }),
+            });
+            Toast.success('Unenrolled');
+        } catch (e) {
+            // 404 here usually means the enrollment auto-completed (e.g. a
+            // trivial 1-step sequence with delay=0) between the badge load
+            // and the click. Refresh the badge in finally so the now-empty
+            // state replaces the stale chip — user sees the truth.
+            if (e?.message?.includes('Not Found') || e?.status === 404) {
+                Toast.info('This enrollment already ended — refreshed.');
+            } else {
+                Toast.error(e?.message || 'Failed to unenroll');
+            }
+        } finally {
+            if (lid) refreshSequenceBadgeForLead(lid);
+        }
+    };
+
+    // Modal: picks a sequence and enrolls the current lead.
+    window.openSequenceEnrollModal = async function (leadId) {
+        if (!leadId) return;
+        let sequences = [];
+        try {
+            sequences = await api.request('/sequences?active_only=true');
+        } catch (e) {
+            Toast.error(e?.message || 'Could not load sequences');
+            return;
+        }
+        if (!Array.isArray(sequences) || sequences.length === 0) {
+            Toast.error('No active sequences yet. Create one on the Sequences page first.');
+            return;
+        }
+
+        // Build a themed modal using the gm-overlay/gm-modal pattern so
+        // it visually matches the rest of the app (same backdrop, blur,
+        // brand-accent border-glow, scale transform).
+        const overlay = document.createElement('div');
+        overlay.className = 'gm-overlay active';
+        overlay.id = 'enrollSeqOverlay';
+        overlay.innerHTML = `
+            <div class="gm-modal" style="width:min(440px,90vw);">
+                <div class="gm-header">
+                    <div class="gm-header-left">
+                        <h2>Enroll in sequence</h2>
+                    </div>
+                    <button class="gm-close" onclick="closeEnrollSeqModal()" aria-label="Close">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <div class="gm-body">
+                    <p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:12px;">
+                        Pick a sequence. The first step fires according to its delay setting.
+                    </p>
+                    <div id="enrollSeqList" class="seq-list"></div>
+                </div>
+                <div class="gm-footer">
+                    <button class="btn btn-outline" onclick="closeEnrollSeqModal()">Cancel</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        const list = overlay.querySelector('#enrollSeqList');
+        list.innerHTML = sequences.map(s => `
+            <div class="seq-row" style="cursor:pointer;" data-seq-id="${esc(s.id)}">
+                <div class="seq-row-main">
+                    <div class="seq-row-title">
+                        <h3>${esc(s.name)}</h3>
+                    </div>
+                    ${s.description ? `<p class="seq-row-desc">${esc(s.description)}</p>` : ''}
+                </div>
+                <button class="btn btn-sm btn-primary">Enroll</button>
+            </div>
+        `).join('');
+        list.querySelectorAll('.seq-row').forEach(row => {
+            row.addEventListener('click', async () => {
+                const sid = row.getAttribute('data-seq-id');
+                try {
+                    await api.request('/sequences/enroll', {
+                        method: 'POST',
+                        body: JSON.stringify({ lead_id: leadId, sequence_id: sid }),
+                    });
+                    Toast.success('Lead enrolled');
+                    closeEnrollSeqModal();
+                    refreshSequenceBadgeForLead(leadId);
+                } catch (e) {
+                    Toast.error(e?.message || 'Enroll failed');
+                }
+            });
+        });
+    };
+
+    window.closeEnrollSeqModal = function () {
+        const o = document.getElementById('enrollSeqOverlay');
+        if (o) o.remove();
+    };
 
     function renderTimeline(entries) {
         const container = document.getElementById('leadTimeline');
