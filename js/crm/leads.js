@@ -1262,10 +1262,12 @@ function buildFilterParams() {
     // pipeline before bulk-reassign.
     const ownerEl = document.getElementById('filterOwner');
     if (ownerEl && ownerEl.value) {
-        // "Unassigned" sentinel → backend gets a special value that matches
-        // owner_user_id IS NULL. For now we just skip sending — admin caller
-        // would need a dedicated flag. Document as a later polish.
-        if (ownerEl.value !== '__unassigned__') params.set('ownerUserId', ownerEl.value);
+        // "Unassigned" sentinel maps to backend's owner_user_id IS NULL
+        // predicate (DatabaseLayer_Leads.GetLeadsPagedAsync handles the
+        // sentinel directly). Previously this branch silently dropped the
+        // filter, making "Unassigned" behave like "Any owner" — same lead
+        // would show under both, which is the bug we're closing here.
+        params.set('ownerUserId', ownerEl.value);
     }
 
     // Form-answer filter — owned by the shared FormAnswersFilter module.
