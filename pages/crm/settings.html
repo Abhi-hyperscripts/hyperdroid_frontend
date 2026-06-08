@@ -820,6 +820,16 @@
                                 <input type="checkbox" id="aiEnabledToggle" class="ai-toggle-input" onchange="onAiToggleChange(event)">
                                 <span class="ai-toggle-switch" aria-hidden="true"></span>
                             </label>
+
+                            <!-- Auto-status: flips lead from Assigned to Contacted on first connected call. -->
+                            <label class="ai-toggle-row">
+                                <div class="ai-toggle-text">
+                                    <span class="ai-toggle-title">Auto-update status on first contact</span>
+                                    <span class="ai-toggle-hint" id="autoStatusToggleHint">On — when a connected call (any provider) reaches a lead in Assigned, the system flips it to Contacted automatically.</span>
+                                </div>
+                                <input type="checkbox" id="autoStatusToggle" class="ai-toggle-input" onchange="onAutoStatusToggleChange(event)">
+                                <span class="ai-toggle-switch" aria-hidden="true"></span>
+                            </label>
                         </div>
                     </div>
                 </div>

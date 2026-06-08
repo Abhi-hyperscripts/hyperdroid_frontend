@@ -832,7 +832,52 @@ function renderAiSection(aiStatusResp) {
     const hint = document.getElementById('aiToggleHint');
     if (toggle) toggle.checked = !!aiStatusResp.ai_enabled;
     if (hint) hint.textContent = aiHintText(!!aiStatusResp.ai_enabled);
+
+    // Auto-status toggle reuses the same surface — it's still an
+    // AI-adjacent automation. Read the current value via getAllSettings
+    // and reflect it. Default-on per backend defaults.
+    loadAutoStatusToggle();
 }
+
+async function loadAutoStatusToggle() {
+    const toggle = document.getElementById('autoStatusToggle');
+    const hint = document.getElementById('autoStatusToggleHint');
+    if (!toggle) return;
+    try {
+        const settings = await api.request('/crm/crm-settings');
+        const enabled = String((settings || {}).auto_status_on_connect_enabled ?? 'true').toLowerCase() === 'true';
+        toggle.checked = enabled;
+        if (hint) hint.textContent = autoStatusHintText(enabled);
+    } catch (err) {
+        console.error('Failed to load auto_status setting', err);
+    }
+}
+
+function autoStatusHintText(enabled) {
+    return enabled
+        ? 'On — when a connected call (any provider) reaches a lead in Assigned, the system flips it to Contacted automatically.'
+        : "Off — reps must manually change the lead status after every call.";
+}
+
+async function onAutoStatusToggleChange(event) {
+    const toggle = event && event.target;
+    const next = !!(toggle && toggle.checked);
+    const hint = document.getElementById('autoStatusToggleHint');
+    if (hint) hint.textContent = autoStatusHintText(next);
+    try {
+        await api.request('/crm/crm-settings/auto_status_on_connect_enabled', {
+            method: 'PUT',
+            body: JSON.stringify({ value: next ? 'true' : 'false' }),
+        });
+        Toast.success(next ? 'Auto status enabled' : 'Auto status disabled');
+    } catch (err) {
+        console.error('Failed to update auto_status setting', err);
+        if (toggle) toggle.checked = !next;
+        if (hint) hint.textContent = autoStatusHintText(!next);
+        Toast.error('Could not update setting. Please try again.');
+    }
+}
+window.onAutoStatusToggleChange = onAutoStatusToggleChange;
 
 /**
  * Single source of truth for the AI hint text — keeps both states
