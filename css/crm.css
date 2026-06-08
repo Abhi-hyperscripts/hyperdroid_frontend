@@ -509,6 +509,10 @@
     position: relative;
 }
 
+.ai-toggle-row + .ai-toggle-row {
+    margin-top: 12px;
+}
+
 .ai-toggle-row:hover {
     border-color: var(--brand-primary, #6366f1);
     background: var(--bg-hover);
