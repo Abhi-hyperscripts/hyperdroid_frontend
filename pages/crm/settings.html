@@ -936,12 +936,18 @@
                                     <div class="tng-field">
                                         <label class="tng-label" for="aiTuningModel">Quality tier</label>
                                         <select id="aiTuningModel" class="tng-control" onchange="onAiTuningChange()">
-                                            <option value="auto" selected>Auto (Gladia picks; cheapest)</option>
-                                            <option value="standard">Standard</option>
-                                            <option value="enhanced">Enhanced (~2× cost, better accuracy)</option>
-                                            <option value="solaria">Solaria (Gladia's Indian-language specialist, 2025)</option>
+                                            <optgroup label="Gladia (STT) + Anthropic (summary)">
+                                                <option value="auto" selected>Auto (Gladia picks; cheapest Gladia)</option>
+                                                <option value="standard">Standard</option>
+                                                <option value="enhanced">Enhanced (~2× cost, better accuracy)</option>
+                                                <option value="solaria">Solaria (Gladia's Indian-language specialist)</option>
+                                            </optgroup>
+                                            <optgroup label="Google Gemini (transcript + summary in one call)">
+                                                <option value="gemini-2.5-flash">Gemini 2.5 Flash (recommended for Hindi/Hinglish)</option>
+                                                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (cheaper, slightly lower quality)</option>
+                                            </optgroup>
                                         </select>
-                                        <p class="tng-hint">Solaria requires a Gladia plan that includes it — start with Auto unless you've confirmed your plan.</p>
+                                        <p class="tng-hint">Gemini needs a <code>google / llm</code> API key in the Admin API Keys section. Switches the call pipeline from "Gladia + Anthropic Haiku" to one Gemini call that does both transcription and summary — ~5× cheaper, dramatically better on Hindi-English code-mix.</p>
                                     </div>
 
                                     <!-- Actions -->
