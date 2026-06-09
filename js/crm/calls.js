@@ -368,6 +368,13 @@
                 transcript_language: c.transcript_language,
                 summary_status: c.summary_status,
                 summary_json: c.summary_json,
+                // Phase 1 scoring fields — null until CallScoringJob
+                // lands. renderCallScorecard reads score_json directly
+                // and falls back to total_score / letter_grade for
+                // header rendering when the JSON parse fails.
+                score_json: c.score_json,
+                total_score: c.total_score,
+                letter_grade: c.letter_grade,
             };
             extrasHtml = window.renderCallExtras(meta);
         }

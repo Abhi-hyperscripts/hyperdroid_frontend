@@ -154,3 +154,171 @@
     line-height: 1.5;
     margin: 6px 0 0;
 }
+
+/* ── Call quality scorecard (Phase 1) ────────────────────────────
+   Rendered by renderCallScorecard in lead-journey.js. Reads the
+   structured output of CallScoringJob (AIEngine ScoreCallQuality).
+*/
+
+.tl-scorecard {
+    margin: 10px 0;
+    background: var(--bg-card, transparent);
+    border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+    border-radius: 10px;
+    padding: 8px 12px;
+}
+.tl-scorecard[open] { background: var(--bg-secondary, rgba(255,255,255,0.02)); }
+
+.tl-scorecard > summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    padding: 4px 0;
+    color: var(--text-primary, #e6e8ee);
+    font-weight: 600;
+}
+.tl-scorecard > summary::-webkit-details-marker { display: none; }
+.tl-scorecard > summary::before {
+    content: '▸';
+    transition: transform 0.15s ease;
+    color: var(--text-secondary, #a8afbb);
+}
+.tl-scorecard[open] > summary::before { transform: rotate(90deg); }
+
+.tl-score-grade {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    font-size: 1.05em;
+    font-weight: 800;
+    color: #fff;
+    background: var(--brand-primary, #2563eb);
+    letter-spacing: 0;
+}
+.tl-score-grade-a .tl-score-grade { background: #16a34a; } /* green */
+.tl-score-grade-b .tl-score-grade { background: #65a30d; } /* lime */
+.tl-score-grade-c .tl-score-grade { background: #ca8a04; } /* amber */
+.tl-score-grade-d .tl-score-grade { background: #ea580c; } /* orange */
+.tl-score-grade-f .tl-score-grade { background: #dc2626; } /* red */
+
+.tl-score-total {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.92em;
+    color: var(--text-secondary, #a8afbb);
+    font-weight: 600;
+}
+.tl-score-title { color: var(--text-primary, #e6e8ee); }
+
+.tl-scorecard-body { padding: 6px 0 4px; }
+
+.tl-score-verdict {
+    color: var(--text-secondary, #a8afbb);
+    font-size: 0.93em;
+    margin: 4px 0 12px;
+    line-height: 1.45;
+    font-style: italic;
+}
+
+.tl-score-dims {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.tl-score-row {
+    background: var(--bg-tertiary, rgba(255,255,255,0.04));
+    border-radius: 6px;
+    padding: 8px 10px;
+}
+.tl-score-row-head {
+    display: grid;
+    grid-template-columns: 110px 50px 1fr 80px;
+    gap: 8px;
+    align-items: center;
+    font-size: 0.9em;
+}
+.tl-score-name { color: var(--text-primary, #e6e8ee); font-weight: 600; }
+.tl-score-weight { color: var(--text-tertiary, #7a818c); font-size: 0.85em; }
+.tl-score-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.tl-score-bar-fill {
+    display: block;
+    height: 100%;
+    background: var(--brand-primary, #2563eb);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+.tl-score-num {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary, #a8afbb);
+    font-size: 0.85em;
+    text-align: right;
+}
+.tl-score-evidence {
+    margin: 6px 0 0 22px;
+    padding: 0;
+    list-style: disc;
+    color: var(--text-secondary, #a8afbb);
+    font-size: 0.85em;
+    line-height: 1.45;
+}
+.tl-score-evidence li { margin: 2px 0; }
+
+.tl-score-violations-row {
+    background: rgba(220, 38, 38, 0.08);
+    border-left: 3px solid #dc2626;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 12px;
+}
+.tl-score-violations-label {
+    display: block;
+    color: #fca5a5;
+    font-weight: 600;
+    font-size: 0.85em;
+    margin-bottom: 6px;
+}
+.tl-score-violations {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.tl-score-violation {
+    background: rgba(220, 38, 38, 0.2);
+    color: #fecaca;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 500;
+    cursor: help;
+}
+
+.tl-score-coaching {
+    background: var(--bg-tertiary, rgba(255,255,255,0.04));
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+.tl-score-coaching-head {
+    color: var(--text-primary, #e6e8ee);
+    font-weight: 600;
+    font-size: 0.9em;
+    margin-bottom: 6px;
+}
+.tl-score-coaching-list {
+    margin: 0;
+    padding: 0 0 0 18px;
+    color: var(--text-secondary, #a8afbb);
+    font-size: 0.9em;
+    line-height: 1.55;
+}
+.tl-score-coaching-list li { margin: 3px 0; }

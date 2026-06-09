@@ -923,8 +923,105 @@
             parts.push(`<div class="tl-error">Summary failed</div>`);
         }
 
+        // Quality score panel — rendered after the summary so the
+        // user reads "what was said" first, then "how it scored".
+        // Driven off meta.score_json (Phase 1 of the call-quality
+        // pipeline). Null when scoring hasn't fired yet or was
+        // skipped (no google/llm key).
+        const scoreJson = meta.score_json;
+        if (scoreJson) {
+            try {
+                const s = typeof scoreJson === 'string' ? JSON.parse(scoreJson) : scoreJson;
+                if (s) parts.push(renderCallScorecard(s, meta.total_score, meta.letter_grade));
+            } catch (_) { /* malformed JSON — skip the panel rather than break the timeline */ }
+        }
+
         if (!parts.length) return '';
         return `<div class="tl-call-extras">${parts.join('')}</div>`;
+    }
+
+    // ─── Sales-rep quality scorecard ──────────────────────────────────
+    //
+    // Renders the structured output from CallScoringJob (AIEngine
+    // ScoreCallQuality):
+    //   - Letter grade + total score badge
+    //   - One-line verdict
+    //   - 4 dimension bars (Discovery / Value / Objections / Closing)
+    //     with weights and inline evidence chips
+    //   - Playbook violations chip row
+    //   - Top 3 coaching suggestions
+    function renderCallScorecard(s, totalFromColumn, letterFromColumn) {
+        ensureBubbleStylesheet(); // shared CSS file holds both styles
+        const total = (typeof totalFromColumn === 'number' && totalFromColumn >= 0)
+            ? totalFromColumn
+            : (s.total_weighted_score ?? 0);
+        const grade = letterFromColumn || s.letter_grade || '?';
+        const verdict = s.one_line_verdict || '';
+
+        const dimWeights = { discovery: 30, value_prop: 25, objection_handling: 25, closing: 20 };
+        const dimLabels = {
+            discovery: 'Discovery',
+            value_prop: 'Value prop',
+            objection_handling: 'Objections',
+            closing: 'Closing'
+        };
+        const dimRows = Object.entries(s.dimension_scores || {}).map(([k, v]) => {
+            const raw = v.raw_score ?? 0;
+            const weight = dimWeights[k] ?? 0;
+            const weighted = Math.round(raw * weight / 10);
+            const evList = Array.isArray(v.evidence)
+                ? v.evidence.slice(0, 2).map(e => `<li>${esc(e)}</li>`).join('')
+                : '';
+            return `
+                <div class="tl-score-row">
+                    <div class="tl-score-row-head">
+                        <span class="tl-score-name">${esc(dimLabels[k] || k)}</span>
+                        <span class="tl-score-weight">×${weight}%</span>
+                        <span class="tl-score-bar">
+                            <span class="tl-score-bar-fill" style="width:${raw * 10}%"></span>
+                        </span>
+                        <span class="tl-score-num">${raw}/10 → ${weighted}</span>
+                    </div>
+                    ${evList ? `<ul class="tl-score-evidence">${evList}</ul>` : ''}
+                </div>
+            `;
+        }).join('');
+
+        const violations = Array.isArray(s.playbook_violations)
+            ? s.playbook_violations.filter(v => v.violated).map(v => `
+                <span class="tl-score-violation" title="${esc(v.evidence || '')}">
+                    ${esc(v.id.replace(/_/g, ' '))}
+                </span>
+            `).join('')
+            : '';
+
+        const suggestions = Array.isArray(s.top_3_coaching_suggestions)
+            ? s.top_3_coaching_suggestions.map(t => `<li>${esc(t)}</li>`).join('')
+            : '';
+
+        return `
+            <details class="tl-scorecard tl-score-grade-${esc(grade).toLowerCase()}" open>
+                <summary>
+                    <span class="tl-score-grade">${esc(grade)}</span>
+                    <span class="tl-score-total">${total}/100</span>
+                    <span class="tl-score-title">Call quality</span>
+                </summary>
+                <div class="tl-scorecard-body">
+                    ${verdict ? `<div class="tl-score-verdict">${esc(verdict)}</div>` : ''}
+                    <div class="tl-score-dims">${dimRows}</div>
+                    ${violations ? `
+                        <div class="tl-score-violations-row">
+                            <span class="tl-score-violations-label">Playbook violations</span>
+                            <div class="tl-score-violations">${violations}</div>
+                        </div>` : ''}
+                    ${suggestions ? `
+                        <div class="tl-score-coaching">
+                            <div class="tl-score-coaching-head">Coaching</div>
+                            <ol class="tl-score-coaching-list">${suggestions}</ol>
+                        </div>` : ''}
+                </div>
+            </details>
+        `;
     }
 
     // ─── Diarized transcript renderer ─────────────────────────────────
