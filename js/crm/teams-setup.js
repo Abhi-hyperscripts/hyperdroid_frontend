@@ -407,12 +407,36 @@
         // New teams default to brand-primary indigo until the admin picks
         // something brand-specific. setTeamColor seeds the swatch + preview.
         setTeamColor('#6366f1');
+        // Playbook fields default to empty → recording-only mode.
+        setPlaybookFields(null);
         renderFaPicker();
         renderManagerSlot();
         renderTeamleadSlots();
         renderMemberSlots();
         openGmOverlay('teamModal');
         setTimeout(() => document.getElementById('teamNameInput').focus(), 50);
+    }
+
+    // Playbook fields don't round-trip through the main team PUT endpoint —
+    // they live on a dedicated /playbook PATCH so the UI can save them
+    // independently. We still seed them in the modal so the user can see
+    // the current config when editing.
+    function setPlaybookFields(team) {
+        const motionSel = document.getElementById('teamMotionSelect');
+        const icp       = document.getElementById('teamIcpInput');
+        const vp        = document.getElementById('teamValuePropInput');
+        const obj       = document.getElementById('teamCallObjectiveInput');
+        const lang      = document.getElementById('teamLanguageRegisterSelect');
+        const pbJson    = document.getElementById('teamPlaybookJsonInput');
+        const err       = document.getElementById('teamPlaybookJsonError');
+        if (!motionSel) return; // section not yet in DOM (e.g. older HTML cache)
+        motionSel.value = (team && team.motion)            || '';
+        icp.value       = (team && team.icp_description)   || '';
+        vp.value        = (team && team.value_prop)        || '';
+        obj.value       = (team && team.call_objective)    || '';
+        lang.value      = (team && team.language_register) || '';
+        pbJson.value    = (team && (team.playbook_json || ''));
+        if (err) { err.style.display = 'none'; err.textContent = ''; }
     }
 
     async function openEditTeamModal(teamId) {
@@ -436,6 +460,7 @@
             document.getElementById('teamCodeInput').value = team.team_code || '';
             document.getElementById('teamDescInput').value = team.description || '';
             setTeamColor(team.color || '#6366f1');
+            setPlaybookFields(team);
             renderFaPicker();
             renderManagerSlot();
             renderTeamleadSlots();
@@ -830,6 +855,47 @@
 
     // ─── Save team ─────────────────────────────────────────────────────────
 
+    // Read the playbook section from the form. Returns a body suitable
+    // for PUT /api/teams/{id}/playbook, or null when no playbook input
+    // exists (older HTML cache) so the save path stays a no-op for those.
+    // Validates the JSON locally so the user gets immediate feedback
+    // instead of a generic 500.
+    function readPlaybookBody() {
+        const motionSel = document.getElementById('teamMotionSelect');
+        if (!motionSel) return null;
+        const icp    = document.getElementById('teamIcpInput')?.value || '';
+        const vp     = document.getElementById('teamValuePropInput')?.value || '';
+        const obj    = document.getElementById('teamCallObjectiveInput')?.value || '';
+        const lang   = document.getElementById('teamLanguageRegisterSelect')?.value || '';
+        const pbJson = document.getElementById('teamPlaybookJsonInput')?.value || '';
+        const err    = document.getElementById('teamPlaybookJsonError');
+
+        // Empty-string convention: explicit clear. Whitespace-only also clears.
+        const trimmed = pbJson.trim();
+        if (trimmed) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (typeof parsed !== 'object' || parsed === null) throw new Error('JSON must be an object.');
+            } catch (e) {
+                if (err) {
+                    err.textContent = `Custom rubric JSON is invalid: ${e.message}`;
+                    err.style.display = 'block';
+                }
+                throw new Error('Invalid playbook JSON');
+            }
+        }
+        if (err) { err.style.display = 'none'; err.textContent = ''; }
+
+        return {
+            motion: motionSel.value,           // "" clears
+            icp_description: icp.trim(),
+            value_prop: vp.trim(),
+            call_objective: obj.trim(),
+            language_register: lang,
+            playbook_json: trimmed,
+        };
+    }
+
     async function saveTeam() {
         const name = document.getElementById('teamNameInput').value.trim();
         const team_code = document.getElementById('teamCodeInput').value.trim() || null;
@@ -843,13 +909,21 @@
         if (functional_area_ids.length === 0) return toastErr(null, 'Pick at least one functional group');
         if (!_teamModal.manager) return toastErr(null, 'A manager is required');
 
+        // Read the playbook fields BEFORE the network call so we can
+        // surface JSON errors without bouncing the user back to a
+        // half-saved team.
+        let playbookBody;
+        try { playbookBody = readPlaybookBody(); }
+        catch (_) { return; /* readPlaybookBody already showed the error */ }
+
         const btn = document.getElementById('teamSaveBtn');
         btn.disabled = true;
         try {
+            let teamId = _teamModal.teamId;
             if (_teamModal.mode === 'create') {
                 // 1. Create the team (server requires ≥1 FA, creates as 'draft')
                 const team = await apiPost('/teams', { team_name: name, team_code, description, functional_area_ids, color });
-                const teamId = team.id;
+                teamId = team.id;
                 // 2. Manager (activates team to 'active')
                 await apiPost(`/teams/${teamId}/members`, { user_id: _teamModal.manager.user_id, role: TEAM_ROLES.MANAGER });
                 // 3. Team leads (optional)
@@ -863,11 +937,19 @@
                 toastOk(`Team "${name}" created`);
             } else {
                 // EDIT mode — update team metadata + FA set, then diff members.
-                await apiPut(`/teams/${_teamModal.teamId}`, {
+                await apiPut(`/teams/${teamId}`, {
                     team_name: name, team_code, description, functional_area_ids, color
                 });
                 await syncMembersDiff();
                 toastOk(`Team "${name}" updated`);
+            }
+            // Playbook PATCH runs after the main save in both modes. If any
+            // playbook field changed (relative to "all empty" for create
+            // mode, or relative to original for edit), send the PATCH. We
+            // always send in edit mode so explicit "clear" propagates.
+            if (playbookBody && teamId) {
+                try { await apiPut(`/teams/${teamId}/playbook`, playbookBody); }
+                catch (pe) { toastErr(pe, 'Team saved, but failed to save playbook'); }
             }
             closeTeamModal();
             await loadTeamsTab();

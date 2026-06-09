@@ -554,3 +554,40 @@
     font-size: 0.78rem; font-weight: 600; line-height: 1.4;
     white-space: nowrap;
 }
+
+/* Inline-help expander used by the Call Coaching Playbook section + the
+   "Advanced: customise rubric" power-user JSON editor. Styled to fade
+   into the form when collapsed and read as a soft helper card when open. */
+.form-helper-collapsible {
+    background: var(--bg-secondary, rgba(255,255,255,0.02));
+    border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+.form-helper-collapsible > summary {
+    cursor: pointer;
+    list-style: none;
+    color: var(--text-primary, #e6e8ee);
+    font-size: 0.88em;
+    font-weight: 600;
+    padding: 2px 0;
+    user-select: none;
+}
+.form-helper-collapsible > summary::-webkit-details-marker { display: none; }
+.form-helper-collapsible > summary::before {
+    content: '▸';
+    display: inline-block;
+    margin-right: 6px;
+    color: var(--text-secondary, #a8afbb);
+    transition: transform 0.15s ease;
+}
+.form-helper-collapsible[open] > summary::before { transform: rotate(90deg); }
+.form-helper-collapsible .form-helper-body {
+    color: var(--text-secondary, #a8afbb);
+    font-size: 0.88em;
+    line-height: 1.55;
+    padding-top: 8px;
+}
+.form-helper-collapsible .form-helper-body p { margin: 4px 0; }
+.form-helper-collapsible .form-helper-body p:first-child { margin-top: 0; }
+.form-helper-collapsible .form-helper-body p:last-child  { margin-bottom: 0; }

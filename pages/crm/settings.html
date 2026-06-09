@@ -3744,6 +3744,86 @@
                     <div class="fa-chip-picker" id="teamFaPicker"></div>
                 </div>
 
+                <!-- Call coaching playbook — tells the call-quality scorer
+                     what this team's selling motion looks like so the rep
+                     gets graded against the right yardstick (cold call vs
+                     inbound qual vs warm follow-up vs enterprise consultative).
+                     Leave everything blank to score against universal sales
+                     fundamentals from the recording alone. -->
+                <div class="team-members-section" id="teamPlaybookSection">
+                    <h4 class="team-members-heading">Call coaching playbook</h4>
+                    <details class="form-helper-collapsible" style="margin-top: -4px; margin-bottom: 14px;">
+                        <summary>What is this?</summary>
+                        <div class="form-helper-body">
+                            <p>The CRM transcribes every call this team makes and the AI scorer grades each call on Discovery, Value, Objection Handling, and Closing. The playbook tells the AI what kind of selling this team is doing so it grades against the right yardstick.</p>
+                            <p><strong>If you leave all fields blank</strong>, the AI scores against universal sales fundamentals based purely on what's in the recording — no industry or motion assumptions.</p>
+                            <p><strong>If you fill these in</strong>, the AI uses your motion's playbook (cold call vs inbound vs warm vs enterprise) plus your ICP/value-prop/objective to ground its feedback.</p>
+                        </div>
+                    </details>
+
+                    <div class="crm-form-group">
+                        <label for="teamMotionSelect">Selling motion</label>
+                        <p class="form-help-text" style="margin-bottom: 6px;">Drives which playbook the AI scores against.</p>
+                        <select id="teamMotionSelect" class="form-control">
+                            <option value="">— No motion (score against universal sales fundamentals) —</option>
+                            <option value="cold_outbound">Cold outbound — rep plants pain, locks callback</option>
+                            <option value="inbound_qual">Inbound qualification — prospect raised hand, rep qualifies fit + timing</option>
+                            <option value="warm_followup">Warm follow-up — advance an engaged lead</option>
+                            <option value="enterprise_consultative">Enterprise consultative — multi-stakeholder discovery</option>
+                        </select>
+                    </div>
+
+                    <div class="crm-form-group">
+                        <label for="teamIcpInput">Ideal Customer Profile (ICP)</label>
+                        <p class="form-help-text" style="margin-bottom: 6px;">Who this team sells to. Used to ground the AI's persona — be specific.</p>
+                        <textarea id="teamIcpInput" class="form-control" rows="2" placeholder="e.g. SME travel agencies in India, 5-50 employees, currently using Excel + WhatsApp"></textarea>
+                    </div>
+
+                    <div class="crm-form-group">
+                        <label for="teamValuePropInput">Value proposition</label>
+                        <p class="form-help-text" style="margin-bottom: 6px;">What this team sells, in one or two sentences.</p>
+                        <textarea id="teamValuePropInput" class="form-control" rows="2" placeholder="e.g. Custom CRM that replaces Excel + WhatsApp — single dashboard for leads, calls, follow-ups"></textarea>
+                    </div>
+
+                    <div class="crm-form-group">
+                        <label for="teamCallObjectiveInput">Objective on each call</label>
+                        <p class="form-help-text" style="margin-bottom: 6px;">What "good" looks like on a single call. Used to weight the closing score.</p>
+                        <textarea id="teamCallObjectiveInput" class="form-control" rows="2" placeholder="e.g. Plant a problem, get the customer's WhatsApp + a specific callback time. DO NOT try to close on call 1."></textarea>
+                    </div>
+
+                    <div class="crm-form-group">
+                        <label for="teamLanguageRegisterSelect">Language register</label>
+                        <p class="form-help-text" style="margin-bottom: 6px;">Tells the AI what language to write coaching feedback in. Auto-detects from the call when set to Auto.</p>
+                        <select id="teamLanguageRegisterSelect" class="form-control">
+                            <option value="">Auto-detect from the call</option>
+                            <option value="hinglish">Hinglish</option>
+                            <option value="english">English</option>
+                            <option value="hindi">Hindi</option>
+                        </select>
+                    </div>
+
+                    <details class="form-helper-collapsible" style="margin-top: 4px;">
+                        <summary>Advanced: customise rubric (JSON)</summary>
+                        <div class="form-helper-body">
+                            <p style="margin-bottom: 6px;">Power-user override. Paste a full rubric JSON to replace the motion's starter template entirely. Schema:</p>
+                            <pre style="font-size: 0.78em; line-height: 1.4; background: var(--bg-secondary); padding: 8px; border-radius: 6px; overflow-x: auto; margin: 6px 0;">{
+  "dimensions": {
+    "discovery":          { "weight": 30, "description": "...", "good_signals": [...], "bad_signals": [...] },
+    "value_prop":         { "weight": 25, "description": "...", "good_signals": [...], "bad_signals": [...] },
+    "objection_handling": { "weight": 25, "description": "...", "good_signals": [...], "bad_signals": [...] },
+    "closing":            { "weight": 20, "description": "...", "good_signals": [...], "bad_signals": [...] }
+  },
+  "playbook_flags": [
+    { "id": "...", "label": "...", "description": "..." }
+  ]
+}</pre>
+                            <p>The 4 dimension keys are fixed (the frontend renderer depends on them). Weights should sum to 100.</p>
+                            <textarea id="teamPlaybookJsonInput" class="form-control" rows="6" style="font-family: monospace; font-size: 0.85em;" placeholder='Leave blank to use the motion template above.'></textarea>
+                            <p id="teamPlaybookJsonError" style="color: var(--color-error); font-size: 0.85em; margin-top: 4px; display: none;"></p>
+                        </div>
+                    </details>
+                </div>
+
                 <div class="team-members-section">
                     <h4 class="team-members-heading">Members</h4>
                     <p class="form-help-text" style="margin-top: -4px; margin-bottom: 12px;">
