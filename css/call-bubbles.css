@@ -1,0 +1,156 @@
+/* ── Diarized call-transcript bubbles ──────────────────────────────
+   Renders Gemini/Gladia speaker-labeled segments as a chat-style
+   conversation under any call activity. Used by renderTranscriptBubbles
+   in js/crm/lead-journey.js. Falls back to the existing <pre> blob
+   when neither segments_json nor a parseable transcript_text is
+   available.
+
+   Colour cues:
+     • Sales rep  (right side)  — brand-primary tinted, leans right
+     • Customer   (left side)   — neutral surface, leans left
+   Click anywhere on a bubble that has a timestamp to seek the audio
+   player in the same call card to that moment.
+*/
+
+.tl-bubbles {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 0;
+}
+
+.tl-bubble-row {
+    display: flex;
+    width: 100%;
+}
+.tl-bubble-row.tl-bubble-right { justify-content: flex-end; }
+.tl-bubble-row.tl-bubble-left  { justify-content: flex-start; }
+
+.tl-bubble {
+    max-width: 78%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    line-height: 1.45;
+    font-size: 0.92em;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    position: relative;
+    cursor: default;
+}
+
+.tl-bubble[data-seek-ms] { cursor: pointer; }
+.tl-bubble[data-seek-ms]:hover { filter: brightness(1.05); }
+.tl-bubble[data-seek-ms]:active { filter: brightness(0.95); }
+
+/* Rep (right side) — branded */
+.tl-bubble-right.tl-bubble {
+    background: var(--brand-primary, #2563eb);
+    color: var(--text-inverse, #fff);
+    border-bottom-right-radius: 4px;
+}
+.tl-bubble-right.tl-bubble .tl-bubble-name { color: rgba(255, 255, 255, 0.92); }
+.tl-bubble-right.tl-bubble .tl-bubble-ts   { color: rgba(255, 255, 255, 0.72); }
+.tl-bubble-right.tl-bubble .tl-bubble-lang {
+    background: rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Customer (left side) — neutral surface */
+.tl-bubble-left.tl-bubble {
+    background: var(--bg-tertiary, #2a2f3a);
+    color: var(--text-primary, #e6e8ee);
+    border-bottom-left-radius: 4px;
+}
+.tl-bubble-left.tl-bubble .tl-bubble-name { color: var(--text-secondary, #a8afbb); }
+.tl-bubble-left.tl-bubble .tl-bubble-ts   { color: var(--text-tertiary, #7a818c); }
+.tl-bubble-left.tl-bubble .tl-bubble-lang {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-secondary, #a8afbb);
+}
+
+.tl-bubble-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78em;
+    font-weight: 600;
+    margin-bottom: 4px;
+    opacity: 0.95;
+}
+
+.tl-bubble-name { letter-spacing: 0.2px; }
+
+.tl-bubble-lang {
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.86em;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+}
+
+.tl-bubble-ts {
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+}
+
+.tl-bubble-body {
+    white-space: pre-wrap;
+    font-weight: 400;
+}
+
+/* The <details> wrapper that holds the bubbles — make the summary
+   row tidy and ensure padding around the bubbles doesn't blow out the
+   card layout. */
+.tl-transcript {
+    margin: 10px 0;
+    background: var(--bg-card, transparent);
+    border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+    border-radius: 10px;
+    padding: 8px 12px;
+}
+.tl-transcript[open] {
+    background: var(--bg-secondary, rgba(255,255,255,0.02));
+}
+.tl-transcript > summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-primary, #e6e8ee);
+    padding: 4px 0;
+    user-select: none;
+}
+.tl-transcript > summary::-webkit-details-marker { display: none; }
+.tl-transcript > summary::before {
+    content: '▸';
+    display: inline-block;
+    margin-right: 6px;
+    transition: transform 0.15s ease;
+}
+.tl-transcript[open] > summary::before { transform: rotate(90deg); }
+
+.tl-lang-chip {
+    margin-left: 8px;
+    padding: 2px 6px;
+    background: var(--brand-primary, #2563eb);
+    color: var(--text-inverse, #fff);
+    border-radius: 4px;
+    font-size: 0.72em;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+}
+
+/* Pre-rendered fallback (when neither segments_json nor parseable
+   transcript_text is available). Kept narrow + monospace so it
+   doesn't compete visually with the bubbles. */
+.tl-transcript-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background: var(--bg-secondary, rgba(255,255,255,0.04));
+    color: var(--text-secondary, #a8afbb);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 0.88em;
+    line-height: 1.5;
+    margin: 6px 0 0;
+}

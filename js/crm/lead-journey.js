@@ -871,10 +871,17 @@
         const callEventId = meta.call_event_id;
         if (tText) {
             const langChip = tLang ? ` <span class="tl-lang-chip">${esc(tLang)}</span>` : '';
+            // Build a diarized bubble view from whatever source is best:
+            //   1. meta.segments_json  — structured, with role + timestamps (Phase 1.5)
+            //   2. meta.transcript_text  — Speaker-N tokens, regex-parsed (today)
+            // The renderer guards against malformed JSON and falls back
+            // to the old <pre> blob if we can't extract anything useful.
+            const bubbles = renderTranscriptBubbles(meta);
+            const body = bubbles || `<pre class="tl-transcript-text">${esc(tText)}</pre>`;
             parts.push(`
-                <details class="tl-transcript">
+                <details class="tl-transcript" open>
                     <summary>Transcript${langChip}</summary>
-                    <pre class="tl-transcript-text">${esc(tText)}</pre>
+                    ${body}
                 </details>
             `);
         } else if (tStatus === 'pending' || tStatus === 'transcribing' || tStatus === 'submitted') {
@@ -918,6 +925,179 @@
 
         if (!parts.length) return '';
         return `<div class="tl-call-extras">${parts.join('')}</div>`;
+    }
+
+    // ─── Diarized transcript renderer ─────────────────────────────────
+    //
+    // Two input shapes we handle:
+    //   1. meta.segments_json (preferred, when CRM exposes it) — array
+    //      of { speaker, text, start_ms, end_ms, language } from AIEngine.
+    //      Click on a bubble seeks the audio to that timestamp.
+    //   2. meta.transcript_text (always present) — single string with
+    //      "Speaker N: …" tokens (English) or "स्पीकर N: …" (Devanagari).
+    //      Regex-split into segments. No timestamps but proper speaker
+    //      alternation gets us a usable bubble UI.
+    //
+    // Speaker → side mapping defaults to "Speaker 0 right (agent), all
+    // others left (customer)". Outbound calls put the rep first so this
+    // is correct in practice; on inbound we still default the same and
+    // accept a one-side-only swap if it ever matters.
+    // Lazy CSS injection — keeps us from having to touch any HTML
+    // file (avoids stepping on parallel UI work). Idempotent via the
+    // dataset flag so multiple renderCallExtras calls don't duplicate.
+    function ensureBubbleStylesheet() {
+        if (document.head.querySelector('link[data-bubble-styles]')) return;
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        const v = (typeof window !== 'undefined' && window.SW_VERSION) ? window.SW_VERSION : Date.now();
+        link.href = `/css/call-bubbles.css?v=${v}`;
+        link.dataset.bubbleStyles = '1';
+        document.head.appendChild(link);
+    }
+
+    function renderTranscriptBubbles(meta) {
+        ensureBubbleStylesheet();
+        const cid = meta && meta.call_event_id;
+
+        let segments = [];
+        let speakerRoles = {}; // speaker_id → "agent"|"customer"|"unknown"
+
+        // Source 1: structured segments_json (when CRM surfaces it).
+        if (meta && meta.segments_json) {
+            try {
+                const raw = typeof meta.segments_json === 'string'
+                    ? JSON.parse(meta.segments_json) : meta.segments_json;
+                if (Array.isArray(raw)) {
+                    segments = raw.map(s => ({
+                        speaker: Number(s.speaker ?? s.speaker_id ?? 0),
+                        text: String(s.text || '').trim(),
+                        startMs: Number(s.start_ms ?? (s.start * 1000) ?? 0),
+                        endMs: Number(s.end_ms ?? (s.end * 1000) ?? 0),
+                        language: s.language || ''
+                    })).filter(s => s.text);
+                }
+            } catch (_) { /* fall through to text parsing */ }
+        }
+
+        // Source 1.5: speakers_json (role mapping). Gemini-only.
+        if (meta && meta.speakers_json) {
+            try {
+                const raw = typeof meta.speakers_json === 'string'
+                    ? JSON.parse(meta.speakers_json) : meta.speakers_json;
+                if (Array.isArray(raw)) {
+                    raw.forEach(s => {
+                        if (s && (s.speaker_id != null || s.speaker != null)) {
+                            speakerRoles[Number(s.speaker_id ?? s.speaker)] = s.role || 'unknown';
+                        }
+                    });
+                }
+            } catch (_) {}
+        }
+
+        // Source 2: parse transcript_text via regex.
+        if (segments.length === 0 && meta && meta.transcript_text) {
+            segments = parseTranscriptTextToSegments(meta.transcript_text);
+        }
+
+        if (segments.length === 0) return null;
+
+        // Default speaker labels. If role mapping is present use it,
+        // else use heuristic: speaker 0 = Sales rep, others = Customer.
+        function labelFor(speakerId) {
+            const role = speakerRoles[speakerId];
+            if (role === 'agent') return 'Sales rep';
+            if (role === 'customer') return 'Customer';
+            if (speakerId === 0) return 'Sales rep';
+            return 'Customer';
+        }
+        function sideFor(speakerId) {
+            const role = speakerRoles[speakerId];
+            if (role === 'agent') return 'right';
+            if (role === 'customer') return 'left';
+            return speakerId === 0 ? 'right' : 'left';
+        }
+
+        // Build bubble HTML.
+        const bubbleRows = segments.map(seg => {
+            const side = sideFor(seg.speaker);
+            const label = labelFor(seg.speaker);
+            const ts = seg.startMs > 0 ? formatTimestamp(seg.startMs) : '';
+            const seekAttr = (seg.startMs > 0 && cid)
+                ? ` data-seek-ms="${seg.startMs}" data-call-event-id="${esc(cid)}" onclick="seekCallAudio(this)"`
+                : '';
+            const tsHtml = ts ? `<span class="tl-bubble-ts">${ts}</span>` : '';
+            const langHtml = seg.language ? `<span class="tl-bubble-lang">${esc(seg.language.toUpperCase())}</span>` : '';
+            return `
+                <div class="tl-bubble-row tl-bubble-${side}">
+                    <div class="tl-bubble tl-bubble-${side}" data-speaker="${seg.speaker}"${seekAttr}>
+                        <div class="tl-bubble-header">
+                            <span class="tl-bubble-name">${esc(label)}</span>
+                            ${langHtml}
+                            ${tsHtml}
+                        </div>
+                        <div class="tl-bubble-body">${esc(seg.text)}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `<div class="tl-bubbles">${bubbleRows}</div>`;
+    }
+
+    // Regex-parse "Speaker 0: …Speaker 1: …" or "स्पीकर 0: …" tokens
+    // into {speaker, text} segments. Tolerant of mixed-script labels —
+    // Gemini sometimes emits the label in Devanagari mid-transcript.
+    function parseTranscriptTextToSegments(text) {
+        if (!text || typeof text !== 'string') return [];
+        const TOKEN = /(?:Speaker|स्पीकर|स्पिकर|वक्ता)\s*(\d+)\s*[:.：]\s*/gi;
+        const segments = [];
+        let lastIdx = 0;
+        let lastSpeaker = null;
+        let m;
+        while ((m = TOKEN.exec(text)) !== null) {
+            if (lastSpeaker !== null) {
+                const chunk = text.slice(lastIdx, m.index).trim();
+                if (chunk) segments.push({ speaker: lastSpeaker, text: chunk, startMs: 0, endMs: 0, language: '' });
+            }
+            lastSpeaker = parseInt(m[1], 10);
+            lastIdx = TOKEN.lastIndex;
+        }
+        if (lastSpeaker !== null && lastIdx < text.length) {
+            const tail = text.slice(lastIdx).trim();
+            if (tail) segments.push({ speaker: lastSpeaker, text: tail, startMs: 0, endMs: 0, language: '' });
+        }
+        // If we never matched a token, return single-segment fallback so
+        // the bubble UI still renders something rather than blanking out.
+        if (segments.length === 0) {
+            const trimmed = text.trim();
+            if (trimmed) segments.push({ speaker: 0, text: trimmed, startMs: 0, endMs: 0, language: '' });
+        }
+        return segments;
+    }
+
+    function formatTimestamp(ms) {
+        if (!ms || ms <= 0) return '';
+        const totalSec = Math.floor(ms / 1000);
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        return `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    // Click-handler for bubble timestamps — seeks the closest audio
+    // element in the same call extras block to the bubble's startMs.
+    // Exported as a window global at the bottom of the module so the
+    // onclick attribute can find it.
+    function seekCallAudioImpl(el) {
+        if (!el) return;
+        const ms = parseInt(el.dataset.seekMs || '0', 10);
+        if (!ms) return;
+        const extras = el.closest('.tl-call-extras');
+        const audio = extras ? extras.querySelector('audio') : null;
+        if (!audio) return;
+        try {
+            audio.currentTime = ms / 1000;
+            audio.play().catch(() => {});
+        } catch (_) {}
     }
 
     // Render a Haiku-shape sales-call summary. Schema matches the
@@ -2432,6 +2612,7 @@
     // the call-extras DOM shape.
     window.renderCallExtras = renderCallExtras;
     window.renderCallSummary = renderCallSummary;
+    window.seekCallAudio = seekCallAudioImpl;
     window.openReplyModal = openReplyModal;
     window.closeReplyModal = closeReplyModal;
     window.submitReply = submitReply;
