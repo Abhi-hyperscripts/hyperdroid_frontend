@@ -4439,6 +4439,11 @@ let _gsColDropdowns = new Map();     // col letter -> SearchableDropdown
 let _gsRowIdDropdown = null;
 let _gsSearchTimer = null;
 let _gsServiceAccount = { enabled: false, email: null };
+// Cached list of connected sheets — used to pre-select the saved team in the
+// connect/share modal when a tenant re-connects the same sheet+tab, so the
+// "Assign manually later" default doesn't silently nuke their previously
+// chosen team. Refreshed on every loadGoogleSheetsState().
+let _gsConnectedSheets = [];
 
 async function loadGoogleSheetsState() {
     try {
@@ -4450,8 +4455,9 @@ async function loadGoogleSheetsState() {
             api.request('/crm/GoogleSheets/service-account/info').catch(() => ({ enabled: false }))
         ]);
         _gsConnections = conns || [];
+        _gsConnectedSheets = Array.isArray(sheets) ? sheets : [];
         _gsServiceAccount = saInfo || { enabled: false };
-        renderGoogleSheetsCard(_gsConnections, sheets || []);
+        renderGoogleSheetsCard(_gsConnections, _gsConnectedSheets);
         // Lazy-start the realtime hub once data is on screen so the user
         // never sees stale "last sync" timestamps.
         setupGoogleSheetsRealtime();
@@ -5313,6 +5319,33 @@ function openGoogleSheetShareModal() {
     document.getElementById('gsShareStage2').style.display = 'none';
     document.getElementById('gsShareStage3').style.display = 'none';
     document.getElementById('gsShareSaveBtn').style.display = 'none';
+    // Fire-and-forget — Stage 3 is the only place the dropdown is read, so
+    // populating it asynchronously after modal open is fine.
+    populateGsAutoAssignTeams();
+}
+
+// Reuses the FB teams cache (_fbAutoAssignTeams) so opening both modals in
+// the same session doesn't double-fetch /crm/teams. preselectTeamId is set
+// later by gsShareSelectTab() when re-connecting an existing sheet so the
+// "Assign manually later" default doesn't silently clear a saved team.
+async function populateGsAutoAssignTeams(preselectTeamId) {
+    const sel = document.getElementById('gsShareAutoAssignTeamSelect');
+    if (!sel) return;
+    if (!_fbAutoAssignTeams) {
+        try {
+            const teams = await api.request('/crm/teams');
+            _fbAutoAssignTeams = Array.isArray(teams) ? teams : [];
+        } catch {
+            _fbAutoAssignTeams = [];
+        }
+    }
+    sel.innerHTML =
+        '<option value="">— Assign manually later —</option>' +
+        _fbAutoAssignTeams
+            .filter(t => t.is_active !== false)
+            .map(t => `<option value="${escapeHtml(t.id)}">${escapeHtml(t.team_name || t.name || t.id)}</option>`)
+            .join('');
+    sel.value = preselectTeamId || '';
 }
 
 function closeGoogleSheetShareModal() {
@@ -5405,6 +5438,15 @@ async function gsShareSelectTab(tabName, tabIndex) {
     const label = `${_gsShareSpreadsheet.name} — ${tabName}`;
     const labelInput = document.getElementById('gsShareSourceNameInput');
     if (labelInput) labelInput.value = label.slice(0, 200);
+
+    // If this exact sheet+tab is already connected, pre-select its saved
+    // team so re-saving doesn't silently clear it. Both OAuth + service-
+    // account paths surface auto_assign_team_id on the connected-sheets
+    // endpoint after this change; this lookup matches both.
+    const existing = (_gsConnectedSheets || []).find(s =>
+        s.spreadsheet_id === _gsShareSpreadsheet.spreadsheet_id &&
+        s.sheet_tab_name === tabName);
+    populateGsAutoAssignTeams(existing?.auto_assign_team_id || '');
 
     await gsShareReloadPreview();
 }
@@ -5549,6 +5591,14 @@ async function saveGoogleSheetShareConnection() {
     const headerRow = Math.max(1, parseInt(document.getElementById('gsShareHeaderRow').value || '1', 10));
     map['_header_row'] = headerRow;
 
+    // Mirror the FB sentinel: empty select value → empty UUID = explicit
+    // clear on the backend; real UUID → assign that team. Anything else
+    // would leave the column untouched (null), which is fine on create but
+    // surprising on edit. Empty UUID is the only safe way to say "no team".
+    const teamSel = document.getElementById('gsShareAutoAssignTeamSelect');
+    const teamSelVal = (teamSel?.value || '').trim();
+    const autoTeamId = teamSelVal === '' ? '00000000-0000-0000-0000-000000000000' : teamSelVal;
+
     try {
         await api.request('/crm/GoogleSheets/service-account/connect', {
             method: 'POST',
@@ -5559,6 +5609,7 @@ async function saveGoogleSheetShareConnection() {
                 field_mappings: JSON.stringify(map),
                 header_row: headerRow,
                 auto_assign_user_id: null,
+                auto_assign_team_id: autoTeamId,
                 source_name: sourceName
             })
         });

@@ -3136,6 +3136,25 @@
                         <input type="text" id="gsShareSourceNameInput" class="form-control" maxlength="200" placeholder="e.g. Software Dev Q2">
                         <small style="color:var(--text-secondary);">Shown in the Leads page filter so you can separate leads from different campaigns.</small>
                     </div>
+
+                    <!-- Auto-assign team (optional) — mirrors the Facebook
+                         form mapping. When set, new leads from this sheet
+                         land in the chosen team and round-robin to the next
+                         member. Default empty = manual handoff. -->
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block; font-weight:500; margin-bottom:4px;">
+                            Auto-assign new leads to team
+                            <span style="color: var(--text-secondary); font-weight: 400; font-size: 0.85em;">(optional)</span>
+                        </label>
+                        <select id="gsShareAutoAssignTeamSelect" class="form-control">
+                            <option value="">— Assign manually later —</option>
+                            <!-- Populated by openGoogleSheetShareModal() -->
+                        </select>
+                        <small style="color:var(--text-secondary);">
+                            New leads run through the same team round-robin a superadmin manually triggers.
+                            Leave empty to assign manually on the Leads page.
+                        </small>
+                    </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
                         <div>
                             <label style="display:block; font-weight:500; margin-bottom:4px;">Header row</label>
