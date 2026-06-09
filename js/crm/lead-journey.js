@@ -252,13 +252,30 @@
         const actType = document.getElementById('activityType').value;
         const outcome = document.getElementById('activityOutcome').value;
         const disposition = document.getElementById('activityDisposition').value;
+
+        // Disposition is required for call/meeting activities (parity with
+        // mobile v1.0.48 + backend ArgumentException). Outcome stays
+        // optional — backend auto-derives it from disposition. Toast
+        // tells the rep exactly what's missing instead of letting the
+        // POST fall through to a 400 modal.
+        if ((actType === 'call' || actType === 'meeting') && !disposition) {
+            Toast.error(`Pick a Disposition to log this ${actType}`);
+            return;
+        }
         // Flatpickr stores values as "YYYY-MM-DD HH:mm"; helper returns the
         // datetime-local-shaped "YYYY-MM-DDTHH:mm" string the backend expects.
         const nextFollowup = HRMSDatePicker.getDateTimeValue('activityNextFollowup');
         const callDuration = document.getElementById('activityCallDuration').value;
 
         try {
-            // 1. Log the activity
+            // 1. Log the activity. Disposition rides INSIDE the activity body
+            // now — backend gates call/meeting on its presence and applies
+            // it to the lead in the same transaction. Previously this code
+            // did a separate PUT /disposition AFTER the activity, which (a)
+            // started failing once the backend required disposition on the
+            // activity itself, and (b) silently lost the disposition update
+            // when activity creation 400-ed. Single request, single source
+            // of truth — same wiring as the mobile app.
             await api.request('/crm/activities', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -271,20 +288,12 @@
                     performed_at: new Date().toISOString(),
                     is_completed: true,
                     contact_outcome: outcome || undefined,
+                    disposition: disposition || undefined,
                     call_duration_seconds: callDuration ? parseInt(callDuration) * 60 : undefined,
                     next_action: nextFollowup ? 'Follow up' : undefined,
                     next_action_date: nextFollowup ? new Date(nextFollowup).toISOString() : undefined
                 })
             });
-
-            // 2. Update disposition if set
-            if (disposition) {
-                await api.request(`/crm/leads/${_logActivityLeadId}/disposition`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ disposition: disposition, notes: summary })
-                });
-            }
 
             // 3. If next follow-up date set, update the lead's follow-up date (no separate follow-up record)
             // The activity already stores next_action + next_action_date, shown in timeline via chips.
