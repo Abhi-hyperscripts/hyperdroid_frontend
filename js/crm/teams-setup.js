@@ -1185,6 +1185,75 @@
 
     // ─── Save team ─────────────────────────────────────────────────────────
 
+    // Mirror of CRM/Services/Calls/PlaybookJsonValidator.cs so the
+    // power-user gets instant feedback inside the modal instead of
+    // a round-trip 400. Backend is the authoritative gate; this is
+    // belt-and-suspenders UX only.
+    const REQUIRED_DIM_KEYS = ['discovery', 'value_prop', 'objection_handling', 'closing'];
+    function validatePlaybookJson(jsonText) {
+        let root;
+        try { root = JSON.parse(jsonText); }
+        catch (e) { return { ok: false, error: `Not parseable JSON: ${e.message}` }; }
+        if (!root || typeof root !== 'object' || Array.isArray(root)) {
+            return { ok: false, error: 'Top-level value must be a JSON object.' };
+        }
+        // dimensions
+        if (root.dimensions !== undefined) {
+            const dims = root.dimensions;
+            if (!dims || typeof dims !== 'object' || Array.isArray(dims)) {
+                return { ok: false, error: "'dimensions' must be a JSON object." };
+            }
+            for (const k of REQUIRED_DIM_KEYS) {
+                if (!(k in dims)) return { ok: false, error: `'dimensions' is missing required key '${k}'. The 4 fixed dimensions are: ${REQUIRED_DIM_KEYS.join(', ')}.` };
+            }
+            for (const k of Object.keys(dims)) {
+                if (!REQUIRED_DIM_KEYS.includes(k)) return { ok: false, error: `'dimensions' has unknown key '${k}'. Allowed: ${REQUIRED_DIM_KEYS.join(', ')}.` };
+            }
+            let weightSum = 0;
+            for (const k of REQUIRED_DIM_KEYS) {
+                const d = dims[k];
+                if (!d || typeof d !== 'object' || Array.isArray(d)) {
+                    return { ok: false, error: `'dimensions.${k}' must be a JSON object.` };
+                }
+                if (!Number.isInteger(d.weight))                       return { ok: false, error: `'dimensions.${k}.weight' must be an integer.` };
+                if (d.weight < 1 || d.weight > 100)                    return { ok: false, error: `'dimensions.${k}.weight' must be between 1 and 100 (got ${d.weight}).` };
+                weightSum += d.weight;
+                if (typeof d.description !== 'string' || !d.description.trim()) return { ok: false, error: `'dimensions.${k}.description' must be a non-empty string.` };
+                for (const arrKey of ['good_signals', 'bad_signals']) {
+                    const arr = d[arrKey];
+                    if (!Array.isArray(arr)) return { ok: false, error: `'dimensions.${k}.${arrKey}' must be an array of strings.` };
+                    for (let i = 0; i < arr.length; i++) {
+                        if (typeof arr[i] !== 'string' || !arr[i].trim()) return { ok: false, error: `'dimensions.${k}.${arrKey}[${i}]' must be a non-empty string.` };
+                    }
+                }
+            }
+            if (weightSum !== 100) return { ok: false, error: `Sum of dimension weights must equal 100 (got ${weightSum}). Adjust the four weights so they total 100.` };
+        }
+        // playbook_flags
+        if (root.playbook_flags !== undefined) {
+            const flags = root.playbook_flags;
+            if (!Array.isArray(flags)) return { ok: false, error: "'playbook_flags' must be a JSON array." };
+            const seen = new Set();
+            for (let i = 0; i < flags.length; i++) {
+                const f = flags[i];
+                if (!f || typeof f !== 'object' || Array.isArray(f)) return { ok: false, error: `'playbook_flags[${i}]' must be an object.` };
+                for (const req of ['id', 'label', 'description']) {
+                    if (typeof f[req] !== 'string' || !f[req].trim()) return { ok: false, error: `'playbook_flags[${i}].${req}' must be a non-empty string.` };
+                }
+                const idKey = f.id.trim().toLowerCase();
+                if (seen.has(idKey)) return { ok: false, error: `'playbook_flags' contains duplicate id '${f.id}'. Each flag id must be unique.` };
+                seen.add(idKey);
+            }
+        }
+        // string metadata fields
+        for (const name of ['motion', 'icp_description', 'value_prop', 'call_objective', 'language_register']) {
+            if (name in root && root[name] !== null && typeof root[name] !== 'string') {
+                return { ok: false, error: `'${name}' must be a string (or omitted).` };
+            }
+        }
+        return { ok: true };
+    }
+
     // Read the playbook section from the form. Returns a body suitable
     // for PUT /api/teams/{id}/playbook, or null when no playbook input
     // exists (older HTML cache) so the save path stays a no-op for those.
@@ -1204,12 +1273,10 @@
         // Empty-string convention: explicit clear. Whitespace-only also clears.
         const trimmed = pbJson.trim();
         if (trimmed) {
-            try {
-                const parsed = JSON.parse(trimmed);
-                if (typeof parsed !== 'object' || parsed === null) throw new Error('JSON must be an object.');
-            } catch (e) {
+            const v = validatePlaybookJson(trimmed);
+            if (!v.ok) {
                 if (err) {
-                    err.textContent = `Custom rubric JSON is invalid: ${e.message}`;
+                    err.textContent = `Custom rubric JSON is invalid: ${v.error}`;
                     err.style.display = 'block';
                 }
                 throw new Error('Invalid playbook JSON');
