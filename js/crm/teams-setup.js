@@ -417,25 +417,57 @@
         setTimeout(() => document.getElementById('teamNameInput').focus(), 50);
     }
 
-    // Playbook fields don't round-trip through the main team PUT endpoint —
-    // they live on a dedicated /playbook PATCH so the UI can save them
-    // independently. We still seed them in the modal so the user can see
-    // the current config when editing.
+    // Playbook dropdowns are real SearchableDropdown instances (per the
+    // "never use native <select>" rule). We rebuild them every modal
+    // open so they pick up the team's current value cleanly.
+    const MOTION_OPTIONS = [
+        { value: '',                        label: '— No motion (score against universal sales fundamentals) —' },
+        { value: 'cold_outbound',           label: 'Cold outbound — rep plants pain, locks callback' },
+        { value: 'inbound_qual',            label: 'Inbound qualification — prospect raised hand, rep qualifies fit + timing' },
+        { value: 'warm_followup',           label: 'Warm follow-up — advance an engaged lead' },
+        { value: 'enterprise_consultative', label: 'Enterprise consultative — multi-stakeholder discovery' },
+    ];
+    const LANG_REGISTER_OPTIONS = [
+        { value: '',         label: 'Auto-detect from the call' },
+        { value: 'hinglish', label: 'Hinglish' },
+        { value: 'english',  label: 'English' },
+        { value: 'hindi',    label: 'Hindi' },
+    ];
+
     function setPlaybookFields(team) {
-        const motionSel = document.getElementById('teamMotionSelect');
-        const icp       = document.getElementById('teamIcpInput');
-        const vp        = document.getElementById('teamValuePropInput');
-        const obj       = document.getElementById('teamCallObjectiveInput');
-        const lang      = document.getElementById('teamLanguageRegisterSelect');
-        const pbJson    = document.getElementById('teamPlaybookJsonInput');
-        const err       = document.getElementById('teamPlaybookJsonError');
-        if (!motionSel) return; // section not yet in DOM (e.g. older HTML cache)
-        motionSel.value = (team && team.motion)            || '';
-        icp.value       = (team && team.icp_description)   || '';
-        vp.value        = (team && team.value_prop)        || '';
-        obj.value       = (team && team.call_objective)    || '';
-        lang.value      = (team && team.language_register) || '';
-        pbJson.value    = (team && (team.playbook_json || ''));
+        const motionHost = document.getElementById('teamMotionDropdown');
+        const langHost   = document.getElementById('teamLanguageRegisterDropdown');
+        const icp        = document.getElementById('teamIcpInput');
+        const vp         = document.getElementById('teamValuePropInput');
+        const obj        = document.getElementById('teamCallObjectiveInput');
+        const pbJson     = document.getElementById('teamPlaybookJsonInput');
+        const err        = document.getElementById('teamPlaybookJsonError');
+        if (!motionHost || !window.SearchableDropdown) return; // section/lib missing — older cache
+
+        // (re)build motion dropdown
+        _teamModal.motionDropdown = new window.SearchableDropdown(motionHost, {
+            options:           MOTION_OPTIONS,
+            value:             (team && team.motion) || '',
+            placeholder:       '— No motion (score against universal sales fundamentals) —',
+            searchPlaceholder: 'Search motion...',
+        });
+        _teamModal.langDropdown = new window.SearchableDropdown(langHost, {
+            options:           LANG_REGISTER_OPTIONS,
+            value:             (team && team.language_register) || '',
+            placeholder:       'Auto-detect from the call',
+            searchPlaceholder: 'Search language...',
+        });
+
+        // (See team-modal-scroll CSS in crm-teams-setup.css for the
+        // internal-scroll override that makes SearchableDropdown's
+        // portal-to-body branch kick in. Without that, the motion menu
+        // opens upward and visually overlaps the Functional groups
+        // section above.)
+
+        icp.value    = (team && team.icp_description) || '';
+        vp.value     = (team && team.value_prop)      || '';
+        obj.value    = (team && team.call_objective)  || '';
+        pbJson.value = (team && (team.playbook_json || ''));
         if (err) { err.style.display = 'none'; err.textContent = ''; }
     }
 
@@ -861,12 +893,13 @@
     // Validates the JSON locally so the user gets immediate feedback
     // instead of a generic 500.
     function readPlaybookBody() {
-        const motionSel = document.getElementById('teamMotionSelect');
-        if (!motionSel) return null;
+        const motionHost = document.getElementById('teamMotionDropdown');
+        if (!motionHost) return null;
+        const motion = _teamModal.motionDropdown ? (_teamModal.motionDropdown.getValue() || '') : '';
+        const lang   = _teamModal.langDropdown   ? (_teamModal.langDropdown.getValue()   || '') : '';
         const icp    = document.getElementById('teamIcpInput')?.value || '';
         const vp     = document.getElementById('teamValuePropInput')?.value || '';
         const obj    = document.getElementById('teamCallObjectiveInput')?.value || '';
-        const lang   = document.getElementById('teamLanguageRegisterSelect')?.value || '';
         const pbJson = document.getElementById('teamPlaybookJsonInput')?.value || '';
         const err    = document.getElementById('teamPlaybookJsonError');
 
@@ -887,12 +920,12 @@
         if (err) { err.style.display = 'none'; err.textContent = ''; }
 
         return {
-            motion: motionSel.value,           // "" clears
-            icp_description: icp.trim(),
-            value_prop: vp.trim(),
-            call_objective: obj.trim(),
+            motion:            motion,
+            icp_description:   icp.trim(),
+            value_prop:        vp.trim(),
+            call_objective:    obj.trim(),
             language_register: lang,
-            playbook_json: trimmed,
+            playbook_json:     trimmed,
         };
     }
 

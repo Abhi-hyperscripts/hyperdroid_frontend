@@ -555,6 +555,44 @@
     white-space: nowrap;
 }
 
+/* ── Team modal: make it self-scrolling (matches the tall settings
+   modal pattern from crm.css ~3581: gsSheetPickerModal, gsShareModal,
+   fbFormModal). The Edit Team form is ~1500 px of content vs an
+   ~800 px viewport, so without internal scroll the body bleeds out
+   the bottom of the modal — the Selling motion dropdown ends up
+   rendered outside the modal entirely and the user can't reach Save
+   Changes without window-scrolling.
+
+   Layout:
+     .gm-modal  caps to 92 vh and clips overflow (so its rounded
+                corners stay clean).
+     .gm-body   scrolls internally between the header and footer.
+
+   The `:has(.searchable-dropdown.open)` overrides below keep this
+   layout active even when a SearchableDropdown is open inside —
+   otherwise the global `:has` rule in crm.css would flip everything
+   to overflow:visible and burst the form back out of bounds. With
+   overflow:auto on .gm-body, SearchableDropdown's positionMenu()
+   detects the scroll ancestor and portals its menu to <body> with
+   `position: fixed`, so the menu floats above everything cleanly. */
+#teamModal .gm-modal {
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+#teamModal .gm-body {
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+body.crm-page #teamModal .gm-modal:has(.searchable-dropdown.open) {
+    overflow: hidden !important;
+}
+body.crm-page #teamModal .gm-body:has(.searchable-dropdown.open) {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
 /* Inline-help expander used by the Call Coaching Playbook section + the
    "Advanced: customise rubric" power-user JSON editor. Styled to fade
    into the form when collapsed and read as a soft helper card when open. */

@@ -3762,15 +3762,13 @@
                     </details>
 
                     <div class="crm-form-group">
-                        <label for="teamMotionSelect">Selling motion</label>
+                        <label>Selling motion</label>
                         <p class="form-help-text" style="margin-bottom: 6px;">Drives which playbook the AI scores against.</p>
-                        <select id="teamMotionSelect" class="form-control">
-                            <option value="">— No motion (score against universal sales fundamentals) —</option>
-                            <option value="cold_outbound">Cold outbound — rep plants pain, locks callback</option>
-                            <option value="inbound_qual">Inbound qualification — prospect raised hand, rep qualifies fit + timing</option>
-                            <option value="warm_followup">Warm follow-up — advance an engaged lead</option>
-                            <option value="enterprise_consultative">Enterprise consultative — multi-stakeholder discovery</option>
-                        </select>
+                        <!-- SearchableDropdown is instantiated in teams-setup.js
+                             every time the modal opens (so it picks up the
+                             current value). data-sd-skip prevents the global
+                             auto-wrap from layering a second one. -->
+                        <div id="teamMotionDropdown" data-sd-skip="true"></div>
                     </div>
 
                     <div class="crm-form-group">
@@ -3792,14 +3790,9 @@
                     </div>
 
                     <div class="crm-form-group">
-                        <label for="teamLanguageRegisterSelect">Language register</label>
+                        <label>Language register</label>
                         <p class="form-help-text" style="margin-bottom: 6px;">Tells the AI what language to write coaching feedback in. Auto-detects from the call when set to Auto.</p>
-                        <select id="teamLanguageRegisterSelect" class="form-control">
-                            <option value="">Auto-detect from the call</option>
-                            <option value="hinglish">Hinglish</option>
-                            <option value="english">English</option>
-                            <option value="hindi">Hindi</option>
-                        </select>
+                        <div id="teamLanguageRegisterDropdown" data-sd-skip="true"></div>
                     </div>
 
                     <details class="form-helper-collapsible" style="margin-top: 4px;">
