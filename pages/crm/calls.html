@@ -153,6 +153,18 @@
                     <option value="all">All time</option>
                 </select>
             </div>
+            <!-- One-click retry for every call where transcript_status='failed'.
+                 Backend (POST /api/calls/retry-failed-transcripts, CRM_ADMIN
+                 only) re-applies the 20-second floor + has-recording gates
+                 per row, so a tenant can't accidentally re-fire a sub-20s
+                 call. Shown only for tenants whose token has CRM_ADMIN. -->
+            <button type="button" id="ciRetryFailedBtn" class="btn btn-secondary" style="display: none;" title="Re-fire transcription for every call with transcript_status=failed">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                Retry failed
+            </button>
         </div>
 
         <!-- List — uses the shared .crm-table-wrapper + .crm-table classes

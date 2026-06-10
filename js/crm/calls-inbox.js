@@ -423,5 +423,48 @@
         loadInbox(true);
         loadStats();
         bindRealtime();
+
+        // CRM_ADMIN-only "Retry failed" button. Surface it as soon as
+        // we can confirm the role; CONFIG.getUser() reads the cached
+        // user payload from login, no extra round-trip.
+        wireRetryFailedButton();
     });
+
+    function wireRetryFailedButton() {
+        const btn = document.getElementById('ciRetryFailedBtn');
+        if (!btn) return;
+        const user = (typeof CONFIG !== 'undefined' && CONFIG.getUser) ? CONFIG.getUser() : null;
+        const roles = (user && (user.roles || user.Roles)) || [];
+        const isAdmin = roles.some(r => r === 'CRM_ADMIN' || r === 'SUPERADMIN');
+        if (!isAdmin) return; // stays hidden for non-admins
+        btn.style.display = '';
+        btn.addEventListener('click', async () => {
+            const ok = typeof Confirm !== 'undefined' && Confirm.show
+                ? await Confirm.show({
+                    title: 'Retry every failed transcription?',
+                    message: 'Each call with transcript_status=failed will be re-queued. Calls under the 20-second AI floor or without a recording are skipped automatically.',
+                    confirmLabel: 'Retry all failed',
+                    confirmStyle: 'primary'
+                })
+                : confirm('Retry every failed transcription?');
+            if (!ok) return;
+            btn.disabled = true;
+            try {
+                const r = await api.request('/crm/calls/retry-failed-transcripts', { method: 'POST' });
+                const parts = [`Re-queued ${r.enqueued ?? 0}`];
+                if (r.skipped_no_recording) parts.push(`skipped (no recording): ${r.skipped_no_recording}`);
+                if (r.skipped_too_short)    parts.push(`skipped (under 20s): ${r.skipped_too_short}`);
+                if (typeof Toast !== 'undefined' && Toast.success) Toast.success(parts.join(' · '));
+                else alert(parts.join('\n'));
+                // Refresh after a brief delay so the user sees status flip to pending.
+                setTimeout(() => { loadInbox(true); loadStats(); }, 800);
+            } catch (e) {
+                const msg = (e && (e.message || e.toString())) || 'Retry failed';
+                if (typeof Toast !== 'undefined' && Toast.error) Toast.error(msg);
+                else alert(msg);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    }
 })();
