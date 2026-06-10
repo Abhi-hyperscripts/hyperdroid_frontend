@@ -469,7 +469,305 @@
         obj.value    = (team && team.call_objective)  || '';
         pbJson.value = (team && (team.playbook_json || ''));
         if (err) { err.style.display = 'none'; err.textContent = ''; }
+
+        // Wire the "Download sample rubric" button. Each modal open
+        // re-wires the handler so it always reflects the currently
+        // selected motion in the dropdown above (motion changes →
+        // different sample template). Capture-clone to avoid stacking
+        // listeners on repeated opens.
+        const dlBtn = document.getElementById('teamPlaybookDownloadSampleBtn');
+        if (dlBtn) {
+            const fresh = dlBtn.cloneNode(true);
+            dlBtn.parentNode.replaceChild(fresh, dlBtn);
+            fresh.addEventListener('click', () => {
+                const motion = (_teamModal.motionDropdown?.getValue() || '') || 'cold_outbound';
+                downloadSamplePlaybookJson(motion, (team && team.team_name) || 'team');
+            });
+        }
     }
+
+    // Power-user starter rubric — mirrors CRM/Services/Calls/CallRubricBuilder.cs
+    // (ColdOutbound template). The user is meant to edit this then paste
+    // into the textarea; we include all 4 fixed dimension keys + a few
+    // playbook flags so weights already sum to 100 and the file is
+    // ready to drop in.
+    function downloadSamplePlaybookJson(motion, teamName) {
+        const sample = SAMPLE_PLAYBOOKS[motion] || SAMPLE_PLAYBOOKS.cold_outbound;
+        const blob = new Blob([JSON.stringify(sample, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const slug = String(teamName).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'team';
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `playbook-${slug}-${motion}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        // Defer revoke so the browser still has time to start the
+        // download — common foot-gun is revoking immediately.
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    const SAMPLE_PLAYBOOKS = {
+        cold_outbound: {
+            dimensions: {
+                discovery: {
+                    weight: 30,
+                    description: "Did the rep uncover the prospect's workflow + pain through open questions, mirroring, and follow-up probes?",
+                    good_signals: [
+                        "Asked 'how do you handle X today?' style open questions",
+                        "Mirrored a customer answer back as a question to dig deeper",
+                        "Got the customer to name a specific tool / process they use today",
+                        "Got the customer to acknowledge a downside of their current setup"
+                    ],
+                    bad_signals: [
+                        "Asked 'do you have any requirement?' (closed yes/no in the cold-call killer pattern)",
+                        "Did not ask any open discovery question",
+                        "Accepted the first customer answer at face value, no probing"
+                    ]
+                },
+                value_prop: {
+                    weight: 25,
+                    description: "Did the rep tailor their explanation to the specific pain the customer shared?",
+                    good_signals: [
+                        "Connected solution to a pain the customer named, not a generic feature list",
+                        "Cited a peer company that solved the same problem",
+                        "Quantified the outcome (% improvement, time saved)"
+                    ],
+                    bad_signals: [
+                        "Listed product features without tying to a stated pain",
+                        "Pitched everything they offer before establishing any customer need"
+                    ]
+                },
+                objection_handling: {
+                    weight: 25,
+                    description: "When the prospect pushed back, did the rep reframe with a question that earned more time?",
+                    good_signals: [
+                        "After 'no requirement', asked a future-state question (6 months out)",
+                        "After 'busy', locked a specific callback time, not a vague 'whenever'",
+                        "After 'send email', asked who the decision-maker is",
+                        "After 'using competitor X', asked what's broken about it"
+                    ],
+                    bad_signals: [
+                        "Said 'OK thank you' and hung up on a 'no'",
+                        "Accepted a vague callback time like 'whenever'",
+                        "Started bashing the competitor instead of probing the gap"
+                    ]
+                },
+                closing: {
+                    weight: 20,
+                    description: "Did the rep secure a concrete next step with mutual commitment (specific channel + time confirmed)?",
+                    good_signals: [
+                        "Confirmed the customer's WhatsApp or preferred channel on the way out",
+                        "Set a specific follow-up date/time (not 'will call later')",
+                        "Got permission to send a video / one-pager / deck",
+                        "Identified the decision-maker for the next conversation"
+                    ],
+                    bad_signals: [
+                        "Ended call without any next step",
+                        "Said 'OK thank you' alone on a no-requirement response",
+                        "Did not confirm any channel for follow-up"
+                    ]
+                }
+            },
+            playbook_flags: [
+                { id: "asked_requirement_too_early", label: "Asked 'do you have any requirement?' early in the call", description: "Flag whenever this (or its Hinglish equivalent 'kya requirement hai?') appears in the first half of the call — it gives the prospect a polite exit before any pain is planted." },
+                { id: "no_warmup",                  label: "Did not warm up before pitching",                      description: "Jumped straight into pitch without a 'kaise hain' / 'how have you been' / weather / location warm-up." },
+                { id: "no_next_step",               label: "Did not secure any next step",                         description: "Hung up without confirming WhatsApp, callback time, or any follow-up channel." },
+                { id: "feature_dump",               label: "Listed product features before establishing pain",     description: "Pitched the catalog before learning what the customer's actual workflow looks like." },
+                { id: "thank_you_on_no",            label: "Closed with 'OK thank you' on a 'no requirement' response", description: "Did not run the recovery move (future-state question or content micro-ask)." }
+            ]
+        },
+        inbound_qual: {
+            dimensions: {
+                discovery: {
+                    weight: 30,
+                    description: "Did the rep qualify the inbound prospect — what brought them in, what they've tried, urgency, decision-makers?",
+                    good_signals: [
+                        "Asked what specifically prompted the inquiry",
+                        "Asked what they've already tried / evaluated",
+                        "Confirmed urgency (timeline / deadline)",
+                        "Identified all stakeholders / decision-makers"
+                    ],
+                    bad_signals: [
+                        "Jumped to pricing without qualifying need",
+                        "Did not ask why-now",
+                        "Treated inbound as if it were a cold opportunity"
+                    ]
+                },
+                value_prop: {
+                    weight: 25,
+                    description: "Did the rep explain how the offering fits THIS prospect's specific situation, including budget fit?",
+                    good_signals: [
+                        "Mapped solution back to the specific reason they reached out",
+                        "Asked about budget range or signaled fit",
+                        "Set expectations on what comes next in the sales process"
+                    ],
+                    bad_signals: [
+                        "Generic walkthrough of the product, untied to the inquiry",
+                        "Avoided budget conversation entirely"
+                    ]
+                },
+                objection_handling: {
+                    weight: 25,
+                    description: "When concerns were raised (price, timing, fit), did the rep address them with specifics that earned trust?",
+                    good_signals: [
+                        "Acknowledged the concern before responding",
+                        "Reframed price as ROI / time saved",
+                        "Offered a concrete proof point or reference"
+                    ],
+                    bad_signals: [
+                        "Defensive or dismissive on price",
+                        "Generic reassurance without proof"
+                    ]
+                },
+                closing: {
+                    weight: 20,
+                    description: "Did the rep advance the deal — booking a demo, sending a tailored proposal, looping in the right stakeholder?",
+                    good_signals: [
+                        "Booked a specific time for next step on the call",
+                        "Confirmed which stakeholders join the next meeting",
+                        "Set expectations on what materials go out before the next call"
+                    ],
+                    bad_signals: [
+                        "Left the next step vague ('we will be in touch')",
+                        "Did not secure stakeholder names for next call"
+                    ]
+                }
+            },
+            playbook_flags: [
+                { id: "no_why_now",            label: "Did not ask why-now",                description: "Failed to learn what triggered the inbound — without this the rep can't prioritise urgency." },
+                { id: "skipped_budget",        label: "Did not surface budget fit",         description: "Even a soft 'is this in your budget range' is missing." },
+                { id: "no_next_step",          label: "Did not book a concrete next step",  description: "Ended with vague 'will get back to you' instead of a specific calendar slot." },
+                { id: "no_stakeholder_mapping",label: "Did not ask who else is involved",   description: "Inbound where only one person is on the call but a real decision requires multiple is a hand-off risk." }
+            ]
+        },
+        warm_followup: {
+            dimensions: {
+                discovery: {
+                    weight: 30,
+                    description: "Did the rep pick up where the last conversation left off and surface what's changed?",
+                    good_signals: [
+                        "Recapped specific points from the last conversation",
+                        "Asked what has changed on their side since",
+                        "Identified new stakeholders or shifts in priority"
+                    ],
+                    bad_signals: [
+                        "Treated the call as if it were the first one",
+                        "Did not reference any prior context",
+                        "Re-pitched the same generic pitch"
+                    ]
+                },
+                value_prop: {
+                    weight: 25,
+                    description: "Did the rep tie the next step to what the prospect specifically asked for or to a new insight?",
+                    good_signals: [
+                        "Delivered on something promised in the last call (data, demo, intro)",
+                        "Brought new information the prospect didn't have",
+                        "Quantified value against the prospect's stated metric"
+                    ],
+                    bad_signals: [
+                        "Showed up empty-handed against a prior promise",
+                        "Re-pitched without advancing the conversation"
+                    ]
+                },
+                objection_handling: {
+                    weight: 25,
+                    description: "Did the rep address the prior concern and surface any new objections?",
+                    good_signals: [
+                        "Pre-emptively addressed the prior concern",
+                        "Asked 'what else might hold this back'",
+                        "Brought a peer reference to defuse a specific risk"
+                    ],
+                    bad_signals: [
+                        "Ignored the prior objection",
+                        "Did not probe for new concerns"
+                    ]
+                },
+                closing: {
+                    weight: 20,
+                    description: "Did the rep advance to a concrete commitment (decision date, contract, paid pilot, sign-off owner)?",
+                    good_signals: [
+                        "Got mutual agreement on the next gate (e.g. decision by date X)",
+                        "Confirmed who signs off and what they need to see",
+                        "Booked the final-decision meeting before hanging up"
+                    ],
+                    bad_signals: [
+                        "Ended on 'we will think about it'",
+                        "Did not name the next milestone"
+                    ]
+                }
+            },
+            playbook_flags: [
+                { id: "ignored_prior_context", label: "Did not reference the previous conversation", description: "Warm follow-up requires showing memory; treating it like a cold call wastes built-up trust." },
+                { id: "broken_promise",        label: "Did not deliver on something promised",       description: "Showed up without the material/data/intro committed in the last call." },
+                { id: "no_next_milestone",     label: "No next milestone named",                     description: "Failed to advance to a specific gate (demo, pilot, contract, decision date)." }
+            ]
+        },
+        enterprise_consultative: {
+            dimensions: {
+                discovery: {
+                    weight: 30,
+                    description: "Did the rep map stakeholders, business process, and the underlying business case behind the inquiry?",
+                    good_signals: [
+                        "Mapped at least 3 stakeholder roles + their concerns",
+                        "Connected pain to a measurable business metric",
+                        "Asked about current procurement/legal process",
+                        "Drew out the alternative being evaluated"
+                    ],
+                    bad_signals: [
+                        "Talked only to the user-buyer, did not surface economic buyer",
+                        "Did not connect pain to a dollar figure or business outcome",
+                        "Skipped the procurement / legal process question"
+                    ]
+                },
+                value_prop: {
+                    weight: 25,
+                    description: "Did the rep articulate value in terms of business outcome and ROI, not just product features?",
+                    good_signals: [
+                        "Tied solution to a quantified business metric",
+                        "Brought a similar-industry case study or ROI proof point",
+                        "Tailored ROI math to the prospect's stated scale"
+                    ],
+                    bad_signals: [
+                        "Feature-led pitch with no ROI framing",
+                        "Generic case study mismatched to the prospect's industry"
+                    ]
+                },
+                objection_handling: {
+                    weight: 25,
+                    description: "Did the rep handle multi-stakeholder objections (security, procurement, integration, change-management) with concrete answers?",
+                    good_signals: [
+                        "Anticipated security/compliance questions before they were asked",
+                        "Offered a concrete integration plan or timeline",
+                        "Addressed change-management with examples of similar rollouts"
+                    ],
+                    bad_signals: [
+                        "Vague on security/compliance specifics",
+                        "Did not offer a deployment plan"
+                    ]
+                },
+                closing: {
+                    weight: 20,
+                    description: "Did the rep secure a concrete next step that advances the buying process (mutual action plan, exec sponsor intro, paid POC)?",
+                    good_signals: [
+                        "Proposed and got agreement on a mutual action plan",
+                        "Secured intro to economic buyer or executive sponsor",
+                        "Agreed on POC criteria + timeline"
+                    ],
+                    bad_signals: [
+                        "No mutual action plan",
+                        "Did not get a path to the economic buyer"
+                    ]
+                }
+            },
+            playbook_flags: [
+                { id: "no_econ_buyer",       label: "Did not surface the economic buyer",      description: "Enterprise deals stall when the rep only talks to user-buyers. The economic buyer must be on the radar." },
+                { id: "no_business_metric",  label: "Did not connect pain to a business metric",description: "Without a quantified business outcome the deal slides on price." },
+                { id: "no_action_plan",      label: "No mutual action plan agreed",            description: "Enterprise cycles need a written, mutually-owned plan. Verbal 'we'll be in touch' kills momentum." },
+                { id: "weak_security_answer",label: "Vague on security or compliance",         description: "Even softly-vague answers signal the rep isn't enabled — kills trust with IT/InfoSec." }
+            ]
+        }
+    };
 
     async function openEditTeamModal(teamId) {
         try {

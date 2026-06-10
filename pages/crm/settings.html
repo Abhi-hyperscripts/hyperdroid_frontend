@@ -3811,6 +3811,17 @@
   ]
 }</pre>
                             <p>The 4 dimension keys are fixed (the frontend renderer depends on them). Weights should sum to 100.</p>
+                            <div style="display: flex; gap: 8px; margin: 6px 0 4px;">
+                                <button type="button" class="btn btn-secondary" id="teamPlaybookDownloadSampleBtn" style="font-size: 0.85em; padding: 4px 10px;">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px;">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    Download sample rubric
+                                </button>
+                                <span class="form-help-text" style="font-size: 0.85em; align-self: center;">— ready-to-edit JSON based on the selected motion above.</span>
+                            </div>
                             <textarea id="teamPlaybookJsonInput" class="form-control" rows="6" style="font-family: monospace; font-size: 0.85em;" placeholder='Leave blank to use the motion template above.'></textarea>
                             <p id="teamPlaybookJsonError" style="color: var(--color-error); font-size: 0.85em; margin-top: 4px; display: none;"></p>
                         </div>
