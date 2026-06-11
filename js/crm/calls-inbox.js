@@ -24,6 +24,9 @@
     let _teamsCache = null;              // cached for the convert modal
     let _searchTimer = null;
     let _signalRBound = false;
+    let _userMap = null;                 // Map(user_id → {display_name, email})
+    let _userMapLoading = null;          // promise — dedupe parallel loads
+    let _leadCache = new Map();          // leadId → Promise<lead> so reopening the same popup is instant
 
     // ─── Helpers ───────────────────────────────────────────────────────────
     const $ = (id) => document.getElementById(id);
@@ -118,6 +121,19 @@
         </span>`;
     }
 
+    // Resolve an agent user_id to a display name. Falls back to a
+    // shortened GUID if we haven't loaded the user map yet OR the
+    // agent is no longer in the active user list (e.g. removed rep).
+    function agentLabel(userId) {
+        if (!userId) return '—';
+        if (_userMap) {
+            const u = _userMap.get(userId);
+            if (u && (u.display_name || u.email)) return u.display_name || u.email;
+        }
+        // Last resort: short GUID so the column isn't blank.
+        return userId.slice(0, 8) + '…';
+    }
+
     // ─── Render ────────────────────────────────────────────────────────────
     function renderRow(c) {
         const isInbound = c.direction === 'inbound';
@@ -126,21 +142,53 @@
         const playerHtml = playback
             ? `<audio controls preload="none" style="height:28px;max-width:200px;" onclick="event.stopPropagation()"><source src="${escapeHtml(playback)}" type="audio/mpeg"></audio>`
             : '<span class="ci-mute">—</span>';
+        // "View lead" opens a popup inside this page instead of
+        // navigating to leads.html — that way the user keeps the calls
+        // inbox + filter state and can quickly peek at lead context.
         const leadCell = c.lead_id
-            ? `<a class="ci-lead-link" href="leads.html?leadId=${encodeURIComponent(c.lead_id)}" onclick="event.stopPropagation()">View lead →</a>`
+            ? `<a class="ci-lead-link" href="#" onclick="event.preventDefault(); event.stopPropagation(); openLeadPopup('${escapeHtml(c.lead_id)}')">View lead →</a>`
             : `<button class="ci-convert-btn" onclick="event.stopPropagation(); openConvertModal('${escapeHtml(c.id)}')">Convert to Lead</button>`;
         return `
             <tr data-call-id="${escapeHtml(c.id)}" onclick="openCallDrawer('${escapeHtml(c.id)}')">
                 <td>${directionIcon(c.direction)}</td>
                 <td><span class="ci-phone">${escapeHtml(otherPhone || '—')}</span></td>
                 <td>${leadCell}</td>
-                <td class="hide-mobile"><span class="ci-mute">${c.agent_user_id ? escapeHtml((c.agent_user_id).slice(0,8) + '…') : '—'}</span></td>
+                <td class="hide-mobile"><span class="ci-mute">${escapeHtml(agentLabel(c.agent_user_id))}</span></td>
                 <td><span class="ci-time">${escapeHtml(relTime(c.initiated_at || c.created_at))}</span></td>
                 <td>${statusChip(c.status)}</td>
                 <td class="hide-mobile">${escapeHtml(fmtDuration(c.duration_seconds))}</td>
                 <td>${playerHtml}</td>
                 <td><button class="ci-row-action" onclick="event.stopPropagation(); openCallDrawer('${escapeHtml(c.id)}')" aria-label="Open detail">›</button></td>
             </tr>`;
+    }
+
+    // One-time lookup of every CRM user for the agent column. /teams/users
+    // already returns display_name + email + active flag and is the same
+    // endpoint the teams-setup admin page uses, so we get the same view.
+    // Cached in module scope; the bootstrap calls preloadUserMap() so the
+    // first render already has names. If the call fails (network blip,
+    // permissions), agentLabel falls back to the truncated GUID — same
+    // behaviour as before, no crash.
+    async function preloadUserMap() {
+        if (_userMap) return _userMap;
+        if (_userMapLoading) return _userMapLoading;
+        _userMapLoading = (async () => {
+            try {
+                const users = await api.request('/crm/teams/users?includeInactive=true');
+                _userMap = new Map();
+                (users || []).forEach(u => {
+                    if (u.user_id) _userMap.set(u.user_id, { display_name: u.display_name, email: u.email });
+                });
+            } catch (e) {
+                // Surface to console but don't toast — non-critical UX.
+                console.warn('[calls-inbox] failed to preload user map:', e?.message || e);
+                _userMap = new Map();
+            } finally {
+                _userMapLoading = null;
+            }
+            return _userMap;
+        })();
+        return _userMapLoading;
     }
 
     function renderTable() {
@@ -235,7 +283,7 @@
             ? `<ul class="ci-life">${lifecycleStamps.map(s => `<li><span class="ci-life-dot"></span><div><div class="ci-life-label">${escapeHtml(s.label)}</div><div class="ci-life-when">${escapeHtml(new Date(s.when).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }))}</div></div></li>`).join('')}</ul>`
             : '<p class="ci-mute">No lifecycle stamps yet.</p>';
         const leadActionsHtml = c.lead_id
-            ? `<a class="btn btn-secondary" href="leads.html?leadId=${encodeURIComponent(c.lead_id)}">Open lead →</a>`
+            ? `<button class="btn btn-secondary" onclick="openLeadPopup('${escapeHtml(c.lead_id)}')">View lead →</button>`
             : `<button class="btn btn-primary" onclick="openConvertModal('${escapeHtml(c.id)}')">Convert to Lead</button>`;
         $('ciDrawerTitle').textContent = `${isInbound ? 'Incoming' : 'Outgoing'} · ${otherPhone || '—'}`;
         $('ciDrawerBody').innerHTML = `
@@ -276,6 +324,92 @@
         $('ciDrawer').classList.remove('active');
     }
     window.closeCallDrawer = closeCallDrawer;
+
+    // ─── Lead detail popup ────────────────────────────────────────────────
+    // Opens an inline modal with the lead's key facts so the user keeps
+    // their inbox filter / scroll position. Footer button still routes
+    // to leads.html?leadId=… for the full timeline experience.
+    async function openLeadPopup(leadId) {
+        if (!leadId) return;
+        const overlay = $('ciLeadOverlay');
+        const title   = $('ciLeadTitle');
+        const sub     = $('ciLeadSubtitle');
+        const body    = $('ciLeadBody');
+        const fullBtn = $('ciLeadOpenFull');
+        title.textContent = 'Lead detail';
+        sub.textContent = 'Loading…';
+        body.innerHTML = '<div class="ci-state">Loading lead…</div>';
+        fullBtn.setAttribute('href', `leads.html?leadId=${encodeURIComponent(leadId)}`);
+        overlay.classList.add('active');
+
+        try {
+            // Cache parsed lead so reopening the same row is instant.
+            if (!_leadCache.has(leadId)) {
+                _leadCache.set(leadId, api.request(`/crm/leads/${encodeURIComponent(leadId)}`));
+            }
+            const lead = await _leadCache.get(leadId);
+            renderLeadPopup(lead);
+        } catch (e) {
+            // Drop the cached rejected promise so the next attempt re-fetches.
+            _leadCache.delete(leadId);
+            body.innerHTML = `<div class="ci-state ci-state-error">Failed to load lead — ${escapeHtml(e?.message || 'unknown error')}</div>`;
+        }
+    }
+    window.openLeadPopup = openLeadPopup;
+
+    function closeLeadPopup() {
+        $('ciLeadOverlay').classList.remove('active');
+    }
+    window.closeLeadPopup = closeLeadPopup;
+
+    function renderLeadPopup(lead) {
+        const title = $('ciLeadTitle');
+        const sub   = $('ciLeadSubtitle');
+        const body  = $('ciLeadBody');
+
+        const fullName = [lead.first_name, lead.last_name].filter(Boolean).join(' ').trim() || lead.company_name || lead.phone || 'Lead';
+        title.textContent = fullName;
+        const subParts = [];
+        if (lead.lead_number) subParts.push(escapeHtml(lead.lead_number));
+        if (lead.lead_source) subParts.push(escapeHtml(lead.lead_source));
+        if (lead.created_at)  subParts.push(`Created ${escapeHtml(relTime(lead.created_at))}`);
+        sub.innerHTML = subParts.join(' · ') || '—';
+
+        // Coloured team chip (uses the team_color the lead carries — same
+        // chip the leads table renders for consistency).
+        const teamChip = lead.team_id && lead.team_name
+            ? `<span class="crm-team-badge" style="background:${escapeHtml(lead.team_color || '#6366f1')}; color:#fff;">${escapeHtml(lead.team_name)}</span>`
+            : '<span class="ci-mute">—</span>';
+
+        // Two-column key/value grid — designed to read at a glance.
+        const rows = [
+            ['Phone',          fmtPhoneLink(lead.phone)],
+            ['Email',          lead.email ? `<a href="mailto:${escapeHtml(lead.email)}" onclick="event.stopPropagation()">${escapeHtml(lead.email)}</a>` : '<span class="ci-mute">—</span>'],
+            ['Company',        escapeHtml(lead.company_name || '—')],
+            ['City / State',   escapeHtml([lead.city, lead.state].filter(Boolean).join(', ') || '—')],
+            ['Status',         lead.status ? `<span class="ci-status ci-status-${escapeHtml(lead.status)}">${escapeHtml(lead.status)}</span>` : '<span class="ci-mute">—</span>'],
+            ['Owner',          escapeHtml(lead.owner_name || agentLabel(lead.owner_user_id) || '—') + (lead.owner_is_inactive ? ' <span class="ci-mute">(inactive)</span>' : '')],
+            ['Team',           teamChip],
+            ['Last activity',  lead.latest_activity_at ? `${escapeHtml(relTime(lead.latest_activity_at))} <span class="ci-mute">· ${escapeHtml(lead.latest_activity_summary || lead.latest_activity_type || '')}</span>` : '<span class="ci-mute">—</span>'],
+        ];
+        body.innerHTML = `
+            <div class="ci-lead-grid">
+                ${rows.map(([k, v]) => `
+                    <div class="ci-lead-row">
+                        <span class="ci-lead-k">${escapeHtml(k)}</span>
+                        <span class="ci-lead-v">${v}</span>
+                    </div>
+                `).join('')}
+            </div>
+            ${lead.notes ? `<div class="ci-lead-section"><h4 class="ci-lead-sec-h">Notes</h4><div class="ci-lead-notes">${escapeHtml(lead.notes)}</div></div>` : ''}
+        `;
+    }
+
+    function fmtPhoneLink(phone) {
+        if (!phone) return '<span class="ci-mute">—</span>';
+        const safe = escapeHtml(String(phone));
+        return `<a href="tel:${safe}" onclick="event.stopPropagation()">${safe}</a>`;
+    }
 
     // ─── Convert to Lead ──────────────────────────────────────────────────
     async function loadTeamsForConvert() {
@@ -418,6 +552,16 @@
         $('ciLoadMore').addEventListener('click', () => {
             _offset += PAGE_SIZE;
             loadInbox(false);
+        });
+
+        // Preload the user map FIRST so the agent column renders names
+        // on the very first paint instead of GUIDs that flip a beat later.
+        // If it's slow, the inbox render falls through with truncated GUIDs
+        // and re-renders after the map resolves (see loadInbox).
+        preloadUserMap().then(() => {
+            // If the inbox already rendered before the map landed, re-render
+            // so GUIDs flip to names without the user clicking refresh.
+            if (_rows.length) renderTable();
         });
 
         loadInbox(true);

@@ -251,6 +251,33 @@
         </div>
     </div>
 
+    <!-- Lead detail popup — opens when a user clicks "View lead →" on a
+         row in the calls inbox. Renders the key lead facts (name,
+         company, phone, status, owner, team, last activity) inline so the
+         user keeps their filter + scroll position. The "Open full lead"
+         button at the bottom still routes to leads.html?leadId=… for
+         users who want the full timeline + composer experience. -->
+    <div id="ciLeadOverlay" class="gm-overlay" onclick="closeLeadPopup()">
+        <div class="gm-modal" onclick="event.stopPropagation()" style="width: 560px; max-width: 95vw;">
+            <header class="gm-header">
+                <div class="gm-title-group">
+                    <h3 class="gm-title" id="ciLeadTitle">Lead detail</h3>
+                    <p class="gm-subtitle" id="ciLeadSubtitle">Loading…</p>
+                </div>
+                <button class="gm-close" onclick="closeLeadPopup()" aria-label="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </header>
+            <div class="gm-body" id="ciLeadBody">
+                <div class="ci-state" id="ciLeadLoading">Loading lead…</div>
+            </div>
+            <footer class="gm-footer">
+                <button class="btn btn-secondary" onclick="closeLeadPopup()">Close</button>
+                <a class="btn btn-primary" id="ciLeadOpenFull" href="#">Open full lead →</a>
+            </footer>
+        </div>
+    </div>
+
     <!-- ── Scripts ─────────────────────────────────────────────────── -->
     <script>document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');</script>
     <script>document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');</script>
