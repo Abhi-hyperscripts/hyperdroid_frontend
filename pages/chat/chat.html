@@ -174,9 +174,49 @@
                     </div>
                 </div>
 
+                <!-- Pinned-messages sticky bar — Telegram-style strip
+                     sitting between the chat header and the message list.
+                     Hidden when there are 0 pins. Click cycles through
+                     pins + scrolls to the original; the kebab opens the
+                     full pinned list. -->
+                <div class="pinned-bar" id="pinnedBar" style="display: none;" onclick="onPinnedBarClick()">
+                    <div class="pinned-bar-icon" title="Pinned">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="17" x2="12" y2="22"></line>
+                            <path d="M5 17h14V6H5v11z"></path>
+                            <path d="M5 6l7-4 7 4"></path>
+                        </svg>
+                    </div>
+                    <div class="pinned-bar-body">
+                        <div class="pinned-bar-title" id="pinnedBarTitle">Pinned message</div>
+                        <div class="pinned-bar-preview" id="pinnedBarPreview"></div>
+                    </div>
+                    <button class="pinned-bar-list-btn" onclick="event.stopPropagation(); openPinnedListModal();" title="View all pinned">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="8" y1="6" x2="21" y2="6"/>
+                            <line x1="8" y1="12" x2="21" y2="12"/>
+                            <line x1="8" y1="18" x2="21" y2="18"/>
+                            <circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>
+                        </svg>
+                    </button>
+                </div>
+
                 <!-- Messages -->
                 <div class="chat-messages" id="chatMessages">
                     <!-- Messages will be loaded here -->
+                </div>
+
+                <!-- Pinned list modal (rendered on demand) -->
+                <div class="pinned-list-modal" id="pinnedListModal" style="display: none;" onclick="if(event.target===this) closePinnedListModal()">
+                    <div class="pinned-list-card">
+                        <div class="pinned-list-header">
+                            <h3>Pinned messages</h3>
+                            <button class="pinned-list-close" onclick="closePinnedListModal()" title="Close">×</button>
+                        </div>
+                        <div class="pinned-list-body" id="pinnedListBody">
+                            <!-- Populated by renderPinnedList() -->
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Typing Indicator -->

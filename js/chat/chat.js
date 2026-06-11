@@ -114,6 +114,10 @@ async function connectSignalR() {
         signalRConnection.on('ParticipantAdded', handleParticipantAdded);
         signalRConnection.on('ParticipantRemoved', handleParticipantRemoved);
         signalRConnection.on('ReadReceipt', handleReadReceipt);
+        // Pinned-message lifecycle — conversation-scoped, broadcast to
+        // every participant. Updates the sticky bar + bubble glyphs.
+        signalRConnection.on('MessagePinned', handleMessagePinned);
+        signalRConnection.on('MessageUnpinned', handleMessageUnpinned);
 
         signalRConnection.onreconnecting(() => {
             console.log('SignalR reconnecting...');
@@ -638,6 +642,15 @@ function renderMessage(msg) {
                         </svg>
                     </button>
                 ` : ''}
+                ${msg.message_type !== 'system' ? `
+                    <button class="msg-action-btn ${msg.is_pinned ? 'is-pinned' : ''}" onclick="event.stopPropagation(); togglePinMessage('${msg.id}', ${msg.is_pinned ? 'true' : 'false'})" title="${msg.is_pinned ? 'Unpin' : 'Pin'}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="17" x2="12" y2="22"/>
+                            <path d="M5 17h14V6H5v11z"/>
+                            <path d="M5 6l7-4 7 4"/>
+                        </svg>
+                    </button>
+                ` : ''}
                 ${isOwn ? `
                     <button class="msg-action-btn msg-action-delete" onclick="event.stopPropagation(); confirmDeleteMessage('${msg.id}')" title="Delete">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -654,7 +667,7 @@ function renderMessage(msg) {
     }
 
     return `
-        <div class="message ${isOwn ? 'own' : ''}" data-message-id="${msg.id}">
+        <div class="message ${isOwn ? 'own' : ''} ${msg.is_pinned ? 'is-pinned' : ''}" data-message-id="${msg.id}">
             <div class="message-avatar">${initials}</div>
             <div class="message-content">
                 <span class="message-sender">${escapeHtml(senderName)}</span>
@@ -2488,3 +2501,244 @@ document.addEventListener('click', (e) => {
         }
     });
 })();
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Pinned messages (parity with mobile — 2026-06)
+ *
+ * Conversation-scoped pins: every participant sees the same set. The
+ * sticky bar between header and message list shows the active pin; the
+ * trailing list icon opens a modal with the full list and per-row
+ * unpin. Realtime: MessagePinned / MessageUnpinned SignalR events
+ * keep the bar + bubble glyphs in sync across all participants.
+ * ───────────────────────────────────────────────────────────────────── */
+
+// Per-conversation pins cache. Resets whenever the user switches
+// conversation (openConversation calls loadPinnedMessages which
+// replaces this).
+let pinnedMessages = [];          // ChatPinnedMessage[]
+let pinnedBarIndex = 0;           // current preview index (cycles on tap)
+
+async function loadPinnedMessages(conversationId) {
+    // Soft-fail: a 5xx here shouldn't block the conversation from
+    // rendering. We just leave the bar hidden.
+    try {
+        const r = await api.getPinnedMessages(conversationId);
+        pinnedMessages = (r && r.pins) ? r.pins : [];
+    } catch (e) {
+        console.warn('[chat] loadPinnedMessages failed', e);
+        pinnedMessages = [];
+    }
+    pinnedBarIndex = 0;
+    renderPinnedBar();
+}
+
+function renderPinnedBar() {
+    const bar = document.getElementById('pinnedBar');
+    if (!bar) return;
+    if (pinnedMessages.length === 0) {
+        bar.style.display = 'none';
+        return;
+    }
+    bar.style.display = 'flex';
+    const active = pinnedMessages[pinnedBarIndex % pinnedMessages.length];
+    const title = document.getElementById('pinnedBarTitle');
+    const prev = document.getElementById('pinnedBarPreview');
+    title.textContent = pinnedMessages.length === 1
+        ? 'Pinned message'
+        : `Pinned · ${pinnedMessages.length}`;
+    prev.textContent = pinSnippet(active);
+}
+
+function pinSnippet(pin) {
+    const m = pin && pin.message;
+    if (!m) return 'Message unavailable';
+    if (m.is_deleted) return 'Pinned message was deleted';
+    if (m.message_type === 'file') {
+        const ct = m.file_content_type || '';
+        if (ct.startsWith('image/')) return '📷 Photo';
+        if (ct.startsWith('audio/')) return '🎤 Voice note';
+        return `📎 ${m.file_name || 'File'}`;
+    }
+    return (m.content || '').replace(/\s+/g, ' ').trim();
+}
+
+function onPinnedBarClick() {
+    if (pinnedMessages.length === 0) return;
+    const active = pinnedMessages[pinnedBarIndex % pinnedMessages.length];
+    if (pinnedMessages.length > 1) {
+        pinnedBarIndex = (pinnedBarIndex + 1) % pinnedMessages.length;
+        renderPinnedBar();
+    }
+    scrollToMessage(active.message_id);
+}
+
+function scrollToMessage(messageId) {
+    const el = document.querySelector(`.message[data-message-id="${messageId}"]`);
+    if (!el) return; // best-effort — message may be in older page not yet loaded
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('flash-highlight');
+    setTimeout(() => el.classList.remove('flash-highlight'), 1500);
+}
+
+// Pin / unpin from the per-message hover-actions strip. Optimistic
+// — we flip the local flag now, fire the network call, roll back on
+// failure. The SignalR broadcast that comes back is then a no-op
+// because handleMessagePinned dedupes by message_id.
+async function togglePinMessage(messageId, currentlyPinned) {
+    // Roll forward: flip the in-memory currentMessages flag + rerender
+    // the affected bubble, prepend an optimistic pin row to the bar
+    // cache (so the bar feels live). Stripped down when network
+    // response lands or fails.
+    const msg = currentMessages.find(m => m.id === messageId);
+    if (!msg) return;
+    const nextPinned = !currentlyPinned;
+    msg.is_pinned = nextPinned;
+    rerenderMessageBubble(msg);
+
+    if (nextPinned) {
+        // Optimistic prepend with a synthetic id. The server response
+        // replaces this with the real pin row.
+        const optimistic = {
+            id: 'optimistic-' + messageId,
+            message_id: messageId,
+            conversation_id: currentConversationId,
+            pinned_by: (currentUser && currentUser.userId) || '',
+            pinned_at: new Date().toISOString(),
+            message: msg,
+        };
+        pinnedMessages = [optimistic, ...pinnedMessages.filter(p => p.message_id !== messageId)];
+        renderPinnedBar();
+        try {
+            const r = await api.pinMessage(messageId);
+            if (r && r.reason === 'limit_reached') {
+                msg.is_pinned = false;
+                rerenderMessageBubble(msg);
+                pinnedMessages = pinnedMessages.filter(p => p.id !== optimistic.id);
+                renderPinnedBar();
+                showToast(`Max ${r.max_pins || 10} pins per chat. Unpin one first.`, 'error');
+            } else if (r && r.pin) {
+                // Replace the optimistic row with the canonical one.
+                pinnedMessages = [r.pin, ...pinnedMessages.filter(p => p.id !== optimistic.id && p.message_id !== messageId)];
+                renderPinnedBar();
+            }
+        } catch (e) {
+            msg.is_pinned = false;
+            rerenderMessageBubble(msg);
+            pinnedMessages = pinnedMessages.filter(p => p.id !== optimistic.id);
+            renderPinnedBar();
+            showToast(e?.message || 'Pin failed', 'error');
+        }
+    } else {
+        pinnedMessages = pinnedMessages.filter(p => p.message_id !== messageId);
+        renderPinnedBar();
+        try {
+            await api.unpinMessage(messageId);
+        } catch (e) {
+            msg.is_pinned = true;
+            rerenderMessageBubble(msg);
+            // Re-fetch the canonical list rather than guessing the
+            // previous row — covers the race where another tab unpinned
+            // a different message in the same window.
+            try { const r = await api.getPinnedMessages(currentConversationId); pinnedMessages = (r && r.pins) || []; renderPinnedBar(); } catch {}
+            showToast(e?.message || 'Unpin failed', 'error');
+        }
+    }
+}
+
+// Replace just the affected message DIV instead of re-rendering the
+// whole thread on every pin toggle. Falls back to a full rerender if
+// the row isn't in the DOM yet (shouldn't happen in practice).
+function rerenderMessageBubble(msg) {
+    const el = document.querySelector(`.message[data-message-id="${msg.id}"]`);
+    if (!el) { renderMessages(currentMessages); return; }
+    const wrap = document.createElement('div');
+    wrap.innerHTML = renderMessage(msg, (currentUser && msg.sender_id === currentUser.userId)).trim();
+    if (wrap.firstChild) el.replaceWith(wrap.firstChild);
+}
+
+// SignalR — pin / unpin broadcast handlers.
+function handleMessagePinned(e) {
+    if (!e || e.conversation_id !== currentConversationId) return;
+    const pin = e.pin;
+    if (!pin) return;
+    // Dedupe by message_id; replace any optimistic row with the
+    // canonical server row.
+    pinnedMessages = [pin, ...pinnedMessages.filter(p => p.message_id !== pin.message_id)];
+    renderPinnedBar();
+    const msg = currentMessages.find(m => m.id === pin.message_id);
+    if (msg && !msg.is_pinned) { msg.is_pinned = true; rerenderMessageBubble(msg); }
+}
+
+function handleMessageUnpinned(e) {
+    if (!e || e.conversation_id !== currentConversationId) return;
+    pinnedMessages = pinnedMessages.filter(p => p.message_id !== e.message_id);
+    renderPinnedBar();
+    const msg = currentMessages.find(m => m.id === e.message_id);
+    if (msg && msg.is_pinned) { msg.is_pinned = false; rerenderMessageBubble(msg); }
+}
+
+// Pinned-list modal — full list view with unpin per row.
+function openPinnedListModal() {
+    const modal = document.getElementById('pinnedListModal');
+    if (!modal) return;
+    renderPinnedList();
+    modal.style.display = 'flex';
+}
+
+function closePinnedListModal() {
+    const modal = document.getElementById('pinnedListModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function renderPinnedList() {
+    const body = document.getElementById('pinnedListBody');
+    if (!body) return;
+    if (pinnedMessages.length === 0) {
+        body.innerHTML = '<div class="pinned-list-empty">No pinned messages.</div>';
+        return;
+    }
+    body.innerHTML = pinnedMessages.map(p => {
+        const m = p.message || {};
+        const sender = escapeHtml(m.sender_name || m.sender_id || 'Unknown');
+        const snippet = escapeHtml(pinSnippet(p));
+        const meta = `Pinned by ${escapeHtml(p.pinned_by_name || 'someone')} · ${formatDate(p.pinned_at)}`;
+        const initials = (m.sender_name || m.sender_id || '?').slice(0, 2).toUpperCase();
+        return `
+            <div class="pinned-list-row" onclick="onPinnedListRowClick('${p.message_id}')">
+                <div class="pinned-list-row-avatar">${initials}</div>
+                <div class="pinned-list-row-body">
+                    <div class="pinned-list-row-sender">${sender}</div>
+                    <div class="pinned-list-row-snippet">${snippet}</div>
+                    <div class="pinned-list-row-meta">${escapeHtml(meta)}</div>
+                </div>
+                <button class="pinned-list-row-unpin" onclick="event.stopPropagation(); togglePinMessage('${p.message_id}', true)" title="Unpin">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 9V4h1V2H7v2h1v5L6 11v2h5.2v7l.8 1 .8-1v-7H18v-2l-2-2z"/></svg>
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+function onPinnedListRowClick(messageId) {
+    closePinnedListModal();
+    scrollToMessage(messageId);
+}
+
+// Hook into the existing conversation-open path: wherever loadMessages
+// is called on conversation switch, also load pins. The current
+// openConversation calls loadMessages internally; we monkey-patch by
+// wrapping it once at script load.
+(function wirePinLoadOnConversationOpen() {
+    if (typeof loadMessages !== 'function') return;
+    const _origLoad = loadMessages;
+    window.loadMessages = async function(convId, beforeMessageId) {
+        const r = await _origLoad(convId, beforeMessageId);
+        // Only re-fetch pins on initial open (no beforeMessageId), not
+        // on scroll-up "load older" pagination.
+        if (!beforeMessageId && convId === currentConversationId) {
+            void loadPinnedMessages(convId);
+        }
+        return r;
+    };
+})();
+
