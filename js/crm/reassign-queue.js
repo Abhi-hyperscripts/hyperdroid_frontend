@@ -84,22 +84,37 @@
                 ⚠️ This team has no other active members. Add a member in Team Setup, or use "Leave unassigned".
             </div>`;
 
+        // Group leads by bucket so we can render distinct headings + a
+        // round-robin button that only applies to the unassigned bucket
+        // (orphaned leads usually need manager judgement on who picks them up).
+        const unassignedCount = (g.leads || []).filter(l => l.bucket === 'unassigned').length;
+        const orphanedCount   = (g.leads || []).filter(l => l.bucket !== 'unassigned').length;
+        // Toolbar — round-robin is only useful when there are unassigned
+        // rows AND at least 1 active member to fan them out to.
+        const roundRobinBtn = (hasMembers && unassignedCount > 0) ? `
+            <button type="button" class="btn btn-success btn-sm rq-round-robin" data-team-id="${esc(g.team_id || '')}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 4px;">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                Round-robin auto-assign (${unassignedCount})
+            </button>` : '';
+
         const rows = (g.leads || []).map((l, li) => {
             const name = `${esc(l.first_name || '')} ${esc(l.last_name || '')}`.trim() || '(no name)';
             const formerOwner = esc(l.owner_name || l.owner_user_id || 'unknown');
-            return `<tr data-lead-id="${esc(l.id)}" data-group-index="${gi}">
+            const bucket = l.bucket || 'orphaned';
+            const formerOwnerCell = bucket === 'unassigned'
+                ? `<span class="rq-bucket-pill rq-bucket-unassigned"><span class="rq-bucket-dot"></span>No owner yet</span>`
+                : `<span class="rq-inactive-pill"><span class="rq-inactive-dot"></span>${formerOwner} <span style="opacity:0.7">(inactive)</span></span>`;
+            return `<tr data-lead-id="${esc(l.id)}" data-group-index="${gi}" data-bucket="${esc(bucket)}">
                 <td><a href="leads.html?lead=${esc(l.id)}">${esc(l.lead_id || '')}</a></td>
                 <td>
                     <div class="crm-cell-primary">${name}</div>
                     <div class="crm-cell-secondary">${esc(l.company || '')}</div>
                 </td>
                 <td class="hide-mobile">${esc(l.email || '')}</td>
-                <td>
-                    <span class="rq-inactive-pill">
-                        <span class="rq-inactive-dot"></span>
-                        ${formerOwner}
-                    </span>
-                </td>
+                <td>${formerOwnerCell}</td>
                 <td>
                     <div id="rq-row-pick-${gi}-${li}" class="rq-row-pick" data-no-members="${hasMembers ? 'false' : 'true'}"></div>
                 </td>
@@ -109,13 +124,20 @@
             </tr>`;
         }).join('');
 
+        // Subtitle pins both buckets so the manager sees the split at a glance.
+        const parts = [];
+        if (unassignedCount > 0) parts.push(`<span class="rq-bucket-chip rq-bucket-chip-unassigned">${unassignedCount} unassigned</span>`);
+        if (orphanedCount   > 0) parts.push(`<span class="rq-bucket-chip rq-bucket-chip-orphaned">${orphanedCount} orphaned</span>`);
+        const subtitle = parts.join(' ') || `${g.count} lead${g.count===1?'':'s'} need a new owner`;
+
         return `<div class="rq-group" data-group-index="${gi}">
             <div class="rq-group-header">
                 <div>
                     <div class="rq-group-title">${teamName}</div>
-                    <div class="rq-group-subtitle">${g.count} lead${g.count===1?'':'s'} need a new owner</div>
+                    <div class="rq-group-subtitle">${subtitle}</div>
                 </div>
                 <div class="rq-group-bulk">
+                    ${roundRobinBtn}
                     <div id="rq-bulk-pick-${gi}" class="rq-bulk-pick"></div>
                     <button type="button" class="btn btn-primary btn-sm rq-bulk-apply">Apply to all</button>
                 </div>
@@ -128,7 +150,7 @@
                             <th>Lead ID</th>
                             <th>Name</th>
                             <th class="hide-mobile">Email</th>
-                            <th>Former Owner</th>
+                            <th>Previous Owner</th>
                             <th>New Owner</th>
                             <th></th>
                         </tr>
@@ -207,6 +229,53 @@
                 } catch (err) {
                     showToast(err?.message || 'Reassign failed', 'error');
                     btn.disabled = false; btn.textContent = 'Reassign';
+                }
+            });
+        });
+
+        // Round-robin auto-assign for the unassigned bucket. Picks up
+        // every lead in the group flagged as `bucket=unassigned` and
+        // POSTs them to /bulk-auto-assign-owners with the group's team_id.
+        // Backend distributes evenly across the team's active members
+        // and returns per-owner counts which we show in the success toast.
+        document.querySelectorAll('.rq-round-robin').forEach((btn) => {
+            btn.addEventListener('click', async () => {
+                const teamId = btn.getAttribute('data-team-id');
+                if (!teamId) {
+                    showToast('No team to round-robin against', 'error');
+                    return;
+                }
+                const groupEl = btn.closest('.rq-group');
+                const leadIds = Array.from(
+                    groupEl.querySelectorAll('tr[data-bucket="unassigned"]')
+                ).map(tr => tr.getAttribute('data-lead-id')).filter(Boolean);
+                if (leadIds.length === 0) {
+                    showToast('No unassigned leads in this group', 'info');
+                    return;
+                }
+                const ok = await showConfirm(
+                    `Round-robin ${leadIds.length} lead${leadIds.length===1?'':'s'} evenly across this team's active members?`,
+                    'Auto-assign owners'
+                );
+                if (!ok) return;
+                btn.disabled = true;
+                const origHtml = btn.innerHTML;
+                btn.textContent = `Assigning… (0/${leadIds.length})`;
+                try {
+                    const res = await api.request('/crm/leads/bulk-auto-assign-owners', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ team_id: teamId, lead_ids: leadIds })
+                    });
+                    const breakdown = Object.values(res.per_owner_counts || {}).reduce((a, b) => a + b, 0);
+                    let msg = `Assigned ${res.assigned} lead${res.assigned===1?'':'s'} via round-robin`;
+                    if (res.skipped > 0) msg += `, ${res.skipped} skipped`;
+                    showToast(msg, 'success');
+                    setTimeout(() => loadQueue(), 400);
+                } catch (err) {
+                    btn.innerHTML = origHtml;
+                    btn.disabled = false;
+                    showToast(err?.message || 'Round-robin failed', 'error');
                 }
             });
         });

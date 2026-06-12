@@ -551,11 +551,26 @@ async function loadReassignQueueBadge() {
     try {
         const res = await api.request('/crm/leads/reassign-queue/count');
         const count = (res && typeof res.count === 'number') ? res.count : 0;
-        if (count > 0) {
-            badge.textContent = count;
-            btn.style.display = '';
+        badge.textContent = count;
+        // Permanently visible for admins/managers (any caller the
+        // backend doesn't 403). Hiding it behind count > 0 made the
+        // page un-discoverable — a tenant with 207 unassigned leads
+        // had no way to find this page until the queue's predicate
+        // was widened on 2026-06-12 to surface them. Now it shows
+        // even at zero so the manager knows the option exists.
+        btn.style.display = '';
+        // Soften the red when nothing's wrong; keep the loud red
+        // when leads are actually stuck.
+        if (count === 0) {
+            btn.style.borderColor = 'var(--border-color)';
+            btn.style.color = 'var(--text-secondary)';
+            badge.style.background = 'var(--bg-secondary)';
+            badge.style.color = 'var(--text-secondary)';
         } else {
-            btn.style.display = 'none';
+            btn.style.borderColor = 'rgba(239,68,68,0.4)';
+            btn.style.color = 'var(--color-error, #ef4444)';
+            badge.style.background = 'var(--color-error, #ef4444)';
+            badge.style.color = '#fff';
         }
     } catch {
         // 403 (non-manager) or transient — stay hidden.
