@@ -4255,7 +4255,10 @@ async function previewWipeLeadsByRange() {
         previewEl.innerHTML = `Will delete <strong>${res.leads_count} leads</strong>, ${res.activities_count} activities, ${res.followups_count} follow-ups, ${res.email_sends_count} email sends, and ${res.other_child_rows_count} other child rows (tasks, notes, transfer/help requests, assignment history). <strong>Total: ${res.total_rows_count} rows.</strong> Companies, contacts, and deals are not deleted.`;
     } catch (e) {
         console.error('Preview wipe failed:', e);
-        previewEl.innerHTML = `<span style="color:var(--color-danger);">${(e.message || 'Preview failed').replace(/</g, '&lt;')}</span>`;
+        // Use the canonical escapeHtml (defined at top of file) instead of
+        // the inline .replace(/</g) which only covered '<' and would let
+        // attacker-controlled error messages slip ">"/quote-based XSS through.
+        previewEl.innerHTML = `<span style="color:var(--color-danger);">${escapeHtml(e.message || 'Preview failed')}</span>`;
     }
 }
 
