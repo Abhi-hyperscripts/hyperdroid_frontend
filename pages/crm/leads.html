@@ -27,6 +27,7 @@
     <script>document.write('<link rel="stylesheet" href="../../css/searchable-dropdown.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/slide-panel.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/crm-lead-import.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sequences.css?v=' + CACHE_VERSION + '">');</script>
     <!-- TinyMCE 7 community (replaces Quill) — used by the shared email
          composer (js/shared/email-composer.js) and any other rich-text
          editor on this page. -->
@@ -1239,6 +1240,10 @@
             <!-- Lead info summary -->
             <div id="leadDetailInfo" class="lead-detail-info"></div>
 
+            <!-- Sequence enrollment badge — populated by lead-journey.js'
+                 refreshSequenceBadgeForLead. Empty when no active enrollment. -->
+            <div id="leadSeqBadgeSlot"></div>
+
             <!-- Quick actions -->
             <div class="lead-detail-actions" id="leadDetailActions">
                 <button class="btn btn-sm btn-outline-primary" onclick="openStatusChangeModal(window._leadDetailId)">Change Status</button>
@@ -1251,6 +1256,11 @@
                 </button>
                 <button class="btn btn-sm btn-outline-secondary" onclick="openTransferRequestModal(window._leadDetailId)">Transfer to Team</button>
                 <button class="btn btn-sm btn-outline-warning" onclick="openHelpRequestModal(window._leadDetailId)" id="leadDetailNeedHelpBtn">Need Help</button>
+                <button class="btn btn-sm btn-outline-primary" onclick="openSequenceEnrollModal(window._leadDetailId)" id="leadDetailEnrollSeqBtn" title="Enroll this lead in a multi-step sequence">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;">
+                        <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/>
+                    </svg>Enroll in Sequence
+                </button>
             </div>
 
             <!-- Timeline -->

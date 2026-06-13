@@ -38,21 +38,40 @@
     // Meta Pixel ID — Wisetrack Web (Wisetrack Lead Gen BP)
     const META_PIXEL_ID = '1300543928289367';
 
+    // GA4 Measurement IDs
+    // Marketing pages (home, insights, calculators, signup/login, legal) → Ragenaizer Web stream
+    // Product/app pages (signed-in workspace) → HyperDroid product telemetry stream
+    const GA4_MARKETING = 'G-60658KXB0N';
+    const GA4_PRODUCT   = 'G-LXVS357DCK';
+
+    // URL-based router: product page == /pages/<product-area>/* OR /pages/home.html
+    // Everything else (root, insights, calculators, blog, legal, auth) is marketing.
+    function pickGA4Id() {
+        const PRODUCT_AREAS = ['vision','drive','hrms','crm','admin','mail','email','chat','accounts','payment','procurement','lms','news','pms'];
+        const path = (location.pathname || '').toLowerCase();
+        if (path === '/pages/home.html') return GA4_PRODUCT;
+        const m = path.match(/^\/pages\/([^/]+)\//);
+        if (m && PRODUCT_AREAS.indexOf(m[1]) !== -1) return GA4_PRODUCT;
+        return GA4_MARKETING;
+    }
+
     // Load Google Analytics + Meta Pixel if consent given
     function loadAnalytics() {
         if (window.gaLoaded) return;
 
+        const ga4Id = pickGA4Id();
+
         // Google Analytics 4
         const script = document.createElement('script');
         script.async = true;
-        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-LXVS357DCK';
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=' + ga4Id;
         document.head.appendChild(script);
 
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         window.gtag = gtag;
         gtag('js', new Date());
-        gtag('config', 'G-LXVS357DCK');
+        gtag('config', ga4Id);
 
         // Meta Pixel — base + PageView
         !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?

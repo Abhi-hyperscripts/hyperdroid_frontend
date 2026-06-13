@@ -121,6 +121,7 @@ class API {
             || endpoint.startsWith('/lead-sources')
             || endpoint.startsWith('/lead-fields')
             || endpoint.startsWith('/status-email-triggers')
+            || endpoint.startsWith('/sequences')
             || endpoint.startsWith('/whatsapp/')) {
             return CONFIG.crmApiBaseUrl;
         }
@@ -289,11 +290,6 @@ class API {
                 // keep working — they just ignore the extra field.
                 const apiErr = new Error(errorMessage || 'Request failed');
                 apiErr.status = response.status;
-                // Carry the parsed body too — some endpoints return
-                // structured failure shapes (e.g. pin's 409
-                // { reason: 'limit_reached', max_pins }) that callers
-                // want to read without re-parsing.
-                apiErr.data = data;
                 throw apiErr;
             }
 
@@ -1420,30 +1416,6 @@ class API {
             method: 'POST',
             body: JSON.stringify({ message_id: messageId })
         });
-    }
-
-    // ── Pinned messages (2026-06) ────────────────────────────────────
-    // Pin / unpin are idempotent on the server (re-pin returns
-    // already_pinned:true, re-unpin returns was_pinned:false). Pin
-    // returns 409 Conflict with { reason: 'limit_reached', max_pins }
-    // when the 10-per-conversation cap would be exceeded; caller is
-    // expected to surface that as a "unpin one first" toast.
-    async pinMessage(messageId) {
-        // 409 (limit_reached) is a *normal* outcome — convert it back
-        // into a resolved response so the happy path doesn't need a
-        // try/catch. Any other failure (auth, network, 5xx) re-throws.
-        try {
-            return await this.request(`/chat/messages/${messageId}/pin`, { method: 'POST' });
-        } catch (e) {
-            if (e?.status === 409 && e?.data) return e.data;
-            throw e;
-        }
-    }
-    async unpinMessage(messageId) {
-        return this.request(`/chat/messages/${messageId}/pin`, { method: 'DELETE' });
-    }
-    async getPinnedMessages(conversationId) {
-        return this.request(`/chat/conversations/${conversationId}/pinned-messages`);
     }
 
     // Participants
