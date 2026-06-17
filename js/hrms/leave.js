@@ -2540,11 +2540,18 @@ function hideTeamCalendarDayPopover() {
 }
 
 function getLeaveEntriesForDate(dateStr) {
-    const date = new Date(dateStr);
+    // dateStr is "YYYY-MM-DD". Compare against the API's start/end as
+    // YYYY-MM-DD strings — lexicographic compare matches calendar compare
+    // for ISO date heads. Going through `new Date(...)` instead was the
+    // bug: an ISO date with NO time ("2026-06-17") parses as UTC midnight,
+    // but the same value with a "T00:00:00" suffix and no zone parses as
+    // LOCAL midnight. On IST that's a 5h30m offset, which clipped any
+    // single-day leave (and the last day of every multi-day leave) off the
+    // calendar even though the backend returned the row correctly.
     return calendarData.filter(leave => {
-        const fromDate = new Date(leave.start_date || leave.from_date);
-        const toDate = new Date(leave.end_date || leave.to_date);
-        return date >= fromDate && date <= toDate;
+        const from = (leave.start_date || leave.from_date || '').slice(0, 10);
+        const to   = (leave.end_date   || leave.to_date   || '').slice(0, 10);
+        return from && to && dateStr >= from && dateStr <= to;
     });
 }
 
