@@ -183,12 +183,11 @@
 
                 <div style="border-top:1px solid var(--border-color); padding-top:14px;">
                     <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Add a subscriber</div>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <select id="subsAddUserSelect" class="form-control" style="flex:1;"></select>
-                        <select id="subsAddRoleSelect" class="form-control" style="width:140px;">
-                            <option value="collaborator">Collaborator</option>
-                            <option value="owner">Owner</option>
-                        </select>
+                    <div style="display:flex; gap:8px; align-items:flex-start;">
+                        <!-- SearchableDropdown mounts here. Native <select> is forbidden
+                             per the project's UI conventions (breaks brand theme). -->
+                        <div id="subsAddUserDropdown" style="flex:1; min-width:0;"></div>
+                        <div id="subsAddRoleDropdown" style="width:160px; flex-shrink:0;"></div>
                         <button class="email-send-btn" id="subsAddBtn" style="white-space:nowrap;">Add</button>
                     </div>
                     <div id="subsAddResult" style="font-size:12px; margin-top:8px; display:none;"></div>
@@ -206,6 +205,7 @@
         document.write('<script src="../../js/api.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/navigation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/toast.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/email/settings.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>

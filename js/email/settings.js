@@ -437,7 +437,10 @@ async function connectGmailOAuth() {
 // admin-gated server-side. User picker calls /api/users which Auth filters
 // to current-tenant only.
 
-const Subs = { mailbox: null, subscribers: [], tenantUsers: [] };
+// userDropdown + roleDropdown are SearchableDropdown instances, populated
+// once on first open and reused. Native <select> is forbidden across the
+// project — searchable-dropdown.js is the canonical picker.
+const Subs = { mailbox: null, subscribers: [], tenantUsers: [], userDropdown: null, roleDropdown: null };
 
 async function openSubscribersModal(mbx) {
     if (!isEmailAdmin()) return; // defense-in-depth — UI button already gates
@@ -459,6 +462,11 @@ async function openSubscribersModal(mbx) {
 function closeSubscribersModal() {
     document.getElementById('subscribersModal').classList.remove('active');
     Subs.mailbox = null;
+    // Destroy the dropdowns so re-opening the modal for a DIFFERENT mailbox
+    // doesn't reuse stale options. Cheap to recreate; correctness matters
+    // more than reuse here.
+    if (Subs.userDropdown) { Subs.userDropdown.destroy(); Subs.userDropdown = null; }
+    if (Subs.roleDropdown) { Subs.roleDropdown.destroy(); Subs.roleDropdown = null; }
 }
 
 async function loadSubscribers() {
@@ -515,24 +523,48 @@ function renderSubscribers() {
 }
 
 function renderUserPicker() {
-    const sel = document.getElementById('subsAddUserSelect');
-    sel.disabled = false;
-    // Exclude already-subscribed users so the admin can't re-add them.
+    // SearchableDropdown is mandatory across the project — never use native
+    // <select>. The instance is created lazily on first open and reused.
+    const userContainer = document.getElementById('subsAddUserDropdown');
+    const roleContainer = document.getElementById('subsAddRoleDropdown');
+    if (!userContainer || !roleContainer) return;
+
+    // Exclude already-subscribed users so an admin can't add a duplicate.
     const subscribedIds = new Set(Subs.subscribers.map(s => s.user_id));
-    const eligible = Subs.tenantUsers.filter(u => !subscribedIds.has(u.userId));
-    if (eligible.length === 0) {
-        sel.innerHTML = '<option value="">Everyone in the tenant is already subscribed</option>';
-        sel.disabled = true;
-        return;
+    const eligible = Subs.tenantUsers
+        .filter(u => !subscribedIds.has(u.userId))
+        .map(u => ({ value: u.userId, label: u.email || u.userId }));
+
+    if (!Subs.userDropdown) {
+        Subs.userDropdown = new SearchableDropdown(userContainer, {
+            options: eligible,
+            placeholder: eligible.length === 0
+                ? 'Everyone in the tenant is already subscribed'
+                : 'Pick a user…',
+            searchPlaceholder: 'Search by email…',
+            disabled: eligible.length === 0,
+            virtualScroll: eligible.length > 50,
+        });
+    } else {
+        Subs.userDropdown.setOptions(eligible, /*preserveValue*/ false);
     }
-    sel.innerHTML = '<option value="">Pick a user…</option>' +
-        eligible.map(u => `<option value="${escapeHtml(u.userId)}">${escapeHtml(u.email || u.userId)}</option>`).join('');
+
+    if (!Subs.roleDropdown) {
+        Subs.roleDropdown = new SearchableDropdown(roleContainer, {
+            options: [
+                { value: 'collaborator', label: 'Collaborator' },
+                { value: 'owner',        label: 'Owner' },
+            ],
+            placeholder: 'Role',
+            value: 'collaborator',
+        });
+    }
 }
 
 async function addSubscriber() {
     if (!Subs.mailbox) return;
-    const userId = document.getElementById('subsAddUserSelect').value;
-    const role   = document.getElementById('subsAddRoleSelect').value;
+    const userId = Subs.userDropdown?.getValue() || '';
+    const role   = Subs.roleDropdown?.getValue() || 'collaborator';
     const res = document.getElementById('subsAddResult');
     if (!userId) {
         res.style.display = 'block';
@@ -550,6 +582,10 @@ async function addSubscriber() {
         res.style.background = 'var(--color-success-light)';
         res.style.color = 'var(--color-success-dark)';
         res.textContent = 'Added.';
+        // Clear the user pick so the admin can immediately add another.
+        // Role stays at whatever they chose — most adds in one session
+        // will be the same role.
+        Subs.userDropdown?.setValue(null);
         await loadSubscribers();
     } catch (err) {
         res.style.display = 'block';
