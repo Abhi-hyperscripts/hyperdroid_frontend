@@ -2,7 +2,39 @@
  * EmailService — settings page (mailbox CRUD).
  */
 
-const S = { mailboxes: [], editingId: null };
+// imapSslDropdown / smtpSslDropdown — SearchableDropdown instances for the
+// SSL pickers in the Add Mailbox modal. Native <select> is forbidden across
+// the project; these get created lazily the first time the modal opens.
+const S = { mailboxes: [], editingId: null, imapSslDropdown: null, smtpSslDropdown: null };
+
+const SSL_OPTIONS = [
+    { value: 'true',  label: 'Yes' },        // implicit TLS
+    { value: 'false', label: 'STARTTLS' },   // opportunistic TLS over plain port
+];
+
+// Lazily-built singleton instances. The modal stays in the DOM across opens,
+// so reuse keeps DOM allocations and event bindings stable.
+function ensureSslDropdown(stateKey, mountId) {
+    if (S[stateKey]) return S[stateKey];
+    const mount = document.getElementById(mountId);
+    if (!mount) return null;
+    S[stateKey] = new SearchableDropdown(mount, {
+        options: SSL_OPTIONS,
+        placeholder: 'SSL',
+        value: 'true',
+    });
+    return S[stateKey];
+}
+
+// Two tiny helpers so the rest of the file reads like the original
+// .value / .value= sites it replaces.
+function getSslDropdownValue(stateKey) {
+    return S[stateKey]?.getValue() ?? 'true';
+}
+function setSslDropdownValue(stateKey, mountId, value) {
+    const dd = ensureSslDropdown(stateKey, mountId);
+    dd?.setValue(value);
+}
 
 // True for SUPERADMIN or EMAILSERVICE_ADMIN. Drives whether the "Shared mailbox"
 // toggle is editable. Non-admins see it disabled with an explanation. Backend
@@ -135,12 +167,12 @@ function openMailboxModal(mbx) {
     document.getElementById('mbxDisplay').value = mbx?.display_name || '';
     document.getElementById('mbxImapHost').value = mbx?.imap_host || '';
     document.getElementById('mbxImapPort').value = mbx?.imap_port || 993;
-    document.getElementById('mbxImapSsl').value = String(mbx?.imap_use_ssl ?? true);
+    setSslDropdownValue('imapSslDropdown', 'mbxImapSslDropdown', String(mbx?.imap_use_ssl ?? true));
     document.getElementById('mbxImapUser').value = mbx?.imap_username || '';
     document.getElementById('mbxImapPass').value = '';
     document.getElementById('mbxSmtpHost').value = mbx?.smtp_host || '';
     document.getElementById('mbxSmtpPort').value = mbx?.smtp_port || 465;
-    document.getElementById('mbxSmtpSsl').value = String(mbx?.smtp_use_ssl ?? true);
+    setSslDropdownValue('smtpSslDropdown', 'mbxSmtpSslDropdown', String(mbx?.smtp_use_ssl ?? true));
     document.getElementById('mbxSmtpUser').value = mbx?.smtp_username || '';
     document.getElementById('mbxSmtpPass').value = '';
     document.getElementById('mbxEmail').disabled = !!mbx;
@@ -199,8 +231,8 @@ async function handleEmailBlurAutoconfig() {
         fillIfEmpty('mbxSmtpPort', cfg.smtp_port);
         // SSL selects need their value set explicitly (empty-check doesn't apply).
         // Only override if they're still at defaults and the guess differs.
-        document.getElementById('mbxImapSsl').value = String(cfg.imap_use_ssl);
-        document.getElementById('mbxSmtpSsl').value = String(cfg.smtp_use_ssl);
+        setSslDropdownValue('imapSslDropdown', 'mbxImapSslDropdown', String(cfg.imap_use_ssl));
+        setSslDropdownValue('smtpSslDropdown', 'mbxSmtpSslDropdown', String(cfg.smtp_use_ssl));
 
         const helpLink = cfg.app_password_help_url
             ? ` <a href="${cfg.app_password_help_url}" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline;">App-password help ↗</a>`
@@ -223,13 +255,13 @@ function readForm() {
         is_shared: !!document.getElementById('mbxIsShared').checked,
         imap_host: document.getElementById('mbxImapHost').value.trim(),
         imap_port: parseInt(document.getElementById('mbxImapPort').value, 10) || 993,
-        imap_use_ssl: document.getElementById('mbxImapSsl').value === 'true',
+        imap_use_ssl: getSslDropdownValue('imapSslDropdown') === 'true',
         imap_username: document.getElementById('mbxImapUser').value.trim()
             || document.getElementById('mbxEmail').value.trim(),
         imap_password: document.getElementById('mbxImapPass').value,
         smtp_host: document.getElementById('mbxSmtpHost').value.trim(),
         smtp_port: parseInt(document.getElementById('mbxSmtpPort').value, 10) || 465,
-        smtp_use_ssl: document.getElementById('mbxSmtpSsl').value === 'true',
+        smtp_use_ssl: getSslDropdownValue('smtpSslDropdown') === 'true',
         smtp_username: document.getElementById('mbxSmtpUser').value.trim()
             || document.getElementById('mbxImapUser').value.trim()
             || document.getElementById('mbxEmail').value.trim(),

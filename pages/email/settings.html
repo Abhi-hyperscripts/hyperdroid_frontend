@@ -107,11 +107,9 @@
                         <input type="number" id="mbxImapPort" value="993">
                     </div>
                     <div class="email-form-field" style="max-width:110px;">
-                        <label for="mbxImapSsl">SSL</label>
-                        <select id="mbxImapSsl">
-                            <option value="true" selected>Yes</option>
-                            <option value="false">STARTTLS</option>
-                        </select>
+                        <label>SSL</label>
+                        <!-- SearchableDropdown mounts here. Native <select> is forbidden. -->
+                        <div id="mbxImapSslDropdown"></div>
                     </div>
                 </div>
                 <div class="email-form-row">
@@ -136,11 +134,9 @@
                         <input type="number" id="mbxSmtpPort" value="465">
                     </div>
                     <div class="email-form-field" style="max-width:110px;">
-                        <label for="mbxSmtpSsl">SSL</label>
-                        <select id="mbxSmtpSsl">
-                            <option value="true" selected>Yes</option>
-                            <option value="false">STARTTLS</option>
-                        </select>
+                        <label>SSL</label>
+                        <!-- SearchableDropdown mounts here. Native <select> is forbidden. -->
+                        <div id="mbxSmtpSslDropdown"></div>
                     </div>
                 </div>
                 <div class="email-form-row">
