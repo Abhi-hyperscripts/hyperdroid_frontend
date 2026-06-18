@@ -524,12 +524,20 @@ function renderSubscribers() {
 
 function renderUserPicker() {
     // SearchableDropdown is mandatory across the project — never use native
-    // <select>. The instance is created lazily on first open and reused.
+    // <select>. The dropdowns are created once on first open, then every
+    // call to this function re-syncs options + disabled state.
+    //
+    // Two failure modes the structure here defends against:
+    //  1. renderUserPicker fires before loadTenantUsers resolves (the modal
+    //     opens both fetches in parallel). The dropdown gets built once and
+    //     populated when the data arrives; nothing baked in at construction.
+    //  2. The placeholder/disabled state must reflect the current
+    //     eligible-list, not whatever the list was at construction.
     const userContainer = document.getElementById('subsAddUserDropdown');
     const roleContainer = document.getElementById('subsAddRoleDropdown');
+    const hint = document.getElementById('subsAddHint');
     if (!userContainer || !roleContainer) return;
 
-    // Exclude already-subscribed users so an admin can't add a duplicate.
     const subscribedIds = new Set(Subs.subscribers.map(s => s.user_id));
     const eligible = Subs.tenantUsers
         .filter(u => !subscribedIds.has(u.userId))
@@ -538,15 +546,24 @@ function renderUserPicker() {
     if (!Subs.userDropdown) {
         Subs.userDropdown = new SearchableDropdown(userContainer, {
             options: eligible,
-            placeholder: eligible.length === 0
-                ? 'Everyone in the tenant is already subscribed'
-                : 'Pick a user…',
+            placeholder: 'Pick a user…',
             searchPlaceholder: 'Search by email…',
-            disabled: eligible.length === 0,
-            virtualScroll: eligible.length > 50,
+            virtualScroll: true,
         });
     } else {
         Subs.userDropdown.setOptions(eligible, /*preserveValue*/ false);
+    }
+    // Always re-sync disabled — eligible can flip from non-empty to empty
+    // (and back) as the admin adds/removes subscribers without closing the modal.
+    Subs.userDropdown.setDisabled(eligible.length === 0);
+
+    if (hint) {
+        if (eligible.length === 0 && Subs.tenantUsers.length > 0) {
+            hint.textContent = 'Everyone in the tenant is already subscribed.';
+            hint.style.display = '';
+        } else {
+            hint.style.display = 'none';
+        }
     }
 
     if (!Subs.roleDropdown) {
