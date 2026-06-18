@@ -79,12 +79,24 @@ function renderMailboxList() {
         return;
     }
     list.innerHTML = '';
+    const admin = isEmailAdmin();
     S.mailboxes.forEach(m => {
         const card = document.createElement('div');
         card.className = 'email-mailbox-card';
         let statusClass = 'pending', statusLabel = 'Never connected';
         if (m.last_error) { statusClass = 'error'; statusLabel = 'Connection error'; }
         else if (m.last_connected_at) { statusClass = 'ok'; statusLabel = 'Connected'; }
+
+        // SERVICE = is_shared=TRUE. Tooltip reflects the post-2026-06-18
+        // semantics: it's a backend-integration mailbox, not a "team inbox"
+        // by default. Humans see it only if they have a subscriber row.
+        const sharedBadge = m.is_shared
+            ? `<span title="Service mailbox — used by backend integrations like CRM. Add subscribers below to grant human access." style="font-size:10.5px; padding:2px 8px; border-radius:10px; background:var(--brand-primary); color:#fff; font-weight:600; letter-spacing:0.3px;">SERVICE</span>`
+            : `<span title="Personal mailbox — only you can see this" style="font-size:10.5px; padding:2px 8px; border-radius:10px; background:var(--bg-card-hover); color:var(--text-secondary); font-weight:600; letter-spacing:0.3px; border:1px solid var(--border-color);">PERSONAL</span>`;
+
+        // Manage Subscribers button: admin-only, shared-mailbox-only.
+        const subsButton = (admin && m.is_shared)
+            ? `<button data-action="subscribers">Subscribers</button>` : '';
 
         card.innerHTML = `
             <div class="mbx-left">
@@ -94,9 +106,7 @@ function renderMailboxList() {
                 <div>
                     <div class="mbx-name" style="display:flex; align-items:center; gap:8px;">
                         ${escapeHtml(m.display_name || m.email_address)}
-                        ${m.is_shared
-                            ? `<span title="Visible to the whole team — can be attached to CRM flows" style="font-size:10.5px; padding:2px 8px; border-radius:10px; background:var(--brand-primary); color:#fff; font-weight:600; letter-spacing:0.3px;">SHARED</span>`
-                            : `<span title="Personal mailbox — only you can see this" style="font-size:10.5px; padding:2px 8px; border-radius:10px; background:var(--bg-card-hover); color:var(--text-secondary); font-weight:600; letter-spacing:0.3px; border:1px solid var(--border-color);">PERSONAL</span>`}
+                        ${sharedBadge}
                     </div>
                     <div class="mbx-sub">${escapeHtml(m.email_address)} · ${escapeHtml(m.imap_host || '')}:${m.imap_port}</div>
                     ${m.last_error ? `<div class="mbx-err">${escapeHtml(m.last_error)}</div>` : ''}
@@ -105,12 +115,15 @@ function renderMailboxList() {
             <div class="mbx-status ${statusClass}">${statusLabel}</div>
             <div class="mbx-actions">
                 <button data-action="test">Test</button>
+                ${subsButton}
                 <button data-action="edit">Edit</button>
                 <button data-action="delete" class="danger">Delete</button>
             </div>`;
         card.querySelector('[data-action="test"]').addEventListener('click', () => testExistingMailbox(m.id));
         card.querySelector('[data-action="edit"]').addEventListener('click', () => openMailboxModal(m));
         card.querySelector('[data-action="delete"]').addEventListener('click', () => deleteMailbox(m));
+        const subsBtn = card.querySelector('[data-action="subscribers"]');
+        if (subsBtn) subsBtn.addEventListener('click', () => openSubscribersModal(m));
         list.appendChild(card);
     });
 }
@@ -133,15 +146,15 @@ function openMailboxModal(mbx) {
     document.getElementById('mbxEmail').disabled = !!mbx;
     document.getElementById('mbxTestResult').style.display = 'none';
 
-    // Shared toggle — admin-only. Reflect current value, lock for non-admins.
+    // Shared toggle — admin-only. Non-admins shouldn't even see the row;
+    // dead UI is worse than no UI. Existing mailboxes preserve their
+    // current is_shared value on the hidden input so an update PUT
+    // doesn't accidentally drop the flag.
+    const sharedField = document.getElementById('mbxSharedField');
     const sharedCb = document.getElementById('mbxIsShared');
-    const adminBadge = document.getElementById('mbxSharedAdminBadge');
-    const deniedHint = document.getElementById('mbxSharedDeniedHint');
     sharedCb.checked = !!(mbx?.is_shared);
     const admin = isEmailAdmin();
-    sharedCb.disabled = !admin;
-    adminBadge.style.display = admin ? 'none' : '';
-    deniedHint.style.display = admin ? 'none' : '';
+    sharedField.style.display = admin ? '' : 'none';
 
     document.getElementById('mailboxModal').classList.add('active');
 }
@@ -417,3 +430,172 @@ async function connectGmailOAuth() {
         else alert('Could not start Gmail connect: ' + (e.message || e));
     }
 }
+
+// ───── Manage Subscribers (admin-only, shared mailboxes) ───────────────
+//
+// Backend: /api/mailboxes/{id}/subscribers (GET / POST / DELETE),
+// admin-gated server-side. User picker calls /api/users which Auth filters
+// to current-tenant only.
+
+const Subs = { mailbox: null, subscribers: [], tenantUsers: [] };
+
+async function openSubscribersModal(mbx) {
+    if (!isEmailAdmin()) return; // defense-in-depth — UI button already gates
+    Subs.mailbox = mbx;
+    document.getElementById('subsModalEmail').textContent = mbx.email_address;
+    document.getElementById('subsList').innerHTML = '<div style="color:var(--text-secondary); font-size:13px;">Loading subscribers…</div>';
+    document.getElementById('subsAddResult').style.display = 'none';
+    document.getElementById('subscribersModal').classList.add('active');
+
+    // Re-parent to body so no positioned ancestor traps the overlay.
+    const overlay = document.getElementById('subscribersModal');
+    if (overlay && overlay.parentElement !== document.body) document.body.appendChild(overlay);
+
+    // Fetch both in parallel — subs render first; user picker just becomes
+    // selectable once it loads.
+    await Promise.all([loadSubscribers(), loadTenantUsers()]);
+}
+
+function closeSubscribersModal() {
+    document.getElementById('subscribersModal').classList.remove('active');
+    Subs.mailbox = null;
+}
+
+async function loadSubscribers() {
+    if (!Subs.mailbox) return;
+    try {
+        const data = await api.request(`/email/mailboxes/${Subs.mailbox.id}/subscribers`);
+        Subs.subscribers = Array.isArray(data) ? data : [];
+        renderSubscribers();
+    } catch (err) {
+        document.getElementById('subsList').innerHTML =
+            `<div style="color:var(--color-danger); font-size:13px;">Failed to load: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+async function loadTenantUsers() {
+    try {
+        // Auth returns tenant-scoped user list. Required role for the
+        // endpoint includes EMAILSERVICE_ADMIN (loosened 2026-06-18).
+        const users = await api.request('/users');
+        Subs.tenantUsers = Array.isArray(users) ? users : [];
+        renderUserPicker();
+    } catch (err) {
+        const sel = document.getElementById('subsAddUserSelect');
+        sel.innerHTML = `<option value="">Failed to load users: ${escapeHtml(err.message)}</option>`;
+        sel.disabled = true;
+    }
+}
+
+function renderSubscribers() {
+    const container = document.getElementById('subsList');
+    if (Subs.subscribers.length === 0) {
+        container.innerHTML = `<div style="color:var(--text-secondary); font-size:13px;">
+            No subscribers yet. Add one below to give that user access in the email UI.</div>`;
+        renderUserPicker();
+        return;
+    }
+    container.innerHTML = '';
+    Subs.subscribers.forEach(s => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; background:var(--bg-card-hover); border-radius:6px; border:1px solid var(--border-color);';
+        const user = Subs.tenantUsers.find(u => u.userId === s.user_id);
+        const displayLabel = s.display_name || user?.email || s.user_id;
+        const roleColor = s.role === 'owner' ? 'var(--brand-primary)' : 'var(--text-secondary)';
+        row.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:2px;">
+                <div style="font-weight:500; font-size:13px;">${escapeHtml(displayLabel)}</div>
+                <div style="font-size:11.5px; color:${roleColor};">${escapeHtml(s.role)}</div>
+            </div>
+            <button data-action="remove" style="background:transparent; border:1px solid var(--color-danger); color:var(--color-danger); padding:4px 10px; border-radius:5px; font-size:12px; cursor:pointer;">Remove</button>`;
+        row.querySelector('[data-action="remove"]').addEventListener('click', () => removeSubscriber(s.user_id));
+        container.appendChild(row);
+    });
+    renderUserPicker();
+}
+
+function renderUserPicker() {
+    const sel = document.getElementById('subsAddUserSelect');
+    sel.disabled = false;
+    // Exclude already-subscribed users so the admin can't re-add them.
+    const subscribedIds = new Set(Subs.subscribers.map(s => s.user_id));
+    const eligible = Subs.tenantUsers.filter(u => !subscribedIds.has(u.userId));
+    if (eligible.length === 0) {
+        sel.innerHTML = '<option value="">Everyone in the tenant is already subscribed</option>';
+        sel.disabled = true;
+        return;
+    }
+    sel.innerHTML = '<option value="">Pick a user…</option>' +
+        eligible.map(u => `<option value="${escapeHtml(u.userId)}">${escapeHtml(u.email || u.userId)}</option>`).join('');
+}
+
+async function addSubscriber() {
+    if (!Subs.mailbox) return;
+    const userId = document.getElementById('subsAddUserSelect').value;
+    const role   = document.getElementById('subsAddRoleSelect').value;
+    const res = document.getElementById('subsAddResult');
+    if (!userId) {
+        res.style.display = 'block';
+        res.style.background = 'var(--color-warning-light)';
+        res.style.color = 'var(--color-warning-dark)';
+        res.textContent = 'Pick a user first.';
+        return;
+    }
+    try {
+        await api.request(`/email/mailboxes/${Subs.mailbox.id}/subscribers`, {
+            method: 'POST',
+            body: JSON.stringify({ user_id: userId, role: role }),
+        });
+        res.style.display = 'block';
+        res.style.background = 'var(--color-success-light)';
+        res.style.color = 'var(--color-success-dark)';
+        res.textContent = 'Added.';
+        await loadSubscribers();
+    } catch (err) {
+        res.style.display = 'block';
+        res.style.background = 'var(--color-danger-light)';
+        res.style.color = 'var(--color-danger-dark)';
+        res.textContent = 'Failed: ' + err.message;
+    }
+}
+
+async function removeSubscriber(targetUserId) {
+    if (!Subs.mailbox) return;
+    // Confirm — match the existing delete-mailbox pattern.
+    const ok = typeof Confirm !== 'undefined' && Confirm.show
+        ? await Confirm.show({
+            title: 'Remove subscriber',
+            message: 'They will lose access to this mailbox until re-added.',
+            confirmText: 'Remove',
+            danger: true,
+          })
+        : confirm('Remove this subscriber? They will lose access until re-added.');
+    if (!ok) return;
+    try {
+        await api.request(`/email/mailboxes/${Subs.mailbox.id}/subscribers/${encodeURIComponent(targetUserId)}`, {
+            method: 'DELETE',
+        });
+        await loadSubscribers();
+    } catch (err) {
+        if (typeof showToast === 'function') showToast('Failed to remove: ' + err.message, 'error');
+        else alert('Failed to remove: ' + err.message);
+    }
+}
+
+// Wire modal controls once DOM is ready (after the initial DOMContentLoaded
+// handler at the top of this file completes, the modal element exists).
+document.addEventListener('DOMContentLoaded', () => {
+    const close = document.getElementById('subscribersModalClose');
+    const done  = document.getElementById('subscribersModalDone');
+    const overlay = document.getElementById('subscribersModal');
+    const addBtn = document.getElementById('subsAddBtn');
+    if (close)   close.addEventListener('click', closeSubscribersModal);
+    if (done)    done.addEventListener('click', closeSubscribersModal);
+    if (addBtn)  addBtn.addEventListener('click', addSubscriber);
+    if (overlay) overlay.addEventListener('click', e => {
+        if (e.target.id === 'subscribersModal') closeSubscribersModal();
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && overlay && overlay.classList.contains('active')) closeSubscribersModal();
+    });
+});

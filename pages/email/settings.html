@@ -87,8 +87,8 @@
                         <span id="mbxSharedAdminBadge" style="font-size:11px; padding:2px 8px; border-radius:10px; background:var(--brand-primary); color:#fff; display:none;">Admin only</span>
                     </label>
                     <p style="font-size:12.5px; color:var(--text-secondary); margin:8px 0 0 28px; line-height:1.5;">
-                        Visible to the whole team and can be attached to CRM campaigns, sequences, and lead sources.
-                        When a rep leaves, customer conversations stay with the team. Only EmailService admins can flip this.
+                        Service mailbox for backend integrations (CRM auto-replies, transactional sends, etc.).
+                        Hidden from regular users by default — use <strong>Manage subscribers</strong> on the mailbox row to grant access to specific people.
                     </p>
                     <p id="mbxSharedDeniedHint" style="font-size:12px; color:var(--color-warning-dark); margin:6px 0 0 28px; display:none;">
                         You don't have admin permissions — ask your admin to mark this mailbox shared.
@@ -160,6 +160,42 @@
                     <button class="email-icon-btn" id="btnTestConnection">Test connection</button>
                 </div>
                 <button class="email-send-btn" id="btnSaveMailbox">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Subscribers modal (admin-only, shown via "Manage subscribers" button on a shared mailbox row) -->
+    <div class="email-modal-overlay" id="subscribersModal">
+        <div class="email-modal" style="width:560px;">
+            <div class="email-modal-header">
+                <h3>Manage subscribers — <span id="subsModalEmail" style="color:var(--text-secondary); font-weight:500;"></span></h3>
+                <button class="email-modal-close" id="subscribersModalClose">&times;</button>
+            </div>
+            <div class="email-modal-body">
+                <p style="font-size:13px; color:var(--text-secondary); margin:0 0 14px;">
+                    Service mailboxes are used by backend integrations (CRM, etc.) and aren't visible to humans by default.
+                    Add specific users below to give them read/write access in the email UI.
+                </p>
+
+                <div id="subsList" style="display:flex; flex-direction:column; gap:6px; margin-bottom:18px;">
+                    <!-- subscriber rows injected here -->
+                </div>
+
+                <div style="border-top:1px solid var(--border-color); padding-top:14px;">
+                    <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Add a subscriber</div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <select id="subsAddUserSelect" class="form-control" style="flex:1;"></select>
+                        <select id="subsAddRoleSelect" class="form-control" style="width:140px;">
+                            <option value="collaborator">Collaborator</option>
+                            <option value="owner">Owner</option>
+                        </select>
+                        <button class="email-send-btn" id="subsAddBtn" style="white-space:nowrap;">Add</button>
+                    </div>
+                    <div id="subsAddResult" style="font-size:12px; margin-top:8px; display:none;"></div>
+                </div>
+            </div>
+            <div class="email-modal-footer">
+                <button class="email-icon-btn" id="subscribersModalDone">Done</button>
             </div>
         </div>
     </div>
