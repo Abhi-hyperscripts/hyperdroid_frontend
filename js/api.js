@@ -2192,6 +2192,23 @@ class API {
         });
     }
 
+    // --- Field-agent location tracking ---
+    async setEmployeeFieldAgent(employeeId, isFieldAgent) {
+        return this.request(`/hrms/attendance/location-pings/employee/${employeeId}/field-agent`, {
+            method: 'PUT',
+            body: JSON.stringify({ is_field_agent: !!isFieldAgent })
+        });
+    }
+
+    async getEmployeeLocationTrail(employeeId, date = null) {
+        const query = date ? `?date=${encodeURIComponent(date)}` : '';
+        return this.request(`/hrms/attendance/location-pings/${employeeId}${query}`);
+    }
+
+    async getLiveFieldAgentLocations() {
+        return this.request('/hrms/attendance/location-pings/live');
+    }
+
     // --- Leave Management ---
     async getLeaveTypes() {
         return this.request('/hrms/leave/types');

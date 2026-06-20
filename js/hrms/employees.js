@@ -1574,6 +1574,8 @@ async function openEmployeePanel(id) {
                 </div>
             </div>
 
+            ${hrmsRoles.canEditEmployee() ? renderFieldAgentSection(emp) : ''}
+
             ${(emp.termination_date || emp.employment_status === 'terminated' || emp.employment_status === 'resigned') ? `
             <div class="panel-section">
                 <div class="panel-section-header">
@@ -1620,6 +1622,56 @@ async function openEmployeePanel(id) {
     } catch (error) {
         console.error('Error loading employee:', error);
         body.innerHTML = '<div class="empty-state"><p>Error loading employee details</p></div>';
+    }
+}
+
+function renderFieldAgentSection(emp) {
+    const checked = emp.is_field_agent ? 'checked' : '';
+    const id = `fieldAgentToggle_${emp.id}`;
+    return `
+        <div class="panel-section">
+            <div class="panel-section-header">
+                <div class="panel-section-icon" style="background: rgba(124, 58, 237, 0.15); color: #7C3AED;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                </div>
+                <h4 class="panel-section-title">Field Agent</h4>
+            </div>
+            <div class="panel-info-item panel-info-item-full" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                <div style="flex:1;">
+                    <div style="font-weight:600;color:var(--text-primary);font-size:0.9rem;">Track location every 5 min while clocked in</div>
+                    <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px;line-height:1.4;">
+                        Pings flow when this employee is clocked in.
+                    </div>
+                </div>
+                <label class="toggle-switch" style="flex-shrink:0;">
+                    <input type="checkbox" id="${id}" ${checked} onchange="onFieldAgentToggle('${emp.id}', this)">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+    `;
+}
+
+async function onFieldAgentToggle(employeeId, checkbox) {
+    const desired = !!checkbox.checked;
+    checkbox.disabled = true;
+    try {
+        await api.setEmployeeFieldAgent(employeeId, desired);
+        showToast(`Field agent ${desired ? 'enabled' : 'disabled'}`, 'success');
+        // Patch the panel snapshot so a subsequent panel close+reopen reflects
+        // the new value without re-fetching.
+        if (currentViewEmployee && currentViewEmployee.id === employeeId) {
+            currentViewEmployee.is_field_agent = desired;
+        }
+    } catch (e) {
+        // Revert UI on failure.
+        checkbox.checked = !desired;
+        showToast(`Could not update field-agent flag: ${e?.message || 'request failed'}`, 'error');
+    } finally {
+        checkbox.disabled = false;
     }
 }
 
