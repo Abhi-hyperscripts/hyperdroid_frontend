@@ -1255,16 +1255,35 @@ function buildFilterParams() {
     if (dateFromEl && dateFromEl.value) params.set('createdFrom', dateFromEl.value);
     if (dateToEl && dateToEl.value) params.set('createdTo', dateToEl.value);
     // dateMode: which column the from/to range filters on. 'created' (default)
-    // = lead.created_at; 'activity' narrows to leads with at least one row in
-    // activities within the range — answers "who did I contact today?".
+    // = lead.created_at; 'activity' = activities.performed_at; 'followup' =
+    // lead.next_followup_date (pair with Follow-up scheduled); 'ai_summary' =
+    // lead_call_transcripts.summarized_at (pair with AI summary); 'help' =
+    // lead_help_requests.created_at (pair with Help requested); 'email_engagement' =
+    // email_engagement_events.event_at (pair with an emailStatus pick).
     const dateModeEl = document.getElementById('filterDateMode');
-    if (dateModeEl && dateModeEl.value === 'activity') params.set('dateMode', 'activity');
+    const ALLOWED_DATE_MODES = ['activity', 'followup', 'ai_summary', 'help', 'email_engagement'];
+    let dateModeWire = dateModeEl && ALLOWED_DATE_MODES.includes(dateModeEl.value) ? dateModeEl.value : null;
+    // Quality-of-life auto-coerce: when a pseudo-status toggle is active AND
+    // a date range is set AND the user left the mode on the default 'created'
+    // pick, route the date to the timestamp that matches the toggle. Without
+    // this the date silently lands on lead.created_at and usually returns 0.
+    const dateRangeActive = !!((dateFromEl && dateFromEl.value) || (dateToEl && dateToEl.value));
+    if (!dateModeWire && dateRangeActive && (!dateModeEl || dateModeEl.value === 'created' || !dateModeEl.value)) {
+        if (status === 'follow_up_scheduled') dateModeWire = 'followup';
+        else if (status === 'help_requested') dateModeWire = 'help';
+        else if (status === 'ai_summary') dateModeWire = 'ai_summary';
+        else if (emailStatus) dateModeWire = 'email_engagement';
+    }
+    if (dateModeWire) params.set('dateMode', dateModeWire);
     // Keep the "<x> to" label in sync with the mode dropdown so both ends of
-    // the range tell the same story (otherwise a rep sees "Activity from /
-    // Created to" which is incoherent).
+    // the range tell the same story.
     const toLabel = document.getElementById('filterDateModeLabelTo');
     if (toLabel && dateModeEl) {
-        toLabel.textContent = dateModeEl.value === 'activity' ? 'Activity' : 'Created';
+        const labels = {
+            activity: 'Activity', followup: 'Follow-up', ai_summary: 'AI summary',
+            help: 'Help request', email_engagement: 'Email event',
+        };
+        toLabel.textContent = labels[dateModeEl.value] || 'Created';
     }
 
     // Multi-team scope: when the user has picked a specific team, backend
