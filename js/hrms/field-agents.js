@@ -94,8 +94,20 @@
         // Default to today's UTC date for the trail picker. The backend
         // interprets `date` as a UTC day, so this matches what HR usually
         // wants — "show me today's run".
+        //
+        // Clamp the picker to the retention window: the Hangfire pruner
+        // (LocationPingsPrunerJob, RETENTION_DAYS=7) drops anything older
+        // than 7 UTC-days at 02:00 UTC daily, so picking older dates would
+        // just return "no pings recorded" — confusing UX. The compliance
+        // officer signed off on the 7-day window; if HR ever asks for
+        // longer history, that requires re-approval, not a UI change.
         const today = new Date();
-        trailDateInput.value = today.toISOString().slice(0, 10);
+        const todayUtc = today.toISOString().slice(0, 10);
+        const earliestUtc = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+            .toISOString().slice(0, 10);
+        trailDateInput.value = todayUtc;
+        trailDateInput.max = todayUtc;
+        trailDateInput.min = earliestUtc;
         trailDateInput.addEventListener('change', () => {
             if (selectedEmployeeId) loadTrail(selectedEmployeeId, trailDateInput.value).catch(() => undefined);
         });
@@ -263,7 +275,12 @@
             const pings = res?.pings || [];
             if (pings.length === 0) {
                 document.getElementById('trailHint').textContent = 'No pings recorded for this day.';
-                document.getElementById('trailPoints').textContent = '0';
+                // Reset all stats — without this, switching from a populated
+                // day to an empty day leaves the previous day's numbers
+                // visible, which looks like the empty state failed to load.
+                ['trailPoints', 'trailFirst', 'trailLast', 'trailBattery'].forEach(id => {
+                    document.getElementById(id).textContent = id === 'trailPoints' ? '0' : '—';
+                });
                 return;
             }
 
