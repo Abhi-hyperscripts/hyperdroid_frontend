@@ -6,16 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
 
-    <!-- CSP — Leaflet served from cdnjs (already allow-listed). Tile imagery
-         comes from OpenStreetMap tile servers (`img-src 'self' data: blob: https:`
-         already covers any HTTPS source). -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.sheetjs.com https://www.googletagmanager.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: blob: https: http://localhost:9000; connect-src 'self' https: wss: ws:; frame-src 'self' https://www.google.com https://docs.google.com; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.sheetjs.com https://www.googletagmanager.com https://www.gstatic.com https://justadudewhohacks.github.io; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' data: https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data: blob: https: http://localhost:9000; connect-src 'self' https: wss: ws:; frame-src 'self' https://www.google.com https://docs.google.com; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
     <meta http-equiv="X-Frame-Options" content="DENY">
     <meta name="referrer" content="strict-origin-when-cross-origin">
 
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png?v=2">
-    <title>Field Agents Map - HRMS | Ragenaizer</title>
+    <title>Field Agents - HRMS | Ragenaizer</title>
 
     <script>window.CACHE_VERSION = Date.now();</script>
     <script>document.write('<script src="../../js/sw-version.js?v=' + CACHE_VERSION + '"><\/script>');</script>
@@ -27,60 +26,53 @@
     <script>document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/hrms.css?v=' + CACHE_VERSION + '">');</script>
     <script>document.write('<link rel="stylesheet" href="../../css/glass-cards.css?v=' + CACHE_VERSION + '">');</script>
+    <script>document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');</script>
 
-    <!-- Leaflet: cdnjs satisfies the CSP allow-list, pinned to a recent stable.
-         No SRI hash — CSP host pin is the trust anchor and SRI drift on
-         minor cdnjs republishes was breaking the build. -->
+    <!-- Leaflet via cdnjs (CSP-allowed) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 
-    <script>document.write('<link rel="stylesheet" href="../../css/flatpickr-custom.css?v=' + CACHE_VERSION + '">');</script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script>document.write('<script src="../../js/theme.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 
     <style>
-        /* Map page is intentionally full-bleed — the standard hrms-container
-           padding fights with the map UI, so we override below. */
-        body.field-agents-page { overflow: hidden; }
-        .map-page-shell {
-            position: fixed;
-            top: 64px;  /* clears the navbar */
-            left: 0; right: 0; bottom: 0;
+        /* Map fills the .organization-content area below it. The standard
+           HRMS layout uses flow content; the map wrapper takes whatever
+           vertical space is left over from the header + sidebar above. */
+        .field-agents-layout {
             display: grid;
-            grid-template-columns: 320px 1fr;
-            background: var(--bg-primary);
+            grid-template-columns: 280px 1fr;
+            gap: 16px;
+            /* Subtract: navbar (52) + hrms-header (~110) + small breathing */
+            height: calc(100vh - 200px);
+            min-height: 480px;
         }
         @media (max-width: 768px) {
-            .map-page-shell { grid-template-columns: 1fr; }
-            .map-page-shell .agent-list-panel { display: none; }
-            .map-page-shell.show-list .agent-list-panel { display: flex; position: absolute; inset: 0; z-index: 1100; }
-            .map-page-shell.show-list .map-canvas-wrap { display: none; }
+            .field-agents-layout { grid-template-columns: 1fr; height: auto; }
         }
 
-        .agent-list-panel {
+        .agent-list-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
             display: flex; flex-direction: column;
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border-color);
-            min-height: 0;  /* needed for flex children to scroll */
+            overflow: hidden;
         }
         .agent-list-header {
-            padding: 16px;
+            padding: 14px 16px;
             border-bottom: 1px solid var(--border-color);
             display: flex; align-items: center; justify-content: space-between;
         }
         .agent-list-header h3 {
-            margin: 0; font-size: 1rem; color: var(--text-primary); font-weight: 600;
+            margin: 0; font-size: 0.95rem; color: var(--text-primary); font-weight: 600;
         }
         .agent-list-badge {
             background: rgba(124, 58, 237, 0.15);
             color: #7C3AED;
             padding: 2px 8px;
             border-radius: 10px;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 600;
         }
-        .agent-list-scroll {
-            flex: 1; overflow-y: auto; padding: 8px;
-        }
+        .agent-list-scroll { flex: 1; overflow-y: auto; padding: 8px; }
         .agent-list-empty {
             padding: 24px 16px;
             text-align: center;
@@ -125,21 +117,26 @@
             box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
         }
 
-        .map-canvas-wrap {
-            position: relative; min-height: 0;
+        .map-card {
+            position: relative;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            min-height: 480px;
         }
-        #fieldAgentsMap {
-            position: absolute;
-            inset: 0;
-            background: var(--bg-primary);
+        @media (max-width: 768px) {
+            .map-card { height: 60vh; }
         }
+        #fieldAgentsMap { position: absolute; inset: 0; background: var(--bg-primary); }
+
         .map-toolbar {
             position: absolute;
             top: 12px; right: 12px;
             z-index: 1000;
             display: flex; gap: 8px;
         }
-        .map-toolbar .btn {
+        .map-toolbar .map-btn {
             background: var(--bg-secondary);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
@@ -149,17 +146,17 @@
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
-        .map-toolbar .btn:hover { background: var(--bg-tertiary); }
-        .map-toolbar .btn.primary {
+        .map-toolbar .map-btn:hover { background: var(--bg-tertiary); }
+        .map-toolbar .map-btn.primary {
             background: var(--brand-primary); color: var(--text-inverse);
             border-color: var(--brand-primary);
         }
 
-        /* Right-side drawer for selected agent's trail */
+        /* Trail drawer slides in from right edge of map card */
         .trail-drawer {
             position: absolute;
             top: 0; right: 0; bottom: 0;
-            width: 360px;
+            width: 320px;
             background: var(--bg-secondary);
             border-left: 1px solid var(--border-color);
             transform: translateX(100%);
@@ -170,30 +167,22 @@
         }
         .trail-drawer.open { transform: translateX(0); }
         .trail-header {
-            padding: 16px;
+            padding: 14px 16px;
             border-bottom: 1px solid var(--border-color);
-            display: flex; align-items: center; gap: 12px;
+            display: flex; align-items: center; gap: 10px;
         }
         .trail-header .close-btn {
             margin-left: auto; cursor: pointer;
             background: transparent; border: none;
             color: var(--text-secondary); padding: 4px 8px; font-size: 1.2rem;
         }
-        .trail-body {
-            flex: 1; overflow-y: auto; padding: 16px;
-        }
-        .trail-stat {
-            display: flex; justify-content: space-between;
-            padding: 6px 0;
-            font-size: 0.85rem;
-        }
+        .trail-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+        .trail-stat { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.85rem; }
         .trail-stat .k { color: var(--text-secondary); }
         .trail-stat .v { color: var(--text-primary); font-weight: 600; }
-        .date-picker-row {
-            margin-top: 12px;
-        }
+        .date-picker-row { margin-top: 8px; }
         .date-picker-row label {
-            display: block; font-size: 0.75rem;
+            display: block; font-size: 0.72rem;
             color: var(--text-secondary); margin-bottom: 4px;
             text-transform: uppercase; letter-spacing: 0.5px;
         }
@@ -207,7 +196,7 @@
             font-size: 0.9rem;
         }
 
-        /* Custom leaflet marker — violet pulse */
+        /* Violet pulse marker for live last-known */
         .fa-marker {
             background: #7C3AED;
             width: 16px; height: 16px;
@@ -227,15 +216,12 @@
             border: 1px solid white;
         }
 
-        /* Leaflet tile filter for dark theme — matches the app's violet tone
-           without needing a paid Mapbox/MapTiler dark style. Toggle via
-           `body[data-theme=dark]` if the user is in dark mode. */
         body[data-theme="dark"] .leaflet-tile-pane {
             filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85) saturate(0.7);
         }
     </style>
 </head>
-<body class="dashboard field-agents-page">
+<body class="dashboard">
     <script>document.write('<script src="/js/button-spinner.js?v=' + CACHE_VERSION + '"><\/script>');</script>
 
     <nav class="navbar">
@@ -244,73 +230,83 @@
                 <img src="../../assets/brand_logo.png" alt="Ragenaizer Logo" class="navbar-logo">
             </a>
         </div>
-        <div class="navbar-menu">
-            <a href="attendance.html" class="navbar-link" style="margin-right:12px;color:var(--text-secondary);font-size:0.85rem;text-decoration:none;">← Attendance</a>
-        </div>
+        <div class="navbar-menu"></div>
     </nav>
 
-    <div class="map-page-shell" id="mapShell">
-        <!-- Left rail — live agent list -->
-        <aside class="agent-list-panel">
-            <div class="agent-list-header">
-                <h3>Field Agents</h3>
-                <span class="agent-list-badge" id="agentCountBadge">0 live</span>
-            </div>
-            <div class="agent-list-scroll" id="agentListScroll">
-                <div class="agent-list-empty" id="agentListEmpty">
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                        <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                    <div>No field agents clocked in right now.</div>
-                    <div style="margin-top:6px;font-size:0.75rem;">Mark employees as field agents in their profile, then they'll appear here while their shift is open.</div>
+    <div class="hrms-container">
+        <div class="hrms-header">
+            <div class="header-content">
+                <nav class="breadcrumb-nav">
+                    <a href="dashboard.html">HRMS</a>
+                    <span class="separator">/</span>
+                    <a href="attendance.html">Attendance</a>
+                    <span class="separator">/</span>
+                    <span class="current">Field Agents</span>
+                </nav>
+                <div class="hrms-header-row">
+                    <h1>Field Agents</h1>
+                </div>
+                <div class="active-tab-title">
+                    <span class="tab-indicator"></span>
+                    <span>Live positions + per-day trail</span>
                 </div>
             </div>
-        </aside>
+        </div>
 
-        <!-- Map -->
-        <div class="map-canvas-wrap">
-            <div id="fieldAgentsMap"></div>
-            <div class="map-toolbar">
-                <button class="btn" id="refreshBtn" title="Refresh live positions">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px;">
-                        <polyline points="23 4 23 10 17 10"></polyline>
-                        <polyline points="1 20 1 14 7 14"></polyline>
-                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                    </svg>
-                    Refresh
-                </button>
-                <button class="btn primary" id="fitBoundsBtn" title="Zoom to show all agents">
-                    Fit all
-                </button>
-            </div>
-
-            <!-- Right-side trail drawer (slides in when an agent is selected) -->
-            <aside class="trail-drawer" id="trailDrawer">
-                <div class="trail-header">
-                    <div class="agent-avatar" id="trailAvatar" style="width:40px;height:40px;">--</div>
-                    <div>
-                        <div id="trailName" style="font-weight:600;color:var(--text-primary);">—</div>
-                        <div id="trailRole" style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px;">—</div>
-                    </div>
-                    <button class="close-btn" id="trailCloseBtn">×</button>
+        <div class="field-agents-layout">
+            <!-- Left rail — live agent list (styled like a glass card) -->
+            <aside class="agent-list-card">
+                <div class="agent-list-header">
+                    <h3>Live agents</h3>
+                    <span class="agent-list-badge" id="agentCountBadge">0 live</span>
                 </div>
-                <div class="trail-body">
-                    <div class="date-picker-row">
-                        <label>Trail date</label>
-                        <input type="date" id="trailDate">
-                    </div>
-                    <div style="margin-top:16px;">
-                        <div class="trail-stat"><span class="k">Points</span><span class="v" id="trailPoints">—</span></div>
-                        <div class="trail-stat"><span class="k">First ping</span><span class="v" id="trailFirst">—</span></div>
-                        <div class="trail-stat"><span class="k">Last ping</span><span class="v" id="trailLast">—</span></div>
-                        <div class="trail-stat"><span class="k">Battery (last)</span><span class="v" id="trailBattery">—</span></div>
-                    </div>
-                    <div id="trailHint" style="margin-top:16px;font-size:0.75rem;color:var(--text-secondary);line-height:1.5;">
-                        Click the date picker above to see this employee's trail for any day in the last 7 days.
+                <div class="agent-list-scroll" id="agentListScroll">
+                    <div class="agent-list-empty">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <div>No field agents clocked in right now.</div>
+                        <div style="margin-top:6px;font-size:0.75rem;">Mark employees as field agents in their profile, then they'll appear here while their shift is open.</div>
                     </div>
                 </div>
             </aside>
+
+            <!-- Map card -->
+            <div class="map-card">
+                <div id="fieldAgentsMap"></div>
+                <div class="map-toolbar">
+                    <button class="map-btn" id="refreshBtn">Refresh</button>
+                    <button class="map-btn primary" id="fitBoundsBtn">Fit all</button>
+                </div>
+
+                <!-- Right-side trail drawer (slides in when an agent is selected) -->
+                <aside class="trail-drawer" id="trailDrawer">
+                    <div class="trail-header">
+                        <div class="agent-avatar" id="trailAvatar">--</div>
+                        <div>
+                            <div id="trailName" style="font-weight:600;color:var(--text-primary);">—</div>
+                            <div id="trailRole" style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px;">—</div>
+                        </div>
+                        <button class="close-btn" id="trailCloseBtn">×</button>
+                    </div>
+                    <div class="trail-body">
+                        <div class="date-picker-row">
+                            <label>Trail date</label>
+                            <input type="date" id="trailDate">
+                        </div>
+                        <div style="margin-top:14px;">
+                            <div class="trail-stat"><span class="k">Points</span><span class="v" id="trailPoints">—</span></div>
+                            <div class="trail-stat"><span class="k">First ping</span><span class="v" id="trailFirst">—</span></div>
+                            <div class="trail-stat"><span class="k">Last ping</span><span class="v" id="trailLast">—</span></div>
+                            <div class="trail-stat"><span class="k">Battery (last)</span><span class="v" id="trailBattery">—</span></div>
+                        </div>
+                        <div id="trailHint" style="margin-top:14px;font-size:0.75rem;color:var(--text-secondary);line-height:1.5;">
+                            Pick a date to see this employee's trail for any day in the last 7 days.
+                        </div>
+                    </div>
+                </aside>
+            </div>
         </div>
     </div>
 

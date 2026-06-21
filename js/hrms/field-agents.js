@@ -67,6 +67,18 @@
         }).addTo(map);
 
         trailLayerGroup = L.layerGroup().addTo(map);
+
+        // The shell relies on calc(100vh - 52px); Leaflet measures the map
+        // div on construction, and if the page is still settling layout
+        // the map ends up shorter than the column. invalidateSize after a
+        // beat fixes the tile gap; a ResizeObserver catches later resizes
+        // (e.g. devtools open / window resize).
+        const mapDiv = document.getElementById('fieldAgentsMap');
+        setTimeout(() => map.invalidateSize(), 100);
+        if (window.ResizeObserver) {
+            new ResizeObserver(() => map.invalidateSize()).observe(mapDiv);
+        }
+        window.addEventListener('resize', () => map.invalidateSize());
     }
 
     function wireHandlers() {
