@@ -88,7 +88,7 @@
             cursor: pointer;
             transition: background 0.15s ease;
         }
-        .agent-row:hover { background: var(--bg-tertiary); }
+        .agent-row:hover { background: var(--bg-hover, #334155); }
         .agent-row.active { background: rgba(124, 58, 237, 0.15); }
         .agent-avatar {
             width: 36px; height: 36px; border-radius: 50%;
@@ -128,7 +128,7 @@
         @media (max-width: 768px) {
             .map-card { height: 60vh; }
         }
-        #fieldAgentsMap { position: absolute; inset: 0; background: var(--bg-primary); }
+        #fieldAgentsMap { position: absolute; inset: 0; background: var(--bg-body, #0f172a); }
 
         .map-toolbar {
             position: absolute;
@@ -137,7 +137,7 @@
             display: flex; gap: 8px;
         }
         .map-toolbar .map-btn {
-            background: var(--bg-secondary);
+            background: var(--bg-elevated, #1e293b);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
             padding: 6px 12px;
@@ -146,7 +146,7 @@
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
-        .map-toolbar .map-btn:hover { background: var(--bg-tertiary); }
+        .map-toolbar .map-btn:hover { background: var(--bg-hover, #334155); }
         .map-toolbar .map-btn.primary {
             background: var(--brand-primary); color: var(--text-inverse);
             border-color: var(--brand-primary);
@@ -157,7 +157,7 @@
             position: absolute;
             top: 0; right: 0; bottom: 0;
             width: 320px;
-            background: var(--bg-secondary);
+            background: var(--bg-elevated, #1e293b);
             border-left: 1px solid var(--border-color);
             transform: translateX(100%);
             transition: transform 0.25s ease;
@@ -188,7 +188,7 @@
         }
         .date-picker-row input {
             width: 100%;
-            background: var(--bg-tertiary);
+            background: var(--bg-hover, #334155);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
             padding: 8px 12px;
