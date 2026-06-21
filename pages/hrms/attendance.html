@@ -110,6 +110,13 @@
                             <button class="sidebar-btn active" data-tab="daily" id="dailyTab">
                                 <span class="nav-number">1</span><span class="nav-label">Daily Attendance</span>
                             </button>
+                            <!-- Links to its own page rather than swapping a tab — the
+                                 map needs full-card height which the tab-content slot
+                                 doesn't give. Styled as a sidebar-btn so the rail looks
+                                 uniform. -->
+                            <a class="sidebar-btn" href="field-agents.html" id="fieldAgentsNavLink" style="text-decoration:none;">
+                                <span class="nav-number">2</span><span class="nav-label">Field Agents Map</span>
+                            </a>
                         </div>
                     </div>
 
@@ -127,10 +134,10 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="regularization" id="regularizationTabBtn">
-                                <span class="nav-number">2</span><span class="nav-label">Regularization Requests</span>
+                                <span class="nav-number">3</span><span class="nav-label">Regularization Requests</span>
                             </button>
                             <button class="sidebar-btn" data-tab="overtime" id="overtimeTabBtn">
-                                <span class="nav-number">3</span><span class="nav-label">Overtime Requests</span>
+                                <span class="nav-number">4</span><span class="nav-label">Overtime Requests</span>
                             </button>
                         </div>
                     </div>
@@ -151,7 +158,7 @@
                         </div>
                         <div class="nav-group-items">
                             <button class="sidebar-btn" data-tab="settings" id="settingsTabBtn">
-                                <span class="nav-number">4</span><span class="nav-label">Mobile App Settings</span>
+                                <span class="nav-number">5</span><span class="nav-label">Mobile App Settings</span>
                             </button>
                         </div>
                     </div>
