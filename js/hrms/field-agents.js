@@ -105,12 +105,34 @@
         const todayUtc = today.toISOString().slice(0, 10);
         const earliestUtc = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
             .toISOString().slice(0, 10);
-        trailDateInput.value = todayUtc;
-        trailDateInput.max = todayUtc;
-        trailDateInput.min = earliestUtc;
-        trailDateInput.addEventListener('change', () => {
-            if (selectedEmployeeId) loadTrail(selectedEmployeeId, trailDateInput.value).catch(() => undefined);
-        });
+
+        // flatpickr — same lib + theme used by attendance.html / leads.html
+        // so HR's muscle memory works. The native <input type="date"> is
+        // unreliable inside our positioned drawer (Safari occasionally
+        // refuses to open the popup, Chrome opens it but clipped).
+        if (typeof flatpickr === 'function') {
+            flatpickr(trailDateInput, {
+                dateFormat: 'Y-m-d',
+                defaultDate: todayUtc,
+                minDate: earliestUtc,
+                maxDate: todayUtc,
+                disableMobile: false,  // honour the native calendar on small phones
+                onChange: (selectedDates, dateStr) => {
+                    if (selectedEmployeeId && dateStr) {
+                        loadTrail(selectedEmployeeId, dateStr).catch(() => undefined);
+                    }
+                },
+            });
+        } else {
+            // Fallback to native if flatpickr failed to load (CDN down etc).
+            trailDateInput.type = 'date';
+            trailDateInput.value = todayUtc;
+            trailDateInput.min = earliestUtc;
+            trailDateInput.max = todayUtc;
+            trailDateInput.addEventListener('change', () => {
+                if (selectedEmployeeId) loadTrail(selectedEmployeeId, trailDateInput.value).catch(() => undefined);
+            });
+        }
     }
 
     function startPolling() {
