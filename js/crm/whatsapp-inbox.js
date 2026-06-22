@@ -239,6 +239,33 @@
             });
             fileInput.addEventListener('change', handleFilePicked);
         }
+
+        // Template picker — the canonical path for messaging outside Meta's
+        // 24h reply window. The modal handles its own picker / preview /
+        // send; we just give it the active number + recipient.
+        const tplBtn = document.getElementById('waTemplateBtn');
+        if (tplBtn && typeof WhatsAppTemplatePicker !== 'undefined') {
+            tplBtn.addEventListener('click', () => {
+                if (!activeCustomerPhone) {
+                    if (typeof Toast !== 'undefined') Toast.warning('Pick a conversation first');
+                    return;
+                }
+                WhatsAppTemplatePicker.open({
+                    businessPhone: activeBusinessPhone,
+                    recipientPhone: activeCustomerPhone,
+                    onSent: () => {
+                        // Refresh the thread so the new outbound row from
+                        // /whatsapp/send shows up next to existing
+                        // messages. SignalR also broadcasts the outbound
+                        // row, but re-opening guarantees ordering for the
+                        // immediate send case. The picker already called
+                        // Toast.success.
+                        const customerName = document.getElementById('waThreadTitle')?.textContent || '';
+                        if (activeCustomerPhone) openConversation(activeCustomerPhone, customerName);
+                    },
+                });
+            });
+        }
     }
 
     function wireMobileBackHandler() {

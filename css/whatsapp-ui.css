@@ -1231,6 +1231,7 @@
 }
 .wa-composer-attach,
 .wa-composer-emoji,
+.wa-composer-template,
 .wa-composer-mic,
 .wa-composer-send {
     width: 42px;
@@ -1247,9 +1248,11 @@
 }
 .wa-composer-attach:hover,
 .wa-composer-emoji:hover,
+.wa-composer-template:hover,
 .wa-composer-mic:hover { background: rgba(0,0,0,0.05); }
 .wa-composer-attach svg,
 .wa-composer-emoji svg,
+.wa-composer-template svg,
 .wa-composer-mic svg,
 .wa-composer-send svg { width: 24px; height: 24px; }
 
@@ -1497,4 +1500,152 @@
 /* Reduce-motion users get an instant transition. */
 @media (prefers-reduced-motion: reduce) {
     .wa-thread-pane { animation: none; }
+}
+
+/* ─── Template picker modal ───────────────────────────────────────────────
+   The picker is a single floating modal anchored to the WhatsApp inbox
+   composer. Uses theme variables so light/dark themes both look right.
+─────────────────────────────────────────────────────────────────────── */
+.wa-tpl-modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 10000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+}
+.wa-tpl-modal {
+    background: var(--bg-card, #fff);
+    color: var(--text-primary, #1f2937);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+}
+.wa-tpl-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+.wa-tpl-modal-header h3 { margin: 0; font-size: 17px; font-weight: 600; }
+.wa-tpl-close {
+    background: transparent; border: 0; font-size: 24px;
+    cursor: pointer; color: var(--text-secondary, #6b7280);
+    line-height: 1; padding: 0 6px;
+}
+.wa-tpl-close:hover { color: var(--text-primary, #1f2937); }
+.wa-tpl-modal-body {
+    padding: 18px 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+.wa-tpl-row { margin-bottom: 14px; }
+.wa-tpl-row > label,
+.wa-tpl-preview-wrap > label {
+    display: block;
+    font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-secondary, #6b7280);
+    margin-bottom: 6px;
+}
+.wa-tpl-loading {
+    padding: 14px; text-align: center;
+    color: var(--text-secondary, #6b7280); font-size: 14px;
+}
+.wa-tpl-empty {
+    padding: 16px; border-radius: 8px;
+    background: var(--bg-subtle, #f9fafb);
+    border: 1px dashed var(--border-color, #e5e7eb);
+    font-size: 13px;
+    color: var(--text-secondary, #6b7280);
+}
+.wa-tpl-empty a { color: var(--brand-primary, #25d366); }
+.wa-tpl-meta {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 14px;
+}
+.wa-tpl-badge {
+    display: inline-block;
+    font-size: 11px; font-weight: 600;
+    padding: 3px 8px; border-radius: 4px;
+    background: #e5e7eb; color: #374151;
+}
+.wa-tpl-badge-marketing      { background: #ffe2c2; color: #9a3412; }
+.wa-tpl-badge-utility        { background: #d1fae5; color: #065f46; }
+.wa-tpl-badge-authentication { background: #dbeafe; color: #1e40af; }
+.wa-tpl-lang {
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+}
+.wa-tpl-params { display: flex; flex-direction: column; gap: 10px; }
+.wa-tpl-param-row { display: flex; flex-direction: column; gap: 4px; }
+.wa-tpl-param-row label {
+    font-size: 12px; font-weight: 500;
+    color: var(--text-secondary, #6b7280);
+}
+.wa-tpl-param-row input {
+    height: 38px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 6px;
+    padding: 0 10px;
+    background: var(--bg-card, #fff);
+    color: var(--text-primary, #1f2937);
+    font-size: 14px;
+}
+.wa-tpl-param-row input:focus {
+    outline: none;
+    border-color: var(--brand-primary, #25d366);
+    box-shadow: 0 0 0 3px rgba(37,211,102,0.18);
+}
+.wa-tpl-no-params {
+    padding: 10px 12px;
+    background: var(--bg-subtle, #f9fafb);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-secondary, #6b7280);
+}
+.wa-tpl-preview-wrap { margin-top: 16px; }
+.wa-tpl-preview {
+    background: #d9fdd3;
+    color: #111;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.wa-tpl-modal-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    background: var(--bg-subtle, #f9fafb);
+}
+.wa-tpl-footer-right { display: flex; gap: 8px; }
+.wa-tpl-btn-primary,
+.wa-tpl-btn-secondary {
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 6px;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+.wa-tpl-btn-primary {
+    background: var(--brand-primary, #25d366);
+    color: #fff;
+}
+.wa-tpl-btn-primary:disabled {
+    opacity: 0.55; cursor: not-allowed;
+}
+.wa-tpl-btn-secondary {
+    background: var(--bg-card, #fff);
+    color: var(--text-primary, #1f2937);
+    border-color: var(--border-color, #e5e7eb);
+}
+.wa-tpl-btn-secondary:hover {
+    background: var(--bg-subtle, #f9fafb);
 }

@@ -397,6 +397,14 @@
                                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                             </svg>
                         </button>
+                        <button type="button" class="wa-composer-template" id="waTemplateBtn" title="Send approved template (works outside 24h window)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="9" y1="13" x2="15" y2="13"/>
+                                <line x1="9" y1="17" x2="13" y2="17"/>
+                            </svg>
+                        </button>
                         <button type="button" class="wa-composer-emoji" id="waEmojiBtn" title="Emoji">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
                         </button>
@@ -420,6 +428,46 @@
         </div>
     </main>
 
+    <!--
+        Template picker modal. Lives outside the inbox grid so it floats
+        across the whole page. Single instance because only one composer
+        is active at a time.
+    -->
+    <div class="wa-tpl-modal-backdrop" id="waTplModal" style="display:none;">
+        <div class="wa-tpl-modal" role="dialog" aria-modal="true" aria-labelledby="waTplTitle">
+            <header class="wa-tpl-modal-header">
+                <h3 id="waTplTitle">Send WhatsApp template</h3>
+                <button type="button" class="wa-tpl-close" id="waTplClose" aria-label="Close">×</button>
+            </header>
+            <div class="wa-tpl-modal-body">
+                <div class="wa-tpl-row">
+                    <label for="waTplPicker">Template</label>
+                    <div id="waTplPickerHost"></div>
+                </div>
+                <div class="wa-tpl-meta" id="waTplMeta" style="display:none;"></div>
+                <div class="wa-tpl-params" id="waTplParams"></div>
+                <div class="wa-tpl-preview-wrap" id="waTplPreviewWrap" style="display:none;">
+                    <label>Preview</label>
+                    <div class="wa-tpl-preview" id="waTplPreview"></div>
+                </div>
+                <div class="wa-tpl-empty" id="waTplEmpty" style="display:none;">
+                    No approved templates found in this Interakt workspace.
+                    <a href="https://app.interakt.ai/templates" target="_blank" rel="noopener">Open Interakt</a>
+                    to submit one, then click Refresh.
+                </div>
+            </div>
+            <footer class="wa-tpl-modal-footer">
+                <button type="button" class="wa-tpl-btn-secondary" id="waTplRefresh">
+                    Refresh from Interakt
+                </button>
+                <div class="wa-tpl-footer-right">
+                    <button type="button" class="wa-tpl-btn-secondary" id="waTplCancel">Cancel</button>
+                    <button type="button" class="wa-tpl-btn-primary" id="waTplSend" disabled>Send</button>
+                </div>
+            </footer>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
     <script>
         document.write('<script src="../../js/config.js?v=' + CACHE_VERSION + '"><\/script>');
@@ -429,6 +477,7 @@
         document.write('<script src="../../js/searchable-dropdown.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/shared/whatsapp-ui.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/shared/whatsapp-emoji-picker.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/whatsapp-template-picker.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/whatsapp-inbox.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
 </body>
