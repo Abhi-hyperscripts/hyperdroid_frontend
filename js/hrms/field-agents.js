@@ -9,18 +9,29 @@
 // HR_ADMIN / HRMS_ADMIN / SUPERADMIN see every clocked-in field agent.
 //
 // Page is gated to manager+ roles via roleUtils. Plain HRMS_USER is bounced.
+//
+// v2 (June 2026): added search + Stale / Low-batt filter chips, marker
+// clustering via Leaflet.markercluster, freshest-first sort, and auto-fit
+// to live agents on first load. Sized for a manager with 200+ agents
+// across a city — the older flat list + uncluster pins fell over at scale.
 
 (function () {
     const POLL_MS = 60_000;
     const DEFAULT_CENTER = [20.5937, 78.9629];  // Geographic centre of India
     const DEFAULT_ZOOM = 5;
+    const STALE_MS = 15 * 60 * 1000;            // > 15 min since last ping → stale
+    const LOW_BATT = 20;                         // ≤ 20% → low
 
     let map = null;
-    let liveMarkers = {};           // employeeId → L.Marker (live last-known)
-    let trailLayerGroup = null;     // L.LayerGroup of trail polyline + intermediate markers
+    let clusterLayer = null;        // L.MarkerClusterGroup of live pins
+    let markerById = {};            // employeeId → L.Marker (so we can centerOn)
+    let trailLayerGroup = null;     // L.LayerGroup of trail polyline + dots
     let liveAgents = [];            // last fetched /live response
     let selectedEmployeeId = null;
     let pollTimer = null;
+    let hasAutoFitted = false;      // first non-empty fetch → fit map once
+    let searchQuery = '';
+    let activeFilter = 'all';       // 'all' | 'stale' | 'low_batt'
 
     document.addEventListener('DOMContentLoaded', async () => {
         if (!ensureAccess()) return;
@@ -66,6 +77,16 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
 
+        // Cluster bubble for the live pins. spiderfyOnMaxZoom expands the
+        // last overlapping cluster into a fan so coincident agents (e.g.
+        // two field reps at the same client site) are individually tappable.
+        clusterLayer = L.markerClusterGroup({
+            showCoverageOnHover: false,
+            spiderfyOnMaxZoom: true,
+            chunkedLoading: true,
+            maxClusterRadius: 45,
+        }).addTo(map);
+
         trailLayerGroup = L.layerGroup().addTo(map);
 
         // The shell relies on calc(100vh - 52px); Leaflet measures the map
@@ -89,6 +110,25 @@
             fitMapToLiveAgents();
         });
         document.getElementById('trailCloseBtn').addEventListener('click', closeTrail);
+
+        // Search input — re-renders the list as the user types. Cheap;
+        // the list is virtualized via the browser's natural scroll.
+        const searchInput = document.getElementById('agentSearchInput');
+        searchInput.addEventListener('input', (e) => {
+            searchQuery = (e.target.value || '').toLowerCase().trim();
+            renderAgentList();
+        });
+
+        // Filter chips — All / Stale / Low batt. Click any chip to flip
+        // active state; the list re-renders, the map markers do not (they
+        // always show every live agent, just colour-tinted by status).
+        document.querySelectorAll('.agent-filter-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                activeFilter = chip.dataset.filter;
+                document.querySelectorAll('.agent-filter-chip').forEach(c => c.classList.toggle('active', c === chip));
+                renderAgentList();
+            });
+        });
 
         const trailDateInput = document.getElementById('trailDate');
         // Default to today's UTC date for the trail picker. The backend
@@ -155,6 +195,13 @@
             liveAgents = res?.agents || [];
             renderAgentList();
             renderLiveMarkers();
+            // First time we get real agents, zoom the map to where they
+            // actually are. Otherwise the user lands on India-centroid
+            // zoom 5 and never sees the marker in Delhi.
+            if (!hasAutoFitted && liveAgents.length > 0) {
+                hasAutoFitted = true;
+                fitMapToLiveAgents();
+            }
         } catch (e) {
             console.error('[field-agents] live fetch failed:', e);
             if (typeof showToast === 'function') {
@@ -163,10 +210,57 @@
         }
     }
 
+    // ─── Status helpers (shared across list + markers) ─────────────────
+    function lastPingMs(a) {
+        const iso = a.recorded_at || a.last_recorded_at;
+        return iso ? new Date(iso).getTime() : 0;
+    }
+    function isStale(a) {
+        const t = lastPingMs(a);
+        return t > 0 && (Date.now() - t) > STALE_MS;
+    }
+    function isLowBatt(a) {
+        return typeof a.battery_pct === 'number' && a.battery_pct <= LOW_BATT;
+    }
+    // Worst-case-first so a low-battery stale agent reads as "low battery".
+    function statusClass(a) {
+        if (isLowBatt(a)) return 'low';
+        if (isStale(a)) return 'stale';
+        return '';
+    }
+
     function renderAgentList() {
         const scroll = document.getElementById('agentListScroll');
-        const badge = document.getElementById('agentCountBadge');
-        badge.textContent = `${liveAgents.length} live`;
+
+        // Header summary — always shows live count; stale/low pills only
+        // surface when non-zero so a healthy fleet doesn't look cluttered.
+        const counts = liveAgents.reduce((acc, a) => {
+            acc.live++;
+            if (isStale(a)) acc.stale++;
+            if (isLowBatt(a)) acc.low++;
+            return acc;
+        }, { live: 0, stale: 0, low: 0 });
+        const summary = document.getElementById('agentListSummary');
+        let summaryHtml = `<span class="pill">${counts.live} live</span>`;
+        if (counts.stale) summaryHtml += `<span class="pill stale">${counts.stale} stale</span>`;
+        if (counts.low)   summaryHtml += `<span class="pill low">${counts.low} low batt</span>`;
+        summary.innerHTML = summaryHtml;
+
+        // Chip badges
+        document.getElementById('countAll').textContent   = counts.live;
+        document.getElementById('countStale').textContent = counts.stale;
+        document.getElementById('countLow').textContent   = counts.low;
+
+        // Filter + search → visible list
+        const q = searchQuery;
+        const visible = liveAgents.filter(a => {
+            if (activeFilter === 'stale' && !isStale(a)) return false;
+            if (activeFilter === 'low_batt' && !isLowBatt(a)) return false;
+            if (!q) return true;
+            const name = (a.employee_name || '').toLowerCase();
+            const code = (a.employee_code || '').toLowerCase();
+            return name.includes(q) || code.includes(q);
+        }).sort((a, b) => lastPingMs(b) - lastPingMs(a)); // freshest first
 
         if (liveAgents.length === 0) {
             scroll.innerHTML = `
@@ -180,10 +274,16 @@
                 </div>`;
             return;
         }
+        if (visible.length === 0) {
+            scroll.innerHTML = `<div class="agent-list-empty">No agents match this filter or search.</div>`;
+            return;
+        }
 
-        scroll.innerHTML = liveAgents.map(a => {
+        scroll.innerHTML = visible.map(a => {
             const initials = (a.employee_name || '?').split(' ').map(w => w[0] || '').slice(0, 2).join('').toUpperCase();
-            const ago = humanAgo(a.last_recorded_at);
+            const ago = humanAgo(a.recorded_at || a.last_recorded_at);
+            const cls = statusClass(a);
+            const battLow = isLowBatt(a) ? ' low' : '';
             return `
                 <div class="agent-row${selectedEmployeeId === a.employee_id ? ' active' : ''}"
                      data-employee-id="${a.employee_id}">
@@ -191,9 +291,9 @@
                     <div class="agent-meta">
                         <div class="agent-name">${escapeText(a.employee_name || a.employee_code || 'Unknown')}</div>
                         <div class="agent-subline">
-                            <span class="agent-pulse"></span>
+                            <span class="agent-pulse ${cls}"></span>
                             <span>${ago}</span>
-                            ${typeof a.battery_pct === 'number' ? `<span>· 🔋 ${a.battery_pct}%</span>` : ''}
+                            ${typeof a.battery_pct === 'number' ? `<span class="agent-batt${battLow}">· 🔋 ${a.battery_pct}%</span>` : ''}
                         </div>
                     </div>
                 </div>
@@ -209,33 +309,25 @@
     }
 
     function renderLiveMarkers() {
-        // Remove markers for agents no longer in the list
-        const seen = new Set(liveAgents.map(a => a.employee_id));
-        Object.keys(liveMarkers).forEach(id => {
-            if (!seen.has(id)) {
-                map.removeLayer(liveMarkers[id]);
-                delete liveMarkers[id];
-            }
-        });
+        // Rebuild from scratch — the cluster layer is cheap to repopulate
+        // (chunkedLoading: true), and tracking per-marker status changes
+        // independently is more code than it's worth.
+        clusterLayer.clearLayers();
+        markerById = {};
 
-        // Add / update markers
         liveAgents.forEach(a => {
             if (typeof a.latitude !== 'number' || typeof a.longitude !== 'number') return;
-            const latlng = [a.latitude, a.longitude];
-            if (liveMarkers[a.employee_id]) {
-                liveMarkers[a.employee_id].setLatLng(latlng);
-                return;
-            }
+            const cls = statusClass(a);
             const icon = L.divIcon({
                 className: 'fa-marker-wrap',
-                html: '<div class="fa-marker"></div>',
-                iconSize: [16, 16],
-                iconAnchor: [8, 8],
+                html: `<div class="fa-marker ${cls}"></div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12],
             });
-            const m = L.marker(latlng, { icon, title: a.employee_name || a.employee_code });
+            const m = L.marker([a.latitude, a.longitude], { icon, title: a.employee_name || a.employee_code });
             m.on('click', () => selectAgent(a.employee_id));
-            m.addTo(map);
-            liveMarkers[a.employee_id] = m;
+            clusterLayer.addLayer(m);
+            markerById[a.employee_id] = m;
         });
     }
 
@@ -261,8 +353,13 @@
         const agent = liveAgents.find(a => a.employee_id === employeeId);
         if (!agent) return;
 
-        // Centre map on the agent
-        if (typeof agent.latitude === 'number' && typeof agent.longitude === 'number') {
+        // Centre map on the agent. zoomToShowLayer un-clusters the bubble
+        // first so the pin actually surfaces; falls back to setView for
+        // markers that aren't inside the cluster layer.
+        const marker = markerById[employeeId];
+        if (marker && clusterLayer.hasLayer(marker)) {
+            clusterLayer.zoomToShowLayer(marker, () => map.setView(marker.getLatLng(), 15));
+        } else if (typeof agent.latitude === 'number' && typeof agent.longitude === 'number') {
             map.setView([agent.latitude, agent.longitude], 15);
         }
 
