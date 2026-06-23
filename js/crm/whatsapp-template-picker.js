@@ -340,6 +340,15 @@
             // back into Interakt's components shape.
             const flatParams = params.header.concat(params.body);
 
+            // Compute the substituted body text so the CRM persists it on
+            // the outbound row. Without this the inbox bubble renders
+            // "(empty)" — the controller falls back to caption/body for
+            // non-text sends, and templates carry neither natively.
+            // Substituting client-side keeps the bubble pixel-accurate to
+            // the live-preview the rep just confirmed; Interakt does the
+            // canonical render server-side, but the body content matches.
+            const renderedBody = substitute(selectedTemplate.body_text || '', params.body);
+
             // CRM body binding is JsonNamingPolicy.SnakeCaseLower (see
             // feedback_crm_snake_case_json memory). camelCase keys
             // silently bind to null which would send a malformed
@@ -349,6 +358,7 @@
                 recipient_country_code: countryCode,
                 recipient_phone: local,
                 message_type: 'template',
+                body: renderedBody,
                 template_name: selectedTemplate.name,
                 template_language: selectedTemplate.language,
                 template_params: flatParams,
