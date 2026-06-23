@@ -73,7 +73,14 @@
         if (activeBlobUrl) { URL.revokeObjectURL(activeBlobUrl); activeBlobUrl = null; }
         wrap.innerHTML = '<span style="color:#64748b;font-size:13px;">Loading…</span>';
         urlPreview.textContent = '';
-        modal.style.display = 'flex';
+        // Match the leads.html openModal() pattern: clear the inline
+        // display:none, then add gm-animating + active classes so the
+        // page's existing .modal CSS handles position, centering, and
+        // backdrop. Setting style.display='flex' directly bypassed the
+        // page's overrides and left the dialog stuck top-left.
+        modal.style.display = '';
+        modal.classList.add('gm-animating');
+        requestAnimationFrame(() => modal.classList.add('active'));
 
         try {
             // Fetch the lead so we have the card_token for the URL
@@ -95,7 +102,18 @@
 
     function closeLeadQrModal() {
         const modal = document.getElementById('leadQrModal');
-        if (modal) modal.style.display = 'none';
+        if (modal) {
+            // Mirror leads.js closeModal(): drop the active class to
+            // trigger the close animation, then strip gm-animating
+            // after the transition completes. We also reapply
+            // display:none after the animation so the modal doesn't
+            // intercept clicks while hidden.
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.classList.remove('gm-animating');
+                modal.style.display = 'none';
+            }, 200);
+        }
         if (activeBlobUrl) { URL.revokeObjectURL(activeBlobUrl); activeBlobUrl = null; }
         activeLeadId = null;
     }
