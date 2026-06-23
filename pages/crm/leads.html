@@ -496,6 +496,30 @@
         <div class="crm-pagination" id="leadsPagination"></div>
     </div>
 
+    <!-- QR Code Modal (lead-card public landing) -->
+    <div class="modal" id="leadQrModal" style="display:none;">
+        <div class="modal-content" style="max-width: 380px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Lead QR Code</h2>
+                <button class="close-btn" onclick="closeLeadQrModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align:center;">
+                <p style="margin: 0 0 14px; font-size: 13px; color: var(--text-secondary, #64748b);">
+                    Scan to open a customer-facing card with your contact details.
+                    The lead can save it to their phone for quick access.
+                </p>
+                <div id="leadQrImageWrap" style="display:flex; justify-content:center; align-items:center; min-height: 260px; background: #f8fafc; border-radius: 12px; padding: 12px;">
+                    <span style="color: var(--text-secondary, #64748b); font-size: 13px;">Loading…</span>
+                </div>
+                <div style="margin-top: 14px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--text-secondary, #64748b); word-break: break-all; padding: 0 12px;" id="leadQrUrlPreview"></div>
+            </div>
+            <div class="modal-footer" style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn btn-outline-secondary" onclick="closeLeadQrModal()">Close</button>
+                <button class="btn btn-primary" id="leadQrDownloadBtn">Download PNG</button>
+            </div>
+        </div>
+    </div>
+
     <!-- New/Edit Lead Modal -->
     <div class="modal" id="leadModal">
         <div class="modal-backdrop" onclick="closeLeadModal()"></div>
@@ -1265,6 +1289,14 @@
                         <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/>
                     </svg>Enroll in Sequence
                 </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="openLeadQrModal(window._leadDetailId)" title="Show QR code that opens the lead's public customer card">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <path d="M14 14h3v3M14 21h7M21 14v7M17 17h4"/>
+                    </svg>QR Code
+                </button>
             </div>
 
             <!-- Timeline -->
@@ -1369,6 +1401,7 @@
         document.write('<script src="../../js/crm/lead-discovery.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-import.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-journey.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/lead-qr-modal.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/calls.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->
