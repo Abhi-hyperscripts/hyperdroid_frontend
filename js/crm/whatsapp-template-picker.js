@@ -543,19 +543,14 @@ get silently flipped to MARKETING (2-3x cost in India).">
             const looksStale =
                 /\b(template[_ ]?name|does not exist|not found|invalid template|404)\b/i.test(msg);
             if (looksStale && typeof Toast !== 'undefined') {
-                // Toast.error supports an optional action via .show with
-                // custom config; fall back to chained toasts if not.
-                if (Toast.show) {
-                    Toast.show({
-                        type: 'error',
-                        message: 'Template no longer exists in Interakt. Refresh to load the latest list.',
-                        action: { label: 'Refresh', onClick: () => loadTemplates(true) },
-                        duration: 8000,
-                    });
-                } else {
-                    Toast.error('Template no longer exists in Interakt — click Refresh and try again.');
-                    setTimeout(() => loadTemplates(true), 500);
-                }
+                // The existing Toast API has no "action button" variant —
+                // chain a clear message + automatic refresh of the
+                // catalog so by the time the rep reopens the picker, the
+                // deleted template is gone from the dropdown. Immediate
+                // feedback + zero extra clicks. The refresh runs even if
+                // the rep dismisses the toast.
+                Toast.error('Template no longer exists in Interakt — refreshing the list now.');
+                loadTemplates(true);
             } else if (typeof Toast !== 'undefined') {
                 Toast.error(msg);
             }
