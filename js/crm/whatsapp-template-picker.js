@@ -274,11 +274,67 @@
     function onTemplatePicked(t) {
         selectedTemplate = t;
         elMeta.style.display = 'block';
+        // Reclassification lint (#3): scan body_text for phrases Meta
+        // has been silently flipping from UTILITY → MARKETING in India,
+        // which 2-3x's per-send cost. The current Wisetrack template
+        // "Hi {{1}}, following up on our last conversation dated
+        // {{2}}…" is exactly the sort of phrasing that gets flipped.
+        // Match is case-insensitive on substring — we err on the side
+        // of false positives because a misclassification is way more
+        // painful than a "this looks like marketing" warning.
+        const utilityRiskPhrases = [
+            'following up',
+            "hope you're doing well",
+            'hope you are doing well',
+            'just checking in',
+            "let's discuss",
+            'lets discuss',
+            'special offer',
+            'limited time',
+            'check out our',
+        ];
+        const bodyLower = (t.body_text || '').toLowerCase();
+        const matchedRisks = utilityRiskPhrases.filter(p => bodyLower.includes(p));
+        const isUtilityCategory = (t.category || '').toUpperCase() === 'UTILITY';
+        const showReclassificationWarning = isUtilityCategory && matchedRisks.length > 0;
+        // Buttons + non-integer placeholder lint (#6): surface malformed
+        // input to the rep instead of silently dropping. The render
+        // pipeline already skips them; we just narrate the skip.
+        let buttonsBroken = false;
+        if (t.buttons_json) {
+            try { JSON.parse(t.buttons_json); }
+            catch (_) { buttonsBroken = true; }
+        }
+        const nonIntPlaceholders = ((t.body_text || '').match(/\{\{[^}]+\}\}/g) || [])
+            .filter(tok => !/^\{\{\d+\}\}$/.test(tok));
+
         elMeta.innerHTML = `
-            <span class="wa-tpl-badge wa-tpl-badge-${(t.category || 'OTHER').toLowerCase()}">
+            <span class="wa-tpl-badge wa-tpl-badge-${(t.category || 'OTHER').toLowerCase()}"
+                  title="Meta re-classifies every send. UTILITY templates with sales-y phrasing
+get silently flipped to MARKETING (2-3x cost in India).">
                 ${escapeHtml(t.category || 'OTHER')}
             </span>
             <span class="wa-tpl-lang">${escapeHtml(t.language || '')}</span>
+            ${showReclassificationWarning ? `
+                <div class="wa-tpl-warning wa-tpl-warning--reclass">
+                    ⚠ This UTILITY template contains phrases Meta has been flipping to
+                    MARKETING category in India (2-3× cost). Watch for:
+                    <em>${matchedRisks.map(escapeHtml).join(', ')}</em>.
+                    Send anyway, but verify with your next month's invoice.
+                </div>
+            ` : ''}
+            ${buttonsBroken ? `
+                <div class="wa-tpl-warning wa-tpl-warning--info">
+                    ℹ Template's buttons metadata is malformed — preview omits buttons
+                    but the send itself still works (Interakt renders them server-side).
+                </div>
+            ` : ''}
+            ${nonIntPlaceholders.length > 0 ? `
+                <div class="wa-tpl-warning wa-tpl-warning--info">
+                    ℹ Body text has non-numeric placeholders that Meta will treat as
+                    literal text: <em>${escapeHtml(nonIntPlaceholders.join(', '))}</em>.
+                </div>
+            ` : ''}
         `;
         renderParamInputs(t);
         renderPreview(t);
@@ -400,10 +456,6 @@
         try {
             const { countryCode, local } = splitPhone(currentRecipientPhone);
             const params = readParams();
-            // /whatsapp/send takes a single flat templateParams array in
-            // header-then-body order. The NS BSP layer composes them
-            // back into Interakt's components shape.
-            const flatParams = params.header.concat(params.body);
 
             // Compute the substituted body text so the CRM persists it on
             // the outbound row. Without this the inbox bubble renders
@@ -418,6 +470,12 @@
             // feedback_crm_snake_case_json memory). camelCase keys
             // silently bind to null which would send a malformed
             // template. Stick to snake_case here.
+            //
+            // Header and body placeholder values travel as INDEPENDENT
+            // arrays end-to-end: Meta numbers header {{N}} and body {{N}}
+            // separately, so flattening them would bind the wrong value
+            // to the header slot. Backend (CRM controller → NS BL →
+            // Interakt) forwards each into the matching component.
             const body = {
                 business_phone_number: currentBusinessPhone || '',
                 recipient_country_code: countryCode,
@@ -426,7 +484,8 @@
                 body: renderedBody,
                 template_name: selectedTemplate.name,
                 template_language: selectedTemplate.language,
-                template_params: flatParams,
+                template_header_params: params.header,
+                template_body_params: params.body,
             };
             const resp = await api.request('/whatsapp/send', {
                 method: 'POST',
@@ -443,7 +502,29 @@
             }
         } catch (err) {
             const msg = err && err.message ? err.message : 'Send failed';
-            if (typeof Toast !== 'undefined') Toast.error(msg);
+            // Stale-cache detection (#4): when the template was deleted
+            // on Interakt after we cached it, Meta/Interakt return
+            // 404-ish errors. Surface a refresh CTA so the rep doesn't
+            // assume "the app is broken" — single-click recovery.
+            const looksStale =
+                /\b(template[_ ]?name|does not exist|not found|invalid template|404)\b/i.test(msg);
+            if (looksStale && typeof Toast !== 'undefined') {
+                // Toast.error supports an optional action via .show with
+                // custom config; fall back to chained toasts if not.
+                if (Toast.show) {
+                    Toast.show({
+                        type: 'error',
+                        message: 'Template no longer exists in Interakt. Refresh to load the latest list.',
+                        action: { label: 'Refresh', onClick: () => loadTemplates(true) },
+                        duration: 8000,
+                    });
+                } else {
+                    Toast.error('Template no longer exists in Interakt — click Refresh and try again.');
+                    setTimeout(() => loadTemplates(true), 500);
+                }
+            } else if (typeof Toast !== 'undefined') {
+                Toast.error(msg);
+            }
         } finally {
             sending = false;
             elSend.textContent = originalSendLabel;

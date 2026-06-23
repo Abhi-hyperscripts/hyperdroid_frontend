@@ -113,6 +113,10 @@
             await loadNumbers();
         }
         await connectSignalR();
+        // Tick the 24-h gate every minute so the template button reappears
+        // automatically once the customer's last inbound ages past 24h —
+        // no manual reload required.
+        setInterval(updateTemplateButtonVisibility, 60 * 1000);
     }
 
     async function loadCompactThread() {
@@ -649,7 +653,14 @@
         if (avatarSlot) avatarSlot.innerHTML = WhatsappUI.renderAvatar(display);
     }
 
+    // Wraps renderThread + updateTemplateButtonVisibility so every entry
+    // point that mutates threadMessages (initial load, SignalR inbound,
+    // optimistic outbound, status update) re-evaluates the 24-h gate.
     function renderThread() {
+        updateTemplateButtonVisibility();
+        return renderThreadImpl();
+    }
+    function renderThreadImpl() {
         const messagesDiv = document.getElementById('waMessages');
         const empty = document.getElementById('waThreadEmpty');
         const composer = document.getElementById('waComposer');
@@ -713,6 +724,41 @@
         // Re-evaluate send/mic button visibility after composer (re)appears.
         const ta = document.getElementById('waComposerInput');
         if (ta) autoSizeTextarea(ta);
+        // The template-send button is INR-per-message via Meta. When the
+        // customer has replied within the last 24 hours, free-form text
+        // is free — hide the template button to nudge reps toward the
+        // cheaper path. Re-evaluated when (a) a thread opens,
+        // (b) an inbound message arrives via SignalR, (c) the rep sends
+        // an outbound row (outbound doesn't reset the window).
+        updateTemplateButtonVisibility();
+    }
+
+    function getLastInboundAtMs() {
+        // Walk thread newest-first and return the timestamp of the most
+        // recent inbound. Returns 0 when there's never been any inbound
+        // (cold lead) — caller treats 0 as "outside the window".
+        for (let i = threadMessages.length - 1; i >= 0; i--) {
+            const m = threadMessages[i];
+            if (m.direction !== 'inbound') continue;
+            const t = m.receivedAtUtc || m.createdAtUtc || m.sentAtUtc;
+            if (!t) continue;
+            const ms = new Date(t).getTime();
+            if (!Number.isNaN(ms)) return ms;
+        }
+        return 0;
+    }
+
+    function updateTemplateButtonVisibility() {
+        const btn = document.getElementById('waTemplateBtn');
+        if (!btn) return;
+        const lastInboundMs = getLastInboundAtMs();
+        const withinWindow = lastInboundMs > 0
+            && (Date.now() - lastInboundMs) < (24 * 60 * 60 * 1000);
+        // Inside the window: free-form is free, hide the paid template
+        // button. Outside the window (or never replied): show it because
+        // free-form would be rejected by Meta with a "outside session"
+        // error anyway.
+        btn.style.display = withinWindow ? 'none' : '';
     }
 
     // ─── Attachments ────────────────────────────────────────────────────────
