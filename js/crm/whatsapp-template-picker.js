@@ -61,7 +61,20 @@
                 if (typeof Toast !== 'undefined') Toast.warning('No recipient selected.');
                 return;
             }
-            resolveDom();
+            // resolveDom returns false when any required modal element is
+            // missing — happens when the browser HTTP-cache served an old
+            // inbox.html that predates the picker markup. Bail with a
+            // friendly toast pointing the user at hard-reload rather than
+            // throwing an opaque "innerHTML of null" deep in loadTemplates.
+            if (!resolveDom()) {
+                console.warn('[TemplatePicker] modal markup not in DOM — page is from stale HTTP cache');
+                if (typeof Toast !== 'undefined') {
+                    Toast.error('Template picker not yet loaded on this page. Hard-reload (Cmd+Shift+R / Ctrl+F5) to fetch the latest version.');
+                } else {
+                    alert('Template picker not loaded — please hard-reload the page (Cmd+Shift+R or Ctrl+F5).');
+                }
+                return;
+            }
             wireOnce();
             showModal();
             // Fetch fresh (or cached) on every open so the rep sees newly
@@ -72,6 +85,12 @@
     };
 
     // ─── DOM lookup ─────────────────────────────────────────────────────────
+    // Returns true when every required element was found, false otherwise.
+    // The picker JS ships before its HTML markup on first deploy — a user
+    // whose browser HTTP-cached the old inbox.html will load the new picker
+    // JS but be missing the modal scaffold. Bail cleanly in that case so
+    // the only damage is a Toast asking them to hard-reload, not an
+    // unhandled exception that breaks the whole composer.
     function resolveDom() {
         elModal       = document.getElementById('waTplModal');
         elClose       = document.getElementById('waTplClose');
@@ -84,6 +103,9 @@
         elPreviewWrap = document.getElementById('waTplPreviewWrap');
         elMeta        = document.getElementById('waTplMeta');
         elEmpty       = document.getElementById('waTplEmpty');
+        return !!(elModal && elClose && elCancel && elSend && elRefresh &&
+                  elPickerHost && elParams && elPreview && elPreviewWrap &&
+                  elMeta && elEmpty);
     }
 
     // Wire DOM listeners exactly once. The modal lives across multiple
