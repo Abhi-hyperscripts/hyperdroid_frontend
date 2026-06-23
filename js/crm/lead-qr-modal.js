@@ -22,15 +22,19 @@
      * Authorization header is attached.
      */
     async function fetchQrPngBlob(leadId, size) {
-        const path = `/leads/${encodeURIComponent(leadId)}/qr.png?size=${size}`;
-        // api.request defaults to JSON parsing; we need the raw response
-        // for the binary body. Use api.requestRaw if available, else
-        // construct the fetch manually with the JWT.
-        const token = (typeof api !== 'undefined' && api.getAuthToken) ? api.getAuthToken() : localStorage.getItem('token');
+        // CONFIG.crmApiBaseUrl already includes the /api segment, so
+        // concatenating /api/leads/... here would produce /api/api/...
+        // and a 404. Pin: base + /leads/... only.
         const base = (typeof CONFIG !== 'undefined' && CONFIG.crmApiBaseUrl)
             ? CONFIG.crmApiBaseUrl
-            : (location.hostname === 'localhost' ? 'http://localhost:5112' : 'https://crm.ragenaizer.com');
-        const resp = await fetch(`${base}/api${path}`, {
+            : (location.hostname === 'localhost' ? 'http://localhost:5112/api' : 'https://crm.ragenaizer.com/api');
+        const url = `${base}/leads/${encodeURIComponent(leadId)}/qr.png?size=${size}`;
+        // Use the global getAuthToken() helper exposed by config.js /
+        // api.js — same token the rest of the app uses, picks up
+        // refreshes too. Fall back to localStorage only if the helper
+        // isn't loaded (shouldn't happen on the leads page).
+        const token = (typeof getAuthToken === 'function') ? getAuthToken() : localStorage.getItem('token');
+        const resp = await fetch(url, {
             headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         });
         if (!resp.ok) {
