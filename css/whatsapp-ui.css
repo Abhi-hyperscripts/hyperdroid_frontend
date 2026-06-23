@@ -1526,6 +1526,37 @@
 .searchable-dropdown-popup {
     z-index: 1000002 !important;
 }
+
+/* Template picker's SearchableDropdown menu (tagged via JS with
+   .wa-tpl-menu after init). Stack the option label above its description
+   so a long body_text preview doesn't push the template name out of view.
+   Without this, the default flex row gives `flex: 1` to the label but
+   `flex-shrink: 0` to the description — long descriptions starve the
+   label, which clips to 30-40px of ellipsis. */
+.wa-tpl-menu .searchable-dropdown-option {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 12px;
+}
+.wa-tpl-menu .searchable-dropdown-option-label {
+    flex: none;
+    width: 100%;
+    font-weight: 500;
+}
+.wa-tpl-menu .searchable-dropdown-option-desc {
+    margin-left: 0;
+    flex: none;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wa-tpl-menu .searchable-dropdown-check {
+    position: absolute;
+    right: 12px;
+    top: 10px;
+}
 .wa-tpl-modal {
     background: var(--bg-card, #fff);
     color: var(--text-primary, #1f2937);

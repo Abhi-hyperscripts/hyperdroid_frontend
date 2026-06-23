@@ -254,6 +254,14 @@
                 if (t) onTemplatePicked(t);
             },
         });
+        // Marker class on the portaled menu so CSS can give template options
+        // their own layout (label-above-description) without leaking to every
+        // other SearchableDropdown on the page. The library portals menuEl
+        // to <body>, so a parent-scoped selector (.wa-tpl-modal-backdrop …)
+        // can't reach it.
+        if (dropdown && dropdown.menuEl) {
+            dropdown.menuEl.classList.add('wa-tpl-menu');
+        }
     }
 
     function keyFor(t) {
