@@ -282,7 +282,13 @@
         // Match is case-insensitive on substring — we err on the side
         // of false positives because a misclassification is way more
         // painful than a "this looks like marketing" warning.
+        // English + Hindi/Hinglish corpus of phrases Meta's classifier has
+        // been silently flipping UTILITY → MARKETING in India. Maintained
+        // alongside the reference_whatsapp_utility_template_rules memory.
+        // Match is case-insensitive substring (English Latin script) +
+        // exact substring (Devanagari, case is irrelevant there).
         const utilityRiskPhrases = [
+            // English
             'following up',
             "hope you're doing well",
             'hope you are doing well',
@@ -292,6 +298,30 @@
             'special offer',
             'limited time',
             'check out our',
+            'gentle reminder',
+            'last chance',
+            "don't miss",
+            'dont miss',
+            'exclusive offer',
+            'big discount',
+            // Hindi (Devanagari) — common transactional-but-Marketing-flagged hooks
+            'ज़रा सोचिए',          // "just imagine" — promo opener
+            'जरा सोचिए',
+            'क्या आप जानते',         // "do you know"
+            'विशेष ऑफर',           // "special offer"
+            'आज ही',               // "today only" / urgency
+            'सीमित समय',           // "limited time"
+            'सबसे अच्छा',           // "the best"
+            'मौका न गंवाएं',         // "don't miss the chance"
+            'मुफ्त में',             // "for free"
+            'भारी छूट',            // "huge discount"
+            // Hinglish / Roman-script Hindi
+            'aap ke liye',
+            'special discount',
+            'limited stock',
+            'free trial',
+            'aaj hi',
+            'mauka',
         ];
         const bodyLower = (t.body_text || '').toLowerCase();
         const matchedRisks = utilityRiskPhrases.filter(p => bodyLower.includes(p));
@@ -448,6 +478,10 @@ get silently flipped to MARKETING (2-3x cost in India).">
 
     // ─── Send ───────────────────────────────────────────────────────────────
     async function handleSend() {
+        // Race-guard: sending is flipped SYNCHRONOUSLY before any await,
+        // so a second rapid click sees sending=true and bails. The
+        // disabled flag on elSend backs this up visually but is not the
+        // primary defense (could be re-enabled by stray DOM mutations).
         if (sending || !selectedTemplate) return;
         sending = true;
         elSend.disabled = true;

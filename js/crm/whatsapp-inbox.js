@@ -586,6 +586,17 @@
                 `/whatsapp/thread?businessPhoneNumber=${encodeURIComponent(activeBusinessPhone)}`
                 + `&customerPhone=${encodeURIComponent(customerPhone)}`);
             const raw = (resp && resp.messages) ? resp.messages : [];
+            // Anchor the 24-h gate to the SERVER's clock — see comment on
+            // nowFromServer above. Bypassed if the response doesn't ship
+            // server_now_utc (older backend → degrade to Date.now()).
+            const srvIso = resp && resp.server_now_utc ? resp.server_now_utc : '';
+            if (srvIso) {
+                const parsed = new Date(srvIso).getTime();
+                if (!Number.isNaN(parsed)) {
+                    serverNowAtFetchMs = parsed;
+                    clientFetchedAtMs = Date.now();
+                }
+            }
             // Server returns newest-first; the inbox renders oldest-at-top so we reverse.
             threadMessages = raw.slice().reverse().map(m => ({
                 id: m.id,
@@ -748,12 +759,30 @@
         return 0;
     }
 
+    // Server-supplied reference clock (ms since epoch). Set from
+    // /whatsapp/thread's server_now_utc on every thread load so the
+    // 24-h gate decides against the SERVER's view of time, not the
+    // user's device clock — a wrong device time would otherwise push
+    // the rep into the wrong free-vs-paid bucket. Falls back to
+    // Date.now() until the first thread loads.
+    let serverNowAtFetchMs = 0;
+    let clientFetchedAtMs = 0;
+    function nowFromServer() {
+        if (serverNowAtFetchMs === 0) return Date.now();
+        // Add the elapsed wall-clock time since we received the server's
+        // timestamp. That's still vulnerable to a wrong-but-constant
+        // device clock for delta computation, but the BASE is anchored
+        // to server time so cross-device-time-zone errors don't drift
+        // the 24-h boundary.
+        return serverNowAtFetchMs + (Date.now() - clientFetchedAtMs);
+    }
+
     function updateTemplateButtonVisibility() {
         const btn = document.getElementById('waTemplateBtn');
         if (!btn) return;
         const lastInboundMs = getLastInboundAtMs();
         const withinWindow = lastInboundMs > 0
-            && (Date.now() - lastInboundMs) < (24 * 60 * 60 * 1000);
+            && (nowFromServer() - lastInboundMs) < (24 * 60 * 60 * 1000);
         // Inside the window: free-form is free, hide the paid template
         // button. Outside the window (or never replied): show it because
         // free-form would be rejected by Meta with a "outside session"
