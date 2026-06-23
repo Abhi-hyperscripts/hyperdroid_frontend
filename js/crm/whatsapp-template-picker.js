@@ -103,6 +103,23 @@
         elPreviewWrap = document.getElementById('waTplPreviewWrap');
         elMeta        = document.getElementById('waTplMeta');
         elEmpty       = document.getElementById('waTplEmpty');
+
+        // SearchableDropdown.destroy() removes its container from the DOM.
+        // If a prior open()/render destroyed the picker host, re-stamp a
+        // fresh one into the .wa-tpl-row slot so loadTemplates's first
+        // line (elPickerHost.innerHTML = …) doesn't throw. This is the
+        // common case for the SECOND open of the modal — every other
+        // element survives.
+        if (!elPickerHost) {
+            const slot = document.querySelector('.wa-tpl-row');
+            if (slot) {
+                const freshHost = document.createElement('div');
+                freshHost.id = 'waTplPickerHost';
+                slot.appendChild(freshHost);
+                elPickerHost = freshHost;
+            }
+        }
+
         return !!(elModal && elClose && elCancel && elSend && elRefresh &&
                   elPickerHost && elParams && elPreview && elPreviewWrap &&
                   elMeta && elEmpty);
@@ -204,11 +221,29 @@
                 });
             });
         });
-        // Destroy any prior instance so we don't leak event handlers
-        // when the rep re-opens the modal with stale state.
+        // SearchableDropdown's destroy() does `parentNode.removeChild(this.container)`
+        // — it removes the host element from the DOM entirely. If we just
+        // destroyed and rebuilt against the original elPickerHost, the next
+        // open() would find #waTplPickerHost missing and resolveDom would
+        // bail. Recreate a fresh host div each render: stamp a new one
+        // into the slot, replace the prior one in the DOM, then point
+        // elPickerHost at it before handing to the dropdown.
         if (dropdown && typeof dropdown.destroy === 'function') {
             try { dropdown.destroy(); } catch (_) {}
         }
+        const slot = document.querySelector('.wa-tpl-row'); // stable parent
+        const freshHost = document.createElement('div');
+        freshHost.id = 'waTplPickerHost';
+        if (slot) {
+            const old = document.getElementById('waTplPickerHost');
+            if (old && old.parentNode) {
+                old.parentNode.replaceChild(freshHost, old);
+            } else {
+                slot.appendChild(freshHost);
+            }
+        }
+        elPickerHost = freshHost;
+
         dropdown = new SearchableDropdown(elPickerHost, {
             options,
             placeholder: 'Pick a template',
