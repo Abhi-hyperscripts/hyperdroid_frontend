@@ -14,6 +14,7 @@
 
     let activeBlobUrl = null;
     let activeLeadId = null;
+    let activeCardUrl = null;
 
     /**
      * Server returns the QR PNG with proper Content-Type + ETag, so we
@@ -73,6 +74,15 @@
         if (activeBlobUrl) { URL.revokeObjectURL(activeBlobUrl); activeBlobUrl = null; }
         wrap.innerHTML = '<span style="color:#64748b;font-size:13px;">Loading…</span>';
         urlPreview.textContent = '';
+        activeCardUrl = null;
+        const copyBtn = document.getElementById('leadQrCopyLinkBtn');
+        if (copyBtn) {
+            copyBtn.disabled = true;
+            // Reset label state on every open in case a previous open
+            // left it stuck on "Copied!" from a clipboard write.
+            copyBtn.innerHTML = copyBtn.dataset.defaultHtml || copyBtn.innerHTML;
+            if (!copyBtn.dataset.defaultHtml) copyBtn.dataset.defaultHtml = copyBtn.innerHTML;
+        }
         // Match the leads.html openModal() pattern: clear the inline
         // display:none, then add gm-animating + active classes so the
         // page's existing .modal CSS handles position, centering, and
@@ -89,7 +99,9 @@
             const lead = await api.request(`/crm/leads/${leadId}`);
             const cardToken = lead?.card_token;
             if (cardToken) {
-                urlPreview.textContent = publicCardUrl(cardToken);
+                activeCardUrl = publicCardUrl(cardToken);
+                urlPreview.textContent = activeCardUrl;
+                if (copyBtn) copyBtn.disabled = false;
             }
 
             const blob = await fetchQrPngBlob(leadId, 320);
@@ -116,6 +128,43 @@
         }
         if (activeBlobUrl) { URL.revokeObjectURL(activeBlobUrl); activeBlobUrl = null; }
         activeLeadId = null;
+        activeCardUrl = null;
+    }
+
+    async function copyLeadCardLink() {
+        if (!activeCardUrl) return;
+        const copyBtn = document.getElementById('leadQrCopyLinkBtn');
+        let ok = false;
+        try {
+            // Modern path — needs HTTPS or localhost. Will throw on http
+            // pages, which is why we fall back to execCommand below.
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(activeCardUrl);
+                ok = true;
+            }
+        } catch (_) { /* fall through to legacy path */ }
+        if (!ok) {
+            // Legacy path for http contexts (some self-hosted CRMs).
+            // textarea + execCommand still works in every browser.
+            const ta = document.createElement('textarea');
+            ta.value = activeCardUrl;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try { ok = document.execCommand('copy'); } catch (_) { ok = false; }
+            document.body.removeChild(ta);
+        }
+        if (copyBtn) {
+            const defaultHtml = copyBtn.dataset.defaultHtml || copyBtn.innerHTML;
+            if (ok) {
+                copyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;"><polyline points="20 6 9 17 4 12"/></svg>Copied`;
+                setTimeout(() => { copyBtn.innerHTML = defaultHtml; }, 1600);
+            }
+        }
+        if (typeof Toast !== 'undefined') {
+            if (ok) Toast.success('Link copied'); else Toast.error('Could not copy link');
+        }
     }
 
     async function downloadLeadQr() {
@@ -148,10 +197,12 @@
             .replace(/'/g, '&#39;');
     }
 
-    // Wire the download button once the DOM is ready.
+    // Wire the modal buttons once the DOM is ready.
     document.addEventListener('DOMContentLoaded', () => {
         const btn = document.getElementById('leadQrDownloadBtn');
         if (btn) btn.addEventListener('click', downloadLeadQr);
+        const copyBtn = document.getElementById('leadQrCopyLinkBtn');
+        if (copyBtn) copyBtn.addEventListener('click', copyLeadCardLink);
     });
 
     // Public surface — referenced by inline onclick handlers in
