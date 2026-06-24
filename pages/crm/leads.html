@@ -432,6 +432,11 @@
             <span class="bulk-count"><span id="selectedCount">0</span> selected</span>
             <button class="btn btn-sm btn-outline-primary" onclick="bulkAssign()">Assign</button>
             <button class="btn btn-sm btn-outline-primary" onclick="bulkSendCampaign()">Send Campaign</button>
+            <button class="btn btn-sm btn-outline-success" onclick="openBulkWhatsAppModal()" title="Send an approved WhatsApp template to every selected lead">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;">
+                    <path d="M20.52 3.48A11.94 11.94 0 0 0 12.02 0C5.4 0 .07 5.35.07 11.96c0 2.11.55 4.17 1.6 5.99L0 24l6.21-1.63a11.93 11.93 0 0 0 5.81 1.48h.01c6.62 0 11.95-5.35 11.95-11.96 0-3.19-1.24-6.19-3.46-8.41z"/>
+                </svg>WhatsApp
+            </button>
             <button class="btn btn-sm btn-outline-danger" id="bulkDeleteBtn" onclick="bulkDelete()">Delete</button>
         </div>
 
@@ -494,6 +499,107 @@
 
         <!-- Pagination -->
         <div class="crm-pagination" id="leadsPagination"></div>
+    </div>
+
+    <!-- Bulk WhatsApp Send Modal — 4-step wizard.
+         Stepper at top tracks progress; main pane swaps between
+         step-recipients / step-template / step-preview / step-progress.
+         The same modal mounts the progress view once the batch is
+         created so the rep stays in one container. -->
+    <div class="modal" id="bulkWhatsAppModal" style="display:none;">
+        <div class="modal-content" style="max-width: 720px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Send WhatsApp to selected leads</h2>
+                <button class="close-btn" onclick="closeBulkWhatsAppModal()">&times;</button>
+            </div>
+            <!-- Wizard stepper -->
+            <div class="bulk-wa-stepper" id="bulkWaStepper">
+                <div class="bulk-wa-step is-active" data-step="recipients">
+                    <span class="bulk-wa-step-num">1</span>
+                    <span class="bulk-wa-step-label">Recipients</span>
+                </div>
+                <div class="bulk-wa-step" data-step="template">
+                    <span class="bulk-wa-step-num">2</span>
+                    <span class="bulk-wa-step-label">Template</span>
+                </div>
+                <div class="bulk-wa-step" data-step="preview">
+                    <span class="bulk-wa-step-num">3</span>
+                    <span class="bulk-wa-step-label">Preview</span>
+                </div>
+                <div class="bulk-wa-step" data-step="send">
+                    <span class="bulk-wa-step-num">4</span>
+                    <span class="bulk-wa-step-label">Send</span>
+                </div>
+            </div>
+
+            <div class="modal-body" id="bulkWaBody">
+                <!-- Step 1: Recipients -->
+                <div class="bulk-wa-pane" data-pane="recipients">
+                    <p class="bulk-wa-helper" id="bulkWaRecipientsHelper">
+                        Review the leads who'll receive this message. Click ✕ to drop
+                        anyone you don't want included. Leads without a valid phone
+                        number are flagged automatically — they'll be skipped, but
+                        won't block the rest of the batch.
+                    </p>
+                    <div class="bulk-wa-summary" id="bulkWaRecipientsSummary"></div>
+                    <div class="bulk-wa-recipients-table" id="bulkWaRecipientsTable"></div>
+                </div>
+
+                <!-- Step 2: Template + variable mapping -->
+                <div class="bulk-wa-pane" data-pane="template" style="display:none;">
+                    <p class="bulk-wa-helper">
+                        Pick a Meta-approved template. Each {{N}} placeholder needs a
+                        value — pull it from a lead field (per-recipient) or set a
+                        single static value for everyone.
+                    </p>
+                    <div class="form-group">
+                        <label class="form-label" for="bulkWaTemplateNumber">Send from</label>
+                        <div id="bulkWaNumberMount"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="bulkWaTemplate">Template</label>
+                        <div id="bulkWaTemplateMount"></div>
+                    </div>
+                    <div class="bulk-wa-template-preview" id="bulkWaTemplateBody"></div>
+                    <div class="bulk-wa-mapping" id="bulkWaMapping"></div>
+                </div>
+
+                <!-- Step 3: Preview -->
+                <div class="bulk-wa-pane" data-pane="preview" style="display:none;">
+                    <p class="bulk-wa-helper">
+                        Here's what each recipient will actually see. The first three
+                        and the last one are shown — if these look wrong, go back and
+                        fix the mapping.
+                    </p>
+                    <div class="bulk-wa-preview-cards" id="bulkWaPreviewCards"></div>
+                </div>
+
+                <!-- Step 4: Send / progress -->
+                <div class="bulk-wa-pane" data-pane="send" style="display:none;">
+                    <div id="bulkWaSendIntro">
+                        <p class="bulk-wa-helper">
+                            Ready to send. Sending is paced at about one message per
+                            second so the conversation looks natural to recipients and
+                            stays comfortably under Meta's rate limits.
+                        </p>
+                        <div class="bulk-wa-confirm-summary" id="bulkWaConfirmSummary"></div>
+                    </div>
+                    <div id="bulkWaProgress" style="display:none;">
+                        <div class="bulk-wa-progress-stats" id="bulkWaProgressStats"></div>
+                        <div class="bulk-wa-progress-bar">
+                            <div class="bulk-wa-progress-bar-inner" id="bulkWaProgressBarInner"></div>
+                        </div>
+                        <p class="bulk-wa-progress-note" id="bulkWaProgressNote"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" id="bulkWaFooter">
+                <button class="btn btn-outline-secondary" id="bulkWaCancelBtn" onclick="closeBulkWhatsAppModal()">Close</button>
+                <button class="btn btn-outline-secondary" id="bulkWaBackBtn" onclick="bulkWaStepBack()" style="display:none;">Back</button>
+                <button class="btn btn-primary" id="bulkWaNextBtn" onclick="bulkWaStepNext()">Next</button>
+            </div>
+        </div>
     </div>
 
     <!-- QR Code Modal (lead-card public landing) -->
@@ -1406,6 +1512,7 @@
         document.write('<script src="../../js/crm/lead-import.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-journey.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-qr-modal.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/bulk-whatsapp-modal.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/calls.js?v=' + CACHE_VERSION + '"><\/script>');
     </script>
     <!-- AI Copilot Widget -->
