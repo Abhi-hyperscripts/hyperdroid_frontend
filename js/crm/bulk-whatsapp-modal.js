@@ -479,6 +479,118 @@
         `;
     }
 
+    /// <summary>
+    /// Friendly explanations for the most common Meta error codes the
+    /// rep will hit. Keys are extracted by NS from data.errors[].code.
+    /// When a recipient's error_message starts with one of these codes,
+    /// show the friendly explanation INSTEAD of the raw error so the
+    /// rep understands what to do (or why it's not their fault).
+    /// </summary>
+    const META_ERROR_EXPLANATIONS = {
+        '131049': {
+            label: 'Meta marketing throttle',
+            help: "Meta limits how many marketing messages a single user receives across all businesses. They throttled this delivery because the recipient was less likely to engage. Try again in 24h, or use a Utility template if the message is transactional.",
+        },
+        '131026': {
+            label: 'Undeliverable',
+            help: "Phone is invalid, blocked, or the recipient opted out of WhatsApp business messages.",
+        },
+        '131047': {
+            label: 'Outside 24h window',
+            help: "More than 24 hours since the recipient last messaged you, and Meta wouldn't accept the template. Resubmit the template for approval if it's been rejected.",
+        },
+        '132001': {
+            label: 'Template paused',
+            help: "Meta paused this template because of low quality scores. Submit a fresh variant in your BSP dashboard.",
+        },
+        '132012': {
+            label: 'Template parameter mismatch',
+            help: "The template variables don't match what Meta approved. Check the {{N}} count against the approved version.",
+        },
+    };
+
+    function classifyError(errorMessage) {
+        if (!errorMessage) return null;
+        // NS forwards errors as "{code} — {title}: {detail}". Pluck the
+        // leading code via a tight regex; fall back to substring match
+        // for older string-only error_messages.
+        const match = String(errorMessage).match(/^(\d{6})\b/);
+        if (match && META_ERROR_EXPLANATIONS[match[1]]) {
+            return { code: match[1], ...META_ERROR_EXPLANATIONS[match[1]], raw: errorMessage };
+        }
+        return null;
+    }
+
+    async function loadRecipientsDetail() {
+        if (!state.batchId) return [];
+        try {
+            const resp = await api.request(`/whatsapp/bulk-send/${state.batchId}/recipients`);
+            return (resp && resp.recipients) || [];
+        } catch (err) {
+            console.error('[BulkWA] failed to load recipient detail', err);
+            return [];
+        }
+    }
+
+    function renderRecipientsBreakdown(recipients) {
+        if (!recipients || recipients.length === 0) return '';
+        // Group by status priority
+        const failed = recipients.filter(r => r.status === 'failed' || r.status === 'cancelled' || r.status === 'skipped');
+        const success = recipients.filter(r => r.status === 'delivered' || r.status === 'read');
+        const inFlight = recipients.filter(r => r.status === 'sent' || r.status === 'sending' || r.status === 'pending');
+        if (failed.length === 0 && success.length === 0 && inFlight.length === 0) return '';
+
+        const card = (r, statusKlass) => {
+            const err = classifyError(r.error_message);
+            const errDisplay = err
+                ? `<div class="bulk-wa-detail-err"><strong>${esc(err.code)} — ${esc(err.label)}</strong><div class="bulk-wa-detail-err-help">${esc(err.help)}</div></div>`
+                : (r.error_message ? `<div class="bulk-wa-detail-err">${esc(r.error_message)}</div>` : '');
+            return `
+                <div class="bulk-wa-detail-row is-${statusKlass}">
+                    <div class="bulk-wa-detail-phone">${esc(r.phone)} ${r.recipient_name ? `<span class="bulk-wa-detail-name">· ${esc(r.recipient_name)}</span>` : ''}</div>
+                    <div class="bulk-wa-detail-status">${esc(r.status)}</div>
+                    ${errDisplay}
+                </div>`;
+        };
+        let html = '';
+        if (failed.length > 0) {
+            html += `<h4 class="bulk-wa-detail-section-h">Needs attention (${failed.length})</h4>`;
+            html += failed.map(r => card(r, 'fail')).join('');
+        }
+        if (inFlight.length > 0) {
+            html += `<h4 class="bulk-wa-detail-section-h">In flight (${inFlight.length})</h4>`;
+            html += inFlight.map(r => card(r, 'inflight')).join('');
+        }
+        if (success.length > 0) {
+            html += `<h4 class="bulk-wa-detail-section-h">Delivered (${success.length})</h4>`;
+            html += success.map(r => card(r, 'ok')).join('');
+        }
+        return html;
+    }
+
+    async function refreshRecipientDetail() {
+        // Only fetch detail on terminal-batch refresh (when it's actually
+        // useful) AND on the failed-count being non-zero. Avoids
+        // hammering the endpoint during a healthy run.
+        if (!state.lastPoll) return;
+        const c = state.lastPoll.counts || {};
+        const hasFailures = (c.failed || 0) + (c.skipped || 0) + (c.cancelled || 0) > 0;
+        const isTerminal = ['completed','cancelled','failed'].includes(state.lastPoll.status);
+        if (!hasFailures && !isTerminal) return;
+        const recipients = await loadRecipientsDetail();
+        const mountId = 'bulkWaRecipientBreakdown';
+        let mount = document.getElementById(mountId);
+        if (!mount) {
+            const progressPane = document.querySelector('.bulk-wa-pane[data-pane="send"] #bulkWaProgress');
+            if (!progressPane) return;
+            mount = document.createElement('div');
+            mount.id = mountId;
+            mount.className = 'bulk-wa-recipient-breakdown';
+            progressPane.appendChild(mount);
+        }
+        mount.innerHTML = renderRecipientsBreakdown(recipients);
+    }
+
     function updatePollData(data) {
         // Stash for stepNext (cancel button) to branch on.
         state.lastPoll = data;
@@ -505,9 +617,21 @@
                 <div class="label">Failed</div>
             </div>
         `;
+        // Refresh the per-recipient detail breakdown when failures exist
+        // or the batch is terminal. Fire-and-forget — don't block the
+        // poll cycle on the detail fetch.
+        refreshRecipientDetail();
+
         let note;
         if (data.status === 'completed') {
-            note = `Batch complete — ${c.sent + c.delivered + c.read} successful, ${c.failed} failed.`;
+            const ok = (c.delivered || 0) + (c.read || 0);
+            const sentNotYetDelivered = c.sent || 0;
+            const bad = (c.failed || 0) + (c.skipped || 0) + (c.cancelled || 0);
+            const noteParts = [`Batch complete`];
+            if (ok > 0) noteParts.push(`${ok} delivered`);
+            if (sentNotYetDelivered > 0) noteParts.push(`${sentNotYetDelivered} sent (awaiting delivery receipt)`);
+            if (bad > 0) noteParts.push(`${bad} failed`);
+            note = noteParts.join(' — ');
             stopPolling();
             // Flip the cancel button to "Close" once the batch is done.
             const nextBtn = document.getElementById('bulkWaNextBtn');
