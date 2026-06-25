@@ -743,15 +743,21 @@
                 method: 'POST',
                 body: JSON.stringify(payload),
             });
-            state.batchId = resp.batch_id;
-            renderSendPane();
-            startPolling();
+            // NEW: non-blocking handoff to the tracker. A 500-recipient
+            // batch at 1 send/sec is ~8 minutes — the rep should not
+            // be locked in the modal that long. We close immediately,
+            // toast a confirmation, and the floating tracker chip
+            // (bulk-whatsapp-tracker.js) takes over with live progress.
+            if (typeof window.bulkWaTrack === 'function') {
+                window.bulkWaTrack(resp.batch_id);
+            }
             if (typeof Toast !== 'undefined') {
                 const skip = resp.skipped_count || 0;
                 Toast.success(skip > 0
-                    ? `Batch started — ${resp.total_recipients} queued, ${skip} skipped`
-                    : `Batch started — ${resp.total_recipients} queued`);
+                    ? `Sending ${resp.total_recipients} messages in the background · ${skip} skipped`
+                    : `Sending ${resp.total_recipients} messages in the background`);
             }
+            closeModal();
         } catch (err) {
             console.error('[BulkWA] send failed', err);
             if (typeof Toast !== 'undefined') Toast.error(err.message || 'Failed to start batch');

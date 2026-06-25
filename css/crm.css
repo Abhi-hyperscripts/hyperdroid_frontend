@@ -5995,3 +5995,130 @@ label.ff-checkbox-inline input[type="checkbox"] {
     font-size: 11.5px;
     line-height: 1.45;
 }
+
+/* ───────────────────────────────────────────────────────────────
+   Floating progress chip — the non-blocking sibling of the modal.
+   Anchored bottom-right, stacks multiple chips vertically when
+   the rep has multiple batches in flight. Click to expand the
+   per-recipient breakdown inline; auto-dismisses 30s after the
+   batch reaches a terminal state.
+   ─────────────────────────────────────────────────────────────── */
+
+.bulk-wa-tracker-mount {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 10px;
+    max-width: 380px;
+    pointer-events: none;
+}
+.bulk-wa-chip {
+    pointer-events: auto;
+    width: 360px;
+    max-width: 92vw;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.32), 0 2px 8px rgba(0,0,0,0.18);
+    overflow: hidden;
+    transition: transform 0.2s ease, opacity 0.2s ease, border-color 0.18s ease;
+    animation: bulkWaChipIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes bulkWaChipIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+.bulk-wa-chip.is-running { border-color: var(--brand-primary); }
+.bulk-wa-chip.is-done    { border-color: var(--color-success, #10b981); }
+.bulk-wa-chip.is-mixed   { border-color: var(--color-warning, #f59e0b); }
+
+.bulk-wa-chip-head {
+    display: grid;
+    grid-template-columns: 32px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+}
+.bulk-wa-chip-head:hover { background: var(--bg-hover, rgba(255,255,255,0.02)); }
+.bulk-wa-chip-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #25d366, #128c7e);
+    color: #fff;
+}
+.bulk-wa-chip.is-mixed .bulk-wa-chip-icon {
+    background: linear-gradient(135deg, var(--color-warning, #f59e0b), #dc2626);
+}
+.bulk-wa-chip-body { min-width: 0; }
+.bulk-wa-chip-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+.bulk-wa-chip-meta {
+    margin-top: 2px;
+    font-size: 11.5px;
+    color: var(--text-secondary);
+}
+.bulk-wa-chip-fail {
+    color: var(--color-error, #ef4444);
+    font-weight: 500;
+}
+.bulk-wa-chip-bar {
+    margin-top: 6px;
+    height: 4px;
+    background: var(--bg-subtle, rgba(0,0,0,0.08));
+    border-radius: 999px;
+    overflow: hidden;
+}
+.bulk-wa-chip-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--brand-primary), var(--color-success, #10b981));
+    transition: width 0.4s ease;
+}
+.bulk-wa-chip.is-mixed .bulk-wa-chip-bar-inner {
+    background: linear-gradient(90deg, var(--color-warning, #f59e0b), var(--color-error, #ef4444));
+}
+.bulk-wa-chip-dismiss {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+.bulk-wa-chip-dismiss:hover { background: var(--bg-hover, rgba(255,255,255,0.04)); color: var(--text-primary); }
+
+.bulk-wa-chip-detail {
+    border-top: 1px solid var(--border-color);
+    padding: 12px 14px;
+    max-height: 360px;
+    overflow-y: auto;
+    background: var(--bg-subtle, rgba(0,0,0,0.02));
+}
+.bulk-wa-chip-loading {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+}
+
+@media (max-width: 580px) {
+    .bulk-wa-tracker-mount {
+        right: 12px;
+        bottom: 12px;
+        left: 12px;
+        max-width: none;
+    }
+    .bulk-wa-chip { width: 100%; }
+}

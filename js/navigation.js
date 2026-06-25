@@ -201,6 +201,24 @@ const Navigation = {
         this.renderNavbar(currentPageId, basePath, user);
         this.setupDropdownListeners();
 
+        // Hoist the bulk-WhatsApp tracker on every CRM page (not just
+        // leads.html) so an in-flight batch's floating chip follows the
+        // rep around. The tracker re-hydrates from localStorage on
+        // each page load — refresh, navigate, even close+reopen the
+        // tab and the chip resumes polling for any non-terminal batch.
+        // Only inject on CRM pages (path contains /pages/crm/). The
+        // load is idempotent — the tracker IIFE guards against
+        // double-mount.
+        try {
+            if (location.pathname.includes('/pages/crm/') && !document.getElementById('bulkWaTrackerScript')) {
+                const s = document.createElement('script');
+                s.id = 'bulkWaTrackerScript';
+                s.src = `${basePath}../../js/crm/bulk-whatsapp-tracker.js?v=${typeof CACHE_VERSION !== 'undefined' ? CACHE_VERSION : Date.now()}`;
+                s.async = true;
+                document.head.appendChild(s);
+            }
+        } catch (_) { /* fail silently — tracker is a non-essential UX layer */ }
+
         // Fetch organization info asynchronously and update display
         this.getOrganizationInfo().then(orgInfo => {
             if (orgInfo) {
