@@ -511,10 +511,13 @@
 
     function classifyError(errorMessage) {
         if (!errorMessage) return null;
-        // NS forwards errors as "{code} — {title}: {detail}". Pluck the
-        // leading code via a tight regex; fall back to substring match
-        // for older string-only error_messages.
-        const match = String(errorMessage).match(/^(\d{6})\b/);
+        // NS forwards errors as "{code} — {title}: {detail}", but
+        // manually-reconciled rows and older NS code paths may prefix
+        // with "Meta " or other tokens. Scan for the first 6-digit
+        // Meta error code anywhere in the string — Meta WhatsApp
+        // error codes are all 6 digits (130000-200000 range), so a
+        // bare digit-run is unambiguous.
+        const match = String(errorMessage).match(/\b(\d{6})\b/);
         if (match && META_ERROR_EXPLANATIONS[match[1]]) {
             return { code: match[1], ...META_ERROR_EXPLANATIONS[match[1]], raw: errorMessage };
         }
