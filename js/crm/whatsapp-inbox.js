@@ -603,6 +603,10 @@
                 direction: m.direction,
                 messageType: m.message_type ?? m.messageType ?? 'text',
                 body: m.body,
+                // Template name — shown in the bubble when a template row
+                // has no stored body (historical bulk sends). Backend
+                // returns it on the thread projection.
+                templateName: m.template_name ?? m.templateName ?? '',
                 mediaUrl: m.media_url ?? m.mediaUrl ?? '',
                 fileName: m.file_name ?? m.fileName ?? '',
                 status: m.status,

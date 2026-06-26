@@ -82,6 +82,14 @@
     // ── Time / date formatters ──────────────────────────────────────────────
     function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
+    // "cold_intro_v1" → "Cold intro v1" — readable label for a template
+    // name when a (body-less) template row has no rendered text to show.
+    function humanizeTemplate(name) {
+        if (!name) return 'Template message';
+        const s = String(name).replace(/_/g, ' ').trim();
+        return s ? s.charAt(0).toUpperCase() + s.slice(1) : 'Template message';
+    }
+
     function formatTime(iso) {
         if (!iso) return '';
         const d = new Date(iso);
@@ -386,6 +394,12 @@
                   <span class="wa-bubble-doc-icon">${mediaIcon('document')}</span>
                   <span class="wa-bubble-doc-name">${escapeHtml(fileLabel)}</span>
                 </a>${captionHtml}`;
+        } else if (!captionHtml && type === 'template') {
+            // Body-less template row (historical bulk send stored only the
+            // template name, not the rendered text). Show the template
+            // instead of a bare "(empty)" so the slot is meaningful.
+            const tname = humanizeTemplate(m.templateName);
+            mediaInner = `<span class="wa-bubble-caption" style="opacity:.85;font-style:italic;">📄 ${escapeHtml(tname)}</span>`;
         } else {
             // Plain text fallback. Empty bodies show a placeholder so the
             // user can still see the message slot exists (rare for inbound,
