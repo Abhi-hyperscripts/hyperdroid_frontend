@@ -1634,14 +1634,19 @@ document.getElementById('createMeetingForm').addEventListener('submit', async (e
 
     const meetingName = document.getElementById('meetingName').value;
 
-    // Combine custom date and time picker values
+    // Combine custom date and time picker values.
+    // The picker gives wall-clock LOCAL date+time (e.g. "2026-06-29" + "18:00").
+    // We must send a timezone-aware UTC ISO string — `new Date("YYYY-MM-DDTHH:mm")`
+    // parses the string as LOCAL time, and .toISOString() converts it to UTC.
+    // Sending the naive "YYYY-MM-DDTHH:mm" string made the backend store the
+    // wall-clock value AS UTC, so an IST 6PM came back as 6PM UTC = 11:30PM IST.
     const startDateVal = selectedStartDate; // YYYY-MM-DD format
     const startTimeVal = document.getElementById('startTime').value;
-    const startTime = (startDateVal && startTimeVal) ? `${startDateVal}T${startTimeVal}` : null;
+    const startTime = (startDateVal && startTimeVal) ? new Date(`${startDateVal}T${startTimeVal}`).toISOString() : null;
 
     const endDateVal = selectedEndDate; // YYYY-MM-DD format
     const endTimeVal = document.getElementById('endTime').value;
-    const endTime = (endDateVal && endTimeVal) ? `${endDateVal}T${endTimeVal}` : null;
+    const endTime = (endDateVal && endTimeVal) ? new Date(`${endDateVal}T${endTimeVal}`).toISOString() : null;
 
     const notes = document.getElementById('notes').value;
     const allowGuests = document.getElementById('allowGuests').checked;
