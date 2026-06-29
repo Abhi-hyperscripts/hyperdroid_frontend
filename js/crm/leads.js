@@ -18,6 +18,14 @@ let currentPage = 1;
 let pageSize = 50;
 const PAGE_SIZE_OPTIONS = [10, 50, 100, 500, 1000, 5000];
 let totalLeads = 0;
+// Monotonic token so only the LATEST loadLeads() render wins. On page
+// load we fire an unfiltered loadLeads() immediately, then a second,
+// filtered one once persisted filters (e.g. the saved Source) finish
+// restoring after their options load async. The unfiltered query returns
+// more rows, so it resolved LAST and clobbered the filtered view — the
+// dropdown showed the saved Source but the list was unfiltered. Each call
+// claims a token; a response only renders if its token is still current.
+let _loadLeadsSeq = 0;
 let myTeamRole = 'member'; // default to most restrictive
 let reassigningLeadId = null;
 
@@ -838,6 +846,7 @@ function canDeleteLead() {
  */
 async function loadLeads(page) {
     if (page) currentPage = page;
+    const seq = ++_loadLeadsSeq;
     try {
         const params = buildFilterParams();
         params.set('page', currentPage);
@@ -846,6 +855,9 @@ async function loadLeads(page) {
         const endpoint = `/crm/leads${queryString ? '?' + queryString : ''}`;
 
         const response = await api.request(endpoint);
+        // A newer loadLeads() superseded this one while we were awaiting —
+        // discard this (stale) response so it can't clobber the latest view.
+        if (seq !== _loadLeadsSeq) return;
         allLeads = response.data || [];
         totalLeads = response.total || allLeads.length;
         // Cache every row we touch so bulk actions retain rich lead data
@@ -854,6 +866,7 @@ async function loadLeads(page) {
         renderLeadsTable(allLeads);
         renderPagination();
     } catch (error) {
+        if (seq !== _loadLeadsSeq) return; // stale failure — don't blank the latest view
         console.error('Failed to load leads:', error);
         allLeads = [];
         totalLeads = 0;
