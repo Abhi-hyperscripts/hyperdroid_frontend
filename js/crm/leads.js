@@ -123,9 +123,20 @@ function _markRestoreSourceDone(name) {
     _PENDING_RESTORE_SOURCES.delete(name);
     if (_PENDING_RESTORE_SOURCES.size === 0 && !_initialRestoreDone) {
         _initialRestoreDone = true;
-        // One final restore + apply pass now that every widget has its
-        // options. Anything saved that hasn't applied yet lands here.
-        _restoreAndApplyIfChanged();
+        // Re-apply every persisted widget now that all options exist, then
+        // do an UNCONDITIONAL authoritative reload. The async Source restore
+        // settles its dropdown wrapper AFTER the early loadLeads() calls
+        // already fired during init, so gating this on "did anything change"
+        // (the old _restoreAndApplyIfChanged) reported no-change and SKIPPED
+        // the reload — leaving the stale unfiltered list even though the
+        // Source dropdown showed the saved value. Always reload here; the
+        // stale-response guard in loadLeads() makes this final, fully-
+        // restored load win over any earlier in-flight one.
+        _restorePersistedFilters();
+        _restoreLeadFieldsChips();
+        _restoreFormAnswers();
+        loadLeads();
+        loadLeadStats();
     }
 }
 // Safety net: if something goes wrong with one of the loaders and it
