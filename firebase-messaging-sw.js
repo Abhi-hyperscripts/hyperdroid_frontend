@@ -307,18 +307,26 @@ self.addEventListener('push', (event) => {
     // task assignments, etc.) is sticky until tapped.
     var isHighFrequency = data && data.notification_type === 'chat_message';
 
+    // Per-service badge (option G, web): the backend sends `source_icon` — the
+    // per-service icon URL (ragenaizer.com/assets/notif/<service>.png). Show it
+    // as the notification `image` so the tray shows which app produced it, the
+    // same way Android/iOS do — which is why the "[CRM]" text tag was dropped.
+    var sourceIcon = (data && data.source_icon) || null;
+    var notifOptions = {
+        body: body,
+        icon: icon || origin + '/assets/notification-icon-v2.png',
+        badge: origin + '/assets/badge-icon.png',
+        tag: 'ragenaizer-' + Date.now(),
+        renotify: true,
+        requireInteraction: !isHighFrequency,
+        silent: false,
+        data: data,
+        vibrate: [200, 100, 200]
+    };
+    if (sourceIcon) notifOptions.image = sourceIcon;
+
     event.waitUntil(
-        self.registration.showNotification(title, {
-            body: body,
-            icon: icon || origin + '/assets/notification-icon-v2.png',
-            badge: origin + '/assets/badge-icon.png',
-            tag: 'ragenaizer-' + Date.now(),
-            renotify: true,
-            requireInteraction: !isHighFrequency,
-            silent: false,
-            data: data,
-            vibrate: [200, 100, 200]
-        }).then(function () {
+        self.registration.showNotification(title, notifOptions).then(function () {
             // Multiple cleanup passes to catch Chrome's phantom regardless of timing.
             // Chrome creates phantom 15-200ms after showNotification resolves,
             // but sometimes later on slow devices.
