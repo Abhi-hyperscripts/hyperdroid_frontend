@@ -1147,7 +1147,7 @@
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
                                 <div>
                                     <label for="capiPixelInput" style="display: block; font-weight: 500; margin-bottom: 4px; font-size: 0.9em;">Pixel ID</label>
-                                    <input type="text" id="capiPixelInput" class="form-control" placeholder="e.g. 1300543928289367" autocomplete="off">
+                                    <input type="text" id="capiPixelInput" class="form-control" placeholder="e.g. 123456789012345" autocomplete="off">
                                     <small id="capiPixelHint" style="color: var(--text-secondary); font-size: 0.8em;">Digits only, from Meta Events Manager.</small>
                                 </div>
                                 <div>
@@ -1346,6 +1346,7 @@
                                             <th>API Key</th>
                                             <th>Added</th>
                                             <th style="white-space:nowrap;" data-tooltip="Push notification on new inbound message">Notifications</th>
+                                            <th style="white-space:nowrap;" data-tooltip="AI answers new WhatsApp contacts (not yet leads) using your Knowledge Base documents">AI Replies</th>
                                             <th style="text-align:right;">Actions</th>
                                         </tr>
                                     </thead>
@@ -1370,6 +1371,93 @@
                             <a class="btn btn-outline" href="/pages/crm/whatsapp-inbox.html" id="waOpenInboxBtn" style="display:none;">
                                 Open WhatsApp Inbox →
                             </a>
+                        </div>
+                    </div>
+
+                    <!-- AI Knowledge Base Card (grounds the WhatsApp AI auto-replies) -->
+                    <div class="integration-card" id="kbCard">
+                        <div class="integration-card-header">
+                            <div class="integration-icon" style="background:#7c3aed; color:#fff;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="integration-title">AI Knowledge Base</h4>
+                                <p class="integration-description">Upload documents per team (price lists, catalogues, FAQs). When AI Replies is on for a WhatsApp number, the AI answers new contacts using ONLY these documents.</p>
+                            </div>
+                        </div>
+
+                        <details class="mailbox-help" style="margin-bottom: 16px;">
+                            <summary>
+                                <svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                What is this and how does it work?
+                                <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </summary>
+                            <div class="mailbox-help-body">
+                                <p>These documents are the AI's <strong>only</strong> source of truth when it chats with new WhatsApp contacts. It will never invent prices or offers — if the answer isn't in a document, it says it will check with the team and hands off to a human.</p>
+                                <ol style="padding-left: 20px; line-height: 1.7;">
+                                    <li>Pick a team and upload its documents (PDF, DOCX, XLSX, TXT, MD, CSV — up to 20&nbsp;MB each).</li>
+                                    <li>Watch the size meter — the AI can read a limited amount of text. Use <strong>Compact</strong> on big documents to have AI squeeze them into a fact sheet.</li>
+                                    <li>Flip <strong>AI Replies</strong> on for a WhatsApp number in the card above. The AI answers new contacts only — the moment someone becomes a lead or a teammate replies, the AI steps aside.</li>
+                                </ol>
+                                <p style="margin-top:10px;color:var(--text-secondary);font-size:0.9em;">Requires an active Anthropic key under Admin → API Keys. Escalations ("talk to a human", ready-to-buy, complaints) ping your admins by push notification.</p>
+                            </div>
+                        </details>
+
+                        <!-- Tenant-wide KB usage meter -->
+                        <div id="kbUsageWrap" style="margin-bottom:14px;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.82rem; color:var(--text-secondary); margin-bottom:4px;">
+                                <span>Knowledge base size</span>
+                                <span id="kbUsageLabel">—</span>
+                            </div>
+                            <div style="height:8px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:999px; overflow:hidden;">
+                                <div id="kbUsageBar" style="height:100%; width:0%; background:var(--brand-primary); border-radius:999px; transition:width 0.3s ease;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Team picker + upload -->
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
+                            <div id="kbTeamDropdown" style="min-width:220px;"></div>
+                            <button class="btn btn-primary" id="kbUploadBtn" onclick="kbPickFile()" disabled>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                                Upload document
+                            </button>
+                            <input type="file" id="kbFileInput" accept=".pdf,.docx,.xlsx,.txt,.md,.csv" style="display:none;" onchange="kbFileChosen(this)">
+                            <span id="kbUploadSpinner" style="display:none; font-size:0.85rem; color:var(--text-secondary);">Uploading &amp; reading document…</span>
+                        </div>
+
+                        <!-- Docs table -->
+                        <div id="kbDocsWrap" style="display:none;">
+                            <div class="crm-table-wrapper">
+                                <table class="crm-table data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Document</th>
+                                            <th>Team</th>
+                                            <th data-tooltip="How much of the AI's reading budget this document uses">Size (tokens)</th>
+                                            <th>Status</th>
+                                            <th style="text-align:right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="kbDocsTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="kbEmptyState" style="display:none; padding:18px; background:var(--bg-secondary); border:1px dashed var(--border-color); border-radius:8px; text-align:center;">
+                            <p style="margin:0 0 6px; font-weight:600;">No knowledge-base documents yet</p>
+                            <p style="margin:0; color:var(--text-secondary); font-size:0.9em;">Pick a team above and upload its price lists, catalogues or FAQs to power AI replies.</p>
                         </div>
                     </div>
 
@@ -4601,6 +4689,7 @@
         document.write('<script src="../../js/crm/email-templates.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/email-campaigns.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/whatsapp-settings.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/team-kb.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-fields-settings.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/settings-fb-capi.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');

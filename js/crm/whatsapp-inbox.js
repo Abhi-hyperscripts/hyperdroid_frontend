@@ -610,6 +610,8 @@
                 mediaUrl: m.media_url ?? m.mediaUrl ?? '',
                 fileName: m.file_name ?? m.fileName ?? '',
                 status: m.status,
+                // 'CRM_AI' = bot-authored reply → renderBubble shows an AI chip.
+                senderService: m.sender_service ?? m.senderService ?? '',
                 receivedAtUtc: m.received_at_utc ?? m.receivedAtUtc ?? '',
                 sentAtUtc: m.sent_at_utc ?? m.sentAtUtc ?? '',
                 createdAtUtc: m.created_at_utc ?? m.createdAtUtc ?? '',

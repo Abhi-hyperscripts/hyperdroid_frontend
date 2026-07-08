@@ -347,6 +347,16 @@
             ? `<span class="wa-bubble-sender" style="color:${senderColor(m.senderName)};">${escapeHtml(m.senderName)}</span>`
             : '';
 
+        // Bot-authored outbound (CRM's AI auto-responder writes
+        // sender_service='CRM_AI') gets a small chip so reps can tell at a
+        // glance which replies the assistant handled vs a human teammate.
+        const aiChipHtml = (isOut && m.senderService === 'CRM_AI')
+            ? '<span class="wa-bubble-ai-chip" title="Sent automatically by the AI assistant" ' +
+              'style="display:inline-flex;align-items:center;gap:3px;font-size:0.66rem;font-weight:700;' +
+              'letter-spacing:0.04em;padding:1px 6px;border-radius:999px;margin-bottom:2px;width:fit-content;' +
+              'background:rgba(124,58,237,0.14);color:#7c3aed;">&#129302; AI</span>'
+            : '';
+
         const forwardedHtml = m.forwarded
             ? `<div class="wa-bubble-forwarded">↪ Forwarded</div>`
             : '';
@@ -411,6 +421,7 @@
             <div class="${baseRowCls}" data-msg-id="${escapeAttr(m.id || '')}" data-msg-sender="${escapeAttr(rowSender)}" data-msg-time="${escapeAttr(rowTime)}">
               <div class="wa-bubble${bubbleExtra}">
                 ${senderHtml}
+                ${aiChipHtml}
                 ${forwardedHtml}
                 ${replyHtml}
                 ${mediaInner}

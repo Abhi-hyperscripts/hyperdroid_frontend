@@ -31,6 +31,11 @@
     // to make a per-row settings call. Key = digits-only phone, value = bool.
     const waNotifyState = new Map();
 
+    // Per-number AI auto-reply toggle state. Missing key = OFF — an
+    // outward-facing AI is strictly opt-in per number (opposite default
+    // to the notify toggle above).
+    const waAiState = new Map();
+
     async function loadWhatsAppNumbers() {
         const wrap = document.getElementById('waNumbersWrap');
         const empty = document.getElementById('waEmptyState');
@@ -59,6 +64,7 @@
             // Pull per-number push toggle state in parallel — missing key means
             // ON (default), which matches the backend ingest-path behaviour.
             waNotifyState.clear();
+            waAiState.clear();
             await Promise.all(numbers.map(async n => {
                 const phone = n.instanceKey || n.instance_key || '';
                 if (!phone) return;
@@ -67,6 +73,13 @@
                     waNotifyState.set(phone, r?.value !== 'false');
                 } catch {
                     waNotifyState.set(phone, true);
+                }
+                // AI auto-reply — missing key means OFF (backend gate default).
+                try {
+                    const r = await api.request(`/crm/crm-settings/ai_autoreply_whatsapp_${phone}`);
+                    waAiState.set(phone, r?.value === 'true');
+                } catch {
+                    waAiState.set(phone, false);
                 }
             }));
 
@@ -93,6 +106,7 @@
         const createdLabel = created ? new Date(created).toLocaleDateString() : '—';
         const formattedPhone = formatPhoneForDisplay(phone);
         const notifyOn = waNotifyState.get(phone) !== false;
+        const aiOn = waAiState.get(phone) === true;
 
         return `
             <tr>
@@ -115,6 +129,15 @@
                             <span style="position:absolute; top:2px; left:${notifyOn ? '18px' : '2px'}; width:14px; height:14px; background:#fff; border-radius:50%; transition:left 0.18s ease; box-shadow:0 1px 2px rgba(0,0,0,0.25);"></span>
                         </span>
                         <span class="wa-notify-label" style="font-size:0.78rem; color:var(--text-secondary);">${notifyOn ? 'On' : 'Off'}</span>
+                    </label>
+                </td>
+                <td>
+                    <label class="wa-ai-switch" data-tooltip="${aiOn ? 'AI answers new contacts on this number using your Knowledge Base' : 'AI replies off — inbound messages from new contacts wait for a human'}" style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; user-select:none;">
+                        <input type="checkbox" class="wa-ai-toggle-input" data-phone="${escPhone}" ${aiOn ? 'checked' : ''} onchange="toggleWhatsAppAi('${escPhone}', this.checked)" style="position:absolute; opacity:0; pointer-events:none;">
+                        <span class="wa-ai-track" style="position:relative; width:34px; height:18px; background:${aiOn ? 'var(--brand-primary)' : 'var(--border-color)'}; border-radius:999px; transition:background 0.18s ease; flex:0 0 34px;">
+                            <span style="position:absolute; top:2px; left:${aiOn ? '18px' : '2px'}; width:14px; height:14px; background:#fff; border-radius:50%; transition:left 0.18s ease; box-shadow:0 1px 2px rgba(0,0,0,0.25);"></span>
+                        </span>
+                        <span class="wa-ai-label" style="font-size:0.78rem; color:var(--text-secondary);">${aiOn ? 'On' : 'Off'}</span>
                     </label>
                 </td>
                 <td style="text-align:right;">
@@ -262,6 +285,40 @@
         }
     }
 
+    async function toggleWhatsAppAi(phone, enabled) {
+        const previous = waAiState.get(phone);
+        waAiState.set(phone, !!enabled);
+        try {
+            if (enabled) {
+                // Pre-flight: an AI with no documents stays silent by design —
+                // tell the admin up-front instead of letting them wonder why
+                // nothing replies.
+                try {
+                    const kb = await api.request('/crm/team-documents');
+                    const readyDocs = (kb?.documents || []).filter(d => d.status === 'ready').length;
+                    if (readyDocs === 0 && typeof Toast !== 'undefined') {
+                        Toast.warning('AI enabled, but your Knowledge Base is empty — upload documents below or the AI will stay silent.');
+                    }
+                } catch { /* list failure is non-blocking */ }
+            }
+            await api.request(`/crm/crm-settings/ai_autoreply_whatsapp_${phone}`, {
+                method: 'PUT',
+                body: JSON.stringify({ value: enabled ? 'true' : 'false' })
+            });
+            await loadWhatsAppNumbers();
+            if (typeof Toast !== 'undefined') {
+                Toast.success(enabled
+                    ? 'AI replies enabled — new contacts on this number get AI answers from your Knowledge Base'
+                    : 'AI replies disabled for this number');
+            }
+        } catch (err) {
+            console.error('[whatsapp-settings] AI toggle failed:', err);
+            waAiState.set(phone, previous);
+            await loadWhatsAppNumbers();
+            if (typeof Toast !== 'undefined') Toast.error(err.message || 'Failed to update AI setting');
+        }
+    }
+
     async function toggleWhatsAppActive(phone, makeActive) {
         try {
             await api.updateApiKey('Interakt', 'whatsapp', { isActive: makeActive }, phone);
@@ -376,6 +433,7 @@
     window.saveWhatsAppNumber = saveWhatsAppNumber;
     window.toggleWhatsAppActive = toggleWhatsAppActive;
     window.toggleWhatsAppNotify = toggleWhatsAppNotify;
+    window.toggleWhatsAppAi = toggleWhatsAppAi;
     window.openDeleteWhatsAppModal = openDeleteWhatsAppModal;
     window.closeDeleteWhatsAppModal = closeDeleteWhatsAppModal;
     window.confirmDeleteWhatsAppNumber = confirmDeleteWhatsAppNumber;
