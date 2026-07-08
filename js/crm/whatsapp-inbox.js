@@ -582,18 +582,26 @@
             if (!resp?.draft) return;
             pendingAiDraft = resp.draft;
             const text = pendingAiDraft.draft_text ?? pendingAiDraft.draftText ?? '';
+            // The draft is EDITABLE in place: sending a tweaked version goes
+            // through the approve endpoint with editedText, which the
+            // learning loop treats as a correction ("you drafted X, they
+            // sent Y") — the strongest training signal. A separate
+            // edit-in-composer flow would lose that signal.
             banner.innerHTML = `
                 <div style="margin:8px 12px; padding:10px 12px; border:1px solid rgba(124,58,237,0.4); border-radius:10px;
                             background:rgba(124,58,237,0.08);">
                     <div style="display:flex; align-items:center; gap:6px; font-size:0.76rem; font-weight:700;
                                 letter-spacing:0.04em; color:#7c3aed; margin-bottom:6px;">
-                        🤖 AI SUGGESTED REPLY — waiting for your approval
+                        🤖 AI SUGGESTED REPLY — edit if needed, then Send
                     </div>
-                    <div id="waAiDraftText" style="font-size:0.9rem; white-space:pre-wrap; margin-bottom:8px;">${escapeHtmlSafe(text)}</div>
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <textarea id="waAiDraftText" rows="3"
+                        style="width:100%; font-size:0.9rem; padding:8px 10px; border:1px solid var(--border-color);
+                               border-radius:8px; background:var(--bg-primary); color:var(--text-primary);
+                               resize:vertical; margin-bottom:8px; font-family:inherit;">${escapeHtmlSafe(text)}</textarea>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                         <button type="button" class="btn btn-primary" style="padding:4px 14px; font-size:0.82rem;" onclick="approveAiDraft()">Send</button>
-                        <button type="button" class="btn btn-outline" style="padding:4px 14px; font-size:0.82rem;" onclick="editAiDraft()">Edit</button>
                         <button type="button" class="btn btn-outline" style="padding:4px 14px; font-size:0.82rem; color:var(--color-error,#dc2626);" onclick="rejectAiDraft()">Dismiss</button>
+                        <span style="font-size:0.72rem; color:var(--text-secondary);">Your edits teach the AI — it learns the corrections you make.</span>
                     </div>
                 </div>`;
             banner.style.display = '';
@@ -610,8 +618,15 @@
     async function approveAiDraft() {
         if (!pendingAiDraft) return;
         try {
+            // Send whatever is in the editable draft box. If the reviewer
+            // tweaked it, the backend records draft→final as an EDIT — the
+            // learning loop's strongest signal.
+            const box = document.getElementById('waAiDraftText');
+            const editedText = box ? box.value.trim() : '';
             await api.request(`/whatsapp/ai-drafts/${pendingAiDraft.id}/approve`, {
-                method: 'POST', body: JSON.stringify({})
+                method: 'POST',
+                // CRM binds snake_case JSON.
+                body: JSON.stringify({ edited_text: editedText })
             });
             if (typeof Toast !== 'undefined') Toast.success('AI reply sent');
             await refreshAiDraftBanner();
@@ -620,19 +635,6 @@
             if (typeof Toast !== 'undefined') Toast.error(err.message || 'Failed to send — it may have expired');
             await refreshAiDraftBanner();
         }
-    }
-
-    function editAiDraft() {
-        // Move the draft into the composer for editing; sending it there is
-        // a HUMAN reply (which correctly pauses the AI). Dismiss the draft.
-        if (!pendingAiDraft) return;
-        const ta = document.getElementById('waComposerInput');
-        if (ta) {
-            ta.value = pendingAiDraft.draft_text ?? pendingAiDraft.draftText ?? '';
-            autoSizeTextarea(ta);
-            ta.focus();
-        }
-        rejectAiDraft(true);
     }
 
     async function rejectAiDraft(silent) {
@@ -646,7 +648,6 @@
 
     // Inline onclick handlers in the banner HTML need these on window.
     window.approveAiDraft = approveAiDraft;
-    window.editAiDraft = editAiDraft;
     window.rejectAiDraft = rejectAiDraft;
 
     async function openConversation(customerPhone, customerName) {
