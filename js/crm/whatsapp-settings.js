@@ -36,6 +36,10 @@
     // to the notify toggle above).
     const waAiState = new Map();
 
+    // Per-number AI reply mode: 'draft' (default — a human approves every
+    // AI reply in the inbox) or 'auto' (AI sends directly).
+    const waAiModeState = new Map();
+
     async function loadWhatsAppNumbers() {
         const wrap = document.getElementById('waNumbersWrap');
         const empty = document.getElementById('waEmptyState');
@@ -81,6 +85,14 @@
                 } catch {
                     waAiState.set(phone, false);
                 }
+                // Mode — anything other than explicit 'auto' means Draft
+                // (approve-before-send), matching the backend default.
+                try {
+                    const r = await api.request(`/crm/crm-settings/ai_autoreply_mode_${phone}`);
+                    waAiModeState.set(phone, r?.value === 'auto' ? 'auto' : 'draft');
+                } catch {
+                    waAiModeState.set(phone, 'draft');
+                }
             }));
 
             wrap.style.display = '';
@@ -107,6 +119,7 @@
         const formattedPhone = formatPhoneForDisplay(phone);
         const notifyOn = waNotifyState.get(phone) !== false;
         const aiOn = waAiState.get(phone) === true;
+        const aiMode = waAiModeState.get(phone) === 'auto' ? 'auto' : 'draft';
 
         return `
             <tr>
@@ -139,6 +152,17 @@
                         </span>
                         <span class="wa-ai-label" style="font-size:0.78rem; color:var(--text-secondary);">${aiOn ? 'On' : 'Off'}</span>
                     </label>
+                    ${aiOn ? `
+                    <button type="button" class="wa-ai-mode-chip" onclick="toggleWhatsAppAiMode('${escPhone}')"
+                        data-tooltip="${aiMode === 'draft'
+                            ? 'Draft mode — every AI reply waits for your approval in the inbox. Click to switch to Auto.'
+                            : 'Auto mode — the AI sends replies directly. Click to switch to Draft (approve-before-send).'}"
+                        style="display:inline-flex; align-items:center; gap:4px; margin-top:6px; padding:2px 8px; border-radius:999px;
+                               font-size:0.72rem; font-weight:700; letter-spacing:0.03em; cursor:pointer; border:1px solid var(--border-color);
+                               background:${aiMode === 'draft' ? 'rgba(124,58,237,0.12)' : 'rgba(16,185,129,0.12)'};
+                               color:${aiMode === 'draft' ? '#7c3aed' : '#059669'};">
+                        ${aiMode === 'draft' ? '✋ Draft — you approve' : '⚡ Auto — AI sends'}
+                    </button>` : ''}
                 </td>
                 <td style="text-align:right;">
                     <div class="action-buttons" style="justify-content:flex-end;">
@@ -319,6 +343,28 @@
         }
     }
 
+    async function toggleWhatsAppAiMode(phone) {
+        const next = waAiModeState.get(phone) === 'auto' ? 'draft' : 'auto';
+        waAiModeState.set(phone, next);
+        try {
+            await api.request(`/crm/crm-settings/ai_autoreply_mode_${phone}`, {
+                method: 'PUT',
+                body: JSON.stringify({ value: next })
+            });
+            await loadWhatsAppNumbers();
+            if (typeof Toast !== 'undefined') {
+                Toast.success(next === 'auto'
+                    ? 'Auto mode — the AI now sends replies directly'
+                    : 'Draft mode — every AI reply now waits for your approval in the inbox');
+            }
+        } catch (err) {
+            console.error('[whatsapp-settings] AI mode toggle failed:', err);
+            waAiModeState.set(phone, next === 'auto' ? 'draft' : 'auto');
+            await loadWhatsAppNumbers();
+            if (typeof Toast !== 'undefined') Toast.error(err.message || 'Failed to update AI mode');
+        }
+    }
+
     async function toggleWhatsAppActive(phone, makeActive) {
         try {
             await api.updateApiKey('Interakt', 'whatsapp', { isActive: makeActive }, phone);
@@ -434,6 +480,7 @@
     window.toggleWhatsAppActive = toggleWhatsAppActive;
     window.toggleWhatsAppNotify = toggleWhatsAppNotify;
     window.toggleWhatsAppAi = toggleWhatsAppAi;
+    window.toggleWhatsAppAiMode = toggleWhatsAppAiMode;
     window.openDeleteWhatsAppModal = openDeleteWhatsAppModal;
     window.closeDeleteWhatsAppModal = closeDeleteWhatsAppModal;
     window.confirmDeleteWhatsAppNumber = confirmDeleteWhatsAppNumber;

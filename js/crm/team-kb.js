@@ -163,8 +163,15 @@
             const formData = new FormData();
             formData.append('file', file);
             formData.append('team_id', kbSelectedTeamId);
-            await apiUpload('/team-documents/upload', formData);
+            const uploaded = await apiUpload('/team-documents/upload', formData);
             if (typeof Toast !== 'undefined') Toast.success(`'${file.name}' added to the knowledge base`);
+            // Data-hygiene warnings: same SKU priced differently in another
+            // doc — surface each conflict so the admin fixes the stale file.
+            const warnings = uploaded?.warnings || [];
+            if (warnings.length && typeof Toast !== 'undefined') {
+                warnings.slice(0, 3).forEach(w => Toast.warning(`⚠️ Price conflict: ${w}`, { duration: 12000 }));
+                if (warnings.length > 3) Toast.warning(`…and ${warnings.length - 3} more price conflicts — review your documents.`);
+            }
             await refreshKbDocs();
         } catch (err) {
             console.error('[team-kb] upload failed:', err);

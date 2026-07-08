@@ -564,6 +564,91 @@
 
     // ─── Thread ─────────────────────────────────────────────────────────────
 
+    // ─── AI draft approval banner (approve-before-send mode) ────────────
+
+    let pendingAiDraft = null;   // {id, draftText, ...} for the open thread
+
+    async function refreshAiDraftBanner() {
+        const banner = document.getElementById('waAiDraftBanner');
+        if (!banner) return;
+        pendingAiDraft = null;
+        banner.style.display = 'none';
+        banner.innerHTML = '';
+        if (!activeCustomerPhone || !activeBusinessPhone) return;
+        try {
+            const resp = await api.request(
+                `/whatsapp/ai-drafts/pending?businessPhoneNumber=${encodeURIComponent(activeBusinessPhone)}`
+                + `&customerPhone=${encodeURIComponent(activeCustomerPhone)}`);
+            if (!resp?.draft) return;
+            pendingAiDraft = resp.draft;
+            const text = pendingAiDraft.draft_text ?? pendingAiDraft.draftText ?? '';
+            banner.innerHTML = `
+                <div style="margin:8px 12px; padding:10px 12px; border:1px solid rgba(124,58,237,0.4); border-radius:10px;
+                            background:rgba(124,58,237,0.08);">
+                    <div style="display:flex; align-items:center; gap:6px; font-size:0.76rem; font-weight:700;
+                                letter-spacing:0.04em; color:#7c3aed; margin-bottom:6px;">
+                        🤖 AI SUGGESTED REPLY — waiting for your approval
+                    </div>
+                    <div id="waAiDraftText" style="font-size:0.9rem; white-space:pre-wrap; margin-bottom:8px;">${escapeHtmlSafe(text)}</div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button type="button" class="btn btn-primary" style="padding:4px 14px; font-size:0.82rem;" onclick="approveAiDraft()">Send</button>
+                        <button type="button" class="btn btn-outline" style="padding:4px 14px; font-size:0.82rem;" onclick="editAiDraft()">Edit</button>
+                        <button type="button" class="btn btn-outline" style="padding:4px 14px; font-size:0.82rem; color:var(--color-error,#dc2626);" onclick="rejectAiDraft()">Dismiss</button>
+                    </div>
+                </div>`;
+            banner.style.display = '';
+        } catch (err) {
+            console.warn('[wa-inbox] draft banner fetch failed:', err);
+        }
+    }
+
+    function escapeHtmlSafe(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c =>
+            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    async function approveAiDraft() {
+        if (!pendingAiDraft) return;
+        try {
+            await api.request(`/whatsapp/ai-drafts/${pendingAiDraft.id}/approve`, {
+                method: 'POST', body: JSON.stringify({})
+            });
+            if (typeof Toast !== 'undefined') Toast.success('AI reply sent');
+            await refreshAiDraftBanner();
+            await openConversation(activeCustomerPhone, null);   // refresh thread with the sent bubble
+        } catch (err) {
+            if (typeof Toast !== 'undefined') Toast.error(err.message || 'Failed to send — it may have expired');
+            await refreshAiDraftBanner();
+        }
+    }
+
+    function editAiDraft() {
+        // Move the draft into the composer for editing; sending it there is
+        // a HUMAN reply (which correctly pauses the AI). Dismiss the draft.
+        if (!pendingAiDraft) return;
+        const ta = document.getElementById('waComposerInput');
+        if (ta) {
+            ta.value = pendingAiDraft.draft_text ?? pendingAiDraft.draftText ?? '';
+            autoSizeTextarea(ta);
+            ta.focus();
+        }
+        rejectAiDraft(true);
+    }
+
+    async function rejectAiDraft(silent) {
+        if (!pendingAiDraft) return;
+        try {
+            await api.request(`/whatsapp/ai-drafts/${pendingAiDraft.id}/reject`, { method: 'POST' });
+            if (!silent && typeof Toast !== 'undefined') Toast.info('AI draft dismissed — nothing was sent');
+        } catch { /* already decided elsewhere */ }
+        await refreshAiDraftBanner();
+    }
+
+    // Inline onclick handlers in the banner HTML need these on window.
+    window.approveAiDraft = approveAiDraft;
+    window.editAiDraft = editAiDraft;
+    window.rejectAiDraft = rejectAiDraft;
+
     async function openConversation(customerPhone, customerName) {
         if (!customerPhone) return;
         // Switching threads invalidates any in-flight composer attachment.
@@ -646,6 +731,8 @@
         renderThread();
         renderConversationList();
         showComposer(true);
+        // Approve-before-send: surface any pending AI draft for this thread.
+        refreshAiDraftBanner();
     }
 
     function renderThreadHeader(thread) {
@@ -1187,6 +1274,17 @@
                 .build();
 
             connection.on('WhatsAppMessageReceived', onWhatsAppMessageReceived);
+            // Live AI-draft banner: when the responder drafts a reply for the
+            // thread the rep is looking at, the approval banner appears
+            // without a refresh.
+            connection.on('WhatsAppAiDraftCreated', (ev) => {
+                try {
+                    if (ev?.customerPhone === activeCustomerPhone
+                        && ev?.businessPhoneNumber === activeBusinessPhone) {
+                        refreshAiDraftBanner();
+                    }
+                } catch { /* banner refresh is best-effort */ }
+            });
 
             connection.onreconnected(async () => {
                 try { await connection.invoke('JoinWhatsApp'); } catch {}
