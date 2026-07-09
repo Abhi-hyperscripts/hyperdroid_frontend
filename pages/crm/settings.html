@@ -1461,6 +1461,104 @@
                         </div>
                     </div>
 
+                    <!-- AI Assistant — activity & controls -->
+                    <div class="integration-card" id="aiAssistantCard">
+                        <div class="integration-card-header">
+                            <div class="integration-icon" style="background:#0ea5e9; color:#fff;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 8V4H8"/>
+                                    <rect x="4" y="8" width="16" height="12" rx="2"/>
+                                    <path d="M2 14h2M20 14h2M15 13v2M9 13v2"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="integration-title">AI Assistant — Activity &amp; Controls</h4>
+                                <p class="integration-description">Watch what the WhatsApp AI is doing, set its daily limits, and pause it on any conversation.</p>
+                            </div>
+                        </div>
+
+                        <details class="mailbox-help" style="margin-bottom: 16px;">
+                            <summary>
+                                <svg class="help-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                What is this?
+                                <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </summary>
+                            <div class="mailbox-help-body">
+                                <p>The AI answers WhatsApp messages from new contacts using your Knowledge Base. This panel is its control room:</p>
+                                <ol style="padding-left:20px; line-height:1.7;">
+                                    <li><strong>Daily limits</strong> — per contact (stops one person monopolizing the AI) and for the whole company per day (caps your AI cost no matter what).</li>
+                                    <li><strong>Conversations</strong> — every thread the AI has touched, with its state. <em>Paused — human</em> means a teammate replied and the AI stepped aside; <em>Escalated</em> means the AI asked for a human. Pause/Resume any thread manually.</li>
+                                    <li><strong>Recent AI drafts</strong> — in Draft mode, what the AI proposed and what your team did with it (approvals and edits teach the AI).</li>
+                                    <li><strong>Needed a human (7 days)</strong> — the questions the AI couldn't answer. If these are knowledge gaps, add a document above and it handles them next time.</li>
+                                </ol>
+                            </div>
+                        </details>
+
+                        <!-- Today usage meter -->
+                        <div style="margin-bottom:14px;">
+                            <div style="display:flex; justify-content:space-between; font-size:0.82rem; color:var(--text-secondary); margin-bottom:4px;">
+                                <span>AI replies sent today (whole company)</span>
+                                <span id="aiUsageLabel">—</span>
+                            </div>
+                            <div style="height:8px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:999px; overflow:hidden;">
+                                <div id="aiUsageBar" style="height:100%; width:0%; background:var(--brand-primary); border-radius:999px; transition:width 0.3s ease;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Caps editor -->
+                        <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end; margin-bottom:16px;">
+                            <div>
+                                <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:4px;">Max replies per contact / day</label>
+                                <input type="number" id="aiContactCapInput" class="form-control" min="1" max="200" style="width:140px;">
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:4px;">Max replies company-wide / day</label>
+                                <input type="number" id="aiTenantCapInput" class="form-control" min="1" max="10000" style="width:140px;">
+                            </div>
+                            <button class="btn btn-primary" onclick="saveAiCaps()" style="height:38px;">Save limits</button>
+                        </div>
+
+                        <!-- Conversations table -->
+                        <h4 style="margin:0 0 8px; font-size:0.9rem;">AI conversations</h4>
+                        <div id="aiConvosWrap" style="display:none; margin-bottom:16px;">
+                            <div class="crm-table-wrapper">
+                                <table class="crm-table data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Contact</th>
+                                            <th>Status</th>
+                                            <th data-tooltip="AI replies sent on this thread">Replies</th>
+                                            <th>Last activity</th>
+                                            <th style="text-align:right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="aiConvosTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div id="aiConvosEmpty" style="display:none; padding:14px; background:var(--bg-secondary); border:1px dashed var(--border-color); border-radius:8px; text-align:center; margin-bottom:16px; font-size:0.88rem; color:var(--text-secondary);">
+                            No AI conversations yet — they appear here as soon as a new contact messages a number with AI Replies on.
+                        </div>
+
+                        <!-- Recent drafts + escalations, side by side -->
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px;">
+                            <div>
+                                <h4 style="margin:0 0 8px; font-size:0.9rem;">Recent AI drafts</h4>
+                                <div id="aiDraftsFeed" style="font-size:0.82rem; color:var(--text-secondary);">—</div>
+                            </div>
+                            <div>
+                                <h4 style="margin:0 0 8px; font-size:0.9rem;">Needed a human (last 7 days)</h4>
+                                <div id="aiEscalationsFeed" style="font-size:0.82rem; color:var(--text-secondary);">—</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Calling (Exotel BYOK) Integration Card -->
                     <div class="integration-card">
                         <div class="integration-card-header">
@@ -4690,6 +4788,7 @@
         document.write('<script src="../../js/crm/email-campaigns.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/whatsapp-settings.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/team-kb.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="../../js/crm/ai-assistant.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/lead-fields-settings.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/crm/settings-fb-capi.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/table-cards.js?v=' + CACHE_VERSION + '"><\/script>');
