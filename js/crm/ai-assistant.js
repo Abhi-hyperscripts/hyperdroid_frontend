@@ -97,25 +97,26 @@
         }
         wrap.style.display = '';
         empty.style.display = 'none';
+        // NOTE: the CRM API serializes with SnakeCaseLower — read snake_case keys.
         tbody.innerHTML = convos.map(c => {
             const meta = STATUS_META[c.status] || { label: c.status, cls: 'inactive' };
-            const who = c.detectedName ? `${escapeHtml(c.detectedName)} · ${escapeHtml(c.customerPhone)}` : escapeHtml(c.customerPhone);
-            const last = c.lastAiReplyAt || c.lastInboundAt;
+            const who = c.detected_name ? `${escapeHtml(c.detected_name)} · ${escapeHtml(c.customer_phone)}` : escapeHtml(c.customer_phone);
+            const last = c.last_ai_reply_at || c.last_inbound_at;
             const lastLabel = last ? new Date(last).toLocaleString() : '—';
             const isActive = c.status === 'active';
-            const reason = c.pausedReason ? ` data-tooltip="${escapeHtml(c.pausedReason)}"` : '';
+            const reason = c.paused_reason ? ` data-tooltip="${escapeHtml(c.paused_reason)}"` : '';
             return `
                 <tr>
                     <td>
                         <div style="font-weight:600;">${who}</div>
-                        ${c.detectedInterest ? `<div style="font-size:0.76rem; color:var(--text-secondary);">${escapeHtml(c.detectedInterest)}</div>` : ''}
+                        ${c.detected_interest ? `<div style="font-size:0.76rem; color:var(--text-secondary);">${escapeHtml(c.detected_interest)}</div>` : ''}
                     </td>
                     <td><span class="status-badge ${meta.cls}"${reason}><span class="status-dot"></span>${meta.label}</span></td>
-                    <td>${c.aiReplyCount ?? 0}</td>
+                    <td>${c.ai_reply_count ?? 0}</td>
                     <td style="font-size:0.8rem;">${lastLabel}</td>
                     <td style="text-align:right;">
                         <button class="btn btn-outline" style="padding:2px 12px; font-size:0.78rem;"
-                            onclick="${isActive ? 'pauseAiConversation' : 'resumeAiConversation'}('${escapeHtml(c.businessPhoneNumber)}','${escapeHtml(c.customerPhone)}')">
+                            onclick="${isActive ? 'pauseAiConversation' : 'resumeAiConversation'}('${escapeHtml(c.business_phone_number)}','${escapeHtml(c.customer_phone)}')">
                             ${isActive ? 'Pause AI' : 'Resume AI'}
                         </button>
                     </td>
@@ -169,7 +170,7 @@
             const label = d.edited ? '✏️ edited & sent' : (DRAFT_LABEL[d.status] || d.status);
             return `<div style="padding:6px 0; border-bottom:1px solid var(--border-color);">
                 <span style="font-weight:600;">${label}</span>
-                <span style="color:var(--text-secondary);"> · ${escapeHtml(d.customerPhone)}</span>
+                <span style="color:var(--text-secondary);"> · ${escapeHtml(d.customer_phone)}</span>
                 <div style="margin-top:2px;">${escapeHtml(d.preview)}</div>
             </div>`;
         }).join('');
