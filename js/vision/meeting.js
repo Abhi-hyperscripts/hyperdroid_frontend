@@ -366,7 +366,7 @@ if (!isAuthenticated && !isGuest) {
 // hard refreshes). This constant travels with the exact asset it protects.
 //
 // >>> BUMP MEETING_BUILD TOGETHER WITH SW_VERSION ON EVERY DEPLOY <<<
-const MEETING_BUILD = 1944;
+const MEETING_BUILD = 1945;
 
 async function assertFreshBuild() {
     try {
@@ -2650,10 +2650,15 @@ async function toggleScreenShare() {
             }, 100);
         }
     } else {
-        // Enable screen share with MAXIMUM QUALITY settings for crisp text.
-        // Re-check the network at share time (it may have changed mid-call):
-        // on a slow link request 1080p instead of 4K — a 4K capture squeezed
-        // through a 2.5 Mbps cap is far blurrier than a clean 1080p encode.
+        // Screen share capture: 1440p, NOT 4K. Measured live (2026-07-10):
+        // Chrome's VP9-SVC screencast adaptation steps a 3840x2160 encode
+        // down to 1920x1080 on the wire REGARDLESS of degradationPreference —
+        // the client cannot force full-res SVC. A 4K capture therefore buys
+        // nothing except a heavy software downscale (soft, blurry text) and
+        // huge encode CPU. 1440p encodes comfortably, survives adaptation at
+        // or near full resolution, and reads far sharper. (Meet/Zoom cap
+        // screenshare ~1080p for the same reason.)
+        // Re-check the network at share time (it may have changed mid-call).
         const shareEffType = navigator.connection?.effectiveType || '';
         const slowShareLink = shareEffType === '2g' || shareEffType === 'slow-2g' || shareEffType === '3g';
         await room.localParticipant.setScreenShareEnabled(true, {
@@ -2664,7 +2669,7 @@ async function toggleScreenShare() {
             contentHint: 'text', // Optimize encoding for text clarity
             resolution: slowShareLink
                 ? { width: 1920, height: 1080 }
-                : { width: 3840, height: 2160 },
+                : { width: 2560, height: 1440 },
         }, {
             // Encoding cap decided here, at share time, alongside the capture
             // resolution — both must reflect the CURRENT network, not the one
@@ -2674,7 +2679,7 @@ async function toggleScreenShare() {
                 : { maxBitrate: 8_000_000, maxFramerate: 24 },
         });
         screenBtn.classList.add('active');
-        console.log(`Screen share started (${slowShareLink ? '1080p / 2.5 Mbps slow-network' : '4K / 8 Mbps'})`);
+        console.log(`Screen share started (${slowShareLink ? '1080p / 2.5 Mbps slow-network' : '1440p / 8 Mbps'})`);
 
         // Apply contentHint and log encoding stats
         setTimeout(async () => {
