@@ -366,7 +366,7 @@ if (!isAuthenticated && !isGuest) {
 // hard refreshes). This constant travels with the exact asset it protects.
 //
 // >>> BUMP MEETING_BUILD TOGETHER WITH SW_VERSION ON EVERY DEPLOY <<<
-const MEETING_BUILD = 1945;
+const MEETING_BUILD = 1946;
 
 async function assertFreshBuild() {
     try {
@@ -2677,6 +2677,16 @@ async function toggleScreenShare() {
             screenShareEncoding: slowShareLink
                 ? { maxBitrate: 2_500_000, maxFramerate: 15 }
                 : { maxBitrate: 8_000_000, maxFramerate: 24 },
+            // VP8 for screen share ONLY (camera stays VP9 SVC). Measured live
+            // 2026-07-10: Chrome's VP9-SVC screencast encoder never ships more
+            // than ~1080p regardless of capture size (halved a 4K capture,
+            // stepped a 1440p capture down to 1080p) — text arrives soft and
+            // no client option overrides it. The VP8 screencast path honors
+            // maintain-resolution and the contentHint 'text' screen-content
+            // mode (the SDK only forces 'motion' for SVC codecs), and brings
+            // our h720 simulcast fallback rung back to life for slow viewers
+            // (SVC ignored simulcast layers entirely).
+            videoCodec: 'vp8',
         });
         screenBtn.classList.add('active');
         console.log(`Screen share started (${slowShareLink ? '1080p / 2.5 Mbps slow-network' : '1440p / 8 Mbps'})`);
