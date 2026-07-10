@@ -107,6 +107,12 @@
         // Don't show if already exists
         if (document.getElementById('cookie-consent-banner')) return;
 
+        // Never on join-critical meeting pages: the fixed-bottom banner
+        // (z-index 999999) can cover the lobby's "Join Now" button on short
+        // viewports and swallow the click. Consent gets collected on any
+        // other page; tracking stays off until then either way.
+        if (/\/vision\/(lobby|meeting|guest-join|pre-meeting)\.html/.test(window.location.pathname)) return;
+
         const banner = document.createElement('div');
         banner.id = 'cookie-consent-banner';
         banner.innerHTML = `

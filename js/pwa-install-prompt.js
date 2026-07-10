@@ -356,6 +356,12 @@
         if (window.matchMedia('(display-mode: standalone)').matches) return;
         if (window.navigator.standalone === true) return;
 
+        // Never on join-critical meeting pages: the prompt is fixed-bottom at
+        // z-index 999999 and appears 2s after load — on short viewports it
+        // lands exactly on top of the lobby's "Join Now" button and swallows
+        // the click. Users are here to join a call, not install the app.
+        if (/\/vision\/(lobby|meeting|guest-join|pre-meeting)\.html/.test(window.location.pathname)) return;
+
         injectStyles();
         promptElement = injectHTML();
         setupListeners();

@@ -560,18 +560,21 @@ async function connectToLiveKit(wsUrl, token) {
                 audioPreset: LivekitClient.AudioPresets.speech,  // 24 kbps voice-tuned Opus
                 red: true,  // Opus RED packet-loss redundancy - survives 1-2 lost packets
                 dtx: true,  // Discontinuous Transmission - saves uplink during silence
-                // When the encoder is starved (weak uplink / weak CPU), let it
-                // drop BOTH resolution and framerate. The SDK default for
-                // >=1080p capture is 'maintain-resolution', which can only shed
-                // fps — a slow uplink then produces 1080p at 5fps judder
-                // instead of a smooth 540p.
-                degradationPreference: 'balanced',
-                // Screen share cap: 8 Mbps normally; on a detected slow network
-                // (2g/3g) cap hard at 2.5 Mbps / 15fps so the share doesn't
-                // starve the mic audio.
+                // degradationPreference: DO NOT set here. publishDefaults
+                // bleeds into EVERY publish including screen share, where the
+                // SDK deliberately forces 'maintain-resolution' (text goes
+                // unreadable if resolution drops) — and for >=1080p VP9-SVC
+                // camera the SDK's 'maintain-resolution' default works around
+                // a Chrome bug that spuriously downscales SVC video claiming
+                // bandwidth limits on healthy links. The SDK's per-track
+                // defaults are correct; overriding them here broke both.
+                //
+                // Screen share default cap (8 Mbps). Slow-network override is
+                // decided AT SHARE TIME in toggleScreenShare — network state
+                // at join time is stale by the time anyone shares.
                 screenShareEncoding: {
-                    maxBitrate: isSlowNetwork ? 2_500_000 : 8_000_000,
-                    maxFramerate: isSlowNetwork ? 15 : 24,
+                    maxBitrate: 8_000_000,
+                    maxFramerate: 24,
                 },
                 // Screen share low rung (VP8/H264 paths only). NOTE: with VP9
                 // SVC (Chrome/Edge) the SDK forces screenshare to L1T3 — a
@@ -749,17 +752,28 @@ async function connectToLiveKit(wsUrl, token) {
         // UI state afterwards. Without them a network blip = silently frozen
         // meeting with no indication and no recovery.
         // ------------------------------------------------------------------
+        // A quick signal RESUME also emits Reconnected — but media/tracks were
+        // never interrupted there, so a full tile rebuild would cause churn on
+        // every blip of a flapping network. Only RESTARTS (RoomEvent.Reconnecting)
+        // need the full resync.
+        let needsFullResync = false;
         room.on(LivekitClient.RoomEvent.SignalReconnecting, () => {
             console.warn('[Media] Signal connection unstable — reconnecting…');
             showConnectionBanner('Connection unstable — reconnecting…', 'warning');
         });
         room.on(LivekitClient.RoomEvent.Reconnecting, () => {
             console.warn('[Media] Media connection lost — reconnecting…');
+            needsFullResync = true;
             showConnectionBanner('Connection lost — reconnecting…', 'warning');
         });
         room.on(LivekitClient.RoomEvent.Reconnected, () => {
-            console.log('[Media] Reconnected — resyncing layout and subscriptions');
             showConnectionBanner('Reconnected', 'success', 2500);
+            if (!needsFullResync) {
+                console.log('[Media] Signal resumed — no resync needed');
+                return;
+            }
+            needsFullResync = false;
+            console.log('[Media] Reconnected after restart — resyncing layout and subscriptions');
             // A hard reconnect re-subscribes every track; force a full layout
             // rebuild so tiles re-attach to the live tracks, and re-drive the
             // Safari subscription manager.
@@ -773,7 +787,18 @@ async function connectToLiveKit(wsUrl, token) {
             const R = LivekitClient.DisconnectReason || {};
             // Intentional or separately-handled paths — no overlay
             if (reason === R.CLIENT_INITIATED) return;      // user clicked Leave
-            if (reason === R.PARTICIPANT_REMOVED) return;   // kick flow has its own UX
+            if (reason === R.PARTICIPANT_REMOVED) {
+                // The SignalR 'ParticipantRemovedByHost' handler shows the kick
+                // toast + redirect — but SignalR may be down on exactly the
+                // flaky networks where kicks race disconnects. If we're still
+                // on the page after 2s, show a fallback so the user isn't
+                // left staring at a frozen meeting.
+                hideConnectionBanner();
+                setTimeout(() => {
+                    showDisconnectedOverlay('You were removed from the meeting by the host.', false);
+                }, 2000);
+                return;
+            }
             if (reason === R.DUPLICATE_IDENTITY) {
                 showDisconnectedOverlay('You joined this meeting from another device or tab.', false);
                 return;
@@ -790,6 +815,14 @@ async function connectToLiveKit(wsUrl, token) {
         // The SFU pauses individual video streams when the downlink can't
         // carry them (congestion control). Show a chip on the affected tile
         // instead of an unexplained frozen frame — audio keeps flowing.
+        //
+        // NOTE: livekit-client 2.20.1 NEVER emits TrackStreamStateChanged —
+        // upstream Room.handleStreamStateUpdate mutates track.streamState
+        // BEFORE comparing it, so the changed-guard is always false (broken
+        // since ~2.16, still broken on their main). The handler below is kept
+        // for whenever the SDK fixes it; the POLL in startStreamStateMonitor()
+        // is the path that actually works — track.streamState itself IS
+        // updated correctly, only the notification is dead.
         room.on(LivekitClient.RoomEvent.TrackStreamStateChanged, (publication, streamState, participant) => {
             if (publication.kind !== 'video' || publication.source !== 'camera') return;
             const paused = streamState === LivekitClient.Track.StreamState.Paused;
@@ -814,6 +847,7 @@ async function connectToLiveKit(wsUrl, token) {
         await room.connect(wsUrl, token, connectOptions);
 
         localParticipant = room.localParticipant;
+        startStreamStateMonitor();
 
         // Read lobby preferences from sessionStorage
         const preMeetingMicEnabled = sessionStorage.getItem('preMeetingMicEnabled');
@@ -1926,10 +1960,19 @@ function showDisconnectedOverlay(message, offerRejoin) {
         btnRow.appendChild(rejoinBtn);
     }
     const exitBtn = document.createElement('button');
-    exitBtn.textContent = 'Back to dashboard';
+    // Guests have no dashboard — same exit convention as the kick handler
+    const overlayIsGuest = sessionStorage.getItem('isGuest') === 'true';
+    exitBtn.textContent = overlayIsGuest ? 'Exit meeting' : 'Back to dashboard';
     exitBtn.style.cssText = 'padding:10px 20px;border:1px solid var(--border-color, #444);border-radius:8px;' +
         'cursor:pointer;font-weight:600;background:transparent;color:var(--text-primary, #fff);';
-    exitBtn.onclick = () => { window.location.href = 'dashboard.html'; };
+    exitBtn.onclick = () => {
+        if (overlayIsGuest) {
+            sessionStorage.clear();
+            window.location.href = '../login.html';
+        } else {
+            window.location.href = 'dashboard.html';
+        }
+    };
     btnRow.appendChild(exitBtn);
     card.appendChild(title);
     card.appendChild(msg);
@@ -1941,6 +1984,40 @@ function showDisconnectedOverlay(message, offerRejoin) {
 // Identities whose camera stream the SFU has paused for bandwidth — chips
 // must survive layout rebuilds, so state lives here and tiles re-apply it.
 const pausedVideoIdentities = new Set();
+
+// livekit-client 2.20.1 never emits TrackStreamStateChanged (see handler
+// comment), but track.streamState IS kept current — so poll it. 1.5s is
+// plenty: SFU pauses last seconds-to-minutes, and the scan is a few dozen
+// property reads.
+let streamStateMonitorInterval = null;
+function startStreamStateMonitor() {
+    if (streamStateMonitorInterval) return;
+    streamStateMonitorInterval = setInterval(() => {
+        if (!room || room.state !== 'connected') return;
+        room.remoteParticipants.forEach((p) => {
+            p.videoTrackPublications.forEach((pub) => {
+                if (pub.source !== 'camera' || !pub.track) return;
+                const paused = pub.track.streamState === LivekitClient.Track.StreamState.Paused;
+                const wasPaused = pausedVideoIdentities.has(p.identity);
+                if (paused === wasPaused) return;
+                if (paused) {
+                    console.warn(`[Network] SFU paused ${p.identity}'s video (congestion)`);
+                    pausedVideoIdentities.add(p.identity);
+                } else {
+                    console.log(`[Network] SFU resumed ${p.identity}'s video`);
+                    pausedVideoIdentities.delete(p.identity);
+                }
+                updateLowBandwidthChip(p.identity, paused);
+            });
+        });
+    }, 1500);
+}
+function stopStreamStateMonitor() {
+    if (streamStateMonitorInterval) {
+        clearInterval(streamStateMonitorInterval);
+        streamStateMonitorInterval = null;
+    }
+}
 function updateLowBandwidthChip(identity, paused) {
     const tile = document.getElementById(`participant-${identity}`);
     if (!tile) return;
@@ -2520,9 +2597,16 @@ async function toggleScreenShare() {
             resolution: slowShareLink
                 ? { width: 1920, height: 1080 }
                 : { width: 3840, height: 2160 },
+        }, {
+            // Encoding cap decided here, at share time, alongside the capture
+            // resolution — both must reflect the CURRENT network, not the one
+            // at join. (Publish options override publishDefaults.)
+            screenShareEncoding: slowShareLink
+                ? { maxBitrate: 2_500_000, maxFramerate: 15 }
+                : { maxBitrate: 8_000_000, maxFramerate: 24 },
         });
         screenBtn.classList.add('active');
-        console.log(`Screen share started (${slowShareLink ? '1080p slow-network' : '4K'} capture)`);
+        console.log(`Screen share started (${slowShareLink ? '1080p / 2.5 Mbps slow-network' : '4K / 8 Mbps'})`);
 
         // Apply contentHint and log encoding stats
         setTimeout(async () => {
