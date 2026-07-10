@@ -354,9 +354,66 @@ if (!isAuthenticated && !isGuest) {
     window.location.href = `guest-join.html?id=${meetingId}`;
 }
 
+// ---------------------------------------------------------------------------
+// Join-time version gate.
+//
+// MEETING_BUILD lives INSIDE this file on purpose: sw-version.js is excluded
+// from the SW static cache (so update polls reach origin), which means the
+// page's window.SW_VERSION is always fresh — it can NOT detect that
+// meeting.js itself was served stale from a cached bundle. A stale client
+// then passes every version check while running old meeting code (observed
+// live 2026-07-10: sharer stuck on a 2-builds-old bundle through multiple
+// hard refreshes). This constant travels with the exact asset it protects.
+//
+// >>> BUMP MEETING_BUILD TOGETHER WITH SW_VERSION ON EVERY DEPLOY <<<
+const MEETING_BUILD = 1944;
+
+async function assertFreshBuild() {
+    try {
+        const res = await fetch('/js/sw-version.js?vg=' + Date.now(), {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-cache' }
+        });
+        if (!res.ok) return true;
+        const m = (await res.text()).match(/SW_VERSION\s*=\s*(\d+)/);
+        if (!m) return true;
+        const server = parseInt(m[1], 10);
+        if (!server || server <= MEETING_BUILD) return true;
+
+        // One reload attempt per server version — if we're STILL stale after
+        // reloading (CDN edge lag), join anyway rather than loop forever.
+        const guardKey = 'vg-reload-' + server;
+        if (sessionStorage.getItem(guardKey)) {
+            console.warn(`[VersionGate] Still on build ${MEETING_BUILD} after reload (server ${server}) — joining anyway`);
+            return true;
+        }
+        sessionStorage.setItem(guardKey, '1');
+        console.warn(`[VersionGate] meeting.js build ${MEETING_BUILD} < server ${server} — refreshing before join`);
+
+        // Purge SW static caches + nudge the SW updater, then reload
+        try {
+            const names = await caches.keys();
+            await Promise.all(names.filter(n => n.startsWith('ragenaizer-static-')).map(n => caches.delete(n)));
+        } catch (e) { /* ignore */ }
+        try {
+            const reg = await navigator.serviceWorker?.getRegistration();
+            await reg?.update();
+        } catch (e) { /* ignore */ }
+        window.location.reload();
+        return false;
+    } catch (e) {
+        // Offline / origin unreachable — never block joining over the gate
+        return true;
+    }
+}
+
 // Initialize meeting
 async function initializeMeeting() {
     try {
+        // Never join a meeting on stale code — every media fix we ship is
+        // useless to a user whose cached bundle predates it
+        if (!(await assertFreshBuild())) return;
+
         // Check meeting status first
         const meetingStatus = await api.getMeetingStatus(meetingId);
 
@@ -790,6 +847,7 @@ async function connectToLiveKit(wsUrl, token) {
             }
         });
         room.on(LivekitClient.RoomEvent.Disconnected, (reason) => {
+            window.__meetingLive = false; // call over — updates may reload again
             const R = LivekitClient.DisconnectReason || {};
             // Intentional or separately-handled paths — no overlay
             if (reason === R.CLIENT_INITIATED) return;      // user clicked Leave
@@ -854,6 +912,10 @@ async function connectToLiveKit(wsUrl, token) {
 
         localParticipant = room.localParticipant;
         startStreamStateMonitor();
+        // Tell sw-update.js a call is live: a deploy mid-call must NOT
+        // auto-reload the page (the join-time version gate guarantees
+        // freshness at the next join instead)
+        window.__meetingLive = true;
 
         // Read lobby preferences from sessionStorage
         const preMeetingMicEnabled = sessionStorage.getItem('preMeetingMicEnabled');

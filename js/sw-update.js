@@ -90,6 +90,14 @@
     function listenForSwMessages() {
         navigator.serviceWorker.addEventListener('message', (event) => {
             if (event.data?.type === 'APP_UPDATE_AVAILABLE' && !reloading) {
+                // Never auto-reload a LIVE meeting — being yanked out of a
+                // call is worse than running one deploy behind. meeting.js
+                // sets/clears this flag; its join-time version gate ensures
+                // freshness at the next join instead.
+                if (window.__meetingLive) {
+                    console.log('[Update] New version available but a meeting is live — deferring reload');
+                    return;
+                }
                 reloading = true;
                 console.log(`[Update] Auto-updating: v${event.data.currentVersion} → v${event.data.newVersion}`);
 
@@ -251,6 +259,10 @@
                 if (!match) return;
                 var serverVersion = parseInt(match[1], 10);
                 if (serverVersion && serverVersion > pageVersion && !reloading) {
+                    if (window.__meetingLive) {
+                        console.log('[Update] v' + serverVersion + ' available but a meeting is live — deferring reload');
+                        return;
+                    }
                     reloading = true;
                     console.log('[Update] Page-side detected v' + pageVersion + ' < server v' + serverVersion + ' — reloading');
                     window.location.reload();
