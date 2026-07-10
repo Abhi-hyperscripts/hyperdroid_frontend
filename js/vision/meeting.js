@@ -366,7 +366,7 @@ if (!isAuthenticated && !isGuest) {
 // hard refreshes). This constant travels with the exact asset it protects.
 //
 // >>> BUMP MEETING_BUILD TOGETHER WITH SW_VERSION ON EVERY DEPLOY <<<
-const MEETING_BUILD = 1946;
+const MEETING_BUILD = 1947;
 
 async function assertFreshBuild() {
     try {
@@ -2674,9 +2674,14 @@ async function toggleScreenShare() {
             // Encoding cap decided here, at share time, alongside the capture
             // resolution — both must reflect the CURRENT network, not the one
             // at join. (Publish options override publishDefaults.)
+            // 15fps, not 24: text sharing doesn't need smooth motion, and the
+            // freed encode CPU is what lets Chrome HOLD the full 1440p top
+            // simulcast layer instead of trimming it to 1080p (measured live
+            // at 24fps: top layer settled at 1080p under CPU adaptation).
+            // Resolution beats framerate for legibility.
             screenShareEncoding: slowShareLink
                 ? { maxBitrate: 2_500_000, maxFramerate: 15 }
-                : { maxBitrate: 8_000_000, maxFramerate: 24 },
+                : { maxBitrate: 8_000_000, maxFramerate: 15 },
             // VP8 for screen share ONLY (camera stays VP9 SVC). Measured live
             // 2026-07-10: Chrome's VP9-SVC screencast encoder never ships more
             // than ~1080p regardless of capture size (halved a 4K capture,
