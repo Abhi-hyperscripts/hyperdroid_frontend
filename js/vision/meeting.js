@@ -158,27 +158,35 @@ function attachVideoTrackSafari(track, videoElement, participantIdentity) {
             attached = !!videoElement.srcObject;
             console.log(`[Safari] Method 2 (srcObject): attached=${attached} for ${participantIdentity}`);
 
-            // Listen for track ending (happens during quality switches)
-            track.mediaStreamTrack.addEventListener('ended', () => {
-                console.warn(`[Safari] MediaStreamTrack ended for ${participantIdentity}`);
-            });
+            // Track the CURRENT element on the track object and register the
+            // refresh listeners ONCE per track. Registering fresh closures on
+            // every layout rebuild leaked listeners holding destroyed elements
+            // (max-listeners warnings + zombie srcObject writes on Safari).
+            track._rzSafariEl = videoElement;
+            if (track.on && !track._rzSafariListeners) {
+                track._rzSafariListeners = true;
 
-            // CRITICAL: Listen for LiveKit track restarted event (quality change, reconnect)
-            if (track.on) {
+                // Listen for track ending (happens during quality switches)
+                track.mediaStreamTrack.addEventListener('ended', () => {
+                    console.warn(`[Safari] MediaStreamTrack ended for ${participantIdentity}`);
+                });
+
+                // CRITICAL: Listen for LiveKit track restarted event (quality change, reconnect)
                 track.on('restarted', () => {
                     console.log(`[Safari] Track restarted for ${participantIdentity}, refreshing srcObject`);
-                    if (track.mediaStreamTrack && track.mediaStreamTrack.readyState === 'live') {
-                        const newStream = new MediaStream([track.mediaStreamTrack]);
-                        videoElement.srcObject = newStream;
-                        videoElement.play().catch(e => console.warn('[Safari] Play after restart failed:', e));
+                    const el = track._rzSafariEl;
+                    if (el && track.mediaStreamTrack && track.mediaStreamTrack.readyState === 'live') {
+                        el.srcObject = new MediaStream([track.mediaStreamTrack]);
+                        el.play().catch(e => console.warn('[Safari] Play after restart failed:', e));
                     }
                 });
 
                 // Also listen for unmuted which happens after quality switches
                 track.on('unmuted', () => {
                     console.log(`[Safari] Track unmuted for ${participantIdentity}, ensuring playback`);
-                    if (videoElement.paused && videoElement.srcObject) {
-                        videoElement.play().catch(e => console.warn('[Safari] Play on unmute failed:', e));
+                    const el = track._rzSafariEl;
+                    if (el && el.paused && el.srcObject) {
+                        el.play().catch(e => console.warn('[Safari] Play on unmute failed:', e));
                     }
                 });
             }
@@ -1460,10 +1468,13 @@ function updateParticipantLayout(layout) {
         isPinned: isPinned
     };
 
-    // Clear video container — detach tracks from the doomed tiles first, or
-    // the SDK keeps every destroyed element registered forever (observer +
-    // memory leak growing with every speaker switch)
-    detachTileVideos(videoContainer);
+    // Capture the doomed tiles' videos NOW, but detach them only AFTER the
+    // replacement tiles are attached and observed (see end of function).
+    // Detaching first empties the track's element list, which makes
+    // adaptiveStream emit an immediate visible=false → the SFU pauses every
+    // remote stream on every rebuild (disable/enable churn + keyframe storms
+    // precisely at speaker-switch time).
+    const doomedVideos = Array.from(videoContainer.querySelectorAll('video'));
     videoContainer.innerHTML = '';
 
     // Create main speaker container
@@ -1514,6 +1525,32 @@ function updateParticipantLayout(layout) {
     } else {
         // Single participant - add class for full width layout
         videoContainer.classList.add('single-participant');
+    }
+
+    // Deferred detach of the old tiles' videos: by now (150ms) the new
+    // elements' IntersectionObserver has fired and reported them visible, so
+    // unregistering the old ones never drops the track's visibility to false
+    // — no pause/resume signal reaches the SFU. Still prevents the unbounded
+    // element/observer leak (each rebuild only ever orphans its own list).
+    // The active PiP element is skipped — detaching it kills the PiP feed.
+    setTimeout(() => {
+        doomedVideos.forEach((el) => {
+            if (el === document.pictureInPictureElement) return;
+            const t = el._lkVideoTrack;
+            if (t) {
+                try { t.detach(el); } catch (e) { /* track may already be gone */ }
+                el._lkVideoTrack = null;
+            }
+            if (el.srcObject) el.srcObject = null;
+        });
+    }, 150);
+
+    // Re-target the copilot emotion detector: it holds a reference to a
+    // specific tile <video>, which this rebuild just destroyed. Without this
+    // it silently freezes on the dead element and keeps reporting the last
+    // emotion forever (interview meetings).
+    if (typeof retargetEmotionDetector === 'function') {
+        setTimeout(retargetEmotionDetector, 300);
     }
 }
 
@@ -1785,7 +1822,11 @@ function ensureParticipantAudio(track, participant) {
         document.body.appendChild(rail);
     }
 
-    const elId = `audio-for-${participant.identity}`;
+    // Key by identity + source: a participant can publish TWO audio tracks
+    // (microphone + screen_share_audio). The SDK's attach() evicts same-kind
+    // tracks from an element's MediaStream, so sharing one element would make
+    // tab-audio silently replace the mic.
+    const elId = `audio-for-${participant.identity}${railAudioSuffix(track)}`;
     let audio = document.getElementById(elId);
     if (!audio) {
         audio = document.createElement('audio');
@@ -1814,12 +1855,19 @@ function ensureParticipantAudio(track, participant) {
     return audio;
 }
 
+function railAudioSuffix(track) {
+    return track && track.source === 'screen_share_audio' ? '-screen' : '';
+}
+
 function removeParticipantAudio(identity) {
-    const audio = document.getElementById(`audio-for-${identity}`);
-    if (audio) {
-        try { audio.srcObject = null; } catch (e) { /* ignore */ }
-        audio.remove();
-    }
+    const rail = document.getElementById('audioRail');
+    if (!rail) return;
+    rail.querySelectorAll('audio').forEach((audio) => {
+        if (audio.dataset.participantId === identity) {
+            try { audio.srcObject = null; } catch (e) { /* ignore */ }
+            audio.remove();
+        }
+    });
 }
 
 // Detach LiveKit tracks from every <video> inside a node before it is
@@ -1830,6 +1878,9 @@ function removeParticipantAudio(identity) {
 function detachTileVideos(rootNode) {
     if (!rootNode) return;
     rootNode.querySelectorAll('video').forEach((el) => {
+        // Never detach the element currently in Picture-in-Picture — that
+        // freezes the PiP window. It gets cleaned up when PiP closes.
+        if (el === document.pictureInPictureElement) return;
         const t = el._lkVideoTrack;
         if (t) {
             try { t.detach(el); } catch (e) { /* track may already be gone */ }
@@ -2003,6 +2054,7 @@ function detachTrack(track, publication, participant) {
         const screenShareControls = document.getElementById('screenShareControls');
 
         track.detach(screenShareVideo);
+        if (screenShareVideo._lkVideoTrack === track) screenShareVideo._lkVideoTrack = null;
         screenShareContainer.style.display = 'none';
         videoContainer.classList.remove('minimized');
         // Only restore chat visibility if it was open before screen share
@@ -2042,7 +2094,7 @@ function detachTrack(track, publication, participant) {
     // Audio: detach from the persistent rail element (track replacement on
     // device switch republishes — the rail element is reused by the new track)
     if (track.kind === 'audio') {
-        const audio = document.getElementById(`audio-for-${participant.identity}`);
+        const audio = document.getElementById(`audio-for-${participant.identity}${railAudioSuffix(track)}`);
         if (audio) {
             try { track.detach(audio); } catch (e) { /* ignore */ }
         }
