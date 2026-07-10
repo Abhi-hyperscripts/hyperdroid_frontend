@@ -423,8 +423,11 @@
          could serve backdoored JS that steals LiveKit tokens + chat content.
          Hashes computed with: openssl dgst -sha384 -binary <file> | openssl base64 -A
          When upgrading versions, recompute the hash. -->
-    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.0.0/dist/livekit-client.umd.min.js"
-            integrity="sha384-7CCpxZ2UCWftylVx33dX2apJDPn/ejL6nHBJ70bOhs2wHuOgpclTioCiK1PU1+vI"
+    <!-- livekit-client 2.20.1 (upgraded from 2.0.0, Jan-2024 vintage): 2.5 years of
+         adaptive-stream/simulcast/Safari fixes, and VP9 now publishes as SVC
+         (L3T3 = 9 quality steps vs 3 simulcast rungs) for smoother degradation. -->
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.20.1/dist/livekit-client.umd.min.js"
+            integrity="sha384-IGu2q4tt1II4yly/zsJYCCLP+lffK6+KqCYd4wvwv7cEzBcULk1wHM1fKzBOLrqY"
             crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"
             integrity="sha384-/taWmisziXYpcfnYsumSUmNaiMvG/fF/OJOUCLnqCIYTrpOZy7WbFF6FfIxwOrfL"
