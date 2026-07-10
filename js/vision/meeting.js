@@ -134,7 +134,14 @@ function attachVideoTrackSafari(track, videoElement, participantIdentity) {
     // the top 1080p layer for every tile, and congestion then crushed quality.
     if (!isSafari) {
         try {
+            // If this element was previously attached to a different track
+            // (tile reuse), unregister it first so the old track doesn't keep
+            // observing a stolen element.
+            if (videoElement._lkVideoTrack && videoElement._lkVideoTrack !== track) {
+                try { videoElement._lkVideoTrack.detach(videoElement); } catch (err) { /* ignore */ }
+            }
             track.attach(videoElement);
+            videoElement._lkVideoTrack = track; // for detachTileVideos cleanup
             attached = true;
             console.log(`[Attach] Method 1 (track.attach): attached for ${participantIdentity}`);
         } catch (e) {
@@ -185,6 +192,7 @@ function attachVideoTrackSafari(track, videoElement, participantIdentity) {
         try {
             const attachedElements = track.attach(videoElement);
             attached = attachedElements && attachedElements.length > 0;
+            if (attached) videoElement._lkVideoTrack = track; // for detachTileVideos cleanup
             console.log(`[Safari] Method 3 (track.attach): attached=${attached}, elements=${attachedElements?.length || 0} for ${participantIdentity}`);
         } catch (e) {
             console.warn(`[Safari] Method 3 failed for ${participantIdentity}:`, e);
@@ -501,11 +509,16 @@ async function connectToLiveKit(wsUrl, token) {
         //    pixelDensity 'screen' multiplies by devicePixelRatio; without it a
         //    retina MacBook tile requests CSS-pixel sizes = half resolution = blur.
         //  - Safari: adaptiveStream off; manual setVideoQuality via
-        //    ActiveSpeakerManager (which is a no-op when adaptiveStream is on —
-        //    the SDK ignores manual quality calls in that mode).
+        //    ActiveSpeakerManager. NOTE: since SDK 2.15 manual setVideoQuality
+        //    calls are HONORED even with adaptiveStream on — the
+        //    _adaptiveStreamOn guards in activeSpeaker.js are what stop the two
+        //    systems from fighting over layers on Chrome. Keep them.
+        //    pauseVideoInBackground=false: default (true) server-pauses every
+        //    remote video when the tab is hidden, which freezes PiP the moment
+        //    the user switches tabs — the main reason PiP exists.
         window._adaptiveStreamOn = !isSafari;
         const roomOptions = {
-            adaptiveStream: isSafari ? false : { pixelDensity: 'screen' },
+            adaptiveStream: isSafari ? false : { pixelDensity: 'screen', pauseVideoInBackground: false },
             dynacast: !isSafari,        // Disable for Safari - causes track issues
             videoCaptureDefaults: {
                 resolution: isSafari
@@ -545,9 +558,11 @@ async function connectToLiveKit(wsUrl, token) {
                     maxBitrate: 8_000_000,
                     maxFramerate: 24,
                 },
-                // Screen share low rung: 720p, NOT 360p. When the SFU steps down
-                // under congestion, 640x360 of a 4K desktop capture is unreadable
-                // text — 720p keeps the share legible in the worst case.
+                // Screen share low rung (VP8/H264 paths only). NOTE: with VP9
+                // SVC (Chrome/Edge) the SDK forces screenshare to L1T3 — a
+                // single spatial layer — and ignores simulcast layers entirely,
+                // so under congestion the SFU can only drop framerate, not
+                // resolution. Kept for the non-SVC fallback paths.
                 screenShareSimulcastLayers: isSafari ? [] : [
                     LivekitClient.VideoPresets.h720,
                 ],
@@ -557,6 +572,12 @@ async function connectToLiveKit(wsUrl, token) {
                 // a VP8 backup publish for subscribers that can't decode VP9.
                 videoCodec: isSafari ? 'vp8' : 'vp9',
                 backupCodec: true,
+                // Without this, the SDK default (regression) makes ONE
+                // VP9-incapable subscriber (old Safari/iOS) drop the WHOLE
+                // room to VP8: the publisher stops sending VP9 for everyone.
+                // SIMULCAST publishes VP9 + VP8 concurrently instead — capable
+                // viewers keep VP9, the legacy viewer gets VP8.
+                backupCodecPolicy: LivekitClient.BackupCodecPolicy.SIMULCAST,
             }
         };
 
@@ -1245,30 +1266,10 @@ function addParticipant(participant) {
         }
     });
 
-    // Attach any existing audio tracks
+    // Attach any existing audio tracks (persistent rail — see ensureParticipantAudio)
     participant.audioTrackPublications.forEach((publication) => {
         if (publication.track && publication.isSubscribed) {
-            let audio = document.createElement('audio');
-            audio.autoplay = true;
-            audio.playsInline = true;
-            audio.dataset.participantId = participant.identity;
-            participantDiv.appendChild(audio);
-            publication.track.attach(audio);
-
-            // Handle mobile Safari autoplay
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    console.warn('Audio autoplay blocked for', participant.identity, '- will play on user interaction');
-                    const resumeAudio = () => {
-                        audio.play().catch(e => console.warn('Audio play retry failed:', e));
-                        document.removeEventListener('click', resumeAudio);
-                        document.removeEventListener('touchstart', resumeAudio);
-                    };
-                    document.addEventListener('click', resumeAudio, { once: true });
-                    document.addEventListener('touchstart', resumeAudio, { once: true });
-                });
-            }
+            ensureParticipantAudio(publication.track, participant);
         }
     });
 }
@@ -1286,10 +1287,11 @@ function removeParticipant(participantOrIdentity) {
         activeSpeakerManager.removeParticipant(participantSid);
     }
 
-    // Remove video tile
+    // Remove video tile (detach tracks first so the SDK unregisters the elements)
     const participantDiv = document.getElementById(`participant-${identity}`);
     if (participantDiv) {
         console.log(`Removing video tile for: ${identity}`);
+        detachTileVideos(participantDiv);
         participantDiv.remove();
     }
 
@@ -1299,6 +1301,9 @@ function removeParticipant(participantOrIdentity) {
         console.log(`Removing audio-only tile for: ${identity}`);
         audioOnlyDiv.remove();
     }
+
+    // Remove persistent rail audio — the participant is gone
+    removeParticipantAudio(identity);
 
     // Clean up zoom level tracking
     if (participantZoomLevels[identity]) {
@@ -1343,9 +1348,24 @@ function cleanupStaleParticipants() {
         // Remove tile if participant is no longer active
         if (identity && !activeParticipants.has(identity)) {
             console.log(`Cleaning up stale tile for disconnected participant: ${identity}`);
+            detachTileVideos(tile);
             tile.remove();
+            removeParticipantAudio(identity);
         }
     });
+
+    // Also sweep the audio rail for participants who left without their tile
+    // ever existing (rail entries are tile-independent)
+    const rail = document.getElementById('audioRail');
+    if (rail) {
+        rail.querySelectorAll('audio').forEach((audio) => {
+            const identity = audio.dataset.participantId;
+            if (identity && !activeParticipants.has(identity)) {
+                console.log(`Cleaning up stale rail audio for: ${identity}`);
+                removeParticipantAudio(identity);
+            }
+        });
+    }
 }
 
 // Start periodic cleanup every 5 seconds
@@ -1440,7 +1460,10 @@ function updateParticipantLayout(layout) {
         isPinned: isPinned
     };
 
-    // Clear video container
+    // Clear video container — detach tracks from the doomed tiles first, or
+    // the SDK keeps every destroyed element registered forever (observer +
+    // memory leak growing with every speaker switch)
+    detachTileVideos(videoContainer);
     videoContainer.innerHTML = '';
 
     // Create main speaker container
@@ -1704,30 +1727,13 @@ function addParticipantToContainer(participant, container, className, isLocal, i
             }
         });
 
-        // Attach audio track for remote participants
+        // Audio lives on the persistent rail (idempotent — normally already
+        // attached by trackSubscribed), never inside tiles: tiles are
+        // destroyed on every layout rebuild and orphaned <audio> elements
+        // keep playing outside the DOM, stacking duplicate playback.
         participant.audioTrackPublications.forEach((publication) => {
             if (publication.track && publication.isSubscribed) {
-                const audio = document.createElement('audio');
-                audio.autoplay = true;
-                audio.playsInline = true;
-                audio.dataset.participantId = participant.identity;
-                participantDiv.appendChild(audio);
-                publication.track.attach(audio);
-
-                // Handle mobile Safari autoplay
-                const playPromise = audio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(() => {
-                        console.warn('Audio autoplay blocked for', participant.identity, '- will play on user interaction');
-                        const resumeAudio = () => {
-                            audio.play().catch(e => console.warn('Audio play retry failed:', e));
-                            document.removeEventListener('click', resumeAudio);
-                            document.removeEventListener('touchstart', resumeAudio);
-                        };
-                        document.addEventListener('click', resumeAudio, { once: true });
-                        document.addEventListener('touchstart', resumeAudio, { once: true });
-                    });
-                }
+                ensureParticipantAudio(publication.track, participant);
             }
         });
     }
@@ -1754,6 +1760,83 @@ function addAudioOnlyParticipant(participant) {
     audioOnlyDiv.appendChild(icon);
     audioOnlyDiv.appendChild(nameTag);
     videoContainer.appendChild(audioOnlyDiv);
+}
+
+// ---------------------------------------------------------------------------
+// Persistent audio rail
+//
+// Remote audio must NOT live inside video tiles: tiles only exist for the
+// 1 main + 4 small participants the layout renders, so a 6th participant's
+// audio had nothing to attach to (they were inaudible until active-speaker
+// promotion). Worse, layout rebuilds recreated tiles without detaching, and
+// orphaned <audio> elements keep playing outside the DOM — every
+// promote/demote cycle stacked another playback of the same person.
+//
+// Instead: one hidden <audio> per participant identity in a persistent
+// off-layout container, attached once on trackSubscribed, removed only on
+// participant disconnect. Tiles are video-only.
+// ---------------------------------------------------------------------------
+function ensureParticipantAudio(track, participant) {
+    let rail = document.getElementById('audioRail');
+    if (!rail) {
+        rail = document.createElement('div');
+        rail.id = 'audioRail';
+        rail.style.display = 'none';
+        document.body.appendChild(rail);
+    }
+
+    const elId = `audio-for-${participant.identity}`;
+    let audio = document.getElementById(elId);
+    if (!audio) {
+        audio = document.createElement('audio');
+        audio.id = elId;
+        audio.autoplay = true;
+        audio.playsInline = true;
+        audio.dataset.participantId = participant.identity;
+        rail.appendChild(audio);
+    }
+    track.attach(audio);
+
+    // Handle mobile Safari autoplay - attempt play with user gesture fallback
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(() => {
+            console.warn('Audio autoplay blocked for', participant.identity, '- will play on user interaction');
+            const resumeAudio = () => {
+                audio.play().catch(e => console.warn('Audio play retry failed:', e));
+                document.removeEventListener('click', resumeAudio);
+                document.removeEventListener('touchstart', resumeAudio);
+            };
+            document.addEventListener('click', resumeAudio, { once: true });
+            document.addEventListener('touchstart', resumeAudio, { once: true });
+        });
+    }
+    return audio;
+}
+
+function removeParticipantAudio(identity) {
+    const audio = document.getElementById(`audio-for-${identity}`);
+    if (audio) {
+        try { audio.srcObject = null; } catch (e) { /* ignore */ }
+        audio.remove();
+    }
+}
+
+// Detach LiveKit tracks from every <video> inside a node before it is
+// destroyed. Without this the SDK keeps destroyed elements registered in the
+// track's attachedElements (adaptiveStream observers, memory) forever —
+// layout rebuilds happen on every speaker switch, so this leaked unbounded.
+// attachVideoTrackSafari records the owning track on the element.
+function detachTileVideos(rootNode) {
+    if (!rootNode) return;
+    rootNode.querySelectorAll('video').forEach((el) => {
+        const t = el._lkVideoTrack;
+        if (t) {
+            try { t.detach(el); } catch (e) { /* track may already be gone */ }
+            el._lkVideoTrack = null;
+        }
+        if (el.srcObject) el.srcObject = null;
+    });
 }
 
 // Attach track to participant
@@ -1820,45 +1903,24 @@ function attachTrack(track, publication, participant) {
         return;
     }
 
+    // Audio is tile-independent: attach to the persistent rail so every
+    // participant is audible even when the layout has no tile for them
+    // (only 1 main + 4 small tiles exist; a 6th participant used to be
+    // silent until active-speaker promotion).
+    if (track.kind === 'audio') {
+        ensureParticipantAudio(track, participant);
+        return;
+    }
+
     const participantDiv = document.getElementById(`participant-${participant.identity}`);
     if (participantDiv) {
-        if (track.kind === 'video') {
-            const video = participantDiv.querySelector('video');
-            if (video) {
-                // Use Safari-compatible method
-                attachVideoTrackSafari(track, video, participant.identity);
+        const video = participantDiv.querySelector('video');
+        if (video) {
+            // Use Safari-compatible method
+            attachVideoTrackSafari(track, video, participant.identity);
 
-                // CRITICAL: Update camera-off placeholder visibility after video track is attached
-                updateCameraOffPlaceholder(participantDiv, !track.isMuted);
-            }
-        } else if (track.kind === 'audio') {
-            // Create or get audio element for this participant
-            let audio = participantDiv.querySelector('audio');
-            if (!audio) {
-                audio = document.createElement('audio');
-                audio.autoplay = true;
-                audio.playsInline = true;
-                // Add data attribute to identify the participant for this audio
-                audio.dataset.participantId = participant.identity;
-                participantDiv.appendChild(audio);
-            }
-            track.attach(audio);
-
-            // Handle mobile Safari autoplay - attempt play with user gesture fallback
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    console.warn('Audio autoplay blocked for', participant.identity, '- will play on user interaction');
-                    // Add one-time click handler to resume audio on any user interaction
-                    const resumeAudio = () => {
-                        audio.play().catch(e => console.warn('Audio play retry failed:', e));
-                        document.removeEventListener('click', resumeAudio);
-                        document.removeEventListener('touchstart', resumeAudio);
-                    };
-                    document.addEventListener('click', resumeAudio, { once: true });
-                    document.addEventListener('touchstart', resumeAudio, { once: true });
-                });
-            }
+            // CRITICAL: Update camera-off placeholder visibility after video track is attached
+            updateCameraOffPlaceholder(participantDiv, !track.isMuted);
         }
     } else {
         // Participant element doesn't exist yet - race condition between track subscription and DOM creation
@@ -1896,28 +1958,16 @@ function attachTrack(track, publication, participant) {
             setTimeout(() => {
                 const retryDiv = document.getElementById(`participant-${participant.identity}`);
                 if (retryDiv) {
-                    if (track.kind === 'video') {
-                        const video = retryDiv.querySelector('video');
-                        if (video) {
-                            // Use Safari-compatible method
-                            attachVideoTrackSafari(track, video, participant.identity);
-                            console.log(`Video track attached for ${participant.identity} (retry ${retryCount} successful)`);
+                    // Only video reaches this path — audio goes to the
+                    // persistent rail above and never needs a tile.
+                    const video = retryDiv.querySelector('video');
+                    if (video) {
+                        // Use Safari-compatible method
+                        attachVideoTrackSafari(track, video, participant.identity);
+                        console.log(`Video track attached for ${participant.identity} (retry ${retryCount} successful)`);
 
-                            // Update camera-off placeholder visibility
-                            updateCameraOffPlaceholder(retryDiv, !track.isMuted);
-                        }
-                    } else if (track.kind === 'audio') {
-                        let audio = retryDiv.querySelector('audio');
-                        if (!audio) {
-                            audio = document.createElement('audio');
-                            audio.autoplay = true;
-                            audio.playsInline = true;
-                            audio.dataset.participantId = participant.identity;
-                            retryDiv.appendChild(audio);
-                        }
-                        track.attach(audio);
-                        audio.play().catch(() => {});
-                        console.log(`Audio track attached for ${participant.identity} (retry ${retryCount} successful)`);
+                        // Update camera-off placeholder visibility
+                        updateCameraOffPlaceholder(retryDiv, !track.isMuted);
                     }
                 } else if (retryCount < 5) {
                     // Exponential backoff: 100ms, 200ms, 400ms, 800ms, 1600ms
@@ -1989,11 +2039,21 @@ function detachTrack(track, publication, participant) {
         return;
     }
 
-    const participantDiv = document.getElementById(`participant-${participant.identity}`);
-    if (participantDiv) {
-        const video = participantDiv.querySelector('video');
-        if (video) {
-            track.detach(video);
+    // Audio: detach from the persistent rail element (track replacement on
+    // device switch republishes — the rail element is reused by the new track)
+    if (track.kind === 'audio') {
+        const audio = document.getElementById(`audio-for-${participant.identity}`);
+        if (audio) {
+            try { track.detach(audio); } catch (e) { /* ignore */ }
+        }
+    } else {
+        const participantDiv = document.getElementById(`participant-${participant.identity}`);
+        if (participantDiv) {
+            const video = participantDiv.querySelector('video');
+            if (video) {
+                track.detach(video);
+                if (video._lkVideoTrack === track) video._lkVideoTrack = null;
+            }
         }
     }
 
@@ -2251,10 +2311,21 @@ async function toggleScreenShare() {
                 if (publication.source === 'screen_share' && publication.track) {
                     const mediaStreamTrack = publication.track.mediaStreamTrack;
 
-                    // Set contentHint for text optimization
+                    // Set contentHint for text optimization — EXCEPT when the SDK
+                    // has set 'motion'. On VP9/AV1 SVC screenshare (Chrome/Edge)
+                    // the SDK deliberately forces contentHint='motion' as a
+                    // workaround: Chrome's screen-content ('text'/'detail')
+                    // encoder path caps SVC at ~5fps and has encoding bugs.
+                    // Overwriting it back to 'text' turns every share into a
+                    // slideshow for all viewers. 'text' is only correct on the
+                    // non-SVC (VP8) paths, where the SDK leaves the hint alone.
                     if (mediaStreamTrack && 'contentHint' in mediaStreamTrack) {
-                        mediaStreamTrack.contentHint = 'text';
-                        console.log('Applied contentHint=text to screen share track');
+                        if (mediaStreamTrack.contentHint === 'motion') {
+                            console.log('Keeping SDK contentHint=motion (VP9 SVC screenshare workaround)');
+                        } else {
+                            mediaStreamTrack.contentHint = 'text';
+                            console.log('Applied contentHint=text to screen share track');
+                        }
                     }
 
                     // Log actual capture settings

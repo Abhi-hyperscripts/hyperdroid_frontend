@@ -70,11 +70,12 @@ class ActiveSpeakerManager {
      * @param {boolean} isInitialSubscription - Whether this is the initial subscription (skip delay)
      */
     setVideoQualityDelayed(publication, quality, participantIdentity, isInitialSubscription = false) {
-        // Manual quality selection only functions when adaptive streaming is OFF
-        // (Safari). With adaptiveStream on, the SDK ignores setVideoQuality
-        // entirely ("adaptive stream is enabled, cannot change video track
-        // settings") and manages layers from attached-element size instead —
-        // calling it anyway just spams warnings and hides the real regime.
+        // Manual quality selection is Safari-only (adaptiveStream OFF).
+        // NOTE: since livekit-client 2.15 the SDK HONORS setVideoQuality even
+        // with adaptiveStream on (older versions ignored it) — so this guard
+        // is load-bearing: without it, manual calls would fight adaptiveStream's
+        // per-element layer selection on Chrome and quality would oscillate.
+        // Do not remove.
         if (window._adaptiveStreamOn) return;
 
         const qualityLabel = quality === LivekitClient.VideoQuality.HIGH ? '1080p' :
@@ -690,6 +691,10 @@ class ActiveSpeakerManager {
                                 if (!publication.isSubscribed) {
                                     console.log(`🎥 [${role}] [Safari] Executing delayed subscription for ${participant.identity}`);
                                     publication.setSubscribed(true);
+                                    // Set the initial layer too — without this the
+                                    // publication streams at the server default
+                                    // (top layer) until the next speaker event
+                                    this.setVideoQualityDelayed(publication, quality, participant.identity, true);
                                 }
                             }, 500);
                         } else {
@@ -927,8 +932,12 @@ class ActiveSpeakerManager {
         // Safari uses delayed quality changes via setVideoQualityDelayed
 
         // Downgrade previous main speaker to medium quality (360p)
+        // NOTE: room.remoteParticipants is keyed by IDENTITY, not sid —
+        // .get(sid) always missed, silently turning this whole function into
+        // a no-op (Safari pinned/promoted tiles stayed at the wrong layer).
         if (previousMain) {
-            const prevParticipant = this.room.remoteParticipants.get(previousMain.participantSid);
+            const prevParticipant = this.room.remoteParticipants.get(previousMain.identity) ||
+                Array.from(this.room.remoteParticipants.values()).find(p => p.sid === previousMain.participantSid);
             if (prevParticipant) {
                 prevParticipant.videoTrackPublications.forEach((publication) => {
                     if (publication.source === LivekitClient.Track.Source.Camera && publication.isSubscribed) {
@@ -941,7 +950,8 @@ class ActiveSpeakerManager {
 
         // Upgrade new main speaker to high quality (1080p)
         if (newMain) {
-            const newParticipant = this.room.remoteParticipants.get(newMain.participantSid);
+            const newParticipant = this.room.remoteParticipants.get(newMain.identity) ||
+                Array.from(this.room.remoteParticipants.values()).find(p => p.sid === newMain.participantSid);
             if (newParticipant) {
                 newParticipant.videoTrackPublications.forEach((publication) => {
                     if (publication.source === LivekitClient.Track.Source.Camera && publication.isSubscribed) {
