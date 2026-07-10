@@ -1521,6 +1521,10 @@
                                 <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:4px;">Max replies company-wide / day</label>
                                 <input type="number" id="aiTenantCapInput" class="form-control" min="1" max="10000" style="width:140px;">
                             </div>
+                            <div>
+                                <label style="display:block; font-size:0.78rem; color:var(--text-secondary); margin-bottom:4px;">Reply delay (seconds)</label>
+                                <input type="number" id="aiDebounceInput" class="form-control" min="5" max="60" style="width:140px;" title="How long the AI waits after the customer's last message before answering — lets multi-message bursts arrive so one reply covers them all.">
+                            </div>
                             <button class="btn btn-primary" onclick="saveAiCaps()" style="height:38px;">Save limits</button>
                         </div>
 

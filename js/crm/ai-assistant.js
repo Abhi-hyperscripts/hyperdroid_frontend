@@ -50,15 +50,22 @@
     function renderCaps() {
         const contact = document.getElementById('aiContactCapInput');
         const tenant = document.getElementById('aiTenantCapInput');
+        const debounce = document.getElementById('aiDebounceInput');
         if (contact && aiOverview) contact.value = aiOverview.contact_daily_cap ?? 20;
         if (tenant && aiOverview) tenant.value = aiOverview.tenant_daily_cap ?? 300;
+        if (debounce && aiOverview) debounce.value = aiOverview.debounce_seconds ?? 10;
     }
 
     async function saveAiCaps() {
         const contact = parseInt(document.getElementById('aiContactCapInput')?.value, 10);
         const tenant = parseInt(document.getElementById('aiTenantCapInput')?.value, 10);
+        const debounce = parseInt(document.getElementById('aiDebounceInput')?.value, 10);
         if (!Number.isFinite(contact) || contact < 1 || !Number.isFinite(tenant) || tenant < 1) {
             if (typeof Toast !== 'undefined') Toast.error('Limits must be positive numbers');
+            return;
+        }
+        if (!Number.isFinite(debounce) || debounce < 5 || debounce > 60) {
+            if (typeof Toast !== 'undefined') Toast.error('Reply delay must be between 5 and 60 seconds');
             return;
         }
         try {
@@ -67,6 +74,9 @@
             });
             await api.request('/crm/crm-settings/ai_reply_tenant_daily_cap', {
                 method: 'PUT', body: JSON.stringify({ value: String(tenant) })
+            });
+            await api.request('/crm/crm-settings/ai_reply_debounce_seconds', {
+                method: 'PUT', body: JSON.stringify({ value: String(debounce) })
             });
             if (typeof Toast !== 'undefined') Toast.success('AI limits saved');
             await loadAiAssistant();
