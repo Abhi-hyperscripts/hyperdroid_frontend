@@ -560,11 +560,18 @@ async function connectToLiveKit(wsUrl, token) {
                 audioPreset: LivekitClient.AudioPresets.speech,  // 24 kbps voice-tuned Opus
                 red: true,  // Opus RED packet-loss redundancy - survives 1-2 lost packets
                 dtx: true,  // Discontinuous Transmission - saves uplink during silence
-                // Screen share: Drop the cap from 30 Mbps -> 8 Mbps and add a low layer
-                // so a viewer on a slow link can still see the share at 360p.
+                // When the encoder is starved (weak uplink / weak CPU), let it
+                // drop BOTH resolution and framerate. The SDK default for
+                // >=1080p capture is 'maintain-resolution', which can only shed
+                // fps — a slow uplink then produces 1080p at 5fps judder
+                // instead of a smooth 540p.
+                degradationPreference: 'balanced',
+                // Screen share cap: 8 Mbps normally; on a detected slow network
+                // (2g/3g) cap hard at 2.5 Mbps / 15fps so the share doesn't
+                // starve the mic audio.
                 screenShareEncoding: {
-                    maxBitrate: 8_000_000,
-                    maxFramerate: 24,
+                    maxBitrate: isSlowNetwork ? 2_500_000 : 8_000_000,
+                    maxFramerate: isSlowNetwork ? 15 : 24,
                 },
                 // Screen share low rung (VP8/H264 paths only). NOTE: with VP9
                 // SVC (Chrome/Edge) the SDK forces screenshare to L1T3 — a
@@ -733,6 +740,65 @@ async function connectToLiveKit(wsUrl, token) {
                 }
                 console.log(`[Network] Local connection quality recovered: ${quality}`);
             }
+        });
+
+        // ------------------------------------------------------------------
+        // Media connection lifecycle — the resilience layer for flaky links.
+        // LiveKit auto-reconnects internally (ICE restart / session resume);
+        // these handlers give the user feedback while it happens and resync
+        // UI state afterwards. Without them a network blip = silently frozen
+        // meeting with no indication and no recovery.
+        // ------------------------------------------------------------------
+        room.on(LivekitClient.RoomEvent.SignalReconnecting, () => {
+            console.warn('[Media] Signal connection unstable — reconnecting…');
+            showConnectionBanner('Connection unstable — reconnecting…', 'warning');
+        });
+        room.on(LivekitClient.RoomEvent.Reconnecting, () => {
+            console.warn('[Media] Media connection lost — reconnecting…');
+            showConnectionBanner('Connection lost — reconnecting…', 'warning');
+        });
+        room.on(LivekitClient.RoomEvent.Reconnected, () => {
+            console.log('[Media] Reconnected — resyncing layout and subscriptions');
+            showConnectionBanner('Reconnected', 'success', 2500);
+            // A hard reconnect re-subscribes every track; force a full layout
+            // rebuild so tiles re-attach to the live tracks, and re-drive the
+            // Safari subscription manager.
+            currentLayoutState = { mainSpeakerIdentity: null, smallTileIdentities: [] };
+            if (activeSpeakerManager) {
+                activeSpeakerManager.updateVideoSubscriptions();
+                activeSpeakerManager.notifyLayoutChange();
+            }
+        });
+        room.on(LivekitClient.RoomEvent.Disconnected, (reason) => {
+            const R = LivekitClient.DisconnectReason || {};
+            // Intentional or separately-handled paths — no overlay
+            if (reason === R.CLIENT_INITIATED) return;      // user clicked Leave
+            if (reason === R.PARTICIPANT_REMOVED) return;   // kick flow has its own UX
+            if (reason === R.DUPLICATE_IDENTITY) {
+                showDisconnectedOverlay('You joined this meeting from another device or tab.', false);
+                return;
+            }
+            if (reason === R.ROOM_DELETED) {
+                showDisconnectedOverlay('The meeting has ended.', false);
+                return;
+            }
+            // Genuine connection loss after all automatic reconnect attempts
+            console.error('[Media] Disconnected from room, reason:', reason);
+            showDisconnectedOverlay('Connection to the meeting was lost.', true);
+        });
+
+        // The SFU pauses individual video streams when the downlink can't
+        // carry them (congestion control). Show a chip on the affected tile
+        // instead of an unexplained frozen frame — audio keeps flowing.
+        room.on(LivekitClient.RoomEvent.TrackStreamStateChanged, (publication, streamState, participant) => {
+            if (publication.kind !== 'video' || publication.source !== 'camera') return;
+            const paused = streamState === LivekitClient.Track.StreamState.Paused;
+            if (paused) {
+                pausedVideoIdentities.add(participant.identity);
+            } else {
+                pausedVideoIdentities.delete(participant.identity);
+            }
+            updateLowBandwidthChip(participant.identity, paused);
         });
 
         // Configure connection options with ICE servers fetched from backend
@@ -1320,6 +1386,7 @@ function removeParticipant(participantOrIdentity) {
 
     // Remove from raised hands tracking
     raisedHands.delete(identity);
+    pausedVideoIdentities.delete(identity);
 
     console.log(`Participant ${identity} fully removed from UI`);
 }
@@ -1777,6 +1844,12 @@ function addParticipantToContainer(participant, container, className, isLocal, i
 
     // Show placeholder if no video
     updateCameraOffPlaceholder(participantDiv, hasVideo);
+
+    // Re-apply the low-bandwidth chip if this participant's stream is
+    // currently SFU-paused (tiles are rebuilt on every layout change)
+    if (!isLocal && pausedVideoIdentities.has(participant.identity)) {
+        updateLowBandwidthChip(participant.identity, true);
+    }
 }
 
 // Add audio-only participant indicator
@@ -1797,6 +1870,94 @@ function addAudioOnlyParticipant(participant) {
     audioOnlyDiv.appendChild(icon);
     audioOnlyDiv.appendChild(nameTag);
     videoContainer.appendChild(audioOnlyDiv);
+}
+
+// ---------------------------------------------------------------------------
+// Connection resilience UI — banner, disconnect overlay, low-bandwidth chips
+// ---------------------------------------------------------------------------
+let connectionBannerTimer = null;
+function showConnectionBanner(message, type = 'warning', autoHideMs = 0) {
+    let banner = document.getElementById('connectionBanner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'connectionBanner';
+        banner.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:10000;' +
+            'padding:8px 18px;border-radius:8px;font-size:14px;font-weight:600;' +
+            'box-shadow:0 4px 16px rgba(0,0,0,0.35);pointer-events:none;';
+        document.body.appendChild(banner);
+    }
+    banner.style.background = type === 'success' ? 'var(--color-success)' : 'var(--color-warning)';
+    banner.style.color = 'var(--text-inverse, #fff)';
+    banner.textContent = message;
+    banner.style.display = 'block';
+    if (connectionBannerTimer) { clearTimeout(connectionBannerTimer); connectionBannerTimer = null; }
+    if (autoHideMs > 0) connectionBannerTimer = setTimeout(hideConnectionBanner, autoHideMs);
+}
+function hideConnectionBanner() {
+    const banner = document.getElementById('connectionBanner');
+    if (banner) banner.style.display = 'none';
+}
+
+function showDisconnectedOverlay(message, offerRejoin) {
+    if (document.getElementById('disconnectedOverlay')) return;
+    hideConnectionBanner();
+    const overlay = document.createElement('div');
+    overlay.id = 'disconnectedOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.78);' +
+        'display:flex;align-items:center;justify-content:center;';
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--bg-card, #1e1e2e);color:var(--text-primary, #fff);' +
+        'padding:32px 40px;border-radius:12px;text-align:center;max-width:380px;' +
+        'box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+    const title = document.createElement('h3');
+    title.textContent = offerRejoin ? 'Connection lost' : 'Disconnected';
+    title.style.cssText = 'margin:0 0 10px;font-size:18px;';
+    const msg = document.createElement('p');
+    msg.textContent = message;
+    msg.style.cssText = 'margin:0 0 22px;font-size:14px;color:var(--text-secondary, #aaa);';
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:10px;justify-content:center;';
+    if (offerRejoin) {
+        const rejoinBtn = document.createElement('button');
+        rejoinBtn.textContent = 'Rejoin meeting';
+        rejoinBtn.style.cssText = 'padding:10px 20px;border:none;border-radius:8px;cursor:pointer;' +
+            'font-weight:600;background:var(--brand-primary, #6366f1);color:var(--text-inverse, #fff);';
+        rejoinBtn.onclick = () => window.location.reload();
+        btnRow.appendChild(rejoinBtn);
+    }
+    const exitBtn = document.createElement('button');
+    exitBtn.textContent = 'Back to dashboard';
+    exitBtn.style.cssText = 'padding:10px 20px;border:1px solid var(--border-color, #444);border-radius:8px;' +
+        'cursor:pointer;font-weight:600;background:transparent;color:var(--text-primary, #fff);';
+    exitBtn.onclick = () => { window.location.href = 'dashboard.html'; };
+    btnRow.appendChild(exitBtn);
+    card.appendChild(title);
+    card.appendChild(msg);
+    card.appendChild(btnRow);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+}
+
+// Identities whose camera stream the SFU has paused for bandwidth — chips
+// must survive layout rebuilds, so state lives here and tiles re-apply it.
+const pausedVideoIdentities = new Set();
+function updateLowBandwidthChip(identity, paused) {
+    const tile = document.getElementById(`participant-${identity}`);
+    if (!tile) return;
+    let chip = tile.querySelector('.low-bw-chip');
+    if (paused) {
+        if (!chip) {
+            chip = document.createElement('div');
+            chip.className = 'low-bw-chip';
+            chip.textContent = 'Low bandwidth';
+            chip.style.cssText = 'position:absolute;top:8px;left:8px;z-index:5;padding:2px 8px;' +
+                'border-radius:6px;font-size:11px;font-weight:600;opacity:0.92;' +
+                'background:var(--color-warning);color:var(--text-inverse, #fff);';
+            tile.appendChild(chip);
+        }
+    } else if (chip) {
+        chip.remove();
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -2344,18 +2505,24 @@ async function toggleScreenShare() {
             }, 100);
         }
     } else {
-        // Enable screen share with MAXIMUM QUALITY settings for crisp text
-        // Capture at native resolution, optimize for text/detail content
+        // Enable screen share with MAXIMUM QUALITY settings for crisp text.
+        // Re-check the network at share time (it may have changed mid-call):
+        // on a slow link request 1080p instead of 4K — a 4K capture squeezed
+        // through a 2.5 Mbps cap is far blurrier than a clean 1080p encode.
+        const shareEffType = navigator.connection?.effectiveType || '';
+        const slowShareLink = shareEffType === '2g' || shareEffType === 'slow-2g' || shareEffType === '3g';
         await room.localParticipant.setScreenShareEnabled(true, {
             audio: false, // No audio - save bandwidth for video quality
             video: {
                 displaySurface: 'monitor', // Prefer full screen capture
             },
             contentHint: 'text', // Optimize encoding for text clarity
-            resolution: { width: 3840, height: 2160 }, // Request 4K capture
+            resolution: slowShareLink
+                ? { width: 1920, height: 1080 }
+                : { width: 3840, height: 2160 },
         });
         screenBtn.classList.add('active');
-        console.log('Screen share started with 4K resolution and text optimization');
+        console.log(`Screen share started (${slowShareLink ? '1080p slow-network' : '4K'} capture)`);
 
         // Apply contentHint and log encoding stats
         setTimeout(async () => {
