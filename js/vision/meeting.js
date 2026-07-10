@@ -126,13 +126,30 @@ function attachVideoTrackSafari(track, videoElement, participantIdentity) {
     // Try multiple attachment methods
     let attached = false;
 
-    // Method 1: Direct srcObject assignment (works best for Safari)
-    if (track.mediaStreamTrack && track.mediaStreamTrack.readyState === 'live') {
+    // Method 1 (non-Safari): track.attach() — REQUIRED for adaptive streaming.
+    // attach() registers the element with the SDK's size/visibility observer, which
+    // is how the SFU learns what resolution each tile needs. The old code used
+    // direct srcObject for ALL browsers, which left adaptiveStream completely
+    // blind: no per-tile layer requests were ever sent, every subscriber pulled
+    // the top 1080p layer for every tile, and congestion then crushed quality.
+    if (!isSafari) {
+        try {
+            track.attach(videoElement);
+            attached = true;
+            console.log(`[Attach] Method 1 (track.attach): attached for ${participantIdentity}`);
+        } catch (e) {
+            console.warn(`[Attach] track.attach() failed for ${participantIdentity}, falling back to srcObject:`, e);
+        }
+    }
+
+    // Method 2 (Safari primary / fallback): Direct srcObject assignment.
+    // Safari runs with adaptiveStream OFF, so bypassing attach() costs nothing there.
+    if (!attached && track.mediaStreamTrack && track.mediaStreamTrack.readyState === 'live') {
         try {
             const mediaStream = new MediaStream([track.mediaStreamTrack]);
             videoElement.srcObject = mediaStream;
             attached = !!videoElement.srcObject;
-            console.log(`[Safari] Method 1 (srcObject): attached=${attached} for ${participantIdentity}`);
+            console.log(`[Safari] Method 2 (srcObject): attached=${attached} for ${participantIdentity}`);
 
             // Listen for track ending (happens during quality switches)
             track.mediaStreamTrack.addEventListener('ended', () => {
@@ -159,29 +176,29 @@ function attachVideoTrackSafari(track, videoElement, participantIdentity) {
                 });
             }
         } catch (e) {
-            console.warn(`[Safari] Method 1 failed for ${participantIdentity}:`, e);
-        }
-    }
-
-    // Method 2: Use track.attach() as fallback
-    if (!attached) {
-        try {
-            const attachedElements = track.attach(videoElement);
-            attached = attachedElements && attachedElements.length > 0;
-            console.log(`[Safari] Method 2 (track.attach): attached=${attached}, elements=${attachedElements?.length || 0} for ${participantIdentity}`);
-        } catch (e) {
             console.warn(`[Safari] Method 2 failed for ${participantIdentity}:`, e);
         }
     }
 
-    // Method 3: Try getting MediaStream from track directly
+    // Method 3: Use track.attach() as last-resort for Safari
+    if (!attached) {
+        try {
+            const attachedElements = track.attach(videoElement);
+            attached = attachedElements && attachedElements.length > 0;
+            console.log(`[Safari] Method 3 (track.attach): attached=${attached}, elements=${attachedElements?.length || 0} for ${participantIdentity}`);
+        } catch (e) {
+            console.warn(`[Safari] Method 3 failed for ${participantIdentity}:`, e);
+        }
+    }
+
+    // Method 4: Try getting MediaStream from track directly
     if (!attached && track.mediaStream) {
         try {
             videoElement.srcObject = track.mediaStream;
             attached = !!videoElement.srcObject;
-            console.log(`[Safari] Method 3 (track.mediaStream): attached=${attached} for ${participantIdentity}`);
+            console.log(`[Safari] Method 4 (track.mediaStream): attached=${attached} for ${participantIdentity}`);
         } catch (e) {
-            console.warn(`[Safari] Method 3 failed for ${participantIdentity}:`, e);
+            console.warn(`[Safari] Method 4 failed for ${participantIdentity}:`, e);
         }
     }
 
@@ -475,8 +492,20 @@ async function connectToLiveKit(wsUrl, token) {
 
         // Configure RTC options with TURN/STUN servers, simulcast, and audio resilience
         // Safari: Disable adaptive features that cause track subscription issues
+        //
+        // Quality regime: ONE system manages per-tile resolution.
+        //  - Chrome/Edge/Firefox: adaptiveStream. The SDK measures each <video>
+        //    element registered via track.attach() and asks the SFU for exactly
+        //    the layer that fits it (main speaker -> 1080p, small tile -> 360p).
+        //    REQUIRES track.attach() — see attachVideoTrackSafari Method 1.
+        //    pixelDensity 'screen' multiplies by devicePixelRatio; without it a
+        //    retina MacBook tile requests CSS-pixel sizes = half resolution = blur.
+        //  - Safari: adaptiveStream off; manual setVideoQuality via
+        //    ActiveSpeakerManager (which is a no-op when adaptiveStream is on —
+        //    the SDK ignores manual quality calls in that mode).
+        window._adaptiveStreamOn = !isSafari;
         const roomOptions = {
-            adaptiveStream: !isSafari,  // Disable for Safari - causes track unsubscription
+            adaptiveStream: isSafari ? false : { pixelDensity: 'screen' },
             dynacast: !isSafari,        // Disable for Safari - causes track issues
             videoCaptureDefaults: {
                 resolution: isSafari
@@ -495,14 +524,16 @@ async function connectToLiveKit(wsUrl, token) {
                     maxBitrate: maxPublishBitrate,
                     maxFramerate: 30,
                 },
-                // Explicit 3-layer simulcast: ensures a true 180p lifeline layer exists
-                // for downlink-constrained subscribers. Without this, LiveKit derives
-                // layers from maxBitrate and the "low" layer can still be ~600 kbps,
-                // which a 1 Mbps user can't sustain.
+                // Simulcast ladder. IMPORTANT: the SDK uses only the FIRST TWO
+                // presets here (low, mid) + the original capture resolution as the
+                // top rung — a third preset is silently dropped. The previous
+                // [h180, h360, h720] therefore published 180p/360p/1080p: the 720p
+                // tier never existed, so any congestion step-down jumped straight
+                // from 1080p to 360p on the main speaker (the "blurry video" bug).
+                // Actual rungs now: 360p (~500 kbps) / 720p (~1.7 Mbps) / 1080p.
                 videoSimulcastLayers: isSafari ? [] : [
-                    LivekitClient.VideoPresets.h180,   // ~150 kbps - lifeline for slow viewers
-                    LivekitClient.VideoPresets.h360,   // ~500 kbps - default for small tiles
-                    LivekitClient.VideoPresets.h720,   // ~2 Mbps  - main speaker tier
+                    LivekitClient.VideoPresets.h360,   // low rung - small tiles + slow viewers
+                    LivekitClient.VideoPresets.h720,   // mid rung - the missing tier
                 ],
                 // Audio resilience for poor networks
                 audioPreset: LivekitClient.AudioPresets.speech,  // 24 kbps voice-tuned Opus
@@ -514,11 +545,18 @@ async function connectToLiveKit(wsUrl, token) {
                     maxBitrate: 8_000_000,
                     maxFramerate: 24,
                 },
+                // Screen share low rung: 720p, NOT 360p. When the SFU steps down
+                // under congestion, 640x360 of a 4K desktop capture is unreadable
+                // text — 720p keeps the share legible in the worst case.
                 screenShareSimulcastLayers: isSafari ? [] : [
-                    LivekitClient.VideoPresets.h360,  // forced low rung for slow viewers
+                    LivekitClient.VideoPresets.h720,
                 ],
-                videoCodec: isSafari ? 'vp8' : 'vp9',  // Safari: VP8 is more compatible
-                backupCodec: isSafari ? true : false,  // Safari: Allow fallback codec
+                // VP9: ~30-40% better quality per bit than VP8 (now enabled
+                // server-side; previously the server only allowed VP8/H264, so this
+                // setting silently fell back to VP8 for everyone). backupCodec keeps
+                // a VP8 backup publish for subscribers that can't decode VP9.
+                videoCodec: isSafari ? 'vp8' : 'vp9',
+                backupCodec: true,
             }
         };
 
@@ -1730,9 +1768,14 @@ function attachTrack(track, publication, participant) {
         const screenBtn = document.getElementById('screenBtn');
         const screenShareControls = document.getElementById('screenShareControls');
 
-        // Set highest quality for screen share - we want crisp text and details
-        publication.setVideoQuality(LivekitClient.VideoQuality.HIGH);
-        console.log('Screen share quality set to HIGH for best viewing experience');
+        // Set highest quality for screen share - we want crisp text and details.
+        // Only effective when adaptiveStream is off (Safari); with adaptiveStream
+        // on, the SDK sizes the layer from the (fullscreen) element — which
+        // resolves to the top layer anyway.
+        if (!window._adaptiveStreamOn) {
+            publication.setVideoQuality(LivekitClient.VideoQuality.HIGH);
+            console.log('Screen share quality set to HIGH for best viewing experience');
+        }
 
         // Use Safari-compatible method for screen share
         attachVideoTrackSafari(track, screenShareVideo, `${participant.identity}-screenshare`);

@@ -70,6 +70,13 @@ class ActiveSpeakerManager {
      * @param {boolean} isInitialSubscription - Whether this is the initial subscription (skip delay)
      */
     setVideoQualityDelayed(publication, quality, participantIdentity, isInitialSubscription = false) {
+        // Manual quality selection only functions when adaptive streaming is OFF
+        // (Safari). With adaptiveStream on, the SDK ignores setVideoQuality
+        // entirely ("adaptive stream is enabled, cannot change video track
+        // settings") and manages layers from attached-element size instead —
+        // calling it anyway just spams warnings and hides the real regime.
+        if (window._adaptiveStreamOn) return;
+
         const qualityLabel = quality === LivekitClient.VideoQuality.HIGH ? '1080p' :
                             quality === LivekitClient.VideoQuality.MEDIUM ? '360p' : '180p';
 
