@@ -145,13 +145,11 @@ class ActiveSpeakerManager {
             }
         });
 
-        // Listen for audio track published/unpublished
-        this.room.on('trackSubscribed', (track, publication, participant) => {
-            if (track.kind === 'audio') {
-                console.log('Audio track subscribed:', participant.identity);
-                this.monitorAudioLevel(track, participant);
-            }
-        });
+        // NOTE: speaker detection is driven entirely by the server-side
+        // 'activeSpeakersChanged' event above. A per-track 'audioLevelChanged'
+        // listener used to be registered here, but that event has never
+        // existed in any livekit-client version we've shipped — it was dead
+        // code that never fired, removed 2026-07-10.
 
         // CRITICAL: Listen for new participants joining
         // When a new participant connects, add them to the layout immediately
@@ -219,56 +217,6 @@ class ActiveSpeakerManager {
         this.updateVideoSubscriptions();
 
         // Notify UI to update layout
-        this.notifyLayoutChange();
-    }
-
-    /**
-     * Monitor audio level for more granular speaker detection
-     * @param {AudioTrack} audioTrack - The audio track to monitor
-     * @param {Participant} participant - The participant
-     */
-    monitorAudioLevel(audioTrack, participant) {
-        // LiveKit provides audio level monitoring
-        audioTrack.on('audioLevelChanged', (level) => {
-            if (level > this.speakingThreshold) {
-                this.updateSpeakerActivity(participant.sid, participant.identity);
-            }
-        });
-    }
-
-    /**
-     * Update speaker activity when they speak
-     * @param {string} participantSid - Participant SID
-     * @param {string} identity - Participant identity/name
-     */
-    updateSpeakerActivity(participantSid, identity) {
-        const now = Date.now();
-        const existingSpeaker = this.activeSpeakers.find(s => s.participantSid === participantSid);
-        const wasInTop5 = this.getVideoParticipants().some(p => p.participantSid === participantSid);
-
-        if (existingSpeaker) {
-            existingSpeaker.lastActiveTime = now;
-            existingSpeaker.isSpeaking = true;
-        } else {
-            this.activeSpeakers.push({
-                participantSid,
-                identity,
-                lastActiveTime: now,
-                isSpeaking: true
-            });
-        }
-
-        this.sortSpeakers();
-        const isInTop5 = this.getVideoParticipants().some(p => p.participantSid === participantSid);
-
-        if (!wasInTop5 && isInTop5) {
-            console.log(`⬆️ ${identity} moved INTO top ${this.maxVideoParticipants} video participants`);
-        } else if (wasInTop5 && isInTop5) {
-            console.log(`🔄 ${identity} spoke (already in top ${this.maxVideoParticipants})`);
-        }
-
-        this.updateMainSpeaker();
-        this.updateVideoSubscriptions();
         this.notifyLayoutChange();
     }
 

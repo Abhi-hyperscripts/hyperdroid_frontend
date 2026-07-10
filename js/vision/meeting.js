@@ -529,8 +529,14 @@ async function connectToLiveKit(wsUrl, token) {
             adaptiveStream: isSafari ? false : { pixelDensity: 'screen', pauseVideoInBackground: false },
             dynacast: !isSafari,        // Disable for Safari - causes track issues
             videoCaptureDefaults: {
-                resolution: isSafari
-                    ? LivekitClient.VideoPresets.h720.resolution  // Safari: Use 720p (more stable)
+                // Mobile Chrome: VP9 encode is SOFTWARE (libvpx) on most phone
+                // SoCs — 1080p x3 SVC layers pegs the CPU and, because the SDK
+                // uses 'maintain-resolution' for >=1080p capture, the encoder
+                // can only shed fps → 5-10fps judder. 720p capture halves the
+                // encode cost AND flips the SDK's per-track degradation
+                // default to 'balanced'. Desktops keep 1080p.
+                resolution: (isSafari || /Android|iPhone|iPad|Mobi/i.test(navigator.userAgent))
+                    ? LivekitClient.VideoPresets.h720.resolution  // Safari + mobile: 720p
                     : LivekitClient.VideoPresets.h1080.resolution,
             },
             // Browser audio preprocessing - helps every participant on every network.
