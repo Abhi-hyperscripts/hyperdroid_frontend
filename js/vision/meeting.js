@@ -366,7 +366,7 @@ if (!isAuthenticated && !isGuest) {
 // hard refreshes). This constant travels with the exact asset it protects.
 //
 // >>> BUMP MEETING_BUILD TOGETHER WITH SW_VERSION ON EVERY DEPLOY <<<
-const MEETING_BUILD = 1947;
+const MEETING_BUILD = 1948;
 
 async function assertFreshBuild() {
     try {
@@ -2667,9 +2667,14 @@ async function toggleScreenShare() {
                 displaySurface: 'monitor', // Prefer full screen capture
             },
             contentHint: 'text', // Optimize encoding for text clarity
-            resolution: slowShareLink
-                ? { width: 1920, height: 1080 }
-                : { width: 2560, height: 1440 },
+            // 1920x1080 capture on ALL paths — final config after live A/B:
+            // Chrome auto-throttles screenshare capture/encode to ~1080p no
+            // matter what (4K->1080, 1440p->1080, VP9 and VP8 alike; same
+            // reason Meet/Zoom cap at 1080p). Requesting more just adds a
+            // SECOND lossy scaling pass (screen->1440p->1080p) that visibly
+            // softens text. Capturing at exactly 1080p = one clean scale at
+            // the capturer + a 1:1 encode = the sharpest 1080p Chrome can do.
+            resolution: { width: 1920, height: 1080 },
         }, {
             // Encoding cap decided here, at share time, alongside the capture
             // resolution — both must reflect the CURRENT network, not the one
