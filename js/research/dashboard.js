@@ -486,7 +486,7 @@ async function deleteProject(projectId) {
 
     const confirmed = await Confirm.show({
         title: 'Delete Project',
-        message: `Are you sure you want to delete "${escapeHtml(project.name)}"? This will permanently remove the project and all its files. This action cannot be undone.`,
+        message: `Are you sure you want to delete "${project.name}"? This will permanently remove the project and all its files. This action cannot be undone.`,
         type: 'danger',
         confirmText: 'Delete',
         cancelText: 'Cancel'
@@ -569,10 +569,14 @@ function closeModal(modalId) {
  * @returns {string} Escaped HTML string
  */
 function escapeHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+    // Escape quotes too — values are frequently placed inside quoted HTML attributes,
+    // and the textContent trick does NOT escape " or ', enabling attribute-breakout XSS.
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 /**
@@ -637,6 +641,9 @@ function capitalizeFirst(str) {
 
 let csvConversionId = null;
 let csvUtilityConnection = null;
+// Guards against the SignalR completion event and the polling fallback BOTH triggering
+// a download of the same conversion (two save prompts / duplicate downloads).
+let csvDownloadStarted = false;
 
 function toggleUtilityDropdown(e) {
     e.stopPropagation();
@@ -690,6 +697,7 @@ async function submitCsvConversion() {
 
         const data = await response.json();
         csvConversionId = data.conversion_id;
+        csvDownloadStarted = false;
 
         // Connect SignalR for progress
         await connectCsvProgressHub(csvConversionId);
@@ -712,11 +720,13 @@ async function connectCsvProgressHub(conversionId) {
             .build();
 
         csvUtilityConnection.on('ConversionProgress', (data) => {
-            updateCsvProgress(data.stage, data.message, data.percentage * 100);
+            // Backend already sends percentage as 0–100; do NOT multiply again.
+            updateCsvProgress(data.stage, data.message, data.percentage);
         });
 
         csvUtilityConnection.on('ConversionComplete', (data) => {
-            updateCsvProgress('Complete!', `${data.row_count} rows x ${data.column_count} columns converted`, 100);
+            const stats = data.stats || {};
+            updateCsvProgress('Complete!', `${stats.row_count} rows x ${stats.column_count} columns converted`, 100);
             // Auto-download
             setTimeout(() => downloadCsvResult(data.conversion_id), 500);
         });
@@ -741,7 +751,8 @@ async function pollCsvStatus(conversionId) {
             if (!resp.ok) return;
             const data = await resp.json();
 
-            updateCsvProgress(data.stage, data.message, data.percentage * 100);
+            // Backend already sends percentage as 0–100; do NOT multiply again.
+            updateCsvProgress(data.stage, data.message, data.percentage);
 
             if (data.status === 'complete') {
                 setTimeout(() => downloadCsvResult(conversionId), 500);
@@ -762,6 +773,11 @@ async function pollCsvStatus(conversionId) {
 }
 
 async function downloadCsvResult(conversionId) {
+    // Only download once, even if both the SignalR completion event and the polling
+    // fallback observe completion. The backend deletes the file after the first fetch,
+    // so a second download would also fail.
+    if (csvDownloadStarted) return;
+    csvDownloadStarted = true;
     try {
         updateCsvProgress('Downloading...', 'Preparing download...', 95);
         const resp = await fetch(`${CONFIG.researchApiBaseUrl}/utility/csv-to-spss/${conversionId}/download`, {

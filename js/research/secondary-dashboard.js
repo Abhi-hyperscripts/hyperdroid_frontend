@@ -711,7 +711,13 @@ function stopPolling() {
 // ============================================
 
 async function connectSignalR(projectId) {
-    if (signalRConnection) return;
+    if (signalRConnection) {
+        // Already connected (e.g. generating a second project this session). Join the
+        // new project's progress group — otherwise its events never reach this client.
+        try { await signalRConnection.invoke('JoinSecondaryResearchProgress', projectId); }
+        catch (e) { console.warn('[SignalR] join for subsequent project failed', e); }
+        return;
+    }
 
     try {
         const token = api.token;
@@ -721,6 +727,13 @@ async function connectSignalR(projectId) {
             .withUrl(hubUrl)
             .withAutomaticReconnect()
             .build();
+
+        // SignalR group membership does not survive a reconnect — re-join the active
+        // generation's group so progress keeps flowing after a transient disconnect.
+        signalRConnection.onreconnected(() => {
+            const pid = activeGenerationProjectId || projectId;
+            if (pid) signalRConnection.invoke('JoinSecondaryResearchProgress', pid).catch(() => {});
+        });
 
         signalRConnection.on('SecondaryResearchProgressUpdate', (data) => {
             if (data.project_id !== projectId && data.project_id !== activeGenerationProjectId) return;
@@ -865,10 +878,15 @@ async function showVisitorsModal(shareToken) {
 // ============================================
 
 function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    // Escape quotes too — the Referer value (attacker-controlled via the anonymous
+    // view-tracking endpoint) is placed inside title="..." in the Visitors modal, and
+    // the textContent trick does NOT escape " or ' — a stored-XSS attribute breakout.
+    return String(text ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function countryCodeToFlag(code) {

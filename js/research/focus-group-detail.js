@@ -163,7 +163,7 @@ function renderRecordings() {
         const statusBadge = getStatusBadge(r);
         const meta = r.status === 'done'
             ? `${r.speakerCount} speakers | ${r.utteranceCount} utterances | ${formatDuration(r.audioDurationSeconds)}`
-            : r.progressMessage || r.status;
+            : r.progressMessage || r.progress_message || r.status;
 
         return `
         <div class="fg-recording" id="rec-${r.id}" data-id="${r.id}">
@@ -175,12 +175,12 @@ function renderRecordings() {
                 </div>
                 <div class="fg-recording-meta">
                     ${isProcessing(r)
-                        ? `<span style="font-size:12px; color:var(--brand-primary);">${esc(r.progressMessage || r.status)}</span>
+                        ? `<span style="font-size:12px; color:var(--brand-primary);">${esc(r.progressMessage || r.progress_message || r.status)}</span>
                            <div class="fg-progress-inline"><div class="fg-progress-bar"><div class="fg-progress-fill" style="width:${r.progress}%"></div></div><span style="font-size:11px;">${r.progress}%</span></div>`
                         : r.status === 'done'
                             ? `<span>${r.speakerCount || r.speaker_count || 0} speakers | ${r.utteranceCount || r.utterance_count || 0} utt | ${formatDuration(r.audioDurationSeconds || r.audio_duration_seconds)}</span>`
                             : ''}
-                    <span>${esc(r.fileName)}</span>
+                    <span>${esc(r.fileName || r.file_name || '')}</span>
                     <span>${(r.createdAt || r.created_at) ? new Date(r.createdAt || r.created_at).toLocaleDateString() : ''}</span>
                     <button class="fg-btn" onclick="event.stopPropagation(); renameRecording('${r.id}')">Rename</button>
                     <button class="fg-btn" onclick="event.stopPropagation(); moveRecording('${r.id}')" title="Move this session to another focus-group project">Move</button>
@@ -408,7 +408,7 @@ function startPolling(recordingId) {
             if (rec.status === 'done' || rec.status === 'failed') {
                 stopPolling(recordingId);
                 if (rec.status === 'done') Toast.success(`"${rec.title}" transcription complete`);
-                if (rec.status === 'failed') Toast.error(`"${rec.title}" failed: ${rec.errorMessage}`);
+                if (rec.status === 'failed') Toast.error(`"${rec.title}" failed: ${rec.errorMessage || rec.error_message || 'Unknown error'}`);
             }
         } catch (e) { /* ignore polling errors */ }
     }, 3000);
@@ -718,7 +718,7 @@ const FgdProgressPanel = (() => {
         try {
             conn = new signalR.HubConnectionBuilder()
                 .withUrl(`${base}/hubs/research`, {
-                    accessTokenFactory: () => (api.getToken ? api.getToken() : ''),
+                    accessTokenFactory: () => (typeof getAuthToken === 'function' ? getAuthToken() : api.token) || '',
                 })
                 .withAutomaticReconnect()
                 .configureLogging(signalR.LogLevel.Warning)
@@ -973,10 +973,14 @@ function norm(obj) {
 }
 
 function esc(text) {
-    if (!text) return '';
-    const d = document.createElement('div');
-    d.textContent = text;
-    return d.innerHTML;
+    // Escape quotes too — values are frequently placed inside quoted HTML attributes,
+    // and the textContent trick does NOT escape " or ', enabling attribute-breakout XSS.
+    return String(text ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function showModal(id) { document.getElementById(id).classList.add('active'); }

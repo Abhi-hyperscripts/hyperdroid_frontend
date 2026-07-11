@@ -64,7 +64,7 @@ async function loadProjects() {
                                         <button class="action-btn" onclick="openProject('${p.id}')" title="Open">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                                         </button>
-                                        <button class="action-btn danger" onclick="deleteProject('${p.id}', '${escapeHtml(p.name)}')" title="Delete">
+                                        <button class="action-btn danger" onclick="deleteProject('${p.id}', '${escAttrJs(p.name)}')" title="Delete">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                         </button>
                                     </div>
@@ -135,10 +135,24 @@ function handleProjectSearch() {
 }
 
 function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    // Escape quotes too — values are frequently placed inside quoted HTML attributes
+    // (and inline onclick handlers), and the textContent trick does NOT escape " or '.
+    return String(text ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Escape a value used as a JS string arg inside a double-quoted inline handler,
+// e.g. onclick="fn('${escAttrJs(x)}')". HTML-entity escaping alone is wrong here: a
+// &#39; decodes back to ' before the JS engine parses the handler, so the quote is
+// JS-escaped (\') while " / < / & are HTML-escaped to keep the attribute intact.
+function escAttrJs(s) {
+    return String(s ?? '')
+        .replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function showModal(id) { document.getElementById(id).classList.add('active'); }

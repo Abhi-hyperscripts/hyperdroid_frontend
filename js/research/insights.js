@@ -615,7 +615,7 @@
                     ${item.chart ? `<div class="ins-sr-chart" id="insSrChart-${idx}"></div>` : ''}
                     ${item.sources && item.sources.length > 0 ? `
                         <div class="ins-sr-sources">
-                            ${item.sources.map(s => `<a href="${esc(s.url || '#')}" target="_blank" rel="noopener noreferrer" class="ins-sr-source">
+                            ${item.sources.map(s => `<a href="${safeUrl(s.url)}" target="_blank" rel="noopener noreferrer" class="ins-sr-source">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                                 ${esc(s.title || s.url || 'Source')}
                             </a>`).join('')}
@@ -654,7 +654,7 @@
                     </div>
                     <div class="ins-sources-list">`;
                 byTier[tier].forEach(s => {
-                    html += `<a href="${esc(s.url || '#')}" target="_blank" rel="noopener nofollow" class="ins-source-item">
+                    html += `<a href="${safeUrl(s.url)}" target="_blank" rel="noopener nofollow" class="ins-source-item">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                         <span>${esc(s.title || s.domain || s.url || 'Source')}</span>
                         ${s.accessed_at ? `<span class="ins-source-date">${esc(s.accessed_at)}</span>` : ''}
@@ -815,7 +815,7 @@
                 chart.render();
                 kpiChartInstances.push(chart);
             } catch (e) {
-                el.innerHTML = `<div style="text-align:center;padding:20px;font-size:28px;font-weight:700;color:${color}">${displayValue}${suffix}</div>`;
+                el.innerHTML = `<div style="text-align:center;padding:20px;font-size:28px;font-weight:700;color:${color}">${esc(displayValue)}${esc(suffix)}</div>`;
             }
         });
     }
@@ -1926,10 +1926,29 @@
 
     // ═══ HELPERS ═══
     function esc(str) {
-        if (!str) return '';
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
+        // Escape quotes too — values land inside quoted HTML attributes on the public
+        // share page, and the textContent trick does NOT escape " or ' (attribute-breakout XSS).
+        return String(str ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    // Sanitize a URL for use in href on the PUBLIC share page. Source URLs come from
+    // LLM web research (attacker-influenced), so block javascript:/data:/vbscript: which
+    // would execute on click even though esc() prevents attribute breakout. Returns '#'
+    // for anything that isn't a plain http(s)/relative link, then HTML-escapes it.
+    function safeUrl(u) {
+        // Strip ALL control chars first: browsers remove tab/newline/CR even mid-scheme,
+        // so "java\tscript:alert(1)" would otherwise slip past the scheme test as "relative".
+        const raw = String(u ?? '').replace(/[\u0000-\u0020\u007F-\u009F]/g, '').trim();
+        if (!raw) return '#';
+        // Reject any scheme other than http/https (relative URLs have no scheme).
+        const scheme = raw.match(/^([a-z][a-z0-9+.-]*):/i);
+        if (scheme && !/^https?$/i.test(scheme[1])) return '#';
+        return esc(raw);
     }
 
     /**
@@ -1949,9 +1968,8 @@
                 if (!s) return '';
                 const num = id.replace('src', '');
                 const title = esc(s.title || s.domain || s.url || 'Source');
-                const url = esc(s.url || '#');
                 const tierLabel = { 1: 'Government & Academic', 2: 'Major Research Firm', 3: 'Reputable Media', 4: 'Industry & Corporate' }[s.tier] || '';
-                return `<a href="${url}" target="_blank" rel="noopener nofollow" class="ins-src-badge" title="${title}${tierLabel ? ' (Tier ' + s.tier + ': ' + tierLabel + ')' : ''}">${num}</a>`;
+                return `<a href="${safeUrl(s.url)}" target="_blank" rel="noopener nofollow" class="ins-src-badge" title="${title}${tierLabel ? ' (Tier ' + s.tier + ': ' + tierLabel + ')' : ''}">${num}</a>`;
             }).filter(Boolean);
             return badges.length > 0 ? `<sup class="ins-src-group">${badges.join('')}</sup>` : match;
         });
@@ -2047,7 +2065,7 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             <div class="ins-info-popover ins-source-popover" id="${popoverId}">
                 <div style="font-size:11px;font-weight:600;margin-bottom:4px;color:var(--ins-text-secondary);">Source</div>
-                <a href="${esc(src.url || '#')}" target="_blank" rel="noopener" style="color:var(--ins-accent);text-decoration:none;font-size:12px;word-break:break-all;">${esc(src.title || src.domain || src.url || 'Source')}</a>
+                <a href="${safeUrl(src.url)}" target="_blank" rel="noopener" style="color:var(--ins-accent);text-decoration:none;font-size:12px;word-break:break-all;">${esc(src.title || src.domain || src.url || 'Source')}</a>
                 ${src.tier ? `<div style="margin-top:4px;font-size:10px;color:var(--ins-text-muted);">Tier ${src.tier} source${src.accessed_at ? ' · Accessed ' + esc(src.accessed_at) : ''}</div>` : ''}
             </div>
         </span>`;
@@ -2061,7 +2079,7 @@
         if (validSources.length === 0) return '';
         const sourcesHtml = validSources.map(s =>
             `<div style="margin-bottom:6px;">
-                <a href="${esc(s.url || '#')}" target="_blank" rel="noopener" style="color:var(--ins-accent);text-decoration:none;font-size:12px;word-break:break-all;">${esc(s.title || s.domain || s.url || 'Source')}</a>
+                <a href="${safeUrl(s.url)}" target="_blank" rel="noopener" style="color:var(--ins-accent);text-decoration:none;font-size:12px;word-break:break-all;">${esc(s.title || s.domain || s.url || 'Source')}</a>
                 ${s.tier ? `<div style="font-size:10px;color:var(--ins-text-muted);">Tier ${s.tier}${s.accessed_at ? ' · ' + esc(s.accessed_at) : ''}</div>` : ''}
             </div>`
         ).join('');
@@ -3188,7 +3206,12 @@
             // Collect all selected card DOM elements in order
             const cards = [];
             for (const key of selectedCharts) {
-                const [tabId, idx] = key.split('-');
+                // Key is `${tabId}-${chartIdx}`; tabId itself may contain hyphens
+                // (e.g. "brand-health" or the default "tab-0"), so split on the LAST
+                // hyphen only — a plain split('-') would truncate the tab id and match nothing.
+                const splitAt = key.lastIndexOf('-');
+                const tabId = splitAt >= 0 ? key.slice(0, splitAt) : key;
+                const idx = splitAt >= 0 ? key.slice(splitAt + 1) : '';
                 const card = document.querySelector(`.ins-chart-card[data-chart-tab="${tabId}"][data-chart-idx="${idx}"]`);
                 if (card) cards.push(card);
             }

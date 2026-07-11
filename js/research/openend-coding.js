@@ -723,7 +723,7 @@ function renderJobCard(job) {
         <button class="oe-btn oe-btn-primary oe-btn-xs" onclick="loadOeResults('${job.id}')">View Results</button>
         <button class="oe-btn oe-btn-ghost oe-btn-xs" onclick="openCostBreakdown('${job.id}')">Cost</button>
         <button class="oe-btn oe-btn-secondary oe-btn-xs" onclick="rerunCoding('${job.id}')">Re-run</button>
-        <button class="oe-btn oe-btn-secondary oe-btn-xs" onclick="codeNewRows('${fileId}', '${escapeHtml(varName).replace(/'/g, "\\'")}')" title="Code new rows from the latest wave, reusing this codeframe">Code new rows</button>
+        <button class="oe-btn oe-btn-secondary oe-btn-xs" onclick="codeNewRows('${fileId}', '${escAttrJs(varName)}')" title="Code new rows from the latest wave, reusing this codeframe">Code new rows</button>
         <button class="oe-btn oe-btn-ghost oe-btn-xs" onclick="exportCoding('${job.id}')">Export</button>
     </div>`;
 }
@@ -1140,7 +1140,7 @@ function renderResultsTable(items, totalCount) {
         const sentimentStr = sentimentVal != null ? (sentimentVal > 0 ? '+' : '') + sentimentVal.toFixed(2) : '';
         const sBadgeCls = sentimentVal > 0.2 ? 'oe-tip-pos' : sentimentVal < -0.2 ? 'oe-tip-neg' : 'oe-tip-neu';
         const rTipId = 'r' + (++_tipIdx);
-        window._oeTips[rTipId] = `<div class="oe-tip-text">${escapeHtml(text)}</div><hr><span class="oe-tip-label">Sentiment</span><span class="oe-tip-badge ${sBadgeCls}">${sentimentStr}</span> <span class="oe-tip-label" style="margin-left:8px">Confidence</span><span class="oe-tip-badge oe-tip-neu">${(confidence * 100).toFixed(0)}%</span> <span class="oe-tip-label" style="margin-left:8px">Method</span><span class="oe-tip-badge oe-tip-neu">${method}</span>`;
+        window._oeTips[rTipId] = `<div class="oe-tip-text">${escapeHtml(text)}</div><hr><span class="oe-tip-label">Sentiment</span><span class="oe-tip-badge ${sBadgeCls}">${sentimentStr}</span> <span class="oe-tip-label" style="margin-left:8px">Confidence</span><span class="oe-tip-badge oe-tip-neu">${(confidence * 100).toFixed(0)}%</span> <span class="oe-tip-label" style="margin-left:8px">Method</span><span class="oe-tip-badge oe-tip-neu">${escapeHtml(method)}</span>`;
 
         // Build the code summary for the expandable detail row
         const codeList = Array.from(codeMap.values())
@@ -1167,7 +1167,7 @@ function renderResultsTable(items, totalCount) {
                 <span class="oe-expand-arrow">&#9662;</span>
                 <a class="oe-matrix-edit" onclick="event.stopPropagation();editOeCoding('${oeCurrentJobId}', ${rowId})">&#9998;</a>
             </td>
-            <td class="oe-matrix-method"><span class="oe-method-badge oe-method-${method}">${method}</span></td>`;
+            <td class="oe-matrix-method"><span class="oe-method-badge oe-method-${escapeHtml(method)}">${escapeHtml(method)}</span></td>`;
 
         // Compact code cells — fill N columns left-to-right with assigned codes
         const sortedCodes = Array.from(codeMap.values())
@@ -1469,10 +1469,24 @@ function closeCostBreakdownModal() {
 // ============================================
 
 function escapeHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+    // Escape quotes too — values are frequently placed inside quoted HTML attributes,
+    // and the textContent trick does NOT escape " or ', enabling attribute-breakout XSS.
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Escape a value used as a JS string arg inside a double-quoted inline handler,
+// e.g. onclick="fn('${escAttrJs(x)}')". HTML-entity escaping alone is wrong here: a
+// &#39; decodes back to ' before the JS engine parses the handler, so the quote is
+// JS-escaped (\') while " / < / & are HTML-escaped to keep the attribute intact.
+function escAttrJs(s) {
+    return String(s ?? '')
+        .replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ============================================
@@ -1629,8 +1643,20 @@ async function openCodeSummary() {
 
     try {
         // Fetch ALL results (no pagination) to count code frequencies
-        const data = await api.request(`/research/projects/${projectId}/openend-coding/jobs/${oeCurrentJobId}/results?page=1&pageSize=10000`);
-        const items = data.items || [];
+        // Fetch ALL coded responses across pages — a single page=1&pageSize=10000 request
+        // silently truncates jobs with more than 10,000 responses, making every count and
+        // the percentage base (items.length) wrong for large studies.
+        const oePageSize = 10000;
+        let items = [];
+        let oePage = 1;
+        while (true) {
+            const data = await api.request(`/research/projects/${projectId}/openend-coding/jobs/${oeCurrentJobId}/results?page=${oePage}&pageSize=${oePageSize}`);
+            const batch = data.items || [];
+            items = items.concat(batch);
+            const totalCount = data.total_count ?? items.length;
+            if (batch.length < oePageSize || items.length >= totalCount) break;
+            oePage++;
+        }
         const totalResponses = items.length;
 
         // Count: for each code_value, how many RESPONSES have it in any code slot

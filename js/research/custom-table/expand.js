@@ -83,7 +83,10 @@
             ? `'${String(code).replace(/'/g, "''")}'`
             : String(code);
 
-        const includeAll = !includedCodes || includedCodes.length === 0;
+        // null/undefined = never filtered → include all. An explicit EMPTY array means the
+        // user unchecked every code ("select none") — that must expand to nothing (the ctRun
+        // guard then warns "no matching codes"), NOT silently fall back to including all.
+        const includeAll = includedCodes == null;
         const includeSet = includeAll ? null : new Set(includedCodes.map(String));
         const keep = (code) => includeAll || includeSet.has(String(code));
 

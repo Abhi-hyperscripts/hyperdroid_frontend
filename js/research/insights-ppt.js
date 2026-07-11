@@ -563,11 +563,19 @@ function generateInsightsPPT(data, opts = {}) {
 
         const colors = series.map((_, i) => getChartColor(i));
 
+        // Match the on-screen renderer: only normalize to 100% when the values are
+        // percentages (or a legacy dashboard with no value_format) AND there are multiple
+        // series. Absolute counts/currency must stay as a plain stack so magnitudes survive.
+        const d = config.data || {};
+        const isPercentFormat = !d.value_format || d.value_format === 'percentage'
+            || (d.value_format === 'custom' && d.value_suffix === '%');
+        const usePercentStack = series.length > 1 && isPercentFormat;
+
         slide.addChart(pptx.charts.BAR, chartData, {
             x: r.x, y: r.y, w: r.w, h: r.h,
             showTitle: false,
             barDir: 'bar',
-            barGrouping: 'percentStacked',
+            barGrouping: usePercentStack ? 'percentStacked' : 'stacked',
             chartColors: colors,
             showValue: true,
             dataLabelPosition: 'ctr',

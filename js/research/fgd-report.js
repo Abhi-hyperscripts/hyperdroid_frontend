@@ -1448,10 +1448,18 @@ function onDownloadPPT() {
         if ((cs.universals || []).length > 0) {
             const s = pptx.addSlide();
             addHeader(s, 'Universal themes', 'Claims that appear across ALL sessions');
-            const rows = cs.universals.slice(0, 8).map((u, i) => ({
-                text: `${(u.theme_name || u.theme_id)} — ${stripQuoteIds(u.description || u.pattern || '')}`,
-                options: { bullet: { type: 'bullet' }, paraSpaceAfter: 8 },
-            }));
+            // cs.universals is an array of theme_id STRINGS (not objects). Resolve each
+            // to its theme name from rj.themes; the old u.theme_name/u.description reads
+            // were all undefined and printed "undefined — ".
+            const themesById = {};
+            for (const t of (rj.themes || [])) themesById[t.theme_id] = t;
+            const rows = cs.universals.slice(0, 8).map((tid) => {
+                const t = themesById[tid];
+                return {
+                    text: t ? `${tid} — ${stripQuoteIds(t.name || '')}` : String(tid),
+                    options: { bullet: { type: 'bullet' }, paraSpaceAfter: 8 },
+                };
+            });
             s.addText(rows, { x: 0.6, y: 1.45, w: 12.1, h: 5.3, fontSize: 12, color: C.body, fontFace: FONT, valign: 'top' });
             slides.push(s);
         }
@@ -1465,11 +1473,13 @@ function onDownloadPPT() {
             s.addText(rows, { x: 0.6, y: 1.45, w: 12.1, h: 5.3, fontSize: 12, color: C.body, fontFace: FONT, valign: 'top' });
             slides.push(s);
         }
-        if ((cs.narratives || []).length > 0) {
+        if ((cs.session_narratives || []).length > 0) {
             const s = pptx.addSlide();
             addHeader(s, 'Narratives', 'Storylines threading across sessions');
-            const rows = cs.narratives.slice(0, 4).map(n => ({
-                text: `${n.title || ''} — ${stripQuoteIds(n.narrative || '')}`,
+            // Schema field is session_narratives (not narratives); each item has
+            // session_title/session_id + narrative (no `title`).
+            const rows = cs.session_narratives.slice(0, 4).map(n => ({
+                text: `${n.session_title || n.session_id || ''} — ${stripQuoteIds(n.narrative || '')}`,
                 options: { bullet: { type: 'bullet' }, paraSpaceAfter: 12 },
             }));
             s.addText(rows, { x: 0.6, y: 1.45, w: 12.1, h: 5.3, fontSize: 12, color: C.body, fontFace: FONT, valign: 'top' });
@@ -1675,7 +1685,7 @@ async function startSignalR() {
     const base = (CONFIG.researchApiBaseUrl || CONFIG.visionApiBaseUrl || '').replace(/\/api$/, '');
     const hubUrl = `${base}/hubs/research`;
     const conn = new signalR.HubConnectionBuilder()
-        .withUrl(hubUrl, { accessTokenFactory: () => api.getToken ? api.getToken() : (localStorage.getItem('token') || '') })
+        .withUrl(hubUrl, { accessTokenFactory: () => (typeof getAuthToken === 'function' ? getAuthToken() : api.token) || '' })
         .withAutomaticReconnect()
         .configureLogging(signalR.LogLevel.Warning)
         .build();
@@ -1685,9 +1695,14 @@ async function startSignalR() {
         if (evt.stage === 'failed') showError(evt.message || 'Report failed');
         else if (evt.stage === 'done') await loadJob();
     });
+    // SignalR group membership is lost on reconnect — re-join so progress keeps flowing.
+    conn.onreconnected(() => conn.invoke('JoinFgdReportProgress', jobId).catch(() => {}));
     try {
         await conn.start();
         await conn.invoke('JoinFgdReportProgress', jobId);
+        // Belt-and-suspenders: poll in parallel so a missed 'done' event (job finished
+        // before the join landed, or a reconnect gap) can't leave the overlay stuck.
+        pollLoop();
     } catch (err) {
         console.warn('[fgd-report] SignalR connect failed; polling fallback', err);
         pollLoop();

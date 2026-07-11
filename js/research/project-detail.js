@@ -293,14 +293,14 @@ function renderFileRow(file) {
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                 </button>` : ''}
-                ${status === 'ready' ? `<button class="btn-icon" onclick="openWaveModal('${fileId}', '${escapeHtml(fileName)}')" title="Add wave / append more data" style="color: var(--text-secondary);">
+                ${status === 'ready' ? `<button class="btn-icon" onclick="openWaveModal('${fileId}', '${escAttrJs(fileName)}')" title="Add wave / append more data" style="color: var(--text-secondary);">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>
                         <path d="M3 6c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>
                         <path d="M3 18c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>
                     </svg>
                 </button>` : ''}
-                <button class="btn-icon-danger" onclick="deleteFile('${fileId}', '${escapeHtml(fileName)}')" title="${['uploading','parsing','loading_data'].includes(status) ? 'Cannot delete while processing' : 'Delete file'}"${['uploading','parsing','loading_data'].includes(status) ? ' disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
+                <button class="btn-icon-danger" onclick="deleteFile('${fileId}', '${escAttrJs(fileName)}')" title="${['uploading','parsing','loading_data'].includes(status) ? 'Cannot delete while processing' : 'Delete file'}"${['uploading','parsing','loading_data'].includes(status) ? ' disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"/>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -349,14 +349,14 @@ function renderFileCard(file) {
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                 </button>` : ''}
-                ${status === 'ready' ? `<button class="btn-icon" onclick="openWaveModal('${fileId}', '${escapeHtml(fileName)}')" title="Add wave / append more data" style="color: var(--text-secondary);">
+                ${status === 'ready' ? `<button class="btn-icon" onclick="openWaveModal('${fileId}', '${escAttrJs(fileName)}')" title="Add wave / append more data" style="color: var(--text-secondary);">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>
                         <path d="M3 6c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>
                         <path d="M3 18c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/>
                     </svg>
                 </button>` : ''}
-                <button class="btn-icon-danger" onclick="deleteFile('${fileId}', '${escapeHtml(fileName)}')" title="${isProcessing ? 'Cannot delete while processing' : 'Delete file'}"${isProcessing ? ' disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
+                <button class="btn-icon-danger" onclick="deleteFile('${fileId}', '${escAttrJs(fileName)}')" title="${isProcessing ? 'Cannot delete while processing' : 'Delete file'}"${isProcessing ? ' disabled style="opacity:0.3;cursor:not-allowed;"' : ''}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"/>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -1946,7 +1946,7 @@ function renderVariables() {
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
                                     </button>
                                     <div class="var-ctx-menu" id="varCtx_${rowIdx}">
-                                        <button class="var-ctx-menu-item" onclick="copyVarName('${escapeHtml(varName)}')">
+                                        <button class="var-ctx-menu-item" onclick="copyVarName('${escAttrJs(varName)}')">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                                             Copy Name
                                         </button>
@@ -2019,7 +2019,7 @@ function renderVariableCard(v, globalIdx) {
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
                         </button>
                         <div class="var-ctx-menu" id="varCtxCard_${globalIdx}">
-                            <button class="var-ctx-menu-item" onclick="copyVarName('${escapeHtml(varName)}')">
+                            <button class="var-ctx-menu-item" onclick="copyVarName('${escAttrJs(varName)}')">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                                 Copy Name
                             </button>
@@ -2358,7 +2358,7 @@ function updateAvailableTables() {
 
         return `
             <li>
-                <span class="table-name" onclick="insertTableName('${escapeHtml(tableName)}')" title="Click to insert into query">${escapeHtml(tableName)}</span>
+                <span class="table-name" onclick="insertTableName('${escAttrJs(tableName)}')" title="Click to insert into query">${escapeHtml(tableName)}</span>
                 <span style="color: var(--text-muted);">${escapeHtml(fileName)} (${formatNumber(rowCount)} rows, ${varCount} cols)</span>
             </li>
         `;
@@ -2591,7 +2591,7 @@ function renderValidationError(container, errorData) {
         html += `<div class="validation-suggestions">`;
         html += `<span class="validation-suggestions-label">Did you mean?</span>`;
         for (const [unknown, suggested] of Object.entries(suggestions)) {
-            html += `<button class="validation-suggestion-btn" onclick="applySuggestion('${escapeHtml(unknown)}', '${escapeHtml(suggested)}')">${escapeHtml(unknown)} &rarr; <strong>${escapeHtml(suggested)}</strong></button>`;
+            html += `<button class="validation-suggestion-btn" onclick="applySuggestion('${escAttrJs(unknown)}', '${escAttrJs(suggested)}')">${escapeHtml(unknown)} &rarr; <strong>${escapeHtml(suggested)}</strong></button>`;
         }
         html += `</div>`;
     }
@@ -3177,7 +3177,7 @@ async function sendAiMessage() {
 
     try {
         // Get active file ID if a specific file is selected
-        const fileFilter = document.getElementById('varFileFilter');
+        const fileFilter = document.getElementById('variableFileFilter');
         let fileId = null;
         if (fileFilter && fileFilter.value) {
             fileId = fileFilter.value;
@@ -3447,9 +3447,9 @@ function renderAiContent(text, stripChartMarkers = false) {
     if (stripChartMarkers) {
         text = text.replace(/\[CHART:\d+\]\n?/g, '');
     }
-    // Use marked.js library for proper markdown rendering
+    // Use marked.js library for proper markdown rendering (sanitized — see sanitizeMarkedHtml)
     if (typeof marked !== 'undefined') {
-        return marked.parse(text);
+        return sanitizeMarkedHtml(marked.parse(text));
     }
     // Fallback: basic text with line breaks if marked.js not loaded
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
@@ -3537,8 +3537,44 @@ function renderInlineCharts(msgEl, charts) {
     });
 }
 
+// Escape a value used as a JS string argument inside a double-quoted inline handler,
+// e.g. onclick="fn('${escAttrJs(x)}')". Plain HTML escaping is insufficient here: a
+// &#39; entity decodes back to ' BEFORE the JS engine parses the handler, so the quote
+// must be JS-escaped (\'), while " / < / & are HTML-escaped to keep the attribute intact.
+function escAttrJs(s) {
+    return String(s ?? '')
+        .replace(/\\/g, '\\\\').replace(/'/g, "\\'")
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Sanitize HTML produced by marked.parse() before it is assigned to innerHTML.
+// marked v15 no longer escapes raw HTML and no DOMPurify is loaded, so LLM output and
+// function-result cells (which can contain untrusted survey verbatims) would otherwise be
+// a stored-XSS sink. Parse into an INERT <template> (scripts don't run, images don't load),
+// strip dangerous tags, on* handlers, and javascript:/data: URLs, then serialize back.
+function sanitizeMarkedHtml(html) {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = String(html ?? '');
+    tpl.content.querySelectorAll('script,iframe,object,embed,link,meta,style,form,base').forEach(n => n.remove());
+    tpl.content.querySelectorAll('*').forEach(el => {
+        for (const attr of [...el.attributes]) {
+            const name = attr.name.toLowerCase();
+            if (name.startsWith('on')) { el.removeAttribute(attr.name); continue; }
+            if (name === 'href' || name === 'src' || name === 'xlink:href') {
+                // Strip control chars before the scheme test — browsers ignore tab/newline/CR
+                // even mid-scheme, so "java\tscript:" must not slip through.
+                const v = attr.value.replace(/[\u0000-\u0020\u007F-\u009F]/g, '');
+                if (/^(javascript|data|vbscript):/i.test(v)) el.removeAttribute(attr.name);
+            }
+        }
+    });
+    return tpl.innerHTML;
+}
+
 function escapeHtml(str) {
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return String(str ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 /**
@@ -4681,7 +4717,7 @@ function showLlmResponse(msgIndex, messageSource) {
     let rendered = '';
     if (typeof marked !== 'undefined') {
         try {
-            rendered = marked.parse(msg.content || '');
+            rendered = sanitizeMarkedHtml(marked.parse(msg.content || ''));
         } catch (e) {
             rendered = `<pre style="white-space:pre-wrap;">${escapeHtml(msg.content || '')}</pre>`;
         }
@@ -5932,7 +5968,7 @@ function renderFnResults(response, funcName, varName, varLabel) {
         // Render markdown
         if (md) {
             try {
-                html = `<div class="fn-summary fn-summary-md" style="padding: 14px;">${(typeof marked !== 'undefined' && marked.parse) ? marked.parse(md) : escapeHtml(md)}</div>`;
+                html = `<div class="fn-summary fn-summary-md" style="padding: 14px;">${(typeof marked !== 'undefined' && marked.parse) ? sanitizeMarkedHtml(marked.parse(md)) : escapeHtml(md)}</div>`;
             } catch(e) {
                 html = `<div class="fn-summary" style="padding: 14px;">${escapeHtml(md)}</div>`;
             }
@@ -6260,10 +6296,9 @@ function restoreFnPopup() {
 // ============================================
 
 function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    const div = document.createElement('div');
-    div.textContent = String(str);
-    return div.innerHTML;
+    return String(str ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function formatDate(dateStr) {
@@ -6787,16 +6822,19 @@ function renderEmbedList() {
             <span class="embed-list-badge ${enabled ? 'enabled' : 'disabled'}">${enabled ? 'Enabled' : 'Disabled'}</span>
             <div class="embed-list-actions">
                 <button onclick="openEmbedDetail('${id}')">Edit</button>
-                <button class="delete-btn" onclick="deleteEmbedConfig('${id}', '${escapeHtml(name)}')">Delete</button>
+                <button class="delete-btn" onclick="deleteEmbedConfig('${id}', '${escAttrJs(name)}')">Delete</button>
             </div>
         </div>`;
     }).join('');
 }
 
 function escapeHtml(s) {
-    const div = document.createElement('div');
-    div.textContent = s;
-    return div.innerHTML;
+    // Quote-safe + null-guarded. This is the LAST declaration in the file, so by
+    // function-hoisting it is the one that wins for the whole script — it must escape
+    // " and ' (values are used inside quoted attributes and inline onclick handlers).
+    return String(s ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ---- Detail view (edit / create) ----
@@ -8090,10 +8128,10 @@ async function loadQuestionnaireList() {
                     </div>
                     <div class="questionnaire-item-actions">
                         ${hasDetails ? `<button class="btn-expand-details" onclick="toggleQuestionnaireDetails(this)" title="Show details"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>` : ''}
-                        ${status !== 'ready' && status !== 'failed' ? `<button class="btn-track-progress" onclick="trackQuestionnaireProgress('${id}', '${escapeHtml(fileName).replace(/'/g, "\\'")}')" title="Show parsing progress">Track</button>` : ''}
-                        ${status === 'ready' ? `<button class="btn-view-questionnaire" onclick="openQuestionnaireViewer('${id}', '${escapeHtml(fileName).replace(/'/g, "\\'")}')">View</button>` : ''}
+                        ${status !== 'ready' && status !== 'failed' ? `<button class="btn-track-progress" onclick="trackQuestionnaireProgress('${id}', '${escAttrJs(fileName)}')" title="Show parsing progress">Track</button>` : ''}
+                        ${status === 'ready' ? `<button class="btn-view-questionnaire" onclick="openQuestionnaireViewer('${id}', '${escAttrJs(fileName)}')">View</button>` : ''}
                         ${status === 'ready' && !isActive ? `<button class="btn-activate" onclick="activateQuestionnaire('${id}')">Set Active</button>` : ''}
-                        <button class="btn-icon-danger" onclick="deleteQuestionnaire('${id}', '${escapeHtml(fileName).replace(/'/g, "\\'")}')" title="Delete">
+                        <button class="btn-icon-danger" onclick="deleteQuestionnaire('${id}', '${escAttrJs(fileName)}')" title="Delete">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -9296,6 +9334,12 @@ async function loadWaveHistory() {
         const token = getAuthToken();
         const url = `${CONFIG.researchApiBaseUrl}/files/${waveModalState.fileId}/waves`;
         const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) {
+            // Distinguish a real error (401/403/500) from a genuinely empty history —
+            // otherwise an auth/server failure is silently shown as "No waves recorded yet."
+            container.innerHTML = '<div class="wave-history-empty">Could not load wave history. Please try again.</div>';
+            return;
+        }
         const body = await res.json();
         const waves = body.waves || [];
         if (waves.length === 0) {
