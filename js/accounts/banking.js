@@ -17,6 +17,10 @@ let recentTransfers = [];
 let currentTxnPage = 1;
 let currentReconId = null;
 let reconTransactions = [];
+// Matched rows are spliced out of reconTransactions after each PUT, so keep a
+// running count for the Complete Reconciliation summary (the transaction model
+// has no is_matched field).
+let reconMatchedCount = 0;
 const TXN_PAGE_SIZE = 50;
 
 // Dropdown instances
@@ -335,9 +339,12 @@ async function saveBankAccount() {
     const bankName = document.getElementById('bankName').value.trim();
     const accountNumber = document.getElementById('accountNumber').value.trim();
     const accountType = document.getElementById('accountType').value;
+    const glAccountId = document.getElementById('glAccountId').value;
 
-    if (!accountName || !bankName || !accountNumber || !accountType) {
-        Toast.error('Account Name, Bank Name, Account Number, and Type are required');
+    // Backend CreateBankAccountRequest.gl_account_id is a non-nullable Guid —
+    // sending null 400s, so require it client-side.
+    if (!accountName || !bankName || !accountNumber || !accountType || !glAccountId) {
+        Toast.error('Account Name, Bank Name, Account Number, Type, and GL Account are required');
         return;
     }
 
@@ -349,7 +356,7 @@ async function saveBankAccount() {
         ifsc_code: document.getElementById('ifscCode').value.trim() || null,
         swift_code: document.getElementById('swiftCode').value.trim() || null,
         branch: document.getElementById('branchName').value.trim() || null,
-        gl_account_id: document.getElementById('glAccountId').value || null,
+        gl_account_id: glAccountId,
         is_default: document.getElementById('isDefault').checked
     };
 
@@ -379,7 +386,7 @@ async function loadBankTransactions() {
         const bankId = txnBankFilterDropdown?.getValue?.() || '';
         if (!bankId) {
             const tbody = document.getElementById('bankTransactionsTable');
-            if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1rem; color:var(--text-secondary);">Select a bank account to view transactions</td></tr>';
+            if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:1rem; color:var(--text-secondary);">Select a bank account to view transactions</td></tr>';
             return;
         }
 
@@ -414,7 +421,7 @@ function renderBankTransactionsTable() {
     const tbody = document.getElementById('bankTransactionsTable');
     if (!tbody) return;
     if (!bankTransactions.length) {
-        tbody.innerHTML = `<tr class="empty-state"><td colspan="8"><div class="empty-message">
+        tbody.innerHTML = `<tr class="empty-state"><td colspan="7"><div class="empty-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg><p>No transactions found</p></div></td></tr>`;
         return;
     }
@@ -422,22 +429,9 @@ function renderBankTransactionsTable() {
     const isAdmin = accountsRoles.isAdmin();
     const delSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
 
-    // Compute running balance client-side (oldest → newest) so users see
-    // their ledger evolve row-by-row. Assumes backend sends newest first.
-    // We work on a sorted copy so we don't mutate the cached list.
-    const sortedOldest = [...bankTransactions].sort((a, b) => {
-        const da = new Date(a.transaction_date || a.date).getTime();
-        const db = new Date(b.transaction_date || b.date).getTime();
-        if (da !== db) return da - db;
-        return (a.created_at || '').localeCompare(b.created_at || '');
-    });
-    const balanceByTxnId = {};
-    let runningBal = 0;
-    sortedOldest.forEach(t => {
-        const isInflow = t.transaction_type === 'deposit' || t.transaction_type === 'transfer_in' || t.transaction_type === 'interest';
-        runningBal += isInflow ? Number(t.amount || 0) : -Number(t.amount || 0);
-        balanceByTxnId[t.id] = runningBal;
-    });
+    // Note: the old "Balance" column was removed — it was a per-page running
+    // total starting at 0 (the backend provides no opening balance for the
+    // page), which misread as an authoritative ledger balance.
 
     tbody.innerHTML = bankTransactions.map(t => {
         // From the account HOLDER's perspective (our ledger, not the bank's
@@ -448,7 +442,6 @@ function renderBankTransactionsTable() {
         const isInflow = inflowTypes.includes(t.transaction_type);
         const debit = isInflow ? fmt(t.amount) : '-';
         const credit = !isInflow ? fmt(t.amount) : '-';
-        const runningBalance = balanceByTxnId[t.id];
         const reconBadge = t.is_reconciled
             ? '<span class="status-badge active" style="font-size:0.7rem;">Yes</span>'
             : '<span class="status-badge" style="font-size:0.7rem;">No</span>';
@@ -461,7 +454,6 @@ function renderBankTransactionsTable() {
             <td>${esc((t.transaction_type || t.type || '').charAt(0).toUpperCase() + (t.transaction_type || t.type || '').slice(1))}</td>
             <td class="text-right">${debit}</td>
             <td class="text-right">${credit}</td>
-            <td class="text-right">${runningBalance != null ? fmt(runningBalance) : '-'}</td>
             <td>${reconBadge}</td>
             <td class="actions-cell">${actions}</td>
         </tr>`;
@@ -488,12 +480,16 @@ function populateCounterAccountSelect(selectedId) {
     if (!sel) return;
     const esc = AccountsCommon.escapeHtml;
     sel.innerHTML = '<option value="">Select Account...</option>' +
-        coaAccounts.map(a => {
-            const code = a.account_code || a.code || '';
-            const name = a.account_name || a.name || '';
-            const label = code ? code + ' - ' + name : name;
-            return `<option value="${a.id}" ${a.id === selectedId ? 'selected' : ''}>${esc(label)}</option>`;
-        }).join('');
+        coaAccounts
+            // Only postable accounts are valid counter accounts — the backend rejects
+            // header/non-postable GLs (allow_direct_posting = false) with a 409.
+            .filter(a => a.allow_direct_posting)
+            .map(a => {
+                const code = a.account_code || a.code || '';
+                const name = a.account_name || a.name || '';
+                const label = code ? code + ' - ' + name : name;
+                return `<option value="${a.id}" ${a.id === selectedId ? 'selected' : ''}>${esc(label)}</option>`;
+            }).join('');
 }
 
 async function saveBankTransaction() {
@@ -501,9 +497,12 @@ async function saveBankTransaction() {
     const txnDate = document.getElementById('txnDate').value;
     const txnType = document.getElementById('txnType').value;
     const amount = parseFloat(document.getElementById('txnAmount').value) || 0;
+    const counterAccountId = document.getElementById('txnCounterAccount').value;
 
-    if (!bankAccountId || !txnDate || !txnType || !amount) {
-        Toast.error('Bank account, date, type, and amount are required');
+    // Backend RecordBankTransactionRequest.counter_account_id is a non-nullable
+    // Guid (the other leg of the double entry) — sending null 400s.
+    if (!bankAccountId || !txnDate || !txnType || !amount || !counterAccountId) {
+        Toast.error('Bank account, date, type, amount, and counter account are required');
         return;
     }
 
@@ -514,7 +513,7 @@ async function saveBankTransaction() {
         amount,
         description: document.getElementById('txnDescription').value.trim() || null,
         reference_number: document.getElementById('txnReference').value.trim() || null,
-        counter_account_id: document.getElementById('txnCounterAccount').value || null
+        counter_account_id: counterAccountId
     };
 
     try {
@@ -653,6 +652,7 @@ async function startReconciliation() {
         const recon = res?.data || res;
         currentReconId = recon.id;
         reconTransactions = recon.transactions || recon.unmatched_transactions || [];
+        reconMatchedCount = 0;
 
         document.getElementById('reconWorkspace').style.display = 'block';
         document.getElementById('reconSummaryStatement').textContent = AccountsCommon.formatCurrency(statementBalance);
@@ -675,7 +675,10 @@ function renderReconTransactions() {
     const esc = AccountsCommon.escapeHtml, fmt = AccountsCommon.formatCurrency, fmtD = AccountsCommon.formatDate;
 
     tbody.innerHTML = reconTransactions.map(t => {
-        const amt = t.transaction_type === 'withdrawal' ? -(parseFloat(t.amount) || 0) : (parseFloat(t.amount) || 0);
+        // Same outflow set as the Transactions list view: withdrawal, charges and
+        // transfer_out reduce the bank balance; deposit/transfer_in/interest add.
+        const outflowTypes = ['withdrawal', 'charges', 'transfer_out'];
+        const amt = outflowTypes.includes(t.transaction_type) ? -(parseFloat(t.amount) || 0) : (parseFloat(t.amount) || 0);
         return `<tr>
             <td><input type="checkbox" class="recon-check" data-txn-id="${t.id}" data-amount="${amt}" onchange="updateReconSummary()"></td>
             <td>${fmtD(t.transaction_date || t.date)}</td>
@@ -729,6 +732,7 @@ async function matchSelectedTransactions() {
             body: JSON.stringify({ transaction_ids: txnIds })
         });
         Toast.success(`${txnIds.length} transaction(s) matched`);
+        reconMatchedCount += txnIds.length;
         // Remove matched from list
         reconTransactions = reconTransactions.filter(t => !txnIds.includes(t.id));
         renderReconTransactions();
@@ -747,8 +751,10 @@ async function completeReconciliation() {
     const bankLabel = bank ? `${bank.account_name}${bank.bank_name ? ' at ' + bank.bank_name : ''}` : 'this bank account';
     const stmtBal = parseFloat(document.getElementById('reconStatementBalance')?.value || 0);
     const stmtDate = document.getElementById('reconStatementDate')?.value || '';
-    const matchedCount = reconTransactions.filter(t => t.is_matched).length;
-    const unmatchedCount = reconTransactions.length - matchedCount;
+    // Matched rows have already been spliced out of reconTransactions — the
+    // remaining ones are the unmatched set.
+    const matchedCount = reconMatchedCount;
+    const unmatchedCount = reconTransactions.length;
     const ok = await Confirm.show({
         title: 'Complete Bank Reconciliation',
         message: `Finalise the reconciliation for ${bankLabel} as of ${stmtDate || 'the selected date'}? Statement balance ${fmt(stmtBal)}, ${matchedCount} transaction${matchedCount === 1 ? '' : 's'} matched${unmatchedCount > 0 ? `, ${unmatchedCount} still unmatched (these will remain in the next reconciliation)` : ''}. Once completed, this reconciliation is locked and cannot be reopened — any further changes require a new reconciliation.`,
@@ -762,6 +768,7 @@ async function completeReconciliation() {
         Toast.success('Reconciliation completed');
         currentReconId = null;
         reconTransactions = [];
+        reconMatchedCount = 0;
         document.getElementById('reconWorkspace').style.display = 'none';
         await loadBankAccounts();
     } catch (err) {

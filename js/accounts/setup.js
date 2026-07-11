@@ -250,6 +250,17 @@ function renderAccountGroups() {
     }).join('');
 }
 
+// Enable/disable a form field AND its SearchableDropdown wrapper (selects in
+// modals are auto-converted by AccountsCommon.openModal; the wrapper instance
+// is exposed on the native element as `_searchableDropdown`). Must be called
+// AFTER openModal so the wrapper exists on first open.
+function _setGroupFieldDisabled(id, disabled) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.disabled = disabled;
+    el._searchableDropdown?.setDisabled?.(disabled);
+}
+
 function showCreateGroupModal() {
     document.getElementById('groupModalTitle').textContent = 'Create Account Group';
     document.getElementById('groupForm').reset();
@@ -257,6 +268,8 @@ function showCreateGroupModal() {
     populateGroupTypeSelect();
     populateGroupParentSelect();
     AccountsCommon.openModal('accountGroupModal');
+    // Re-enable fields that editGroup disables
+    ['groupCode', 'groupAccountType', 'groupParent'].forEach(id => _setGroupFieldDisabled(id, false));
 }
 
 async function editGroup(id) {
@@ -272,6 +285,10 @@ async function editGroup(id) {
     populateGroupTypeSelect(group.account_type_id);
     populateGroupParentSelect(group.parent_group_id, group.id);
     AccountsCommon.openModal('accountGroupModal');
+    // Backend UpdateAccountGroupRequest only supports name/description —
+    // code, account type, and parent group are immutable after creation
+    // (mirrors editAccount, which disables its immutable fields).
+    ['groupCode', 'groupAccountType', 'groupParent'].forEach(fid => _setGroupFieldDisabled(fid, true));
 }
 
 async function saveAccountGroup() {
@@ -287,7 +304,11 @@ async function saveAccountGroup() {
         return;
     }
 
-    const payload = { name, account_type_id: accountTypeId, code, parent_group_id: parentGroupId || null, description };
+    // Backend UpdateAccountGroupRequest only supports name/description — the
+    // other fields are disabled in edit mode and ignored server-side.
+    const payload = id
+        ? { name, description }
+        : { name, account_type_id: accountTypeId, code, parent_group_id: parentGroupId || null, description };
 
     try {
         if (id) {
@@ -348,7 +369,9 @@ async function loadAccounts() {
         // Always fetch active + inactive so the stat tiles can show the true
         // counts. The "Show Inactive" toggle filters render-side via
         // renderAccounts() so the stats stay accurate regardless.
-        const params = { page: currentPage, pageSize: PAGE_SIZE };
+        // Backend GetAccounts has NO paging params (returns the full list) —
+        // pagination is done client-side in renderAccounts() by slicing.
+        const params = {};
         if (search) params.search = search;
         if (typeFilter) params.accountTypeId = typeFilter;
         if (groupFilter) params.accountGroupId = groupFilter;
@@ -358,23 +381,17 @@ async function loadAccounts() {
         const data = res?.data || res?.items || (Array.isArray(res) ? res : []);
         accounts = data;
 
-        const total = res?.total || res?.totalCount || accounts.length;
-        const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
         const activeCount = accounts.filter(a => a.is_active !== false).length;
         const inactiveCount = accounts.filter(a => a.is_active === false).length;
 
         const totalEl = document.getElementById('totalAccounts');
         const activeEl = document.getElementById('activeAccounts');
         const inactiveEl = document.getElementById('inactiveAccounts');
-        if (totalEl) totalEl.textContent = total;
+        if (totalEl) totalEl.textContent = accounts.length;
         if (activeEl) activeEl.textContent = activeCount;
         if (inactiveEl) inactiveEl.textContent = inactiveCount;
 
         renderAccounts();
-        AccountsCommon.renderPagination('accountsPagination', currentPage, totalPages, (page) => {
-            currentPage = page;
-            loadAccounts();
-        });
     } catch (err) {
         console.error('[Setup] loadAccounts error:', err);
         Toast.error('Failed to load accounts');
@@ -386,7 +403,16 @@ function renderAccounts() {
     if (!tbody) return;
 
     const showInactive = document.getElementById('showInactiveAccounts')?.checked || false;
-    const visible = showInactive ? accounts : accounts.filter(a => a.is_active !== false);
+    const filtered = showInactive ? accounts : accounts.filter(a => a.is_active !== false);
+
+    // Client-side pagination — the backend returns the full account list.
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    AccountsCommon.renderPagination('accountsPagination', currentPage, totalPages, (page) => {
+        currentPage = page;
+        renderAccounts();
+    });
 
     if (!visible.length) {
         const msg = !accounts.length
@@ -624,11 +650,10 @@ async function importAccounts() {
 }
 
 function parseCSV(text) {
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    if (lines.length < 2) return [];
-
-    // Parse header
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
+    // Delegate to the quote-aware parser (_parseCsv, defined further down) —
+    // the old raw comma-split broke on quoted fields containing commas.
+    const rawRows = _parseCsv(text);
+    if (!rawRows.length) return [];
 
     // Map header names to ImportAccountRow field names
     const fieldMap = {
@@ -642,13 +667,12 @@ function parseCSV(text) {
         'balance_type': 'balance_type'
     };
 
-    return lines.slice(1).map(line => {
-        const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+    return rawRows.map(raw => {
         const row = {};
-        headers.forEach((h, i) => {
-            const field = fieldMap[h];
-            if (field && values[i] !== undefined && values[i] !== '') {
-                row[field] = field === 'opening_balance' ? parseFloat(values[i]) || null : values[i];
+        Object.entries(raw).forEach(([header, value]) => {
+            const field = fieldMap[header.trim().toLowerCase().replace(/\s+/g, '_')];
+            if (field && value !== undefined && value !== '') {
+                row[field] = field === 'opening_balance' ? parseFloat(value) || null : value;
             }
         });
         return row;
@@ -857,7 +881,8 @@ async function loadOpeningBalances() {
         // first-time setup needs every active account as an input row.
         const [balancesRes, accountsRes] = await Promise.all([
             api.request(AccountsCommon.buildUrl('coa/balances', { fiscalYearId }), { _skipSpinner: true }),
-            api.request(AccountsCommon.buildUrl('coa', { pageSize: 500 }), { _skipSpinner: true })
+            // No pageSize param — backend GetAccounts has no paging and returns all
+            api.request(AccountsCommon.buildUrl('coa'), { _skipSpinner: true })
         ]);
 
         const existingBalances = Array.isArray(balancesRes) ? balancesRes : (balancesRes?.data || balancesRes?.items || []);
@@ -1128,6 +1153,10 @@ function editFiscalYear(id) {
     document.getElementById('fiscalYearStart').value = fy.start_date?.split('T')[0] || '';
     const endEl = document.getElementById('fiscalYearEnd');
     if (endEl) endEl.value = fy.end_date?.split('T')[0] || '';
+    // Backend UpdateFiscalYearRequest only supports `name` — dates are immutable
+    // after creation, so disable them instead of implying they can change.
+    document.getElementById('fiscalYearStart').disabled = true;
+    if (endEl) endEl.disabled = true;
     AccountsCommon.openModal('fiscalYearModal');
 }
 
@@ -1135,6 +1164,10 @@ function showCreateFiscalYearModal() {
     document.getElementById('fiscalYearModalTitle').textContent = 'Create Fiscal Year';
     document.getElementById('fiscalYearForm').reset();
     document.getElementById('fiscalYearId').value = '';
+    // Re-enable date fields that editFiscalYear disables
+    document.getElementById('fiscalYearStart').disabled = false;
+    const endEl = document.getElementById('fiscalYearEnd');
+    if (endEl) endEl.disabled = false;
     AccountsCommon.openModal('fiscalYearModal');
 }
 
@@ -1154,7 +1187,9 @@ async function saveFiscalYear() {
         return;
     }
 
-    const payload = { name, start_date: startDate, end_date: endDate };
+    // Backend UpdateFiscalYearRequest only has `name` — don't send dates on edit
+    // (they're disabled in the modal and ignored server-side anyway).
+    const payload = id ? { name } : { name, start_date: startDate, end_date: endDate };
 
     try {
         if (id) {

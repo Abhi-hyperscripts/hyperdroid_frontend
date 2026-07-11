@@ -636,7 +636,7 @@ const SearchableDropdown = (function() {
             // Sync options to linked native select for form validation
             if (this.linkedSelect) {
                 this.linkedSelect.innerHTML = options.map(opt =>
-                    `<option value="${opt.value}">${opt.label}</option>`
+                    `<option value="${escapeHtml(String(opt.value))}">${escapeHtml(String(opt.label))}</option>`
                 ).join('');
                 // Sync the current value
                 if (this.selectedValue !== null) {

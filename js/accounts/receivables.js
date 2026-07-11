@@ -190,12 +190,20 @@ async function loadCustomerInvoices() {
     if (status) params.status = status;
     if (dateFrom) params.fromDate = dateFrom;
     if (dateTo) params.toDate = dateTo;
-    if (search) params.search = search;
+    // Note: the backend list endpoint has no `search` param — filtering is done
+    // client-side over the loaded page below.
 
     try {
         const res = await api.request(AccountsCommon.buildUrl('invoices', params));
-        const items = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        let items = Array.isArray(res) ? res : (res?.data || res?.items || []);
         customerInvoices = items;  // cache for row action handlers
+        if (search) {
+            const q = search.toLowerCase();
+            items = items.filter(inv => {
+                const custName = inv.customer_name || customers.find(c => c.id === inv.customer_id)?.name || '';
+                return `${inv.invoice_number || ''} ${custName}`.toLowerCase().includes(q);
+            });
+        }
         const total = res?.total || items.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
 
@@ -245,7 +253,7 @@ function invoiceActions(inv) {
     }
     if (inv.status === 'sent' || inv.status === 'approved' || inv.status === 'partially_paid' || inv.status === 'overdue') {
         html += ` <button class="btn-icon" data-tooltip="Send Reminder" onclick="sendInvoiceReminder('${inv.id}', '${(inv.invoice_number||'').replace(/'/g,'')}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>`;
-        html += ` <button class="btn btn-outline" style="padding:0.2rem 0.6rem;font-size:0.75rem;" onclick="showRecordPaymentModal(); document.getElementById('paymentCustomerId').value='${inv.customer_id}';">Pay</button>`;
+        html += ` <button class="btn btn-outline" style="padding:0.2rem 0.6rem;font-size:0.75rem;" onclick="payInvoice('${inv.customer_id}')">Pay</button>`;
     }
     return html;
 }
@@ -322,13 +330,16 @@ async function submitBulkInvoices() {
         const invoices = JSON.parse(text);
         if (!Array.isArray(invoices)) { Toast.error('Data must be a JSON array'); return; }
         if (!invoices.length) { Toast.error('Array is empty'); return; }
+        // Backend BulkCreateInvoices binds a bare List<CreateCustomerInvoiceRequest> —
+        // wrapping in { invoices } binds null and 400s. Send the array itself.
         const res = await api.request(AccountsCommon.buildUrl('invoices/bulk'), {
             method: 'POST',
-            body: JSON.stringify({ invoices }),
+            body: JSON.stringify(invoices),
             headers: { 'Content-Type': 'application/json' }
         });
-        const created = res?.created || res?.success_count || invoices.length;
-        const failed = res?.failed || res?.error_count || 0;
+        // Backend returns { total, created, results: [{ success, ... }] } — no failed/error_count.
+        const created = res?.created ?? invoices.length;
+        const failed = Array.isArray(res?.results) ? res.results.filter(r => !r.success).length : 0;
         if (failed > 0) {
             Toast.warning(`${created} invoices created, ${failed} failed`);
         } else {
@@ -639,23 +650,52 @@ async function saveInvoice(approve) {
     if (!form.reportValidity()) return;
 
     const lines = [];
-    document.querySelectorAll('#invoiceLines tr').forEach(row => {
+    let lineError = null;
+    document.querySelectorAll('#invoiceLines tr').forEach((row, idx) => {
         const taxConfigId = row._lineTaxDropdown?.selectedValue || null;
         const taxRate = _invoiceTaxRateFor(taxConfigId);
+        const description = row.querySelector('.line-desc')?.value.trim() || '';
+        const accountId = row.querySelector('.line-account')?.value || '';
+        const rate = parseFloat(row.querySelector('.line-rate')?.value) || 0;
+        // Skip fully-blank rows (no description, no account, no amount)
+        if (!description && !accountId && rate <= 0) return;
+        // Backend CreateCustomerInvoiceLineRequest.account_id is a non-nullable
+        // Guid — sending null 400s. Require an account on every row with data.
+        if (!accountId) {
+            if (!lineError) lineError = `Line ${idx + 1}: select an account for this line item`;
+            return;
+        }
         // Note: backend CreateCustomerInvoiceLineRequest currently accepts
         // {account_id, description, quantity, unit_price}. hsn_sac, tax_config_id,
         // and tax_rate are silently dropped today but Tier 3 will start using
         // them so the GSTR returns can split CGST/SGST/IGST per line.
         lines.push({
-            description: row.querySelector('.line-desc')?.value || '',
-            account_id: row.querySelector('.line-account')?.value || null,
+            description,
+            account_id: accountId,
             hsn_sac: row.querySelector('.line-hsn')?.value || '',
             quantity: parseFloat(row.querySelector('.line-qty')?.value) || 0,
-            unit_price: parseFloat(row.querySelector('.line-rate')?.value) || 0,
+            unit_price: rate,
             tax_config_id: taxConfigId,
             tax_rate: taxRate || 0
         });
     });
+
+    if (lineError) {
+        Toast.error(lineError);
+        return;
+    }
+    if (!lines.length) {
+        Toast.error('At least one line item is required');
+        return;
+    }
+
+    // The backend requires every line to share one tax configuration. Catch mixed slabs
+    // here with a clear message instead of a confusing 400 after the round-trip.
+    const distinctTaxConfigs = [...new Set(lines.map(l => l.tax_config_id).filter(Boolean))];
+    if (distinctTaxConfigs.length > 1) {
+        Toast.error('All line items must use the same tax rate. Set every line to the same GST/tax option before saving.');
+        return;
+    }
 
     // Backend CreateCustomerInvoiceRequest has NO `status` field — passing
     // status:'approved' here was silently dropped, so "Save & Approve" only ever
@@ -670,28 +710,32 @@ async function saveInvoice(approve) {
     };
 
     const id = document.getElementById('invoiceId').value;
+    let savedInvoice;
     try {
-        let savedInvoice;
         if (id) {
-            // PUT /invoices/{id} doesn't exist on backend yet — Tier 3 will add it.
-            // Until then, Edit Invoice clicks here will 405; row is still flagged as gap.
             savedInvoice = await api.request(AccountsCommon.buildUrl(`invoices/${id}`), { method: 'PUT', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
         } else {
             savedInvoice = await api.request(AccountsCommon.buildUrl('invoices'), { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' } });
         }
-
-        if (approve && savedInvoice?.id) {
-            // Chain the approve call so "Save & Approve" actually approves
-            await api.request(AccountsCommon.buildUrl(`invoices/${savedInvoice.id}/approve`), { method: 'POST' });
-            Toast.success('Invoice created and approved');
-        } else {
-            Toast.success(id ? 'Invoice updated' : 'Invoice saved as draft');
-        }
-        AccountsCommon.closeModal('customerInvoiceModal');
-        loadCustomerInvoices();
     } catch (err) {
         Toast.error(err.message || 'Failed to save invoice');
+        return;
     }
+
+    // The draft now exists. Approval is a separate step — if it fails, the draft must
+    // still be surfaced (close modal + refresh) so the user doesn't re-submit and create a duplicate.
+    if (approve && savedInvoice?.id) {
+        try {
+            await api.request(AccountsCommon.buildUrl(`invoices/${savedInvoice.id}/approve`), { method: 'POST' });
+            Toast.success('Invoice created and approved');
+        } catch (err) {
+            Toast.error(`Saved as draft, but approval failed: ${err.message || 'unknown error'}`);
+        }
+    } else {
+        Toast.success(id ? 'Invoice updated' : 'Invoice saved as draft');
+    }
+    AccountsCommon.closeModal('customerInvoiceModal');
+    loadCustomerInvoices();
 }
 
 function _invoiceLabel(id) {
@@ -719,7 +763,7 @@ async function approveInvoice(id) {
         await api.request(AccountsCommon.buildUrl(`invoices/${id}/approve`), { method: 'POST' });
         Toast.success('Invoice approved');
         loadCustomerInvoices();
-    } catch (err) { Toast.error('Failed to approve invoice'); }
+    } catch (err) { Toast.error(err.message || 'Failed to approve invoice'); }
 }
 
 async function sendInvoice(id) {
@@ -735,7 +779,7 @@ async function sendInvoice(id) {
         await api.request(AccountsCommon.buildUrl(`invoices/${id}/send`), { method: 'POST' });
         Toast.success('Invoice marked as sent');
         loadCustomerInvoices();
-    } catch (err) { Toast.error('Failed to send invoice'); }
+    } catch (err) { Toast.error(err.message || 'Failed to send invoice'); }
 }
 
 async function deleteDraftInvoice(id) {
@@ -751,7 +795,7 @@ async function deleteDraftInvoice(id) {
         await api.request(AccountsCommon.buildUrl(`invoices/${id}`), { method: 'DELETE' });
         Toast.success('Invoice deleted');
         loadCustomerInvoices();
-    } catch (err) { Toast.error('Failed to delete invoice'); }
+    } catch (err) { Toast.error(err.message || 'Failed to delete invoice'); }
 }
 
 // ============================================================================
@@ -759,31 +803,47 @@ async function deleteDraftInvoice(id) {
 // ============================================================================
 
 async function loadCustomerPayments() {
-    const params = { limit: PAGE_SIZE, offset: (paymentPage - 1) * PAGE_SIZE };
     const customerId = paymentCustomerFilterDD?.getValue?.();
     const dateFrom = document.getElementById('paymentDateFrom')?.value;
     const dateTo = document.getElementById('paymentDateTo')?.value;
-    const search = document.getElementById('paymentSearch')?.value?.trim();
+    const search = (document.getElementById('paymentSearch')?.value || '').trim().toLowerCase();
 
+    // Backend GET invoices/payments only supports customerId + limit/offset and
+    // returns a bare array with no total. Fetch up to the server cap (200) and
+    // do date/search filtering + pagination client-side.
+    const params = { limit: 200 };
     if (customerId) params.customerId = customerId;
-    if (dateFrom) params.fromDate = dateFrom;
-    if (dateTo) params.toDate = dateTo;
-    if (search) params.search = search;
 
     try {
         const res = await api.request(AccountsCommon.buildUrl('invoices/payments', params));
-        const items = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        customerPayments = items;
-        const total = res?.total || items.length;
-        const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+        const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        customerPayments = all;
+
+        const items = all.filter(p => {
+            const d = (p.payment_date || '').substring(0, 10);
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            if (search) {
+                const custName = p.customer_name || customers.find(c => c.id === p.customer_id)?.name || '';
+                const hay = `${p.payment_number || ''} ${custName} ${p.reference_number || ''} ${p.payment_method || ''}`.toLowerCase();
+                if (!hay.includes(search)) return false;
+            }
+            return true;
+        });
+
+        const totalPages = Math.ceil(items.length / PAGE_SIZE) || 1;
+        if (paymentPage > totalPages) paymentPage = totalPages;
+        const pageItems = items.slice((paymentPage - 1) * PAGE_SIZE, paymentPage * PAGE_SIZE);
 
         const tbody = document.getElementById('customerPaymentsTable');
-        if (!items.length) {
+        if (!pageItems.length) {
             tbody.innerHTML = '<tr class="empty-state"><td colspan="7"><div class="empty-message"><p>No payments recorded</p></div></td></tr>';
         } else {
-            tbody.innerHTML = items.map(p => {
+            tbody.innerHTML = pageItems.map(p => {
                 const custName = p.customer_name || customers.find(c => c.id === p.customer_id)?.name || '-';
                 const bankName = p.bank_account_name || p.bank_name || window._bankAccountMap?.[p.bank_account_id] || bankAccounts.find(b => b.id === p.bank_account_id)?.account_name || (p.bank_account_id ? p.bank_account_id.substring(0, 8) + '...' : '-');
+                // No row action: CustomerPayment has no invoice_id and there is no
+                // payment-detail endpoint — the old "View" button 404'd via editInvoice(payment id).
                 return `<tr>
                     <td>${AccountsCommon.escapeHtml(p.payment_number || '-')}</td>
                     <td>${AccountsCommon.escapeHtml(custName)}</td>
@@ -791,7 +851,7 @@ async function loadCustomerPayments() {
                     <td>${AccountsCommon.formatCurrency(p.amount)}</td>
                     <td>${AccountsCommon.escapeHtml(bankName)}</td>
                     <td>${AccountsCommon.escapeHtml(p.reference_number || p.reference || '-')}</td>
-                    <td><button class="btn-icon" data-tooltip="View" onclick="editInvoice('${p.invoice_id || p.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+                    <td><span class="text-secondary">-</span></td>
                 </tr>`;
             }).join('');
         }
@@ -810,6 +870,19 @@ function showRecordPaymentModal() {
     AccountsCommon.openModal('customerPaymentModal');
 }
 
+// Open the Record Payment modal pre-filled with the invoice's customer.
+// Dispatching 'change' fires the select's inline onchange
+// (loadCustomerInvoicesForPayment — loads the allocation list, mirroring
+// payables' loadVendorOpenBills) and re-syncs the SearchableDropdown wrapper.
+function payInvoice(customerId) {
+    showRecordPaymentModal();
+    const sel = document.getElementById('paymentCustomerId');
+    if (sel) {
+        sel.value = customerId;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+}
+
 async function loadCustomerInvoicesForPayment() {
     const custId = document.getElementById('paymentCustomerId').value;
     const tbody = document.getElementById('paymentAllocations');
@@ -826,7 +899,7 @@ async function loadCustomerInvoicesForPayment() {
         const items = allItems.filter(inv => {
             const bal = parseFloat(inv.balance_due) || 0;
             const st = (inv.status || '').toLowerCase();
-            return bal > 0 && (st === 'approved' || st === 'sent' || st === 'partial' || st === 'overdue');
+            return bal > 0 && (st === 'approved' || st === 'sent' || st === 'partially_paid' || st === 'overdue');
         });
         if (!items.length) {
             tbody.innerHTML = '<tr class="empty-state"><td colspan="3"><div class="empty-message"><p>No outstanding invoices</p></div></td></tr>';
@@ -887,32 +960,48 @@ async function saveCustomerPayment() {
 // ============================================================================
 
 async function loadCreditNotes() {
-    const params = { limit: PAGE_SIZE, offset: (cnPage - 1) * PAGE_SIZE };
     const customerId = cnCustomerFilterDD?.getValue?.();
     const dateFrom = document.getElementById('cnDateFrom')?.value;
     const dateTo = document.getElementById('cnDateTo')?.value;
-    const search = document.getElementById('cnSearch')?.value?.trim();
+    const search = (document.getElementById('cnSearch')?.value || '').trim().toLowerCase();
     const statusFilter = document.getElementById('creditNoteStatusFilter')?.value;
 
+    // Backend GET invoices/credit-notes only supports customerId + limit/offset
+    // and returns a bare array with no total. Fetch up to the server cap (200)
+    // and do status/date/search filtering + pagination client-side.
+    const params = { limit: 200 };
     if (customerId) params.customerId = customerId;
-    if (statusFilter) params.status = statusFilter;
-    if (dateFrom) params.fromDate = dateFrom;
-    if (dateTo) params.toDate = dateTo;
-    if (search) params.search = search;
 
     try {
         const res = await api.request(AccountsCommon.buildUrl('invoices/credit-notes', params));
-        const items = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        creditNotes = items;
-        const total = res?.total || items.length;
-        const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+        const all = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        creditNotes = all;
+
+        const items = all.filter(cn => {
+            if (statusFilter && (cn.status || '') !== statusFilter) return false;
+            const d = (cn.credit_date || '').substring(0, 10);
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            if (search) {
+                const custName = cn.customer_name || customers.find(c => c.id === cn.customer_id)?.name || '';
+                const hay = `${cn.credit_note_number || ''} ${custName} ${cn.invoice_number || ''} ${cn.reason || ''}`.toLowerCase();
+                if (!hay.includes(search)) return false;
+            }
+            return true;
+        });
+
+        const totalPages = Math.ceil(items.length / PAGE_SIZE) || 1;
+        if (cnPage > totalPages) cnPage = totalPages;
+        const pageItems = items.slice((cnPage - 1) * PAGE_SIZE, cnPage * PAGE_SIZE);
 
         const tbody = document.getElementById('creditNotesTable');
-        if (!items.length) {
+        if (!pageItems.length) {
             tbody.innerHTML = '<tr class="empty-state"><td colspan="7"><div class="empty-message"><p>No credit notes found</p></div></td></tr>';
         } else {
-            tbody.innerHTML = items.map(cn => {
+            tbody.innerHTML = pageItems.map(cn => {
                 const custName = cn.customer_name || customers.find(c => c.id === cn.customer_id)?.name || '-';
+                // No row action: the old "View" button had no click handler and
+                // there is no credit-note detail endpoint to wire it to.
                 return `<tr>
                     <td>${AccountsCommon.escapeHtml(cn.credit_note_number || '-')}</td>
                     <td>${AccountsCommon.escapeHtml(custName)}</td>
@@ -920,7 +1009,7 @@ async function loadCreditNotes() {
                     <td>${AccountsCommon.formatDate(cn.credit_date)}</td>
                     <td>${AccountsCommon.formatCurrency(cn.amount)}</td>
                     <td>${AccountsCommon.escapeHtml(cn.reason || '-')}</td>
-                    <td><button class="btn-icon" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+                    <td><span class="text-secondary">-</span></td>
                 </tr>`;
             }).join('');
         }

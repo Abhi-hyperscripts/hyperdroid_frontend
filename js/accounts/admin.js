@@ -360,11 +360,14 @@ function viewAuditLogDetail(index) {
         let raw = typeof l.details === 'string' ? JSON.parse(l.details) : l.details;
         if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch {} }
         if (raw && typeof raw === 'object') {
+            // Escape at the call site: SlidePanel.createInfoSection interpolates
+            // label/value into innerHTML unescaped — details come from stored
+            // user input, so unescaped values are a stored-XSS vector.
             detailItems = Object.entries(raw)
                 .filter(([k, v]) => !HIDDEN_KEYS.has(k.toLowerCase()) && !isGuid(v))
                 .map(([key, val]) => ({
-                    label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-                    value: val != null ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : '-'
+                    label: escapeHtml(key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())),
+                    value: escapeHtml(val != null ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : '-')
                 }));
         }
     } catch { /* ignore parse errors */ }
@@ -374,25 +377,27 @@ function viewAuditLogDetail(index) {
         : ['deleted', 'rejected', 'cancelled', 'reversed'].includes(actionLower) || actionLower === 'delete' ? 'status-rejected'
         : 'status-pending';
 
+    // SlidePanel helpers interpolate into innerHTML unescaped — escape every
+    // dynamic value here at the call site.
     let body = SlidePanel.createHeaderCard({
-        avatar: { initials: formatType(l.entity_type)?.[0] || 'A' },
-        title: formatType(l.entity_type),
+        avatar: { initials: escapeHtml(formatType(l.entity_type)?.[0] || 'A') },
+        title: escapeHtml(formatType(l.entity_type)),
         subtitle: AccountsCommon.formatDate(l.timestamp || l.created_at, true),
-        badges: [{ text: l.action || '-', class: actionBadge }]
+        badges: [{ text: escapeHtml(l.action || '-'), class: actionBadge }]
     });
 
     const entityDisplay = l.entity_display_name
         ? `<strong>${AccountsCommon.escapeHtml(l.entity_display_name)}</strong>`
-        : (l.entity_id ? `<code style="font-size:0.75rem">${l.entity_id}</code>` : '-');
+        : (l.entity_id ? `<code style="font-size:0.75rem">${AccountsCommon.escapeHtml(l.entity_id)}</code>` : '-');
 
     body += SlidePanel.createInfoSection({
         title: 'Overview', icon: 'info', iconColor: 'blue',
         items: [
-            { label: 'Action', value: formatType(l.action) },
-            { label: 'Entity Type', value: formatType(l.entity_type) },
+            { label: 'Action', value: escapeHtml(formatType(l.action)) },
+            { label: 'Entity Type', value: escapeHtml(formatType(l.entity_type)) },
             { label: 'Reference', value: entityDisplay },
-            { label: 'Performed By', value: l.performed_by_name || l.user_name || (l.performed_by === 'system' ? 'System' : l.performed_by || '-') },
-            { label: 'IP Address', value: l.ip_address || '-' },
+            { label: 'Performed By', value: escapeHtml(l.performed_by_name || l.user_name || (l.performed_by === 'system' ? 'System' : l.performed_by || '-')) },
+            { label: 'IP Address', value: escapeHtml(l.ip_address || '-') },
             { label: 'Timestamp', value: AccountsCommon.formatDate(l.timestamp || l.created_at, true) }
         ]
     });
@@ -632,7 +637,10 @@ async function loadPendingApprovals() {
 
         container.innerHTML = pendingApprovals.map(a => {
             const isCVR     = a.entity_type === 'client_request' || a.entity_type === 'vendor_request';
-            const showActions = accountsRoles.isManager() && a.status === 'pending';
+            // CVR review endpoint (POST requests/{id}/review) requires
+            // ACCOUNTS_ADMIN/SUPERADMIN — managers get a 403. Expense-claim
+            // approvals do allow MANAGER, so keep isManager() for those.
+            const showActions = a.status === 'pending' && (isCVR ? accountsRoles.isAdmin() : accountsRoles.isManager());
             const extra = a.status === 'rejected' && a.rejection_reason
                 ? `<div style="font-size:12px; color:var(--text-secondary); margin-top:6px;"><strong>Reason:</strong> ${AccountsCommon.escapeHtml(a.rejection_reason)}</div>`
                 : (a.status === 'approved' && a.created_entity_id
@@ -997,14 +1005,16 @@ function viewJobLogDetail(index) {
 
     const formatType = (t) => (t || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-    // Parse details JSON into key-value pairs
+    // Parse details JSON into key-value pairs. Escape at the call site:
+    // SlidePanel.createInfoSection interpolates values into innerHTML unescaped,
+    // and details contain stored user input (stored-XSS vector otherwise).
     let detailItems = [];
     try {
         const raw = typeof j.details === 'string' ? JSON.parse(j.details) : j.details;
         if (raw && typeof raw === 'object') {
             detailItems = Object.entries(raw).map(([key, val]) => ({
-                label: key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-                value: val != null ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : '-'
+                label: escapeHtml(key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())),
+                value: escapeHtml(val != null ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : '-')
             }));
         }
     } catch { /* ignore parse errors */ }
@@ -1015,25 +1025,27 @@ function viewJobLogDetail(index) {
         return 'status-pending';
     };
 
+    // SlidePanel helpers interpolate into innerHTML unescaped — escape every
+    // dynamic value here at the call site.
     let body = SlidePanel.createHeaderCard({
-        avatar: { initials: formatType(j.entity_type)?.[0] || 'J' },
-        title: formatType(j.entity_type),
+        avatar: { initials: escapeHtml(formatType(j.entity_type)?.[0] || 'J') },
+        title: escapeHtml(formatType(j.entity_type)),
         subtitle: AccountsCommon.formatDate(j.created_at || j.timestamp, true),
-        badges: [{ text: j.action || j.status || '-', class: actionBadge(j.action || j.status) }]
+        badges: [{ text: escapeHtml(j.action || j.status || '-'), class: actionBadge(j.action || j.status) }]
     });
 
     // Show entity_display_name (resolved by backend) or fall back to truncated ID
     const entityDisplay = j.entity_display_name
         ? `<strong>${AccountsCommon.escapeHtml(j.entity_display_name)}</strong>`
-        : (j.entity_id ? `<code style="font-size:0.75rem">${j.entity_id}</code>` : '-');
+        : (j.entity_id ? `<code style="font-size:0.75rem">${AccountsCommon.escapeHtml(j.entity_id)}</code>` : '-');
 
     body += SlidePanel.createInfoSection({
         title: 'Overview', icon: 'info', iconColor: 'blue',
         items: [
-            { label: 'Action', value: formatType(j.action || j.status) },
-            { label: 'Entity Type', value: formatType(j.entity_type || j.job_type) },
+            { label: 'Action', value: escapeHtml(formatType(j.action || j.status)) },
+            { label: 'Entity Type', value: escapeHtml(formatType(j.entity_type || j.job_type)) },
             { label: 'Reference', value: entityDisplay },
-            { label: 'Performed By', value: j.performed_by_name || j.performed_by || '-' },
+            { label: 'Performed By', value: escapeHtml(j.performed_by_name || j.performed_by || '-') },
             { label: 'Timestamp', value: AccountsCommon.formatDate(j.created_at || j.timestamp, true) }
         ]
     });
@@ -1122,12 +1134,12 @@ function populateChecklistFYSelect(selectedValue) {
 
 async function saveChecklist() {
     const id = document.getElementById('checklistId').value;
-    const name = document.getElementById('checklistName').value.trim();
     const fiscal_year_id = document.getElementById('checklistFY').value;
-    const description = document.getElementById('checklistDescription').value.trim();
 
-    if (!name || !fiscal_year_id) {
-        Toast.error('Checklist name and Fiscal Year are required');
+    // Backend StartClosingRequest only has fiscal_period_id + closing_type —
+    // there is no name/description to store, so the modal no longer asks for them.
+    if (!fiscal_year_id) {
+        Toast.error('Fiscal Year is required');
         return;
     }
 
@@ -1146,7 +1158,7 @@ async function saveChecklist() {
     }
 
     const closing_type = document.getElementById('checklistClosingType')?.value || 'month_end';
-    const payload = { name, fiscal_period_id, closing_type, description };
+    const payload = { fiscal_period_id, closing_type };
 
     try {
         if (id) {

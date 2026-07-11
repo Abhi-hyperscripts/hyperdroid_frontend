@@ -123,13 +123,13 @@
                             <span class="chevron">&#9660;</span>
                         </div>
                         <div class="nav-group-items">
-                            <button class="sidebar-btn" data-tab="gstr-1" id="gstr1Tab">
+                            <button class="sidebar-btn" data-tab="gstr-1" id="gstr1Tab" data-admin-only>
                                 <span class="nav-number">4</span><span class="nav-label">GSTR-1</span>
                             </button>
-                            <button class="sidebar-btn" data-tab="gstr-3b" id="gstr3bTab">
+                            <button class="sidebar-btn" data-tab="gstr-3b" id="gstr3bTab" data-admin-only>
                                 <span class="nav-number">5</span><span class="nav-label">GSTR-3B</span>
                             </button>
-                            <button class="sidebar-btn" data-tab="tds-return" id="tdsReturnTab">
+                            <button class="sidebar-btn" data-tab="tds-return" id="tdsReturnTab" data-admin-only>
                                 <span class="nav-number">6</span><span class="nav-label">TDS Return</span>
                             </button>
                         </div>
@@ -280,7 +280,7 @@
                             </svg>
                             <input type="text" id="hsnSacSearch" placeholder="Search HSN/SAC codes...">
                         </div>
-                        <select id="hsnSacTypeFilter" class="form-control" style="max-width: 160px;" onchange="loadHsnSacCodes()">
+                        <select id="hsnSacTypeFilter" class="form-control" style="max-width: 160px;" onchange="hsnSacPage = 1; loadHsnSacCodes()">
                             <option value="">All Types</option>
                             <option value="HSN">HSN</option>
                             <option value="SAC">SAC</option>
@@ -668,15 +668,8 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="taxRateStatus">Status</label>
-                                <select id="taxRateStatus" class="form-control">
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
+                        <!-- Status control removed: backend CreateTaxRateRequest (also used
+                             for update) has no status/is_active field — rates are active by default -->
                     </form>
                 </div>
                 <div class="modal-footer">

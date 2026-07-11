@@ -538,13 +538,18 @@ async function openQuickAddAccountModal(dropdownInstance, rebuildOptions) {
     document.getElementById('poQaError').hidden = true;
     const typeContainer = document.getElementById('poQaTypeContainer');
     typeContainer.innerHTML = '';
-    // Fetch account types (fall back to the built-in 5 if endpoint fails)
+    // Fetch account types. No hard-coded fallback: account_type_id must be a real
+    // Guid from coa/types — sending a string like 'Assets' would 400 on the backend.
     let types = [];
     try {
         const typesRes = await api.request(AccountsCommon.buildUrl('coa/types'), { _skipSpinner: true });
         types = Array.isArray(typesRes) ? typesRes : (typesRes?.data || []);
-    } catch {
-        types = ['Assets', 'Liabilities', 'Equity', 'Income', 'Expenses'].map(n => ({ id: n, name: n }));
+    } catch (err) {
+        console.error('[PO quick-add account] failed to load account types:', err);
+    }
+    if (!types.length) {
+        Toast.error('Account types could not be loaded — quick-add is unavailable. Create the account from the Chart of Accounts page instead.');
+        return;
     }
     const typeDropdown = new SearchableDropdown(typeContainer, {
         id: 'poQaType-sd',
@@ -674,19 +679,32 @@ async function savePO() {
     const form = document.getElementById('poForm');
     if (!form.reportValidity()) return;
 
+    // Skip fully blank rows and require an account on any non-empty row —
+    // backend line account_id is a non-nullable Guid (null → 400).
     const lines = [];
-    document.querySelectorAll('#poLines tr').forEach(row => {
+    let lineError = null;
+    document.querySelectorAll('#poLines tr').forEach((row, idx) => {
+        const account_id = row.querySelector('.line-account')?.value || null;
+        const description = (row.querySelector('.line-desc')?.value || '').trim();
+        const quantity = parseFloat(row.querySelector('.line-qty')?.value) || 0;
+        const unit_price = parseFloat(row.querySelector('.line-rate')?.value) || 0;
         const taxConfigId = row._lineTaxDropdown?.selectedValue || null;
         const taxRate = _taxRateFor(taxConfigId);
+
+        const isBlank = !account_id && !description && !(quantity * unit_price > 0);
+        if (isBlank) return;
+        if (!account_id) { lineError = lineError || `Line ${idx + 1}: please select an account`; return; }
         lines.push({
-            description: row.querySelector('.line-desc')?.value || '',
-            account_id: row.querySelector('.line-account')?.value || null,
-            quantity: parseFloat(row.querySelector('.line-qty')?.value) || 0,
-            unit_price: parseFloat(row.querySelector('.line-rate')?.value) || 0,
+            description,
+            account_id,
+            quantity,
+            unit_price,
             tax_config_id: taxConfigId || null,
             tax_rate: taxRate || 0
         });
     });
+    if (lineError) { Toast.error(lineError); return; }
+    if (!lines.length) { Toast.error('Add at least one line item with an account'); return; }
 
     const payload = {
         vendor_id: document.getElementById('poVendorId').value,

@@ -13,7 +13,8 @@
 // ============================================================================
 
 let billingPlans = [];
-let subscriptions = [];
+let subscriptions = [];      // current page slice (after client-side search/paging)
+let allSubscriptions = [];   // full loaded list (used by the delete-plan guard)
 let usageMeters = [];
 let customers = [];  // populated at page init so the Customer dropdown in the
                      // Create Subscription / Record Usage / Tokens tabs can work
@@ -126,25 +127,29 @@ function setupSearchListeners() {
 
 async function loadPlans() {
     try {
-        const search = document.getElementById('planSearch')?.value || '';
-        const params = {};
-        if (search) params.search = search;
+        const search = (document.getElementById('planSearch')?.value || '').trim().toLowerCase();
 
-        const url = AccountsCommon.buildUrl('billing/plans', params);
+        // Backend GetPlans takes no query params — search is applied client-side.
+        const url = AccountsCommon.buildUrl('billing/plans');
         const res = await api.request(url, { _skipSpinner: true });
         billingPlans = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        renderPlans();
+        const filtered = search
+            ? billingPlans.filter(p =>
+                (p.name || '').toLowerCase().includes(search) ||
+                (p.plan_code || '').toLowerCase().includes(search))
+            : billingPlans;
+        renderPlans(filtered);
     } catch (err) {
         console.error('[Billing] loadPlans error:', err);
         Toast.error('Failed to load billing plans');
     }
 }
 
-function renderPlans() {
+function renderPlans(list = billingPlans) {
     const tbody = document.getElementById('plansTable');
     if (!tbody) return;
 
-    if (!billingPlans.length) {
+    if (!list.length) {
         tbody.innerHTML = `<tr class="empty-state"><td colspan="6"><div class="empty-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                 <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
@@ -161,7 +166,7 @@ function renderPlans() {
         'one_time': 'One-Time'
     };
 
-    tbody.innerHTML = billingPlans.map(p => {
+    tbody.innerHTML = list.map(p => {
         const status = p.status || (p.is_active === false ? 'inactive' : 'active');
         const viewBtn = `<button class="btn-icon" onclick="viewPlan('${p.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
         const adminBtns = accountsRoles.isAdmin()
@@ -212,11 +217,23 @@ async function viewPlan(id) {
     }
 }
 
+// Backend UpdateBillingPlanRequest only supports { name, description, amount, is_active } —
+// plan code, billing type and interval are immutable after creation, so lock them in edit mode.
+function setPlanEditMode(isEdit) {
+    ['planCode', 'planBillingType', 'planInterval'].forEach(fid => {
+        const el = document.getElementById(fid);
+        if (!el) return;
+        el.disabled = isEdit;
+        if (el._searchableDropdown) el._searchableDropdown.setDisabled(isEdit);
+    });
+}
+
 function showCreatePlanModal() {
     document.getElementById('planModalTitle').textContent = 'Create Billing Plan';
     document.getElementById('planForm').reset();
     document.getElementById('planId').value = '';
     document.getElementById('planStatus').value = 'active';
+    setPlanEditMode(false);
     AccountsCommon.openModal('planModal');
 }
 
@@ -233,6 +250,7 @@ function editPlan(id) {
     document.getElementById('planInterval').value = plan.billing_cycle || plan.interval || '';
     document.getElementById('planStatus').value = plan.is_active === false ? 'inactive' : (plan.status || 'active');
     document.getElementById('planDescription').value = plan.description || '';
+    setPlanEditMode(true);
     AccountsCommon.openModal('planModal');
 }
 
@@ -275,11 +293,19 @@ async function deletePlan(id) {
     const fmt = AccountsCommon.formatCurrency;
     const parts = [];
     if (p?.name) parts.push(`"${p.name}"`);
-    if (p?.code) parts.push(`(${p.code})`);
+    if (p?.plan_code) parts.push(`(${p.plan_code})`);
     if (p?.amount != null) parts.push(`at ${fmt(p.amount)}`);
     const cycleWord = p?.billing_cycle ? ` ${p.billing_cycle}` : '';
     const label = parts.length ? `${parts.join(' ')}${cycleWord}` : 'this billing plan';
-    const activeSubs = (subscriptions || []).filter(s => s.plan_id === id && (s.status === 'active' || s.status === 'paused')).length;
+    // Subscription model uses billing_plan_id (not plan_id); guard over the full loaded list.
+    // If the Subscriptions tab hasn't been visited yet, fetch the list so the guard is real.
+    if (!allSubscriptions.length) {
+        try {
+            const subRes = await api.request(AccountsCommon.buildUrl('billing/subscriptions'), { _skipSpinner: true });
+            allSubscriptions = Array.isArray(subRes) ? subRes : (subRes?.data || subRes?.items || []);
+        } catch (e) { /* guard degrades gracefully if fetch fails */ }
+    }
+    const activeSubs = allSubscriptions.filter(s => s.billing_plan_id === id && (s.status === 'active' || s.status === 'paused')).length;
     const warning = activeSubs > 0 ? ` This plan currently has ${activeSubs} active or paused subscription${activeSubs === 1 ? '' : 's'} — deleting it will either be blocked or will cancel those subscriptions depending on backend rules.` : '';
     const ok = await Confirm.show({
         title: 'Delete Billing Plan',
@@ -304,15 +330,27 @@ async function deletePlan(id) {
 
 async function loadSubscriptions() {
     try {
-        const search = document.getElementById('subscriptionSearch')?.value || '';
-        const params = { page: subscriptionPage, pageSize: PAGE_SIZE };
-        if (search) params.search = search;
+        const search = (document.getElementById('subscriptionSearch')?.value || '').trim().toLowerCase();
 
-        const url = AccountsCommon.buildUrl('billing/subscriptions', params);
+        // Backend GetSubscriptions only supports a customerId query param — search and
+        // pagination are applied client-side over the loaded list.
+        const url = AccountsCommon.buildUrl('billing/subscriptions');
         const res = await api.request(url, { _skipSpinner: true });
-        subscriptions = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        const total = res?.total || res?.totalCount || subscriptions.length;
+        allSubscriptions = Array.isArray(res) ? res : (res?.data || res?.items || []);
+
+        const planMap = {};
+        billingPlans.forEach(p => { planMap[p.id] = p.name; });
+        let list = allSubscriptions;
+        if (search) {
+            list = list.filter(s =>
+                (s.customer_name || '').toLowerCase().includes(search) ||
+                (planMap[s.billing_plan_id] || s.plan_name || '').toLowerCase().includes(search) ||
+                (s.status || '').toLowerCase().includes(search));
+        }
+        const total = list.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+        if (subscriptionPage > totalPages) subscriptionPage = totalPages;
+        subscriptions = list.slice((subscriptionPage - 1) * PAGE_SIZE, subscriptionPage * PAGE_SIZE);
 
         renderSubscriptions();
         AccountsCommon.renderPagination('subscriptionsPagination', subscriptionPage, totalPages, (page) => {
@@ -343,7 +381,7 @@ function renderSubscriptions() {
     billingPlans.forEach(p => { planMap[p.id] = p.name; });
 
     tbody.innerHTML = subscriptions.map(s => {
-        const planName = planMap[s.plan_id] || s.plan_name || '-';
+        const planName = planMap[s.billing_plan_id] || s.plan_name || '-';
         const status = s.status || 'active';
 
         const viewBtn = `<button class="btn-icon" onclick="viewSubscription('${s.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
@@ -371,9 +409,10 @@ async function viewSubscription(id) {
 
         const esc = AccountsCommon.escapeHtml;
         const fmt = AccountsCommon.formatCurrency;
-        const planMap = {};
-        billingPlans.forEach(p => { planMap[p.id] = p.name; });
-        const planName = planMap[s.plan_id] || s.plan_name || '-';
+        // Subscription model has billing_plan_id + cancellation_reason and no amount —
+        // resolve the plan for both the name and the amount display.
+        const plan = billingPlans.find(p => p.id === s.billing_plan_id);
+        const planName = plan?.name || s.plan_name || '-';
         const status = s.status || 'active';
 
         document.getElementById('billingDetailModalTitle').textContent = 'Subscription Details';
@@ -385,8 +424,8 @@ async function viewSubscription(id) {
                 <div class="detail-row"><span class="detail-label">Start Date</span><span class="detail-value">${AccountsCommon.formatDate(s.start_date)}</span></div>
                 <div class="detail-row"><span class="detail-label">End Date</span><span class="detail-value">${AccountsCommon.formatDate(s.end_date)}</span></div>
                 <div class="detail-row"><span class="detail-label">Next Billing</span><span class="detail-value">${AccountsCommon.formatDate(s.next_billing_date)}</span></div>
-                <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value">${s.amount != null ? fmt(s.amount) : '-'}</span></div>
-                <div class="detail-row"><span class="detail-label">Cancel Reason</span><span class="detail-value">${esc(s.cancel_reason || '-')}</span></div>
+                <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value">${plan?.amount != null ? fmt(plan.amount) : '-'}</span></div>
+                <div class="detail-row"><span class="detail-label">Cancel Reason</span><span class="detail-value">${esc(s.cancellation_reason || '-')}</span></div>
                 <div class="detail-row"><span class="detail-label">Created</span><span class="detail-value">${AccountsCommon.formatDate(s.created_at)}</span></div>
                 <div class="detail-row"><span class="detail-label">Updated</span><span class="detail-value">${AccountsCommon.formatDate(s.updated_at)}</span></div>
             </div>`;
@@ -553,6 +592,7 @@ function showCreateMeterModal() {
     document.getElementById('meterModalTitle').textContent = 'Create Usage Meter';
     document.getElementById('meterForm').reset();
     document.getElementById('meterId').value = '';
+    document.getElementById('meterCode').value = '';
     document.getElementById('meterStatus').value = 'active';
     AccountsCommon.openModal('meterModal');
 }
@@ -563,9 +603,11 @@ function editMeter(id) {
 
     document.getElementById('meterModalTitle').textContent = 'Edit Usage Meter';
     document.getElementById('meterId').value = meter.id;
+    document.getElementById('meterCode').value = meter.meter_code || '';
     document.getElementById('meterName').value = meter.name || '';
     document.getElementById('meterUnit').value = meter.unit || '';
-    document.getElementById('meterStatus').value = meter.status || 'active';
+    document.getElementById('meterRate').value = meter.rate_per_unit ?? '';
+    document.getElementById('meterStatus').value = meter.is_active === false ? 'inactive' : 'active';
     document.getElementById('meterDescription').value = meter.description || '';
     AccountsCommon.openModal('meterModal');
 }
@@ -574,6 +616,7 @@ async function saveMeter() {
     const id = document.getElementById('meterId').value;
     const name = document.getElementById('meterName').value.trim();
     const unit = document.getElementById('meterUnit').value.trim();
+    const rate = parseFloat(document.getElementById('meterRate').value);
     const status = document.getElementById('meterStatus').value;
     const description = document.getElementById('meterDescription').value.trim();
 
@@ -581,9 +624,17 @@ async function saveMeter() {
         Toast.error('Name and Unit are required');
         return;
     }
+    if (isNaN(rate) || rate < 0) {
+        Toast.error('Rate per unit must be 0 or greater');
+        return;
+    }
 
-    // Backend expects: meter_code, name, unit, rate_per_unit
-    const payload = { meter_code: name.toLowerCase().replace(/\s+/g, '_'), name, unit, rate_per_unit: 1 };
+    // Backend expects: meter_code, name, unit, rate_per_unit.
+    // On edit, keep the existing meter_code (loaded into the hidden #meterCode field) —
+    // regenerating it from the name would break usage records keyed by meter_code.
+    const existingCode = document.getElementById('meterCode').value.trim();
+    const meter_code = (id && existingCode) ? existingCode : name.toLowerCase().replace(/\s+/g, '_');
+    const payload = { meter_code, name, unit, rate_per_unit: rate };
 
     try {
         if (id) {

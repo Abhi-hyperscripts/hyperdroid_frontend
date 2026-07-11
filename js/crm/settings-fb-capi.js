@@ -51,7 +51,7 @@
                 badge.style.color = 'var(--text-secondary)';
             }
             if (disconnectBtn) disconnectBtn.style.display = 'none';
-            if (pixelInput) pixelInput.placeholder = 'e.g. 1300543928289367';
+            if (pixelInput) pixelInput.placeholder = 'e.g. 123456789012345';
             if (tokenInput) tokenInput.placeholder = 'EAA…';
         }
 

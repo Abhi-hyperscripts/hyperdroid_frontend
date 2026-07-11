@@ -279,8 +279,7 @@
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                             Generate
                         </button>
-                        <button class="btn btn-outline" onclick="exportReport('cash-flow', 'pdf')">Export PDF</button>
-                        <button class="btn btn-outline" onclick="exportReport('cash-flow', 'csv')">Export CSV</button>
+                        <!-- No Export buttons: backend export supports only TB/PL/BS -->
                         <button class="btn btn-outline" onclick="window.print()">Print</button>
                     </div>
                     <div class="report-container" id="cashFlowContainer">
@@ -300,14 +299,13 @@
                 <div class="tab-content" id="account-ledger">
                     <div class="filters-bar" style="display:flex;align-items:flex-end;gap:0.75rem;flex-wrap:wrap;">
                         <div class="searchable-dropdown-container" id="ledgerAccountContainer"></div>
-                        <input type="text" id="ledgerFromDate" class="form-control flatpickr-input" placeholder="From date" style="max-width:160px;">
-                        <input type="text" id="ledgerToDate" class="form-control flatpickr-input" placeholder="To date" style="max-width:160px;">
+                        <input type="text" id="ledgerFromDate" class="form-control flatpickr-input" placeholder="From date *" style="max-width:160px;" required>
+                        <input type="text" id="ledgerToDate" class="form-control flatpickr-input" placeholder="To date *" style="max-width:160px;" required>
                         <button class="btn btn-primary" onclick="loadAccountLedger()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                             Generate
                         </button>
-                        <button class="btn btn-outline" onclick="exportReport('ledger', 'pdf')">Export PDF</button>
-                        <button class="btn btn-outline" onclick="exportReport('ledger', 'csv')">Export CSV</button>
+                        <!-- No Export buttons: backend export supports only TB/PL/BS -->
                         <button class="btn btn-outline" onclick="window.print()">Print</button>
                     </div>
                     <div class="report-container" id="ledgerContainer">
@@ -331,8 +329,7 @@
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                             Generate
                         </button>
-                        <button class="btn btn-outline" onclick="exportReport('day-book', 'pdf')">Export PDF</button>
-                        <button class="btn btn-outline" onclick="exportReport('day-book', 'csv')">Export CSV</button>
+                        <!-- No Export buttons: backend export supports only TB/PL/BS -->
                         <button class="btn btn-outline" onclick="window.print()">Print</button>
                     </div>
                     <div class="report-container" id="dayBookContainer">
@@ -352,14 +349,13 @@
                 <div class="tab-content" id="cash-book">
                     <div class="filters-bar" style="display:flex;align-items:flex-end;gap:0.75rem;flex-wrap:wrap;">
                         <div class="searchable-dropdown-container" id="cashBookBankContainer"></div>
-                        <input type="text" id="cashBookFromDate" class="form-control flatpickr-input" placeholder="From date" style="max-width:160px;">
-                        <input type="text" id="cashBookToDate" class="form-control flatpickr-input" placeholder="To date" style="max-width:160px;">
+                        <input type="text" id="cashBookFromDate" class="form-control flatpickr-input" placeholder="From date *" style="max-width:160px;" required>
+                        <input type="text" id="cashBookToDate" class="form-control flatpickr-input" placeholder="To date *" style="max-width:160px;" required>
                         <button class="btn btn-primary" onclick="loadCashBook()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                             Generate
                         </button>
-                        <button class="btn btn-outline" onclick="exportReport('cash-book', 'pdf')">Export PDF</button>
-                        <button class="btn btn-outline" onclick="exportReport('cash-book', 'csv')">Export CSV</button>
+                        <!-- No Export buttons: backend export supports only TB/PL/BS -->
                         <button class="btn btn-outline" onclick="window.print()">Print</button>
                     </div>
                     <div class="report-container" id="cashBookContainer">
@@ -382,8 +378,7 @@
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                             Generate
                         </button>
-                        <button class="btn btn-outline" onclick="exportReport('ar-aging', 'pdf')">Export PDF</button>
-                        <button class="btn btn-outline" onclick="exportReport('ar-aging', 'csv')">Export CSV</button>
+                        <!-- No Export buttons: backend export supports only TB/PL/BS -->
                         <button class="btn btn-outline" onclick="window.print()">Print</button>
                     </div>
                     <div class="report-container" id="arAgingContainer">
@@ -406,8 +401,7 @@
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                             Generate
                         </button>
-                        <button class="btn btn-outline" onclick="exportReport('ap-aging', 'pdf')">Export PDF</button>
-                        <button class="btn btn-outline" onclick="exportReport('ap-aging', 'csv')">Export CSV</button>
+                        <!-- No Export buttons: backend export supports only TB/PL/BS -->
                         <button class="btn btn-outline" onclick="window.print()">Print</button>
                     </div>
                     <div class="report-container" id="apAgingContainer">

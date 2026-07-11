@@ -560,19 +560,32 @@ async function saveProforma() {
     const form = document.getElementById('proformaForm');
     if (!form.reportValidity()) return;
 
+    // Skip fully blank rows and require an account on any non-empty row —
+    // backend line account_id is a non-nullable Guid (null → 400).
     const lines = [];
-    document.querySelectorAll('#proformaLines tr').forEach(row => {
+    let lineError = null;
+    document.querySelectorAll('#proformaLines tr').forEach((row, idx) => {
+        const account_id = row.querySelector('.line-account')?.value || null;
+        const description = (row.querySelector('.line-desc')?.value || '').trim();
+        const quantity = parseFloat(row.querySelector('.line-qty')?.value) || 0;
+        const unit_price = parseFloat(row.querySelector('.line-rate')?.value) || 0;
         const taxConfigId = row._lineTaxDropdown?.selectedValue || null;
         const taxRate = _proformaTaxRateFor(taxConfigId);
+
+        const isBlank = !account_id && !description && !(quantity * unit_price > 0);
+        if (isBlank) return;
+        if (!account_id) { lineError = lineError || `Line ${idx + 1}: please select an account`; return; }
         lines.push({
-            description: row.querySelector('.line-desc')?.value || '',
-            account_id: row.querySelector('.line-account')?.value || null,
-            quantity: parseFloat(row.querySelector('.line-qty')?.value) || 0,
-            unit_price: parseFloat(row.querySelector('.line-rate')?.value) || 0,
+            description,
+            account_id,
+            quantity,
+            unit_price,
             tax_config_id: taxConfigId,
             tax_rate: taxRate || 0
         });
     });
+    if (lineError) { Toast.error(lineError); return; }
+    if (!lines.length) { Toast.error('Add at least one line item with an account'); return; }
 
     // tax_configuration_id was previously a single header-level field —
     // keeping a no-op default so the existing backend still parses, but tax

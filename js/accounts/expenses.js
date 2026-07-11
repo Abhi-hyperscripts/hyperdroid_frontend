@@ -557,14 +557,18 @@ async function saveExpenseClaim() {
     if (!rows.length) { Toast.error('Add at least one expense item'); return; }
 
     const items = [];
+    let rowNum = 0;
     for (const row of rows) {
+        rowNum++;
         const cat = row.querySelector('.claim-item-category')?.value || null;
         const desc = row.querySelector('.claim-item-desc')?.value?.trim() || '';
         const amount = parseFloat(row.querySelector('.claim-item-amount')?.value) || 0;
         const date = row.querySelector('.claim-item-date')?.value || claimDate;
 
-        if (amount <= 0) { Toast.error('Each item must have an amount greater than 0'); return; }
-        items.push({ expense_category_id: cat || null, description: desc, amount, expense_date: date });
+        if (amount <= 0) { Toast.error(`Item ${rowNum}: amount must be greater than 0`); return; }
+        // Backend expense_category_id is a non-nullable Guid — null → 400
+        if (!cat) { Toast.error(`Item ${rowNum}: please select an expense category`); return; }
+        items.push({ expense_category_id: cat, description: desc, amount, expense_date: date });
     }
 
     const payload = { claim_date: claimDate, description, items };

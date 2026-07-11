@@ -271,14 +271,13 @@
                                     <th>Type</th>
                                     <th>Debit</th>
                                     <th>Credit</th>
-                                    <th>Balance</th>
                                     <th>Reconciled</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="bankTransactionsTable">
                                 <tr class="empty-state">
-                                    <td colspan="8">
+                                    <td colspan="7">
                                         <div class="empty-message">
                                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                                                 <polyline points="17 1 21 5 17 9"></polyline>
@@ -625,7 +624,7 @@
                                 <input type="text" id="branchName" class="form-control" placeholder="Branch name">
                             </div>
                             <div class="form-group">
-                                <label for="glAccountId">GL Account</label>
+                                <label for="glAccountId">GL Account *</label>
                                 <select id="glAccountId" class="form-control">
                                     <option value="">Select GL Account...</option>
                                 </select>
@@ -684,7 +683,7 @@
                                 <input type="number" id="txnAmount" class="form-control" required step="0.01" min="0.01" placeholder="0.00">
                             </div>
                             <div class="form-group">
-                                <label for="txnCounterAccount">Counter Account</label>
+                                <label for="txnCounterAccount">Counter Account *</label>
                                 <select id="txnCounterAccount" class="form-control">
                                     <option value="">Select Account...</option>
                                 </select>

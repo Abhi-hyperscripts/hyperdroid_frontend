@@ -85,8 +85,8 @@ function initDropdowns() {
 
     const configOptions = taxConfigs.map(c => ({ value: c.id, label: c.name }));
 
-    rateConfigFilterDropdown = new SearchableDropdown({
-        container: document.getElementById('rateConfigFilterContainer'),
+    // SearchableDropdown signature is (containerElOrId, { options, ... })
+    rateConfigFilterDropdown = new SearchableDropdown(document.getElementById('rateConfigFilterContainer'), {
         placeholder: 'Filter by config...',
         options: configOptions,
         onChange: () => loadTaxRates()
@@ -118,25 +118,31 @@ function setupSearchListeners() {
 
 async function loadTaxConfigs() {
     try {
-        const search = document.getElementById('taxConfigSearch')?.value || '';
-        const params = {};
-        if (search) params.search = search;
+        const search = (document.getElementById('taxConfigSearch')?.value || '').trim().toLowerCase();
 
-        const url = AccountsCommon.buildUrl('tax/configurations', params);
+        // Backend GetTaxConfigurations only supports countryCode/taxType params —
+        // free-text search is applied client-side.
+        const url = AccountsCommon.buildUrl('tax/configurations');
         const res = await api.request(url, { _skipSpinner: true });
         taxConfigs = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        renderTaxConfigs();
+        const filtered = search
+            ? taxConfigs.filter(c =>
+                (c.name || '').toLowerCase().includes(search) ||
+                (c.country_code || '').toLowerCase().includes(search) ||
+                (c.tax_type || '').toLowerCase().includes(search))
+            : taxConfigs;
+        renderTaxConfigs(filtered);
     } catch (err) {
         console.error('[Taxation] loadTaxConfigs error:', err);
         Toast.error('Failed to load tax configs');
     }
 }
 
-function renderTaxConfigs() {
+function renderTaxConfigs(list = taxConfigs) {
     const tbody = document.getElementById('taxConfigsTable');
     if (!tbody) return;
 
-    if (!taxConfigs.length) {
+    if (!list.length) {
         tbody.innerHTML = `<tr class="empty-state"><td colspan="6"><div class="empty-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                 <circle cx="12" cy="12" r="3"></circle>
@@ -144,7 +150,7 @@ function renderTaxConfigs() {
         return;
     }
 
-    tbody.innerHTML = taxConfigs.map(c => {
+    tbody.innerHTML = list.map(c => {
         const status = c.status || (c.is_active === false ? 'inactive' : 'active');
         const viewBtn = `<button class="btn-icon" onclick="viewTaxConfig('${c.id}')" data-tooltip="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
         const adminBtns = accountsRoles.isAdmin()
@@ -210,6 +216,9 @@ function showCreateTaxConfigModal() {
     document.getElementById('taxConfigForm').reset();
     document.getElementById('taxConfigId').value = '';
     document.getElementById('taxConfigStatus').value = 'active';
+    // Country and Tax Type are set at creation only — re-enable them for a new config.
+    document.getElementById('taxConfigCountry').disabled = false;
+    document.getElementById('taxConfigType').disabled = false;
     AccountsCommon.openModal('taxConfigModal');
 }
 
@@ -225,6 +234,10 @@ function editTaxConfig(id) {
     document.getElementById('taxConfigRate').value = cfg.configuration?.total_rate ?? cfg.rate ?? '';
     document.getElementById('taxConfigStatus').value = cfg.status || 'active';
     document.getElementById('taxConfigDescription').value = cfg.description || '';
+    // The backend treats country_code / tax_type as immutable after creation (the update
+    // payload omits them). Disable so the user isn't misled into editing a discarded field.
+    document.getElementById('taxConfigCountry').disabled = true;
+    document.getElementById('taxConfigType').disabled = true;
     AccountsCommon.openModal('taxConfigModal');
 }
 
@@ -307,23 +320,25 @@ async function loadTaxRates() {
         }
 
         const params = { configId };
-        // Note: backend GetTaxRates doesn't support `search` param — filter client-side if needed
+        // Backend GetTaxRates doesn't support a `search` param — filter client-side
 
         const url = AccountsCommon.buildUrl('tax/rates', params);
         const res = await api.request(url, { _skipSpinner: true });
         taxRates = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        renderTaxRates();
+        const q = (search || '').trim().toLowerCase();
+        const filtered = q ? taxRates.filter(r => (r.name || '').toLowerCase().includes(q)) : taxRates;
+        renderTaxRates(filtered);
     } catch (err) {
         console.error('[Taxation] loadTaxRates error:', err);
         Toast.error('Failed to load tax rates');
     }
 }
 
-function renderTaxRates() {
+function renderTaxRates(list = taxRates) {
     const tbody = document.getElementById('taxRatesTable');
     if (!tbody) return;
 
-    if (!taxRates.length) {
+    if (!list.length) {
         tbody.innerHTML = `<tr class="empty-state"><td colspan="5"><div class="empty-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                 <line x1="19" y1="5" x2="5" y2="19"></line>
@@ -333,7 +348,7 @@ function renderTaxRates() {
         return;
     }
 
-    tbody.innerHTML = taxRates.map(r => {
+    tbody.innerHTML = list.map(r => {
         const status = r.status || (r.is_active === false ? 'inactive' : 'active');
         const actions = accountsRoles.isAdmin()
             ? `<button class="btn-icon" onclick="editTaxRate('${r.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
@@ -354,7 +369,6 @@ function showCreateTaxRateModal() {
     document.getElementById('taxRateModalTitle').textContent = 'Create Tax Rate';
     document.getElementById('taxRateForm').reset();
     document.getElementById('taxRateId').value = '';
-    document.getElementById('taxRateStatus').value = 'active';
     populateTaxRateConfigSelect();
     populateTaxRateAccountSelect();
     AccountsCommon.openModal('taxRateModal');
@@ -368,7 +382,6 @@ function editTaxRate(id) {
     document.getElementById('taxRateId').value = rate.id;
     document.getElementById('taxRateName').value = rate.name || '';
     document.getElementById('taxRatePercent').value = rate.rate ?? '';
-    document.getElementById('taxRateStatus').value = rate.status || 'active';
     populateTaxRateConfigSelect(rate.tax_configuration_id);
     populateTaxRateAccountSelect(rate.tax_account_id);
     AccountsCommon.openModal('taxRateModal');
@@ -380,14 +393,15 @@ async function saveTaxRate() {
     const rate = parseFloat(document.getElementById('taxRatePercent').value);
     const tax_configuration_id = document.getElementById('taxRateConfig').value;
     const tax_account_id = document.getElementById('taxRateAccount').value || null;
-    const status = document.getElementById('taxRateStatus').value;
 
     if (!name || isNaN(rate) || !tax_configuration_id) {
         Toast.error('Name, Rate, and Tax Config are required');
         return;
     }
 
-    const payload = { name, rate, tax_configuration_id, tax_account_id, status };
+    // Backend CreateTaxRateRequest (also used for update) has no status/is_active
+    // field — rates are active by default, so no Status control is offered.
+    const payload = { name, rate, tax_configuration_id, tax_account_id };
 
     try {
         if (id) {
@@ -457,11 +471,15 @@ async function loadHsnSacCodes() {
 
         const url = AccountsCommon.buildUrl('tax/hsn-sac', params);
         const res = await api.request(url, { _skipSpinner: true });
+        // Backend GetHsnSacCodes supports search/codeType but not paging —
+        // pagination is applied client-side over the full returned list.
         hsnSacCodes = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        const total = res?.total || res?.totalCount || hsnSacCodes.length;
+        const total = hsnSacCodes.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+        if (hsnSacPage > totalPages) hsnSacPage = totalPages;
+        const pageSlice = hsnSacCodes.slice((hsnSacPage - 1) * PAGE_SIZE, hsnSacPage * PAGE_SIZE);
 
-        renderHsnSacCodes();
+        renderHsnSacCodes(pageSlice);
         AccountsCommon.renderPagination('hsnSacPagination', hsnSacPage, totalPages, (page) => {
             hsnSacPage = page;
             loadHsnSacCodes();
@@ -472,11 +490,11 @@ async function loadHsnSacCodes() {
     }
 }
 
-function renderHsnSacCodes() {
+function renderHsnSacCodes(list = hsnSacCodes) {
     const tbody = document.getElementById('hsnSacTable');
     if (!tbody) return;
 
-    if (!hsnSacCodes.length) {
+    if (!list.length) {
         tbody.innerHTML = `<tr class="empty-state"><td colspan="5"><div class="empty-message">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                 <polyline points="16 18 22 12 16 6"></polyline>
@@ -485,7 +503,7 @@ function renderHsnSacCodes() {
         return;
     }
 
-    tbody.innerHTML = hsnSacCodes.map(h => {
+    tbody.innerHTML = list.map(h => {
         const actions = accountsRoles.isAdmin()
             ? `<button class="btn-icon" onclick="editHsnSac('${h.id}')" data-tooltip="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                <button class="btn-icon danger" onclick="deleteHsnSac('${h.id}')" data-tooltip="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`

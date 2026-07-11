@@ -197,7 +197,7 @@ function renderBillsTable() {
             <td>${esc(vendorMap[b.vendor_id] || b.vendor_name || '-')}</td>
             <td>${fmtD(b.bill_date)}</td><td>${fmtD(b.due_date)}</td>
             <td class="text-right">${fmt(b.total_amount || b.total)}</td>
-            <td class="text-right">${fmt(b.balance_due || b.balance || b.total_amount || b.total)}</td>
+            <td class="text-right">${fmt(b.balance_due ?? b.total_amount ?? 0)}</td>
             <td>${AccountsCommon.statusBadge(b.status)}</td>
             <td class="actions-cell">${actions || '<span class="text-secondary">-</span>'}</td>
         </tr>`;
@@ -618,27 +618,47 @@ async function saveBill(approve = false) {
     // Collect line items from DOM (now Account-first, with per-line tax)
     const tbody = document.getElementById('billLinesBody');
     const lines = [];
-    tbody?.querySelectorAll('tr').forEach(row => {
+    let lineError = null;
+    Array.from(tbody?.querySelectorAll('tr') || []).forEach((row, idx) => {
         const description = row.querySelector('.line-desc')?.value.trim() || '';
         const account_id = row.querySelector('.line-account')?.value || '';
         const quantity = parseFloat(row.querySelector('.line-qty')?.value) || 0;
         const rate = parseFloat(row.querySelector('.line-rate')?.value) || 0;
         const tax_config_id = row._lineTaxDropdown?.selectedValue || null;
         const tax_rate = _billTaxRateFor(tax_config_id);
-        if (description || account_id) {
-            lines.push({
-                description,
-                account_id: account_id || null,
-                quantity,
-                unit_price: rate,
-                tax_config_id,
-                tax_rate: tax_rate || 0
-            });
+        // Skip fully-blank rows (no description, no account, no amount)
+        if (!description && !account_id && rate <= 0) return;
+        // Backend CreateVendorBillLineRequest.account_id is a non-nullable Guid —
+        // sending null 400s. Require an account on every row that has any data.
+        if (!account_id) {
+            if (!lineError) lineError = `Line ${idx + 1}: select an account for this line item`;
+            return;
         }
+        lines.push({
+            description,
+            account_id,
+            quantity,
+            unit_price: rate,
+            tax_config_id,
+            tax_rate: tax_rate || 0
+        });
     });
+
+    if (lineError) {
+        Toast.error(lineError);
+        return;
+    }
 
     if (!lines.length) {
         Toast.error('At least one line item is required');
+        return;
+    }
+
+    // The backend requires every line to share one tax configuration. Catch mixed slabs
+    // here with a clear message instead of a confusing 400 after the round-trip.
+    const distinctTaxConfigs = [...new Set(lines.map(l => l.tax_config_id).filter(Boolean))];
+    if (distinctTaxConfigs.length > 1) {
+        Toast.error('All line items must use the same tax rate. Set every line to the same GST/tax option before saving.');
         return;
     }
 
@@ -651,27 +671,34 @@ async function saveBill(approve = false) {
         tds_amount: 0, tds_section: null
     };
 
+    let savedBill;
     try {
-        let savedBill;
         if (id) {
             savedBill = await api.request(AccountsCommon.buildUrl(`vendor-bills/${id}`), { method: 'PUT', body: JSON.stringify(payload) });
         } else {
             savedBill = await api.request(AccountsCommon.buildUrl('vendor-bills'), { method: 'POST', body: JSON.stringify(payload) });
         }
-
-        if (approve && savedBill?.id) {
-            // Chain the approve call so "Save & Approve" actually posts the GL entry
-            await api.request(AccountsCommon.buildUrl(`vendor-bills/${savedBill.id}/approve`), { method: 'POST' });
-            Toast.success('Bill created and approved');
-        } else {
-            Toast.success(id ? 'Bill updated' : 'Bill saved as draft');
-        }
-        AccountsCommon.closeModal('vendorBillModal');
-        await loadVendorBills();
     } catch (err) {
         console.error('[Payables] saveBill error:', err);
         Toast.error(err.message || 'Failed to save bill');
+        return;
     }
+
+    // The draft now exists. Approval is a separate step — if it fails, the draft must
+    // still be surfaced (close modal + refresh) so the user doesn't re-submit and create a duplicate.
+    if (approve && savedBill?.id) {
+        try {
+            await api.request(AccountsCommon.buildUrl(`vendor-bills/${savedBill.id}/approve`), { method: 'POST' });
+            Toast.success('Bill created and approved');
+        } catch (err) {
+            console.error('[Payables] approveBill (chained) error:', err);
+            Toast.error(`Saved as draft, but approval failed: ${err.message || 'unknown error'}`);
+        }
+    } else {
+        Toast.success(id ? 'Bill updated' : 'Bill saved as draft');
+    }
+    AccountsCommon.closeModal('vendorBillModal');
+    await loadVendorBills();
 }
 
 async function approveBill(id) {
@@ -772,12 +799,15 @@ async function submitBulkBills() {
         const bills = JSON.parse(text);
         if (!Array.isArray(bills)) { Toast.error('Data must be a JSON array'); return; }
         if (!bills.length) { Toast.error('Array is empty'); return; }
+        // Backend BulkCreateBills binds a bare List<CreateVendorBillRequest> —
+        // wrapping in { bills } binds null and 400s. Send the array itself.
         const res = await api.request(AccountsCommon.buildUrl('vendor-bills/bulk'), {
             method: 'POST',
-            body: JSON.stringify({ bills })
+            body: JSON.stringify(bills)
         });
-        const created = res?.created || res?.success_count || bills.length;
-        const failed = res?.failed || res?.error_count || 0;
+        // Backend returns { total, created, results: [{ success, ... }] } — no failed/error_count.
+        const created = res?.created ?? bills.length;
+        const failed = Array.isArray(res?.results) ? res.results.filter(r => !r.success).length : 0;
         if (failed > 0) {
             Toast.warning(`${created} bills created, ${failed} failed`);
         } else {
@@ -798,7 +828,10 @@ async function submitBulkBills() {
 async function loadVendorPayments() {
     try {
         const vendorId = paymentVendorFilterDropdown?.getValue?.() || '';
-        const params = {};
+        // Backend GetPayments defaults to 50 and returns a bare array with no
+        // total, so there's no pager here — fetch the server cap (200) so the
+        // list shows the most recent 200 payments instead of silently stopping at 50.
+        const params = { limit: 200 };
         if (vendorId) params.vendorId = vendorId;
 
         const url = AccountsCommon.buildUrl('vendor-bills/payments', params);
@@ -854,7 +887,9 @@ function showRecordPaymentModal(billId) {
         const bill = vendorBills.find(b => b.id === billId);
         if (bill) {
             document.getElementById('paymentVendor').value = bill.vendor_id;
-            document.getElementById('paymentAmount').value = bill.balance || bill.total || '';
+            // Backend VendorBill uses balance_due — `balance`/`total` don't exist,
+            // and a fully-paid bill (balance_due 0) must not prefill the total.
+            document.getElementById('paymentAmount').value = bill.balance_due ?? '';
             loadVendorOpenBills(billId);
         }
     }
@@ -899,7 +934,7 @@ async function loadVendorOpenBills(preSelectBillId) {
         const openBills = allBills.filter(b => {
             const bal = parseFloat(b.balance_due) || 0;
             const st = (b.status || '').toLowerCase();
-            return bal > 0 && (st === 'approved' || st === 'sent' || st === 'partial' || st === 'partially_paid' || st === 'overdue');
+            return bal > 0 && (st === 'approved' || st === 'sent' || st === 'partially_paid' || st === 'overdue');
         });
 
         if (!openBills.length) {

@@ -522,19 +522,15 @@
                 <div class="modal-body">
                     <form id="checklistForm">
                         <input type="hidden" id="checklistId">
+                        <!-- Backend StartClosingRequest only stores fiscal_period_id + closing_type —
+                             the old Name/Description inputs were silently dropped, so they were removed. -->
                         <div class="form-row two-col">
-                            <div class="form-group">
-                                <label for="checklistName">Checklist Name *</label>
-                                <input type="text" id="checklistName" class="form-control" required placeholder="e.g., Q4 2026 Closing">
-                            </div>
                             <div class="form-group">
                                 <label for="checklistFY">Fiscal Year *</label>
                                 <select id="checklistFY" class="form-control" required>
                                     <option value="">Select...</option>
                                 </select>
                             </div>
-                        </div>
-                        <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="checklistClosingType">Closing Type *</label>
                                 <select id="checklistClosingType" class="form-control" required>
@@ -542,12 +538,6 @@
                                     <option value="quarter_end">Quarter End</option>
                                     <option value="year_end">Year End</option>
                                 </select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="checklistDescription">Description</label>
-                                <textarea id="checklistDescription" class="form-control" rows="2" placeholder="Brief description"></textarea>
                             </div>
                         </div>
                     </form>

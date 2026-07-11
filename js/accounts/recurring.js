@@ -221,7 +221,7 @@ async function pauseRecurring(id) {
         await api.request(AccountsCommon.buildUrl(`recurring/${id}/pause`), { method: 'POST' });
         Toast.success('Paused');
         await loadRecurring();
-    } catch (err) { Toast.error('Failed to pause'); }
+    } catch (err) { Toast.error(err.message || 'Failed to pause'); }
 }
 
 async function resumeRecurring(id) {
@@ -229,7 +229,7 @@ async function resumeRecurring(id) {
         await api.request(AccountsCommon.buildUrl(`recurring/${id}/resume`), { method: 'POST' });
         Toast.success('Resumed');
         await loadRecurring();
-    } catch (err) { Toast.error('Failed to resume'); }
+    } catch (err) { Toast.error(err.message || 'Failed to resume'); }
 }
 
 async function cancelRecurring(id) {
@@ -239,7 +239,7 @@ async function cancelRecurring(id) {
         await api.request(AccountsCommon.buildUrl(`recurring/${id}`), { method: 'DELETE' });
         Toast.success('Cancelled');
         await loadRecurring();
-    } catch (err) { Toast.error('Failed to cancel'); }
+    } catch (err) { Toast.error(err.message || 'Failed to cancel'); }
 }
 
 async function processDue() {

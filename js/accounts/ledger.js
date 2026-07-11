@@ -268,7 +268,7 @@ async function viewGlEntry(id) {
             </div>
             <div style="margin-bottom:1rem;"><strong>Description:</strong> ${esc(entry.description || '-')}</div>
             <div style="margin-bottom:1rem;"><strong>Reference:</strong> ${esc(entry.reference || '-')}</div>
-            ${entry.posted_by ? `<div style="margin-bottom:1rem;"><strong>Posted:</strong> ${resolveUserName(entry.posted_by)} on ${fmtD(entry.posted_at)}</div>` : ''}
+            ${entry.posted_by ? `<div style="margin-bottom:1rem;"><strong>Posted:</strong> ${esc(resolveUserName(entry.posted_by))} on ${fmtD(entry.posted_at)}</div>` : ''}
             <div class="data-table-container" style="margin-top:1rem;">
                 <table class="data-table">
                     <thead><tr><th>Account</th><th>Description</th><th>Debit</th><th>Credit</th></tr></thead>

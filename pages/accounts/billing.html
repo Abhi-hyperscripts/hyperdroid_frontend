@@ -526,6 +526,7 @@
                 <div class="modal-body">
                     <form id="meterForm">
                         <input type="hidden" id="meterId">
+                        <input type="hidden" id="meterCode">
                         <div class="form-row two-col">
                             <div class="form-group">
                                 <label for="meterName">Name *</label>
@@ -538,12 +539,18 @@
                         </div>
                         <div class="form-row two-col">
                             <div class="form-group">
+                                <label for="meterRate">Rate per Unit *</label>
+                                <input type="number" id="meterRate" class="form-control" required placeholder="e.g., 0.01" step="0.0001" min="0">
+                            </div>
+                            <div class="form-group">
                                 <label for="meterStatus">Status</label>
                                 <select id="meterStatus" class="form-control">
                                     <option value="active">Active</option>
                                     <option value="inactive">Inactive</option>
                                 </select>
                             </div>
+                        </div>
+                        <div class="form-row">
                             <div class="form-group">
                                 <label for="meterDescription">Description</label>
                                 <input type="text" id="meterDescription" class="form-control" placeholder="Brief description">

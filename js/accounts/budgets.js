@@ -199,7 +199,7 @@ async function deleteBudget(id) {
         await api.request(AccountsCommon.buildUrl(`budgets/${id}`), { method: 'DELETE' });
         Toast.success('Budget deleted');
         await loadBudgets();
-    } catch (err) { Toast.error('Failed to delete'); }
+    } catch (err) { Toast.error(err.message || 'Failed to delete'); }
 }
 
 function openCopyModal() {
@@ -278,6 +278,12 @@ function renderAnalysis(report) {
     </div>`;
 
     for (const section of report.sections) {
+        // Backend variance = budget - actual. Favorable = expense under budget
+        // (variance >= 0) OR income over budget (variance <= 0).
+        const isIncome = (section.account_type || '').toLowerCase().includes('income')
+            || (section.account_type || '').toLowerCase().includes('revenue');
+        const varianceColor = (variance) =>
+            (isIncome ? variance <= 0 : variance >= 0) ? 'var(--color-success)' : 'var(--color-error)';
         html += `<div class="glass-card" style="margin-bottom:1rem;">
             <div class="glass-card-body">
                 <h4 style="margin-bottom:0.75rem;">${AccountsCommon.escapeHtml(section.account_type)}</h4>
@@ -296,9 +302,13 @@ function renderAnalysis(report) {
                         </thead>
                         <tbody>
                             ${section.accounts.map(a => {
-                                const pct = a.budget_amount > 0 ? Math.min(100, (a.actual_amount / a.budget_amount) * 100) : 0;
-                                const pctColor = pct > 100 ? 'var(--color-error)' : pct > 80 ? 'var(--color-warning)' : 'var(--color-success)';
-                                const varColor = a.variance >= 0 ? 'var(--color-success)' : 'var(--color-error)';
+                                // Use the raw (uncapped) pct for the color test; clamp only the bar width
+                                const rawPct = a.budget_amount > 0 ? (a.actual_amount / a.budget_amount) * 100 : 0;
+                                const pct = Math.min(100, rawPct);
+                                const pctColor = rawPct > 100
+                                    ? (isIncome ? 'var(--color-success)' : 'var(--color-error)')
+                                    : rawPct > 80 ? 'var(--color-warning)' : 'var(--color-success)';
+                                const varColor = varianceColor(a.variance);
                                 return `<tr>
                                     <td><code>${AccountsCommon.escapeHtml(a.account_code)}</code></td>
                                     <td>${AccountsCommon.escapeHtml(a.account_name)}</td>
@@ -313,7 +323,7 @@ function renderAnalysis(report) {
                                 <td colspan="2">Total ${AccountsCommon.escapeHtml(section.account_type)}</td>
                                 <td style="text-align:right;">${fmt(section.section_budget)}</td>
                                 <td style="text-align:right;">${fmt(section.section_actual)}</td>
-                                <td style="text-align:right;color:${section.section_variance >= 0 ? 'var(--color-success)' : 'var(--color-error)'};" colspan="3">${fmt(section.section_variance)}</td>
+                                <td style="text-align:right;color:${varianceColor(section.section_variance)};" colspan="3">${fmt(section.section_variance)}</td>
                             </tr>
                         </tbody>
                     </table>

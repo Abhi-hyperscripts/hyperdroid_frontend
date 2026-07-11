@@ -14,6 +14,7 @@
 let assetCategories = [];
 let assets = [];
 let depreciationResults = [];
+let coaAccountNames = {}; // GL account id -> display name (for the categories table)
 
 let assetPage = 1;
 const PAGE_SIZE = 50;
@@ -57,9 +58,24 @@ function onTabSwitch(tabId) {
 
 async function loadInitialData() {
     try {
+        await loadCoaAccountNames();
         await loadCategories();
     } catch (err) {
         console.error('[Assets] loadInitialData error:', err);
+    }
+}
+
+async function loadCoaAccountNames() {
+    try {
+        const url = AccountsCommon.buildUrl('coa', { pageSize: 500 });
+        const res = await api.request(url, { _skipSpinner: true });
+        const accounts = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        coaAccountNames = {};
+        accounts.forEach(a => {
+            coaAccountNames[a.id] = a.account_code ? a.account_code + ' - ' + (a.account_name || a.name) : (a.account_name || a.name);
+        });
+    } catch (err) {
+        console.error('[Assets] loadCoaAccountNames error:', err);
     }
 }
 
@@ -119,7 +135,7 @@ function renderCategories() {
             <td>${AccountsCommon.escapeHtml(methodLabels[c.depreciation_method] || c.depreciation_method || '-')}</td>
             <td>${c.useful_life_years ?? '-'}</td>
             <td>${c.depreciation_rate != null ? c.depreciation_rate + '%' : '-'}</td>
-            <td>${AccountsCommon.escapeHtml(c.gl_account_name || '-')}</td>
+            <td>${AccountsCommon.escapeHtml(coaAccountNames[c.asset_account_id] || coaAccountNames[c.depreciation_account_id] || '-')}</td>
             <td class="actions-cell">${actions}</td>
         </tr>`;
     }).join('');
@@ -230,26 +246,32 @@ async function populateCategoryAccountSelects(glAccountId, depAccountId) {
 
 async function loadAssets() {
     try {
-        const search = document.getElementById('assetSearch')?.value || '';
+        const search = (document.getElementById('assetSearch')?.value || '').trim().toLowerCase();
         const statusFilter = document.getElementById('assetStatusFilter')?.value || '';
 
-        const params = { page: assetPage, pageSize: PAGE_SIZE };
-        if (search) params.search = search;
-        if (statusFilter) params.status = statusFilter;
-
-        const url = AccountsCommon.buildUrl('assets', params);
+        // Backend GetAssets only supports a `status` query param — search and
+        // pagination are applied client-side over the loaded list.
+        const url = AccountsCommon.buildUrl('assets', statusFilter ? { status: statusFilter } : {});
         const res = await api.request(url, { _skipSpinner: true });
-        assets = Array.isArray(res) ? res : (res?.data || res?.items || []);
-        const total = res?.total || res?.totalCount || assets.length;
+        let list = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        if (search) {
+            list = list.filter(a =>
+                (a.asset_code || a.code || '').toLowerCase().includes(search) ||
+                (a.name || '').toLowerCase().includes(search) ||
+                (a.description || '').toLowerCase().includes(search));
+        }
+        const total = list.length;
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+        if (assetPage > totalPages) assetPage = totalPages;
+        assets = list.slice((assetPage - 1) * PAGE_SIZE, assetPage * PAGE_SIZE);
 
         // Update stats — prefer backend stats, fallback to client-side
         const stats = res?.stats || {};
         const setText = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
         setText('totalAssets', stats.total_count ?? total);
-        setText('activeAssets', stats.active_count ?? assets.filter(a => a.status === 'active').length);
-        setText('disposedAssets', stats.disposed_count ?? assets.filter(a => a.status === 'disposed').length);
-        setText('totalBookValue', stats.total_book_value != null ? AccountsCommon.formatCurrency(stats.total_book_value) : AccountsCommon.formatCurrency(assets.reduce((sum, a) => sum + (a.book_value || 0), 0)));
+        setText('activeAssets', stats.active_count ?? list.filter(a => a.status === 'active').length);
+        setText('disposedAssets', stats.disposed_count ?? list.filter(a => a.status === 'disposed').length);
+        setText('totalBookValue', stats.total_book_value != null ? AccountsCommon.formatCurrency(stats.total_book_value) : AccountsCommon.formatCurrency(list.reduce((sum, a) => sum + (a.book_value || 0), 0)));
 
         renderAssets();
         AccountsCommon.renderPagination('assetsPagination', assetPage, totalPages, (page) => {
@@ -304,10 +326,22 @@ function renderAssets() {
     }).join('');
 }
 
+// Backend UpdateAssetBody only accepts { name, description, location, department } —
+// code/category/purchase date/cost/residual are immutable after registration.
+function setAssetEditMode(isEdit) {
+    ['assetCode', 'assetCategory', 'assetPurchaseDate', 'assetCost', 'assetResidualValue'].forEach(fid => {
+        const el = document.getElementById(fid);
+        if (!el) return;
+        el.disabled = isEdit;
+        if (el._searchableDropdown) el._searchableDropdown.setDisabled(isEdit);
+    });
+}
+
 function showRegisterAssetModal() {
     document.getElementById('assetModalTitle').textContent = 'Register Asset';
     document.getElementById('assetForm').reset();
     document.getElementById('assetId').value = '';
+    setAssetEditMode(false);
     populateAssetCategorySelect();
     AccountsCommon.openModal('assetModal');
 }
@@ -323,7 +357,10 @@ function editAsset(id) {
     document.getElementById('assetPurchaseDate').value = asset.purchase_date ? asset.purchase_date.split('T')[0] : '';
     document.getElementById('assetCost').value = asset.purchase_cost ?? asset.cost ?? '';
     document.getElementById('assetResidualValue').value = asset.salvage_value ?? asset.residual_value ?? '';
+    document.getElementById('assetLocation').value = asset.location || '';
+    document.getElementById('assetDepartment').value = asset.department || '';
     document.getElementById('assetDescription').value = asset.description || '';
+    setAssetEditMode(true);
     populateAssetCategorySelect(asset.asset_category_id || asset.category_id);
     AccountsCommon.openModal('assetModal');
 }
@@ -336,6 +373,8 @@ async function saveAsset() {
     const purchase_date = document.getElementById('assetPurchaseDate').value;
     const cost = parseFloat(document.getElementById('assetCost').value);
     const residual_value = document.getElementById('assetResidualValue').value ? parseFloat(document.getElementById('assetResidualValue').value) : 0;
+    const location = document.getElementById('assetLocation').value.trim() || null;
+    const department = document.getElementById('assetDepartment').value.trim() || null;
     const description = document.getElementById('assetDescription').value.trim();
 
     if (!code || !name || !category_id || !purchase_date || isNaN(cost)) {
@@ -343,8 +382,9 @@ async function saveAsset() {
         return;
     }
 
-    const createPayload = { asset_code: code, name, asset_category_id: category_id, purchase_date, purchase_cost: cost, salvage_value: residual_value, description };
-    const updatePayload = { name, description };
+    const createPayload = { asset_code: code, name, asset_category_id: category_id, purchase_date, purchase_cost: cost, salvage_value: residual_value, location, department, description };
+    // Backend UpdateAssetBody only supports these four fields
+    const updatePayload = { name, description, location, department };
 
     try {
         if (id) {
@@ -427,15 +467,13 @@ async function runDepreciation() {
         return;
     }
 
-    // Build a target-named confirm with the period + category scope
+    // The backend honours category_id (RunDepreciationRequest.category_id): when set, only
+    // assets in that category are depreciated; when omitted, all active assets are processed.
     const periodLabel = new Date(periodDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-    const categoryName = categoryId
-        ? (assetCategories.find(c => c.id === categoryId)?.name || 'the selected category')
-        : 'all asset categories';
-    const activeAssetCount = (assets || []).filter(a => a.is_active !== false && (!categoryId || a.asset_category_id === categoryId || a.category_id === categoryId)).length;
+    const scopeLabel = categoryId ? 'the selected category' : 'all active assets';
     const ok = await Confirm.show({
         title: 'Run Depreciation',
-        message: `Run depreciation for ${categoryName} up to ${periodLabel}? This scans ${activeAssetCount} active asset${activeAssetCount === 1 ? '' : 's'}, posts journal entries for each (Dr Depreciation Expense, Cr Accumulated Depreciation), and cannot be undone for this period — you can only reverse by creating correcting journal entries in the General Ledger.`,
+        message: `Run depreciation for ${scopeLabel} up to ${periodLabel}? This posts journal entries for each eligible asset (Dr Depreciation Expense, Cr Accumulated Depreciation) and cannot be undone for this period — you can only reverse by creating correcting journal entries in the General Ledger.`,
         confirmText: 'Run Depreciation',
         type: 'warning'
     });
@@ -614,7 +652,7 @@ async function viewDepreciationSchedule(id) {
                             ${entries.map(e => `<tr>
                                 <td>${AccountsCommon.formatDate(e.period_date || e.date)}</td>
                                 <td class="text-right">${AccountsCommon.formatCurrency(e.depreciation_amount || e.amount)}</td>
-                                <td class="text-right">${AccountsCommon.formatCurrency(e.accumulated_depreciation || e.accumulated)}</td>
+                                <td class="text-right">${AccountsCommon.formatCurrency(e.accumulated_amount)}</td>
                                 <td class="text-right">${AccountsCommon.formatCurrency(e.book_value_after || e.book_value)}</td>
                             </tr>`).join('')}
                         </tbody>

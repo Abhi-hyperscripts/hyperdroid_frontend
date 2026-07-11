@@ -178,7 +178,7 @@ async function loadTrialBalance() {
         renderTrialBalanceReport(data);
     } catch (err) {
         console.error('[Reports] loadTrialBalance error:', err);
-        Toast.error('Failed to generate Trial Balance');
+        Toast.error(err.message || 'Failed to generate Trial Balance');
     }
 }
 
@@ -197,7 +197,7 @@ async function loadProfitLoss() {
         renderProfitLossReport(data);
     } catch (err) {
         console.error('[Reports] loadProfitLoss error:', err);
-        Toast.error('Failed to generate Profit & Loss');
+        Toast.error(err.message || 'Failed to generate Profit & Loss');
     }
 }
 
@@ -216,7 +216,7 @@ async function loadBalanceSheet() {
         renderBalanceSheetReport(data);
     } catch (err) {
         console.error('[Reports] loadBalanceSheet error:', err);
-        Toast.error('Failed to generate Balance Sheet');
+        Toast.error(err.message || 'Failed to generate Balance Sheet');
     }
 }
 
@@ -232,7 +232,7 @@ async function loadCashFlow() {
         renderCashFlowReport(data);
     } catch (err) {
         console.error('[Reports] loadCashFlow error:', err);
-        Toast.error('Failed to generate Cash Flow Statement');
+        Toast.error(err.message || 'Failed to generate Cash Flow Statement');
     }
 }
 
@@ -242,6 +242,9 @@ async function loadAccountLedger() {
 
     const fromDate = document.getElementById('ledgerFromDate')?.value || '';
     const toDate = document.getElementById('ledgerToDate')?.value || '';
+    // Backend fromDate/toDate are non-nullable DateTime — blank values parse to
+    // year 0001 and return an empty report, so require a valid window.
+    if (!fromDate || !toDate) { Toast.error('Please select both From and To dates'); return; }
 
     try {
         const url = AccountsCommon.buildUrl('reports/ledger', { accountId, fromDate, toDate });
@@ -252,7 +255,7 @@ async function loadAccountLedger() {
         renderLedgerReport(data);
     } catch (err) {
         console.error('[Reports] loadAccountLedger error:', err);
-        Toast.error('Failed to generate Account Ledger');
+        Toast.error(err.message || 'Failed to generate Account Ledger');
     }
 }
 
@@ -267,7 +270,7 @@ async function loadDayBook() {
         renderDayBookReport(data);
     } catch (err) {
         console.error('[Reports] loadDayBook error:', err);
-        Toast.error('Failed to generate Day Book');
+        Toast.error(err.message || 'Failed to generate Day Book');
     }
 }
 
@@ -277,6 +280,9 @@ async function loadCashBook() {
 
     const fromDate = document.getElementById('cashBookFromDate')?.value || '';
     const toDate = document.getElementById('cashBookToDate')?.value || '';
+    // Backend fromDate/toDate are non-nullable DateTime — blank values parse to
+    // year 0001 and return an empty report, so require a valid window.
+    if (!fromDate || !toDate) { Toast.error('Please select both From and To dates'); return; }
 
     try {
         const url = AccountsCommon.buildUrl('reports/cash-book', { bankAccountId, fromDate, toDate });
@@ -287,7 +293,7 @@ async function loadCashBook() {
         renderCashBookReport(data);
     } catch (err) {
         console.error('[Reports] loadCashBook error:', err);
-        Toast.error('Failed to generate Cash Book');
+        Toast.error(err.message || 'Failed to generate Cash Book');
     }
 }
 
@@ -299,7 +305,7 @@ async function loadARAgingReport() {
         renderAgingReport(data, 'ar');
     } catch (err) {
         console.error('[Reports] loadARAgingReport error:', err);
-        Toast.error('Failed to generate AR Aging Report');
+        Toast.error(err.message || 'Failed to generate AR Aging Report');
     }
 }
 
@@ -311,7 +317,7 @@ async function loadAPAgingReport() {
         renderAgingReport(data, 'ap');
     } catch (err) {
         console.error('[Reports] loadAPAgingReport error:', err);
-        Toast.error('Failed to generate AP Aging Report');
+        Toast.error(err.message || 'Failed to generate AP Aging Report');
     }
 }
 
@@ -319,13 +325,28 @@ async function loadAPAgingReport() {
 // EXPORT
 // ============================================================================
 
+// Note: backend export supports only trial-balance / profit-loss / balance-sheet;
+// export buttons on the other report tabs have been removed from reports.html.
 async function exportReport(reportType, format) {
     try {
+        // Include the on-screen fiscal year + comparison so the exported file
+        // matches the generated report (backend ExportReport accepts both).
+        const fyDropdowns = {
+            'trial-balance': tbFiscalYearDropdown,
+            'profit-loss': plFiscalYearDropdown,
+            'balance-sheet': bsFiscalYearDropdown
+        };
+        const compareSelects = { 'profit-loss': 'plCompareTo', 'balance-sheet': 'bsCompareTo' };
+        const fiscalYearId = fyDropdowns[reportType]?.getValue?.() || '';
+        const compareTo = document.getElementById(compareSelects[reportType] || '')?.value || '';
+
         // Use direct fetch for binary responses — api.request() auto-parses
         // responses as JSON/text which corrupts PDF/CSV downloads.
         const baseUrl = api._getBaseUrl('/accounts/');
         const tenantId = AccountsCommon.getTenantId();
-        const url = `${baseUrl}/accounts/reports/export/${reportType}?format=${format}&tenantId=${tenantId}`;
+        let url = `${baseUrl}/accounts/reports/export/${reportType}?format=${format}&tenantId=${tenantId}`;
+        if (fiscalYearId) url += `&fiscalYearId=${encodeURIComponent(fiscalYearId)}`;
+        if (compareTo && compareTo !== 'none') url += `&compareTo=${encodeURIComponent(compareTo)}`;
 
         const response = await fetch(url, {
             method: 'POST',

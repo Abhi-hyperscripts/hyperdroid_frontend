@@ -165,6 +165,20 @@ function renderVendorsTable() {
 // DETAIL SLIDE PANEL (shared for vendor/customer view)
 // ============================================================================
 
+// Render a website as a link only for http(s) URLs — javascript:/data: etc.
+// are shown as plain text to prevent XSS via a stored website value.
+function safeWebsiteLink(website) {
+    if (!website) return '-';
+    const esc = AccountsCommon.escapeHtml;
+    let href = String(website).trim();
+    if (!/^https?:\/\//i.test(href)) {
+        // No scheme — treat as https; anything with a non-http(s) scheme is plain text
+        if (/^[a-z][a-z0-9+.-]*:/i.test(href)) return esc(website);
+        href = 'https://' + href;
+    }
+    return `<a href="${esc(href)}" target="_blank" rel="noopener noreferrer" style="color:var(--brand-primary)">${esc(website)}</a>`;
+}
+
 function openDetailPanel(item, type) {
     const isVendor = type === 'vendor';
     const esc = AccountsCommon.escapeHtml;
@@ -199,7 +213,7 @@ function openDetailPanel(item, type) {
                 <div class="panel-detail-row"><span class="panel-detail-label">Email</span><span class="panel-detail-value">${esc(item.email || '-')}</span></div>
                 <div class="panel-detail-row"><span class="panel-detail-label">Phone</span><span class="panel-detail-value">${esc(item.phone || '-')}</span></div>
                 <div class="panel-detail-row"><span class="panel-detail-label">Contact Person</span><span class="panel-detail-value">${esc(item.contact_person || '-')}</span></div>
-                <div class="panel-detail-row"><span class="panel-detail-label">Website</span><span class="panel-detail-value">${item.website ? `<a href="${esc(item.website)}" target="_blank" style="color:var(--brand-primary)">${esc(item.website)}</a>` : '-'}</span></div>
+                <div class="panel-detail-row"><span class="panel-detail-label">Website</span><span class="panel-detail-value">${safeWebsiteLink(item.website)}</span></div>
             </div>
         </div>
 
