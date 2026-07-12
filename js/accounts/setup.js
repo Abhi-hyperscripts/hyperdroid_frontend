@@ -900,9 +900,13 @@ async function loadOpeningBalances() {
             };
         });
 
-        // Merge — every active account becomes a row, with pre-filled balances if any exist.
+        // Merge — every active BALANCE-SHEET account becomes a row, with pre-filled balances if any
+        // exist. Opening balances belong only to Assets/Liabilities/Equity; the backend rejects a P&L
+        // (Income/Expense) account with a 409, so listing them here would guarantee a save error and,
+        // because saves post one account per request, leave the books half-written.
+        const plTypes = ['Income', 'Revenue', 'Expense', 'Expenses'];
         openingBalances = allAccounts
-            .filter(a => a.is_active !== false)
+            .filter(a => a.is_active !== false && !plTypes.includes(a.account_type_name))
             .map(a => ({
                 account_id: a.id,
                 account_code: a.account_code || a.code,

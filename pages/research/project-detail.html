@@ -19,6 +19,8 @@
     <script src="/js/pwa-install-prompt.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <script>
+        document.write('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>');
+        document.write('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap">');
         document.write('<link rel="stylesheet" href="../../css/theme.css?v=' + CACHE_VERSION + '">');
         document.write('<link rel="stylesheet" href="../../css/styles.css?v=' + CACHE_VERSION + '">');
         document.write('<link rel="stylesheet" href="../../css/sidebar-nav.css?v=' + CACHE_VERSION + '">');
@@ -1432,6 +1434,272 @@
             overflow-y: auto;
             word-break: break-word;
         }
+
+        /* Data QA (Validation) tab */
+        #validationTab .query-section { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+        .val-chip {
+            display: flex; flex-direction: column; gap: 2px;
+            padding: 8px 14px; border-radius: 10px;
+            border: 1px solid var(--border-color); background: var(--bg-card); min-width: 120px;
+        }
+        .val-chip.val-warn { border-color: var(--color-warning, #f59e0b); }
+        .val-chip.val-err  { border-color: var(--color-danger, #ef4444); }
+        .val-chip.val-ok   { border-color: var(--color-success, #10b981); }
+        .val-badge {
+            display: inline-block; padding: 1px 8px; border-radius: 999px;
+            font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        .val-badge.val-ok    { background: var(--color-success-light, rgba(16,185,129,0.12)); color: var(--color-success, #10b981); }
+        .val-badge.val-warn  { background: var(--color-warning-light, rgba(245,158,11,0.12)); color: var(--color-warning, #f59e0b); }
+        .val-badge.val-err   { background: var(--color-danger-light, rgba(239,68,68,0.12)); color: var(--color-danger, #ef4444); }
+        .val-badge.val-muted { background: var(--bg-tertiary); color: var(--text-secondary); }
+        .val-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .val-table th {
+            text-align: left; padding: 6px 10px; color: var(--text-muted);
+            font-weight: 600; border-bottom: 1px solid var(--border-color); position: sticky; top: 0;
+            background: var(--bg-card); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em;
+        }
+        .val-table td { padding: 6px 10px; border-bottom: 1px solid var(--border-color); vertical-align: top; }
+        .val-table code { font-size: 0.8rem; color: var(--brand-primary); }
+
+        /* ---- Syntax reference (Checks) doc cards in the slide panel ---- */
+        .val-ref-hint { color: var(--text-muted); font-size: 0.78rem; margin-bottom: 12px; }
+        .val-ref-search {
+            width: 100%; box-sizing: border-box; margin-bottom: 12px; padding: 8px 12px;
+            border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card);
+            color: var(--text-primary); font-size: 0.85rem;
+        }
+        .val-ref-search:focus { outline: none; border-color: var(--brand-primary); }
+        .val-ref-cat {
+            font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--text-muted); font-weight: 700; margin: 18px 0 8px;
+        }
+        .val-fn { border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 8px; background: var(--bg-card); overflow: hidden; }
+        .val-fn[open] { border-color: var(--brand-primary); }
+        .val-fn > summary {
+            list-style: none; cursor: pointer; padding: 11px 14px; display: flex;
+            align-items: baseline; gap: 10px; user-select: none;
+        }
+        .val-fn > summary::-webkit-details-marker { display: none; }
+        .val-fn > summary:hover { background: var(--bg-secondary); }
+        .val-fn-name {
+            font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+            font-size: 0.9rem; font-weight: 600; color: var(--brand-primary); flex-shrink: 0;
+        }
+        .val-fn-lead { color: var(--text-secondary); font-size: 0.82rem; line-height: 1.35; }
+        .val-fn-body { padding: 4px 14px 16px; border-top: 1px solid var(--border-color); }
+        .val-fn-desc { color: var(--text-primary); font-size: 0.84rem; line-height: 1.55; margin: 12px 0 4px; }
+        .val-sec-h {
+            font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--text-muted); font-weight: 700; margin: 16px 0 6px;
+        }
+        .val-param { display: grid; grid-template-columns: minmax(90px,auto) 1fr; gap: 4px 12px; padding: 6px 0; border-bottom: 1px solid var(--border-color); }
+        .val-param:last-child { border-bottom: none; }
+        .val-param-name {
+            font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+            font-size: 0.8rem; color: var(--text-primary); font-weight: 600;
+        }
+        .val-req { font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 5px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+        .val-req.req { background: var(--color-danger-light, rgba(239,68,68,0.12)); color: var(--color-danger, #ef4444); }
+        .val-req.opt { background: var(--bg-tertiary); color: var(--text-muted); }
+        .val-param-desc { color: var(--text-secondary); font-size: 0.8rem; line-height: 1.45; }
+        .val-ex { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); }
+        .val-ex-use { color: var(--text-primary); font-size: 0.82rem; line-height: 1.45; margin-bottom: 8px; }
+        .val-ex-use b { color: var(--text-muted); font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+        .val-ex-code {
+            font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+            font-size: 0.78rem; line-height: 1.5; color: var(--text-primary); background: var(--bg-card);
+            border: 1px solid var(--border-color); border-radius: 6px; padding: 9px 11px; margin: 0;
+            white-space: pre; overflow-x: auto;
+        }
+        .val-ex-res { color: var(--text-secondary); font-size: 0.78rem; line-height: 1.45; margin-top: 7px; }
+        .val-ex-res b { color: var(--text-muted); }
+        .val-ex-actions { margin-top: 8px; }
+        .val-ex-insert, .val-fn-insert {
+            font-size: 0.74rem; padding: 4px 10px; border-radius: 6px; cursor: pointer;
+            border: 1px solid var(--border-color); background: var(--bg-card); color: var(--brand-primary); font-weight: 600;
+        }
+        .val-ex-insert:hover, .val-fn-insert:hover { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+        .val-fn-insert { margin-top: 14px; }
+
+        /* ---- Unified output window (SPSS-style, one section per block) — compact ---- */
+        .out { padding: 2px; }
+        .out-runbar {
+            position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 6px;
+            flex-wrap: wrap; padding: 6px 2px 8px; margin-bottom: 4px; background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .out-pill {
+            display: inline-flex; align-items: baseline; gap: 4px; padding: 2px 8px; border-radius: 999px;
+            font-size: 0.68rem; font-weight: 600; background: var(--bg-tertiary); color: var(--text-secondary);
+        }
+        .out-pill b { font-size: 0.74rem; color: var(--text-primary); font-weight: 700; }
+        .out-pill.ok   { background: var(--color-success-light, rgba(16,185,129,0.12)); color: var(--color-success, #10b981); }
+        .out-pill.ok b { color: var(--color-success, #10b981); }
+        .out-pill.warn { background: var(--color-warning-light, rgba(245,158,11,0.12)); color: var(--color-warning, #f59e0b); }
+        .out-pill.warn b { color: var(--color-warning, #f59e0b); }
+        .out-pill.err  { background: var(--color-danger-light, rgba(239,68,68,0.12)); color: var(--color-danger, #ef4444); }
+        .out-pill.err b { color: var(--color-danger, #ef4444); }
+        .out-pill .btn-sm { margin-left: 2px; padding: 2px 8px; font-size: 0.68rem; }
+
+        .out-block { border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; overflow: hidden; background: var(--bg-card); }
+        .out-block.k-error { border-color: var(--color-danger, #ef4444); }
+        .out-block-head {
+            display: flex; align-items: center; gap: 8px; padding: 5px 11px;
+            background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);
+        }
+        .out-seq { color: var(--text-muted); font-size: 0.7rem; font-weight: 700; min-width: 14px; }
+        .out-fn { font-family: 'JetBrains Mono','SF Mono',Menlo,Consolas,monospace; font-size: 0.76rem; font-weight: 600; color: var(--text-primary); }
+        .out-kind { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; }
+        .out-time { margin-left: auto; color: var(--text-muted); font-size: 0.66rem; font-variant-numeric: tabular-nums; }
+        .out-body { padding: 9px 11px; }
+        .out-msg { font-size: 0.78rem; color: var(--text-primary); line-height: 1.45; margin: 0 0 3px; }
+        .out-msg .ok-tick { color: var(--color-success, #10b981); font-weight: 700; }
+        .out-sub { font-size: 0.72rem; color: var(--text-secondary); margin: 2px 0 0; }
+        .out-err-msg {
+            font-family: 'JetBrains Mono','SF Mono',Menlo,Consolas,monospace; font-size: 0.72rem; line-height: 1.45;
+            color: var(--color-danger, #ef4444); background: var(--color-danger-light, rgba(239,68,68,0.08));
+            border-radius: 6px; padding: 8px 10px; white-space: pre-wrap; word-break: break-word;
+        }
+        .out-stats { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
+        .out-stat {
+            display: flex; flex-direction: column; gap: 1px; padding: 4px 10px; border-radius: 7px;
+            border: 1px solid var(--border-color); background: var(--bg-secondary); min-width: 62px;
+        }
+        .out-stat .k { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); font-weight: 700; }
+        .out-stat .v { font-size: 0.86rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+        /* SPSS-style: the table keeps its natural width (never stretches to fill the window);
+           when a table is wider than the pane, THIS wrapper shows a horizontal scrollbar. */
+        .out-tbl-wrap { overflow-x: auto; margin-top: 6px; max-width: 100%; }
+        .out-tbl { width: auto; max-width: none; border-collapse: collapse; font-size: 0.74rem; }
+        .out-tbl th {
+            text-align: left; padding: 4px 12px 4px 8px; color: var(--text-muted); font-weight: 700;
+            border-bottom: 1px solid var(--border-color); font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.03em;
+            white-space: nowrap;
+        }
+        .out-tbl td {
+            padding: 4px 12px 4px 8px; border-bottom: 1px solid var(--border-color);
+            vertical-align: top; white-space: nowrap;
+        }
+        .out-tbl td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        /* long free-text (verbatim detail) wraps within a cap instead of forcing a huge row */
+        .out-tbl td.wrap { white-space: normal; max-width: 480px; word-break: break-word; }
+        .out-tbl tbody tr:last-child td, .out-tbl tbody tr:last-child td { border-bottom: none; }
+        .out-gap-pos { color: var(--color-success, #10b981); }
+        .out-gap-neg { color: var(--color-danger, #ef4444); }
+        .out-empty { text-align: center; padding: 14px; color: var(--text-secondary); font-size: 0.78rem; }
+        .out .val-badge { font-size: 0.6rem; padding: 1px 6px; }
+
+        /* ---- Collapsible blocks, outline nav, per-table export, drill link ---- */
+        .out { display: flex; flex-direction: column; height: 100%; }
+        .out-runbar { flex-shrink: 0; }
+        .out-split { display: flex; flex: 1; min-height: 0; gap: 0; }
+        .out-nav {
+            flex-shrink: 0; width: 148px; overflow-y: auto; overflow-x: hidden;
+            border-right: 1px solid var(--border-color); padding: 6px 4px 6px 2px;
+        }
+        .out-nav-item {
+            display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 6px;
+            cursor: pointer; font-size: 0.72rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden;
+        }
+        .out-nav-item:hover { background: var(--bg-secondary); }
+        .out-nav-item .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .out-nav-item .dot.ok { background: var(--color-success, #10b981); }
+        .out-nav-item .dot.warn { background: var(--color-warning, #f59e0b); }
+        .out-nav-item .dot.err { background: var(--color-danger, #ef4444); }
+        .out-nav-item .nm { font-family: 'JetBrains Mono','SF Mono',Menlo,Consolas,monospace; overflow: hidden; text-overflow: ellipsis; }
+        .out-main { flex: 1; overflow: auto; padding: 8px 8px 8px 10px; min-width: 0; }
+        .out-block.collapsed .out-body { display: none; }
+        .out-block-head { cursor: pointer; }
+        .out-caret { color: var(--text-muted); font-size: 0.7rem; transition: transform 0.12s; }
+        .out-block.collapsed .out-caret { transform: rotate(-90deg); }
+        .out-tbl-bar { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; }
+        .out-tbl-bar .lbl { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); font-weight: 700; margin-right: auto; }
+        .out-mini-btn {
+            font-size: 0.66rem; padding: 2px 8px; border-radius: 5px; cursor: pointer; font-weight: 600;
+            border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary);
+        }
+        .out-mini-btn:hover { background: var(--brand-primary); color: #fff; border-color: var(--brand-primary); }
+        .out-drill { cursor: pointer; color: var(--brand-primary); font-weight: 600; text-decoration: underline dotted; }
+        .out-drill:hover { text-decoration: underline; }
+
+        /* ---- Shared modal for Build / Respondent / History ---- */
+        .val-modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 4000;
+            background: rgba(0,0,0,0.42); align-items: center; justify-content: center; padding: 24px;
+        }
+        .val-modal-overlay.active { display: flex; }
+        .val-modal {
+            width: min(620px, 94vw); max-height: 86vh; display: flex; flex-direction: column;
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px;
+            box-shadow: 0 18px 60px rgba(0,0,0,0.32); overflow: hidden;
+        }
+        .val-modal-head {
+            display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+        }
+        .val-modal-title { font-size: 0.92rem; font-weight: 700; color: var(--text-primary); }
+        .val-modal-x {
+            margin-left: auto; width: 26px; height: 26px; border: none; background: transparent;
+            color: var(--text-muted); font-size: 1.2rem; cursor: pointer; border-radius: 6px; line-height: 1;
+        }
+        .val-modal-x:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+        .val-modal-body { padding: 14px 16px; overflow: auto; }
+
+        /* builder form */
+        .vb-row { margin-bottom: 12px; }
+        .vb-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+        .vb-label .req { color: var(--color-danger, #ef4444); font-size: 0.64rem; font-weight: 700; margin-left: 5px; text-transform: uppercase; }
+        .vb-label .opt { color: var(--text-muted); font-size: 0.64rem; font-weight: 700; margin-left: 5px; text-transform: uppercase; }
+        .vb-help { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 5px; }
+        .vb-input, .vb-select {
+            width: 100%; box-sizing: border-box; padding: 7px 10px; font-size: 0.82rem;
+            border: 1px solid var(--border-color); border-radius: 7px; background: var(--bg-primary); color: var(--text-primary);
+        }
+        .vb-input:focus, .vb-select:focus { outline: none; border-color: var(--brand-primary); }
+        .vb-preview {
+            font-family: 'JetBrains Mono','SF Mono',Menlo,Consolas,monospace; font-size: 0.76rem; line-height: 1.5;
+            background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 7px;
+            padding: 9px 11px; margin: 6px 0 12px; white-space: pre-wrap; word-break: break-word; color: var(--text-primary);
+        }
+        .vb-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+        /* respondent record */
+        .vr-search { width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 7px 10px; font-size: 0.82rem;
+            border: 1px solid var(--border-color); border-radius: 7px; background: var(--bg-primary); color: var(--text-primary); }
+        .vr-tbl { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        .vr-tbl th { text-align: left; padding: 5px 10px; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.03em;
+            color: var(--text-muted); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-card); }
+        .vr-tbl td { padding: 5px 10px; border-bottom: 1px solid var(--border-color); vertical-align: top; }
+        .vr-tbl td.v { font-family: 'JetBrains Mono','SF Mono',Menlo,Consolas,monospace; }
+        .vr-tbl .flagged { background: var(--color-warning-light, rgba(245,158,11,0.12)); }
+
+        /* history list */
+        .vh-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border: 1px solid var(--border-color);
+            border-radius: 8px; margin-bottom: 8px; }
+        .vh-when { font-size: 0.78rem; color: var(--text-primary); font-weight: 600; min-width: 118px; }
+        .vh-meta { font-size: 0.74rem; color: var(--text-secondary); display: flex; gap: 10px; flex-wrap: wrap; }
+        .vh-delta { font-weight: 700; }
+        .vh-delta.up { color: var(--color-danger, #ef4444); }
+        .vh-delta.down { color: var(--color-success, #10b981); }
+        .vh-load { margin-left: auto; }
+        /* gutter run icon + error line in the editor */
+        .ace_gutter-cell.val-runnable { cursor: pointer; }
+        .ace_gutter-cell.val-runnable::after {
+            content: '▶'; position: absolute; right: 2px; color: var(--brand-primary); font-size: 8px; opacity: 0.55;
+        }
+        .ace_gutter-cell.val-runnable:hover::after { opacity: 1; }
+
+        /* Compact toolbar buttons for the Syntax tab (override .query-toolbar .btn) */
+        #validationTab .btn-sm,
+        #validationTab .query-toolbar .btn {
+            padding: 5px 11px; font-size: 0.78rem; line-height: 1.2;
+        }
+        #validationTab.active {
+            display: flex; flex-direction: column; flex: 1; min-height: 0;
+            padding: 14px 4px 0;
+        }
+        #validationTab .fn-file-select { padding: 5px 9px; font-size: 0.78rem; }
 
         /* Structured Validation Error */
         .query-validation-error {
@@ -6588,12 +6856,13 @@
                                 </svg>
                                 <span class="nav-label">Functions</span>
                             </button>
-                            <button class="sidebar-btn" data-tab="ailogs">
+                            <button class="sidebar-btn" data-tab="validation">
                                 <span class="nav-number">6</span>
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    <polyline points="16 18 22 12 16 6"/>
+                                    <polyline points="8 6 2 12 8 18"/>
                                 </svg>
-                                <span class="nav-label">AI Logs</span>
+                                <span class="nav-label">Syntax</span>
                             </button>
                             <button class="sidebar-btn" data-tab="opencoding">
                                 <span class="nav-number">7</span>
@@ -6602,6 +6871,13 @@
                                     <line x1="7" y1="7" x2="7.01" y2="7"/>
                                 </svg>
                                 <span class="nav-label">Open-End Coding</span>
+                            </button>
+                            <button class="sidebar-btn" data-tab="ailogs">
+                                <span class="nav-number">8</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                <span class="nav-label">AI Logs</span>
                             </button>
                         </div>
                     </nav>
@@ -6972,6 +7248,72 @@
                             </svg>
                             Add Function Block
                         </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Tab Content: Data QA (Validation) — inline SPSS-style syntax editor -->
+            <div class="tab-content" id="validationTab">
+                <div class="query-section" style="display:flex; flex-direction:column; flex:1; min-height:0;">
+                    <div class="query-toolbar" style="margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <label style="font-size:0.8rem; color:var(--text-secondary);">File:</label>
+                            <select id="valFileSelect" class="fn-file-select" onchange="valLoadColumns()"></select>
+                            <button class="btn btn-primary btn-sm" onclick="runValidation(false)" id="runValBtn">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                Run All
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="runValidation(true)" id="runSelBtn">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-1px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                Run Selection
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="loadValidationExample()">Load example</button>
+                            <button class="btn btn-secondary btn-sm" onclick="valSaveTemplate()">Save</button>
+                            <div style="position:relative; display:inline-block;">
+                                <button class="btn btn-secondary btn-sm" onclick="valToggleTemplates(event)">Templates ▾</button>
+                                <div id="valTemplatesMenu" style="display:none; position:absolute; top:100%; left:0; margin-top:4px; z-index:50; min-width:240px; max-height:320px; overflow:auto; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.25); padding:4px;"></div>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="valOpenBuilder()" id="valBuildBtn">＋ Build</button>
+                            <button class="btn btn-secondary btn-sm" onclick="valSuggestChecks()" id="valSuggestBtn">Suggest</button>
+                            <button class="btn btn-secondary btn-sm" onclick="valToggleHistory(event)" id="valHistoryBtn">History</button>
+                            <button class="btn btn-secondary btn-sm" onclick="toggleValidationChecks()" id="valChecksBtn">Checks reference</button>
+                        </div>
+                        <span class="query-execution-info" id="valExecInfo" style="margin-left:auto;"></span>
+                    </div>
+                    <span class="query-hint" style="margin-bottom:8px;">Blocks run top-to-bottom · supports <code>for i = 1:10 { … }</code> loops and <code>if COND { … } else { … }</code> · click the ▶ in the gutter to run one block · Ctrl+Enter runs</span>
+
+                    <div id="valEditor" style="flex:1; min-height:280px; border:1px solid var(--border-color); border-radius:8px; overflow:hidden; position:relative;"></div>
+                </div>
+
+                <!-- Click-to-build form -->
+                <div class="val-modal-overlay" id="valBuilderOverlay" onclick="if(event.target===this) valCloseBuilder()">
+                    <div class="val-modal" role="dialog" aria-label="Build a check">
+                        <div class="val-modal-head">
+                            <span class="val-modal-title">Build a block</span>
+                            <button class="val-modal-x" onclick="valCloseBuilder()" aria-label="Close">×</button>
+                        </div>
+                        <div class="val-modal-body" id="valBuilderBody"></div>
+                    </div>
+                </div>
+
+                <!-- Respondent drill-down -->
+                <div class="val-modal-overlay" id="valRespOverlay" onclick="if(event.target===this) valCloseResp()">
+                    <div class="val-modal" role="dialog" aria-label="Respondent record">
+                        <div class="val-modal-head">
+                            <span class="val-modal-title" id="valRespTitle">Respondent</span>
+                            <button class="val-modal-x" onclick="valCloseResp()" aria-label="Close">×</button>
+                        </div>
+                        <div class="val-modal-body" id="valRespBody"></div>
+                    </div>
+                </div>
+
+                <!-- Run history -->
+                <div class="val-modal-overlay" id="valHistoryOverlay" onclick="if(event.target===this) valCloseHistory()">
+                    <div class="val-modal" role="dialog" aria-label="Run history">
+                        <div class="val-modal-head">
+                            <span class="val-modal-title">Run history</span>
+                            <button class="val-modal-x" onclick="valCloseHistory()" aria-label="Close">×</button>
+                        </div>
+                        <div class="val-modal-body" id="valHistoryBody"></div>
                     </div>
                 </div>
             </div>
@@ -7557,6 +7899,9 @@
         document.write('<script src="../../js/shared/insights-chart-renderer.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/research/project-detail.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/research/openend-coding.js?v=' + CACHE_VERSION + '"><\/script>');
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.min.js"><\/script>');
+        document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ext-language_tools.min.js"><\/script>');
+        document.write('<script src="../../js/research/validation.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/research/custom-table/expand.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/research/custom-table/ui.js?v=' + CACHE_VERSION + '"><\/script>');
         document.write('<script src="../../js/research/weighting/ui.js?v=' + CACHE_VERSION + '"><\/script>');

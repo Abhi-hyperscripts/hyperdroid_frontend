@@ -1002,7 +1002,7 @@ function switchTab(tabName) {
 
     // Update active tab title
     const nameEl = document.getElementById('activeTabName');
-    const tabDisplayNames = { files:'Files', variables:'Variables', questions:'Questions', query:'Query', functions:'Functions', ailogs:'AI Logs', opencoding:'Open-End Coding' };
+    const tabDisplayNames = { files:'Files', variables:'Variables', questions:'Questions', query:'Query', functions:'Functions', ailogs:'AI Logs', opencoding:'Open-End Coding', validation:'Syntax' };
     if (nameEl && tabDisplayNames[tabName]) nameEl.textContent = tabDisplayNames[tabName];
 
     // Update tab content
@@ -1035,6 +1035,9 @@ function switchTab(tabName) {
     }
     if (tabName === 'opencoding') {
         if (typeof initOpenEndCoding === 'function') initOpenEndCoding();
+    }
+    if (tabName === 'validation') {
+        if (typeof initValidation === 'function') initValidation();
     }
 
     // Analyze button: only visible on Variables tab when a file is selected.
@@ -5148,6 +5151,9 @@ function openFnInfoPanel(blockId) {
     const overlay = document.getElementById('fnInfoPanelOverlay');
     const body = document.getElementById('fnInfoPanelBody');
     if (!panel || !body) return;
+    const titleReset = panel.querySelector('.panel-title');
+    if (titleReset) titleReset.textContent = 'Function Info';
+    panel._showingChecks = false;
 
     const name = fn.name || fn.function_name || '';
     const category = fn.category || '';

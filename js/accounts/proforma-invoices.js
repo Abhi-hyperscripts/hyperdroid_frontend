@@ -660,7 +660,12 @@ async function acceptProforma(id) {
         await api.request(AccountsCommon.buildUrl(`proforma-invoices/${id}/accept`), { method: 'POST' });
         Toast.success('Proforma invoice accepted');
         loadProformaInvoices();
-    } catch (err) { Toast.error(err.message || 'Failed to accept proforma invoice'); }
+    } catch (err) {
+        Toast.error(err.message || 'Failed to accept proforma invoice');
+        // Accepting a past-valid_until proforma flips it to 'expired' server-side before erroring,
+        // so refresh to show the new status instead of a stale 'sent'/Accept row.
+        loadProformaInvoices();
+    }
 }
 
 async function rejectProforma(id) {

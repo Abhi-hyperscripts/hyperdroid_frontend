@@ -274,8 +274,14 @@ async function sendInvoiceReminder(invoiceId, invoiceNumber) {
     if (!ok) return;
     try {
         const res = await api.request(AccountsCommon.buildUrl(`invoices/${invoiceId}/send-reminder`), { method: 'POST' });
-        const sentAt = res?.sent_at ? AccountsCommon.formatDate(res.sent_at, true) : 'now';
-        Toast.success(`Reminder sent at ${sentAt}`);
+        // The endpoint returns HTTP 200 with success:false when the email was recorded but delivery
+        // failed (e.g. no customer email, notification service down) — don't report that as sent.
+        if (res && res.success === false) {
+            Toast.warning(res.message || 'Reminder was recorded but the email could not be delivered.');
+        } else {
+            const sentAt = res?.sent_at ? AccountsCommon.formatDate(res.sent_at, true) : 'now';
+            Toast.success(`Reminder sent at ${sentAt}`);
+        }
     } catch (err) {
         console.error('[Receivables] sendInvoiceReminder error:', err);
         Toast.error(err.message || 'Failed to send reminder');
