@@ -70,7 +70,7 @@ function ensureAceEditor() {
                 this.$rules = { start: [
                     { token: 'comment.line', regex: /#.*$/ },
                     { token: 'keyword.control', regex: /\b(?:for|if|else|then|in)\b/ },
-                    { token: 'keyword', regex: /\b(?:respid|compute_variable|vc_[a-z_]+)\b/ },
+                    { token: 'keyword', regex: /\b(?:respid|compute_variable|rim_weighting|csharp|vc_[a-z_]+)\b/ },
                     { token: 'variable.parameter', regex: /\{[A-Za-z_][A-Za-z0-9_]*(?:[+\-*]\d+)?\}/ },
                     { token: 'string', regex: /"(?:[^"\\]|\\.)*"/ },
                     { token: 'constant.language.boolean', regex: /\b(?:true|false|null)\b/ },
@@ -230,10 +230,7 @@ async function valLoadColumns() {
 async function valLoadChecksData() {
     if (_valChecks.length) return;
     try {
-        const baseUrl = api._getBaseUrl('/research/');
-        const token = api.token || getAuthToken();
-        const resp = await fetch(`${baseUrl}/projects/${projectId}/validation/checks`, { headers: { 'Authorization': `Bearer ${token}` } });
-        const data = await resp.json();
+        const data = await api.request(`/research/projects/${projectId}/validation/checks`, { _skipSpinner: true });
         _valChecks = data.checks || [];
         _valChecks.forEach(c => { _valCheckParams[c.name] = c.input_schema ? Object.keys(c.input_schema) : []; });
     } catch (e) { /* autocomplete for checks/params just won't be available */ }
@@ -378,21 +375,20 @@ async function valRunScript(script) {
     if (execInfo) execInfo.textContent = 'Running…';
 
     try {
-        const baseUrl = api._getBaseUrl('/research/');
-        const token = api.token || getAuthToken();
         const body = { script };
         if (fileId) body.file_id = fileId;
 
-        const resp = await fetch(`${baseUrl}/projects/${projectId}/validation/run`, {
+        // Go through the api client so a 401 auto-refreshes the token (and non-JSON / error
+        // responses surface a clear message instead of "Unexpected end of JSON input").
+        const result = await api.request(`/research/projects/${projectId}/validation/run`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
+            _skipSpinner: true
         });
-        const result = await resp.json();
 
-        if (!resp.ok || result.success === false) {
+        if (!result || result.success === false) {
             _valLastResult = null;
-            showValidationInPopup(`<div class="query-error" style="display:block;">${vEsc(result.error || result.message || 'Validation failed to run.')}</div>`, '');
+            showValidationInPopup(`<div class="query-error" style="display:block;">${vEsc((result && (result.error || result.message)) || 'Validation failed to run.')}</div>`, '');
             if (execInfo) execInfo.textContent = 'failed';
             return;
         }
@@ -401,7 +397,11 @@ async function valRunScript(script) {
         if (execInfo) execInfo.textContent = `${formatNumber(result.total_blocks || 0)} block(s) · ${result.execution_time_ms || 0}ms`;
     } catch (err) {
         _valLastResult = null;
-        showValidationInPopup(`<div class="query-error" style="display:block;">Could not reach the validation service: ${vEsc(err?.message || err)}</div>`, '');
+        const m = err?.message || String(err);
+        const msg = /session expired/i.test(m) ? 'Your session expired — reload the page and sign in again.'
+            : /failed to fetch|networkerror/i.test(m) ? 'Could not reach the validation service. Is the backend running?'
+            : m;   // a 400 from a script/parse error carries the real reason here
+        showValidationInPopup(`<div class="query-error" style="display:block;">${vEsc(msg)}</div>`, '');
         if (execInfo) execInfo.textContent = 'error';
     } finally {
         [runAll, runSel].forEach(b => b && (b.disabled = false));
@@ -486,7 +486,7 @@ function renderValidationReport(result) {
     valRecordRun(result);          // save to run history
 }
 
-const OUT_KIND_LABEL = { check: 'Check', derive: 'Data prep', weight: 'Weighting', directive: 'Directive', error: 'Error' };
+const OUT_KIND_LABEL = { check: 'Check', script: 'Script', derive: 'Data prep', weight: 'Weighting', directive: 'Directive', error: 'Error' };
 const OUT_STATUS_CLASS = { pass: 'ok', ok: 'ok', fail: 'warn', error: 'err' };
 
 /** Render one collapsible block section, dispatched by its kind. */
@@ -506,9 +506,22 @@ function valRenderBlock(b, errs) {
     if (kind === 'error') inner = `<div class="out-err-msg">${vEsc(b.message || 'This block failed.')}</div>`;
     else if (kind === 'weight') inner = valBlockWeight(b);
     else if (kind === 'derive') inner = valBlockDerive(b);
+    else if (kind === 'script') inner = valBlockScript(b);
     else if (kind === 'directive') inner = `<p class="out-msg"><span class="ok-tick">✓</span> Respondent id set to <code>${vEsc(b.target || '')}</code>.</p>`;
     else inner = valBlockCheck(b, errs);
+    inner += valOutputPanel(b);   // csharp Print(...) lines, if any
     return `<div class="out-block k-${kind}" id="outblk-${b.seq}" data-status="${vEsc(b.status)}">${head}<div class="out-body">${inner}</div></div>`;
+}
+
+/** Console-style panel of Print(...) lines emitted by a csharp block. Hidden when nothing was printed. */
+function valOutputPanel(b) {
+    const lines = b.output || [];
+    if (!lines.length) return '';
+    const body = lines.map(l => vEsc(l)).join('\n');
+    return `<div class="out-console">
+        <div class="out-console-head"><span class="out-console-dot"></span>Output · Print(${lines.length})</div>
+        <pre class="out-console-body">${body}</pre>
+    </div>`;
 }
 
 /** Validation check: pass line, or a per-block flagged-respondents table (rows drill into the record). */
@@ -534,6 +547,24 @@ function valBlockCheck(b, errs) {
         <div class="out-tbl-wrap"><table class="out-tbl">
             <thead><tr><th>Respondent</th><th>Issue</th><th>Question</th><th>Detail</th></tr></thead>
             <tbody>${rows}</tbody></table></div>${more}`;
+}
+
+/** csharp SCRIPT: the variable operations the script performed (create/update/delete), colour-coded. */
+function valBlockScript(b) {
+    const rows = b.rows || [];
+    const msg = b.message ? vEsc(b.message) : 'Script ran.';
+    if (!rows.length)
+        return `<p class="out-msg"><span class="ok-tick">✓</span> ${msg}</p><p class="out-sub">No variable operations performed.</p>`;
+    const cls = op => op === 'delete' ? 'val-err' : op === 'update' ? 'val-warn' : 'val-ok';
+    const body = rows.map(r => `<tr>
+        <td><span class="val-badge ${cls(String(r.operation))}">${vEsc(r.operation)}</span></td>
+        <td><code>${vEsc(r.variable)}</code></td>
+        <td class="wrap" style="color:var(--text-secondary);">${vEsc(r.detail)}</td>
+    </tr>`).join('');
+    return `<p class="out-msg"><span class="ok-tick">✓</span> ${msg}</p>
+        <div class="out-tbl-wrap"><table class="out-tbl">
+            <thead><tr><th>Operation</th><th>Variable</th><th>Detail</th></tr></thead>
+            <tbody>${body}</tbody></table></div>`;
 }
 
 /** Data-prep: "created variable X" + a frequency table when the function returned one. */
@@ -790,6 +821,17 @@ function valParseBlocks(text) {
         }
         return -1;
     };
+    // C#-aware brace match for the raw csharp { … } body (skip strings, chars, // and /* */ comments).
+    const matchBraceCs = open => { let depth = 0;
+        for (let j = open; j < n; j++) { const ch = text[j];
+            if (ch === '"') { for (j++; j < n; j++) { if (text[j] === '\\') { j++; continue; } if (text[j] === '"') break; } continue; }
+            if (ch === "'") { for (j++; j < n; j++) { if (text[j] === '\\') { j++; continue; } if (text[j] === "'") break; } continue; }
+            if (ch === '/' && text[j + 1] === '/') { while (j < n && text[j] !== '\n') j++; continue; }
+            if (ch === '/' && text[j + 1] === '*') { j += 2; while (j + 1 < n && !(text[j] === '*' && text[j + 1] === '/')) j++; j++; continue; }
+            if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth === 0) return j; }
+        }
+        return -1;
+    };
     const word = (p, w) => text.slice(p, p + w.length).toLowerCase() === w && !/[A-Za-z0-9_]/.test(text[p + w.length] || ' ');
 
     while (i < n) {
@@ -820,7 +862,7 @@ function valParseBlocks(text) {
 
         i = skipTrivia(i);
         if (i >= n || text[i] !== '{') continue;
-        const end = matchBrace(i); if (end < 0) break;
+        const end = (fn === 'csharp' ? matchBraceCs(i) : matchBrace(i)); if (end < 0) break;
         blocks.push({ fn, startRow: rowAt(idStart), endRow: rowAt(end), text: text.slice(idStart, end + 1) });
         i = end + 1;
     }
@@ -991,6 +1033,11 @@ function valSyntaxBlock(name, params) {
     if (params === undefined || params === null) return name + ' {  }';
     let obj = params;
     if (typeof params === 'string') { try { obj = JSON.parse(params); } catch { return name + ' ' + params; } }
+    // csharp is a RAW-body block: render the code directly (indented, multi-line), not as a JSON string.
+    if (name === 'csharp' && obj && typeof obj.code === 'string') {
+        const body = obj.code.split('\n').map(l => '    ' + l).join('\n');
+        return `csharp {\n${body}\n}`;
+    }
     const oneLine = JSON.stringify(obj);
     const inner = oneLine.length <= 58 ? oneLine : JSON.stringify(obj, null, 2);
     return name + ' ' + inner;
@@ -1198,12 +1245,7 @@ async function valDrillResp(rid) {
     body.innerHTML = '<div class="out-empty">Loading…</div>';
     ov.classList.add('active');
     try {
-        const baseUrl = api._getBaseUrl('/research/');
-        const token = api.token || getAuthToken();
-        const resp = await fetch(`${baseUrl}/projects/${projectId}/validation/respondent?fileId=${encodeURIComponent(fileId)}&rid=${encodeURIComponent(rid)}`,
-            { headers: { 'Authorization': `Bearer ${token}` } });
-        if (!resp.ok) { body.innerHTML = '<div class="out-empty">Could not load this record.</div>'; return; }
-        const rec = await resp.json();
+        const rec = await api.request(`/research/projects/${projectId}/validation/respondent?fileId=${encodeURIComponent(fileId)}&rid=${encodeURIComponent(rid)}`, { _skipSpinner: true });
         const flaggedVars = new Set((_valLastResult?.errors || []).filter(e => Number(e.rid) === Number(rid))
             .map(e => String(e.question || '').toUpperCase()));
         const rows = (rec.fields || []).map(f => {
