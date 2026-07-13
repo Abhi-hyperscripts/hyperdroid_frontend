@@ -766,6 +766,57 @@
                 grid-template-columns: 1fr;
             }
         }
+        /* ── Live product screenshots gallery ── */
+        .screens-section {
+            padding: 120px 60px;
+            position: relative;
+        }
+        .screens-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 28px;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+        .screen-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 0;
+        }
+        .screen-card.wide { grid-column: 1 / -1; }
+        .screen-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.02);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.45);
+        }
+        .screen-label .screen-dots { display: flex; gap: 6px; }
+        .screen-label .screen-dots span {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.14);
+        }
+        .screen-label .screen-dots span:last-child { background: rgba(6, 182, 212, 0.75); }
+        .screen-card img { width: 100%; display: block; }
+        .screen-caption {
+            padding: 14px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 13px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.55);
+        }
+        @media (max-width: 900px) {
+            .screens-section { padding: 80px 20px; }
+            .screens-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body class="landing-page landing-research">
@@ -1218,6 +1269,53 @@
 
         <div class="integration-callout">
             <strong>Cross-product integration:</strong> Research works alongside Vision for meeting analytics, Drive for data storage, and HRMS for workforce insights.
+        </div>
+    </section>
+
+    <!-- Section 4.5: Live Product Screenshots -->
+    <section class="screens-section" id="screens">
+        <div class="section-header">
+            <div class="section-badge">Live Product</div>
+            <h2 class="section-title">
+                Not mockups.<br>
+                <span class="highlight">The actual product, on real studies.</span>
+            </h2>
+            <p class="section-description">
+                Every screen below was captured from the live platform running production studies — 1.85 million respondent rows across 10 projects.
+            </p>
+        </div>
+
+        <div class="screens-grid">
+            <figure class="screen-card wide">
+                <div class="screen-label"><span>Custom Tables · Drag-and-drop builder with significance</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
+                <img src="../assets/research/custom-tables.jpg" alt="Custom Tables builder — drag-and-drop rows and columns with live preview, significance letters and low-base suppression" loading="lazy">
+                <figcaption class="screen-caption">The Custom Tables builder on a live 1,133-respondent study: drag any of the 233 variables into rows, columns or filter, toggle counts, percentages and significance, and the table computes as you build. Age columns lettered A&ndash;G, significance letters under each percentage naming the columns it beats, and low-base columns automatically suppressed with asterisks &mdash; everything SPSS Custom Tables does, in the browser.</figcaption>
+            </figure>
+            <figure class="screen-card">
+                <div class="screen-label"><span>Data validation · Scripted QA run</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
+                <img src="../assets/research/validation-run.jpg" alt="Data validation run — QA script with live pass/fail results and flagged respondents" loading="lazy">
+                <figcaption class="screen-caption">A real validation run: six check blocks &mdash; attention checks, speeders, duplicates, straight-lining &mdash; executed in 428&nbsp;ms, flagging 41 speeders with per-respondent evidence.</figcaption>
+            </figure>
+            <figure class="screen-card">
+                <div class="screen-label"><span>Open-end coding · AI codeframe + sentiment</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
+                <img src="../assets/research/oe-coding.jpg" alt="Open-end coding results — verbatims coded with sentiment, confidence and multiple codes per response" loading="lazy">
+                <figcaption class="screen-caption">1,960 e-commerce verbatims coded into a 78-code frame with sentiment and confidence per response &mdash; including automatic gibberish quarantine and analyst manual overrides.</figcaption>
+            </figure>
+            <figure class="screen-card">
+                <div class="screen-label"><span>AI insight dashboard · Generated from data</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
+                <img src="../assets/research/insights-dashboard.jpg" alt="AI-generated insight dashboard — consumer segments sized and profiled with written key findings" loading="lazy">
+                <figcaption class="screen-caption">A generated dashboard on a 1,630-respondent study: value-based segments sized and profiled on the platform's own segmentation engine, with key findings written above the charts.</figcaption>
+            </figure>
+            <figure class="screen-card">
+                <div class="screen-label"><span>Focus groups · Speaker dynamics report</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
+                <img src="../assets/research/fgd-report.jpg" alt="Focus-group report — speaker dynamics with talk-time share, turn counts and sentiment flow" loading="lazy">
+                <figcaption class="screen-caption">A focus-group discussion analysed end to end: talk-time share with dominance index per speaker, turn counts, and sentiment flow across the conversation.</figcaption>
+            </figure>
+            <figure class="screen-card wide">
+                <div class="screen-label"><span>Workspace · Projects at tracker scale</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
+                <img src="../assets/research/workspace.jpg" alt="Research workspace — projects list with 1.85 million respondent rows across live studies" loading="lazy">
+                <figcaption class="screen-caption">The primary-research workspace: 10 live studies totalling 1.85 million respondent rows, each with its file count, row count and status at a glance.</figcaption>
+            </figure>
         </div>
     </section>
 
