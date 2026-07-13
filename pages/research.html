@@ -817,6 +817,50 @@
             .screens-section { padding: 80px 20px; }
             .screens-grid { grid-template-columns: 1fr; }
         }
+
+        /* ── Deep-dive capability sections ── */
+        .deep-section { padding: 110px 60px; position: relative; }
+        .deep-section.alt { background: rgba(255,255,255,0.015); border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .deep-grid { display: grid; gap: 22px; max-width: 1280px; margin: 0 auto; }
+        .deep-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+        .deep-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+        .deep-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 26px 28px; }
+        .deep-kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 10px; }
+        .deep-card h3 { font-size: 19px; font-weight: 700; color: #fff; margin: 0 0 10px; }
+        .deep-card > p { font-size: 14px; line-height: 1.65; color: rgba(255,255,255,0.6); margin: 0; }
+        .deep-list { list-style: none; display: flex; flex-direction: column; gap: 12px; margin: 14px 0 0; padding: 0; }
+        .deep-list li { display: flex; gap: 12px; font-size: 13.5px; line-height: 1.6; color: rgba(255,255,255,0.62); }
+        .deep-list li code { font-family: 'SF Mono', Consolas, monospace; font-size: 11.5px; color: #06b6d4; white-space: nowrap; margin-top: 3px; }
+        .deep-list li .arrow { color: #06b6d4; flex-shrink: 0; }
+        .deep-list strong, .deep-card strong { color: #fff; font-weight: 600; }
+        .deep-steps { list-style: none; counter-reset: step; display: flex; flex-direction: column; gap: 20px; margin: 0; padding: 0; }
+        .deep-steps li { display: flex; gap: 16px; font-size: 14px; line-height: 1.65; color: rgba(255,255,255,0.62); }
+        .deep-steps li::before { counter-increment: step; content: "0" counter(step); font-weight: 800; font-size: 22px; color: #06b6d4; line-height: 1.1; flex-shrink: 0; }
+        .deep-figure { max-width: 1280px; margin: 30px auto 0; }
+        .catalogue-card { max-width: 1280px; margin: 0 auto; padding: 8px; }
+        .catalogue-wrap { overflow-x: auto; }
+        table.catalogue { width: 100%; min-width: 720px; border-collapse: collapse; font-size: 13px; }
+        table.catalogue th { text-align: left; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.4); padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: 600; }
+        table.catalogue td { padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.65); line-height: 1.5; }
+        table.catalogue tr:last-child td { border-bottom: none; }
+        table.catalogue td code { font-family: 'SF Mono', Consolas, monospace; font-size: 12px; color: #a78bfa; }
+        .cat-tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; white-space: nowrap; }
+        .cat-tag.prep { background: rgba(167,139,250,0.12); color: #a78bfa; border: 1px solid rgba(167,139,250,0.25); }
+        .cat-tag.check { background: rgba(6,182,212,0.1); color: #06b6d4; border: 1px solid rgba(6,182,212,0.25); }
+        .deep-split { display: grid; grid-template-columns: 5fr 7fr; gap: 32px; max-width: 1280px; margin: 0 auto; align-items: start; }
+        .deep-pre { background: rgba(0,0,0,0.35); padding: 18px 20px; overflow-x: auto; font-size: 12.5px; line-height: 1.65; color: rgba(255,255,255,0.75); font-family: 'SF Mono', Consolas, monospace; margin: 0; }
+        .deep-pre-label { padding: 10px 20px; border-top: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.45); }
+        .deep-note { max-width: 1280px; margin: 18px auto 0; font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.45); }
+        .verbatim-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+        .verbatim-table th { text-align: left; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .verbatim-table td { padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.65); }
+        .verbatim-table td code { font-family: 'SF Mono', Consolas, monospace; font-size: 11px; color: #10b981; }
+        .sent-pos { color: #10b981; } .sent-neg { color: #f43f5e; }
+        @media (max-width: 980px) {
+            .deep-section { padding: 72px 20px; }
+            .deep-grid.cols-2, .deep-grid.cols-3 { grid-template-columns: 1fr; }
+            .deep-split { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body class="landing-page landing-research">
@@ -1273,49 +1317,342 @@
     </section>
 
     <!-- Section 4.5: Live Product Screenshots -->
-    <section class="screens-section" id="screens">
+    <section class="deep-section" id="ingest">
         <div class="section-header">
-            <div class="section-badge">Live Product</div>
-            <h2 class="section-title">
-                Not mockups.<br>
-                <span class="highlight">The actual product, on real studies.</span>
-            </h2>
-            <p class="section-description">
-                Every screen below was captured from the live platform running production studies — 1.85 million respondent rows across 10 projects.
-            </p>
+            <div class="section-badge">Deep Dive · 01 · Ingestion &amp; Waves</div>
+            <h2 class="section-title">SPSS-native in.<br><span class="highlight">Wave-aware forever.</span></h2>
+            <p class="section-description">Upload the .sav your field agency already delivers — variable labels, value labels and measurement types all survive the trip. Behind it sits an engine built for tracker scale, so a 50-question study with a few hundred thousand respondents still tabs in seconds.</p>
         </div>
+        <div class="deep-grid cols-2">
+            <div class="deep-card"><div class="deep-kicker">SPSS .sav</div><p>Native .sav ingestion up to <strong>2&nbsp;GB per file</strong>, with the full data map — labels, value labels, variable types — preserved end to end.</p></div>
+            <div class="deep-card"><div class="deep-kicker">CSV &rarr; SAV</div><p>A built-in converter turns raw CSV into a proper labelled SPSS file for teams whose panel exports don't come as .sav.</p></div>
+            <div class="deep-card"><div class="deep-kicker">Wave append</div><p>Stack tracker waves onto one dataset. A <strong>dry-run compatibility check</strong> classifies schema differences <em>before</em> commit — no corrupted trackers.</p></div>
+            <div class="deep-card"><div class="deep-kicker">Question groups</div><p>Variables are auto-grouped into logical survey questions — grids, multi-punch sets, singles, numerics — so every downstream tool thinks in questions, not columns.</p></div>
+        </div>
+        <figure class="screen-card deep-figure">
+            <div class="screen-label"><span>Live product · Primary research workspace</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
+            <img src="../assets/research/workspace.jpg" alt="Research workspace — projects list with 1.85 million respondent rows across live studies" loading="lazy">
+            <figcaption class="screen-caption">The primary-research workspace on the live platform — ten studies, 1.85 million respondent rows, from a 550-complete ad-hoc to a multi-country tracker.</figcaption>
+        </figure>
+    </section>
 
-        <div class="screens-grid">
-            <figure class="screen-card wide">
-                <div class="screen-label"><span>Custom Tables · Drag-and-drop builder with significance</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
-                <img src="../assets/research/custom-tables.jpg" alt="Custom Tables builder — drag-and-drop rows and columns with live preview, significance letters and low-base suppression" loading="lazy">
-                <figcaption class="screen-caption">The Custom Tables builder on a live 1,133-respondent study: drag any of the 233 variables into rows, columns or filter, toggle counts, percentages and significance, and the table computes as you build. Age columns lettered A&ndash;G, significance letters under each percentage naming the columns it beats, and low-base columns automatically suppressed with asterisks &mdash; everything SPSS Custom Tables does, in the browser.</figcaption>
-            </figure>
-            <figure class="screen-card">
-                <div class="screen-label"><span>Data validation · Scripted QA run</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
-                <img src="../assets/research/validation-run.jpg" alt="Data validation run — QA script with live pass/fail results and flagged respondents" loading="lazy">
-                <figcaption class="screen-caption">A real validation run: six check blocks &mdash; attention checks, speeders, duplicates, straight-lining &mdash; executed in 428&nbsp;ms, flagging 41 speeders with per-respondent evidence.</figcaption>
-            </figure>
-            <figure class="screen-card">
-                <div class="screen-label"><span>Open-end coding · AI codeframe + sentiment</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
-                <img src="../assets/research/oe-coding.jpg" alt="Open-end coding results — verbatims coded with sentiment, confidence and multiple codes per response" loading="lazy">
-                <figcaption class="screen-caption">1,960 e-commerce verbatims coded into a 78-code frame with sentiment and confidence per response &mdash; including automatic gibberish quarantine and analyst manual overrides.</figcaption>
-            </figure>
-            <figure class="screen-card">
-                <div class="screen-label"><span>AI insight dashboard · Generated from data</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
-                <img src="../assets/research/insights-dashboard.jpg" alt="AI-generated insight dashboard — consumer segments sized and profiled with written key findings" loading="lazy">
-                <figcaption class="screen-caption">A generated dashboard on a 1,630-respondent study: value-based segments sized and profiled on the platform's own segmentation engine, with key findings written above the charts.</figcaption>
-            </figure>
-            <figure class="screen-card">
-                <div class="screen-label"><span>Focus groups · Speaker dynamics report</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
-                <img src="../assets/research/fgd-report.jpg" alt="Focus-group report — speaker dynamics with talk-time share, turn counts and sentiment flow" loading="lazy">
-                <figcaption class="screen-caption">A focus-group discussion analysed end to end: talk-time share with dominance index per speaker, turn counts, and sentiment flow across the conversation.</figcaption>
-            </figure>
-            <figure class="screen-card wide">
-                <div class="screen-label"><span>Workspace · Projects at tracker scale</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
-                <img src="../assets/research/workspace.jpg" alt="Research workspace — projects list with 1.85 million respondent rows across live studies" loading="lazy">
-                <figcaption class="screen-caption">The primary-research workspace: 10 live studies totalling 1.85 million respondent rows, each with its file count, row count and status at a glance.</figcaption>
-            </figure>
+    <section class="deep-section alt" id="validation">
+        <div class="section-header">
+            <div class="section-badge">Deep Dive · 02 · Data Quality Validation</div>
+            <h2 class="section-title">Built for how research firms<br><span class="highlight">actually write validation mandates.</span></h2>
+            <p class="section-description">If your validation spec talks about routing compliance, exclusive-choice breaches, allocation totals and fraud triage — every line of it maps onto a named, catalogued check below. Nothing lives in an analyst's head.</p>
+        </div>
+        <div class="deep-grid cols-2">
+            <div class="deep-card">
+                <div class="deep-kicker">A · Questionnaire logic &amp; structure</div>
+                <p>Routing and masking compliance, checked against the master questionnaire — the pass you run the moment the soft-launch dataset lands.</p>
+                <ul class="deep-list">
+                    <li><code>vc_skip</code><span>Answered when not asked, blank when asked — full skip-logic compliance per routed variable.</span></li>
+                    <li><code>vc_gate</code><span>Item-by-item gating across matched batteries (each statement asked only when its base item qualifies).</span></li>
+                    <li><code>vc_funnel</code><span>Brand-funnel integrity: no usage without awareness, no consideration without salience.</span></li>
+                    <li><code>vc_multi</code><span>Multi-punch hygiene including <em>exclusive-option breaches</em> — "None of the above" ticked alongside a real answer.</span></li>
+                    <li><code>vc_single · vc_grid</code><span>Single-punch and grid punches validated against the code frame; out-of-range and missing flagged per cell.</span></li>
+                    <li><code>vc_codes</code><span>Undefined codes — any punch with no matching value label anywhere in the file.</span></li>
+                    <li><code>vc_rank · vc_rotation</code><span>Tied or incomplete rankings, corrupted rotation orders, multi-punch slots that skip positions.</span></li>
+                </ul>
+            </div>
+            <div class="deep-card">
+                <div class="deep-kicker">B · Ranges, allocations &amp; boundaries</div>
+                <p>Every numeric entry held inside the bounds the questionnaire promised — including the allocation grids where respondents type a zero across the whole row.</p>
+                <ul class="deep-list">
+                    <li><code>vc_range</code><span>Floor / ceiling on any numeric write-in — age, spend, percentages, 0–100 ratings — single variables or whole blocks.</span></li>
+                    <li><code>vc_sum</code><span>Constant-sum / auto-sum compliance: allocations must hit the target total, with a configurable tolerance. Blanks count as zero, so incomplete allocations surface too.</span></li>
+                    <li><code>vc_flatline</code><span>The all-zero allocation grid — a respondent entering 0 in every numeric field of a matrix — caught as its own named flag.</span></li>
+                    <li><code>vc_outlier</code><span>Statistical outliers by z-score or IQR — the ₹8,00,000 monthly grocery spend in a sample that tops out at ₹50,000.</span></li>
+                    <li><code>vc_dates</code><span>Interview timestamps that end before they start; any start / end pair sanity-checked.</span></li>
+                    <li><code>vc_empty</code><span>Questions that are blank for the entire base — the pipe that never fired, the punch that never landed.</span></li>
+                </ul>
+            </div>
+            <div class="deep-card">
+                <div class="deep-kicker">C · Fraud, identity &amp; attention</div>
+                <p>The quality-triage layer: who is real, who is rushing, who is on autopilot. Each flag carries the evidence, so triage decisions are defensible.</p>
+                <ul class="deep-list">
+                    <li><code>vc_dupe</code><span>Duplicate respondent IDs within the file — plus <em>identity collision against prior waves</em> via a known-ID baseline you carry forward run to run.</span></li>
+                    <li><code>vc_speed</code><span>Speeders by median-fraction (adapts to actual survey length) or an absolute cut-off — with the option to freeze the baseline on soft-launch completes so the cut-off never drifts mid-field.</span></li>
+                    <li><code>vc_flatline</code><span>Straightliners: the same punch down an entire grid, with a minimum-items threshold for partly-filled batteries.</span></li>
+                    <li><code>vc_pattern</code><span>Alternating responders (1-2-1-2 down the grid) — the inattentive pattern plain straightlining checks miss.</span></li>
+                    <li><code>vc_textdup</code><span>Copy-paste verbatims — one respondent reusing an answer across questions, and identical answers appearing across different respondents.</span></li>
+                </ul>
+            </div>
+            <div class="deep-card">
+                <div class="deep-kicker">D · Open-end quality &amp; PII</div>
+                <p>Verbatim hygiene before a single response reaches coding — and a compliance pass your DPO will actually like.</p>
+                <ul class="deep-list">
+                    <li><code>vc_texteffort</code><span>Low-effort filler ("na", "dk", "nothing", "-") counted across a respondent's open-ends, with configurable phrase lists and thresholds.</span></li>
+                    <li><code>vc_textformat</code><span>Type confusion: "many" typed into an income box, "1234" typed into a name field.</span></li>
+                    <li><code>vc_pii</code><span>Emails and phone numbers left inside verbatims — the report shows only the PII <em>type</em> found, never the contact detail itself.</span></li>
+                    <li><code>vc_rule</code><span>Free-form cross-question logic: write any condition that should never be true for a clean interview ("under 18 yet marked complete") and label it for the QA report.</span></li>
+                    <li><code>csharp</code><span>And when the mandate doesn't fit any template — a sandboxed scripting block. See the escape hatch below.</span></li>
+                </ul>
+            </div>
+        </div>
+        <div class="deep-grid cols-3" style="margin-top: 22px;">
+            <div class="deep-card"><div class="deep-kicker">Base-aware</div><p>Every check accepts a filter expression, so bases are honoured: respondents never asked a question aren't flagged for skipping it.</p></div>
+            <div class="deep-card"><div class="deep-kicker">Evidence-first</div><p>Flags land per respondent, per variable, with the offending value and rule attached — a QA report you can hand straight to the panel provider.</p></div>
+            <div class="deep-card"><div class="deep-kicker">Re-runnable</div><p>The validation script is an artifact. Soft launch, main field, top-up sample, next wave — same rules, zero drift, one click.</p></div>
+        </div>
+        <figure class="screen-card deep-figure">
+            <div class="screen-label"><span>Live product · Data QA run</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
+            <img src="../assets/research/validation-run.jpg" alt="Data validation run — QA script on the left, live pass/fail results with flagged respondents on the right" loading="lazy">
+            <figcaption class="screen-caption">A real QA run on a 1,133-complete study: the script on the left, results on the right — six checks in under half a second, 41 speeders flagged with the evidence attached to each respondent.</figcaption>
+        </figure>
+    </section>
+
+    <section class="deep-section" id="catalogue">
+        <div class="section-header">
+            <div class="section-badge">Deep Dive · 03 · The Catalogue</div>
+            <h2 class="section-title">The validation &amp; DP catalogue.<br><span class="highlight">All 34 functions.</span></h2>
+            <p class="section-description">This is the live spec — the same catalogue the platform exposes to analysts and to the AI copilot. If a mandate names a check, you can point at the exact function that runs it.</p>
+        </div>
+        <div class="deep-card catalogue-card">
+            <div class="catalogue-wrap">
+                <table class="catalogue">
+                    <thead><tr><th>Function</th><th>Kind</th><th>What it does</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>compute_variable</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>New coded variable from ordered IF / ELSE-IF / ELSE conditions — segments, nets, age and value bands</td></tr>
+                        <tr><td><code>rim_weighting</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>RIM / rake weights to hit interlocking quota targets; reports per-cell fit and weighting efficiency</td></tr>
+                        <tr><td><code>vc_any</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>0/1 any-punch net across a battery (e.g. used any premium brand)</td></tr>
+                        <tr><td><code>vc_calc</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>New numeric variable from an arithmetic formula across existing variables</td></tr>
+                        <tr><td><code>vc_count</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>Per-respondent count of punched cells across a set (brands aware, items owned)</td></tr>
+                        <tr><td><code>vc_numvert</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>Text-to-numeric conversion so a text-typed field can be tabbed and range-checked</td></tr>
+                        <tr><td><code>vc_recode</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>In-place old&rarr;new code mapping with keep / blank / catch-all handling for unlisted codes</td></tr>
+                        <tr><td><code>vc_reverse</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>Reverse-code scale items around their endpoints before averaging reverse-worded batteries</td></tr>
+                        <tr><td><code>vc_rowstat</code></td><td><span class="cat-tag prep">Data-prep</span></td><td>Per-respondent sum / mean / min / max across numeric variables</td></tr>
+                        <tr><td><code>csharp</code></td><td><span class="cat-tag check">Check + script</span></td><td>Bespoke scripted check for any rule or derivation the built-ins don't cover</td></tr>
+                        <tr><td><code>vc_codes</code></td><td><span class="cat-tag check">Check</span></td><td>Undefined codes — data values with no matching value label in the code frame</td></tr>
+                        <tr><td><code>vc_dates</code></td><td><span class="cat-tag check">Check</span></td><td>End-before-start on any date / timestamp pair (interview timing sanity)</td></tr>
+                        <tr><td><code>vc_dupe</code></td><td><span class="cat-tag check">Check</span></td><td>Duplicate respondent IDs in-file, plus cross-wave repeats against a known-ID baseline</td></tr>
+                        <tr><td><code>vc_empty</code></td><td><span class="cat-tag check">Check</span></td><td>Variables completely blank for the base — pipes that never fired</td></tr>
+                        <tr><td><code>vc_fillorder</code></td><td><span class="cat-tag check">Check</span></td><td>Multi-punch slots that skip positions; punches outside the allowed codes</td></tr>
+                        <tr><td><code>vc_flatline</code></td><td><span class="cat-tag check">Check</span></td><td>Straightliners on grids — including the all-zero allocation matrix as a targeted flag</td></tr>
+                        <tr><td><code>vc_funnel</code></td><td><span class="cat-tag check">Check</span></td><td>Funnel integrity across matched batteries — no downstream pick without its upstream pick</td></tr>
+                        <tr><td><code>vc_gate</code></td><td><span class="cat-tag check">Check</span></td><td>Item-level ask / skip gating across matched batteries, with optional range enforcement</td></tr>
+                        <tr><td><code>vc_grid</code></td><td><span class="cat-tag check">Check</span></td><td>Grid / battery punches out of range or missing, per statement, per respondent</td></tr>
+                        <tr><td><code>vc_multi</code></td><td><span class="cat-tag check">Check</span></td><td>Multi-punch hygiene: bad punches, missing, nothing ticked, exclusive-option breaches</td></tr>
+                        <tr><td><code>vc_outlier</code></td><td><span class="cat-tag check">Check</span></td><td>Unrealistic numeric answers by z-score or IQR, with segment-scoped baselines</td></tr>
+                        <tr><td><code>vc_pattern</code></td><td><span class="cat-tag check">Check</span></td><td>Alternating response patterns (1-2-1-2) down a grid — inattention that flatline checks miss</td></tr>
+                        <tr><td><code>vc_pii</code></td><td><span class="cat-tag check">Check</span></td><td>Emails / phone numbers inside open-ends; reports the PII type only, never the detail</td></tr>
+                        <tr><td><code>vc_range</code></td><td><span class="cat-tag check">Check</span></td><td>Numeric floor / ceiling violations on write-ins, single variables or whole blocks</td></tr>
+                        <tr><td><code>vc_rank</code></td><td><span class="cat-tag check">Check</span></td><td>Ranking questions: out-of-range ranks, ties, incomplete forced rankings</td></tr>
+                        <tr><td><code>vc_rotation</code></td><td><span class="cat-tag check">Check</span></td><td>Rotation-order records: duplicate items in the sequence, invalid item IDs</td></tr>
+                        <tr><td><code>vc_rule</code></td><td><span class="cat-tag check">Check</span></td><td>Any cross-question logic rule, written as a condition that must never be true, with a report label</td></tr>
+                        <tr><td><code>vc_single</code></td><td><span class="cat-tag check">Check</span></td><td>Single-punch questions validated against the allowed code list; missing flagged</td></tr>
+                        <tr><td><code>vc_skip</code></td><td><span class="cat-tag check">Check</span></td><td>Skip-logic compliance per routed variable: leaked past the skip, or missing in universe</td></tr>
+                        <tr><td><code>vc_speed</code></td><td><span class="cat-tag check">Check</span></td><td>Speeders by median-fraction or absolute threshold, with freezable soft-launch baselines</td></tr>
+                        <tr><td><code>vc_sum</code></td><td><span class="cat-tag check">Check</span></td><td>Constant-sum / allocation totals with tolerance; incomplete allocations surface as misses</td></tr>
+                        <tr><td><code>vc_textdup</code></td><td><span class="cat-tag check">Check</span></td><td>Duplicate verbatims — within one respondent's answers and across different respondents</td></tr>
+                        <tr><td><code>vc_texteffort</code></td><td><span class="cat-tag check">Check</span></td><td>Low-effort open-ends: filler-answer counting with custom phrase lists and thresholds</td></tr>
+                        <tr><td><code>vc_textformat</code></td><td><span class="cat-tag check">Check</span></td><td>Type confusion in typed fields — text in number boxes, digits in name boxes</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p class="deep-note">Every function is documented with parameters, defaults and worked examples — and the same catalogue drives the AI copilot, so an analyst can ask for a check in plain English and get the exact validated call.</p>
+
+        <div class="deep-split" style="margin-top: 60px;">
+            <div>
+                <div class="deep-kicker">The escape hatch</div>
+                <h3 style="font-size: 26px; font-weight: 800; color: #fff; line-height: 1.25; margin: 0 0 16px;">When the spec has a rule no template covers, script it.</h3>
+                <p style="font-size: 14.5px; line-height: 1.7; color: rgba(255,255,255,0.6); margin: 0 0 18px;">Every real validation spec has that one clause the standard checks don't cover. Research has a scripting layer for exactly that: the rule from your mandate document becomes a bespoke check that flags respondents, or a dataset script that builds helper variables — and then behaves like any other check in the run.</p>
+                <ul class="deep-list">
+                    <li><span class="arrow">&rarr;</span><span><strong>Any rule from your spec.</strong> If the mandate can describe it, it can be scripted — cross-question logic, bespoke quality scores, helper variables for later checks.</span></li>
+                    <li><span class="arrow">&rarr;</span><span><strong>It can only touch the survey data.</strong> Scripts run in a locked-down sandbox with hard limits — they read the dataset and write flags or variables, nothing else, and a runaway script stops itself instead of your run.</span></li>
+                    <li><span class="arrow">&rarr;</span><span><strong>Versioned with the run.</strong> Bespoke rules are saved as part of the validation setup, so the same check re-runs identically on every batch, top-up and wave.</span></li>
+                </ul>
+            </div>
+            <div class="deep-card" style="padding: 0; overflow: hidden;">
+                <div class="deep-pre-label" style="border-top: none;">Bespoke check · written from your spec</div>
+                <pre class="deep-pre"><code>// Flag: aware of 2+ brands but gave a throwaway "why"
+int aware = 0;
+if (data.QAWARE_1 == 1) { aware++; }
+if (data.QAWARE_2 == 1) { aware++; }
+if (data.QAWARE_3 == 1) { aware++; }
+
+string why = (data.QWHY ?? "").Trim();
+return aware >= 2 &amp;&amp; why.Length &lt; 4;</code></pre>
+                <div class="deep-pre-label">Dataset script · builds helper variables</div>
+                <pre class="deep-pre"><code>double n = Compute("AGE_BAND",
+    "multiIf(AGE &lt; 30, 1, AGE &lt; 50, 2, 3)");
+Print("AGE_BAND set for " + n + " respondents");
+
+Compute("HIGH_SPEND", "QSPEND &gt; 5000 ? 1 : 0");
+if (n == 0) { Delete("AGE_BAND"); }</code></pre>
+            </div>
+        </div>
+        <p class="deep-note">The first kind flags respondents; the second builds variables that later checks and tables can use. Either way it reads close enough to plain English that a QC lead can review the rule line by line before sign-off.</p>
+    </section>
+
+    <section class="deep-section alt" id="dp">
+        <div class="section-header">
+            <div class="section-badge">Deep Dive · 04 · Data Processing</div>
+            <h2 class="section-title">From raw export<br><span class="highlight">to tab-ready data.</span></h2>
+            <p class="section-description">The unglamorous middle of every project — done with named, repeatable operations instead of one-off syntax nobody can re-run.</p>
+        </div>
+        <div class="deep-grid cols-3">
+            <div class="deep-card"><div class="deep-kicker">Segments &amp; derived variables</div><h3>Coded variables, nets, bands</h3><p>Ordered IF / ELSE-IF logic builds segments and bands with value labels attached, ready to tab immediately. Any-punch nets, counts, row statistics and formula variables cover the rest.</p></div>
+            <div class="deep-card"><div class="deep-kicker">Cleaning ops</div><h3>Recode · reverse · convert</h3><p>Scale collapses with explicit handling for unlisted codes, reverse-coded battery items fixed before averaging, text fields converted to clean numerics. All in place, all filter-aware, all logged.</p></div>
+            <div class="deep-card"><div class="deep-kicker">Weighting</div><h3>RIM / rake weighting</h3><p>Multi-factor rim weighting to gender, age, region or any quota set — per wave or whole sample. Output includes achieved-vs-target per cell and the weighting-efficiency figure your QA sign-off needs.</p></div>
+        </div>
+    </section>
+
+    <section class="deep-section" id="oe-coding">
+        <div class="section-header">
+            <div class="section-badge">Deep Dive · 05 · Open-End Coding</div>
+            <h2 class="section-title">One verbatim, every claim inside it —<br><span class="highlight">coded and scored.</span></h2>
+            <p class="section-description">Aspect-based coding, not bucket-sorting: a single answer decomposes into atomic claims, each assigned its own code, sentiment and confidence. The hardest text task in market research, treated like one.</p>
+        </div>
+        <div class="deep-split">
+            <div class="deep-card" style="padding: 0; overflow: hidden;">
+                <div class="deep-pre-label" style="border-top: none;">Input · raw verbatim</div>
+                <p style="padding: 16px 20px; font-size: 14px; font-style: italic; color: rgba(255,255,255,0.7); line-height: 1.65; margin: 0;">"The product quality is amazing, but customer service was terrible and I had to wait 3 hours. The price is reasonable though."</p>
+                <div class="deep-pre-label">Output · coded claims</div>
+                <div class="catalogue-wrap">
+                    <table class="verbatim-table">
+                        <thead><tr><th>Atomic claim</th><th>Code</th><th>Sent.</th><th>Conf.</th></tr></thead>
+                        <tbody>
+                            <tr><td>Product quality is amazing</td><td><code>PROD_QUALITY</code></td><td class="sent-pos">+0.9</td><td>0.96</td></tr>
+                            <tr><td>Customer service was terrible</td><td><code>CUST_SERVICE</code></td><td class="sent-neg">&minus;0.9</td><td>0.94</td></tr>
+                            <tr><td>Had to wait 3 hours</td><td><code>WAIT_TIME</code></td><td class="sent-neg">&minus;0.7</td><td>0.91</td></tr>
+                            <tr><td>Price is reasonable</td><td><code>PRICE</code></td><td class="sent-pos">+0.5</td><td>0.93</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <ol class="deep-steps">
+                <li><span><strong>Codeframe discovery.</strong> The AI proposes a codeframe from a sample of real responses — target code count and context configurable — and a human curates it before anything is coded. Frames follow the industry-standard <strong>Net &rarr; Theme &rarr; Sub-theme</strong> hierarchy.</span></li>
+                <li><span><strong>Dedupe &amp; cluster first.</strong> Survey verbatims are massively repetitive — trivial answers are filtered and near-identical ones grouped before any AI coding happens, so effort goes into genuinely different responses. That is what makes large volumes affordable.</span></li>
+                <li><span><strong>Two-pass AI coding, QA-audited.</strong> Pass one decomposes each response into atomic claims; pass two classifies against the codeframe and scores sentiment. A random slice is independently re-verified and high-disagreement clusters go to human review — accuracy is measured, not asserted.</span></li>
+                <li><span><strong>Wave-aware.</strong> When the next wave lands, "code new rows" inherits the existing codeframe — trend lines stay comparable instead of every wave inventing new themes.</span></li>
+                <li><span><strong>Auditable end to end.</strong> Progress tracking on every coding job, per-row edits by analysts, a full audit log, and a cost report per job. Mixed-language verbatims are first-class, and results export to Excel keyed to your respondent ID.</span></li>
+            </ol>
+        </div>
+        <figure class="screen-card deep-figure">
+            <div class="screen-label"><span>Live product · Open-end coding results</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
+            <img src="../assets/research/oe-coding.jpg" alt="Open-end coding results — verbatims coded with sentiment, confidence and multiple codes per response" loading="lazy">
+            <figcaption class="screen-caption">Live coding results: 1,960 verbatims coded into a 78-code frame in under ten minutes — sentiment and confidence on every response, gibberish auto-quarantined, and every row editable by the analyst.</figcaption>
+        </figure>
+    </section>
+
+    <section class="deep-section alt" id="tables">
+        <div class="section-header">
+            <div class="section-badge">Deep Dive · 06 · Tables &amp; Significance</div>
+            <h2 class="section-title">Tables an SPSS veteran<br><span class="highlight">will sign off.</span></h2>
+            <p class="section-description">Significance letters, weighted bases, effective bases, nets and sub-nets — the conventions research directors actually check for, computed the way they expect.</p>
+        </div>
+        <div class="deep-grid cols-2">
+            <div class="deep-card">
+                <div class="deep-kicker">Cross-tabs</div>
+                <h3>Banner-ready cross-tabulation</h3>
+                <ul class="deep-list">
+                    <li><span class="arrow">&rarr;</span><span>Z-test for column proportions with <strong>letter notation</strong> (A, B, C…), at 90% / 95% / 99% confidence.</span></li>
+                    <li><span class="arrow">&rarr;</span><span>Column %, row %, total % or raw counts — with SPSS value labels enriched automatically.</span></li>
+                    <li><span class="arrow">&rarr;</span><span>Three base rows on every weighted table: <strong>unweighted, weighted, and effective base</strong> (Kish design-effect), so significance is honest about what weighting costs.</span></li>
+                    <li><span class="arrow">&rarr;</span><span>Descriptive rows (mean, median, std-dev, min, max) alongside the distribution.</span></li>
+                </ul>
+            </div>
+            <div class="deep-card">
+                <div class="deep-kicker">Custom tables</div>
+                <h3>The DP-grade table engine</h3>
+                <ul class="deep-list">
+                    <li><span class="arrow">&rarr;</span><span>Rows and columns can be anything you'd write in a tab spec — any base, any cut, no pre-coding needed.</span></li>
+                    <li><span class="arrow">&rarr;</span><span><strong>Nets and sub-nets</strong> with row basing: percentage a child row against its parent net instead of the column total.</span></li>
+                    <li><span class="arrow">&rarr;</span><span>Measures beyond counts: <strong>means (Welch's t-test), medians, percentiles</strong> — with significance letters on all of them.</span></li>
+                    <li><span class="arrow">&rarr;</span><span>Table-level weights with <strong>per-column overrides</strong>, low-base suppression, and whole banks of tables — up to 32 variants — run in one go.</span></li>
+                    <li><span class="arrow">&rarr;</span><span>Any finished table can be handed to the AI for a written insight summary plus suggested charts — grounded in that exact table, nothing else.</span></li>
+                </ul>
+            </div>
+        </div>
+        <figure class="screen-card deep-figure">
+            <div class="screen-label"><span>Live product · Custom tables builder</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
+            <img src="../assets/research/custom-tables.jpg" alt="Custom Tables builder — drag-and-drop rows and columns with live preview, significance letters and low-base suppression" loading="lazy">
+            <figcaption class="screen-caption">The builder on a live 1,133-respondent study: drag any of the 233 variables into rows, columns or filter, toggle counts, percentages and significance, and the table computes as you build. Age columns lettered A&ndash;G, significance letters under each percentage naming the columns it beats, and low-base columns automatically suppressed with asterisks — everything SPSS Custom Tables does, in the browser.</figcaption>
+        </figure>
+    </section>
+
+    <section class="deep-section" id="analytics">
+        <div class="section-header">
+            <div class="section-badge">Deep Dive · 07 · Advanced Analytics</div>
+            <h2 class="section-title">The models behind<br><span class="highlight">the "so what" slide.</span></h2>
+            <p class="section-description">Driver models, segmentation, portfolio reach — computed in-platform on the full respondent file, with the diagnostics that tell you whether to trust them.</p>
+        </div>
+        <div class="deep-grid cols-3">
+            <div class="deep-card"><div class="deep-kicker">01 · Key drivers</div><h3>Driver regression</h3><p>Key-driver analysis with up to 30 attributes: which drivers genuinely move satisfaction or NPS, how much confidence each one deserves, <strong>warnings when drivers overlap</strong> too much to separate, and an importance-vs-performance quadrant that turns the model into priorities. Run it per wave or per segment and compare.</p></div>
+            <div class="deep-card"><div class="deep-kicker">02 · Segmentation</div><h3>K-means++ clustering</h3><p>2–10 segments from up to 30 inputs, profiled across the <em>entire</em> respondent file. Per-segment index scores with high/low flags, diagnostics that show how cleanly the segments separate, warnings when a segment is too small to trust — and re-runs reproduce the same segments exactly, wave after wave.</p></div>
+            <div class="deep-card"><div class="deep-kicker">03 · Portfolio</div><h3>TURF</h3><p>Total unduplicated reach &amp; frequency across up to 30 SKUs, flavours or messages — a fast stepwise build, or an every-combination search for the guaranteed best line-up — with binary / top-box / top-2-box reach definitions and step-by-step incremental reach.</p></div>
+            <div class="deep-card"><div class="deep-kicker">04 · Structure</div><h3>Correlation matrix</h3><p>Pairwise correlations across up to 50 variables, with automatic warnings when variables overlap too heavily — the sanity pass before any driver model or segmentation goes to the client.</p></div>
+            <div class="deep-card"><div class="deep-kicker">05 · Wave movement</div><h3>Trend decomposition</h3><p>"Why did NPS drop this wave?" — decomposes the change in an outcome between two periods into per-driver contributions, so the trend slide comes with an explanation instead of a shrug.</p></div>
+            <div class="deep-card"><div class="deep-kicker">06 · Foundations</div><h3>Frequencies &amp; descriptives</h3><p>Weighted holecounts and one-way frequencies with top answers and value labels in place; means, medians, spreads and percentiles by any break variable. The basics, instant and correct.</p></div>
+        </div>
+    </section>
+
+    <section class="deep-section alt" id="dashboards">
+        <div class="section-header">
+            <div class="section-badge">Deep Dive · 08 · AI Insight Dashboards</div>
+            <h2 class="section-title">A first-draft debrief,<br><span class="highlight">generated overnight.</span></h2>
+            <p class="section-description">Point the AI at a cleaned dataset and it runs the actual research functions — tabs, drivers, frequencies — then assembles an interactive dashboard: executive summary, KPI cards, charts with written insights. Your brief travels with the project, injected as mandatory requirements the AI must honour.</p>
+        </div>
+        <div class="deep-grid cols-3">
+            <div class="deep-card"><div class="deep-kicker">16 chart types</div><p><strong>Gauge, pie, donut, bar, column, stacked bar, line, area, radar, heatmap, scatter, bubble, treemap, radial bar, polar area, box plot</strong> — each one checked and tidied automatically, so a broken chart never reaches a client.</p></div>
+            <div class="deep-card"><div class="deep-kicker">Recipes, not one-offs</div><p>Every analysis step behind the dashboard is captured as a recipe. When the next wave lands, <strong>replay reproduces the same dashboard</strong> on the new data — pure computation, no AI variance, no regeneration lottery. Need something new this wave? Regenerate-replay keeps every existing chart and adds new ones.</p></div>
+            <div class="deep-card"><div class="deep-kicker">Shareable and measured</div><p>Read-only share links for clients, with owner-side view analytics — visits, unique visitors, referrers — so you know the deck actually got opened.</p></div>
+        </div>
+        <figure class="screen-card deep-figure">
+            <div class="screen-label"><span>Live product · AI insight dashboard</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
+            <img src="../assets/research/insights-dashboard.jpg" alt="AI-generated insight dashboard — consumer segments sized and profiled with written key findings" loading="lazy">
+            <figcaption class="screen-caption">A generated dashboard on a live 1,630-respondent study: value-based segments sized and profiled on the platform's own segmentation engine, with the key findings written above the charts.</figcaption>
+        </figure>
+    </section>
+
+    <section class="deep-section" id="focus-groups">
+        <div class="section-header">
+            <div class="section-badge">Deep Dive · 09 · Focus Groups &amp; IDIs</div>
+            <h2 class="section-title">Qual that arrives as<br><span class="highlight">evidence, not vibes.</span></h2>
+            <p class="section-description">Upload the recording; get back a structured, quote-backed discussion report — the kind a research director can defend in front of a client, because every claim traces to a real utterance.</p>
+        </div>
+        <div class="deep-grid cols-3">
+            <div class="deep-card"><div class="deep-kicker">Transcription</div><h3>Diarised, time-coded, translated</h3><p>Audio up to 500&nbsp;MB per session. Speaker-separated transcripts with timestamps, source-to-target translation for multilingual fieldwork, and progress tracking through the whole pipeline.</p></div>
+            <div class="deep-card"><div class="deep-kicker">Thematic analysis</div><h3>Themes ranked by people, not mentions</h3><p>A Net &rarr; Theme &rarr; Sub-theme codeframe built from the sessions, with prevalence counted by <em>distinct speakers</em>, sentiment breakdowns, consensus levels (universal / majority / split), and the tensions where the room disagreed.</p></div>
+            <div class="deep-card"><div class="deep-kicker">Quote integrity</div><h3>Hallucination-proof by design</h3><p>The AI can only reference quotes by ID — quote text is re-rendered from the actual transcript, so a fabricated quote is structurally impossible. Every report also carries its own cost audit.</p></div>
+            <div class="deep-card"><div class="deep-kicker">Speaker dynamics</div><h3>Who actually spoke</h3><p>Talk-time share, turn counts, a dominance index, and "silent voices" flagged under 5% talk time — moderator excluded — plus moderator-gap analysis: themes that surfaced but never got a follow-up question.</p></div>
+            <div class="deep-card"><div class="deep-kicker">Cross-session</div><h3>Multi-group synthesis</h3><p>Run one report across multiple sessions: universal findings, per-session divergences, and session-by-session narratives — the structure of a proper qual debrief, generated in minutes.</p></div>
+            <div class="deep-card"><div class="deep-kicker">Delivery</div><h3>Share links &amp; SPSS export</h3><p>Finished reports ship on unguessable read-only links, and the coded utterances export to SPSS .sav — one row per statement, themes as binary flags — so qual findings can sit next to the quant in the same tables.</p></div>
+        </div>
+        <figure class="screen-card deep-figure">
+            <div class="screen-label"><span>Live product · Focus-group report</span><span class="screen-dots"><span></span><span></span><span></span></span></div>
+            <img src="../assets/research/fgd-report.jpg" alt="Focus-group report — speaker dynamics with talk-time share, turn counts and sentiment flow" loading="lazy">
+            <figcaption class="screen-caption">Speaker dynamics from a live session report: talk-time share and dominance, turn counts, and sentiment flow across the conversation — the evidence layer beneath every theme and quote.</figcaption>
+        </figure>
+    </section>
+
+    <section class="deep-section alt" id="secondary">
+        <div class="section-header">
+            <div class="section-badge">Deep Dive · 10 · Secondary Research &amp; Questionnaires</div>
+            <h2 class="section-title">Desk research, dashboarded.<br><span class="highlight">The .docx becomes structure.</span></h2>
+        </div>
+        <div class="deep-grid cols-2">
+            <div class="deep-card">
+                <div class="deep-kicker">Secondary research</div>
+                <h3>Brief in, sourced dashboard out</h3>
+                <ul class="deep-list">
+                    <li><span class="arrow">&rarr;</span><span>Write the brief — market context, competitor scan, category deep-dive — and the AI researches it into a structured dashboard: sources, summaries, key findings, charts.</span></li>
+                    <li><span class="arrow">&rarr;</span><span>Live progress while it works, regeneration history when the brief evolves, and manual override when an analyst wants to reshape the output.</span></li>
+                    <li><span class="arrow">&rarr;</span><span>Delivered on the same share-link infrastructure as survey dashboards — one link to the client, view analytics for you.</span></li>
+                </ul>
+            </div>
+            <div class="deep-card">
+                <div class="deep-kicker">Questionnaire intelligence</div>
+                <h3>The master document and the data finally agree</h3>
+                <ul class="deep-list">
+                    <li><span class="arrow">&rarr;</span><span>Upload the questionnaire Word file and it becomes a structured, editable question list — sections, options, routing and programming notes all captured, with quality scores so you know exactly what to double-check.</span></li>
+                    <li><span class="arrow">&rarr;</span><span>An automatic matcher then links each questionnaire question to the SPSS file's variables — confirmed, suggested and unmatched, each with the evidence behind the match.</span></li>
+                    <li><span class="arrow">&rarr;</span><span>That mapping is what lets validation rules reference the questionnaire's own routing — the master document and the data finally agree on what "Q12" means.</span></li>
+                </ul>
+            </div>
         </div>
     </section>
 
