@@ -3600,17 +3600,25 @@ async function startMeetingAsHost() {
 // Toggle hand raise
 async function toggleHandRaise() {
     handRaised = !handRaised;
+    // #handBtn did not exist in meeting.html, so this was null and every call
+    // threw AFTER the RaiseHand invoke had already gone out. The catch then
+    // reverted handRaised to false, which made the LowerHand branch
+    // unreachable — so the hand could never be lowered, and each further click
+    // re-broadcast "raised their hand" to everyone in the meeting.
+    // The id now exists; update the label span rather than the element's
+    // innerHTML, which would have blown away the icon markup inside it.
     const handBtn = document.getElementById('handBtn');
+    const handLabel = handBtn ? handBtn.querySelector('.menu-label') : null;
 
     try {
         if (handRaised) {
             await signalRConnection.invoke('RaiseHand', meetingId);
-            handBtn.classList.add('active');
-            handBtn.innerHTML = '✋ Lower Hand';
+            if (handBtn) handBtn.classList.add('active');
+            if (handLabel) handLabel.textContent = 'Lower Hand';
         } else {
             await signalRConnection.invoke('LowerHand', meetingId);
-            handBtn.classList.remove('active');
-            handBtn.innerHTML = '✋ Raise Hand';
+            if (handBtn) handBtn.classList.remove('active');
+            if (handLabel) handLabel.textContent = 'Raise Hand';
         }
     } catch (error) {
         console.error('Error toggling hand raise:', error);

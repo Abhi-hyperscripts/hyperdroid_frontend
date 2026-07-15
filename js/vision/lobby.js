@@ -182,14 +182,30 @@ function updateParticipantsList() {
         const item = document.createElement('div');
         item.className = 'participant-item';
 
-        const initial = data.username.charAt(0).toUpperCase();
-        const guestBadge = data.isGuest ? '<span class="guest-badge">Guest</span>' : '';
+        // data.username comes from the UserJoinedLobby broadcast and is fully
+        // attacker-controlled: guest-join.html accepts any string as a name, so
+        // interpolating it into innerHTML was unauthenticated stored XSS firing
+        // in every lobby occupant's browser, including the host's. Build the
+        // nodes and assign via textContent instead — no escaping to get wrong.
+        const name = String(data.username ?? '');
 
-        item.innerHTML = `
-            <div class="participant-icon">${initial}</div>
-            <div class="participant-name">${data.username}</div>
-            ${guestBadge}
-        `;
+        const icon = document.createElement('div');
+        icon.className = 'participant-icon';
+        icon.textContent = name.charAt(0).toUpperCase();
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'participant-name';
+        nameEl.textContent = name;
+
+        item.appendChild(icon);
+        item.appendChild(nameEl);
+
+        if (data.isGuest) {
+            const badge = document.createElement('span');
+            badge.className = 'guest-badge';
+            badge.textContent = 'Guest';
+            item.appendChild(badge);
+        }
 
         container.appendChild(item);
     });

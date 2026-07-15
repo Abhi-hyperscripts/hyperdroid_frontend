@@ -2886,6 +2886,19 @@ body.dark-theme .settings-menu,
     color: var(--text-primary);
 }
 
+/* Toggled-on state for menu items that represent a persistent state (currently
+   Raise Hand). toggleHandRaise() adds .active but no rule existed for it, so a
+   raised hand had no visual affordance in the menu at all. */
+.settings-menu-item.active {
+    background: var(--brand-primary);
+    color: var(--text-inverse);
+}
+
+.settings-menu-item.active:hover {
+    background: var(--brand-primary-dark);
+    color: var(--text-inverse);
+}
+
 .settings-menu-item .menu-icon {
     width: 20px;
     height: 20px;
@@ -5854,7 +5867,7 @@ body:has(.pre-meeting-container)::after {
     align-items: center;
     gap: 4px;
     padding: 2px 8px;
-    background-color: var(--color-error);
+    background-color: var(--color-danger);
     color: white;
     font-size: 10px;
     font-weight: 600;
@@ -6342,7 +6355,7 @@ body:has(.pre-meeting-container)::after {
     align-items: center;
     justify-content: center;
     background: transparent;
-    color: var(--color-error);
+    color: var(--color-danger);
     border: none;
     border-radius: 3px;
     cursor: pointer;
@@ -6352,7 +6365,7 @@ body:has(.pre-meeting-container)::after {
 }
 
 .rec-delete:hover {
-    background: var(--color-error);
+    background: var(--color-danger);
     color: var(--text-inverse);
     opacity: 1;
 }
@@ -6363,8 +6376,8 @@ body:has(.pre-meeting-container)::after {
     gap: 4px;
     padding: 4px 8px;
     background: transparent;
-    color: var(--color-error);
-    border: 1px solid var(--color-error);
+    color: var(--color-danger);
+    border: 1px solid var(--color-danger);
     border-radius: 4px;
     font-size: 0.75rem;
     cursor: pointer;
@@ -6373,7 +6386,7 @@ body:has(.pre-meeting-container)::after {
 }
 
 .btn-delete-all-recordings:hover {
-    background: var(--color-error);
+    background: var(--color-danger);
     color: var(--text-inverse);
     opacity: 1;
 }
@@ -7646,8 +7659,8 @@ label.toggle-switch,
 
 .nav-pw-error {
     background: rgba(239, 68, 68, 0.1);
-    border: 1px solid var(--color-error);
-    color: var(--color-error);
+    border: 1px solid var(--color-danger);
+    color: var(--color-danger);
     padding: 10px 12px;
     border-radius: 8px;
     font-size: 0.85rem;
@@ -7985,8 +7998,8 @@ label.toggle-switch,
 }
 
 .filter-bar-context .btn-icon-xs.btn-danger-icon {
-    border-color: var(--color-error);
-    color: var(--color-error);
+    border-color: var(--color-danger);
+    color: var(--color-danger);
 }
 
 .filter-bar-context .btn-icon-xs.btn-danger-icon:hover {

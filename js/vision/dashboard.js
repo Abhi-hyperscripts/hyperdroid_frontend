@@ -275,9 +275,19 @@ function renderMeetingsList(fullReplace = true) {
     if (fullReplace) {
         grid.innerHTML = filtered.map(m => createDashboardMeetingCard(m)).join('');
     } else {
-        // Append new meetings (for Load More)
-        const startIdx = filtered.length - (dashboardState.page_size);
-        const newMeetings = filtered.slice(startIdx < 0 ? 0 : startIdx);
+        // Append new meetings (for Load More).
+        //
+        // This used to slice from `filtered.length - page_size`, which assumes the
+        // page just fetched contributed exactly page_size cards to the FILTERED
+        // list. It doesn't: a client-side filter can drop some of the new page,
+        // and the final page is usually short. Both cases made startIdx point too
+        // far back, re-appending cards that were already on screen (duplicate
+        // cards AND duplicate `id="meeting-<id>"` values, so subsequent live
+        // status updates via getElementById then hit the wrong element).
+        //
+        // Count what's actually rendered instead of inferring it from page size.
+        const alreadyRendered = grid.querySelectorAll('.meeting-card-v2').length;
+        const newMeetings = filtered.slice(alreadyRendered);
         grid.insertAdjacentHTML('beforeend', newMeetings.map(m => createDashboardMeetingCard(m)).join(''));
     }
 }
@@ -302,6 +312,20 @@ function createDashboardMeetingCard(meeting) {
 
     const typeBadge = getTypeBadgeHTML(type);
     const sourceBadge = getSourceBadgeHTML(meeting.source_service);
+
+    // The dashboard also lists meetings you were merely invited to (see the
+    // allowed-participants clause in DatabaseLayer_Dashboard's WHERE). Settings
+    // and Delete used to render for those too — and the API let them through on
+    // tenant scope alone. The server now requires host / project-owner /
+    // SUPERADMIN, so only show the affordances to someone who can actually use
+    // them rather than surfacing a button that 403s.
+    const _me = (typeof api !== 'undefined' && api.getUser) ? api.getUser() : null;
+    const _myId = _me ? _me.userId : null;
+    const canManageMeeting = !!_myId && (
+        meeting.host_user_id === _myId ||
+        meeting.project_owner_id === _myId ||
+        (_me && Array.isArray(_me.roles) && _me.roles.includes('SUPERADMIN'))
+    );
 
     // Defensive: don't trust a stale `is_started` flag if the meeting's
     // scheduled end has passed by more than 15 minutes. The webhook that
@@ -347,6 +371,7 @@ function createDashboardMeetingCard(meeting) {
                 </div>
                 <div class="mcv2-actions">
                     <div class="mcv2-secondary-actions">
+                        ${!canManageMeeting ? '' : `
                         <button class="btn-icon-sm btn-delete" onclick="confirmDeleteMeeting('${meeting.id}')" title="Delete">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -356,7 +381,7 @@ function createDashboardMeetingCard(meeting) {
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                             </svg>
-                        </button>
+                        </button>`}
                         <button class="btn-icon-sm" onclick="event.stopPropagation(); showTranscriptsPanel('${meeting.id}')" title="Transcripts">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
@@ -372,15 +397,15 @@ function createDashboardMeetingCard(meeting) {
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
                             </button>
                             <div class="share-dot-dropdown">
-                                <button onclick="copyEmailCard(event, '${meeting.id}', '${escapeHtml(meeting.meeting_name || 'Untitled').replace(/'/g, "\\'")}', 'participant')">
+                                <button onclick="copyEmailCard(event, '${meeting.id}', '${escapeHtml(escapeJsString(meeting.meeting_name || 'Untitled'))}', 'participant')">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                                     Participant Email Card
                                 </button>
-                                <button onclick="copyEmailCard(event, '${meeting.id}', '${escapeHtml(meeting.meeting_name || 'Untitled').replace(/'/g, "\\'")}', 'guest')">
+                                <button onclick="copyEmailCard(event, '${meeting.id}', '${escapeHtml(escapeJsString(meeting.meeting_name || 'Untitled'))}', 'guest')">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
                                     Guest Email Card
                                 </button>
-                                <button onclick="openSendInviteModal(event, '${meeting.id}', '${escapeHtml(meeting.meeting_name || 'Untitled').replace(/'/g, "\\'")}', '${meeting.start_time || ''}', '${meeting.end_time || ''}')">
+                                <button onclick="openSendInviteModal(event, '${meeting.id}', '${escapeHtml(escapeJsString(meeting.meeting_name || 'Untitled'))}', '${meeting.start_time || ''}', '${meeting.end_time || ''}')">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                                     Send Email Invite
                                 </button>
@@ -410,11 +435,15 @@ function getTypeBadgeHTML(type) {
 
 function getSourceBadgeHTML(sourceService) {
     if (!sourceService) return '';
+    // Theme variables only — theme.css already defines these exact accents
+    // (--color-cyan IS #06b6d4 and --color-warning IS #f59e0b), so the hardcoded
+    // literals were both a rule violation and a duplicate source of truth that
+    // wouldn't follow a future retint. 'Chat' already did the right thing.
     const colors = {
         'Chat': 'var(--color-success)',
-        'HRMS': '#a855f7',
-        'ATS': '#f59e0b',
-        'CRM': '#06b6d4'
+        'HRMS': 'var(--color-purple)',
+        'ATS': 'var(--color-warning)',
+        'CRM': 'var(--color-cyan)'
     };
     const color = colors[sourceService] || 'var(--text-secondary)';
     return `<span class="badge badge-source" style="--source-color: ${color}">${escapeHtml(sourceService)}</span>`;
@@ -2733,10 +2762,10 @@ async function showSessionTranscript(sessionId) {
                 transcriptHtml += `
                     <div class="speaker-group">
                         <div class="speaker-header">
-                            <span class="speaker-name">${segment.speakerName || 'Unknown'}</span>
+                            <span class="speaker-name">${escapeHtml(segment.speakerName || 'Unknown')}</span>
                             <div class="speaker-badges">
                                 ${roleBadge}
-                                <span class="speaker-source badge badge-${segment.source === 'whisper' ? 'whisper' : 'native'}">${segment.source}</span>
+                                <span class="speaker-source badge badge-${segment.source === 'whisper' ? 'whisper' : 'native'}">${escapeHtml(segment.source)}</span>
                             </div>
                         </div>
                 `;
@@ -2745,8 +2774,8 @@ async function showSessionTranscript(sessionId) {
 
             transcriptHtml += `
                 <div class="transcript-segment">
-                    <span class="segment-time">${timestamp}</span>
-                    <span class="segment-text">${segment.text}</span>
+                    <span class="segment-time">${escapeHtml(timestamp)}</span>
+                    <span class="segment-text">${escapeHtml(segment.text)}</span>
                 </div>
             `;
         });
@@ -3706,11 +3735,34 @@ function printSummaryModal() {
     setTimeout(() => { printWin.print(); printWin.close(); }, 300);
 }
 
-// Helper to escape HTML
+// Helper to escape HTML.
+//
+// This file used to define escapeHtml three times (here and twice further
+// down), each using the textContent -> innerHTML trick. That trick does NOT
+// escape quotes: escapeHtml('a"b') returns 'a"b' verbatim, because quotes
+// aren't special in a text node. Every use inside an HTML attribute was
+// therefore an attribute-break XSS — and guest display names, which any
+// unauthenticated person with a meeting link controls, flow into several of
+// them. Escape the five significant chars explicitly instead.
 function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// HTML attribute escape. Same output as escapeHtml today, kept as a distinct
+// name so attribute call sites stay obvious and can't silently regress to a
+// text-only escaper. Mirrors copilot.js:626.
+function escapeAttr(text) {
+    return escapeHtml(text);
+}
+
+// Escape a value destined for a single-quoted JS string inside an inline
+// handler, e.g. onclick="fn('${escapeJsString(name)}')".
+function escapeJsString(text) {
+    return String(text == null ? '' : text)
+        .replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/</g, '\\x3C');
 }
 
 function formatSowItem(item) {
@@ -4231,12 +4283,8 @@ function setHostDropdownDisabled(disabled) {
     }
 }
 
-// Helper function to escape HTML
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+// escapeHtml is defined once near formatSowItem — this duplicate (identical,
+// quote-unsafe) definition hoisted over it and won file-wide. Removed.
 
 // Close dropdowns when clicking outside
 document.addEventListener('click', function(e) {
@@ -5233,11 +5281,7 @@ function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+// (second duplicate escapeHtml removed — see the canonical definition above)
 
 // ============================================
 // INITIALIZE DASHBOARD
