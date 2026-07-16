@@ -67,7 +67,7 @@
 
     /** Smart formatter — detects if value is a stat/mean or percentage */
     function fmtVal(val, config) {
-        if (val == null || isNaN(val)) return String(val);
+        if (val == null || isNaN(val)) return '';
         const title = (config?.title || '').toLowerCase();
         const statsKeywords = ['mean', 'median', 'index', 'score', 'coefficient', 'correlation', 'count', 'average', 'ratio'];
         if (statsKeywords.some(k => title.includes(k))) return fmtMean(val);
@@ -721,7 +721,8 @@
             if (!el) return;
             el.innerHTML = ''; // clear any leftover DOM
 
-            const rawValue = kpi.value != null ? parseFloat(kpi.value) : 0;
+            let rawValue = kpi.value != null ? parseFloat(kpi.value) : 0;
+            if (!isFinite(rawValue)) rawValue = 0; // "N/A"/"TBD"/"" → NaN would render a broken arc
             const suffix = (kpi.suffix || '%').trim();
             const color = KPI_ACCENT_COLORS[i % 4];
             const trackColor = getGaugeTrackColor();
@@ -1046,7 +1047,12 @@
     // ═══ EXISTING CHART BUILDERS ═══
 
     function buildGaugeOptions(data, config) {
-        const value = data.series ? data.series[0] : (config.value || 0);
+        // Coerce to a finite number: series may be a nested [{name,data}] shape or empty,
+        // in which case series[0] is an object/undefined → Math.min/max would yield NaN.
+        let rawGauge = Array.isArray(data.series) ? data.series[0] : config.value;
+        if (rawGauge && typeof rawGauge === 'object') rawGauge = Array.isArray(rawGauge.data) ? rawGauge.data[0] : rawGauge.value;
+        let value = Number(rawGauge);
+        if (!isFinite(value)) value = 0;
         const label = (data.labels && data.labels[0]) || config.kpi_label || '';
         const labelColor = getChartLabelColor();
         const valueColor = getChartValueColor();
@@ -2784,6 +2790,10 @@
         const sigLookup = buildSignificanceLookup(chartConfig);
         let headers = [];
         let rows = [];
+        // Safe value cell: chart values/suffix are AI-generated (attacker-influenceable via
+        // survey/secondary-research data) and this table renders on the public share page,
+        // so coerce+escape every value the same way labels are escaped.
+        const sv = (v) => (v == null ? '' : esc(String(v)));
 
         switch (type) {
             case 'pie':
@@ -2793,13 +2803,13 @@
                 const labels = data.labels || [];
                 const series = data.series || [];
                 headers = ['Label', 'Value'];
-                rows = labels.map((l, i) => [esc(l), `<span class="num">${series[i] != null ? series[i] : ''}</span>`]);
+                rows = labels.map((l, i) => [esc(l), `<span class="num">${sv(series[i])}</span>`]);
                 break;
             }
             case 'gauge': {
                 const val = data.series ? data.series[0] : (chartConfig.value || 0);
                 headers = ['Metric', 'Value'];
-                rows = [[esc(chartConfig.title || 'Value'), `<span class="num">${val}${chartConfig.suffix || '%'}</span>`]];
+                rows = [[esc(chartConfig.title || 'Value'), `<span class="num">${sv(val)}${esc(chartConfig.suffix || '%')}</span>`]];
                 break;
             }
             case 'bar':
@@ -2810,9 +2820,9 @@
                     rows = categories.map((c, i) => [
                         esc(c),
                         ...data.series.map(s => {
-                            const v = s.data[i] != null ? s.data[i] : '';
+                            const v = s.data[i];
                             const dir = sigLookup ? getSigDirection(sigLookup, c, s.name) : null;
-                            return `<span class="num">${v}${sigBadge(dir)}</span>`;
+                            return `<span class="num">${sv(v)}${sigBadge(dir)}</span>`;
                         })
                     ]);
                 } else {
@@ -2820,7 +2830,7 @@
                     const vals = data.series || [];
                     rows = categories.map((c, i) => {
                         const dir = sigLookup ? getSigDirection(sigLookup, c, null) : null;
-                        return [esc(c), `<span class="num">${vals[i] != null ? vals[i] : ''}${sigBadge(dir)}</span>`];
+                        return [esc(c), `<span class="num">${sv(vals[i])}${sigBadge(dir)}</span>`];
                     });
                 }
                 break;
@@ -2832,9 +2842,9 @@
                 rows = categories.map((c, i) => [
                     esc(c),
                     ...series.map(s => {
-                        const v = (s.data || [])[i] != null ? (s.data || [])[i] : '';
+                        const v = (s.data || [])[i];
                         const dir = sigLookup ? getSigDirection(sigLookup, c, s.name) : null;
-                        return `<span class="num">${v}${sigBadge(dir)}</span>`;
+                        return `<span class="num">${sv(v)}${sigBadge(dir)}</span>`;
                     })
                 ]);
                 break;
@@ -2847,12 +2857,12 @@
                     headers = ['X', ...data.series.map(s => s.name || 'Value')];
                     rows = categories.map((c, i) => [
                         esc(c),
-                        ...data.series.map(s => `<span class="num">${(s.data || [])[i] != null ? (s.data || [])[i] : ''}</span>`)
+                        ...data.series.map(s => `<span class="num">${sv((s.data || [])[i])}</span>`)
                     ]);
                 } else {
                     headers = ['X', 'Value'];
                     const vals = data.series || [];
-                    rows = categories.map((c, i) => [esc(c), `<span class="num">${vals[i] != null ? vals[i] : ''}</span>`]);
+                    rows = categories.map((c, i) => [esc(c), `<span class="num">${sv(vals[i])}</span>`]);
                 }
                 break;
             }
@@ -2864,8 +2874,8 @@
                 if (hasBubble) headers.push('Size');
                 points.forEach(s => {
                     (s.data || []).forEach(p => {
-                        const row = [esc(s.name || ''), `<span class="num">${p.x}</span>`, `<span class="num">${p.y}</span>`];
-                        if (hasBubble) row.push(`<span class="num">${p.z || ''}</span>`);
+                        const row = [esc(s.name || ''), `<span class="num">${sv(p.x)}</span>`, `<span class="num">${sv(p.y)}</span>`];
+                        if (hasBubble) row.push(`<span class="num">${sv(p.z)}</span>`);
                         rows.push(row);
                     });
                 });
@@ -2878,7 +2888,7 @@
                 series.forEach(s => {
                     rows.push([
                         esc(s.name || ''),
-                        ...(s.data || []).map(v => `<span class="num">${typeof v === 'number' ? v : ''}</span>`)
+                        ...(s.data || []).map(v => `<span class="num">${typeof v === 'number' ? v : ''}</span>`)  // heatmap: numeric-only by construction
                     ]);
                 });
                 break;
@@ -2892,7 +2902,7 @@
                         const vals = Array.isArray(d) ? d : [d, d, d, d, d];
                         rows.push([
                             esc(categories[i] || `Group ${i + 1}`),
-                            ...vals.map(v => `<span class="num">${v}</span>`)
+                            ...vals.map(v => `<span class="num">${sv(v)}</span>`)
                         ]);
                     });
                 });
@@ -2904,12 +2914,12 @@
                 if (points.length > 0) {
                     points.forEach(s => {
                         (s.data || []).forEach(p => {
-                            rows.push([esc(p.label || p.x || ''), `<span class="num">${p.y}</span>`]);
+                            rows.push([esc(p.label || p.x || ''), `<span class="num">${sv(p.y)}</span>`]);
                         });
                     });
                 } else if (Array.isArray(data.series) && Array.isArray(data.labels)) {
                     data.labels.forEach((l, i) => {
-                        rows.push([esc(l), `<span class="num">${data.series[i] || 0}</span>`]);
+                        rows.push([esc(l), `<span class="num">${sv(data.series[i] != null ? data.series[i] : 0)}</span>`]);
                     });
                 }
                 break;
@@ -2918,7 +2928,7 @@
                 const categories = data.labels || data.categories || [];
                 const vals = Array.isArray(data.series) ? data.series : [];
                 headers = ['Label', 'Value'];
-                rows = categories.map((c, i) => [esc(c), `<span class="num">${vals[i] != null ? vals[i] : ''}</span>`]);
+                rows = categories.map((c, i) => [esc(c), `<span class="num">${sv(vals[i])}</span>`]);
             }
         }
 

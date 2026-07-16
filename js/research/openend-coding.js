@@ -209,7 +209,7 @@ function renderDetectedVars(vars) {
         const total = (v.totalRows || v.total_rows || 0).toLocaleString();
 
         return `
-        <div class="oe-variable-card" onclick="oeSelectVariable('${escapeHtml(name)}')">
+        <div class="oe-variable-card" onclick="oeSelectVariable('${escAttrJs(name)}')">
             <span class="oe-var-name">${escapeHtml(name)}</span>
             ${label ? `<span class="oe-var-label">${escapeHtml(label.length > 80 ? label.substring(0, 80) + '…' : label)}</span>` : ''}
             <span class="oe-var-fill">${nonEmpty} / ${total} (${fillPct}%)</span>
@@ -591,6 +591,18 @@ function renderCodeframePanel(codeframe, codes) {
 
 let oeJobPollTimer = null;
 
+// Re-join SignalR groups for still-running coding jobs after a reconnect. SignalR drops
+// group membership on reconnect, so without this live OE-coding progress stops updating
+// (the 5s poll still advances it, but the smooth SignalR cadence is lost). Called from the
+// shared fileProgressConnection.onreconnected handler in project-detail.js.
+async function rejoinOpenEndCodingGroups() {
+    if (!fileProgressConnected || !fileProgressConnection || !Array.isArray(oeJobs)) return;
+    const running = oeJobs.filter(j => j.status !== 'complete' && j.status !== 'failed' && j.status !== 'cancelled');
+    for (const job of running) {
+        try { await fileProgressConnection.invoke('JoinOpenEndCodingProgress', job.id); } catch {}
+    }
+}
+
 async function loadOeJobs() {
     try {
         oeJobs = await api.request(`/research/projects/${projectId}/openend-coding/jobs`) || [];
@@ -703,6 +715,17 @@ function renderJobCard(job) {
             <div class="oe-job-row-bar"><div class="file-progress-fill" style="width:${pct}%"></div></div>
             <span class="oe-job-row-pct">${Math.round(pct)}%</span>
             <button class="oe-btn oe-btn-danger oe-btn-xs" onclick="cancelOeJob('${job.id}')">Cancel</button>
+        </div>`;
+    }
+
+    if (status === 'cancelled') {
+        // A cancelled job is incomplete — never present it as "Complete" with View
+        // Results/Export actions (those would show partial/empty data as finished).
+        return `<div class="oe-job-row oe-job-row-failed" id="oe-job-${job.id}" data-job-id="${job.id}">
+            <span class="oe-job-var">${escapeHtml(varName)}${vBadge}</span>
+            <span class="status-badge failed">Cancelled</span>
+            <span class="oe-job-row-info">Coding was cancelled before completion</span>
+            <button class="oe-btn oe-btn-secondary oe-btn-xs" onclick="rerunCoding('${job.id}')">Re-run</button>
         </div>`;
     }
 

@@ -13,6 +13,14 @@ let activeGenerationProjectId = null;
 let signalRConnection = null;
 let pollingInterval = null;
 let progressStartTime = null;
+let elapsedTimer = null;
+
+function stopElapsedTimer() {
+    if (elapsedTimer) {
+        clearInterval(elapsedTimer);
+        elapsedTimer = null;
+    }
+}
 
 // ============================================
 // Initialization
@@ -78,6 +86,7 @@ async function loadProjects() {
         } else {
             currentProjects = Array.isArray(response) ? response.filter(p => p.project_type === 'secondary') : [];
             totalCount = currentProjects.length;
+            totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
         }
 
         renderProjects();
@@ -637,9 +646,11 @@ function startProgressTracking(projectId) {
     // Try SignalR first
     connectSignalR(projectId);
 
-    // Elapsed time counter
+    // Elapsed time counter — tear down any prior instance first so regenerate
+    // doesn't stack orphaned 1s timers that keep writing to #progressStats.
+    stopElapsedTimer();
     if (!progressStartTime) progressStartTime = Date.now();
-    const elapsedTimer = setInterval(() => {
+    elapsedTimer = setInterval(() => {
         const elapsed = Math.floor((Date.now() - progressStartTime) / 1000);
         const statsEl = document.getElementById('progressStats');
         if (statsEl) statsEl.textContent = `${elapsed}s elapsed`;
@@ -670,7 +681,7 @@ function startProgressTracking(projectId) {
                     bar.style.width = '100%';
                     bar.style.background = 'var(--color-success)';
                 }
-                clearInterval(elapsedTimer);
+                stopElapsedTimer();
                 setTimeout(() => {
                     hideProgressPanel();
                     loadProjectStatus(projectId);
@@ -685,7 +696,7 @@ function startProgressTracking(projectId) {
                     bar.style.width = '100%';
                     bar.style.background = 'var(--color-error)';
                 }
-                clearInterval(elapsedTimer);
+                stopElapsedTimer();
                 setTimeout(() => {
                     hideProgressPanel();
                     loadProjectStatus(projectId);
@@ -752,6 +763,7 @@ async function connectSignalR(projectId) {
                     loadProjectStatus(projectId);
                 }, 2000);
                 stopPolling();
+                stopElapsedTimer();
             } else if (data.status === 'failed') {
                 const bar = document.getElementById('progressBar');
                 if (bar) {
@@ -764,6 +776,7 @@ async function connectSignalR(projectId) {
                     loadProjectStatus(projectId);
                 }, 3000);
                 stopPolling();
+                stopElapsedTimer();
             }
         });
 
@@ -777,6 +790,7 @@ async function connectSignalR(projectId) {
 }
 
 function disconnectSignalR() {
+    stopElapsedTimer();
     if (signalRConnection) {
         try { signalRConnection.stop(); } catch {}
         signalRConnection = null;
