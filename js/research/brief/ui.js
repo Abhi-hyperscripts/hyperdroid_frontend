@@ -46,7 +46,20 @@
     // Open / close
     // -----------------------------------------------------------------------
 
+    function resetBriefState() {
+        state.focusVariables = [];
+        state.mandatoryCrossTabs = [];
+        state.mandatoryAnalyses = { trend: false, driver: false, cluster: false, correlation: false };
+        state.focusSegments = [];
+        state.customInstructions = '';
+        state.waveVariable = '';
+    }
+
     async function openBriefBuilder(fileId, onGenerate) {
+        // Reset when switching files — state is module-scoped, so without this a brief filled
+        // for file A would leak into file B (and B's own saved brief_json would never reload,
+        // because the retained state makes isEmpty false below).
+        if (_fileId !== fileId) resetBriefState();
         _fileId = fileId;
         _onGenerate = onGenerate;
 

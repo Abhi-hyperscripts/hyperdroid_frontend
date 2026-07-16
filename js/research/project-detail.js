@@ -214,6 +214,9 @@ async function loadFiles() {
         loadingEl.style.display = 'none';
         contentEl.innerHTML = `<div class="query-error">Failed to load files: ${escapeHtml(error.message)}</div>`;
         console.error('Failed to load files:', error);
+        // Still resolve AI availability so the AI-chat / embed / questionnaire
+        // controls aren't stranded hidden after a transient files-load failure.
+        checkAiAvailability();
     }
 }
 
@@ -404,6 +407,7 @@ async function connectFileProgressSignalR() {
             await joinFileProgressGroups();
             await rejoinQuestionnaireProgressGroups();
             await rejoinInsightsProgressGroups();
+            if (typeof rejoinOpenEndCodingGroups === 'function') await rejoinOpenEndCodingGroups();
         });
 
         fileProgressConnection.onclose(() => {
@@ -2876,7 +2880,9 @@ async function handleEditProject(event) {
 
     try {
         const body = { name, description: description || null, status };
-        if (aiInstructions !== null) body.aiInstructions = aiInstructions;
+        // snake_case: backend uses JsonNamingPolicy.SnakeCaseLower, so camelCase
+        // aiInstructions would NOT bind (underscore differs) and silently never persist.
+        if (aiInstructions !== null) body.ai_instructions = aiInstructions;
 
         await api.request(`/research/projects/${projectId}`, {
             method: 'PUT',
@@ -3422,7 +3428,7 @@ function updateTypingIndicator(toolsCalled, stepDescription, round) {
         statusText = 'Analyzing data';
     }
 
-    indicator.innerHTML = `<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span> ${statusText}`;
+    indicator.innerHTML = `<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span> ${escapeHtml(statusText)}`;
 }
 
 function removeTypingIndicator() {
@@ -8165,8 +8171,8 @@ async function loadQuestionnaireList() {
                             <div class="qd-section-title">Confidence</div>
                             <div class="qd-row"><span class="qd-label">Structure</span><span class="qd-value">${(structConf * 100).toFixed(1)}%</span></div>
                             <div class="qd-row"><span class="qd-label">Semantic</span><span class="qd-value">${(semConf * 100).toFixed(1)}%</span></div>
-                            <div class="qd-row"><span class="qd-label">Detected Format</span><span class="qd-value">${detectedFormat || '-'}</span></div>
-                            <div class="qd-row"><span class="qd-label">Label Pattern</span><span class="qd-value">${labelPattern || '-'}</span></div>
+                            <div class="qd-row"><span class="qd-label">Detected Format</span><span class="qd-value">${escapeHtml(detectedFormat || '-')}</span></div>
+                            <div class="qd-row"><span class="qd-label">Label Pattern</span><span class="qd-value">${escapeHtml(labelPattern || '-')}</span></div>
                         </div>
                         <div class="qd-section">
                             <div class="qd-section-title">Processing</div>
@@ -8794,18 +8800,17 @@ async function _doGenerateInsights(fileId, briefText, briefStateJson) {
         }
         activeInsightsFileId = fileId;
 
-        // If a brief was provided, save it as the project's ai_instructions
-        // so the backend's Phase 1 pipeline picks it up via gRPC.
-        if (briefText) {
-            try {
-                await api.request(`/research/projects/${projectId}`, {
-                    method: 'PUT',
-                    body: JSON.stringify({ ai_instructions: briefText })
-                });
-            } catch (e) {
-                console.warn('[Insights] Failed to save brief as ai_instructions:', e);
-                // Non-fatal — continue with generation
-            }
+        // Save the brief as the project's ai_instructions so the backend's Phase 1 pipeline
+        // picks it up via gRPC. Always write (even empty) so "Skip brief — let AI decide"
+        // CLEARS a previously-saved brief instead of silently reusing it.
+        try {
+            await api.request(`/research/projects/${projectId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ ai_instructions: briefText || '' })
+            });
+        } catch (e) {
+            console.warn('[Insights] Failed to save brief as ai_instructions:', e);
+            // Non-fatal — continue with generation
         }
 
         // Show progress panel immediately
@@ -8850,15 +8855,14 @@ async function _doRegenerateReplay(fileId, briefText) {
         genBtn.querySelector('#generateInsightsLabel').textContent = 'Regenerating...';
         if (viewBtn) viewBtn.style.display = 'none';
 
-        // Save brief as ai_instructions
-        if (briefText) {
-            try {
-                await api.request(`/research/projects/${projectId}`, {
-                    method: 'PUT',
-                    body: JSON.stringify({ ai_instructions: briefText })
-                });
-            } catch (e) { console.warn('[Insights] Failed to save brief:', e); }
-        }
+        // Save brief as ai_instructions — always write (even empty) so "Skip brief" clears
+        // a previously-saved brief instead of silently reusing it.
+        try {
+            await api.request(`/research/projects/${projectId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ ai_instructions: briefText || '' })
+            });
+        } catch (e) { console.warn('[Insights] Failed to save brief:', e); }
 
         const result = await api.request(`/research/projects/${projectId}/files/${fileId}/insights/regenerate-replay`, {
             method: 'POST',
@@ -8930,31 +8934,45 @@ async function replayInsights() {
 function startInsightsPolling(fileId) {
     if (insightsPollingTimer) clearInterval(insightsPollingTimer);
 
+    // Cap consecutive request failures: a crashed generation run leaves the
+    // backend record to expire and its GET then 404s. Without this the interval
+    // leaks forever (one request/5s) and the Generate button stays disabled.
+    let consecutiveErrors = 0;
+    const MAX_ERRORS = 3;
+
     insightsPollingTimer = setInterval(async () => {
         try {
             const insights = await api.request(`/research/projects/${projectId}/files/${fileId}/insights`, { _skipSpinner: true });
+            consecutiveErrors = 0;
             insightsShareToken = insights.share_token;
+
+            // If SignalR already finalized while this request was in flight it
+            // nulled the timer — skip so we don't double-fire the toast/cleanup.
+            if (!insightsPollingTimer) return;
 
             if (insights.status === 'ready') {
                 clearInterval(insightsPollingTimer);
                 insightsPollingTimer = null;
-
-                // Only update UI if SignalR hasn't already handled it
-                const progressKey = `insights-${fileId}`;
-                if (activeProgressFiles[progressKey]) {
-                    handleInsightsProgressUpdate({ file_id: fileId, status: 'ready', message: 'Dashboard ready' });
-                }
+                // Drive the UI directly — on a page-reload-during-generation path
+                // activeProgressFiles is never seeded and SignalR isn't joined, so
+                // gating on it would leave the button stuck at "Generating...".
+                handleInsightsProgressUpdate({ file_id: fileId, status: 'ready', message: 'Dashboard ready' });
             } else if (insights.status === 'failed') {
                 clearInterval(insightsPollingTimer);
                 insightsPollingTimer = null;
-
-                const progressKey = `insights-${fileId}`;
-                if (activeProgressFiles[progressKey]) {
-                    handleInsightsProgressUpdate({ file_id: fileId, status: 'failed', message: insights.error_message || 'Unknown error' });
-                }
+                handleInsightsProgressUpdate({ file_id: fileId, status: 'failed', message: insights.error_message || 'Unknown error' });
             }
-        } catch {
-            // Keep polling
+        } catch (e) {
+            consecutiveErrors++;
+            const status = e && (e.status || e.statusCode);
+            if (!insightsPollingTimer) return; // already finalized elsewhere
+            // A 404 means the generation record is gone (crashed/expired) — terminal.
+            if (status === 404 || consecutiveErrors >= MAX_ERRORS) {
+                clearInterval(insightsPollingTimer);
+                insightsPollingTimer = null;
+                handleInsightsProgressUpdate({ file_id: fileId, status: 'failed', message: 'Insights generation did not complete' });
+            }
+            // else keep polling through transient errors
         }
     }, 5000);
 }
@@ -9268,7 +9286,7 @@ function renderWaveReport() {
     document.getElementById('waveStatusFilters').innerHTML = filterChips.map(([key, label]) => {
         const count = key === 'all' ? (r.variables?.length || 0) : (counts[key] || 0);
         const active = waveModalState.statusFilter === key ? ' active' : '';
-        return `<button class="wave-status-filter${active}" onclick="waveFilterStatus('${key}')">${escapeHtml(label)} · ${count}</button>`;
+        return `<button class="wave-status-filter${active}" onclick="waveFilterStatus('${escAttrJs(key)}')">${escapeHtml(label)} · ${count}</button>`;
     }).join('');
 
     renderWaveVarTable();

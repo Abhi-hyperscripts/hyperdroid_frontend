@@ -61,9 +61,10 @@
         }
         await refreshFromActiveFile();
 
-        // Seed with a single empty IF branch on first open so users see
-        // exactly what to fill in.
-        if (state.branches.length === 0 && !state.initialized) {
+        // Seed with a single empty IF branch whenever there are none — on first open, or
+        // after refreshFromActiveFile cleared them on a file change (the old `!initialized`
+        // gate meant a post-file-switch open showed zero branches and a disabled Run).
+        if (state.branches.length === 0) {
             state.branches.push({ id: nextBranchId(), condition: '', code: 1, label: '' });
         }
 
@@ -351,7 +352,10 @@
         const addBtn = document.getElementById('cvAddBranchBtn');
         if (addBtn) {
             addBtn.onclick = () => {
-                const nextCode = state.branches.length + 1;
+                // Next code = 1 + highest existing code, so removing a middle branch and
+                // adding again can't mint a duplicate code (which would silently overwrite
+                // a value label, since the backend keys labels by code).
+                const nextCode = Math.max(state.branches.reduce((mx, b) => Math.max(mx, Number(b.code) || 0), 0), Number(state.elseBranch?.code) || 0) + 1;
                 state.branches.push({ id: nextBranchId(), condition: '', code: nextCode, label: '' });
                 render();
             };
@@ -359,7 +363,9 @@
         const addElseBtn = document.getElementById('cvAddElseBtn');
         if (addElseBtn) {
             addElseBtn.onclick = () => {
-                const nextCode = state.branches.length + (state.elseBranch ? 0 : 1);
+                // 1 + highest existing branch code (same as the Add-branch path) so the ELSE
+                // code can't collide with a branch code after a middle branch was removed.
+                const nextCode = Math.max(state.branches.reduce((mx, b) => Math.max(mx, Number(b.code) || 0), 0), Number(state.elseBranch?.code) || 0) + 1;
                 state.elseBranch = { code: nextCode, label: '' };
                 render();
             };
