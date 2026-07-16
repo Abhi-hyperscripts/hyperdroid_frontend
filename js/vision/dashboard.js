@@ -653,9 +653,13 @@ function initDashboardDropdowns() {
 // Dynamically update source dropdown options from loaded meetings
 function updateSourceFilterOptions(meetings) {
     if (!sourceDropdownSD) return;
+    // Meeting objects carry `source_service` (Chat/HRMS/CRM/ATS...), not
+    // `source`, so the old read was always undefined and the Source dropdown
+    // never listed any real source — only "All" and "Manual". This is the same
+    // field the card badge (getSourceBadgeHTML) and the backend source_filter use.
     const sources = new Set();
     meetings.forEach(m => {
-        if (m.source && m.source !== 'manual') sources.add(m.source);
+        if (m.source_service) sources.add(m.source_service);
     });
     const opts = [{ value: 'all', label: 'All Sources' }, { value: 'manual', label: 'Manual' }];
     Array.from(sources).sort().forEach(s => opts.push({ value: s, label: s }));

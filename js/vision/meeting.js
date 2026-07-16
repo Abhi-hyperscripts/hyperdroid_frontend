@@ -1650,11 +1650,19 @@ function updateParticipantLayout(layout) {
     const mainSpeakerContainer = document.createElement('div');
     mainSpeakerContainer.className = 'main-speaker-container';
 
-    // Add recording overlay to main speaker container
+    // Add recording overlay to main speaker container.
+    // This container is rebuilt on every active-speaker change, so re-apply the
+    // .visible class when a recording is currently active — otherwise the
+    // "Recording" badge vanished the moment the main speaker changed. That's a
+    // privacy-signal failure, especially for server-side Egress where this
+    // overlay is the ONLY recording indicator participants see.
     const recordingOverlay = document.createElement('div');
     recordingOverlay.className = 'recording-overlay';
     recordingOverlay.id = 'recordingOverlay';
     recordingOverlay.innerHTML = '<span class="recording-dot"></span>Recording <span id="recordingTimeOverlay">00:00</span>';
+    if (isRecording || serverRecordingStartTime) {
+        recordingOverlay.classList.add('visible');
+    }
     mainSpeakerContainer.appendChild(recordingOverlay);
 
     // Create small tiles container
@@ -2212,7 +2220,12 @@ function attachTrack(track, publication, participant) {
         // Only effective when adaptiveStream is off (Safari); with adaptiveStream
         // on, the SDK sizes the layer from the (fullscreen) element — which
         // resolves to the top layer anyway.
-        if (!window._adaptiveStreamOn) {
+        // setVideoQuality exists only on RemoteTrackPublication. attachTrack also
+        // runs for the LOCAL screen-share publication (from localTrackPublished),
+        // where calling it throws (TypeError) — on Safari, where _adaptiveStreamOn
+        // is false, that aborted the sharer's own self-preview setup. Guard on the
+        // method's presence so it only runs for remote publications.
+        if (!window._adaptiveStreamOn && typeof publication.setVideoQuality === 'function') {
             publication.setVideoQuality(LivekitClient.VideoQuality.HIGH);
             console.log('Screen share quality set to HIGH for best viewing experience');
         }
@@ -2222,9 +2235,12 @@ function attachTrack(track, publication, participant) {
 
         screenShareContainer.style.display = 'flex';
         videoContainer.classList.add('minimized');
-        // Save chat visibility state before hiding
+        // Save chat visibility state before hiding. Toggle only the .visible
+        // class — NOT inline style.display. toggleChat() and the CSS
+        // (.chat-sidebar / .chat-sidebar.visible) are class-based; an inline
+        // display here would override the class and permanently break the Chat
+        // button (chat couldn't open/close) after any screen share until reload.
         chatWasVisibleBeforeScreenShare = chatSidebar.classList.contains('visible');
-        chatSidebar.style.display = 'none';
         chatSidebar.classList.remove('visible');
         screenShareName.textContent = `${participant.name || participant.identity} is sharing`;
 
@@ -2363,9 +2379,9 @@ function detachTrack(track, publication, participant) {
         if (screenShareVideo._lkVideoTrack === track) screenShareVideo._lkVideoTrack = null;
         screenShareContainer.style.display = 'none';
         videoContainer.classList.remove('minimized');
-        // Only restore chat visibility if it was open before screen share
+        // Only restore chat visibility if it was open before screen share.
+        // Class only — see the note in attachTrack's screen-share branch.
         if (chatWasVisibleBeforeScreenShare) {
-            chatSidebar.style.display = 'flex';
             chatSidebar.classList.add('visible');
         }
         screenShareControls.style.display = 'none';
@@ -2661,6 +2677,7 @@ async function toggleScreenShare() {
         // Re-check the network at share time (it may have changed mid-call).
         const shareEffType = navigator.connection?.effectiveType || '';
         const slowShareLink = shareEffType === '2g' || shareEffType === 'slow-2g' || shareEffType === '3g';
+        try {
         await room.localParticipant.setScreenShareEnabled(true, {
             audio: false, // No audio - save bandwidth for video quality
             video: {
@@ -2698,6 +2715,18 @@ async function toggleScreenShare() {
             // (SVC ignored simulcast layers entirely).
             videoCodec: 'vp8',
         });
+        } catch (err) {
+            // User cancelled the OS picker (NotAllowedError/AbortError) or the
+            // share was blocked. Previously this rejected UNHANDLED and the
+            // button silently failed to activate with no feedback.
+            if (err && (err.name === 'NotAllowedError' || err.name === 'AbortError')) {
+                console.log('Screen share cancelled by user');
+            } else {
+                console.error('Screen share failed:', err);
+                Toast.error('Could not start screen sharing: ' + (err && err.message ? err.message : 'unknown error'));
+            }
+            return;
+        }
         screenBtn.classList.add('active');
         console.log(`Screen share started (${slowShareLink ? '1080p / 2.5 Mbps slow-network' : '1440p / 8 Mbps'})`);
 
