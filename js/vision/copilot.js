@@ -94,8 +94,12 @@ function initCopilot(connection, meetingMode, meetingIdParam) {
     // Restore HUD position preference (left/center)
     restoreHudPosition();
 
-    // Initialize mode toggle UI
+    // Initialize mode + model toggle UI. The model toggle was never synced at
+    // init, so the HUD highlighted whatever the HTML hardcoded (haiku) while the
+    // tracked default was 'sonnet' — the recruiter couldn't tell which model was
+    // actually answering.
     updateModeToggleUI('manual');
+    updateModelToggleUI(copilotModel);
 
     // Set initial bot status to standby
     updateBotStatusUI(false);
@@ -253,7 +257,9 @@ function showInsightCard(data) {
     const followUpDepth = (typeof data.followUpDepth === 'number' ? data.followUpDepth :
                           (typeof data.follow_up_depth === 'number' ? data.follow_up_depth : 0));
     const topicExhausted = data.topicExhausted === true || data.topic_exhausted === true;
-    const isInterview = copilotMeetingMode === 'interview';
+    // Match the badge logic, which treats 'recruit' as an interview alias — else
+    // a recruit-mode meeting silently drops the drill-depth topic chip.
+    const isInterview = copilotMeetingMode === 'interview' || copilotMeetingMode === 'recruit';
     let depthChip = '';
     if (isInterview && topicLabel) {
         // Colour ramps as drill depth grows: 0=cool/cyan, 1=neutral, 2=amber, 3=red
@@ -498,7 +504,10 @@ function updateModeToggleUI(mode) {
     const freqToggle = document.getElementById('copilotFreqToggle');
     const freqSeparator = freqToggle?.previousElementSibling;
     if (freqToggle) freqToggle.style.display = mode === 'autonomous' ? 'none' : '';
-    if (freqSeparator?.classList.contains('hud-separator')) freqSeparator.style.display = mode === 'autonomous' ? 'none' : '';
+    // The divider before the frequency toggle is class "hud-panel-divider" in the
+    // HTML, not "hud-separator" — the old check never matched, so in autonomous
+    // mode the frequency toggle hid but its divider was left dangling.
+    if (freqSeparator?.classList.contains('hud-panel-divider')) freqSeparator.style.display = mode === 'autonomous' ? 'none' : '';
 
     // Update the HUD mode badge to show current copilot mode
     // (mirrors the same recruit↔interview alias as initCopilot)

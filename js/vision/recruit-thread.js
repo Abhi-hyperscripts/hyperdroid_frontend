@@ -798,7 +798,10 @@
             (b.isFollowup ? ' rt-is-followup' : '');
         wrap.dataset.bid = b.id;
 
-        const diffClass = 'rt-diff-' + (b.difficulty || 'medium').toLowerCase();
+        // Sanitize to a safe token — difficulty is normally an enum, but it goes
+        // raw into a class attribute, so strip anything non-alphabetic rather than
+        // trust the wire value (the sibling text is escaped; this closes the gap).
+        const diffClass = 'rt-diff-' + (b.difficulty || 'medium').toLowerCase().replace(/[^a-z]/g, '');
         // Three pill states: DONE (host picked next topic), ANSWERED (grade
         // arrived — candidate has spoken), LISTENING (active, no grade yet).
         // Without ANSWERED, the pill stays at LISTENING after grading lands,
@@ -1041,7 +1044,7 @@
         safeOpts.forEach((o, idx) => {
             html += `<div class="rt-picker-option" data-idx="${idx}">` +
                 '<div class="rt-po-hdr">' +
-                `<span class="rt-qdiff rt-diff-${(o.difficulty || 'medium').toLowerCase()}">${escape(o.difficulty || 'medium').toUpperCase()}</span>` +
+                `<span class="rt-qdiff rt-diff-${(o.difficulty || 'medium').toLowerCase().replace(/[^a-z]/g, '')}">${escape(o.difficulty || 'medium').toUpperCase()}</span>` +
                 `<span class="rt-qtopic">${escape(o.topic || '')}</span>` +
                 '</div>' +
                 `<div class="rt-po-q">${escape(o.question)}</div>` +
