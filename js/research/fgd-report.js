@@ -47,6 +47,7 @@ const SECTIONS = [
 
 let currentReport = null;   // stored once loaded — used by share + PPT
 let currentJob = null;
+let reportRendered = false;  // guards the completion path so SignalR 'done' + the poll loop don't both build the dashboard
 
 // ═══════════════════════════════════════════════════════════════════════
 // DOM HELPERS
@@ -1652,7 +1653,8 @@ async function loadJob() {
         };
         if (job.status === 'failed' || job.status === 'cancelled') {
             showError(job.error_message || 'Report failed with no error message.');
-        } else if (job.status === 'done') {
+        } else if (job.status === 'done' && !reportRendered) {
+            reportRendered = true;
             buildDashboard(job);
         }
         return job;
@@ -1664,7 +1666,7 @@ async function loadJob() {
                 const job = await api.request(`/research/focus-group/reports/public/${jobId}`);
                 if (job && job.status === 'done') {
                     setStage('done', 100, 'Complete');
-                    buildDashboard(job);
+                    if (!reportRendered) { reportRendered = true; buildDashboard(job); }
                     return job;
                 }
             } catch (_) { /* fall through to error path */ }

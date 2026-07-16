@@ -643,12 +643,20 @@
         render();
     }
 
+    let ctRunToken = 0;
     async function ctRun() {
         if (!state.fileId) {
             Toast.error('No file selected. Open the Variables tab and pick a file first.');
             return;
         }
 
+        // Guard against overlapping / double-clicked runs: a monotonic token ensures only
+        // the most recent run may mutate the preview (a slow older response can't paint over
+        // newer results), and the Run button is disabled while a run is in flight.
+        const myToken = ++ctRunToken;
+        const runBtn = document.getElementById('ctRunBtn');
+        if (runBtn) runBtn.disabled = true;
+        try {
         // Make sure we have fresh variablesByName for the currently active file
         await refreshFromActiveFile();
         // Warm the codes cache for every dropped variable so the expansion
@@ -734,6 +742,7 @@
                 body: JSON.stringify(requestBody),
             });
             const body = await res.json().catch(() => ({}));
+            if (myToken !== ctRunToken) return;   // a newer run superseded this one — discard
             if (!res.ok) throw new Error(body.error || body.message || `Request failed (${res.status})`);
             const results = body.results || [];
             if (results.length === 0 || results[0].success === false) {
@@ -747,8 +756,12 @@
             }));
             renderResult(mergeVariantStatsIntoBase(baseResult, variantResults.filter(v => v.ok)));
         } catch (err) {
+            if (myToken !== ctRunToken) return;   // stale run — don't clobber the newer run's UI
             console.error('[customtable run]', err);
             preview.innerHTML = `<div class="ct-preview-error">${escapeHtml(err.message || 'Request failed')}</div>`;
+        }
+        } finally {
+            if (myToken === ctRunToken && runBtn) runBtn.disabled = false;
         }
     }
 

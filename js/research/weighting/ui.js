@@ -780,10 +780,17 @@
             return;
         }
 
-        const factors = state.factors.map(f => ({
-            variable: f.name,
-            targets: f.targets,
-        }));
+        // Normalize each factor's targets to sum to exactly 1.0. The UI accepts near-100%
+        // input (e.g. 33.333×3 = 0.99999), but the backend requires the sum within 1e-6, so
+        // renormalize here rather than hard-fail the user after the UI said "100.00% ✓".
+        const factors = state.factors.map(f => {
+            const total = Object.values(f.targets).reduce((a, b) => a + (Number(b) || 0), 0);
+            const targets = {};
+            if (total > 0) {
+                for (const [code, val] of Object.entries(f.targets)) targets[code] = (Number(val) || 0) / total;
+            }
+            return { variable: f.name, targets };
+        });
         const inputParams = { target_variable: state.targetVariable, factors };
         const filterExpr = (state.filterExpression || '').trim();
         if (filterExpr) inputParams.filter = { expression: filterExpr };

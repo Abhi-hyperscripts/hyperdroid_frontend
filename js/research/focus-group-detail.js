@@ -227,7 +227,7 @@ async function toggleRecording(id) {
         recordingResults[id] = full.result;
         renderRecordingBody(body, full, id);
     } catch (e) {
-        body.innerHTML = `<div style="padding:20px; color:var(--color-error);">Failed to load: ${e.message}</div>`;
+        body.innerHTML = `<div style="padding:20px; color:var(--color-error);">Failed to load: ${esc(e.message)}</div>`;
     }
 }
 
