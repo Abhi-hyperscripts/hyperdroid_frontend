@@ -844,10 +844,18 @@ async function proceedToMeeting() {
         // Non-host: Show waiting overlay on the device testing page
         showWaitingForHostOverlay();
 
-        // Setup SignalR connection for real-time updates
-        await setupSignalRConnection();
+        // Setup SignalR for instant "host started" notification. A failure here
+        // (flaky network — setupSignalRConnection rethrows) must NOT skip the
+        // polling fallback below: without it the user was stuck on "Waiting for
+        // the host" forever, no SignalR and no 10s poll, with only Cancel working.
+        try {
+            await setupSignalRConnection();
+        } catch (err) {
+            console.error('Lobby SignalR setup failed; falling back to status polling only:', err);
+        }
 
-        // Start periodic status check to auto-join when host starts
+        // Start periodic status check to auto-join when host starts (the backstop
+        // if SignalR is down).
         startStatusCheck();
     } else {
         // Regular meeting, participant-controlled, or hosted meeting already started - go to meeting

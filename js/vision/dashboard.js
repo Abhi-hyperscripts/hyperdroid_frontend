@@ -2799,6 +2799,21 @@ async function showSessionTranscript(sessionId) {
     } catch (error) {
         console.error('Error loading session transcript:', error);
         Toast.error('Failed to load transcript: ' + error.message);
+        // Clear the spinner — otherwise the panel spins forever on a failed
+        // load. Offer a way back to the sessions list.
+        const panelBody = document.getElementById('transcriptsPanelBody');
+        if (panelBody) {
+            panelBody.innerHTML = `
+                <div class="panel-empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.5;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <p>Couldn't load this transcript</p>
+                    <button class="btn btn-secondary" onclick="showTranscriptsPanel(currentTranscriptsMeetingId)">Back to sessions</button>
+                </div>`;
+        }
     }
 }
 

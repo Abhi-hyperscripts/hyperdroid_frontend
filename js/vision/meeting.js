@@ -3375,8 +3375,12 @@ function captureScreenShareScreenshot() {
 
         const ctx = canvas.getContext('2d');
 
-        // Fill with black background
-        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--gray-950').trim() || '#09090b';
+        // Fill with a black letterbox. Use the literal #000, NOT --gray-950:
+        // the gray ramp is INVERTED in dark mode (--gray-950 is #ffffff there),
+        // so this painted white bars around a captured screen-share in dark
+        // mode. A canvas screenshot backdrop is a fixed surface, not a themed
+        // one, so a hardcoded black is correct here.
+        ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Save context state
@@ -3573,12 +3577,20 @@ function showStartMeetingButton() {
 }
 
 async function startMeetingAsHost() {
+    // Guard against a double-click: the button was only removed AFTER the
+    // round-trip resolved, so two quick clicks fired startMeeting twice and
+    // broadcast NotifyMeetingStarted twice (every lobby participant's
+    // join-redirect ran twice). Disable immediately; re-enable only on failure.
+    const startButton = document.getElementById('startMeetingBtn');
+    if (startButton) {
+        if (startButton.disabled) return;
+        startButton.disabled = true;
+    }
     try {
         const result = await api.startMeeting(meetingId);
 
         if (result.success) {
             // Remove the start button
-            const startButton = document.getElementById('startMeetingBtn');
             if (startButton) {
                 startButton.remove();
             }
@@ -3590,10 +3602,13 @@ async function startMeetingAsHost() {
 
             // Show success message
             Toast.success('Meeting started! Participants in the lobby can now join.');
+        } else if (startButton) {
+            startButton.disabled = false; // allow retry
         }
     } catch (error) {
         console.error('Error starting meeting:', error);
         Toast.error('Failed to start meeting: ' + error.message);
+        if (startButton) startButton.disabled = false; // allow retry
     }
 }
 

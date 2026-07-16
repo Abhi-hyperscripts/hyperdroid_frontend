@@ -98,6 +98,15 @@ document.getElementById('guestJoinForm').addEventListener('submit', async (e) =>
         lastName = firstName;
     }
 
+    // Guard against a double-submit: two quick clicks minted two guest tokens
+    // and two participant rows, the second sessionStorage.setItem orphaning the
+    // first as a ghost participant. Disable the submit button for the round-trip.
+    const submitBtn = e.target.querySelector('button[type="submit"]') || document.querySelector('#guestJoinForm button[type="submit"]');
+    if (submitBtn) {
+        if (submitBtn.disabled) return;
+        submitBtn.disabled = true;
+    }
+
     try {
         // Call guest join API
         const response = await api.guestJoinMeeting(meetingId, firstName, lastName);
@@ -115,10 +124,13 @@ document.getElementById('guestJoinForm').addEventListener('submit', async (e) =>
         } else {
             errorMessage.textContent = 'Failed to join meeting. Please try again.';
             errorMessage.style.display = 'block';
+            if (submitBtn) submitBtn.disabled = false; // allow retry
         }
     } catch (error) {
         console.error('Guest join error:', error);
         errorMessage.textContent = error.message || 'An error occurred. Please try again.';
         errorMessage.style.display = 'block';
+        if (submitBtn) submitBtn.disabled = false; // allow retry
     }
+    // On success we redirect away, so the button intentionally stays disabled.
 });
