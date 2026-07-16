@@ -4802,6 +4802,22 @@ async function initDashboardSignalR() {
             }
         });
 
+        // Re-join the dashboard groups after an automatic reconnect. SignalR
+        // group membership is per-connection and is NOT preserved across a
+        // reconnect (a new connection id, stateful reconnect not enabled), so
+        // without this a wifi blip left the dashboard silently subscribed to
+        // nothing — MeetingStatusChanged / HostAdded/RemovedFromMeeting stopped
+        // arriving until a full page reload. Mirrors the same fix in meeting.js
+        // and lobby.js.
+        dashboardConnection.onreconnected(async () => {
+            try {
+                await dashboardConnection.invoke('JoinDashboard', currentUser.userId);
+                console.log('Re-joined dashboard notification group after reconnect');
+            } catch (e) {
+                console.error('Failed to re-join dashboard group after reconnect:', e);
+            }
+        });
+
         await dashboardConnection.start();
         console.log('Dashboard SignalR connected');
 
