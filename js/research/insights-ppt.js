@@ -237,7 +237,7 @@ function generateInsightsPPT(data, opts = {}) {
 
                 // KPI value
                 const rawVal = kpi.value != null ? kpi.value : kpi.kpi_value;
-                const suffix = kpi.suffix || '%';
+                const suffix = kpi.suffix != null ? kpi.suffix : (kpi.value_format === 'decimal' || kpi.value_format === 'number' ? '' : '%');
                 const displayVal = rawVal != null ? `${rawVal}${suffix}` : '—';
                 slide.addText(displayVal, {
                     x: cx + 0.1, y: cardY + 0.3, w: cardW - 0.2, h: 0.5,
@@ -455,7 +455,7 @@ function generateInsightsPPT(data, opts = {}) {
     function renderGaugeCard(slide, config, r) {
         const d = config.data || {};
         const rawVal = Array.isArray(d.series) ? d.series[0] : d.value;
-        const suffix = d.suffix || '%';
+        const suffix = d.suffix != null ? d.suffix : (d.value_format === 'decimal' || d.value_format === 'number' ? '' : '%');
         const displayVal = rawVal != null ? `${rawVal}${suffix}` : '—';
 
         slide.addText(displayVal, {
@@ -875,7 +875,7 @@ function generateInsightsPPT(data, opts = {}) {
             const dataRows = cats.map((cat, ci) => [
                 { text: truncate(String(cat), 20), options: { fill: { color: C.surface }, fontSize: 7, color: C.textPrimary, fontFace: FONT } },
                 ...series.map(s => ({
-                    text: pctStr(s.data?.[ci]),
+                    text: pctStr(s.data?.[ci], valSuffix),
                     options: { fill: { color: C.surface }, fontSize: 7, color: C.accent, fontFace: FONT, align: 'center' }
                 }))
             ]);
