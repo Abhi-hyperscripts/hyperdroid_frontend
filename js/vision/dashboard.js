@@ -4698,10 +4698,17 @@ function updateMeetingCardStatusElement(meetingItem, meetingId, isStarted, isRec
             liveIndicator = document.createElement('span');
             liveIndicator.className = 'meeting-live-indicator';
             liveIndicator.innerHTML = '<span class="live-dot"></span>LIVE';
-            // Insert after meeting name
-            const meetingName = meetingItem.querySelector('.meeting-name');
-            if (meetingName) {
-                meetingName.parentNode.insertBefore(liveIndicator, meetingName.nextSibling);
+            // Insert into the title row BEFORE the name, matching the server-side
+            // card render (createDashboardMeetingCard). The old code queried
+            // '.meeting-name', which cards don't have (the class is 'mcv2-name'),
+            // so the live indicator was never inserted and the real-time LIVE
+            // badge only appeared after a manual page reload.
+            const titleRow = meetingItem.querySelector('.mcv2-title-row');
+            const meetingName = meetingItem.querySelector('.mcv2-name');
+            if (titleRow && meetingName) {
+                titleRow.insertBefore(liveIndicator, meetingName);
+            } else if (titleRow) {
+                titleRow.insertBefore(liveIndicator, titleRow.firstChild);
             }
         }
         liveIndicator.style.display = 'inline-flex';
