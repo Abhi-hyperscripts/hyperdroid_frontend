@@ -287,6 +287,13 @@ function renderMeetingsList(fullReplace = true) {
         //
         // Count what's actually rendered instead of inferring it from page size.
         const alreadyRendered = grid.querySelectorAll('.meeting-card-v2').length;
+        if (alreadyRendered === 0) {
+            // The grid currently holds the "No meetings found" empty-state (or
+            // nothing) — appending would leave that block sitting above the new
+            // cards. Do a full render, which clears it.
+            grid.innerHTML = filtered.map(m => createDashboardMeetingCard(m)).join('');
+            return;
+        }
         const newMeetings = filtered.slice(alreadyRendered);
         grid.insertAdjacentHTML('beforeend', newMeetings.map(m => createDashboardMeetingCard(m)).join(''));
     }
@@ -3681,19 +3688,24 @@ function openSummaryModal() {
         if (e.target === overlay) closeSummaryModal();
     });
 
-    // Close on escape
+    // Close on escape. Store the handler on the overlay so closeSummaryModal can
+    // remove it no matter HOW the modal was closed — previously it was only
+    // removed when Escape itself fired, so closing via backdrop/button leaked a
+    // document keydown listener on every open.
     const escHandler = (e) => {
-        if (e.key === 'Escape') {
-            closeSummaryModal();
-            document.removeEventListener('keydown', escHandler);
-        }
+        if (e.key === 'Escape') closeSummaryModal();
     };
     document.addEventListener('keydown', escHandler);
+    overlay._escHandler = escHandler;
 }
 
 function closeSummaryModal() {
     const overlay = document.getElementById('summaryModalOverlay');
     if (overlay) {
+        if (overlay._escHandler) {
+            document.removeEventListener('keydown', overlay._escHandler);
+            overlay._escHandler = null;
+        }
         overlay.classList.remove('active');
         document.body.style.overflow = '';
         setTimeout(() => overlay.remove(), 200);
@@ -5118,14 +5130,14 @@ async function showSpeakerRolesPanel(sessionId, meetingId) {
             if (e.target === overlay) closeSpeakerRolesModal();
         });
 
-        // Close on Escape
+        // Close on Escape. Stored on the overlay so closeSpeakerRolesModal
+        // removes it regardless of how the modal closed (backdrop/Cancel/save) —
+        // otherwise it leaked a document keydown listener on every open.
         const handleEscape = (e) => {
-            if (e.key === 'Escape') {
-                closeSpeakerRolesModal();
-                document.removeEventListener('keydown', handleEscape);
-            }
+            if (e.key === 'Escape') closeSpeakerRolesModal();
         };
         document.addEventListener('keydown', handleEscape);
+        overlay._escHandler = handleEscape;
 
         // Animate in
         requestAnimationFrame(() => {
@@ -5305,6 +5317,10 @@ async function saveSpeakerRoles() {
 function closeSpeakerRolesModal() {
     const overlay = document.getElementById('speakerRolesOverlay');
     if (overlay) {
+        if (overlay._escHandler) {
+            document.removeEventListener('keydown', overlay._escHandler);
+            overlay._escHandler = null;
+        }
         overlay.classList.remove('active');
         setTimeout(() => overlay.remove(), 200);
     }
