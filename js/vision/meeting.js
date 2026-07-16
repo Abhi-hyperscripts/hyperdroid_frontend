@@ -3496,6 +3496,10 @@ async function leaveMeeting() {
     });
     if (confirmed) {
         try {
+            // Clear the stream-state monitor interval (it was defined with a
+            // matching stop but never called on leave).
+            stopStreamStateMonitor();
+
             // Stop recording if active
             if (isRecording) {
                 await stopRecording();
