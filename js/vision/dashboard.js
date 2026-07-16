@@ -319,13 +319,7 @@ function createDashboardMeetingCard(meeting) {
     // tenant scope alone. The server now requires host / project-owner /
     // SUPERADMIN, so only show the affordances to someone who can actually use
     // them rather than surfacing a button that 403s.
-    const _me = (typeof api !== 'undefined' && api.getUser) ? api.getUser() : null;
-    const _myId = _me ? _me.userId : null;
-    const canManageMeeting = !!_myId && (
-        meeting.host_user_id === _myId ||
-        meeting.project_owner_id === _myId ||
-        (_me && Array.isArray(_me.roles) && _me.roles.includes('SUPERADMIN'))
-    );
+    const canManageMeeting = canManageMeetingObj(meeting);
 
     // Defensive: don't trust a stale `is_started` flag if the meeting's
     // scheduled end has passed by more than 15 minutes. The webhook that
@@ -1598,7 +1592,7 @@ function renderCreateParticipantsOptions() {
         const isSelected = createMeetingSelectedParticipants.includes(email.toLowerCase());
 
         return `
-            <div class="dropdown-option ${isSelected ? 'selected' : ''}" onclick="toggleCreateParticipantSelection(event, '${escapeHtml(email)}')">
+            <div class="dropdown-option ${isSelected ? 'selected' : ''}" onclick="toggleCreateParticipantSelection(event, '${escapeHtml(escapeJsString(email))}')">
                 <div class="option-info">
                     <div class="option-name">${escapeHtml(firstName)} ${escapeHtml(lastName)}</div>
                     <div class="option-email">${escapeHtml(email)}</div>
@@ -2209,6 +2203,13 @@ async function playRecording(meetingId) {
             return;
         }
 
+        // GetMeetingRecordings gates on CanReadMeetingHistory, so an invited
+        // (non-owner) participant can VIEW recordings but the server rejects
+        // their delete with 403. Only render the delete buttons if they can
+        // actually manage the meeting.
+        const canDeleteRecordings = canManageMeetingObj(
+            (dashboardState.meetings || []).find(m => m.id === meetingId));
+
         const firstRecording = recordings[0];
 
         // Build the panel content
@@ -2252,13 +2253,14 @@ async function playRecording(meetingId) {
                 <div class="recordings-compact-list">
                     <div class="recordings-compact-header">
                         <span>${recordings.length} RECORDING${recordings.length > 1 ? 'S' : ''}</span>
+                        ${!canDeleteRecordings ? '' : `
                         <button class="btn-delete-all-recordings" onclick="confirmDeleteAllRecordings('${meetingId}')" title="Delete all recordings">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                             </svg>
                             Delete All
-                        </button>
+                        </button>`}
                     </div>
                     <div class="recordings-scroll-container">
                         ${recordings.map((rec, index) => {
@@ -2278,12 +2280,13 @@ async function playRecording(meetingId) {
                                         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                                     </svg>
                                 </button>
+                                ${!canDeleteRecordings ? '' : `
                                 <button class="rec-delete" onclick="event.stopPropagation(); confirmDeleteRecording('${rec.id}')" title="Delete recording">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <polyline points="3 6 5 6 21 6"/>
                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                                     </svg>
-                                </button>
+                                </button>`}
                                 <button class="rec-play" onclick="event.stopPropagation(); loadRecording('${rec.recording_url}', ${index})">▶</button>
                             </div>
                         `;
@@ -3765,6 +3768,37 @@ function escapeJsString(text) {
         .replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/</g, '\\x3C');
 }
 
+// Convert a UTC/ISO timestamp to the "YYYY-MM-DDTHH:mm" value a
+// <input type="datetime-local"> expects, in the viewer's LOCAL wall-clock.
+//
+// The settings modal used new Date(iso).toISOString().slice(0,16) here, which
+// is the UTC wall-clock. But save does new Date(fieldValue).toISOString(),
+// which parses the field as LOCAL. So on any rename the meeting's time was
+// re-sent shifted by the local UTC offset (an IST 6PM crept 5h30m each save).
+// The create form already treats the picker as local; this makes the settings
+// modal match.
+// Can the current user administer this meeting? Mirrors the server's
+// RequireMeetingAdmin gate (host OR project owner OR SUPERADMIN). Used to hide
+// affordances (settings/delete/recording-delete) that would otherwise 403 for
+// invited-only participants, who ARE listed on the dashboard.
+function canManageMeetingObj(meeting) {
+    if (!meeting) return false;
+    const me = (typeof api !== 'undefined' && api.getUser) ? api.getUser() : null;
+    const myId = me ? me.userId : null;
+    if (!myId) return false;
+    return meeting.host_user_id === myId ||
+        meeting.project_owner_id === myId ||
+        (Array.isArray(me.roles) && me.roles.includes('SUPERADMIN'));
+}
+
+function toLocalDatetimeInputValue(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const localMs = d.getTime() - d.getTimezoneOffset() * 60000;
+    return new Date(localMs).toISOString().slice(0, 16);
+}
+
 function formatSowItem(item) {
     if (typeof item === 'string') return escapeHtml(item);
     const parts = [];
@@ -3831,9 +3865,9 @@ async function showMeetingSettingsModal(meetingId, type) {
         // settingsStartTime / settingsEndTime). Use HRMSDatePicker.setDateTimeValue
         // so the visible altInput updates — direct .value assignment doesn't.
         HRMSDatePicker.setDateTimeValue('settingsStartTime',
-            meeting.start_time ? new Date(meeting.start_time).toISOString().slice(0, 16) : '');
+            toLocalDatetimeInputValue(meeting.start_time));
         HRMSDatePicker.setDateTimeValue('settingsEndTime',
-            meeting.end_time ? new Date(meeting.end_time).toISOString().slice(0, 16) : '');
+            toLocalDatetimeInputValue(meeting.end_time));
 
         document.getElementById('settingsNotes').value = meeting.notes || '';
         document.getElementById('settingsAllowGuests').checked = meeting.allow_guests || false;
@@ -4072,7 +4106,7 @@ function renderSettingsParticipantsOptions() {
         const isSelected = settingsSelectedParticipants.includes(email.toLowerCase());
 
         return `
-            <div class="dropdown-option ${isSelected ? 'selected' : ''}" onclick="toggleSettingsParticipantSelection(event, '${escapeHtml(email)}')">
+            <div class="dropdown-option ${isSelected ? 'selected' : ''}" onclick="toggleSettingsParticipantSelection(event, '${escapeHtml(escapeJsString(email))}')">
                 <div class="option-info">
                     <div class="option-name">${escapeHtml(firstName)} ${escapeHtml(lastName)}</div>
                     <div class="option-email">${escapeHtml(email)}</div>
@@ -4535,7 +4569,7 @@ async function saveMeetingSettings() {
 
     // Validate start time is not in the past — but only if the user actually changed it
     // (allow moving an already-past meeting to a different project without touching dates)
-    const originalStart = currentSettingsMeeting?.start_time ? new Date(currentSettingsMeeting.start_time).toISOString().slice(0, 16) : '';
+    const originalStart = toLocalDatetimeInputValue(currentSettingsMeeting?.start_time);
     if (startTimeVal && startTimeVal !== originalStart && new Date(startTimeVal) < new Date()) {
         Toast.warning('Meeting start time cannot be in the past');
         return;
@@ -4562,8 +4596,8 @@ async function saveMeetingSettings() {
         const notesChanged = currentSettingsMeeting && (currentSettingsMeeting.notes || '') !== notes;
         const modeChanged = currentSettingsMeeting && (currentSettingsMeeting.meeting_mode || null) !== meetingMode;
 
-        const oldStart = currentSettingsMeeting?.start_time ? new Date(currentSettingsMeeting.start_time).toISOString().slice(0, 16) : '';
-        const oldEnd = currentSettingsMeeting?.end_time ? new Date(currentSettingsMeeting.end_time).toISOString().slice(0, 16) : '';
+        const oldStart = toLocalDatetimeInputValue(currentSettingsMeeting?.start_time);
+        const oldEnd = toLocalDatetimeInputValue(currentSettingsMeeting?.end_time);
         const startChanged = oldStart !== startTimeVal;
         const endChanged = oldEnd !== endTimeVal;
 
