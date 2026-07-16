@@ -842,8 +842,11 @@
 
             // Build scorecard summary from the in-memory state — interviewer's
             // overrides during the meeting are preserved.
+            // Use the preserved displayName, not the normalized (lowercased) Map
+            // key, so "System Design" doesn't render as "system design" in the
+            // end-of-call report (the live renderScorecard already uses displayName).
             const scLines = Array.from(scorecardState.entries()).map(([comp, d]) =>
-                '<li><strong>' + escapeHtml(comp) + ':</strong> ' + escapeHtml((d.signal || '').replace(/_/g, ' ')) +
+                '<li><strong>' + escapeHtml(d.displayName || comp) + ':</strong> ' + escapeHtml((d.signal || '').replace(/_/g, ' ')) +
                 (d.overridden ? ' <em>(your call)</em>' : '') + '</li>'
             );
             const scorecardHtml = scLines.length === 0
