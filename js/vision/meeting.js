@@ -2047,6 +2047,17 @@ function hideConnectionBanner() {
 
 function showDisconnectedOverlay(message, offerRejoin) {
     if (document.getElementById('disconnectedOverlay')) return;
+    // The disconnect leaves the page mounted behind the overlay, so stop the
+    // background loops that leaveMeeting() would otherwise clear — else they keep
+    // running forever behind the overlay: the 2s participants poll keeps hitting
+    // the API, the 5s stale-cleanup keeps firing, and the wake lock keeps the
+    // screen awake with no live call.
+    try {
+        stopStreamStateMonitor();
+        stopStaleParticipantCleanup();
+        if (participantsRefreshInterval) { clearInterval(participantsRefreshInterval); participantsRefreshInterval = null; }
+        releaseWakeLock();
+    } catch (_e) { /* best-effort teardown */ }
     hideConnectionBanner();
     const overlay = document.createElement('div');
     overlay.id = 'disconnectedOverlay';
@@ -3376,14 +3387,24 @@ function zoomScreenShare(delta) {
     updateScreenShareTransform();
 }
 
-// Pan screen share
+// Pan screen share (relative delta)
 function panScreenShare(deltaX, deltaY) {
     screenSharePanX += deltaX;
     screenSharePanY += deltaY;
     updateScreenShareTransform();
 }
 
-// Reset screen share view
+// Re-center the pan (keeps the current zoom). The "Center" (⊙) button wires here;
+// it previously called panScreenShare(0,0) which added a ZERO delta = a no-op, so
+// a viewer who panned the share off the edge had no way to recover it without also
+// losing their zoom via Reset.
+function centerScreenShare() {
+    screenSharePanX = 0;
+    screenSharePanY = 0;
+    updateScreenShareTransform();
+}
+
+// Reset screen share view (zoom + pan)
 function resetScreenShare() {
     screenShareZoom = 1;
     screenSharePanX = 0;
@@ -3391,8 +3412,22 @@ function resetScreenShare() {
     updateScreenShareTransform();
 }
 
+// Clamp the pan so the zoomed share can't be dragged/panned entirely out of the
+// overflow:hidden wrapper (there was no clamp anywhere, so buttons/drag could push
+// it fully off-screen — blank). translate is post-scale, so the max pan that keeps
+// an edge visible is ~half the overflow on each axis.
+function clampScreenSharePan() {
+    const video = document.getElementById('screenShareVideo');
+    if (!video) return;
+    const maxX = video.clientWidth  * Math.max(0, screenShareZoom - 1) / (2 * screenShareZoom);
+    const maxY = video.clientHeight * Math.max(0, screenShareZoom - 1) / (2 * screenShareZoom);
+    screenSharePanX = Math.max(-maxX, Math.min(maxX, screenSharePanX));
+    screenSharePanY = Math.max(-maxY, Math.min(maxY, screenSharePanY));
+}
+
 // Update screen share transform
 function updateScreenShareTransform() {
+    clampScreenSharePan();
     const video = document.getElementById('screenShareVideo');
     if (video) {
         video.style.transform = `scale(${screenShareZoom}) translate(${screenSharePanX}px, ${screenSharePanY}px)`;
@@ -3742,8 +3777,12 @@ async function toggleHandRaise() {
 
 // Update hand raise indicator on participant
 function updateHandRaiseIndicator(username, isRaised) {
-    // Find participant by name
-    const participants = document.querySelectorAll('.participant-name');
+    // Find participant by name — scope to the VIDEO GRID only. The participants
+    // panel rows also use .participant-name (added in the panel rewrite), so an
+    // unscoped selector also injected the ✋ into the panel row (wrong place).
+    const container = document.getElementById('videoContainer');
+    if (!container) return;
+    const participants = container.querySelectorAll('.participant-name');
     participants.forEach(nameTag => {
         if (nameTag.textContent === username || (username === 'You' && nameTag.textContent === 'You')) {
             const participantDiv = nameTag.parentElement;
