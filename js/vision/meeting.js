@@ -3225,7 +3225,10 @@ async function loadChatHistory() {
     try {
         const messages = await api.getChatHistory(meetingId);
         messages.forEach(msg => {
-            addChatMessage(msg.user_id || 'Unknown', msg.message, msg.message_type);
+            // Prefer the display name captured at send time; fall back to the raw
+            // user_id only for legacy rows saved before user_name existed (showing
+            // a GUID as the author is better than nothing, but the name is right).
+            addChatMessage(msg.user_name || msg.user_id || 'Unknown', msg.message, msg.message_type);
         });
     } catch (error) {
         console.error('Error loading chat history:', error);

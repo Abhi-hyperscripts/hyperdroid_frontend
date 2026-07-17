@@ -499,6 +499,12 @@
     // ─── SignalR handlers ────────────────────────────────────────────────
 
     function onContextLoaded(data) {
+        // Ignore events addressed to a DIFFERENT meeting. These arrive via
+        // Clients.User(hostUserId), which targets every connection of this user —
+        // so a recruiter running two interview tabs would otherwise render
+        // candidate A's data into candidate B's HUD. Only filter when the payload
+        // carries a meetingId (internal re-render calls don't).
+        if (data && data.meetingId && data.meetingId !== meetingId) return;
         const bar = document.getElementById('recruitCandidateBar');
         if (!bar) return;
         setText('recruitCandName', data.candidateName || '—');
@@ -529,6 +535,9 @@
     let pinnedQuestions = []; // each: { question, why, topic, difficulty }
 
     function onQuestionsUpdated(data) {
+        // Cross-meeting guard (see onContextLoaded). Internal re-render callers
+        // pass no meetingId, so they're unaffected.
+        if (data && data.meetingId && data.meetingId !== meetingId) return;
         const root = document.getElementById('recruitAskNext');
         const cards = document.getElementById('recruitAskNextCards');
         if (!root || !cards) return;
@@ -587,6 +596,7 @@
     // Remember the full reason + confidence so the expand handler can show it.
     let _lastAnswerQuality = { reason: '', confidence: null, color: '' };
     function onAnswerQuality(data) {
+        if (data && data.meetingId && data.meetingId !== meetingId) return; // cross-meeting guard
         const chip = document.getElementById('recruitQualityChip');
         if (!chip) return;
 
@@ -663,6 +673,7 @@
     }
 
     function onJargonDetected(data) {
+        if (data && data.meetingId && data.meetingId !== meetingId) return; // cross-meeting guard
         const list = document.getElementById('recruitJargonList');
         const count = document.getElementById('recruitJargonCount');
         const trigger = document.getElementById('recruitJargonTrigger');
@@ -690,6 +701,7 @@
     }
 
     function onScorecardUpdate(data) {
+        if (data && data.meetingId && data.meetingId !== meetingId) return; // cross-meeting guard
         (data.deltas || []).forEach(d => {
             if (!d || !d.competency || !d.signal) return;
             // Normalize competency name for collision-safe Map keys (audit

@@ -220,7 +220,12 @@
         // backend in sync with what the host actually has pinned in the UI.
         if (typeof signalR.onreconnected === 'function') {
             signalR.onreconnected(() => {
-                console.log('[RecruitThread] SignalR reconnected — re-syncing active Q-Block');
+                console.log('[RecruitThread] SignalR reconnected — re-syncing active Q-Block + context');
+                // Ask the bot to re-emit InterviewContextLoaded. The context is
+                // broadcast only once at bot startup, so without this the candidate
+                // bar + cached rubric stay blank for the rest of the interview after
+                // a tab refresh / reconnect. Host-verified server-side.
+                try { if (meetingId) signalR.invoke('RequestInterviewContext', String(meetingId)); } catch (e) {}
                 const cur = blocks.find(b => b.id === activeBlockId);
                 if (cur && cur.status !== 'done') {
                     emitActiveQuestion(cur);
@@ -310,6 +315,11 @@
     function onContextLoaded(data) {
         // Round type + budget come from HRMS via Phase 1 InterviewContextLoaded.
         if (!data) return;
+        // Ignore context for a DIFFERENT meeting — InterviewContextLoaded arrives
+        // via Clients.User(hostUserId) (all of this user's connections), so a
+        // second concurrent interview tab would otherwise overwrite this thread's
+        // round metadata with the other candidate's.
+        if (data.meetingId && String(data.meetingId) !== String(meetingId)) return;
         roundMeta.roundType = data.roundType || '';
         roundMeta.roundLabel = data.roundLabel || data.roundType || '';
         const total = roundBudgetMins(data.roundType);
@@ -499,14 +509,17 @@
         if (!data || !data.questionId) return;
         const block = blocks.find(b => b.id === data.questionId);
         if (!block) return;
-        // Stale-grade guard: if the block was marked DONE >30s ago, drop
-        // the grade. The host has moved on; surfacing late grades on a
-        // closed Q-Block confuses the thread. 30s is generous — typical
-        // Sonnet round-trip is 10-15s, so a grade for an active block
-        // never trips this filter.
-        if (block.status === 'done' && block.askedAtMs && (Date.now() - block.askedAtMs) > 30000) {
+        // Stale-grade guard: if the block was marked DONE >30s ago, drop the
+        // grade — the host has moved on and a late grade on a closed Q-Block
+        // confuses the thread. Measure from doneAtMs (when DONE was clicked), NOT
+        // askedAtMs: askedAtMs is stamped once at block creation, so a candidate
+        // whose answer ran >30s before DONE would have their in-flight grade
+        // wrongly dropped — the block would stay permanently ungraded, exactly for
+        // the long deep-dive answers that matter most. If doneAtMs is somehow
+        // absent, do NOT drop (better a slightly-late grade than a lost one).
+        if (block.status === 'done' && block.doneAtMs && (Date.now() - block.doneAtMs) > 30000) {
             console.warn('[RecruitThread] Dropping stale grade for done block', data.questionId,
-                'age=', Date.now() - block.askedAtMs, 'ms');
+                'age=', Date.now() - block.doneAtMs, 'ms');
             return;
         }
         if (data.qualityColor) block.quality = { color: data.qualityColor, reason: data.qualityReason || '', confidence: data.qualityConfidence || 0 };
@@ -1156,6 +1169,7 @@
                 || (cur.deltas && cur.deltas.length > 0);
             if (hadEngagement) {
                 cur.status = 'done';
+                cur.doneAtMs = Date.now();
                 cur.followupSuggestion = null;
             } else {
                 blocks.splice(curIdx, 1);
@@ -1223,6 +1237,7 @@
         const block = blocks.find(b => b.id === activeBlockId);
         if (!block) return;
         block.status = 'done';
+        block.doneAtMs = Date.now();
         activeBlockId = null;
         // Mark picker as pending so the next render shows "asking AI…"
         // until V7NextQuestionOptions arrives. Clear any stale options
@@ -1287,6 +1302,7 @@
         const fs = parent.followupSuggestion;
         // Close the parent's active state (but keep it in the thread).
         parent.status = 'done';
+        parent.doneAtMs = Date.now();
         parent.followupSuggestion = null;
         const fu = createBlock({
             questionText: fs.question,
@@ -1325,6 +1341,7 @@
                 || (cur.deltas && cur.deltas.length > 0);
             if (hadEngagement) {
                 cur.status = 'done';
+                cur.doneAtMs = Date.now();
                 cur.followupSuggestion = null;
             } else {
                 blocks.splice(curIdx, 1);

@@ -638,6 +638,14 @@ function escapeAttr(text) {
         .replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// Only http/https URLs are safe as an href. Blocks javascript:/data:/etc.
+// (research source URLs come from AIEngine web search — attacker-influenceable).
+// The returned value must still pass through escapeAttr for the attribute context.
+function safeHttpUrl(url) {
+    const u = String(url == null ? '' : url).trim();
+    return /^https?:\/\//i.test(u) ? u : '#';
+}
+
 /**
  * Extract a tactical one-liner from a full script.
  * Splits on sentence boundaries (. ! ?) and caps at 80 chars.
@@ -881,7 +889,9 @@ function showResearchCard(data) {
         sourcesHtml = '<div class="hud-research-card-sources">';
         for (const src of data.sources) {
             const safeTitle = escapeHtml(src.title || src.url || 'Source');
-            const safeUrl = escapeHtml(src.url || '#');
+            // escapeHtml (textContent variant) does NOT encode double-quotes, so a
+            // URL with a " broke out of href="...". Scheme-validate then attr-escape.
+            const safeUrl = escapeAttr(safeHttpUrl(src.url));
             sourcesHtml += `<a class="hud-research-source-link" href="${safeUrl}" target="_blank" rel="noopener">${safeTitle}</a>`;
         }
         sourcesHtml += '</div>';
