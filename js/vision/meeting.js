@@ -333,6 +333,11 @@ let dragStartPanY = 0;
 let handRaised = false;
 let raisedHands = new Set(); // Track who has their hand raised
 
+// True once the meeting is actually being torn down (Leave button confirmed,
+// or a real page unload). Guards the pagehide handler from re-running teardown
+// that leaveMeeting() already did.
+let isLeaving = false;
+
 // Picture-in-Picture state
 let pipEnabled = false;
 
@@ -1704,6 +1709,13 @@ function updateParticipantLayout(layout) {
         videoContainer.classList.add('single-participant');
     }
 
+    // Re-apply hand-raise indicators: the tiles above were just rebuilt from
+    // scratch, so any ✋ set via the HandRaised SignalR event was wiped. Without
+    // this, a raised hand silently disappears on the next active-speaker switch
+    // (seconds later in a live meeting) while the hand is still up — the host
+    // misses it. Mirrors the recording-overlay / low-bandwidth-chip re-apply.
+    raisedHands.forEach((name) => updateHandRaiseIndicator(name, true));
+
     // Deferred detach of the old tiles' videos: by now (150ms) the new
     // elements' IntersectionObserver has fired and reported them visible, so
     // unregistering the old ones never drops the track's visibility to false
@@ -2369,6 +2381,17 @@ function detachTrack(track, publication, participant) {
     // Handle screen share detachment
     if (publication.source === 'screen_share') {
         const screenShareVideo = document.getElementById('screenShareVideo');
+
+        // If a DIFFERENT screen share is the one currently displayed (two shares
+        // briefly overlapped because the OS screen-picker delay let a second one
+        // start before the first attached), only detach THIS track. Running the
+        // full teardown here would hide the still-live displayed share for
+        // everyone when the non-displayed share ends.
+        if (screenShareVideo._lkVideoTrack && screenShareVideo._lkVideoTrack !== track) {
+            try { track.detach(); } catch (e) { /* track may already be gone */ }
+            return;
+        }
+
         const screenShareContainer = document.getElementById('screenShareContainer');
         const videoContainer = document.getElementById('videoContainer');
         const chatSidebar = document.querySelector('.chat-sidebar');
@@ -2494,7 +2517,11 @@ async function toggleMic() {
         } else {
             // For other errors, try to re-acquire mic permission
             try {
-                await navigator.mediaDevices.getUserMedia({ audio: true });
+                // Stop the probe stream's tracks immediately — GC does NOT stop
+                // live capture, so a discarded MediaStream keeps the mic device
+                // held (tab indicator stays lit) for the rest of the session.
+                const micProbe = await navigator.mediaDevices.getUserMedia({ audio: true });
+                micProbe.getTracks().forEach(t => t.stop());
                 // Retry the toggle
                 await room.localParticipant.setMicrophoneEnabled(newState);
                 micEnabled = newState;
@@ -2614,7 +2641,12 @@ async function toggleCamera() {
         } else {
             // For other errors, try to re-acquire camera permission
             try {
-                await navigator.mediaDevices.getUserMedia({ video: true });
+                // Stop the probe stream's tracks immediately — GC does NOT stop
+                // live capture, so a discarded MediaStream keeps the camera
+                // light on for the rest of the session even after the user
+                // turns the camera "off".
+                const camProbe = await navigator.mediaDevices.getUserMedia({ video: true });
+                camProbe.getTracks().forEach(t => t.stop());
                 // Retry the toggle
                 await room.localParticipant.setCameraEnabled(newState);
                 cameraEnabled = newState;
@@ -3525,6 +3557,11 @@ async function leaveMeeting() {
     });
     if (confirmed) {
         try {
+            // Mark teardown in progress so the pagehide handler (which fires
+            // when we navigate away below) doesn't repeat stopRecording /
+            // LeaveMeeting on an already-closing connection.
+            isLeaving = true;
+
             // Clear the stream-state monitor interval (it was defined with a
             // matching stop but never called on leave).
             stopStreamStateMonitor();
@@ -3790,10 +3827,21 @@ async function togglePictureInPicture() {
 }
 
 // Listen for PiP exit (when user clicks browser X button)
-document.addEventListener('leavepictureinpicture', () => {
+document.addEventListener('leavepictureinpicture', (e) => {
     const pipBtn = document.getElementById('pipBtn');
     if (pipBtn) pipBtn.classList.remove('active');
     pipEnabled = false;
+
+    // If the element leaving PiP was already orphaned by a layout rebuild (its
+    // tile got destroyed while it was in PiP — the detach paths deliberately
+    // skip the active PiP element), nothing else will ever detach it. Do it now
+    // so the LiveKit track + its MediaStream aren't leaked for the session.
+    const el = e.target;
+    if (el && !el.isConnected) {
+        const t = el._lkVideoTrack;
+        if (t) { try { t.detach(el); } catch (_e) { /* already gone */ } el._lkVideoTrack = null; }
+        if (el.srcObject) el.srcObject = null;
+    }
 });
 
 
@@ -4620,16 +4668,31 @@ function escapeHtml(text) {
 // Initialize on page load
 initializeMeeting();
 
-// Clean up on page unload
-window.addEventListener('beforeunload', async (e) => {
-    // Stop recording if active
-    if (isRecording) {
+// Clean up on page unload.
+//
+// beforeunload can only PROMPT — it cannot await, so any teardown placed here
+// runs even when the user clicks "Stay" (cancels the dialog). The old code
+// therefore stopped an in-progress recording and invoked LeaveMeeting (removing
+// the user from the meeting group, broadcasting "X left", and firing last-
+// participant server teardown) even when the user chose to stay. So: only warn
+// here; do the actual teardown in pagehide, which is non-cancelable and fires
+// only when the page is genuinely going away.
+window.addEventListener('beforeunload', (e) => {
+    if (isRecording && !isLeaving) {
         e.preventDefault();
         e.returnValue = '';
-        await stopRecording();
     }
+});
 
+window.addEventListener('pagehide', () => {
+    if (isLeaving) return; // leaveMeeting() already tore everything down
+    isLeaving = true;
+    if (isRecording) {
+        try { stopRecording(); } catch (_e) { /* best-effort on unload */ }
+    }
     if (signalRConnection) {
-        await signalRConnection.invoke('LeaveMeeting', meetingId);
+        // Best-effort — the server also cleans up when the socket closes
+        // (OnDisconnectedAsync), so a missed invoke here is not fatal.
+        try { signalRConnection.invoke('LeaveMeeting', meetingId); } catch (_e) { /* unloading */ }
     }
 });
