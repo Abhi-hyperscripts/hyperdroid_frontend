@@ -338,6 +338,28 @@ let raisedHands = new Set(); // Track who has their hand raised
 // that leaveMeeting() already did.
 let isLeaving = false;
 
+// Screen Wake Lock — hold the display awake during an active call.
+let screenWakeLock = null;
+async function requestWakeLock() {
+    if (isLeaving || !('wakeLock' in navigator)) return;
+    try {
+        screenWakeLock = await navigator.wakeLock.request('screen');
+        // The browser auto-releases the lock when the tab is backgrounded; drop
+        // our reference so the visibility handler re-acquires on return.
+        screenWakeLock.addEventListener('release', () => { screenWakeLock = null; });
+    } catch (e) { /* denied / unsupported — non-fatal, screen may sleep */ }
+}
+function releaseWakeLock() {
+    if (screenWakeLock) { try { screenWakeLock.release(); } catch (e) {} screenWakeLock = null; }
+}
+// Mobile browsers release the lock on background — re-acquire when the call's
+// tab becomes visible again (unless we're leaving).
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && window.__meetingLive && !screenWakeLock) {
+        requestWakeLock();
+    }
+});
+
 // Picture-in-Picture state
 let pipEnabled = false;
 
@@ -917,6 +939,9 @@ async function connectToLiveKit(wsUrl, token) {
 
         localParticipant = room.localParticipant;
         startStreamStateMonitor();
+        // Keep the screen awake for the duration of the call — otherwise the OS
+        // idle timer sleeps the display mid-meeting on mobile (and on laptops).
+        requestWakeLock();
         // Tell sw-update.js a call is live: a deploy mid-call must NOT
         // auto-reload the page (the join-time version gate guarantees
         // freshness at the next join instead)
@@ -3568,6 +3593,7 @@ async function leaveMeeting() {
             // Clear the stream-state monitor interval (it was defined with a
             // matching stop but never called on leave).
             stopStreamStateMonitor();
+            releaseWakeLock();
 
             // Stop recording if active
             if (isRecording) {
@@ -4690,6 +4716,7 @@ window.addEventListener('beforeunload', (e) => {
 window.addEventListener('pagehide', () => {
     if (isLeaving) return; // leaveMeeting() already tore everything down
     isLeaving = true;
+    releaseWakeLock();
     if (isRecording) {
         try { stopRecording(); } catch (_e) { /* best-effort on unload */ }
     }

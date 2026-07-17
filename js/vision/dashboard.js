@@ -320,8 +320,8 @@ function createDashboardMeetingCard(meeting) {
     const showGuestLink = meeting.allow_guests && type !== 'participant-controlled';
 
     const dateStr = meeting.start_time
-        ? new Date(meeting.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-            + ', ' + new Date(meeting.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+        ? new Date(meeting.start_time).toLocaleDateString([], { month: 'short', day: 'numeric' })
+            + ', ' + new Date(meeting.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })
         : '';
 
     const typeBadge = getTypeBadgeHTML(type);
@@ -2284,8 +2284,8 @@ async function playRecording(meetingId) {
                     </div>
                     <div class="recordings-scroll-container">
                         ${recordings.map((rec, index) => {
-                            const date = rec.started_at ? new Date(rec.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date';
-                            const time = rec.started_at ? new Date(rec.started_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--';
+                            const date = rec.started_at ? new Date(rec.started_at).toLocaleDateString([], { month: 'short', day: 'numeric' }) : 'No date';
+                            const time = rec.started_at ? new Date(rec.started_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--';
                             const duration = rec.duration_seconds ? `${Math.floor(rec.duration_seconds / 60)}:${String(rec.duration_seconds % 60).padStart(2, '0')}` : '--:--';
                             return `
                             <div class="rec-item ${index === 0 ? 'playing' : ''}" data-recording-id="${rec.id}" onclick="loadRecording('${rec.recording_url}', ${index})">
@@ -2586,7 +2586,7 @@ async function showTranscriptsPanel(meetingId) {
 
         sessions.forEach((session, index) => {
             const startDate = new Date(session.startedAt);
-            const dateStr = startDate.toLocaleDateString('en-US', {
+            const dateStr = startDate.toLocaleDateString([], {
                 month: 'short',
                 day: 'numeric',
                 year: 'numeric',
@@ -5448,11 +5448,11 @@ function openSendInviteModal(event, meetingId, meetingName, startTime, endTime) 
     let dateInfo = 'No date set';
     if (startTime) {
         const start = new Date(startTime);
-        dateInfo = start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
-            + ', ' + start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        dateInfo = start.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+            + ', ' + start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
         if (endTime) {
             const end = new Date(endTime);
-            dateInfo += ' - ' + end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+            dateInfo += ' - ' + end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
         }
     }
     document.getElementById('inviteMeetingDate').textContent = dateInfo;
