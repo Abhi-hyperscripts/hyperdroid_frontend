@@ -231,7 +231,7 @@
                     <form id="createProjectForm">
                         <div class="form-group">
                             <label for="projectName">Project Name</label>
-                            <input type="text" id="projectName" required>
+                            <input type="text" id="projectName" required maxlength="120">
                         </div>
                         <div class="form-group">
                             <label for="projectDescription">Description</label>
@@ -330,7 +330,7 @@
 
                         <div class="form-group">
                             <label for="meetingName">Meeting Name</label>
-                            <input type="text" id="meetingName" required>
+                            <input type="text" id="meetingName" required maxlength="120">
                         </div>
 
                         <div class="form-row">
@@ -762,7 +762,7 @@
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="renameProjectInput">Project Name</label>
-                        <input type="text" id="renameProjectInput" class="form-control" placeholder="Enter project name...">
+                        <input type="text" id="renameProjectInput" class="form-control" placeholder="Enter project name..." maxlength="120">
                     </div>
                     <div class="form-group" style="margin-top: 16px;">
                         <button type="button" class="btn btn-primary btn-full" onclick="confirmRenameProject()">Rename</button>

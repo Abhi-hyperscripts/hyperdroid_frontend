@@ -226,6 +226,13 @@ async function loadDashboard(reset = true) {
         console.error('Error loading dashboard:', error);
         if (reset) {
             grid.innerHTML = '<div class="empty-state"><h3>Error loading meetings</h3><p>Please try refreshing the page</p></div>';
+        } else {
+            // "Load More" failed. loadMoreMeetings() optimistically incremented
+            // dashboardState.page BEFORE this fetch; roll it back so the next click
+            // retries THIS page instead of skipping it (which would permanently
+            // drop a page of meetings from the list). Surface the failure.
+            if (dashboardState.page > 1) dashboardState.page--;
+            if (typeof Toast !== 'undefined') Toast.error('Could not load more meetings. Please try again.');
         }
     } finally {
         dashboardState.isLoading = false;
@@ -791,6 +798,18 @@ function showCreateMeetingQuickModal() {
     document.getElementById('allowGuests').disabled = false;
     document.getElementById('autoTranscription').disabled = false;
 
+    // Reset transcription-dependent groups + the hosted-only meeting-mode group.
+    // form.reset() unchecks the auto-transcription toggle WITHOUT firing 'change',
+    // so its dependent language + code-switching groups (and, from a prior hosted+
+    // Copilot session, the Meeting Mode select) would otherwise stay visible under
+    // an off toggle. showCreateMeetingModalForProject already does this; the quick
+    // modal was missing it.
+    document.getElementById('transcriptionLanguageGroup').classList.add('hidden');
+    document.getElementById('codeSwitchingGroup').classList.add('hidden');
+    document.getElementById('codeSwitching').checked = false;
+    const quickMeetingModeGroup = document.getElementById('meetingModeGroup');
+    if (quickMeetingModeGroup) quickMeetingModeGroup.classList.add('hidden');
+
     // Populate project selector
     const projectGroup = document.getElementById('meetingProjectSelectGroup');
     const projectContainer = document.getElementById('meetingProjectDropdownContainer');
@@ -833,7 +852,6 @@ function showCreateMeetingQuickModal() {
     }
 
     openModal('createMeetingModal');
-    fetchAndPopulateUsers();
 }
 
 function onMeetingProjectSelected(projectId) {
@@ -1059,13 +1077,22 @@ function renderDatePicker(type) {
     daysContainer.innerHTML = html;
 }
 
+// Parse a 'YYYY-MM-DD' string as LOCAL midnight. `new Date('YYYY-MM-DD')` parses
+// it as UTC midnight, so for any user west of UTC (all the Americas) it renders as
+// the PREVIOUS day — picking "July 1" showed/saved "30 Jun". HyperDroid is
+// country-agnostic, so this must be correct in every timezone.
+function parseLocalDateStr(dateStr) {
+    const [y, m, d] = String(dateStr).split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
+}
+
 function selectDate(type, dateStr) {
     if (type === 'start') {
         selectedStartDate = dateStr;
-        startDatePickerDate = new Date(dateStr);
+        startDatePickerDate = parseLocalDateStr(dateStr);
     } else {
         selectedEndDate = dateStr;
-        endDatePickerDate = new Date(dateStr);
+        endDatePickerDate = parseLocalDateStr(dateStr);
     }
 
     updateDateInputDisplay(type);
@@ -1077,7 +1104,7 @@ function updateDateInputDisplay(type) {
     const input = document.getElementById(type + 'Date');
 
     if (dateStr) {
-        const date = new Date(dateStr);
+        const date = parseLocalDateStr(dateStr);
         const day = date.getDate();
         const month = monthNames[date.getMonth()].slice(0, 3);
         const year = date.getFullYear();
@@ -1349,7 +1376,6 @@ async function showCreateMeetingModalForProject(projectId) {
     requestAnimationFrame(() => {
         requestAnimationFrame(() => modal.classList.add('active'));
     });
-    await fetchAndPopulateUsers();
 }
 
 function selectMeetingType(type) {
@@ -1637,23 +1663,6 @@ function updateCreateParticipantsCount() {
     const countDisplay = document.getElementById('selectedParticipantsCount');
     if (countDisplay) {
         countDisplay.textContent = createMeetingSelectedParticipants.length;
-    }
-}
-
-async function fetchAndPopulateUsers() {
-    try {
-        const users = await api.getAllUsers();
-        const hostSelect = document.getElementById('meetingHost');
-        hostSelect.innerHTML = '<option value="">Select Host</option>';
-
-        users.forEach(user => {
-            const option = document.createElement('option');
-            option.value = user.userId;
-            option.textContent = `${user.firstName} ${user.lastName} (${user.email})`;
-            hostSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error fetching users:', error);
     }
 }
 
@@ -2523,10 +2532,18 @@ async function deleteAllRecordings(meetingId) {
 
 let currentTranscriptsMeetingId = null;
 let currentSessionId = null;
+// Whether the current user may MUTATE this meeting's transcripts (delete session,
+// edit/generate/upload summary, manage speaker roles). The backend gates all of
+// those with RequireMeetingAdmin (host / project owner / SUPERADMIN); viewing only
+// needs read access. Without this an invited participant saw the destructive
+// controls and only discovered they couldn't use them after a confirm + 403 toast.
+let currentTranscriptsCanManage = false;
 
 async function showTranscriptsPanel(meetingId) {
     try {
         currentTranscriptsMeetingId = meetingId;
+        currentTranscriptsCanManage = canManageMeetingObj(
+            (dashboardState.meetings || []).find(m => m.id === meetingId));
 
         // Show panel with loading state
         const panel = document.getElementById('transcriptsSlidePanel');
@@ -2613,12 +2630,13 @@ async function showTranscriptsPanel(meetingId) {
                                 <polyline points="9 18 15 12 9 6"/>
                             </svg>
                         </button>
+                        ${!currentTranscriptsCanManage ? '' : `
                         <button class="btn-icon btn-danger btn-sm" onclick="event.stopPropagation(); confirmDeleteSession('${session.id}', ${session.sessionNumber})" title="Delete Session">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                             </svg>
-                        </button>
+                        </button>`}
                     </div>
                 </div>
             `;
@@ -2696,6 +2714,7 @@ async function showSessionTranscript(sessionId) {
                     Back
                 </button>
                 <div class="transcript-actions">
+                    ${!currentTranscriptsCanManage ? '' : `
                     <button class="btn btn-secondary btn-sm" onclick="showSpeakerRolesPanel('${currentSessionId}', '${currentTranscriptsMeetingId}')" title="Manage Speaker Roles">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -2704,7 +2723,7 @@ async function showSessionTranscript(sessionId) {
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                         </svg>
                         Roles
-                    </button>
+                    </button>`}
                     <button class="btn btn-secondary btn-sm" onclick="exportTranscript('${sessionId}', 'text')" title="Export as Text">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -3152,7 +3171,7 @@ async function loadSessionSummary(sessionId) {
                     </div>
                 `}
                 <div class="summary-actions">
-                    ${hasLlmKey ? `
+                    ${hasLlmKey && currentTranscriptsCanManage ? `
                     <button class="btn btn-primary btn-sm" id="generateSummaryBtn" onclick="generateAISummary('${sessionId}')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
@@ -3170,6 +3189,7 @@ async function loadSessionSummary(sessionId) {
                         View Full
                     </button>
                     ` : ''}
+                    ${!currentTranscriptsCanManage ? '' : `
                     <button class="btn btn-secondary btn-sm" onclick="showSummaryEditor('${sessionId}')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -3185,7 +3205,7 @@ async function loadSessionSummary(sessionId) {
                         </svg>
                         Upload File
                         <input type="file" accept=".txt,.md,.text" style="display: none;" onchange="uploadSummaryFile('${sessionId}', this)">
-                    </label>
+                    </label>`}
                 </div>
             </div>
         `;
@@ -3738,6 +3758,12 @@ function printSummaryModal() {
     if (!body) return;
 
     const printWin = window.open('', '_blank', 'width=800,height=600');
+    if (!printWin) {
+        // Popup blocker returned null — printWin.document.write would throw an
+        // uncaught TypeError and the button would appear dead. Tell the user.
+        if (typeof Toast !== 'undefined') Toast.error('Please allow pop-ups for this site to print the summary.');
+        return;
+    }
     printWin.document.write(`<!DOCTYPE html><html><head><title>Meeting Summary</title><style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 32px; color: #1a1a1a; line-height: 1.6; max-width: 800px; margin: 0 auto; }
         h4 { margin: 18px 0 8px; font-size: 1rem; }

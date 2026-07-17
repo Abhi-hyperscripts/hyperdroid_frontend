@@ -77,12 +77,12 @@
             <form id="guestJoinForm">
                 <div class="form-group">
                     <label for="firstName">First Name</label>
-                    <input type="text" id="firstName" required>
+                    <input type="text" id="firstName" required maxlength="60">
                 </div>
 
                 <div class="form-group">
                     <label for="lastName">Last Name <span style="color: var(--text-muted); font-weight: normal;">(optional)</span></label>
-                    <input type="text" id="lastName" placeholder="Same as first name if not provided">
+                    <input type="text" id="lastName" placeholder="Same as first name if not provided" maxlength="60">
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Join Meeting</button>

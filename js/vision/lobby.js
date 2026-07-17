@@ -245,6 +245,11 @@ async function checkMeetingStatus() {
 }
 
 function startStatusCheck() {
+    // Clear any existing interval FIRST. statusCheckInterval only holds the latest
+    // handle, so starting a second without clearing orphaned the first — Cancel
+    // (which clears only statusCheckInterval) then couldn't stop it, and the leaked
+    // poll would yank the user into the meeting AFTER they pressed Cancel.
+    if (statusCheckInterval) clearInterval(statusCheckInterval);
     // Check status every 10 seconds
     statusCheckInterval = setInterval(checkMeetingStatus, 10000);
 }
@@ -815,7 +820,14 @@ async function changeSpeaker() {
 }
 
 // Proceed to meeting after device testing
+let isProceedingToMeeting = false;
 async function proceedToMeeting() {
+    // Re-entrancy guard: the getMeetingStatus round-trip below leaves a wide
+    // double-click window on "Join Now", and each entry could start another SignalR
+    // connection + status-poll. Ignore overlapping clicks.
+    if (isProceedingToMeeting) return;
+    isProceedingToMeeting = true;
+    try {
     // If meetingData is not loaded yet, load it now (refresh to get latest status)
     try {
         meetingData = await api.getMeetingStatus(meetingId);
@@ -860,6 +872,9 @@ async function proceedToMeeting() {
     } else {
         // Regular meeting, participant-controlled, or hosted meeting already started - go to meeting
         goToMeeting();
+    }
+    } finally {
+        isProceedingToMeeting = false;
     }
 }
 
