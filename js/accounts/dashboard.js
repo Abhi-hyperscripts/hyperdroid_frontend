@@ -91,13 +91,77 @@ async function loadKpis() {
 async function loadRevenueTrend() {
     try {
         const url = AccountsCommon.buildUrl('dashboard/revenue-trend', { months: 12 });
-        const trend = await api.request(url, { _skipSpinner: true });
-        // TODO: wire to chart library (Chart.js / ApexCharts) — for now just log so
-        // the endpoint is exercised and the shape is visible during dev.
-        console.log('[Accounts:Dashboard] Revenue trend (last 12 months):', trend);
+        const res = await api.request(url, { _skipSpinner: true });
+        const trend = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        renderRevenueTrendChart(trend);
     } catch (err) {
         console.error('[Accounts:Dashboard] loadRevenueTrend error:', err);
+        const host = document.getElementById('revenueTrendChart');
+        if (host) host.innerHTML = '<div class="empty-state"><p>Could not load revenue trend.</p></div>';
     }
+}
+
+/**
+ * Lightweight inline-SVG grouped bar chart of monthly revenue vs expenses (no external chart lib,
+ * so it stays within the app's strict-asset constraints). Net-profit shown per-month in the tooltip title.
+ */
+function renderRevenueTrendChart(trend) {
+    const host = document.getElementById('revenueTrendChart');
+    if (!host) return;
+    const data = (trend || []).slice(-12);
+    if (!data.length || data.every(d => !d.revenue && !d.expenses)) {
+        host.innerHTML = '<div class="empty-state"><p>No revenue or expenses in the last 12 months yet.</p></div>';
+        return;
+    }
+
+    const W = 900, H = 260, padL = 56, padR = 12, padT = 12, padB = 40;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const maxVal = Math.max(1, ...data.map(d => Math.max(Number(d.revenue) || 0, Number(d.expenses) || 0)));
+    // "nice" axis max
+    const pow = Math.pow(10, Math.floor(Math.log10(maxVal)));
+    const niceMax = Math.ceil(maxVal / pow) * pow;
+    const y = v => padT + plotH - (v / niceMax) * plotH;
+    const groupW = plotW / data.length;
+    const barW = Math.min(18, groupW / 3);
+
+    // Compact Indian axis labels (₹3L, ₹75K) so they fit the left margin without clipping.
+    const axisFmt = (v) => {
+        if (v >= 10000000) return '₹' + (v / 10000000).toFixed(1).replace(/\.0$/, '') + 'Cr';
+        if (v >= 100000) return '₹' + (v / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
+        if (v >= 1000) return '₹' + Math.round(v / 1000) + 'K';
+        return '₹' + Math.round(v);
+    };
+    const gridLines = [0, 0.25, 0.5, 0.75, 1].map(f => {
+        const val = niceMax * f, yy = y(val);
+        return `<line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="var(--border-color, #e5e7eb)" stroke-width="1"/>
+                <text x="${padL - 8}" y="${yy + 4}" text-anchor="end" font-size="10" fill="var(--text-secondary, #6b7280)">${axisFmt(val)}</text>`;
+    }).join('');
+
+    const bars = data.map((d, i) => {
+        const cx = padL + i * groupW + groupW / 2;
+        const rev = Number(d.revenue) || 0, exp = Number(d.expenses) || 0, net = Number(d.net_profit) || 0;
+        const rx = cx - barW - 1, ex = cx + 1;
+        const shortLabel = AccountsCommon.escapeHtml((d.label || '').replace(/ \d{2}(\d{2})$/, " '$1"));
+        const title = `${AccountsCommon.escapeHtml(d.label || '')} — Revenue ${AccountsCommon.formatCurrency(rev)}, Expenses ${AccountsCommon.formatCurrency(exp)}, Net ${AccountsCommon.formatCurrency(net)}`;
+        return `<g><title>${title}</title>
+            <rect x="${rx}" y="${y(rev)}" width="${barW}" height="${padT + plotH - y(rev)}" rx="2" fill="var(--color-success, #16a34a)"/>
+            <rect x="${ex}" y="${y(exp)}" width="${barW}" height="${padT + plotH - y(exp)}" rx="2" fill="var(--color-error, #dc2626)"/>
+            <text x="${cx}" y="${H - padB + 16}" text-anchor="middle" font-size="9" fill="var(--text-secondary, #6b7280)">${shortLabel}</text>
+        </g>`;
+    }).join('');
+
+    host.innerHTML = `
+        <div style="display:flex;gap:1.25rem;margin-bottom:0.25rem;font-size:0.8rem;color:var(--text-secondary);">
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--color-success,#16a34a);margin-right:5px;"></span>Revenue</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--color-error,#dc2626);margin-right:5px;"></span>Expenses</span>
+        </div>
+        <div style="overflow-x:auto;">
+            <svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:640px;" role="img" aria-label="Monthly revenue and expenses, last 12 months">
+                ${gridLines}
+                ${bars}
+                <line x1="${padL}" y1="${padT + plotH}" x2="${W - padR}" y2="${padT + plotH}" stroke="var(--border-color, #d1d5db)" stroke-width="1"/>
+            </svg>
+        </div>`;
 }
 
 function renderTrend(elId, current, previous) {
